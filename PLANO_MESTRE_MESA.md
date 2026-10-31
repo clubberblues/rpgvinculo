@@ -12,8 +12,10 @@ Estabilizar a mesa virtual para uma nova rodada de simulação entre Mestre e jo
 - Verificação após a limpeza: `campaigns`, `characters`, `members`, `campaign_log`, `tokens` e `srd_character_sheets` estão com zero registros.
 - O banco tem catálogos distintos para D&D 3.5 (`srd_*`) e Vínculo (`vinculo_*`). Eles não devem ser misturados.
 - Contagens atuais: D&D 3.5 — 114 equipamentos, 14 magias, 7 raças, 11 classes, 6 talentos, 38 perícias e 10 monstros. Vínculo — 16 classes, 160 habilidades de classe, 95 magias, 191 itens e 72 talentos.
-- A tabela `srd_character_equipment` não existe no banco conectado, embora o fluxo da aplicação espere essa relação. A estrutura de `srd_equipment` também difere da estrutura definida em scripts recentes do repositório. A CA de monstros está armazenada como texto (por exemplo, `15 (+1 Des, +3 armadura...)`), mas a tela tenta convertê-la diretamente em número e obtém valor nulo. É necessário alinhar o esquema e normalizar estatísticas antes de importar ou expor o catálogo.
-- O fluxo de ataque atual publica o total do ataque e deixa a confirmação da CA e a aplicação do dano para o Mestre. Ainda não faz a resolução completa de acerto e dano.
+- A relação `srd_character_equipment` e colunas compatíveis com a aplicação foram criadas em `srd35_schema_reconciliation.sql`, com RLS de leitura por dono/Mestre e RPCs protegidas para entregar, equipar e usar poções de cura. O inventário está vazio porque as campanhas/personagens foram removidos. O esquema legado foi preservado.
+- A função `mover_token_player_cba` tinha permissão efetiva para `anon`; o acesso foi revogado. A verificação posterior mostrou `anon_can_execute=false` e `authenticated=true`. O advisor deixou de apontar função SECURITY DEFINER acessível a anônimos; ainda há avisos genéricos para funções SECURITY DEFINER acessíveis a usuários autenticados, que exigem revisão de autorização por função.
+- O fluxo de ataque foi atualizado para extrair CA numérica, resolver acerto/erro e abrir dado 3D de dano apenas em acerto; falta simulação ponta a ponta e o dano calculado ainda precisa ser aplicado pelo Mestre aos PV do token.
+- O Grimório atual usa botões estreitos de texto, sem campo de imagem no catálogo. O fundo de papel é esticado pelo CSS para 100% da largura e altura do modal, o que pode deformar a textura; as classes também estão sem dados técnicos e fontes no banco.
 
 ## Decisões recuperadas das conversas
 
@@ -38,6 +40,29 @@ Estabilizar a mesa virtual para uma nova rodada de simulação entre Mestre e jo
 - Talentos gerais e habilidades exclusivas de classe são catálogos separados.
 - Magias básicas podem ser universais; magias avançadas dependem de aprendizado, fonte ou condição narrativa.
 - A fórmula de PM discutida para Vínculo era PM máximo = base da classe + INT, com custos e efeitos das magias definidos separadamente. Essa regra deve permanecer no catálogo Vínculo, sem ser misturada às regras SRD de D&D 3.5.
+
+## Auditoria da implementação (31/10/2026)
+
+### Regras recuperadas e status
+
+- **Tamanho no grid:** Pequenas e Médias usam um token individual em 1×1; Grandes 2×2; Enormes 3×3; Imensas 4×4; Colossais 5×5 ou maior. A decisão “ocupação individual” da conversa refere-se a Minúsculas e Diminutas: cada criatura mantém seu próprio token, e elas podem compartilhar um quadrado. Isso ainda precisa ser aplicado à validação de colisão, movimento, alcance e flanqueamento.
+- **Iniciativa:** jogadores rolam seus próprios dados; o Mestre seleciona a quantidade de NPCs/monstros/fichas próprias, rola a mesma quantidade de d20 no dado 3D, e cada resultado é usado uma vez e associado aleatoriamente apenas aos tokens selecionados. Validar no código de ponta a ponta; os registros de iniciativa de Mestre ainda são gerados no servidor em parte do fluxo e não se deve presumir que o dado coletivo do Mestre já esteja concluído.
+- **Criação guiada:** tutorial visual por etapas, escurecendo a tela e destacando a função atual, é uma decisão de experiência; roteiro e integração visual seguem pendentes.
+- **Manter o projeto existente:** evoluir os HTMLs e banco atuais em vez de reconstruir a aplicação.
+
+### Correções executadas e verificadas
+
+- Inventário SRD alinhado ao esquema já instalado, sem apagar ou substituir colunas legadas. A tabela de relação foi criada com FK para equipamento, RLS para leitura do dono/Mestre e RPCs de entrega/equipamento/poções de cura. A estrutura passou por verificação de colunas, FK e permissões de execução.
+- RPC de movimento deixou de ser executável por `anon`; permanece disponível para `authenticated`. A verificação de privilégio efetivo confirmou o resultado.
+- Grimório ainda não foi alterado. Proposta: grade/lista de opções à esquerda e painel de briefing à direita; arte com proporção fixa e `object-fit: contain`; atributos/traços em blocos curtos; progressão da classe em seção expansível; etapa só avança pelo botão “Continuar”. Em telas pequenas, lista acima e briefing abaixo. A textura do papel deve manter a proporção, sem esticar para preencher o modal.
+- O banco agora tem campos `briefing` e `imagem_url` para raça, e `imagem_url` para classe; estão sem conteúdo de arte/briefing. O SRD não fornece ilustrações licenciadas para preencher esses campos; usar arte própria ou devidamente licenciada.
+
+### Lacunas confirmadas no catálogo D&D 3.5
+
+- Contagens atuais: 114 equipamentos, 14 magias, 7 raças, 11 classes, 6 talentos, 38 perícias, 10 monstros e 4 progressões de magia.
+- As 14 magias não têm URL de fonte. As 11 classes estão com `dados_tecnicos={}` e sem URL de fonte. Só 2 dos 6 talentos têm requisitos preenchidos. Os 10 monstros têm CA e PV, mas isso não representa o catálogo completo de monstros SRD.
+- A tabela de equipamentos contém categorias legadas e dados mecânicos incompletos; não há catálogo estruturado de itens mágicos. A tabela de classes não contém a progressão/recursos de cada classe por nível. Não existe ainda catálogo completo de condições e regras.
+- Conteúdo completo dos livros oficiais de Jogador, Mestre e Monstros não é equivalente ao SRD/OGL e inclui texto, nomes e imagens classificados como Product Identity. O escopo confirmado é preencher o SRD 3.5/OGL, registrar licença/fontes e criar resumos originais para material fora desse escopo, sem transcrever livros ou copiar ilustrações.
 
 ## Caminho de implementação
 
