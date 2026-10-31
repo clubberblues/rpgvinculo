@@ -47,13 +47,13 @@ BEGIN
     FROM unnest(v_expected) AS requested(character_id)
     WHERE NOT EXISTS (
       SELECT 1
-      FROM public.characters AS character
+      FROM public.characters AS ch
       JOIN public.members AS player
-        ON player.campaign_id = character.campaign_id
-       AND player.user_id = character.user_id
+        ON player.campaign_id = ch.campaign_id
+       AND player.user_id = ch.user_id
        AND player.role = 'PLAYER'
       WHERE character.campaign_id = p_campaign_id
-        AND character.id::TEXT = requested.character_id
+        AND ch.id::TEXT = requested.character_id
     )
   ) THEN
     RAISE EXCEPTION 'A lista inclui ficha que não pertence a um jogador desta campanha.';
@@ -102,7 +102,7 @@ BEGIN
   ) AS candidate(token)
   LEFT JOIN public.characters AS character
     ON character.campaign_id = p_campaign_id
-   AND character.id::TEXT = candidate.token->>'id'
+   AND ch.id::TEXT = candidate.token->>'id'
   WHERE candidate.token->>'tipo' IN ('npc', 'monstro')
      OR (candidate.token->>'tipo' = 'player' AND character.user_id = auth.uid());
 
@@ -116,7 +116,7 @@ BEGIN
 
   WITH gm_tokens AS (
     SELECT candidate.token,
-           character.id AS linked_character_id,
+           ch.id AS linked_character_id,
            sheet.atributos AS linked_attributes,
            sheet.talentos AS linked_feats
     FROM jsonb_array_elements(
