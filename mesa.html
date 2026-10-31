@@ -934,8 +934,8 @@ button,input,textarea{font-family:inherit}
     document.getElementById('iniciativa-status').textContent='Mira ativa: selecione um token inimigo no tabuleiro.';
   }
   function modifier35(score){return Math.floor((Number(score||10)-10)/2);}
-  function valorCA35(value){if(value==null||value==='')return null;var direct=Number(value);if(Number.isFinite(direct))return direct;var match=String(value).trim().match(/^(-?\\d+)/);return match?Number(match[1]):null;}
-  function critico35(value){var text=String(value||'x2'),range=text.match(/(\\d{1,2})(?:-(\\d{1,2}))?\\s*\\/\\s*x\\s*(\\d+)/i),mult=text.match(/x\\s*(\\d+)/i);return {min:range?Number(range[1]):20,max:range&&range[2]?Number(range[2]):20,multiplier:mult?Math.max(2,Number(mult[1])):2};}
+  function valorCA35(value){if(value==null||value==='')return null;var direct=Number(value);if(Number.isFinite(direct))return direct;var match=String(value).trim().match(/^(-?\d+)/);return match?Number(match[1]):null;}
+  function critico35(value){var text=String(value||'x2'),range=text.match(/(\d{1,2})(?:-(\d{1,2}))?\\s*\\/\\s*x\\s*(\d+)/i),mult=text.match(/x\\s*(\d+)/i);return {min:range?Number(range[1]):20,max:range&&range[2]?Number(range[2]):20,multiplier:mult?Math.max(2,Number(mult[1])):2};}
   function bab35(cls,level){var prog=String(cls&&(cls.bab_progression||cls.progressao_bba)||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); if(prog==='good'||prog==='bom')return level; if(prog==='average'||prog==='medium'||prog==='medio')return Math.floor(3*level/4); if(prog==='poor'||prog==='ruim')return Math.floor(level/2); return 0;}
   function selecionarAlvoAtaque(tokenKey){
     var type=ataqueSelecionado; ataqueSelecionado=null; document.getElementById('area-tabuleiro').classList.remove('selecionando-alvo');
@@ -955,7 +955,7 @@ button,input,textarea{font-family:inherit}
     if(type==='atk-dist'&&!weapon){alert('Equipe uma arma à distância antes de atacar.');return;}
     var weaponName=weapon?weapon.nome:'Ataque desarmado',damage=weapon&&weapon.dano||'1d3',weaponFocus=0,powerPenalty=0,powerDamage=0;
     var feats=own.sh.talentos||[];if(typeof feats==='string'){try{feats=JSON.parse(feats);}catch(e){feats=[];}}
-    var normalizeName=function(value){return String(value||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().trim();};
+    var normalizeName=function(value){return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();};
     var focus=Array.isArray(feats)&&feats.find(function(feat){return feat&&feat.id==='foco_em_arma'&&normalizeName(feat.parametro)===normalizeName(weaponName);});
     if(focus)weaponFocus=1;
     if(type==='atk-corpo'&&personagemTemTalento(own.sh,'ataque_poderoso')){var rawPenalty=prompt('Penalidade de ataque de Ataque Poderoso (0 a '+Math.max(0,bab)+'):', '0');if(rawPenalty===null)return;powerPenalty=Number(rawPenalty);if(!Number.isInteger(powerPenalty)||powerPenalty<0||powerPenalty>bab){alert('A penalidade deve ser um inteiro entre 0 e '+Math.max(0,bab)+'.');return;}powerDamage=powerPenalty*(weapon&&weapon.detalhes&&weapon.detalhes.duas_maos?2:1);}
@@ -963,7 +963,7 @@ button,input,textarea{font-family:inherit}
     if(type==='atk-dist'&&weapon&&weapon.detalhes&&Number(weapon.detalhes.alcance_m)>0){var rangeSquares=Math.max(Math.abs(Number(target.gridX)-Number(ownToken.gridX)),Math.abs(Number(target.gridY)-Number(ownToken.gridY)));if(rangeSquares*1.5>Number(weapon.detalhes.alcance_m)){alert('Alvo fora do alcance da arma ('+weapon.detalhes.alcance_m+' m).');return;}}
     var title=type==='atk-corpo'?'Ataque Corpo a Corpo':'Ataque à Distância', critical=critico35(weapon&&weapon.critico);
     function abrirRolagemDano(isCritical){
-      var rawDamage=String(damage||'1d3').split('/')[0].trim(), parsed=rawDamage.match(/^(\\d+)d(3|4|6|8|10|12|20|100)(?:([+-]\\d+))?$/i);
+      var rawDamage=String(damage||'1d3').split('/')[0].trim(), parsed=rawDamage.match(/^(\d+)d(3|4|6|8|10|12|20|100)(?:([+-]\d+))?$/i);
       if(!parsed){alert('O ataque acertou, mas a expressão de dano da arma não pôde ser interpretada: '+rawDamage+'. O Mestre pode aplicar o dano manualmente.');return;}
       var diceCount=Math.max(1,Math.min(20,Number(parsed[1]))),sides=Number(parsed[2]),baseFlat=Number(parsed[3]||0),multiplier=isCritical?critical.multiplier:1;
       var strengthDamage=type==='atk-corpo'?ability:0,flat=(baseFlat+strengthDamage+powerDamage)*multiplier,diceTotal=diceCount*multiplier;
