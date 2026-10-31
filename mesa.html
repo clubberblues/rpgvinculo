@@ -108,13 +108,13 @@ button,input,textarea{font-family:inherit}
 .teste-confirmar:disabled{opacity:.5;cursor:wait}
 .card-pers.selecionado-para-teste{border-color:#fbbf24;box-shadow:0 0 20px #fbbf24,inset 0 0 10px rgba(251,191,36,.5);transform:scale(1.03)}
 .cards-strip.selecionando-teste .card-pers{cursor:crosshair}
-#botoes-rolagem-pendente{position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:9998;width:min(94vw,720px);max-height:40vh;overflow-y:auto;display:flex;flex-direction:column;gap:7px;pointer-events:none}
-#botoes-rolagem-pendente .btn-rolar-teste{width:100%;background:#b83232;color:#fff;border:2px solid #c9a050;padding:13px 22px;font-family:'Cinzel',serif;font-weight:900;font-size:clamp(12px,2vw,16px);border-radius:8px;cursor:pointer;box-shadow:0 0 20px rgba(184,50,50,.8);animation:pulse-teste 1.5s infinite;pointer-events:auto}
+#botoes-rolagem-pendente{position:fixed;top:auto;right:14px;bottom:calc(84px + env(safe-area-inset-bottom));left:auto;transform:none;z-index:9200;width:min(360px,calc(100vw - 28px));max-height:24vh;overflow-y:auto;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+#botoes-rolagem-pendente .btn-rolar-teste{width:100%;background:rgba(30,40,60,.96);color:#f5ecd6;border:1px solid #c9a050;padding:9px 12px;font-family:'Cinzel',serif;font-weight:700;font-size:12px;text-align:left;border-radius:6px;cursor:pointer;box-shadow:0 5px 16px rgba(0,0,0,.45);pointer-events:auto}
 #botoes-rolagem-pendente .btn-rolar-teste:disabled{opacity:.72;cursor:wait}
-@media(max-width:640px){#botoes-rolagem-pendente{top:8px;width:calc(100vw - 16px);max-height:32vh}#botoes-rolagem-pendente .btn-rolar-teste{padding:10px 12px}}
+@media(max-width:640px){#botoes-rolagem-pendente{right:8px;bottom:calc(82px + env(safe-area-inset-bottom));width:min(320px,calc(100vw - 16px));max-height:22vh}#botoes-rolagem-pendente .btn-rolar-teste{padding:8px 10px;font-size:11px}}
 @keyframes pulse-teste{0%{box-shadow:0 0 0 0 rgba(184,50,50,.7)}70%{box-shadow:0 0 0 15px rgba(184,50,50,0)}100%{box-shadow:0 0 0 0 rgba(184,50,50,0)}}
 
-#painel-iniciativa{display:none;position:fixed;top:70px;left:50%;transform:translateX(-50%);width:min(94vw,900px);background:rgba(10,15,30,.78);border:2px solid #c9a050;border-radius:8px;padding:10px 14px;z-index:9000;box-shadow:0 10px 30px rgba(0,0,0,.9);text-align:center;backdrop-filter:blur(8px);pointer-events:none}
+#painel-iniciativa{display:none;position:fixed;top:72px;left:50%;transform:translateX(-50%);width:min(86vw,820px);max-height:18vh;overflow:hidden;background:rgba(10,15,30,.94);border:1px solid #c9a050;border-radius:7px;padding:6px 10px;z-index:9000;box-shadow:0 6px 18px rgba(0,0,0,.55);text-align:center;backdrop-filter:blur(8px);pointer-events:none}
 #painel-iniciativa.ativo{display:block}
 .iniciativa-titulo{font-family:'Cinzel',serif;color:#c9a050;font-size:12px;letter-spacing:2px;margin-bottom:4px}
 #iniciativa-status{color:#8a9ab0;font-size:11px;margin-bottom:7px}
@@ -161,7 +161,7 @@ button,input,textarea{font-family:inherit}
 .iniciativa-mover:disabled{opacity:.28;cursor:not-allowed}
 @media(max-width:700px){#painel-iniciativa{top:64px;padding:8px}.iniciativa-item{min-width:82px;padding:6px 8px;font-size:10px}.equip-modal-header h2{font-size:15px}}
 @media(max-width:480px){.modal-reforco-card{width:96vw;max-height:92vh}.modal-reforco-head{padding:11px 13px}.modal-reforco-head h2{font-size:15px}.quick-tabs{gap:5px;padding:8px 9px 0}.quick-tabs button{font-size:10px;padding:9px 3px}.modal-reforco-body{padding:11px}.quick-catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.quick-catalog-grid .card-catalogo{min-height:102px;padding:7px}.quick-filter-row{flex-direction:column}}
-@media(max-width:768px){#painel-iniciativa{top:60px;left:2.5vw;transform:none;width:95vw;max-height:28vh;overflow:hidden;padding:6px}.iniciativa-titulo{font-size:10px;letter-spacing:1px}#iniciativa-status{font-size:10px;margin-bottom:4px}#fila-iniciativa{overflow-x:auto;overscroll-behavior-x:contain}.iniciativa-item{min-width:78px;padding:5px 7px;font-size:9px}#btn-encerrar-turno-player{bottom:calc(12px + env(safe-area-inset-bottom));max-width:94vw;padding:11px 15px;font-size:12px}.quick-catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.cba-tools{max-width:100%}.cba-preview-area{min-height:300px}}
+@media(max-width:768px){#painel-iniciativa{top:64px;left:3vw;transform:none;width:94vw;max-height:15vh;padding:5px 7px}.iniciativa-titulo{font-size:10px;letter-spacing:1px}#iniciativa-status{font-size:10px;margin-bottom:3px}#fila-iniciativa{overflow-x:auto;overscroll-behavior-x:contain;padding:2px}.iniciativa-item{min-width:76px;padding:4px 6px;font-size:9px}#btn-encerrar-turno-player{bottom:calc(12px + env(safe-area-inset-bottom));max-width:94vw;padding:11px 15px;font-size:12px}.quick-catalog-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.cba-tools{max-width:100%}.cba-preview-area{min-height:300px}}
 
 /* ============ MODAL DE XP ============ */
 #modal-xp{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9600;display:none;align-items:center;justify-content:center;padding:12px;backdrop-filter:blur(5px)}
@@ -2363,6 +2363,8 @@ button,input,textarea{font-family:inherit}
     var alvos = data.alvos.map(String);
     personagens.forEach(function(personagemAlvo){
       if(personagemAlvo.ch.user_id !== eu.id || alvos.indexOf(String(personagemAlvo.ch.id)) === -1) return;
+      var isInitiative=String(data.tipo||'').toLocaleLowerCase('pt-BR').includes('iniciativa');
+      if(isInitiative&&combatDataState&&Array.isArray(combatDataState.turn_order)&&combatDataState.turn_order.some(function(entry){return !entry.is_monster&&String(entry.id)===String(personagemAlvo.ch.id);})){removerPedidosIniciativaDaFicha(personagemAlvo.ch.id);return;}
       var responseKey=String(requestKey)+'|'+String(personagemAlvo.ch.id);
       if(pedidosTesteRespondidos[responseKey]) return;
       criarBotaoRolagemTeste(String(data.tipo||'Teste de habilidade'), personagemAlvo.ch.id, requestKey);
@@ -2431,6 +2433,7 @@ button,input,textarea{font-family:inherit}
     btn.dataset.requestKey=String(requestKey);
     btn.dataset.characterId=String(personagemId);
     btn.dataset.isInitiative=String(String(tipoTeste).toLocaleLowerCase('pt-BR').includes('iniciativa'));
+    if(btn.dataset.isInitiative==='true') Array.from(container.querySelectorAll('.btn-rolar-teste')).forEach(function(existing){if(existing.dataset.isInitiative==='true'&&existing.dataset.characterId===String(personagemId))existing.remove();});
     var nomePersonagem=personagem&&personagem.ch?String(personagem.ch.nome||'Personagem'):'Personagem';
     btn.textContent='⚡ Rolar '+tipoTeste+' · '+nomePersonagem;
     btn.setAttribute('aria-label','Rolar '+tipoTeste+' para '+nomePersonagem+' com o dado de vinte faces');
@@ -2544,6 +2547,7 @@ button,input,textarea{font-family:inherit}
     var ordem=combatDataState && Array.isArray(combatDataState.turn_order)?combatDataState.turn_order:[];
     var esperados=combatDataState && Array.isArray(combatDataState.expected_character_ids)?combatDataState.expected_character_ids:[];
     var ativo=!!(combatDataState && combatDataState.active && ordem.length);
+    ordem.forEach(function(entry){if(entry&&!entry.is_monster&&entry.id!=null)removerPedidosIniciativaDaFicha(entry.id);});
     if(!ordem.length && !esperados.length){
       renderizarPainelEconomiaAcoes(false,null,null);
       painel.classList.remove('ativo');
