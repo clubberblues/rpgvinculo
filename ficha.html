@@ -1512,7 +1512,9 @@ body{background:#0d0b07;font-family:'EB Garamond',Georgia,serif;color:#2b1f0f;
     return '';
   }
   function dnd35SpellParse(value) { if(typeof value==='string'){try{return JSON.parse(value);}catch(e){return null;}} return value; }
-  function dnd35SpellLevel(spell) {
+  function dnd35SpellLevel(spell,classKey) {
+    var technical=dnd35SpellParse(spell&&spell.dados_tecnicos),levels=technical&&technical.class_levels;
+    if(classKey&&levels&&levels[String(classKey)]!=null&&Number.isFinite(Number(levels[String(classKey)])))return Number(levels[String(classKey)]);
     var raw=spell.circulo!=null?spell.circulo:spell.nivel;
     if(typeof raw==='number'||/^\s*\d+\s*$/.test(String(raw)))return Number(raw);
     var match=String(raw==null?'':raw).match(/\d+/);return match?Number(match[0]):-1;
@@ -1562,7 +1564,7 @@ body{background:#0d0b07;font-family:'EB Garamond',Georgia,serif;color:#2b1f0f;
     var aliases=dnd35SpellClassLabels(key);return classes.some(function(v){return dnd35SpellClassKey(v)===key||aliases.indexOf(String(v||'').toLowerCase())>=0;});
   }
   function dnd35GrimoireRender(state,attrs,charLevel,creating) {
-    var avail=dnd35GrimoireAvailability(state,attrs,charLevel),s=dnd35SpellState(state),spells=(state.srdSpells||[]).filter(function(sp){var lvl=dnd35SpellLevel(sp);return dnd35SpellMatchesClass(sp,avail.key)&&lvl>=0&&lvl<=avail.max;});
+    var avail=dnd35GrimoireAvailability(state,attrs,charLevel),s=dnd35SpellState(state),spells=(state.srdSpells||[]).filter(function(sp){var lvl=dnd35SpellLevel(sp,avail.key);return dnd35SpellMatchesClass(sp,avail.key)&&lvl>=0&&lvl<=avail.max;});
     state.grimoireState=s;
     var classNames={wizard:'Mago / Wizard',bard:'Bardo / Bard',cleric:'Clérigo / Cleric',druid:'Druida / Druid',paladin:'Paladino / Paladin',ranger:'Patrulheiro / Ranger',sorcerer:'Feiticeiro / Sorcerer'},isSpontaneous=avail.key==='sorcerer'||avail.key==='bard',preparedCount=s.preparadas.length,knownCount=s.conhecidas.length,bookTitle=avail.key==='wizard'?'Grimório':(isSpontaneous?'Magias Conhecidas':'Preparação de Magias');
     var message='';
@@ -1576,7 +1578,7 @@ body{background:#0d0b07;font-family:'EB Garamond',Georgia,serif;color:#2b1f0f;
     var activeHtml='';
     if(!creating&&isSpontaneous){
       var selected=s.conhecidas.map(function(id){return spells.filter(function(sp){return String(sp.id)===String(id);})[0];}).filter(Boolean);
-      activeHtml=selected.map(function(sp){var l=dnd35SpellLevel(sp),remaining=(avail.slots[l]||0)-Number(s.usos[String(l)]||0);return '<div class="dnd35-spell-line"><span><b>'+esc(sp.nome)+'</b> · círculo '+l+' · '+Math.max(0,remaining)+' / '+(avail.slots[l]||0)+' espaços restantes para conjurar na mesa</span></div>';}).join('');
+      activeHtml=selected.map(function(sp){var l=dnd35SpellLevel(sp,avail.key),remaining=(avail.slots[l]||0)-Number(s.usos[String(l)]||0);return '<div class="dnd35-spell-line"><span><b>'+esc(sp.nome)+'</b> · círculo '+l+' · '+Math.max(0,remaining)+' / '+(avail.slots[l]||0)+' espaços restantes para conjurar na mesa</span></div>';}).join('');
     } else if(!creating){
       activeHtml=s.preparadas.map(function(p){var sp=spells.filter(function(x){return String(x.id)===String(p.spell_id);})[0];if(!sp)return '';return '<div class="dnd35-spell-line"><span><b>'+esc(sp.nome)+'</b> · círculo '+Number(p.slot_level)+(p.expended?' · gasto':' · pronta para conjurar na mesa')+'</span></div>';}).join('');
     }
@@ -1585,7 +1587,7 @@ body{background:#0d0b07;font-family:'EB Garamond',Georgia,serif;color:#2b1f0f;
     var catalog='';
     if(!spells.length)catalog='<div class="dnd35-spell-empty">'+esc(state.spellCatalogError||'Nenhuma magia disponível neste nível/classe.')+'</div>';
     else catalog='<div class="dnd35-spell-list">'+spells.map(function(sp){
-      var id=String(sp.id),lvl=dnd35SpellLevel(sp),known=s.conhecidas.indexOf(id)>=0,prepared=s.preparadas.filter(function(p){return String(p.spell_id)===id;})[0],technical=sp.dados_tecnicos;
+      var id=String(sp.id),lvl=dnd35SpellLevel(sp,avail.key),known=s.conhecidas.indexOf(id)>=0,prepared=s.preparadas.filter(function(p){return String(p.spell_id)===id;})[0],technical=sp.dados_tecnicos;
       if(technical&&typeof technical==='object')technical=JSON.stringify(technical);
       var meta=['Círculo '+lvl,sp.escola?'Escola: '+sp.escola:'',sp.alcance?'Alcance: '+sp.alcance:'',sp.alvo?'Alvo: '+sp.alvo:'',sp.duracao?'Duração: '+sp.duracao:'',sp.componentes?'Componentes: '+sp.componentes:''].filter(Boolean).join(' · ');
       var controls='';
@@ -1617,7 +1619,7 @@ body{background:#0d0b07;font-family:'EB Garamond',Georgia,serif;color:#2b1f0f;
     var rest=document.querySelector('[data-grimoire-rest]');if(rest)rest.addEventListener('click',async function(){if(!window.confirm('Confirmar reposição das magias após o descanso diário?'))return;rest.disabled=true;var status=document.querySelector('[data-grimoire-status]');try{var result=await sb.rpc('repor_magias_srd',{p_character_id:String(CHAR_ID)});if(result.error)throw result.error;state.grimoireState.usos={};state.grimoireState.preparadas.forEach(function(p){p.expended=false;});state.sheet.magias_preparadas=dnd35GrimoireSaveState({sheet:{magias_preparadas:state.grimoireState}});renderizarFichaSRD35();var restedStatus=document.querySelector('[data-grimoire-status]');if(restedStatus)restedStatus.textContent='Magias repostas após descanso diário.';}catch(e){if(status)status.textContent='Não foi possível repor: '+(e.message||e);rest.disabled=false;}});
   }
   async function dnd35GrimoirePersist(state) {
-    var status=document.querySelector('[data-grimoire-status]'),attrs=dnd35Objeto(state.sheet.atributos),level=Math.max(1,Number(state.sheet.nivel)||1),avail=dnd35GrimoireAvailability(state,attrs,level),s=state.grimoireState||dnd35SpellState(state),spells=(state.srdSpells||[]).filter(function(sp){return dnd35SpellMatchesClass(sp,avail.key)&&dnd35SpellLevel(sp)>=0&&dnd35SpellLevel(sp)<=avail.max;}),validIds=spells.map(function(sp){return String(sp.id);});
+    var status=document.querySelector('[data-grimoire-status]'),attrs=dnd35Objeto(state.sheet.atributos),level=Math.max(1,Number(state.sheet.nivel)||1),avail=dnd35GrimoireAvailability(state,attrs,level),s=state.grimoireState||dnd35SpellState(state),spells=(state.srdSpells||[]).filter(function(sp){return dnd35SpellMatchesClass(sp,avail.key)&&dnd35SpellLevel(sp,avail.key)>=0&&dnd35SpellLevel(sp,avail.key)<=avail.max;}),validIds=spells.map(function(sp){return String(sp.id);});
     if(!state.grimoireState)state.grimoireState=s;
     if(!avail.key||!avail.progression){if(status)status.textContent='Não foi possível salvar: classe ou progressão de magias indisponível.';return;}
     s.conhecidas=Array.from(new Set(s.conhecidas.map(String).filter(function(id){return validIds.indexOf(id)>=0;})));
@@ -1625,16 +1627,16 @@ body{background:#0d0b07;font-family:'EB Garamond',Georgia,serif;color:#2b1f0f;
     if(avail.key==='wizard'&&s.preparadas.some(function(p){return s.conhecidas.indexOf(String(p.spell_id))<0;})){if(status)status.textContent='Magias preparadas pelo Mago precisam estar no grimório (conhecidas).';return;}
     if(avail.key==='sorcerer'||avail.key==='bard'){ 
       var knownRows=dnd35SpellParse(avail.progression&&avail.progression.known_by_level),hasKnown=Array.isArray(knownRows),countBy={};
-      s.conhecidas.forEach(function(id){var sp=spells.filter(function(x){return String(x.id)===id;})[0];if(sp){var l=dnd35SpellLevel(sp);countBy[l]=(countBy[l]||0)+1;}});
+      s.conhecidas.forEach(function(id){var sp=spells.filter(function(x){return String(x.id)===id;})[0];if(sp){var l=dnd35SpellLevel(sp,avail.key);countBy[l]=(countBy[l]||0)+1;}});
       if(hasKnown)for(var kl=0;kl<=avail.max;kl++){var cap=dnd35SpellProgressionCount(state,'known_by_level',level,kl);if(cap!=null&&cap>=0&&(countBy[kl]||0)>cap){if(status)status.textContent='Limite de magias conhecidas excedido no círculo '+kl+'.';return;}}
     }
     if(avail.key!=='sorcerer'&&avail.key!=='bard'){
       var perSlot={};s.preparadas.forEach(function(p){var l=Number(p.slot_level)||0;perSlot[l]=(perSlot[l]||0)+1;});
       for(var sl=0;sl<=avail.max;sl++)if((perSlot[sl]||0)>(avail.slots[sl]||0)){if(status)status.textContent='Espaços de círculo '+sl+' excedidos ('+perSlot[sl]+' / '+(avail.slots[sl]||0)+').';return;}
-      if(s.preparadas.some(function(p){var sp=spells.filter(function(x){return String(x.id)===String(p.spell_id);})[0];return !sp||Number(p.slot_level)<dnd35SpellLevel(sp)||Number(p.slot_level)>avail.max;})){if(status)status.textContent='Há uma magia preparada em um círculo inválido.';return;}
-      s.preparadas.forEach(function(p){var sp=spells.filter(function(x){return String(x.id)===String(p.spell_id);})[0];if(sp&&Number(p.slot_level)<dnd35SpellLevel(sp))p.slot_level=dnd35SpellLevel(sp);});
+      if(s.preparadas.some(function(p){var sp=spells.filter(function(x){return String(x.id)===String(p.spell_id);})[0];return !sp||Number(p.slot_level)<dnd35SpellLevel(sp,avail.key)||Number(p.slot_level)>avail.max;})){if(status)status.textContent='Há uma magia preparada em um círculo inválido.';return;}
+      s.preparadas.forEach(function(p){var sp=spells.filter(function(x){return String(x.id)===String(p.spell_id);})[0];if(sp&&Number(p.slot_level)<dnd35SpellLevel(sp,avail.key))p.slot_level=dnd35SpellLevel(sp,avail.key);});
     }
-      if(avail.key==='sorcerer'){
+      if(avail.key==='sorcerer'||avail.key==='bard'){
       for(var ul=0;ul<=avail.max;ul++)if(Number(s.usos[String(ul)]||0)>(avail.slots[ul]||0)){if(status)status.textContent='Espaços diários de círculo '+ul+' esgotados.';return;}
     }
     var payload=dnd35GrimoireSaveState({sheet:{magias_preparadas:s}});
