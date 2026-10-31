@@ -534,7 +534,7 @@ button,input,textarea,select{font-family:inherit}
 </div>
 
 <!-- MODAIS PADRÃO ESCONDIDOS (Para manter o código funcional) -->
-<div class="modal" id="modal-criar"><div class="modal-box"><button class="fechar" onclick="document.getElementById('modal-criar').classList.remove('ativo')">✕</button><h2>Forjar Nova Mesa</h2><div class="campo"><label>Nome</label><input type="text" id="m-nome"></div><button class="btn btn-dourado" id="m-confirmar">Criar Mesa</button></div></div>
+<div class="modal" id="modal-criar"><div class="modal-box"><button class="fechar" onclick="document.getElementById('modal-criar').classList.remove('ativo')">✕</button><h2>Forjar Nova Mesa</h2><div class="campo"><label>Nome</label><input type="text" id="m-nome" maxlength="60"></div><div class="campo"><label for="m-codigo">Código de convite (4 números)</label><input type="text" id="m-codigo" inputmode="numeric" maxlength="4" autocomplete="off"></div><button class="btn btn-dourado" id="m-confirmar">Criar Mesa</button></div></div>
 <div class="modal" id="modal-config"><div class="modal-box"><h2>Configurações</h2><button class="fechar" onclick="document.getElementById('modal-config').classList.remove('ativo')">✕</button></div></div>
 
 <!-- MODAL PERFIL -->
@@ -1279,7 +1279,7 @@ button,input,textarea,select{font-family:inherit}
       grid.innerHTML = '<div class="vazio" style="color:#f87171">Entre na sua conta para ver as mesas.</div>';
       return;
     }
-    var r = await sb.from('campaigns').select('*').order('id', { ascending: false });
+    var r = await sb.rpc('lobby_list_v2');
     if (r.error) {
       grid.innerHTML = '<div class="vazio" style="color:#f87171">Erro ao carregar mesas: ' + escapeHtml(r.error.message) + '</div>';
       return;
@@ -1289,43 +1289,21 @@ button,input,textarea,select{font-family:inherit}
       return;
     }
 
-    var ownerIds = Array.from(new Set(r.data.map(function(m) { return m.owner_id; }).filter(Boolean)));
-    var perfisMap = Object.create(null);
-    if (ownerIds.length > 0) {
-      var rProf = await sb.from('profiles').select('id, username').in('id', ownerIds);
-      if (rProf.error) {
-        console.warn('Não foi possível buscar os nomes dos mestres:', rProf.error.message);
-      } else if (rProf.data) {
-        rProf.data.forEach(function(p) { perfisMap[String(p.id)] = p.username; });
-      }
-    }
-
-    var rMem = await sb.from('members').select('campaign_id');
-    var membrosMap = Object.create(null);
-    var membrosDisponiveis = !rMem.error;
-    if (rMem.error) {
-      console.warn('Não foi possível contar os membros das mesas:', rMem.error.message);
-    } else if (rMem.data) {
-      rMem.data.forEach(function(membro) {
-        var campaignId = String(membro.campaign_id);
-        membrosMap[campaignId] = (membrosMap[campaignId] || 0) + 1;
-      });
-    }
-
     grid.innerHTML = r.data.map(function(m) {
       var img = m.capa_url || 'bg_lobby.png';
       var estado = m.state || 'EXPLORAÇÃO';
-      var isDono = !!(eu && String(m.owner_id) === String(eu.id));
-      var qtdJogadores = membrosDisponiveis ? (membrosMap[String(m.id)] || 0) : null;
-      var mestreNome = perfisMap[String(m.owner_id)] || m.mestre_nome || (isDono && meuPerfil && meuPerfil.username) || 'Desconhecido';
+      var isDono = m.meu_papel === 'GM';
+      var qtdJogadores = Number(m.participantes) || 0;
+      var mestreNome = m.mestre || 'Desconhecido';
       var btnCapa = isDono
         ? '<button class="btn-edit-capa" data-id="' + escapeHtml(m.id) + '" title="Alterar Capa" aria-label="Alterar capa da mesa" style="position:absolute;top:10px;left:10px;background:rgba(0,0,0,.7);border:1px solid #c9a050;color:#c9a050;border-radius:50%;width:30px;height:30px;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>'
         : '';
       return '<article class="card">' +
         '<div class="card-capa">' + btnCapa + '<img src="' + escapeHtml(img) + '" alt="Capa da mesa"><div class="card-estado">' + escapeHtml(estado) + '</div></div>' +
         '<div class="card-corpo"><div class="card-nome">' + escapeHtml(m.name || 'Mesa sem nome') + '</div>' +
-        '<div class="card-mestre">Mestre: <b>' + escapeHtml(mestreNome) + '</b> · ' + (qtdJogadores === null ? 'Contagem indisponível' : qtdJogadores + ' Jogador(es)') + '</div>' +
-        '<div class="card-briefing">' + escapeHtml(m.briefing || 'Uma nova aventura aguarda...') + '</div>' +
+        '<div class="card-mestre">Mestre: <b>' + escapeHtml(mestreNome) + '</b> · ' + qtdJogadores + ' participante(s)</div>' +
+        '<div class="card-briefing">' + escapeHtml(m.briefing || (m.cidade ? 'Local: ' + m.cidade : 'Uma nova aventura aguarda...')) + '</div>' +
+        (isDono && m.codigo_convite ? '<div class="card-briefing">Código de convite: <b>' + escapeHtml(m.codigo_convite) + '</b></div>' : '') +
         '<button type="button" class="btn-entrar js-entrar-mesa" data-id="' + escapeHtml(m.id) + '" data-dono="' + (isDono ? 'true' : 'false') + '" style="border:none;cursor:pointer">Entrar na Mesa</button></div></article>';
     }).join('');
 
@@ -1367,6 +1345,7 @@ button,input,textarea,select{font-family:inherit}
       location.href = 'mesa.html?mesa=' + encodeURIComponent(mesaId) + '&role=gm';
       return;
     }
+    if (!r.data) throw new Error('Para entrar nesta mesa, informe o código de convite no campo acima e clique em Sentar.');
     // Jogadores escolhem qual das próprias fichas usar sempre que entram,
     // inclusive quando já estão cadastrados como membros da mesa.
     await abrirModalEntrarMesa(mesaId);
@@ -1413,11 +1392,6 @@ button,input,textarea,select{font-family:inherit}
       var rChar = await sb.from('characters').update({ campaign_id: mesaId }).eq('id', charId).eq('user_id', eu.id).select('id').maybeSingle();
       if (rChar.error) throw new Error('Erro ao vincular personagem: ' + rChar.error.message);
       if (!rChar.data) throw new Error('A ficha não existe ou não pertence à sua conta. Atualize a lista e tente novamente.');
-
-      var rMember = await sb.from('members').insert({ campaign_id: mesaId, user_id: eu.id, role: 'PLAYER' });
-      if (rMember.error && rMember.error.code !== '23505') {
-        throw new Error('Erro ao entrar como membro: ' + rMember.error.message);
-      }
 
       setTimeout(function() {
         location.href = 'mesa.html?mesa=' + encodeURIComponent(mesaId);
@@ -1734,27 +1708,46 @@ button,input,textarea,select{font-family:inherit}
     await sb.auth.signOut();
     location.replace('index.html');
   });
+  document.getElementById('btn-codigo').addEventListener('click', async function() {
+    var input = document.getElementById('codigo');
+    var codigo = input.value.trim();
+    var button = document.getElementById('btn-codigo');
+    if (!/^\d{4}$/.test(codigo)) return alert('Informe o código de convite com 4 números.');
+    button.disabled = true;
+    try {
+      var joined = await sb.rpc('join_campaign', { p_code: codigo });
+      if (joined.error) throw new Error(joined.error.message);
+      if (!joined.data || !joined.data.ok) throw new Error((joined.data && joined.data.erro) || 'Não foi possível entrar com esse código.');
+      input.value = '';
+      await abrirModalEntrarMesa(String(joined.data.id));
+    } catch (err) {
+      alert('Não foi possível entrar na mesa: ' + (err.message || err));
+    } finally {
+      button.disabled = false;
+    }
+  });
   document.getElementById('btn-criar').addEventListener('click', function() { modalCriar.classList.add('ativo'); });
   document.getElementById('m-confirmar').addEventListener('click', async function() {
     var nome = document.getElementById('m-nome').value.trim();
+    var codigo = document.getElementById('m-codigo').value.trim();
     if (!nome) return alert('Digite um nome para a mesa.');
+    if (!/^\d{4}$/.test(codigo)) return alert('Defina um código de convite com 4 números.');
     if (!eu) return alert('Sua sessão expirou. Entre novamente.');
     var btn = document.getElementById('m-confirmar');
     btn.disabled = true;
-    var r = await sb.from('campaigns').insert({
-      name: nome,
-      owner_id: eu.id,
-      state: 'EXPLORACAO'
-    }).select();
-    btn.disabled = false;
-    if (r.error) return alert('Erro ao criar mesa: ' + r.error.message);
-    if (r.data && r.data[0]) {
-      var membership = await sb.from('members').insert({ campaign_id: r.data[0].id, user_id: eu.id, role: 'GM' });
-      if (membership.error) console.error('Mesa criada, mas não foi possível registrar o mestre como membro:', membership.error.message);
+    try {
+      var r = await sb.rpc('create_campaign', { p_name: nome, p_code: codigo, p_location: null });
+      if (r.error) throw new Error(r.error.message);
+      if (!r.data || !r.data.ok) throw new Error((r.data && r.data.erro) || 'Não foi possível criar a mesa.');
+      modalCriar.classList.remove('ativo');
+      document.getElementById('m-nome').value = '';
+      document.getElementById('m-codigo').value = '';
+      await carregarMesas();
+    } catch (err) {
+      alert('Erro ao criar mesa: ' + (err.message || err));
+    } finally {
+      btn.disabled = false;
     }
-    modalCriar.classList.remove('ativo');
-    document.getElementById('m-nome').value = '';
-    await carregarMesas();
   });
 
   init().catch(function(err) {
