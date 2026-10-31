@@ -1895,6 +1895,7 @@ button,input,textarea{font-family:inherit}
   async function adicionarReforcoRapido(entidade,tipo){
     if(!ehGM || reforcoBusy) return;
     reforcoBusy=true;
+    var esperandoRolagem=false;
     fecharModaisReforcoRapido();
     try{
       var scene=normalizarCBAData(campanha.cba_data)||{backgroundUrl:'',imgScale:1,gridSize:50,gridRatio:null,gridOpacity:.3,tokens:[]};
@@ -1923,6 +1924,7 @@ button,input,textarea{font-family:inherit}
         token.bonusIniciativa=Number(token.bonusIniciativa)||0;
         var savedTokenScene=await gravarCBAnaCampanha(serializarEstadoCBA(scene));
         campanha.cba_data=savedTokenScene;cbaPublishedState=normalizarCBAData(savedTokenScene);
+        esperandoRolagem=true;
         abrirDado('Iniciativa · '+token.nome,function(total,values){
           if(!Array.isArray(values)||values.length!==1||Number(values[0])!==Number(total)) throw new Error('O dado 3D não retornou o resultado individual do reforço.');
           return (async function(){
@@ -1935,9 +1937,7 @@ button,input,textarea{font-family:inherit}
           })();
         },true,false,'1d20');
       }
-    }catch(e){
-      console.error('Falha ao adicionar reforço:',e);
-      alert('Não foi possível adicionar o reforço. Verifique se a migração SQL atualizada foi executada e se a campanha está acessível. Detalhe: '+e.message);
+      if(!esperandoRolagem) reforcoBusy=false;
     }catch(e){
       reforcoBusy=false;
       console.error('Falha ao adicionar reforço:',e);
