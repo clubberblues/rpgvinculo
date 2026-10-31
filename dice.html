@@ -5116,8 +5116,8 @@ if (throwButtonForLabel) throwButtonForLabel.setAttribute('aria-label', 'Rolar d
     if (parentOrigin !== '*' && event.origin !== parentOrigin) return;
     if (!event.data || (event.data.action !== 'roll' && event.data.action !== 'prepareRoll') || rollPending) return;
     var aguardarClique = event.data.action === 'prepareRoll';
-    var expression = String(event.data.expression || '1d20').replace(/\\s+/g, '');
-    var parsed = expression.match(/^(\\d{1,2})d(4|6|8|10|12|20|100)([+-]\\d+)?$/i);
+    var expression = String(event.data.expression || '1d20').replace(/\s+/g, '');
+    var parsed = expression.match(/^(\d{1,2})d(4|6|8|10|12|20|100)([+-]\d+)?$/i);
     if (!parsed) {
       console.warn('Expressão de rolagem da mesa inválida ou não suportada:', expression);
       return;
