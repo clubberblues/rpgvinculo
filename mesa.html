@@ -2461,7 +2461,7 @@ button,input,textarea{font-family:inherit}
         }finally{
           if(pedidoTesteAtivo&&pedidoTesteAtivo.responseKey===responseKey) pedidoTesteAtivo=null;
         }
-      },true);
+      },true,true);
     };
     container.appendChild(btn);
   }
@@ -2642,7 +2642,7 @@ button,input,textarea{font-family:inherit}
   }
 
   // ============ LÓGICA DO DADO (IFRAME) ============
-  function abrirDado(titulo, callback, rolarD20Automaticamente) {
+  function abrirDado(titulo, callback, rolarD20Automaticamente, aguardarClique) {
     if (rollResultTimer) { clearTimeout(rollResultTimer); rollResultTimer = null; }
     var sessaoAtual = ++rollSessionId;
     document.getElementById('dado-titulo').textContent = titulo;
@@ -2658,9 +2658,8 @@ button,input,textarea{font-family:inherit}
       iframe.addEventListener('load', function() {
         if (sessaoAtual !== rollSessionId || rollResultReceived) return;
         try {
-          var origin = window.location.origin;
-          var targetOrigin = window.location.protocol === 'file:' || !origin || origin === 'null' ? '*' : origin;
-          iframe.contentWindow.postMessage({ action: 'roll' }, targetOrigin);
+          var targetOrigin = new URL(iframe.src, window.location.href).origin;
+          iframe.contentWindow.postMessage({ action: aguardarClique ? 'prepareRoll' : 'roll' }, targetOrigin);
         } catch (err) {
           console.error('Não foi possível iniciar o dado incorporado:', err);
           fecharDado();
@@ -2687,8 +2686,8 @@ button,input,textarea{font-family:inherit}
   window.addEventListener('message', function(event) {
     var iframe = document.getElementById('dado-iframe');
     if (!iframe || event.source !== iframe.contentWindow) return;
-    var ownOrigin = window.location.origin;
-    if (ownOrigin && ownOrigin !== 'null' && event.origin !== ownOrigin) return;
+    // The exact iframe window is checked below; this also supports a dice iframe
+    // served from a different origin than the mesa page.
     if (!event.data || event.data.action !== 'rollResult' || rollResultReceived) return;
 
     var resultado = Number(event.data.value);
@@ -2698,20 +2697,20 @@ button,input,textarea{font-family:inherit}
     var callback = rolagemCallback;
     rolagemCallback = null;
 
-    // Mantém o resultado visível por 2 segundos e então executa o callback.
+    // Persist the result immediately; the display delay is only visual.
     rollResultTimer = window.setTimeout(async function() {
       rollResultTimer = null;
       if (sessaoResultado !== rollSessionId) return;
       document.getElementById('dado-iframe-overlay').style.display = 'none';
-      try {
-        if (callback) await callback(resultado);
-      } catch (err) {
-        console.error('Falha ao concluir a rolagem:', err);
-        if (pedidoTesteAtivo && pedidoTesteAtivo.button) pedidoTesteAtivo.button.disabled = false;
-        pedidoTesteAtivo = null;
-        alert('O dado retornou um resultado, mas não foi possível concluir a rolagem: ' + (err.message || err));
-      }
     }, 2000);
+    try {
+      if (callback) await callback(resultado);
+    } catch (err) {
+      console.error('Falha ao concluir a rolagem:', err);
+      if (pedidoTesteAtivo && pedidoTesteAtivo.button) pedidoTesteAtivo.button.disabled = false;
+      pedidoTesteAtivo = null;
+      alert('O dado retornou um resultado, mas não foi possível concluir a rolagem: ' + (err.message || err));
+    }
   });
 
   async function enviarMensagemChat(texto, tipo='texto', extra) {
