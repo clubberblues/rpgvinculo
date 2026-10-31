@@ -1,0 +1,1767 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Vínculo · Salão de Mesas</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background-color: #0d0b07;
+  font-family:'EB Garamond',Georgia,serif;
+  color: #f5ecd6;
+  min-height:100vh;
+  -webkit-text-size-adjust:100%;
+  overflow-x: hidden;
+}
+button,input,textarea,select{font-family:inherit}
+
+/* ============ FUNDO ============ */
+.bg-image {
+  position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+  object-fit: cover; z-index: -2; pointer-events: none;
+  image-rendering: high-quality; filter: contrast(105%) saturate(110%); 
+}
+.bg-overlay {
+  position: fixed; inset: 0;
+  background: linear-gradient(135deg, rgba(13,11,7,0.6) 0%, rgba(13,11,7,0.2) 50%, rgba(13,11,7,0.6) 100%);
+  z-index: -1; pointer-events: none;
+}
+
+/* === LAYOUT PRINCIPAL === */
+.lobby{display:grid;grid-template-columns:260px 1fr;min-height:100vh;position:relative;z-index:1}
+
+/* ============ SIDEBAR ============ */
+.sidebar{
+  background: url('https://user45886.na.imgto.link/public/20261017/f56d9b6ed4ab40d71c5e25bb-painel-de-mesa-de-rpg-fantasia-sombria.avif') center/cover no-repeat;
+  border-right:3px solid #c9a050; padding:24px 18px; display:flex; flex-direction:column;
+  position:sticky; top:0; height:100vh; box-shadow:4px 0 25px rgba(0,0,0,.9); z-index:20;
+}
+.side-logo{display:flex;justify-content:center;margin-bottom:8px}
+.side-logo img{max-width:180px;max-height:100px;object-fit:contain;filter:drop-shadow(0 4px 10px rgba(0,0,0,1))}
+.side-divisor{width:60px;height:1px;background:linear-gradient(90deg,transparent,#c9a050,transparent);margin:16px auto}
+.side-user{background:rgba(10,15,30,0.85);border:1px solid #3a4a65;border-radius:6px;padding:10px 12px;margin-bottom:16px;text-align:center;box-shadow:inset 0 0 10px rgba(0,0,0,.8); backdrop-filter: blur(4px);}
+.side-user .nome{font-family:'Cinzel',serif;font-weight:700;font-size:12px;color:#f5ecd6;letter-spacing:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.side-user .papel{font-size:9px;letter-spacing:2px;color:#c9a050;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* NAVEGAÇÃO */
+.side-nav{display:flex;flex-direction:column;gap:4px;flex:1}
+.side-nav a{background:transparent;border:none;padding:12px;border-radius:4px;color:#e2e8f0;font-family:'Cinzel',serif;font-weight:700;font-size:12px;letter-spacing:1.5px;text-align:left;cursor:pointer;transition:.15s;display:flex;align-items:center;gap:12px;border-left:3px solid transparent;text-decoration:none; text-shadow: 0 2px 4px rgba(0,0,0,1);}
+.side-nav a:hover{background:rgba(201,160,80,.2);color:#c9a050}
+.side-nav a.ativo{background:rgba(201,160,80,.3);color:#f5ecd6;border-left:3px solid #c9a050; backdrop-filter: blur(4px);}
+.side-nav a.nav-biblioteca-srd{background:linear-gradient(100deg,rgba(201,160,80,.26),rgba(20,29,51,.88));border:1px solid #c9a050;border-left:4px solid #e5bd62;color:#ffe3a0;font-weight:900;box-shadow:0 0 14px rgba(201,160,80,.18);}
+.side-nav a.nav-biblioteca-srd:hover,.side-nav a.nav-biblioteca-srd:focus-visible{background:linear-gradient(100deg,rgba(201,160,80,.42),rgba(20,29,51,.96));color:#fff1cb;outline:2px solid rgba(255,227,160,.55);outline-offset:2px;}
+.side-nav .ic-svg{width:20px;height:20px;flex-shrink:0;opacity:.9; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.8));}
+.side-nav a.ativo .ic-svg, .side-nav a:hover .ic-svg{opacity:1;color:#c9a050}
+
+.side-sair{margin-top:16px;padding:12px;background:rgba(10,15,30,0.8);border:1px solid #3a4a65;color:#a0aec0;border-radius:4px;font-family:'Cinzel',serif;font-weight:700;font-size:10px;letter-spacing:2px;cursor:pointer;transition:.15s; backdrop-filter: blur(4px);}
+.side-sair:hover:not(:disabled){border-color:#b83232;color:#f87171;background:rgba(184,50,50,.3)}
+
+/* ============ MAIN ============ */
+.main{padding:40px 48px 80px;overflow-x:hidden;position:relative;z-index:1}
+.topo{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap;margin-bottom:40px}
+.titulo{font-family:'Cinzel',serif;font-weight:900;font-size:36px;letter-spacing:4px;color:#f5ecd6;text-shadow:0 2px 15px rgba(0,0,0,1), 0 0 20px rgba(0,0,0,0.8)}
+.subtitulo{font-size:15px;color:#c9a050;font-style:italic;margin-top:6px;text-shadow:0 1px 8px rgba(0,0,0,1)}
+
+.acoes{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.input-codigo{background:rgba(239,228,200, 0.95);border:1px solid #b89050;border-radius:4px;padding:10px 14px;color:#1a2a45;font-size:15px;width:190px;letter-spacing:2px;text-transform:uppercase;transition:.15s;box-shadow:inset 0 2px 4px rgba(0,0,0,.3)}
+.input-codigo:focus{outline:none;border-color:#c9a050;box-shadow:0 0 0 3px rgba(201,160,80,.4)}
+.btn{padding:10px 20px;border-radius:4px;font-family:'Cinzel',serif;font-weight:900;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:.15s;border:none;display:flex;align-items:center;justify-content:center;gap:6px;text-decoration:none}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-dourado{background:linear-gradient(180deg,#d4ad5a,#b89050);color:#111;box-shadow:0 4px 10px rgba(0,0,0,.6)}
+.btn-dourado:hover:not(:disabled){background:linear-gradient(180deg,#e0b860,#c9a050);transform:translateY(-1px);box-shadow:0 6px 15px rgba(184,144,80,.5)}
+.btn-sec{background:rgba(20,29,51,0.8);border:1px solid #c9a050;color:#c9a050; backdrop-filter: blur(4px);}
+.btn-sec:hover:not(:disabled){background:rgba(201,160,80,.25);color:#f5ecd6}
+
+/* ============ CARDS DE MESAS ============ */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:32px 24px}
+.card{position:relative;display:flex;flex-direction:column;background: rgba(35, 26, 20, 0.92);border: 2px solid #c9a050;border-radius: 6px;padding: 12px;box-shadow: 0 15px 35px rgba(0,0,0,0.95);transition: all 0.3s ease;backdrop-filter: blur(2px);}
+.card:hover {transform: translateY(-4px);box-shadow: 0 20px 45px rgba(0,0,0,1), 0 0 25px rgba(201,160,80,0.3);}
+.card-capa{height:180px;position:relative;overflow:hidden;margin-bottom:12px;border-radius:4px;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;}
+.card-capa img{width:100%;height:100%;object-fit:cover}
+.card-estado{position:absolute;top:10px;right:10px;background:rgba(10,15,30,.95);padding:3px 10px;border-radius:12px;font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;font-weight:900;}
+.card-corpo{display:flex;flex-direction:column;gap:6px;padding:0 4px}
+.card-nome{font-family:'Cinzel',serif;font-weight:900;font-size:18px;color:#f5ecd6;}
+.card-mestre{font-size:12.5px;color:#a0aec0;font-family:'Cinzel',serif;text-transform:uppercase;}
+.card-mestre b{color:#c9a050;}
+.card-briefing{font-size:13.5px;color:#cbd5e1;line-height:1.5;font-style:italic;margin-top:2px;}
+.btn-entrar{display:block;width:100%;text-align:center;background:linear-gradient(180deg,#d4ad5a,#b89050);color:#111;text-decoration:none;padding:10px;border-radius:4px;font-family:'Cinzel',serif;font-weight:900;font-size:12px;text-transform:uppercase;margin-top:8px;}
+.btn-config{background:transparent;border:none;color:#8a6a3a;cursor:pointer;transition:.2s;}
+.btn-config:hover{color:#c9a050;}
+.vazio{grid-column:1/-1;text-align:center;padding:80px 20px;border:1px dashed #c9a050;}
+
+/* ============ MODAIS PADRÃO (Criar Mesa / Config) ============ */
+.modal{position:fixed;inset:0;background:rgba(13,11,7,.9);z-index:100;display:none;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+.modal.ativo{display:flex}
+.modal-box{background:#141d33;border:3px solid #c9a050;border-radius:6px;padding:32px;width:100%;max-width:520px;position:relative;color:#f5ecd6;box-shadow:0 20px 60px rgba(0,0,0,.95)}
+.modal-box h2{font-family:'Cinzel',serif;font-weight:900;font-size:22px;letter-spacing:3px;color:#f5ecd6;margin-bottom:24px;text-align:center;border-bottom:1px solid #3a4a65;padding-bottom:16px}
+.modal-box .fechar{position:absolute;top:14px;right:16px;background:none;border:none;color:#8a9ab0;font-size:24px;cursor:pointer;}
+.campo{margin-bottom:18px}
+.campo label{display:block;font-family:'Cinzel',serif;font-weight:700;font-size:11px;color:#c9a050;margin-bottom:6px}
+.campo input,.campo textarea{width:100%;padding:10px;background:#0a0f1e;border:1px solid #3a4a65;border-radius:4px;color:#f5ecd6;}
+.capa-preview-box{width:100%;height:180px;border:2px dashed #3a4a65;border-radius:4px;background:#0a0f1e;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.capa-preview-box img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0;}
+.msg-modal{margin-top:16px;padding:12px;border-radius:4px;font-size:14px;display:none;text-align:center;}
+.msg-modal.erro{display:block;background:rgba(184,50,50,.15);color:#f87171;}
+.msg-modal.sucesso{display:block;background:rgba(74,122,58,.15);color:#86efac;}
+.modal-tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid #3a4a65;padding-bottom:12px}
+.modal-tabs button{background:transparent;border:none;color:#8a9ab0;font-family:'Cinzel',serif;font-size:11px;padding:8px 12px;cursor:pointer;}
+.modal-tabs button.ativo{color:#c9a050;background:rgba(201,160,80,.15)}
+.lista-jogadores{display:flex;flex-direction:column;gap:8px;max-height:250px;overflow-y:auto;}
+.jogador-item{display:flex;justify-content:space-between;align-items:center;background:#0a0f1e;border:1px solid #3a4a65;padding:10px;border-radius:4px;}
+.jogador-item .btn-kick{background:rgba(184,50,50,.1);border:1px solid #b83232;color:#f87171;padding:4px 10px;border-radius:4px;cursor:pointer;}
+.jogador-item .badge-mestre{font-size:9px;background:#c9a050;color:#111;padding:2px 6px;border-radius:4px;}
+.danger-zone{border:1px dashed #b83232;border-radius:6px;padding:20px;}
+.btn-perigo{background:#b83232;color:#fff;border:none;padding:10px;border-radius:4px;cursor:pointer;font-family:'Cinzel',serif;font-weight:900;}
+
+/* ============ NOVO VISUAL: ESTANTE E BRIEFING GAMIFICADO ============ */
+.modal-estante {
+  position: fixed; inset: 0; background: rgba(5,5,5,0.95); z-index: 200;
+  display: none; align-items: center; justify-content: center; padding: 20px;
+  backdrop-filter: blur(10px);
+}
+.modal-estante.ativo { display: flex; }
+
+.shelf-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  aspect-ratio: 1536 / 1024;
+  background-color: #000;
+  border-radius: 8px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+  border: 2px solid #c9a050;
+  margin: 0 auto;
+}
+
+.shelf-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.interactive-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.class-btn {
+  position: absolute;
+  pointer-events: auto;
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.class-btn:hover {
+  background: rgba(201, 160, 80, 0.25);
+  border-color: #c9a050;
+  box-shadow: inset 0 0 30px rgba(201, 160, 80, 0.6), 0 0 20px rgba(201, 160, 80, 0.8);
+  transform: scale(1.02);
+}
+
+.btn-fechar-estante {
+  position: absolute; top: 20px; right: 20px; background: transparent; border: none; 
+  color: #c9a050; font-size: 32px; cursor: pointer; z-index: 210;
+  text-shadow: 0 2px 5px rgba(0,0,0,0.8);
+}
+.btn-fechar-estante:hover { color: #fff; }
+
+/* === CARD DE BRIEFING (O Novo Modal) === */
+.modal-briefing {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.9); backdrop-filter: blur(8px);
+  z-index: 300; display: none; align-items: center; justify-content: center; padding: 20px;
+}
+.modal-briefing.ativo { display: flex; }
+
+.briefing-card {
+  background: #141d33; border: 2px solid #c9a050; border-radius: 12px;
+  width: 100%; max-width: 850px; display: flex; flex-direction: row;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.95); overflow: hidden; position: relative;
+  transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.modal-briefing.ativo .briefing-card { transform: scale(1); }
+
+/* Lado Esquerdo: A Arte da Classe */
+.briefing-arte {
+  width: 40%; min-height: 450px; position: relative;
+  background-size: cover; background-position: center;
+  border-right: 2px solid #c9a050;
+}
+.briefing-arte::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(to right, transparent, rgba(20,29,51,0.8));
+}
+
+/* Lado Direito: Informações */
+.briefing-info {
+  width: 60%; padding: 30px; display: flex; flex-direction: column; color: #f5ecd6;
+}
+.briefing-header { margin-bottom: 20px; }
+.briefing-titulo { font-family: 'Cinzel', serif; font-size: 32px; color: #c9a050; font-weight: 900; letter-spacing: 2px; line-height: 1; margin-bottom: 5px; }
+.briefing-funcao { font-family: 'Cinzel', serif; font-size: 12px; color: #a0aec0; text-transform: uppercase; letter-spacing: 2px; }
+
+/* Grid de Atributos */
+.briefing-atributos { display: flex; gap: 15px; margin-bottom: 25px; }
+.attr-box { background: #0a0f1e; border: 1px solid #3a4a65; border-radius: 6px; padding: 10px; flex: 1; text-align: center; }
+.attr-label { font-family: 'Cinzel', serif; font-size: 10px; color: #8a9ab0; letter-spacing: 1px; margin-bottom: 4px; }
+.attr-val { font-family: 'Cinzel', serif; font-size: 18px; color: #c9a050; font-weight: 900; }
+
+/* Habilidades */
+.briefing-habilidades { flex: 1; overflow-y: auto; padding-right: 10px; }
+.hab-item { margin-bottom: 12px; background: rgba(201,160,80,0.05); padding: 10px; border-left: 3px solid #c9a050; border-radius: 0 4px 4px 0; }
+.hab-nivel { font-family: 'Cinzel', serif; font-weight: 900; font-size: 10px; color: #111; background: #c9a050; padding: 2px 6px; border-radius: 3px; margin-right: 8px; }
+.hab-nome { font-family: 'Cinzel', serif; font-weight: 700; font-size: 14px; color: #f5ecd6; }
+.hab-desc { font-size: 13px; color: #cbd5e1; margin-top: 4px; line-height: 1.4; }
+
+/* Ações */
+.briefing-acoes { display: flex; gap: 15px; margin-top: 25px; }
+.btn-voltar { background: transparent; border: 1px solid #8a9ab0; color: #8a9ab0; padding: 12px; border-radius: 6px; font-family: 'Cinzel', serif; font-weight: 700; font-size: 13px; cursor: pointer; transition: 0.2s; flex: 1; }
+.btn-voltar:hover { background: #2a3550; color: #fff; }
+.btn-criar { background: linear-gradient(180deg, #d4ad5a, #b89050); border: none; color: #111; padding: 12px; border-radius: 6px; font-family: 'Cinzel', serif; font-weight: 900; font-size: 13px; cursor: pointer; transition: 0.2s; flex: 2; text-transform: uppercase; letter-spacing: 1px; }
+.btn-criar:hover { background: linear-gradient(180deg, #e0b860, #c9a050); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(184,144,80,0.5); }
+
+/* Responsividade */
+
+.briefing-tabs{display:flex;gap:8px;margin-bottom:15px;border-bottom:1px solid #3a4a65;padding-bottom:10px;flex-shrink:0}
+.b-tab{background:transparent;border:1px solid #2a3550;color:#8a9ab0;padding:7px 12px;border-radius:4px;cursor:pointer;font-family:'Cinzel',serif;font-size:10px;transition:.2s}
+.b-tab:hover{color:#c9a050;border-color:#c9a050}.b-tab.ativo{background:rgba(201,160,80,.15);color:#c9a050;border-color:#c9a050;font-weight:bold}
+.briefing-content{flex:1;overflow-y:auto;padding-right:5px;min-height:120px;max-height:250px;margin-bottom:20px}
+.grid-fichas{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:20px;padding:20px;background:#141d33;min-height:300px;max-height:70vh;overflow-y:auto}
+.modal-cab{background:linear-gradient(180deg,#000,#0a0f1e);padding:14px 20px;display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #c9a050}
+.modal-cab h2{margin:0;border:none;padding:0;font-family:'Cinzel',serif;font-size:18px;letter-spacing:3px;color:#f5ecd6}
+.modal-cab .fechar{position:static;background:transparent;border:1px solid #2a3550;color:#8a9ab0;font-size:16px;cursor:pointer;padding:4px 10px;border-radius:3px}
+.card-ficha-user{background:#0a0f1e;border:2px solid #3a4a65;border-radius:8px;padding:15px;display:flex;flex-direction:column;align-items:center;text-align:center;text-decoration:none;color:#f5ecd6;transition:.2s;position:relative;overflow:hidden;min-height:160px}
+.card-ficha-user:hover{border-color:#c9a050;transform:translateY(-3px);box-shadow:0 10px 20px rgba(0,0,0,.5)}
+.card-ficha-user img,.avatar-placeholder{width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid #c9a050;margin-bottom:10px;background:#2a3550}
+.avatar-placeholder{display:flex;align-items:center;justify-content:center;font-size:30px}
+.card-ficha-user .nome{font-family:'Cinzel',serif;font-weight:900;font-size:16px;color:#c9a050;margin-bottom:4px}
+.card-ficha-user .info{font-size:11px;color:#8a9ab0;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.card-ficha-admin{position:relative;min-width:0}
+.card-ficha-admin .card-ficha-user{height:100%;box-sizing:border-box;padding-bottom:54px}
+.btn-excluir-ficha{position:absolute;left:12px;right:12px;bottom:10px;min-height:34px;border:1px solid #8f3434;border-radius:5px;background:rgba(143,52,52,.22);color:#fecaca;font-weight:700;cursor:pointer}
+.btn-excluir-ficha:hover:not(:disabled){background:#8f3434;color:#fff}
+.btn-excluir-ficha:disabled{opacity:.6;cursor:wait}
+.btn-add-ficha{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;border:2px dashed #3a4a65;background:transparent;color:#8a9ab0;cursor:pointer;font-family:'Cinzel',serif}
+.btn-add-ficha:hover{border-color:#c9a050;color:#c9a050;background:rgba(201,160,80,.05)}.btn-add-ficha span{font-size:40px;line-height:1}
+.fichas-vazio,.catalogo-vazio{color:#8a9ab0;font-style:italic;text-align:center;padding:24px;grid-column:1/-1}.erro-catalogo{color:#f87171}
+
+/* ============ BIBLIOTECA DE LIVROS ============ */
+.grid-livros {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); 
+  gap: 25px; 
+  padding: 40px;
+  background: #141d33;
+}
+.card-livro {
+  display: block; border-radius: 6px; overflow: hidden;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.8), 0 0 0 2px #3a4a65;
+  transition: all 0.3s ease; cursor: pointer; position: relative;
+  width: 100%; background: #0a0f1e;
+  aspect-ratio: 2 / 3; /* Força o formato alto de livro */
+}
+.card-livro:hover {
+  transform: translateY(-8px) scale(1.03);
+  box-shadow: 0 15px 30px rgba(0,0,0,1), 0 0 25px rgba(201,160,80,0.6);
+  border-color: #c9a050;
+}
+.btn-biblioteca-srd{display:flex;align-items:center;justify-content:center;gap:10px;width:calc(100% - 40px);margin:0 20px 20px;padding:14px;border:1px solid #c9a050;border-radius:5px;background:linear-gradient(120deg,#302412,#141d33);color:#f5ecd6;font-family:'Cinzel',serif;font-weight:900;letter-spacing:1px;cursor:pointer}
+.btn-biblioteca-srd:hover{background:rgba(201,160,80,.2);box-shadow:0 0 18px rgba(201,160,80,.25)}
+.srd-library-box{max-width:1180px!important;max-height:90vh;padding:0!important;overflow:hidden;display:flex;flex-direction:column}
+.srd-library-toolbar{padding:16px 20px;background:#101727;border-bottom:1px solid #3a4a65}
+.srd-library-search{display:block;width:100%;padding:12px 14px;border:1px solid #806532;border-radius:4px;background:#0a0f1e;color:#f5ecd6;font-size:16px}
+.srd-library-search:focus{outline:2px solid rgba(201,160,80,.5);border-color:#c9a050}
+.srd-library-filters{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.srd-library-filters button{padding:8px 12px;border:1px solid #3a4a65;border-radius:4px;background:#141d33;color:#aebbd0;cursor:pointer;font-family:'Cinzel',serif;font-size:10px;letter-spacing:.5px}
+.srd-library-filters button.ativo,.srd-library-filters button:hover{border-color:#c9a050;background:rgba(201,160,80,.16);color:#f5ecd6}
+.srd-library-content{display:grid;grid-template-columns:minmax(240px,.85fr) minmax(0,1.5fr);min-height:0;flex:1;background:#0a0f1e}
+.srd-library-results{overflow:auto;max-height:calc(90vh - 190px);border-right:1px solid #3a4a65;padding:10px}
+.srd-library-result{display:block;width:100%;margin:0 0 7px;padding:12px;text-align:left;border:1px solid #26334b;border-radius:4px;background:#111a2b;color:#f5ecd6;cursor:pointer}
+.srd-library-result:hover,.srd-library-result.ativo{border-color:#c9a050;background:rgba(201,160,80,.12)}
+.srd-library-result strong{display:block;font-family:'Cinzel',serif;font-size:13px;color:#f5ecd6}
+.srd-library-result small{display:block;margin-top:4px;color:#c9a050;font-size:11px}
+.srd-library-detail{overflow:auto;max-height:calc(90vh - 190px);padding:22px 26px;color:#e7dfcd}
+.srd-library-detail h3{font-family:'Cinzel',serif;color:#c9a050;font-size:22px;margin-bottom:5px}
+.srd-library-detail .srd-kind{font-family:'Cinzel',serif;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#8a9ab0;margin-bottom:16px}
+.srd-library-detail p{line-height:1.55;margin:0 0 12px;white-space:pre-wrap}
+.srd-library-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin:14px 0}
+.srd-library-stat{padding:9px;border:1px solid #26334b;border-radius:4px;background:#111a2b}
+.srd-library-stat b{display:block;font:700 9px 'Cinzel',serif;letter-spacing:.5px;color:#9ba9bd;text-transform:uppercase;margin-bottom:4px}
+.srd-library-stat span{font-size:13px;overflow-wrap:anywhere}
+.srd-library-pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#080d17;border:1px solid #26334b;border-radius:4px;padding:12px;color:#d4c9af;font-size:12px;line-height:1.5}
+.srd-library-source{display:inline-block;margin-top:12px;color:#d8b96e}
+.srd-library-status{padding:20px;color:#a0aec0;text-align:center}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.capa-livro-img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+@media (max-width: 900px) { 
+  .grid-livros { grid-template-columns: repeat(2, 1fr); gap: 15px; padding: 20px; } 
+}
+@media (max-width: 500px) { 
+  .grid-livros { grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; padding:16px; } 
+}
+@media(max-width:700px){#modal-livros{align-items:flex-start;padding-top:20px;padding-bottom:20px}#modal-livros>.modal-box{max-height:calc(100vh - 40px);overflow-y:auto!important}.srd-library-box{max-height:94vh}.srd-library-content{grid-template-columns:1fr;grid-template-rows:minmax(130px,32vh) minmax(180px,1fr)}.srd-library-results{max-height:32vh;border-right:0;border-bottom:1px solid #3a4a65}.srd-library-detail{max-height:48vh;padding:16px}.srd-library-toolbar{padding:12px}.srd-library-box .modal-cab{padding:12px}.srd-library-box .modal-cab h2{font-size:15px;letter-spacing:1px}}
+@media(max-width:600px){.grid-fichas{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;padding:14px}.briefing-tabs{gap:5px}.b-tab{padding:6px 8px;font-size:9px}.briefing-atributos{gap:6px}.briefing-atributos .attr-box{padding:7px 4px}}
+
+@media (max-width: 850px) {
+  .briefing-card { flex-direction: column; max-height: 90vh; overflow-y: auto; }
+  .briefing-arte { width: 100%; height: 250px; min-height: 250px; border-right: none; border-bottom: 2px solid #c9a050; }
+  .briefing-info { width: 100%; padding: 20px; }
+}
+.perfil-crop-layout{display:grid;grid-template-columns:minmax(0,1fr) 150px;gap:18px;align-items:start}
+.perfil-crop-stage{width:100%;height:320px;overflow:hidden;background:#0a0f1e;border:1px solid #3a4a65;border-radius:4px;display:flex;align-items:center;justify-content:center}
+.perfil-crop-stage img{display:block;max-width:100%;max-height:100%}
+.perfil-preview-wrap{display:flex;flex-direction:column;align-items:center;gap:8px}
+.perfil-preview{width:150px;height:150px;aspect-ratio:1/1;overflow:hidden;border:2px solid #c9a050;border-radius:4px;background:#0a0f1e;display:flex;align-items:center;justify-content:center;color:#8a9ab0;text-align:center}
+.perfil-preview img{width:100%;height:100%;object-fit:cover}
+.perfil-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+.perfil-loading{color:#c9a050}.perfil-status{margin-top:12px}
+.msg-modal.info{display:block;background:rgba(201,160,80,.12);color:#f5ecd6}
+@media(max-width:600px){.perfil-crop-layout{grid-template-columns:1fr}.perfil-preview-wrap{align-items:flex-start}.perfil-preview{width:120px;height:120px}.perfil-crop-stage{height:260px}}
+
+/* ============ GRIMÓRIO DE CRIAÇÃO D&D 3.5 ============ */
+#modal-criacao{position:fixed;inset:0;z-index:9500;display:none;align-items:center;justify-content:center;padding:14px;background:rgba(5,5,5,.95);backdrop-filter:blur(8px)}
+#modal-criacao.ativo{display:flex}
+.grimorio-box{position:relative;width:min(1000px,95vw);height:min(85vh,850px);min-height:500px;display:flex;flex-direction:column;padding:clamp(24px,5vw,60px) clamp(20px,8vw,84px);color:#3b2a1a;background:#f5ecd6 url('fundo-livro.png') center/100% 100% no-repeat;box-shadow:0 20px 50px rgba(0,0,0,.9);overflow:hidden}
+.btn-fechar-grimorio{position:absolute;top:5%;right:7%;z-index:2;background:transparent;border:none;color:#6a3e22;font-size:28px;cursor:pointer}
+.grimorio-titulo{font-family:'Cinzel',serif;color:#4a1c1c;font-size:clamp(19px,3vw,27px);text-align:center;letter-spacing:1.5px;margin:0 38px 8px;border-bottom:2px solid #8a6a3a;padding-bottom:10px}
+.grimorio-subtitulo{text-align:center;color:#5a4a2f;font-style:italic;margin-bottom:16px}
+.grimorio-passo{min-height:0;flex:1;display:flex;flex-direction:column}
+.grimorio-passo[hidden]{display:none!important}
+.grimorio-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:12px;overflow-y:auto;padding:5px 8px 12px 2px;align-content:start}
+.card-opcao{min-height:112px;padding:12px 10px;text-align:center;border:2px solid rgba(138,96,32,.5);border-radius:6px;background:rgba(255,255,255,.35);color:#3b2a1a;cursor:pointer;transition:transform .18s,background .18s,border-color .18s;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+.card-opcao:hover,.card-opcao:focus-visible{background:rgba(201,160,80,.38);border-color:#8a6020;transform:translateY(-2px);outline:none}
+.card-opcao.selecionado{background:rgba(201,160,80,.75);border-color:#4a1c1c;box-shadow:0 0 12px rgba(138,96,32,.45)}
+.card-opcao .nome{font-family:'Cinzel',serif;font-weight:900;font-size:15px}
+.card-opcao .info{font-size:12px;color:#5a4a2f;font-style:italic;line-height:1.35}
+.grimorio-passo-acoes{display:flex;justify-content:center;margin-top:8px}
+.grimorio-footer{display:flex;flex-direction:column;align-items:center;gap:8px;margin-top:12px;flex-shrink:0}
+.grimorio-status{min-height:20px;text-align:center;font-size:13px;color:#6a3e22}
+.grimorio-status.erro{color:#9b2222}
+.btn-iniciar-jornada{min-height:48px;padding:12px 28px;background:#141d33;border:2px solid #c9a050;color:#c9a050;font-family:'Cinzel',serif;font-size:16px;font-weight:900;letter-spacing:1.5px;border-radius:6px;cursor:pointer}
+.btn-iniciar-jornada:hover:not(:disabled){background:#c9a050;color:#111}
+.btn-iniciar-jornada:disabled{opacity:.45;cursor:not-allowed}
+.grimorio-cta{width:calc(100% - 40px);margin:0 20px 20px;min-height:48px}
+@media(max-width:600px){#modal-criacao{padding:8px}.grimorio-box{width:100%;height:92dvh;min-height:0;padding:42px 14px 14px;background:#f5ecd6;border:2px solid #c9a050;border-radius:6px}.btn-fechar-grimorio{top:8px;right:12px}.grimorio-titulo{margin:0 26px 7px;font-size:19px}.grimorio-subtitulo{font-size:13px;margin-bottom:8px}.grimorio-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.card-opcao{min-height:94px;padding:9px 7px}.card-opcao .nome{font-size:13px}.card-opcao .info{font-size:11px}.btn-iniciar-jornada{width:100%;font-size:14px}.grimorio-cta{width:calc(100% - 24px);margin:0 12px 12px}}
+</style>
+</head>
+<body>
+
+<img src="bg_lobby.png" class="bg-image" alt="">
+<div class="bg-overlay"></div>
+
+<div class="lobby">
+  <aside class="sidebar">
+    <div class="side-logo"><img src="logo.png" alt="Vínculo"></div>
+    <div class="side-divisor"></div>
+    <div class="side-user">
+      <div class="nome" id="user-nome">—</div>
+      <div class="papel" id="user-email">—</div>
+    </div>
+    <nav class="side-nav">
+      <a href="lobby.html" class="ativo"><svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5l-8-3z"/></svg><span>Mesas</span></a>
+      
+      <!-- BOTÃO FICHAS -->
+      <a href="#" id="btn-abrir-minhas-fichas"><svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-5 3.5-8 8-8s8 3 8 8"/></svg><span>Minhas Fichas</span></a>
+      
+      <a href="#" id="btn-sidebar-biblioteca-srd" class="nav-biblioteca-srd" aria-haspopup="dialog" aria-controls="modal-biblioteca-srd"><svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v17H6.5A2.5 2.5 0 0 1 4 17.5z"/><path d="M4 17.5A2.5 2.5 0 0 1 6.5 15H20M8 7h7M8 10h7"/><path d="m17 7 .7 1.3L19 9l-1.3.7L17 11l-.7-1.3L15 9l1.3-.7z"/></svg><span>Biblioteca SRD</span></a>
+
+      <a href="#" id="btn-abrir-livros"><svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5c3-1 6 0 9 2 3-2 6-3 9-2v14c-3-1-6-3-9-2-3-2-6-3-9-2V5z"/><path d="M12 7v14"/></svg><span>Livros</span></a>
+      <a href="#" id="btn-abrir-perfil" aria-haspopup="dialog" aria-controls="modal-perfil"><svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-5 4-8 8-8s8 3 8 8"/></svg><span>Perfil</span></a>
+    </nav>
+    <button class="side-sair" id="btn-sair">Sair</button>
+  </aside>
+
+  <main class="main">
+    <header class="topo">
+      <div>
+        <div class="titulo">Salão de Mesas</div>
+        <div class="subtitulo">Onde as histórias começam</div>
+      </div>
+      <div class="acoes">
+        <input type="text" class="input-codigo" id="codigo" placeholder="CÓDIGO (0000)" maxlength="4" inputmode="numeric">
+        <button class="btn btn-sec" id="btn-codigo">Sentar</button>
+        <button class="btn btn-dourado" id="btn-criar">+ Criar Mesa</button>
+      </div>
+    </header>
+    <section class="grid" id="grid"><div class="loading">Carregando mesas...</div></section>
+  </main>
+</div>
+
+<!-- MODAL MINHAS FICHAS -->
+<div class="modal" id="modal-minhas-fichas">
+  <div class="modal-box" style="max-width:900px;padding:0;overflow:hidden">
+    <div class="modal-cab"><h2>Sua Galeria de Heróis</h2><button class="fechar" id="btn-fechar-minhas-fichas" aria-label="Fechar">✕</button></div>
+    <div class="grid-fichas" id="container-minhas-fichas"></div>
+  </div>
+</div>
+
+<!-- MODAL ENTRAR NA MESA: ESCOLHER PERSONAGEM -->
+<div class="modal" id="modal-entrar-mesa">
+  <div class="modal-box" style="max-width:900px;padding:0;overflow:hidden">
+    <div class="modal-cab">
+      <h2>Escolha seu Herói</h2>
+      <button class="fechar" id="btn-fechar-entrar-mesa" aria-label="Fechar">✕</button>
+    </div>
+    <div class="grid-fichas" id="container-entrar-fichas" style="max-height:65vh"></div>
+  </div>
+</div>
+
+<!-- MODAL BIBLIOTECA (LIVROS) -->
+<div class="modal" id="modal-livros">
+  <div class="modal-box" style="max-width:1300px;padding:0;overflow:hidden">
+    <div class="modal-cab">
+      <h2>Biblioteca de Vínculo</h2>
+      <button class="fechar" id="btn-fechar-livros" aria-label="Fechar">✕</button>
+    </div>
+    <button type="button" class="btn-biblioteca-srd" id="btn-abrir-biblioteca-srd">⌕ <span>Abrir Biblioteca SRD · D&amp;D 3.5</span></button>
+    <div class="grid-livros">
+      <!-- LIVRO DO MESTRE -->
+      <div class="card-livro" onclick="alert('EM CONSTRUÇÃO\n\nO Livro do Mestre estará disponível em breve!')">
+        <img src="capa-mestre.png" alt="Livro do Mestre" class="capa-livro-img">
+      </div>
+      
+      <!-- LIVRO DO JOGADOR -->
+      <div class="card-livro" onclick="alert('EM CONSTRUÇÃO\n\nO Livro do Jogador estará disponível em breve!')">
+        <img src="capa-jogador.png" alt="Livro do Jogador" class="capa-livro-img">
+      </div>
+      
+      <!-- LIVRO DOS MONSTROS -->
+      <div class="card-livro" onclick="alert('EM CONSTRUÇÃO\n\nO Livro dos Monstros estará disponível em breve!')">
+        <img src="capa-monstros.png" alt="Livro dos Monstros" class="capa-livro-img">
+      </div>
+      
+      <!-- LIVRO DO MUNDO -->
+      <div class="card-livro" onclick="alert('EM CONSTRUÇÃO\n\nO Livro do Mundo estará disponível em breve!')">
+        <img src="capa-mundo.png" alt="Livro do Mundo" class="capa-livro-img">
+      </div>
+    </div>
+    <button type="button" class="btn btn-dourado grimorio-cta" id="btn-abrir-grimorio">⚔ Forjar Novo Personagem · D&amp;D 3.5</button>
+  </div>
+</div>
+
+<!-- COMPÊNDIO SRD: catálogo pesquisável de criaturas, magias, equipamentos e classes -->
+<div class="modal" id="modal-biblioteca-srd" role="dialog" aria-modal="true" aria-labelledby="srd-library-title" style="z-index:160">
+  <div class="modal-box srd-library-box">
+    <div class="modal-cab">
+      <h2 id="srd-library-title">Biblioteca SRD · D&amp;D 3.5</h2>
+      <button class="fechar" id="btn-fechar-biblioteca-srd" aria-label="Fechar biblioteca">✕</button>
+    </div>
+    <div class="srd-library-toolbar">
+      <label class="sr-only" for="srd-library-search">Pesquisar no compêndio</label>
+      <input class="srd-library-search" id="srd-library-search" type="search" placeholder="Buscar monstro, magia, item ou classe…" autocomplete="off">
+      <div class="srd-library-filters" role="group" aria-label="Filtrar categoria">
+        <button type="button" class="ativo" data-srd-category="todos">Todos</button>
+        <button type="button" data-srd-category="monstros">Monstros</button>
+        <button type="button" data-srd-category="magias">Magias</button>
+        <button type="button" data-srd-category="itens">Itens</button>
+        <button type="button" data-srd-category="classes">Classes</button>
+      </div>
+    </div>
+    <div class="srd-library-content">
+      <div class="srd-library-results" id="srd-library-results" aria-label="Resultados do compêndio" aria-live="polite"></div>
+      <article class="srd-library-detail" id="srd-library-detail" aria-live="polite">
+        <div class="srd-library-status">Carregando catálogos SRD…</div>
+      </article>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DO GRIMÓRIO DE CRIAÇÃO D&D 3.5 -->
+<div id="modal-criacao" role="dialog" aria-modal="true" aria-labelledby="grimorio-titulo" aria-hidden="true">
+  <div class="grimorio-box">
+    <button type="button" class="btn-fechar-grimorio" id="btn-fechar-grimorio" aria-label="Fechar Grimório">✕</button>
+    <div id="grimorio-passo-1" class="grimorio-passo">
+      <h2 id="grimorio-titulo" class="grimorio-titulo">Passo 1: Escolha sua Raça</h2>
+      <p class="grimorio-subtitulo">A linhagem define tamanho, deslocamento e ajustes raciais.</p>
+      <div class="grimorio-grid" id="lista-racas" aria-label="Raças disponíveis"></div>
+    </div>
+    <div id="grimorio-passo-2" class="grimorio-passo" hidden>
+      <h2 class="grimorio-titulo">Passo 2: Escolha sua Classe</h2>
+      <p class="grimorio-subtitulo" id="grimorio-raca-escolhida"></p>
+      <div class="grimorio-grid" id="lista-classes" aria-label="Classes disponíveis"></div>
+      <div class="grimorio-passo-acoes"><button type="button" class="btn btn-sec" id="btn-voltar-racas">Voltar às raças</button></div>
+    </div>
+    <div class="grimorio-footer">
+      <p id="grimorio-status" class="grimorio-status" role="status" aria-live="polite"></p>
+      <button type="button" class="btn-iniciar-jornada" id="btn-iniciar-jornada" disabled>INICIAR JORNADA</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ESTANTE (CATÁLOGO) -->
+<div class="modal-estante" id="modal-estante">
+  <button class="btn-fechar-estante" id="btn-fechar-estante">✕</button>
+  <div class="shelf-wrapper">
+    <img src="estante.png" class="shelf-img" alt="Estante de Classes">
+    <div class="interactive-grid" id="grid-classes"></div>
+  </div>
+</div>
+
+<!-- MODAL BRIEFING GAMIFICADO -->
+<div class="modal-briefing" id="modal-briefing">
+  <div class="briefing-card">
+    <!-- Lado Esquerdo: Imagem da Classe -->
+    <div class="briefing-arte" id="briefing-img"></div>
+    
+    <!-- Lado Direito: Dados -->
+    <div class="briefing-info">
+      <div class="briefing-header"><div class="briefing-titulo" id="briefing-titulo">Classe</div><div class="briefing-funcao" id="briefing-funcao">Função</div></div>
+      <div class="briefing-atributos">
+        <div class="attr-box"><div class="attr-label">PV</div><div class="attr-val" id="briefing-pv">0</div></div>
+        <div class="attr-box"><div class="attr-label">PM</div><div class="attr-val" id="briefing-pm">0</div></div>
+        <div class="attr-box"><div class="attr-label">Desl</div><div class="attr-val" id="briefing-desl">0m</div></div>
+        <div class="attr-box"><div class="attr-label">RM</div><div class="attr-val" id="briefing-rm">0</div></div>
+      </div>
+      <div class="briefing-tabs" role="tablist" aria-label="Catálogo da classe">
+        <button type="button" class="b-tab ativo" data-tab="hab" role="tab">Habilidades</button>
+        <button type="button" class="b-tab" data-tab="tal" role="tab">Talentos</button>
+        <button type="button" class="b-tab" data-tab="mag" role="tab">Magias</button>
+      </div>
+      <div class="briefing-content"><div id="b-content-hab" class="briefing-habilidades"></div><div id="b-content-tal" style="display:none"></div><div id="b-content-mag" style="display:none"></div></div>
+      <div class="briefing-acoes"><button class="btn-voltar" id="btn-voltar-briefing">Voltar</button><a href="#" class="btn-criar" id="btn-ir-criar">Criar Ficha</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAIS PADRÃO ESCONDIDOS (Para manter o código funcional) -->
+<div class="modal" id="modal-criar"><div class="modal-box"><button class="fechar" onclick="document.getElementById('modal-criar').classList.remove('ativo')">✕</button><h2>Forjar Nova Mesa</h2><div class="campo"><label>Nome</label><input type="text" id="m-nome"></div><button class="btn btn-dourado" id="m-confirmar">Criar Mesa</button></div></div>
+<div class="modal" id="modal-config"><div class="modal-box"><h2>Configurações</h2><button class="fechar" onclick="document.getElementById('modal-config').classList.remove('ativo')">✕</button></div></div>
+
+<!-- MODAL PERFIL -->
+<div class="modal" id="modal-perfil" role="dialog" aria-modal="true" aria-labelledby="perfil-titulo" aria-hidden="true">
+  <div class="modal-box" style="max-width:620px">
+    <button type="button" class="fechar" id="btn-fechar-perfil" aria-label="Fechar perfil">✕</button>
+    <h2 id="perfil-titulo">Editar Perfil</h2>
+    <form id="form-perfil">
+      <div class="campo">
+        <label for="perfil-username">Nome de usuário</label>
+        <input id="perfil-username" name="username" type="text" maxlength="40" autocomplete="nickname" required>
+      </div>
+      <div class="campo">
+        <label for="perfil-arquivo">Avatar (opcional)</label>
+        <input id="perfil-arquivo" type="file" accept="image/*" aria-describedby="perfil-dica">
+        <small id="perfil-dica">Escolha uma imagem e ajuste o recorte quadrado antes de salvar.</small>
+      </div>
+      <div class="perfil-crop-layout">
+        <div class="perfil-crop-stage" id="perfil-crop-stage" hidden><img id="perfil-crop-image" alt="Imagem para recortar o avatar"></div>
+        <div class="perfil-preview-wrap"><strong>Prévia 1:1</strong><div class="perfil-preview" id="perfil-preview"><span>Sem avatar</span></div></div>
+      </div>
+      <div id="perfil-status" class="msg-modal perfil-status" role="status" aria-live="polite"></div>
+      <div class="perfil-actions">
+        <button type="button" class="btn btn-sec" id="btn-cancelar-perfil">Cancelar</button>
+        <button type="submit" class="btn btn-dourado" id="btn-salvar-perfil">Salvar perfil</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.js"></script>
+<script>
+(function(){
+  var SUPABASE_URL = 'https://grrgwxcagvvafdmzsmro.supabase.co';
+  var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdycmd3eGNhZ3Z2YWZkbXpzbXJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyNTY4MTQsImV4cCI6MjEwNTgzMjgxNH0.hqLiYynGXHwyUtqcbGTTa2orSStm7ko2C5R03QNmqtQ';
+  // A chave pública original do projeto é inserida durante a montagem a partir do HTML fornecido.
+  var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  var CLASSES = {
+    escudeiro: {
+      nome: 'Escudeiro', funcao: 'Tanque / Proteção',
+      img: 'https://user45886.na.imgto.link/public/20261017/8d64484abe3143783b56871e-cavaleiro-azul-do-bras-o-dourado.avif',
+      pv: '12', pm: '2', desl: '4m', rm: '7',
+      habilidades: [
+        { n: 'N1', nome: 'Postura do Escudo', desc: 'Passiva. Quando com escudo equipado, +1 CA e reduz em 1 o primeiro dano físico recebido por rodada.' },
+        { n: 'N3', nome: 'Interposição', desc: 'Reação (3m). Você se torna o alvo do ataque destinado a um aliado e, se ele acertar, reduz o dano em 1d6.' },
+        { n: 'N5', nome: 'Guarda Inabalável', desc: '1 PM. Recebe +2 CA e não pode ser empurrado, derrubado ou movido contra a vontade.' }
+      ]
+    },
+    berserk: {
+      nome: 'Berserk', funcao: 'Dano Bruto / Fúria',
+      img: 'https://user45886.na.imgto.link/public/20261017/3d2592edcc9f7e459ee6ccc2-berserker-viking-em-f-ria.avif',
+      pv: '11', pm: '1', desl: '5m', rm: '6',
+      habilidades: [
+        { n: 'N1', nome: 'Fúria', desc: '1/combate (3 rodadas). +1 dano em ataques corpo a corpo e resistência a Impacto. Deve atacar ou sofrer dano na rodada.' },
+        { n: 'N3', nome: 'Sangue Quente', desc: 'Passiva. Com Fúria ativa, ao reduzir inimigo a 0 PV ou sofrer crítico, recupera 1d6 PV (máx. 1/rodada).' },
+        { n: 'N5', nome: 'Frenesi', desc: '1 PM. Com Fúria ativa, faça um ataque adicional com -3 no ataque; em acerto, causa o dano da arma.' }
+      ]
+    },
+    cavaleiro: {
+      nome: 'Cavaleiro', funcao: 'Combate Sustentado',
+      img: 'https://user45886.na.imgto.link/public/20261017/2b2540524c46f5a205013af3-cavaleiro-azul-e-dourado-a-cavalo.avif',
+      pv: '10', pm: '2', desl: '4m', rm: '7',
+      habilidades: [
+        { n: 'N1', nome: 'Disciplina Marcial', desc: 'Passiva. +1 em testes de FOR contra deslocamento e +1 dano no primeiro ataque corpo a corpo do turno.' },
+        { n: 'N3', nome: 'Guarda de Combate', desc: '1 PM. +1 CA e +1 em ataques corpo a corpo. Não combina com outra postura.' },
+        { n: 'N5', nome: 'Investida', desc: '1 PM (6m). Mova até 6m e ataque; se percorreu 3m ou mais, +1d8 dano.' }
+      ]
+    },
+    samurai: {
+      nome: 'Samurai', funcao: 'Precisão / Cortes',
+      img: 'https://user45886.na.imgto.link/public/20261017/f1ea77d06bda9a37d8452210-samurai-na-floresta-de-outono.avif',
+      pv: '10', pm: '2', desl: '5m', rm: '7',
+      habilidades: [
+        { n: 'N1', nome: 'Iaijutsu', desc: 'Passiva. Se não atacou no turno anterior, o primeiro ataque do turno causa +1d6 dano. Limite: Não funciona com armas pesadas.' },
+        { n: 'N3', nome: 'Cortante Preciso', desc: '1 PM. +2 no ataque e +1d6 Cortante em acerto. Limite: Não combina com Iaijutsu.' },
+        { n: 'N5', nome: 'Postura do Samurai', desc: 'Passiva. Com lâmina de uma mão: +1 ataque e +1 dano; -1 CA.' }
+      ]
+    },
+    ranger: {
+      nome: 'Ranger', funcao: 'Distância / Exploração',
+      img: 'https://user45886.na.imgto.link/public/20261017/047d72473d4acc1d7bbb9506-arqueiro-tribal-em-posi-o-de-ataque.avif',
+      pv: '9', pm: '3', desl: '6m', rm: '8',
+      habilidades: [
+        { n: 'N1', nome: 'Caçador', desc: 'Passiva. Marca um alvo; ataques à distância contra ele causam +1d4 dano. Limite: Uma marca por vez.' },
+        { n: 'N3', nome: 'Tiro Preciso', desc: '1 PM. +2 no ataque e ignora 1 ponto de cobertura.' },
+        { n: 'N5', nome: 'Movimento do Caçador', desc: 'Passiva. Após acertar um ataque à distância, pode mover 3m sem provocar reação.' }
+      ]
+    },
+    ladino: {
+      nome: 'Ladino', funcao: 'Furtividade / Precisão',
+      img: 'https://user45886.na.imgto.link/public/20261017/777fb9b3f380137fb00557ca-assassino-sombrio-em-posi-o-de-ataque.avif',
+      pv: '8', pm: '3', desl: '7m', rm: '7',
+      habilidades: [
+        { n: 'N1', nome: 'Ataque Furtivo', desc: 'Passiva. Quando tem vantagem ou aliado adjacente, +1d6 dano uma vez por turno.' },
+        { n: 'N3', nome: 'Evasão', desc: 'Reação. Na falha em DES contra área, sofre metade; no sucesso, nenhum dano.' },
+        { n: 'N5', nome: 'Passo Sombrio', desc: '1 PM. Teleporta 6m e fica Oculto até agir ou ser detectado.' }
+      ]
+    },
+    monge: {
+      nome: 'Monge', funcao: 'Mobilidade / Artes Marciais',
+      img: 'https://user45886.na.imgto.link/public/20261017/ea75848b4caffa27f79e3fce-monge-guerreiro-canalizando-energia.avif',
+      pv: '9', pm: '5', desl: '7m', rm: '9',
+      habilidades: [
+        { n: 'N1', nome: 'Artes Marciais', desc: 'Passiva. Ataque desarmado causa 1d6 Impacto e pode usar DES no ataque.' },
+        { n: 'N3', nome: 'Passo Relâmpago', desc: '1 PM. Move 6m sem provocar reações.' },
+        { n: 'N5', nome: 'Golpe Atordoante', desc: '1 PM. Alvo faz CON CD 10; falha fica Atordoado. Uma vez por criatura por combate.' }
+      ]
+    },
+    mago: {
+      nome: 'Mago', funcao: 'Magia / Controle',
+      img: 'https://user45886.na.imgto.link/public/20261017/bc9c8069edfcf196f5543db0-mago-arcano-com-grim-rio-flutuante.avif',
+      pv: '5', pm: '10', desl: '4m', rm: '13',
+      habilidades: [
+        { n: 'N1', nome: 'Especialização Arcana', desc: 'Passiva. Escolha Arcano, Fogo, Gelo ou Elétrico; magia dessa afinidade recebe +1 dano por dado (1/turno).' },
+        { n: 'N3', nome: 'Recuperação Arcana', desc: '1/descanso. Fora de combate, recupera 2d4 PM.' },
+        { n: 'N5', nome: 'Magia Potencializada', desc: '+1 PM. Adiciona +1 dado de dano ou cura à magia conjurada.' }
+      ]
+    },
+    bardo: {
+      nome: 'Bardo', funcao: 'Suporte / Social',
+      img: 'https://user45886.na.imgto.link/public/20261017/350227579534bbbc502a51b6-viajante-barulhento-da-taverna.avif',
+      pv: '7', pm: '7', desl: '5m', rm: '10',
+      habilidades: [
+        { n: 'N1', nome: 'Inspiração', desc: '1 PM. Um aliado recebe 1d6 para adicionar a um ataque ou teste. Uma inspiração por alvo.' },
+        { n: 'N3', nome: 'Canção Restauradora', desc: '1 PM. Até 2 aliados recuperam 1d6 PV cada.' },
+        { n: 'N5', nome: 'Distração', desc: '1 PM. Alvo sofre -2 no próximo ataque e teste de concentração.' }
+      ]
+    },
+    construtor: {
+      nome: 'Construtor', funcao: 'Engenharia / Dispositivos',
+      img: 'https://user45886.na.imgto.link/public/20261017/8e71cd8c4416ec926e4cd9d3-engenheiro-steampunk-na-neve.avif',
+      pv: '7', pm: '4', desl: '4m', rm: '9',
+      habilidades: [
+        { n: 'N1', nome: 'Ferramentas de Mestre', desc: 'Passiva. +2 em testes de construção e pode reparar equipamentos durante descanso curto.' },
+        { n: 'N3', nome: 'Modificação de Arma', desc: '1 PM. +1 dano e uma propriedade simples definida na preparação. Uma arma por vez.' },
+        { n: 'N5', nome: 'Torreta', desc: '2 PM. Cria torreta que ataca com 1d20+INT (1d6 Perfurante). CA 10, PV 5.' }
+      ]
+    },
+    druida: {
+      nome: 'Druida', funcao: 'Natureza / Cura',
+      img: 'https://user45886.na.imgto.link/public/20261017/6b2bf8e56968a5f32b750ef5-druida-da-floresta-com-lobo-e-corvo.avif',
+      pv: '8', pm: '7', desl: '5m', rm: '11',
+      habilidades: [
+        { n: 'N1', nome: 'Afinidade Natural', desc: 'Passiva. +2 em testes de SAB ligados à natureza e interações naturais.' },
+        { n: 'N3', nome: 'Cura Natural', desc: '1 PM. Você ou 1 criatura recupera 1d8 PV.' },
+        { n: 'N5', nome: 'Raízes', desc: '1 PM. Alvo toca o solo. FOR CD 10; falha fica Imobilizado.' }
+      ]
+    },
+    feiticeiro: {
+      nome: 'Feiticeiro', funcao: 'Poder Bruto / Metamagia',
+      img: 'https://user45886.na.imgto.link/public/20261017/7eb9dc9552cec550e26928ce-mago-sombrio-e-grimoire-arcano.avif',
+      pv: '6', pm: '9', desl: '5m', rm: '12',
+      habilidades: [
+        { n: 'N1', nome: 'Linhagem Mágica', desc: 'Passiva. Escolha Fogo, Gelo, Elétrico ou Arcano; magia dessa afinidade +1d4 dano (1/turno).' },
+        { n: 'N3', nome: 'Poder Bruto', desc: '+1 PM. Magia de dano ganha +1d8; se exigir resistência, CD +1.' },
+        { n: 'N5', nome: 'Magia Rápida', desc: '2 PM. Magia de círculo 1-3 como ação rápida. Apenas movimento no turno.' }
+      ]
+    },
+    sacerdorte: {
+      nome: 'Sacerdorte', funcao: 'Cura / Proteção',
+      img: 'https://user45886.na.imgto.link/public/20261017/783025c06f1762e1036077bc-sacerdote-do-deserto-com-cajado-solar.avif',
+      pv: '8', pm: '8', desl: '4m', rm: '12',
+      habilidades: [
+        { n: 'N1', nome: 'Bênção Divina', desc: '1 PM. Aliado recebe +1 ataques e resistências. Uma bênção por alvo.' },
+        { n: 'N3', nome: 'Cura Divina', desc: '1 PM. Criatura viva recupera 1d8+1 PV.' },
+        { n: 'N5', nome: 'Proteção Sagrada', desc: '1 PM. Reduz em 1d8 o primeiro dano recebido por rodada.' }
+      ]
+    },
+    santo: {
+      nome: 'Santo', funcao: 'Maldições / Dreno',
+      img: 'https://user45886.na.imgto.link/public/20261017/37777b45b0b6b0adf1ce596e-profeta-das-ru-nas-douradas.avif',
+      pv: '6', pm: '9', desl: '4m', rm: '13',
+      habilidades: [
+        { n: 'N1', nome: 'Toque Profano', desc: '1 PM. Causa 1d8 Divino ou Arcano e cura você em metade do dano causado.' },
+        { n: 'N3', nome: 'Maldição', desc: '1 PM. Alvo visível sofre -1 CA e -1 RM.' },
+        { n: 'N5', nome: 'Cura Corrompida', desc: '1 PM. Cura 1d8; se amaldiçoado, +1d6.' }
+      ]
+    },
+    juiz: {
+      nome: 'Juiz', funcao: 'Julgamento / Controle',
+      img: 'https://user45886.na.imgto.link/public/20261017/5882f0534f1111442e44a8e6-mago-anci-o-entre-ru-nas-sagradas.avif',
+      pv: '6', pm: '8', desl: '4m', rm: '12',
+      habilidades: [
+        { n: 'N1', nome: 'Veredito', desc: '1 PM. SAB; falha sofre -1 ataques e CA até próximo turno.' },
+        { n: 'N3', nome: 'Sentença', desc: '1 PM. Causa 1d8 Divino; se atacou aliado, +1d6.' },
+        { n: 'N5', nome: 'Absolvição', desc: 'Reação. Aliado rerrola teste falho; se falhar de novo, reduz dano em 1d6.' }
+      ]
+    },
+    nobre: {
+      nome: 'Nobre', funcao: 'Liderança / Comando',
+      img: 'https://user45886.na.imgto.link/public/20261017/a695dd3c43513716d76c4c7a-aristocrata-arcano-sobre-pedestal-ornate.avif',
+      pv: '9', pm: '4', desl: '4m', rm: '9',
+      habilidades: [
+        { n: 'N1', nome: 'Autoridade', desc: 'Passiva. +1 em CAR e liderança; aliados recebem +1 iniciativa se você estiver consciente.' },
+        { n: 'N3', nome: 'Comando', desc: '1 PM. Aliado move 3m ou faz ataque básico com -2 no ataque.' },
+        { n: 'N5', nome: 'Estratégia', desc: '1 PM. Aliados escolhem +2 no próximo ataque ou +2 CA contra o próximo ataque.' }
+      ]
+    }
+  };
+
+  var eu = null;
+  var meuPerfil = null;
+  var cropperPerfil = null;
+  var arquivoAvatarPerfil = null;
+  var urlTemporariaAvatarPerfil = null;
+  var urlAvatarPerfilAtual = null;
+  var perfilProntoParaSalvar = false;
+  var perfilEmGravacao = false;
+  var botaoPerfil = document.getElementById('btn-abrir-perfil');
+  var modalPerfil = document.getElementById('modal-perfil');
+  var formPerfil = document.getElementById('form-perfil');
+  var inputUsernamePerfil = document.getElementById('perfil-username');
+  var inputArquivoPerfil = document.getElementById('perfil-arquivo');
+  var imagemCropPerfil = document.getElementById('perfil-crop-image');
+  var stageCropPerfil = document.getElementById('perfil-crop-stage');
+  var previewPerfil = document.getElementById('perfil-preview');
+  var statusPerfil = document.getElementById('perfil-status');
+  var botaoSalvarPerfil = document.getElementById('btn-salvar-perfil');
+  var botaoFecharPerfil = document.getElementById('btn-fechar-perfil');
+  var botaoCancelarPerfil = document.getElementById('btn-cancelar-perfil');
+  var modalEstante = document.getElementById('modal-estante');
+  var modalBriefing = document.getElementById('modal-briefing');
+  var modalMinhasFichas = document.getElementById('modal-minhas-fichas');
+  var modalEntrarMesa = document.getElementById('modal-entrar-mesa');
+  var containerEntrarFichas = document.getElementById('container-entrar-fichas');
+  var modalLivros = document.getElementById('modal-livros');
+  var modalBibliotecaSrd = document.getElementById('modal-biblioteca-srd');
+  var listaBibliotecaSrd = document.getElementById('srd-library-results');
+  var detalheBibliotecaSrd = document.getElementById('srd-library-detail');
+  var buscaBibliotecaSrd = document.getElementById('srd-library-search');
+  var bibliotecaSrd = { itens: [], categoria: 'todos', carregada: false, carregando: false, erros: [] };
+  var acionadorBibliotecaSrd = null;
+  var modalCriar = document.getElementById('modal-criar');
+  var modalCriacaoPersonagem = document.getElementById('modal-criacao');
+  var listaRacasGrimorio = document.getElementById('lista-racas');
+  var listaClassesGrimorio = document.getElementById('lista-classes');
+  var passoRacasGrimorio = document.getElementById('grimorio-passo-1');
+  var passoClassesGrimorio = document.getElementById('grimorio-passo-2');
+  var statusGrimorio = document.getElementById('grimorio-status');
+  var botaoIniciarJornada = document.getElementById('btn-iniciar-jornada');
+  var racasGrimorio = [];
+  var classesGrimorio = [];
+  var racaSelecionadaGrimorio = null;
+  var classeSelecionadaGrimorio = null;
+  var entradaMesaEmAndamento = false;
+
+  function escapeHtml(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, function(ch) {
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
+    });
+  }
+
+  function valorCatalogo(item, chaves) {
+    for (var i = 0; i < chaves.length; i++) {
+      var valor = item[chaves[i]];
+      if (valor !== null && valor !== undefined && valor !== '') return valor;
+    }
+    return null;
+  }
+
+  function textoCatalogo(valor) {
+    if (valor === null || valor === undefined || valor === '') return '';
+    if (Array.isArray(valor)) return valor.map(textoCatalogo).filter(Boolean).join(' · ');
+    if (typeof valor === 'object') return JSON.stringify(valor, null, 2);
+    return String(valor);
+  }
+
+  function normalizarCatalogo(item, categoria) {
+    var nome = String(valorCatalogo(item, ['nome', 'name', 'nome_original']) || 'Sem nome');
+    var descricao = textoCatalogo(valorCatalogo(item, ['descricao', 'description', 'resumo']));
+    var tecnico = valorCatalogo(item, ['dados_tecnicos', 'detalhes', 'stat_block']) || {};
+    var campos = [];
+    function campo(rotulo, chaves) {
+      var valor = valorCatalogo(item, chaves);
+      if (valor !== null) campos.push({ rotulo: rotulo, valor: textoCatalogo(valor) });
+    }
+    if (categoria === 'monstros') {
+      campo('ND', ['nd']); campo('CA', ['ca']); campo('Pontos de vida', ['pv']);
+      campo('Dados de vida', ['dados_vida', 'dv']); campo('Iniciativa', ['iniciativa']);
+      campo('Deslocamento', ['deslocamento']); campo('BBA / Agarrar', ['base_attack_grapple']); campo('Ataques', ['ataques']);
+      campo('Espaço / alcance', ['espaco_alcance', 'espaco', 'alcance']);
+      campo('Fortitude', ['fortitude', 'fort']); campo('Reflexos', ['reflexos', 'ref']); campo('Vontade', ['vontade', 'von']);
+      campo('Tamanho / tipo', ['tamanho', 'tipo']); campo('Tendência', ['tendencia']);
+      campo('Força', ['forca']); campo('Destreza', ['destreza']); campo('Constituição', ['constituicao']);
+      campo('Inteligência', ['inteligencia']); campo('Sabedoria', ['sabedoria']); campo('Carisma', ['carisma']);
+      campo('Perícias', ['pericias']); campo('Talentos', ['talentos']);
+    } else if (categoria === 'magias') {
+      campo('Nível', ['nivel', 'circulo', 'nível']); campo('Escola', ['escola']); campo('Alcance', ['alcance']);
+      campo('Alvo / área', ['alvo', 'area']); campo('Duração', ['duracao', 'duração']); campo('Componentes', ['componentes']); campo('Classes', ['classes']);
+    } else if (categoria === 'itens') {
+      campo('Categoria', ['categoria']); campo('Dano', ['dano']); campo('Tipo de dano', ['tipo_dano']);
+      campo('Bônus de CA', ['bonus_ca']); campo('Custo (po)', ['custo_po']); campo('Peso (kg)', ['peso']);
+    } else if (categoria === 'classes') {
+      campo('Dado de vida', ['dado_vida']); campo('BBA', ['bab_progression', 'bab_bom']);
+      campo('Fortitude / Reflexos / Vontade', ['fort_bom', 'ref_bom', 'von_bom']);
+      campo('Perícias por nível', ['pericias_por_nivel']); campo('Perícias de classe', ['pericias_classe']);
+    }
+    var complemento = [];
+    ['qualidades_especiais','habilidades_especiais','habilidades_por_nivel','ataques','pericias','talentos','resistencias'].forEach(function(chave) {
+      if (item[chave] !== undefined && item[chave] !== null && item[chave] !== '') complemento.push(chave + ': ' + textoCatalogo(item[chave]));
+    });
+    var tecnicoTexto = textoCatalogo(tecnico);
+    if (complemento.length) tecnicoTexto = (tecnicoTexto && tecnicoTexto !== '{}' ? tecnicoTexto + '\n\n' : '') + complemento.join('\n');
+    return {
+      id: categoria + ':' + String(item.id || nome), categoria: categoria, nome: nome,
+      original: String(valorCatalogo(item, ['nome_original','name']) || ''),
+      descricao: descricao, campos: campos,
+      tecnico: tecnicoTexto && tecnicoTexto !== '{}' ? tecnicoTexto : '',
+      fonte: String(valorCatalogo(item, ['srd_source_url','source_url','fonte_url']) || ''),
+      busca: [nome, descricao, tecnicoTexto, JSON.stringify(item)].join(' ').toLocaleLowerCase('pt-BR'),
+      registro: item
+    };
+  }
+
+  function normalizarTextoBusca(valor) {
+    return String(valor || '').toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function desenharResultadosBiblioteca() {
+    if (!listaBibliotecaSrd) return;
+    listaBibliotecaSrd.replaceChildren();
+    bibliotecaSrd.erros.forEach(function(erro) {
+      var aviso = document.createElement('div');
+      aviso.className = 'srd-library-status'; aviso.style.color = '#f0bd72'; aviso.textContent = erro;
+      listaBibliotecaSrd.appendChild(aviso);
+    });
+    var consulta = normalizarTextoBusca(buscaBibliotecaSrd.value.trim());
+    var resultados = bibliotecaSrd.itens.filter(function(item) {
+      return (bibliotecaSrd.categoria === 'todos' || item.categoria === bibliotecaSrd.categoria) &&
+        (!consulta || normalizarTextoBusca(item.busca).indexOf(consulta) !== -1);
+    });
+    if (!resultados.length) {
+      var vazio = document.createElement('div'); vazio.className = 'srd-library-status';
+      vazio.textContent = bibliotecaSrd.carregando ? 'Consultando catálogos…' : (bibliotecaSrd.itens.length ? 'Nenhuma entrada corresponde à busca.' : 'Nenhuma entrada disponível. Aplique a migração do compêndio e tente novamente.');
+      listaBibliotecaSrd.appendChild(vazio);
+      if (!bibliotecaSrd.carregando) {
+        detalheBibliotecaSrd.replaceChildren(); detalheBibliotecaSrd.dataset.itemId = '';
+        var detalheVazio = document.createElement('div'); detalheVazio.className = 'srd-library-status';
+        detalheVazio.textContent = bibliotecaSrd.itens.length ? 'Selecione uma entrada para ler a descrição e os dados técnicos.' : 'A biblioteca aparecerá aqui quando os catálogos estiverem carregados.';
+        detalheBibliotecaSrd.appendChild(detalheVazio);
+      }
+      return;
+    }
+    resultados.forEach(function(item) {
+      var botao = document.createElement('button'); botao.type = 'button';
+      botao.className = 'srd-library-result' + (detalheBibliotecaSrd.dataset.itemId === item.id ? ' ativo' : '');
+      botao.dataset.itemId = item.id;
+      var titulo = document.createElement('strong'); titulo.textContent = item.nome;
+      var metadado = document.createElement('small');
+      metadado.textContent = ({monstros:'Monstro',magias:'Magia',itens:'Item',classes:'Classe'}[item.categoria] || item.categoria) + (item.campos.length ? ' · ' + item.campos.slice(0,2).map(function(c){return c.valor;}).join(' · ') : '');
+      botao.appendChild(titulo); botao.appendChild(metadado); listaBibliotecaSrd.appendChild(botao);
+    });
+    if (!detalheBibliotecaSrd.dataset.itemId || !resultados.some(function(item){return item.id === detalheBibliotecaSrd.dataset.itemId;})) {
+      exibirDetalheBiblioteca(resultados[0]);
+    }
+  }
+
+  function exibirDetalheBiblioteca(item) {
+    if (!item || !detalheBibliotecaSrd) return;
+    detalheBibliotecaSrd.replaceChildren(); detalheBibliotecaSrd.dataset.itemId = item.id;
+    var titulo = document.createElement('h3'); titulo.textContent = item.nome; detalheBibliotecaSrd.appendChild(titulo);
+    var tipo = document.createElement('div'); tipo.className = 'srd-kind';
+    tipo.textContent = ({monstros:'Bestiário · SRD 3.5',magias:'Magia · SRD 3.5',itens:'Equipamento · SRD 3.5',classes:'Classe · SRD 3.5'}[item.categoria] || 'Compêndio SRD');
+    if (item.original && item.original !== item.nome) tipo.textContent += ' · ' + item.original;
+    detalheBibliotecaSrd.appendChild(tipo);
+    if (item.campos.length) {
+      var grid = document.createElement('div'); grid.className = 'srd-library-stats';
+      item.campos.forEach(function(campo) {
+        var box = document.createElement('div'); box.className = 'srd-library-stat';
+        var rotulo = document.createElement('b'); rotulo.textContent = campo.rotulo;
+        var valor = document.createElement('span'); valor.textContent = campo.valor;
+        box.appendChild(rotulo); box.appendChild(valor); grid.appendChild(box);
+      });
+      detalheBibliotecaSrd.appendChild(grid);
+    }
+    if (item.descricao) { var descricao = document.createElement('p'); descricao.textContent = item.descricao; detalheBibliotecaSrd.appendChild(descricao); }
+    if (item.tecnico) {
+      var heading = document.createElement('h4'); heading.textContent = 'Dados técnicos completos';
+      heading.style.cssText = "font-family:'Cinzel',serif;color:#c9a050;margin:16px 0 8px";
+      var pre = document.createElement('pre'); pre.className = 'srd-library-pre'; pre.textContent = item.tecnico;
+      detalheBibliotecaSrd.appendChild(heading); detalheBibliotecaSrd.appendChild(pre);
+    }
+    if (item.fonte && /^https:\/\//i.test(item.fonte)) {
+      var link = document.createElement('a'); link.className = 'srd-library-source'; link.href = item.fonte;
+      link.target = '_blank'; link.rel = 'noopener noreferrer'; link.textContent = 'Abrir fonte SRD';
+      detalheBibliotecaSrd.appendChild(link);
+    }
+    desenharResultadosBiblioteca();
+  }
+
+  async function buscarCatalogoCompleto(config) {
+    var todos = [];
+    var tamanhoPagina = 500;
+    for (var inicio = 0; inicio < 20000; inicio += tamanhoPagina) {
+      var resposta = await sb.from(config.tabela).select('*').order('nome').range(inicio, inicio + tamanhoPagina - 1);
+      if (resposta.error) return {config:config,resposta:resposta};
+      var pagina = resposta.data || [];
+      todos = todos.concat(pagina);
+      if (pagina.length < tamanhoPagina) return {config:config,resposta:{data:todos,error:null}};
+    }
+    return {config:config,resposta:{data:todos,error:new Error('Catálogo excede o limite de 20.000 entradas carregadas.')}};
+  }
+
+  async function carregarBibliotecaSrd() {
+    if (bibliotecaSrd.carregada || bibliotecaSrd.carregando) return;
+    bibliotecaSrd.carregando = true; bibliotecaSrd.erros = [];
+    detalheBibliotecaSrd.innerHTML = '<div class="srd-library-status">Consultando catálogos SRD…</div>';
+    var consultas = [
+      {tabela:'srd_monsters',categoria:'monstros'}, {tabela:'srd_spells',categoria:'magias'},
+      {tabela:'srd_equipment',categoria:'itens'}, {tabela:'srd_classes',categoria:'classes'}
+    ];
+    var respostas = await Promise.all(consultas.map(function(config) {
+      return buscarCatalogoCompleto(config).catch(function(erro) { return {config:config,resposta:{error:erro,data:[]}}; });
+    }));
+    bibliotecaSrd.itens = [];
+    respostas.forEach(function(linha) {
+      if (linha.resposta.error) {
+        bibliotecaSrd.erros.push('Catálogo indisponível (' + linha.config.tabela + '): ' + (linha.resposta.error.message || 'verifique/aplique a migração SRD.'));
+        return;
+      }
+      (linha.resposta.data || []).forEach(function(item) { bibliotecaSrd.itens.push(normalizarCatalogo(item, linha.config.categoria)); });
+    });
+    bibliotecaSrd.itens.sort(function(a,b){return a.nome.localeCompare(b.nome,'pt-BR');});
+    bibliotecaSrd.carregando = false; bibliotecaSrd.carregada = bibliotecaSrd.erros.length === 0;
+    desenharResultadosBiblioteca();
+    if (!bibliotecaSrd.itens.length) detalheBibliotecaSrd.innerHTML = '<div class="srd-library-status">Não foi possível carregar entradas. Aplique a migração do compêndio no Supabase e confira as permissões SELECT.</div>';
+  }
+
+  function definirStatusGrimorio(texto, erro) {
+    statusGrimorio.textContent = texto || '';
+    statusGrimorio.classList.toggle('erro', !!erro);
+  }
+
+  function textoListaGrimorio(valor) {
+    if (Array.isArray(valor)) return valor.map(function(item) { return String(item); }).join(' · ');
+    if (valor == null) return '';
+    if (typeof valor === 'object') return Object.keys(valor).map(function(k) { return k + ' ' + valor[k]; }).join(' · ');
+    return String(valor);
+  }
+
+  function criarCardGrimorio(item, tipo) {
+    var card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'card-opcao';
+    card.dataset.id = String(item.id);
+    var nome = document.createElement('span');
+    nome.className = 'nome';
+    nome.textContent = item.nome || 'Sem nome';
+    var info = document.createElement('span');
+    info.className = 'info';
+    info.textContent = tipo === 'raca'
+      ? ['Tamanho: ' + (item.tamanho || '—'), 'Deslocamento: ' + (item.deslocamento == null ? '—' : item.deslocamento + ' m')].join(' · ')
+      : ['Dado de Vida: d' + (item.dado_vida || '?'), 'Perícias/nível: ' + (item.pericias_por_nivel == null ? '—' : item.pericias_por_nivel)].join(' · ');
+    card.appendChild(nome);
+    card.appendChild(info);
+    if (tipo === 'raca' && item.habilidades_raciais) {
+      var tracos = document.createElement('span');
+      tracos.className = 'info';
+      tracos.textContent = textoListaGrimorio(item.habilidades_raciais);
+      card.appendChild(tracos);
+    }
+    card.addEventListener('click', function() {
+      if (tipo === 'raca') {
+        racaSelecionadaGrimorio = item;
+        listaRacasGrimorio.querySelectorAll('.card-opcao').forEach(function(el) { el.classList.toggle('selecionado', el === card); });
+        document.getElementById('grimorio-raca-escolhida').textContent = 'Raça escolhida: ' + (item.nome || '—');
+        passoRacasGrimorio.hidden = true;
+        passoClassesGrimorio.hidden = false;
+        definirStatusGrimorio('Agora escolha a classe para esta personagem.');
+      } else {
+        classeSelecionadaGrimorio = item;
+        listaClassesGrimorio.querySelectorAll('.card-opcao').forEach(function(el) { el.classList.toggle('selecionado', el === card); });
+        botaoIniciarJornada.disabled = !racaSelecionadaGrimorio || !classeSelecionadaGrimorio;
+        definirStatusGrimorio('Seleção pronta: ' + racaSelecionadaGrimorio.nome + ' · ' + item.nome + '.');
+      }
+    });
+    return card;
+  }
+
+  function fecharGrimorioCriacao() {
+    modalCriacaoPersonagem.classList.remove('ativo');
+    modalCriacaoPersonagem.setAttribute('aria-hidden', 'true');
+  }
+
+  async function abrirGrimorioCriacao() {
+    modalLivros.classList.remove('ativo');
+    modalMinhasFichas.classList.remove('ativo');
+    modalEstante.classList.remove('ativo');
+    modalBriefing.classList.remove('ativo');
+    modalCriacaoPersonagem.classList.add('ativo');
+    modalCriacaoPersonagem.setAttribute('aria-hidden', 'false');
+    racaSelecionadaGrimorio = null;
+    classeSelecionadaGrimorio = null;
+    botaoIniciarJornada.disabled = true;
+    passoRacasGrimorio.hidden = false;
+    passoClassesGrimorio.hidden = true;
+    definirStatusGrimorio('Consultando raças e classes do compêndio…');
+    listaRacasGrimorio.replaceChildren();
+    listaClassesGrimorio.replaceChildren();
+    try {
+      var resultados = await Promise.all([
+        sb.from('srd_races').select('id,nome,tamanho,deslocamento,ajustes_atributos,habilidades_raciais').order('nome'),
+        sb.from('srd_classes').select('id,nome,dado_vida,bab_bom,fort_bom,ref_bom,von_bom,pericias_por_nivel,pericias_classe,bab_progression').order('nome')
+      ]);
+      if (resultados[0].error) throw new Error('Raças: ' + resultados[0].error.message);
+      if (resultados[1].error) throw new Error('Classes: ' + resultados[1].error.message);
+      racasGrimorio = resultados[0].data || [];
+      classesGrimorio = resultados[1].data || [];
+      racasGrimorio.forEach(function(item) { listaRacasGrimorio.appendChild(criarCardGrimorio(item, 'raca')); });
+      classesGrimorio.forEach(function(item) { listaClassesGrimorio.appendChild(criarCardGrimorio(item, 'classe')); });
+      if (!racasGrimorio.length || !classesGrimorio.length) throw new Error('O catálogo de raças ou classes está vazio.');
+      definirStatusGrimorio('Escolha uma raça para continuar.');
+    } catch (err) {
+      definirStatusGrimorio('Não foi possível carregar o catálogo: ' + (err.message || err), true);
+    }
+  }
+
+  function iniciarJornadaDnd35() {
+    if (!racaSelecionadaGrimorio || !classeSelecionadaGrimorio) return;
+    var params = new URLSearchParams({ mode: 'criar', ruleset: 'dnd35', raca: String(racaSelecionadaGrimorio.id), classe: String(classeSelecionadaGrimorio.id) });
+    window.location.href = 'ficha.html?' + params.toString();
+  }
+
+  async function init() {
+    var rUser = await sb.auth.getUser();
+    if (!rUser.data || !rUser.data.user) {
+      location.replace('index.html');
+      return;
+    }
+    eu = rUser.data.user;
+
+    var rPerfil = await sb.from('profiles').select('username').eq('id', eu.id).maybeSingle();
+    meuPerfil = (rPerfil && rPerfil.data) || { username: (eu.email || 'Aventureiro').split('@')[0] };
+    document.getElementById('user-nome').textContent = meuPerfil.username || 'Aventureiro';
+    document.getElementById('user-email').textContent = eu.email || '';
+    await carregarMesas();
+    if (new URLSearchParams(location.search).get('mostrar-fichas') === '1') {
+      await carregarMinhasFichas();
+      modalMinhasFichas.classList.add('ativo');
+    }
+  }
+
+  function definirStatusPerfil(tipo, mensagem) {
+    statusPerfil.textContent = mensagem || '';
+    statusPerfil.className = 'msg-modal perfil-status' + (tipo ? ' ' + tipo : '');
+  }
+
+  function desenharPreviewPerfil(src) {
+    previewPerfil.replaceChildren();
+    if (!src) {
+      var placeholder = document.createElement('span');
+      placeholder.textContent = 'Sem avatar';
+      previewPerfil.appendChild(placeholder);
+      return;
+    }
+    var img = document.createElement('img');
+    img.alt = 'Prévia quadrada do avatar';
+    img.src = src;
+    previewPerfil.appendChild(img);
+  }
+
+  function liberarRecortePerfil() {
+    if (cropperPerfil) {
+      cropperPerfil.destroy();
+      cropperPerfil = null;
+    }
+    if (urlTemporariaAvatarPerfil) {
+      URL.revokeObjectURL(urlTemporariaAvatarPerfil);
+      urlTemporariaAvatarPerfil = null;
+    }
+    arquivoAvatarPerfil = null;
+    inputArquivoPerfil.value = '';
+    stageCropPerfil.hidden = true;
+    imagemCropPerfil.removeAttribute('src');
+  }
+
+  function fecharModalPerfil() {
+    if (perfilEmGravacao) return;
+    modalPerfil.classList.remove('ativo');
+    modalPerfil.setAttribute('aria-hidden', 'true');
+    liberarRecortePerfil();
+    if (botaoPerfil) botaoPerfil.focus();
+  }
+
+  async function abrirModalPerfil() {
+    modalPerfil.classList.add('ativo');
+    modalPerfil.setAttribute('aria-hidden', 'false');
+    perfilProntoParaSalvar = false;
+    botaoSalvarPerfil.disabled = true;
+    inputUsernamePerfil.disabled = true;
+    inputArquivoPerfil.disabled = true;
+    liberarRecortePerfil();
+    desenharPreviewPerfil(null);
+    definirStatusPerfil('info', 'Carregando seus dados de perfil…');
+    try {
+      if (!eu) {
+        var rUser = await sb.auth.getUser();
+        eu = rUser.data && rUser.data.user;
+      }
+      if (!eu) throw new Error('Sua sessão expirou. Entre novamente.');
+      var rPerfil = await sb.from('profiles').select('username, avatar_url').eq('id', eu.id).maybeSingle();
+      if (rPerfil.error) throw new Error(rPerfil.error.message);
+      if (!rPerfil.data) {
+        throw new Error('Não foi encontrado um registro em profiles para esta conta. O perfil precisa existir e permitir atualização pelo usuário autenticado.');
+      }
+      meuPerfil = rPerfil.data;
+      inputUsernamePerfil.value = meuPerfil.username || (eu.email || 'Aventureiro').split('@')[0];
+      urlAvatarPerfilAtual = meuPerfil.avatar_url || null;
+      desenharPreviewPerfil(urlAvatarPerfilAtual);
+      perfilProntoParaSalvar = true;
+      botaoSalvarPerfil.disabled = false;
+      inputUsernamePerfil.disabled = false;
+      inputArquivoPerfil.disabled = false;
+      definirStatusPerfil('', '');
+      inputUsernamePerfil.focus();
+    } catch (err) {
+      inputUsernamePerfil.value = (meuPerfil && meuPerfil.username) || (eu && eu.email ? eu.email.split('@')[0] : '');
+      definirStatusPerfil('erro', 'Não foi possível carregar o perfil: ' + (err.message || err) + (String(err.message || err).indexOf('avatar_url') !== -1 ? ' Aplique profile_avatar_migration.sql e tente novamente.' : ''));
+      inputUsernamePerfil.disabled = true;
+      inputArquivoPerfil.disabled = true;
+    }
+  }
+
+  inputArquivoPerfil.addEventListener('change', function() {
+    var file = inputArquivoPerfil.files && inputArquivoPerfil.files[0];
+    if (!file) return;
+    if (!file.type || file.type.indexOf('image/') !== 0) {
+      liberarRecortePerfil();
+      definirStatusPerfil('erro', 'Selecione um arquivo de imagem válido.');
+      return;
+    }
+    if (typeof Cropper === 'undefined') {
+      definirStatusPerfil('erro', 'O recortador Cropper.js não foi carregado. Verifique a conexão com o asset já configurado e tente novamente.');
+      return;
+    }
+    if (cropperPerfil) cropperPerfil.destroy();
+    if (urlTemporariaAvatarPerfil) URL.revokeObjectURL(urlTemporariaAvatarPerfil);
+    arquivoAvatarPerfil = file;
+    urlTemporariaAvatarPerfil = URL.createObjectURL(file);
+    stageCropPerfil.hidden = false;
+    imagemCropPerfil.onload = function() {
+      try {
+        cropperPerfil = new Cropper(imagemCropPerfil, {
+          aspectRatio: 1,
+          viewMode: 1,
+          autoCropArea: 0.9,
+          responsive: true,
+          background: false,
+          crop: function() {
+            if (!cropperPerfil) return;
+            try {
+              var canvas = cropperPerfil.getCroppedCanvas({ width: 256, height: 256, imageSmoothingQuality: 'high' });
+              if (canvas) {
+                canvas.setAttribute('aria-label', 'Prévia quadrada do avatar recortado');
+                previewPerfil.replaceChildren(canvas);
+              }
+            } catch (err) { console.warn('Não foi possível atualizar a prévia do avatar:', err); }
+          }
+        });
+        definirStatusPerfil('', '');
+      } catch (err) {
+        definirStatusPerfil('erro', 'Não foi possível preparar o recorte: ' + (err.message || err));
+      }
+    };
+    imagemCropPerfil.onerror = function() {
+      definirStatusPerfil('erro', 'Não foi possível abrir esta imagem. Escolha outro arquivo.');
+    };
+    imagemCropPerfil.src = urlTemporariaAvatarPerfil;
+  });
+
+  formPerfil.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    if (!perfilProntoParaSalvar || perfilEmGravacao) return;
+    var username = inputUsernamePerfil.value.trim();
+    if (!username) {
+      definirStatusPerfil('erro', 'Informe um nome de usuário.');
+      inputUsernamePerfil.focus();
+      return;
+    }
+    if (username.length > 40) {
+      definirStatusPerfil('erro', 'O nome de usuário deve ter no máximo 40 caracteres.');
+      return;
+    }
+    if (arquivoAvatarPerfil && !cropperPerfil) {
+      definirStatusPerfil('erro', 'Aguarde o carregamento do recorte da imagem antes de salvar.');
+      return;
+    }
+    perfilEmGravacao = true;
+    botaoSalvarPerfil.disabled = true;
+    botaoCancelarPerfil.disabled = true;
+    botaoFecharPerfil.disabled = true;
+    definirStatusPerfil('info', 'Salvando perfil…');
+    try {
+      var avatarUrl = urlAvatarPerfilAtual;
+      if (arquivoAvatarPerfil && cropperPerfil) {
+        var blob = await new Promise(function(resolve, reject) {
+          var canvas = cropperPerfil.getCroppedCanvas({ width: 512, height: 512, imageSmoothingQuality: 'high' });
+          if (!canvas) { reject(new Error('Não foi possível gerar o recorte da imagem.')); return; }
+          canvas.toBlob(function(result) {
+            if (result) resolve(result);
+            else reject(new Error('Não foi possível codificar a imagem recortada.'));
+          }, 'image/jpeg', 0.9);
+        });
+        var caminhoAvatar = 'avatars/' + eu.id + '/avatar-' + Date.now() + '.jpg';
+        var upload = await sb.storage.from('midia').upload(caminhoAvatar, blob, { upsert: false, contentType: 'image/jpeg' });
+        if (upload.error) throw new Error('Falha no upload para o bucket midia: ' + upload.error.message);
+        var publicUrl = sb.storage.from('midia').getPublicUrl(caminhoAvatar);
+        avatarUrl = publicUrl && publicUrl.data ? publicUrl.data.publicUrl : null;
+        if (!avatarUrl) throw new Error('O Supabase não retornou a URL pública do avatar.');
+      }
+      var rUpdatePerfil = await sb.from('profiles').update({ username: username, avatar_url: avatarUrl }).eq('id', eu.id).select('username, avatar_url').maybeSingle();
+      if (rUpdatePerfil.error) throw new Error('Falha ao salvar em profiles: ' + rUpdatePerfil.error.message);
+      if (!rUpdatePerfil.data) throw new Error('Nenhum perfil foi atualizado. Verifique se o registro existe e se a política RLS permite UPDATE para o próprio usuário.');
+      meuPerfil = rUpdatePerfil.data;
+      urlAvatarPerfilAtual = meuPerfil.avatar_url || null;
+      var userNome = document.getElementById('user-nome');
+      if (userNome) userNome.textContent = meuPerfil.username || 'Aventureiro';
+      definirStatusPerfil('sucesso', 'Perfil salvo com sucesso.');
+      liberarRecortePerfil();
+      desenharPreviewPerfil(urlAvatarPerfilAtual);
+      perfilProntoParaSalvar = true;
+    } catch (err) {
+      definirStatusPerfil('erro', 'Não foi possível salvar: ' + (err.message || err));
+    } finally {
+      perfilEmGravacao = false;
+      botaoSalvarPerfil.disabled = !perfilProntoParaSalvar;
+      botaoCancelarPerfil.disabled = false;
+      botaoFecharPerfil.disabled = false;
+    }
+  });
+
+  async function carregarMesas() {
+    var grid = document.getElementById('grid');
+    grid.innerHTML = '<div class="vazio">Carregando mesas...</div>';
+    if (!eu) {
+      var rUser = await sb.auth.getUser();
+      eu = rUser.data && rUser.data.user;
+    }
+    if (!eu) {
+      grid.innerHTML = '<div class="vazio" style="color:#f87171">Entre na sua conta para ver as mesas.</div>';
+      return;
+    }
+    var r = await sb.from('campaigns').select('*').order('id', { ascending: false });
+    if (r.error) {
+      grid.innerHTML = '<div class="vazio" style="color:#f87171">Erro ao carregar mesas: ' + escapeHtml(r.error.message) + '</div>';
+      return;
+    }
+    if (!r.data || r.data.length === 0) {
+      grid.innerHTML = '<div class="vazio">Nenhuma mesa encontrada. Seja o primeiro a criar!</div>';
+      return;
+    }
+
+    var ownerIds = Array.from(new Set(r.data.map(function(m) { return m.owner_id; }).filter(Boolean)));
+    var perfisMap = Object.create(null);
+    if (ownerIds.length > 0) {
+      var rProf = await sb.from('profiles').select('id, username').in('id', ownerIds);
+      if (rProf.error) {
+        console.warn('Não foi possível buscar os nomes dos mestres:', rProf.error.message);
+      } else if (rProf.data) {
+        rProf.data.forEach(function(p) { perfisMap[String(p.id)] = p.username; });
+      }
+    }
+
+    var rMem = await sb.from('members').select('campaign_id');
+    var membrosMap = Object.create(null);
+    var membrosDisponiveis = !rMem.error;
+    if (rMem.error) {
+      console.warn('Não foi possível contar os membros das mesas:', rMem.error.message);
+    } else if (rMem.data) {
+      rMem.data.forEach(function(membro) {
+        var campaignId = String(membro.campaign_id);
+        membrosMap[campaignId] = (membrosMap[campaignId] || 0) + 1;
+      });
+    }
+
+    grid.innerHTML = r.data.map(function(m) {
+      var img = m.capa_url || 'bg_lobby.png';
+      var estado = m.state || 'EXPLORAÇÃO';
+      var isDono = !!(eu && String(m.owner_id) === String(eu.id));
+      var qtdJogadores = membrosDisponiveis ? (membrosMap[String(m.id)] || 0) : null;
+      var mestreNome = perfisMap[String(m.owner_id)] || m.mestre_nome || (isDono && meuPerfil && meuPerfil.username) || 'Desconhecido';
+      var btnCapa = isDono
+        ? '<button class="btn-edit-capa" data-id="' + escapeHtml(m.id) + '" title="Alterar Capa" aria-label="Alterar capa da mesa" style="position:absolute;top:10px;left:10px;background:rgba(0,0,0,.7);border:1px solid #c9a050;color:#c9a050;border-radius:50%;width:30px;height:30px;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>'
+        : '';
+      return '<article class="card">' +
+        '<div class="card-capa">' + btnCapa + '<img src="' + escapeHtml(img) + '" alt="Capa da mesa"><div class="card-estado">' + escapeHtml(estado) + '</div></div>' +
+        '<div class="card-corpo"><div class="card-nome">' + escapeHtml(m.name || 'Mesa sem nome') + '</div>' +
+        '<div class="card-mestre">Mestre: <b>' + escapeHtml(mestreNome) + '</b> · ' + (qtdJogadores === null ? 'Contagem indisponível' : qtdJogadores + ' Jogador(es)') + '</div>' +
+        '<div class="card-briefing">' + escapeHtml(m.briefing || 'Uma nova aventura aguarda...') + '</div>' +
+        '<button type="button" class="btn-entrar js-entrar-mesa" data-id="' + escapeHtml(m.id) + '" data-dono="' + (isDono ? 'true' : 'false') + '" style="border:none;cursor:pointer">Entrar na Mesa</button></div></article>';
+    }).join('');
+
+    document.querySelectorAll('.btn-edit-capa').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        uploadCapaMesa(btn.getAttribute('data-id'));
+      });
+    });
+
+    document.querySelectorAll('.js-entrar-mesa').forEach(function(btn) {
+      btn.addEventListener('click', async function() {
+        btn.disabled = true;
+        try {
+          await tentarEntrarMesa(btn.getAttribute('data-id'), btn.getAttribute('data-dono') === 'true');
+        } catch (err) {
+          alert('Não foi possível iniciar a entrada na mesa: ' + (err.message || err));
+        } finally {
+          btn.disabled = false;
+        }
+      });
+    });
+  }
+
+  async function tentarEntrarMesa(mesaId, isDono) {
+    if (!eu) {
+      var rUser = await sb.auth.getUser();
+      eu = rUser.data && rUser.data.user;
+    }
+    if (!eu) throw new Error('Sua sessão expirou. Entre novamente.');
+    if (isDono) {
+      location.href = 'mesa.html?mesa=' + encodeURIComponent(mesaId) + '&role=gm';
+      return;
+    }
+    var r = await sb.from('members').select('role').eq('campaign_id', mesaId).eq('user_id', eu.id).limit(1).maybeSingle();
+    if (r.error) throw new Error(r.error.message);
+    if (r.data && r.data.role === 'GM') {
+      location.href = 'mesa.html?mesa=' + encodeURIComponent(mesaId) + '&role=gm';
+      return;
+    }
+    // Jogadores escolhem qual das próprias fichas usar sempre que entram,
+    // inclusive quando já estão cadastrados como membros da mesa.
+    await abrirModalEntrarMesa(mesaId);
+  }
+
+  async function abrirModalEntrarMesa(mesaId) {
+    containerEntrarFichas.dataset.mesaId = String(mesaId);
+    containerEntrarFichas.innerHTML = '<div style="color:#c9a050;text-align:center;grid-column:1/-1;padding:40px">Buscando seus heróis...</div>';
+    modalEntrarMesa.classList.add('ativo');
+
+    var r = await sb.from('characters').select('id, nome, retrato_url, campaign_id').eq('user_id', eu.id).order('id', { ascending: false });
+    if (r.error) {
+      containerEntrarFichas.innerHTML = '<div style="color:#f87171;text-align:center;grid-column:1/-1;padding:20px">Erro ao carregar fichas: ' + escapeHtml(r.error.message) + '</div>';
+      return;
+    }
+    if (!r.data || r.data.length === 0) {
+      containerEntrarFichas.innerHTML = '<div style="color:#f87171;text-align:center;grid-column:1/-1;padding:20px">Você ainda não tem fichas. Crie uma no menu “Minhas Fichas”.</div>';
+      return;
+    }
+
+    containerEntrarFichas.innerHTML = r.data.map(function(ch) {
+      var avatar = ch.retrato_url
+        ? '<img src="' + escapeHtml(ch.retrato_url) + '" alt="Retrato de ' + escapeHtml(ch.nome || 'herói') + '">'
+        : '<div class="avatar-placeholder" aria-hidden="true">👤</div>';
+      var transferir = ch.campaign_id != null && String(ch.campaign_id) !== String(mesaId);
+      var textoInfo = transferir ? 'Vinculada a outra mesa · confirmar transferência' : 'Clique para entrar com esta ficha';
+      return '<button type="button" class="card-ficha-user js-selecionar-heroi" data-char-id="' + escapeHtml(ch.id) + '" data-transferir="' + (transferir ? 'true' : 'false') + '" style="cursor:pointer;border-color:#3a4a65">' +
+        avatar + '<span class="nome">' + escapeHtml(ch.nome || 'Sem Nome') + '</span><span class="info">' + textoInfo + '</span></button>';
+    }).join('');
+
+    containerEntrarFichas.querySelectorAll('.js-selecionar-heroi').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        if (btn.dataset.transferir === 'true' && !confirm('Esta ficha está vinculada a outra mesa. Ao continuar, ela deixará de aparecer na mesa anterior. Deseja transferi-la para esta mesa?')) return;
+        confirmarEntradaMesa(containerEntrarFichas.dataset.mesaId, btn.getAttribute('data-char-id'));
+      });
+    });
+  }
+
+  async function confirmarEntradaMesa(mesaId, charId) {
+    if (entradaMesaEmAndamento) return;
+    entradaMesaEmAndamento = true;
+    containerEntrarFichas.innerHTML = '<div style="color:#c9a050;text-align:center;grid-column:1/-1;padding:40px">Entrando na mesa...</div>';
+    try {
+      var rChar = await sb.from('characters').update({ campaign_id: mesaId }).eq('id', charId).eq('user_id', eu.id).select('id').maybeSingle();
+      if (rChar.error) throw new Error('Erro ao vincular personagem: ' + rChar.error.message);
+      if (!rChar.data) throw new Error('A ficha não existe ou não pertence à sua conta. Atualize a lista e tente novamente.');
+
+      var rMember = await sb.from('members').insert({ campaign_id: mesaId, user_id: eu.id, role: 'PLAYER' });
+      if (rMember.error && rMember.error.code !== '23505') {
+        throw new Error('Erro ao entrar como membro: ' + rMember.error.message);
+      }
+
+      setTimeout(function() {
+        location.href = 'mesa.html?mesa=' + encodeURIComponent(mesaId);
+      }, 500);
+    } catch (err) {
+      alert('Erro ao entrar na mesa: ' + (err.message || err));
+      modalEntrarMesa.classList.remove('ativo');
+      entradaMesaEmAndamento = false;
+    }
+  }
+
+  function uploadCapaMesa(mesaId) {
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async function() {
+      var file = input.files && input.files[0];
+      if (!file) return;
+      var btn = document.querySelector('.btn-edit-capa[data-id="' + CSS.escape(String(mesaId)) + '"]');
+      var htmlOriginal = btn ? btn.innerHTML : '';
+      if (btn) { btn.disabled = true; btn.textContent = '…'; }
+      try {
+        var ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+        var path = 'capas_mesas/mesa-' + mesaId + '-' + Date.now() + '.' + ext;
+        var up = await sb.storage.from('midia').upload(path, file, { upsert: true, contentType: file.type || 'image/jpeg' });
+        if (up.error) throw new Error('Erro no upload: ' + up.error.message);
+        var url = sb.storage.from('midia').getPublicUrl(path).data.publicUrl;
+        var rUpdate = await sb.from('campaigns').update({ capa_url: url }).eq('id', mesaId);
+        if (rUpdate.error) throw new Error('Erro ao salvar no banco: ' + rUpdate.error.message);
+        await carregarMesas();
+      } catch (err) {
+        alert(err.message || 'Não foi possível alterar a capa.');
+        if (btn) { btn.disabled = false; btn.innerHTML = htmlOriginal; }
+      }
+    };
+    input.click();
+  }
+
+  async function carregarMinhasFichas() {
+    var container = document.getElementById('container-minhas-fichas');
+    container.innerHTML = '<div style="color:#c9a050;text-align:center;grid-column:1/-1;padding:40px">Buscando seus heróis...</div>';
+    if (!eu) {
+      var rUser = await sb.auth.getUser();
+      eu = rUser.data && rUser.data.user;
+    }
+    if (!eu) {
+      container.innerHTML = '<div style="color:#f87171;text-align:center;grid-column:1/-1;padding:40px">Entre na sua conta para ver suas fichas.</div>';
+      return;
+    }
+    var r = await sb.from('characters')
+      .select('id, nome, retrato_url, xp')
+      .eq('user_id', eu.id)
+      .order('id', { ascending: false });
+    if (r.error) {
+      container.innerHTML = '<div style="color:#f87171;text-align:center;grid-column:1/-1;padding:24px">Erro ao carregar: ' + escapeHtml(r.error.message) + '</div>';
+      return;
+    }
+
+    var characterIds = (r.data || []).map(function(ch) { return ch.id; });
+    var srdByCharacter = Object.create(null);
+    var classNames = Object.create(null);
+    var raceNames = Object.create(null);
+    if (characterIds.length) {
+      var sheets = await sb.from('srd_character_sheets').select('character_id,classe_id,raca_id,nivel').in('character_id', characterIds);
+      if (sheets.error) {
+        container.innerHTML = '<div style="color:#f87171;text-align:center;grid-column:1/-1;padding:24px">Erro ao carregar fichas D&amp;D 3.5: ' + escapeHtml(sheets.error.message) + '</div>';
+        return;
+      }
+      (sheets.data || []).forEach(function(sheet) { srdByCharacter[String(sheet.character_id)] = sheet; });
+      var classIds = Array.from(new Set((sheets.data || []).map(function(s) { return s.classe_id; }).filter(Boolean)));
+      var raceIds = Array.from(new Set((sheets.data || []).map(function(s) { return s.raca_id; }).filter(Boolean)));
+      var lookups = await Promise.all([
+        classIds.length ? sb.from('srd_classes').select('id,nome').in('id', classIds) : Promise.resolve({ data: [], error: null }),
+        raceIds.length ? sb.from('srd_races').select('id,nome').in('id', raceIds) : Promise.resolve({ data: [], error: null })
+      ]);
+      if (lookups[0].error || lookups[1].error) {
+        var lookupError = (lookups[0].error || lookups[1].error).message;
+        container.innerHTML = '<div style="color:#f87171;text-align:center;grid-column:1/-1;padding:24px">Erro ao carregar nomes de raça/classe: ' + escapeHtml(lookupError) + '</div>';
+        return;
+      }
+      (lookups[0].data || []).forEach(function(row) { classNames[String(row.id)] = row.nome; });
+      (lookups[1].data || []).forEach(function(row) { raceNames[String(row.id)] = row.nome; });
+    }
+
+    var html = '<button class="card-ficha-user btn-add-ficha" id="btn-nova-ficha-estante"><span>+</span><div class="info" style="margin:0">Criar personagem D&amp;D 3.5</div></button>';
+    if (!r.data || r.data.length === 0) {
+      html += '<div class="fichas-vazio">Você ainda não tem fichas. Clique no “+” para começar.</div>';
+    } else {
+      html += r.data.map(function(ch) {
+        var sheet = srdByCharacter[String(ch.id)];
+        var classe = sheet ? (classNames[String(sheet.classe_id)] || sheet.classe_id) : 'Ficha sem dados SRD';
+        var raca = sheet ? (raceNames[String(sheet.raca_id)] || sheet.raca_id) : '';
+        var resumo = sheet ? 'D&D 3.5 · ' + raca + ' · ' + classe : classe;
+        var avatar = ch.retrato_url
+          ? '<img src="' + escapeHtml(ch.retrato_url) + '" alt="Retrato de ' + escapeHtml(ch.nome || 'herói') + '">'
+          : '<div class="avatar-placeholder" aria-hidden="true">👤</div>';
+        return '<div class="card-ficha-admin"><a href="ficha.html?char=' + encodeURIComponent(ch.id) + '" class="card-ficha-user">' + avatar +
+          '<div class="nome">' + escapeHtml(ch.nome || 'Sem Nome') + '</div><div class="info">' + escapeHtml(resumo) + '</div></a>' +
+          '<button type="button" class="btn-excluir-ficha js-excluir-ficha" data-char-id="' + escapeHtml(ch.id) + '" data-char-name="' + escapeHtml(ch.nome || 'Sem Nome') + '" aria-label="Excluir ficha ' + escapeHtml(ch.nome || 'Sem Nome') + '">Excluir ficha</button></div>';
+      }).join('');
+    }
+    container.innerHTML = html;
+    var btnNova = document.getElementById('btn-nova-ficha-estante');
+    if (btnNova) btnNova.addEventListener('click', function() {
+      modalMinhasFichas.classList.remove('ativo');
+      abrirGrimorioCriacao();
+    });
+    container.querySelectorAll('.js-excluir-ficha').forEach(function(btn) {
+      btn.addEventListener('click', async function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (btn.disabled) return;
+        var nomeFicha = btn.getAttribute('data-char-name') || 'esta ficha';
+        if (!confirm('Tem certeza que deseja excluir ' + nomeFicha + '?')) return;
+        if (!confirm('CONFIRMAÇÃO FINAL: esta ação apagará a ficha, inventário e histórico associado e não pode ser desfeita.')) return;
+        btn.disabled = true;
+        btn.textContent = 'Excluindo…';
+        try {
+          var removida = await sb.rpc('excluir_ficha_propria', { p_character_id: btn.getAttribute('data-char-id') });
+          if (removida.error) throw new Error(removida.error.message);
+          await carregarMinhasFichas();
+        } catch (err) {
+          btn.disabled = false;
+          btn.textContent = 'Excluir ficha';
+          alert('Não foi possível excluir a ficha: ' + (err.message || err));
+        }
+      });
+    });
+  }
+
+  async function abrirBriefing(idClasse) {
+    var cls = CLASSES[idClasse];
+    if (!cls) return;
+    document.getElementById('briefing-img').style.backgroundImage = "url('" + cls.img + "')";
+    document.getElementById('briefing-titulo').textContent = cls.nome;
+    document.getElementById('briefing-funcao').textContent = cls.funcao;
+    document.getElementById('briefing-pv').textContent = cls.pv;
+    document.getElementById('briefing-pm').textContent = cls.pm;
+    document.getElementById('briefing-desl').textContent = cls.desl;
+    document.getElementById('briefing-rm').textContent = cls.rm;
+    document.getElementById('btn-ir-criar').href = '#';
+
+    document.querySelectorAll('.b-tab').forEach(function(t) { t.classList.remove('ativo'); });
+    var firstTab = document.querySelector('.b-tab[data-tab="hab"]');
+    if (firstTab) firstTab.classList.add('ativo');
+    document.getElementById('b-content-hab').style.display = 'block';
+    document.getElementById('b-content-tal').style.display = 'none';
+    document.getElementById('b-content-mag').style.display = 'none';
+    document.getElementById('b-content-hab').innerHTML = (cls.habilidades || []).map(function(h) {
+      return '<div class="hab-item"><div><span class="hab-nivel">' + escapeHtml(h.n) + '</span><span class="hab-nome">' + escapeHtml(h.nome) + '</span></div><div class="hab-desc">' + escapeHtml(h.desc) + '</div></div>';
+    }).join('') || '<div class="catalogo-vazio">Nenhuma habilidade cadastrada.</div>';
+    document.getElementById('b-content-tal').innerHTML = '<div class="catalogo-vazio">Carregando talentos...</div>';
+    document.getElementById('b-content-mag').innerHTML = '<div class="catalogo-vazio">Carregando magias...</div>';
+    modalBriefing.classList.add('ativo');
+
+    var rTal = await sb.from('talents').select('*').order('nivel_min');
+    if (rTal.error) {
+      document.getElementById('b-content-tal').innerHTML = '<div class="catalogo-vazio erro-catalogo">Não foi possível carregar talentos: ' + escapeHtml(rTal.error.message) + '</div>';
+    } else if (rTal.data && rTal.data.length) {
+      document.getElementById('b-content-tal').innerHTML = rTal.data.map(function(t) {
+        var bloqueado = Number(t.nivel_min) > 1;
+        return '<div class="hab-item" style="border-left-color:' + (bloqueado ? '#8a9ab0' : '#c9a050') + ';opacity:' + (bloqueado ? '0.6' : '1') + '">' +
+          '<div><span class="hab-nivel" style="background:' + (bloqueado ? '#8a9ab0' : '#c9a050') + '">N' + escapeHtml(t.nivel_min) + '</span><span class="hab-nome">' + escapeHtml(t.nome) + '</span></div>' +
+          '<div class="hab-desc">' + escapeHtml(t.efeito) + '<br><small style="color:#c9a050">Custo: ' + escapeHtml(t.custo_pt == null ? 2 : t.custo_pt) + ' PT</small></div></div>';
+      }).join('');
+    } else {
+      document.getElementById('b-content-tal').innerHTML = '<div class="catalogo-vazio">Nenhum talento cadastrado.</div>';
+    }
+
+    var rMag = await sb.from('spells').select('*').order('circulo');
+    if (rMag.error) {
+      document.getElementById('b-content-mag').innerHTML = '<div class="catalogo-vazio erro-catalogo">Não foi possível carregar magias: ' + escapeHtml(rMag.error.message) + '</div>';
+    } else if (rMag.data && rMag.data.length) {
+      // Exibe magias da classe e as universais; usa o grimório geral como fallback.
+      var magiasFiltradas = rMag.data.filter(function(s) {
+        return s.classe === idClasse || s.classe === 'todas' || s.classe === 'universal';
+      });
+      if (magiasFiltradas.length === 0) magiasFiltradas = rMag.data;
+      document.getElementById('b-content-mag').innerHTML = magiasFiltradas.map(function(s) {
+        return '<div class="hab-item" style="border-left-color:#3a5a8a"><div><span class="hab-nivel" style="background:#3a5a8a;color:#fff">C' + escapeHtml(s.circulo) + '</span><span class="hab-nome">' + escapeHtml(s.nome) + '</span></div>' +
+          '<div class="hab-desc">' + escapeHtml(s.efeito) + '<br><small style="color:#8a9ab0">' + escapeHtml(s.escola || 'Geral') + ' · ' + escapeHtml(s.custo_pm == null ? (Number(s.circulo || 0) * 2) : s.custo_pm) + ' PM</small></div></div>';
+      }).join('');
+    } else {
+      document.getElementById('b-content-mag').innerHTML = '<div class="catalogo-vazio">Nenhuma magia cadastrada.</div>';
+    }
+  }
+
+  var gridClasses = document.getElementById('grid-classes');
+  var ordemClasses = ['escudeiro','berserk','cavaleiro','samurai','ranger','ladino','monge','mago','bardo','construtor','druida','feiticeiro','sacerdorte','santo','juiz','nobre'];
+  var mapaCoordenadas = {
+    escudeiro:  { left: '20%', top: '5%',  w: '13%', h: '18%' },
+    berserk:    { left: '35%', top: '5%',  w: '14%', h: '18%' },
+    cavaleiro:  { left: '51%', top: '5%',  w: '14%', h: '18%' },
+    samurai:    { left: '67%', top: '5%',  w: '13%', h: '18%' },
+
+    ranger:     { left: '20%', top: '28%', w: '13%', h: '18%' },
+    ladino:     { left: '35%', top: '28%', w: '14%', h: '18%' },
+    monge:      { left: '51%', top: '28%', w: '14%', h: '18%' },
+    mago:       { left: '67%', top: '28%', w: '13%', h: '18%' },
+
+    bardo:      { left: '20%', top: '50%', w: '13%', h: '18%' },
+    construtor: { left: '35%', top: '50%', w: '14%', h: '18%' },
+    druida:     { left: '51%', top: '50%', w: '14%', h: '18%' },
+    feiticeiro: { left: '67%', top: '50%', w: '13%', h: '18%' },
+
+    sacerdorte: { left: '20%', top: '72%', w: '13%', h: '18%' },
+    santo:      { left: '35%', top: '72%', w: '14%', h: '18%' },
+    juiz:       { left: '51%', top: '72%', w: '14%', h: '18%' },
+    nobre:      { left: '67%', top: '72%', w: '13%', h: '18%' }
+  };
+  if (gridClasses) {
+    gridClasses.innerHTML = ordemClasses.map(function(id) {
+      var pos = mapaCoordenadas[id];
+      var stylePosicao = 'left:' + pos.left + ';top:' + pos.top + ';width:' + pos.w + ';height:' + pos.h + ';';
+      return '<button type="button" class="class-btn" aria-label="Selecionar ' + escapeHtml(CLASSES[id].nome) + '" data-id="' + id + '" style="' + stylePosicao + '"></button>';
+    }).join('');
+    gridClasses.querySelectorAll('.class-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() { abrirBriefing(btn.getAttribute('data-id')); });
+    });
+  }
+
+  document.getElementById('btn-abrir-minhas-fichas').addEventListener('click', async function(e) {
+    e.preventDefault();
+    await carregarMinhasFichas();
+    modalMinhasFichas.classList.add('ativo');
+  });
+  document.getElementById('btn-abrir-livros').addEventListener('click', function(e) {
+    e.preventDefault();
+    modalLivros.classList.add('ativo');
+  });
+  document.getElementById('btn-abrir-grimorio').addEventListener('click', abrirGrimorioCriacao);
+  document.getElementById('btn-fechar-grimorio').addEventListener('click', fecharGrimorioCriacao);
+  document.getElementById('btn-voltar-racas').addEventListener('click', function() {
+    passoClassesGrimorio.hidden = true;
+    passoRacasGrimorio.hidden = false;
+    classeSelecionadaGrimorio = null;
+    botaoIniciarJornada.disabled = true;
+    definirStatusGrimorio('Escolha uma raça para continuar.');
+  });
+  botaoIniciarJornada.addEventListener('click', iniciarJornadaDnd35);
+  modalCriacaoPersonagem.addEventListener('click', function(e) { if (e.target === modalCriacaoPersonagem) fecharGrimorioCriacao(); });
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && modalCriacaoPersonagem.classList.contains('ativo')) fecharGrimorioCriacao(); });
+  document.getElementById('btn-ir-criar').addEventListener('click', function(e) {
+    e.preventDefault();
+    abrirGrimorioCriacao();
+  });
+  botaoPerfil.addEventListener('click', function(e) {
+    e.preventDefault();
+    abrirModalPerfil();
+  });
+  botaoFecharPerfil.addEventListener('click', fecharModalPerfil);
+  botaoCancelarPerfil.addEventListener('click', fecharModalPerfil);
+  modalPerfil.addEventListener('click', function(e) { if (e.target === modalPerfil) fecharModalPerfil(); });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && modalPerfil.classList.contains('ativo')) fecharModalPerfil();
+  });
+  document.getElementById('btn-fechar-livros').addEventListener('click', function() { modalLivros.classList.remove('ativo'); });
+  function abrirBibliotecaSrd(evento) {
+    evento.preventDefault();
+    acionadorBibliotecaSrd = evento.currentTarget;
+    modalBibliotecaSrd.classList.add('ativo');
+    carregarBibliotecaSrd();
+    window.setTimeout(function(){ buscaBibliotecaSrd.focus(); }, 0);
+  }
+  function fecharBibliotecaSrd() {
+    modalBibliotecaSrd.classList.remove('ativo');
+    if (acionadorBibliotecaSrd && document.contains(acionadorBibliotecaSrd)) acionadorBibliotecaSrd.focus();
+  }
+  document.getElementById('btn-abrir-biblioteca-srd').addEventListener('click', abrirBibliotecaSrd);
+  document.getElementById('btn-sidebar-biblioteca-srd').addEventListener('click', abrirBibliotecaSrd);
+  document.getElementById('btn-fechar-biblioteca-srd').addEventListener('click', function() {
+    fecharBibliotecaSrd();
+  });
+  modalBibliotecaSrd.addEventListener('click', function(e) { if (e.target === modalBibliotecaSrd) fecharBibliotecaSrd(); });
+  buscaBibliotecaSrd.addEventListener('input', desenharResultadosBiblioteca);
+  modalBibliotecaSrd.querySelector('.srd-library-filters').addEventListener('click', function(e) {
+    var filtro = e.target.closest('[data-srd-category]');
+    if (!filtro) return;
+    modalBibliotecaSrd.querySelectorAll('[data-srd-category]').forEach(function(botao){botao.classList.toggle('ativo',botao===filtro);});
+    bibliotecaSrd.categoria = filtro.dataset.srdCategory;
+    detalheBibliotecaSrd.dataset.itemId = '';
+    desenharResultadosBiblioteca();
+  });
+  listaBibliotecaSrd.addEventListener('click', function(e) {
+    var botao = e.target.closest('.srd-library-result');
+    if (!botao) return;
+    var item = bibliotecaSrd.itens.find(function(registro){return registro.id===botao.dataset.itemId;});
+    if (item) exibirDetalheBiblioteca(item);
+  });
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && modalBibliotecaSrd.classList.contains('ativo')) fecharBibliotecaSrd();
+  });
+  document.getElementById('btn-fechar-minhas-fichas').addEventListener('click', function() { modalMinhasFichas.classList.remove('ativo'); });
+  document.getElementById('btn-fechar-entrar-mesa').addEventListener('click', function() { modalEntrarMesa.classList.remove('ativo'); });
+  document.getElementById('btn-fechar-estante').addEventListener('click', function() { modalEstante.classList.remove('ativo'); modalBriefing.classList.remove('ativo'); });
+  document.getElementById('btn-voltar-briefing').addEventListener('click', function() { modalBriefing.classList.remove('ativo'); });
+  modalEstante.addEventListener('click', function(e) { if (e.target === modalEstante) modalEstante.classList.remove('ativo'); });
+  modalBriefing.addEventListener('click', function(e) { if (e.target === modalBriefing) modalBriefing.classList.remove('ativo'); });
+  modalMinhasFichas.addEventListener('click', function(e) { if (e.target === modalMinhasFichas) modalMinhasFichas.classList.remove('ativo'); });
+  modalEntrarMesa.addEventListener('click', function(e) { if (e.target === modalEntrarMesa) modalEntrarMesa.classList.remove('ativo'); });
+  modalLivros.addEventListener('click', function(e) { if (e.target === modalLivros) modalLivros.classList.remove('ativo'); });
+
+  document.querySelectorAll('.b-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      document.querySelectorAll('.b-tab').forEach(function(t) { t.classList.remove('ativo'); });
+      tab.classList.add('ativo');
+      var target = tab.dataset.tab;
+      ['hab','tal','mag'].forEach(function(key) { document.getElementById('b-content-' + key).style.display = target === key ? 'block' : 'none'; });
+    });
+  });
+
+  document.getElementById('btn-sair').addEventListener('click', async function() {
+    sessionStorage.setItem('saindo', '1');
+    await sb.auth.signOut();
+    location.replace('index.html');
+  });
+  document.getElementById('btn-criar').addEventListener('click', function() { modalCriar.classList.add('ativo'); });
+  document.getElementById('m-confirmar').addEventListener('click', async function() {
+    var nome = document.getElementById('m-nome').value.trim();
+    if (!nome) return alert('Digite um nome para a mesa.');
+    if (!eu) return alert('Sua sessão expirou. Entre novamente.');
+    var btn = document.getElementById('m-confirmar');
+    btn.disabled = true;
+    var r = await sb.from('campaigns').insert({
+      name: nome,
+      owner_id: eu.id,
+      state: 'EXPLORACAO'
+    }).select();
+    btn.disabled = false;
+    if (r.error) return alert('Erro ao criar mesa: ' + r.error.message);
+    if (r.data && r.data[0]) {
+      var membership = await sb.from('members').insert({ campaign_id: r.data[0].id, user_id: eu.id, role: 'GM' });
+      if (membership.error) console.error('Mesa criada, mas não foi possível registrar o mestre como membro:', membership.error.message);
+    }
+    modalCriar.classList.remove('ativo');
+    document.getElementById('m-nome').value = '';
+    await carregarMesas();
+  });
+
+  init().catch(function(err) {
+    console.error('Falha ao inicializar o lobby:', err);
+    document.getElementById('grid').innerHTML = '<div class="vazio" style="color:#f87171">Não foi possível carregar o lobby. Verifique a conexão e as permissões do Supabase.</div>';
+  });
+})();
+</script>
+</body>
+</html>

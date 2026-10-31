@@ -1,0 +1,1780 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Vinculo - Ficha</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0d0b07;font-family:'EB Garamond',Georgia,serif;color:#2b1f0f;
+  display:flex;justify-content:center;padding:12px;min-height:100vh}
+.ficha{width:min(1100px,100%);background:#f5ecd6;border:2px solid #8a6a3a;
+  border-radius:4px;box-shadow:0 15px 50px rgba(0,0,0,.9);position:relative;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.58 0 0 0 0 0.48 0 0 0 0 0.32 0 0 0 0.15 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.ficha::before{content:"";position:absolute;inset:8px;border:1px solid #b89050;border-radius:2px;pointer-events:none;z-index:1}
+.ficha::after{content:"";position:absolute;inset:12px;border:1px solid rgba(201,160,80,.45);border-radius:2px;pointer-events:none;z-index:1}
+.moldura-canto{position:absolute;width:44px;height:44px;z-index:2;pointer-events:none;color:#b89050;opacity:.9}
+.moldura-canto svg{width:100%;height:100%;display:block}
+.moldura-canto.tl{top:4px;left:4px}
+.moldura-canto.tr{top:4px;right:4px;transform:scaleX(-1)}
+.moldura-canto.bl{bottom:4px;left:4px;transform:scaleY(-1)}
+.moldura-canto.br{bottom:4px;right:4px;transform:scale(-1,-1)}
+.cab{position:relative;height:200px;background-color:#141d33;background-size:cover;background-position:center;background-repeat:no-repeat;overflow:hidden;z-index:2}
+.cab::after{content:"";position:absolute;left:0;right:0;bottom:0;height:80px;pointer-events:none;z-index:2;background:linear-gradient(180deg,rgba(245,236,214,0) 0%,rgba(245,236,214,.35) 45%,rgba(245,236,214,.85) 80%,#f5ecd6 100%)}
+.cab.tem-bg::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(180deg,rgba(10,15,30,.35),rgba(10,15,30,.1))}
+.cab-arco{position:absolute;top:0;left:0;right:0;height:22px;z-index:3;pointer-events:none;opacity:.9}
+.cab-arco svg{width:100%;height:100%;display:block}
+.cab-logo-slot{position:absolute;top:16px;left:22px;z-index:4;width:210px;height:120px;display:flex;align-items:center;justify-content:flex-start;pointer-events:none}
+.cab-logo-slot img{max-width:100%;max-height:100%;object-fit:contain;filter:drop-shadow(0 2px 8px rgba(0,0,0,.6))}
+.info-bloco{padding:4px 0 10px;text-align:left}
+.info-bloco .nome{font-family:'Cinzel',serif;font-weight:900;font-size:28px;letter-spacing:4px;color:#1a2a45;line-height:1.05;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;outline:none;border-bottom:1px dashed transparent}
+.info-bloco .nome[contenteditable="true"]:hover{border-bottom-color:#c9a050;cursor:text}
+.info-bloco .nome[contenteditable="true"]:focus{border-bottom-color:#c9a050}
+.info-bloco .nome[contenteditable="true"]{-webkit-user-select:text!important;user-select:text!important;-webkit-touch-callout:default;touch-action:auto!important;pointer-events:auto!important;position:relative;z-index:60;cursor:text}
+.info-bloco .nome[contenteditable="true"]:focus{overflow:visible;text-overflow:clip;white-space:normal;word-break:break-word}
+.info-bloco .linha{font-size:13px;letter-spacing:1.5px;color:#5a4a2f;margin-top:6px}
+.info-bloco .linha b{color:#8a6a3a;font-weight:700}
+.info-bloco .xp-pill{display:inline-block;background:#0a0f1e;color:#f4d07a;border:1px solid #c9a050;border-radius:14px;padding:4px 18px;font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;font-weight:700;margin-top:10px;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.select-cultura{appearance:none;-webkit-appearance:none;background:transparent;border:none;border-bottom:1px dashed #c9a050;font-family:'EB Garamond',serif;font-size:13px;color:#5a4a2f;font-weight:700;cursor:pointer;outline:none;padding-right:15px}
+.foto-heroi{position:absolute;z-index:50;overflow:hidden;background:transparent;cursor:grab}
+.foto-heroi.editando{cursor:move;outline:1px dashed #c9a050;outline-offset:2px}
+.foto-heroi img{width:100%;height:100%;object-fit:contain;-webkit-user-drag:none;user-select:none;pointer-events:none;display:block}
+.foto-heroi.editando img{pointer-events:auto}
+.foto-heroi .foto-handle{position:absolute;width:16px;height:16px;background:#c9a050;border:2px solid #141d33;border-radius:50%;cursor:nwse-resize;z-index:10;display:none}
+.foto-heroi.editando .foto-handle{display:block}
+.foto-heroi .foto-hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;color:#8a6a3a;font-family:'Cinzel',serif;font-size:9px;letter-spacing:1.5px;text-align:center;cursor:pointer;padding:12px;line-height:1.4;opacity:.55;background:rgba(239,228,200,.15);border:1px dashed #c9a050;border-radius:4px}
+.foto-heroi .foto-hint svg{width:44px;height:44px;opacity:.55}
+.foto-heroi .foto-acoes{position:absolute;bottom:6px;right:6px;z-index:20;display:none;gap:4px;flex-direction:column}
+.foto-heroi:hover .foto-acoes, .foto-heroi.editando .foto-acoes{display:flex}
+.foto-heroi .foto-acoes button{background:#141d33;border:1px solid #c9a050;color:#c9a050;padding:4px 8px;border-radius:3px;font-family:'Cinzel',serif;font-size:8px;letter-spacing:1px;cursor:pointer;text-transform:uppercase;white-space:nowrap}
+.foto-heroi .foto-acoes button:hover{background:#c9a050;color:#111}
+.foto-heroi .foto-acoes button.confirmar{background:#4a7a3a;color:#fff;border-color:#4a7a3a}
+.levelup-flag{background:linear-gradient(90deg,#c9a050,#f4d07a);color:#111;padding:7px 14px;font-family:'Cinzel',serif;font-weight:900;font-size:11px;letter-spacing:2px;text-align:center;border-bottom:2px solid #8a6a3a}
+.corpo{display:grid;grid-template-columns:1fr 1fr;background:transparent;position:relative;z-index:3}
+.col{padding:8px 12px;display:flex;flex-direction:column;gap:8px;border-right:1px solid #c9a050}
+.col:last-child{border-right:none}
+.secao{border:1px solid #b89050;border-radius:3px;background:rgba(239,228,200,.75);overflow:hidden}
+.secao-titulo{background:#141d33;color:#f5ecd6;font-family:'Cinzel',serif;font-weight:700;font-size:10px;letter-spacing:2.5px;text-transform:uppercase;padding:6px 10px;border-bottom:2px solid #c9a050;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.secao-titulo .rot{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+.secao-glifo{display:inline-flex;width:16px;height:16px;flex-shrink:0;color:#c9a050}
+.secao-svg{width:100%;height:100%;display:block}
+.secao-titulo small{font-size:8.5px;letter-spacing:1px;color:#c9a050;font-weight:400;text-transform:none}
+.btn-titulo{background:transparent;border:1px solid #c9a050;color:#c9a050;padding:2px 10px;border-radius:3px;font-family:'Cinzel',serif;font-weight:700;font-size:9px;letter-spacing:1.5px;cursor:pointer;text-transform:uppercase}
+.btn-titulo:hover{background:#c9a050;color:#111}
+.secao-corpo{padding:6px 10px 8px}
+.ic-svg{width:12px;height:12px;vertical-align:-2px;margin-right:3px;display:inline-block}
+.grid-rpg{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-top:8px}
+.card-rpg{background:linear-gradient(135deg,#1a2438,#0f1626);border:1px solid #3a4a65;border-radius:6px;padding:12px;position:relative;box-shadow:0 4px 10px rgba(0,0,0,.5);display:flex;flex-direction:column}
+.card-rpg::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:#c9a050;border-radius:6px 6px 0 0}
+.card-header-rpg{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;gap:8px}
+.card-titulo-rpg{font-family:'Cinzel',serif;font-weight:900;font-size:13px;color:#f5ecd6;line-height:1.2}
+.card-tag-rpg{background:rgba(201,160,80,.15);border:1px solid #c9a050;color:#c9a050;font-family:'Cinzel',serif;font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;white-space:nowrap}
+.card-body-rpg{font-size:11.5px;color:#cbd5e1;line-height:1.4;flex:1}
+.card-footer-rpg{margin-top:8px;padding-top:8px;border-top:1px dashed #2a3550;display:flex;justify-content:space-between;font-size:9px;color:#8a9ab0;font-family:'Cinzel',serif;font-weight:700;text-transform:uppercase}
+.tab{width:100%;border-collapse:collapse;font-size:11.5px;line-height:1.3}
+.tab th{text-align:left;font-size:8.5px;letter-spacing:1px;text-transform:uppercase;color:#7a6a4a;padding:2px 4px;border-bottom:1px solid #b89050;font-weight:600}
+.tab td{padding:3px 4px;border-bottom:1px dotted #c9b585}
+.tab tr:last-child td{border-bottom:none}
+.vit th:nth-child(2){text-align:center}
+.vit td:nth-child(2){font-family:'Cinzel',serif;font-weight:700;color:#1a2a45;text-align:center;font-size:15px}
+.vit td:nth-child(3){font-size:10px;font-style:italic;color:#7a6a4a}
+.def td:nth-child(1){font-weight:600;color:#5a4a2f;font-size:11px;width:35%}
+.def td:nth-child(2){font-family:'Cinzel',serif;font-weight:700;font-size:13px;color:#1a2a45;text-align:center;width:44px}
+.def td:nth-child(3){font-size:9.5px;font-style:italic;color:#7a6a4a}
+.per td:nth-child(2){text-align:center;font-weight:700;color:#5a4a2f;width:42px;font-size:11px}
+.per td:nth-child(3){font-size:8.5px;text-transform:uppercase;letter-spacing:.5px;color:#7a6a4a;text-align:center;width:60px}
+.per td:nth-child(4){text-align:right;font-weight:700;color:#1a2a45;width:40px}
+.sub-tab-titulo{font-family:'Cinzel',serif;font-weight:700;font-size:9.5px;letter-spacing:2px;color:#b89050;text-transform:uppercase;margin:12px 0 4px;padding-bottom:2px;border-bottom:1px solid #d4be8e;display:flex;justify-content:space-between;align-items:center}
+.sub-tab-titulo:first-of-type{margin-top:0}
+.sub-tab-titulo .ic-svg{width:13px;height:13px;vertical-align:-2px;color:#b89050}
+.atrs{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;padding:4px 0}
+.atr{border:1.5px solid #1a2a45;border-radius:3px;text-align:center;padding:4px 2px;background:rgba(232,220,186,.85)}
+.atr-rot{font-family:'Cinzel',serif;font-size:9px;font-weight:700;letter-spacing:1px;color:#1a2a45;text-transform:uppercase;display:block;margin-bottom:2px}
+.atr-val{font-family:'Cinzel',serif;font-weight:900;font-size:20px;color:#1a2a45;display:block;line-height:1}
+.atr-val em{color:#b89050;font-style:normal;font-size:12px}
+.atr-btns{display:flex;justify-content:center;gap:3px;margin-top:4px}
+.atb{background:#1a2a45;color:#f5ecd6;border:1px solid #c9a050;border-radius:3px;width:22px;height:20px;font-weight:900;font-size:13px;line-height:1;cursor:pointer;padding:0;font-family:'Cinzel',serif}
+.atb:hover:not(:disabled){background:#c9a050;color:#111}
+.atb:disabled{opacity:.35;cursor:not-allowed}
+.btn-salvar-atr{margin-top:8px;width:100%;padding:8px;background:linear-gradient(180deg,#d4ad5a,#b89050);color:#111;border:none;border-radius:3px;font-family:'Cinzel',serif;font-weight:900;font-size:11px;letter-spacing:2px;text-transform:uppercase;cursor:pointer}
+.btn-salvar-atr:hover:not(:disabled){background:linear-gradient(180deg,#e0b860,#c9a050)}
+.btn-salvar-atr:disabled{opacity:.4;cursor:not-allowed}
+.atr-nota{font-size:9.5px;font-style:italic;color:#7a6a4a;text-align:center;margin-top:4px;line-height:1.4}
+.atq td:nth-child(1){font-size:9.5px;text-transform:uppercase;letter-spacing:.5px;color:#7a6a4a;font-weight:600;width:110px}
+.atq td:nth-child(2){font-weight:600;font-size:11px}
+.atq td:nth-child(3){font-size:11px}
+.eqp-resumo{padding:8px 10px;display:flex;flex-direction:column;gap:5px}
+.eqp-linha{display:flex;justify-content:space-between;font-size:11.5px;color:#5a4a2f;padding-bottom:3px;border-bottom:1px dotted #c9b585;gap:8px}
+.eqp-linha:last-child{border-bottom:none}
+.eqp-linha>span:first-child{display:inline-flex;align-items:center;gap:4px;flex-shrink:0}
+.eqp-linha b{color:#1a2a45;font-weight:700;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.eqp-linha .vazio{color:#b89050;font-style:italic;font-weight:400}
+.eqp-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(180deg,#d4ad5a,#b89050);color:#111;border:none;padding:8px;border-radius:3px;font-family:'Cinzel',serif;font-weight:900;font-size:11px;letter-spacing:2px;cursor:pointer;text-transform:uppercase;margin-top:4px;width:100%}
+.eqp-btn:hover{background:linear-gradient(180deg,#e0b860,#c9a050)}
+.eqp-btn .ic-svg{width:14px;height:14px;margin-right:2px;vertical-align:-3px}
+.anot-lista{padding:0 10px 8px;display:flex;flex-direction:column;gap:4px}
+.anot-item{background:rgba(232,220,186,.9);border:1px solid #b89050;border-radius:3px;padding:5px 8px;font-size:11px;color:#1a2a45;font-weight:600;display:flex;align-items:center;gap:6px;cursor:pointer}
+.anot-item:hover{background:#e0d4ae}
+.anot-item .txt{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.anot-vazio{font-size:10.5px;font-style:italic;color:#7a6a4a;text-align:center;padding:6px}
+.rod{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 24px;background:#141d33;color:#f5ecd6;font-family:'Cinzel',serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;border-top:3px solid #c9a050;position:relative;z-index:3}
+.rod .rod-btns{display:flex;gap:8px;flex-wrap:wrap}
+.rod button{background:transparent;border:1px solid #c9a050;color:#c9a050;padding:5px 14px;border-radius:3px;font-family:'Cinzel',serif;font-weight:700;font-size:9px;letter-spacing:2px;cursor:pointer;text-transform:uppercase}
+.rod button:hover{background:#c9a050;color:#111}
+.rod button.cancelar{border-color:#b83232;color:#f87171}
+.rod button.cancelar:hover{background:#b83232;color:#fff}
+.erro{color:#b83232;padding:30px;font-family:monospace;font-size:13px;background:#f4ecd8;text-align:center;white-space:pre-wrap;line-height:1.5}
+.fab-inv{position:fixed;bottom:24px;right:24px;z-index:90;width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,#e0b860,#b89050);border:3px solid #8a6a3a;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;transition:.2s}
+.fab-inv:hover{transform:scale(1.08)}
+.fab-inv .ic-svg{width:26px;height:26px;margin:0;vertical-align:0;color:#111}
+.fab-inv .badge{position:absolute;top:-4px;right:-4px;background:#b83232;color:#fff;font-family:'Cinzel',serif;font-weight:900;font-size:11px;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #f5ecd6}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
+.modal.ativo{display:flex}
+.modal-box{background:#141d33;border:3px solid #c9a050;border-radius:6px;width:100%;max-width:1100px;max-height:92vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.95);color:#f5ecd6;overflow:hidden}
+.modal-cab{background:linear-gradient(180deg,#000,#0a0f1e);color:#f5ecd6;padding:14px 20px;border-bottom:3px solid #c9a050;display:flex;justify-content:space-between;align-items:center}
+.modal-cab h2{font-family:'Cinzel',serif;font-weight:900;font-size:18px;letter-spacing:3px}
+.modal-cab .fechar{background:transparent;border:1px solid #2a3550;color:#8a9ab0;font-size:16px;cursor:pointer;padding:4px 10px;border-radius:3px;line-height:1}
+.modal-cab .fechar:hover{color:#c9a050;border-color:#c9a050}
+.inv-theme{background:#efe4c8;color:#1a2a45;border-color:#8a6a3a}
+.inv-theme .modal-cab{background:linear-gradient(180deg,#141d33,#0a0f1e);color:#f5ecd6}
+.inv-theme .modal-cab .fechar{border-color:#c9a050;color:#c9a050}
+.inv-theme .modal-cab .fechar:hover{background:#c9a050;color:#111}
+.slots-equip{background:#e8dcba;padding:12px 18px;border-bottom:2px solid #b89050;display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.slot{background:#f5ecd6;border:2px dashed #b89050;border-radius:4px;padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:3px;position:relative;min-height:74px}
+.slot.ocupado{border-style:solid;border-color:#c9a050;background:#f0e6c4}
+.slot-icone{line-height:1}
+.slot-icone .ic-svg{width:22px;height:22px;margin:0;vertical-align:0}
+.slot-label{font-family:'Cinzel',serif;font-size:7.5px;letter-spacing:1px;color:#8a6a3a;text-transform:uppercase;font-weight:700;text-align:center}
+.slot-nome{font-size:10px;color:#1a2a45;font-weight:600;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.slot-vazio{font-size:9px;color:#a08050;font-style:italic}
+.slot-remove{position:absolute;top:2px;right:2px;background:transparent;border:none;color:#8a6a3a;font-size:12px;cursor:pointer;padding:1px 5px;line-height:1}
+.slot-remove:hover{color:#b83232}
+.mochila-info{background:#e8dcba;padding:8px 18px;display:flex;gap:18px;font-size:11.5px;color:#5a4a2f;border-bottom:1px solid #b89050;flex-wrap:wrap}
+.mochila-info b{color:#1a2a45;font-family:'Cinzel',serif;font-weight:700}
+.mochila-lista{flex:1;overflow-y:auto;padding:14px 18px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;background:#efe4c8;align-content:start;align-items:start}
+.item-card{position:relative;background:linear-gradient(180deg,#f5ecd6,#efe4c8);border:2px solid #b89050;border-radius:4px;padding:12px 10px 8px;display:flex;flex-direction:column;gap:5px;overflow:hidden;min-width:0;box-shadow:0 2px 6px rgba(0,0,0,.08);align-self:start}
+.item-cab{display:flex;align-items:center;gap:8px;min-height:34px;flex-shrink:0}
+.item-emoji{line-height:1;flex-shrink:0;width:34px;height:34px;display:flex;align-items:center;justify-content:center;background:#141d33;border-radius:4px;border:1px solid #8a6a3a}
+.item-emoji .ic-svg{width:20px;height:20px;margin:0;vertical-align:0;color:#c9a050}
+.item-titulo{flex:1;min-width:0;overflow:hidden}
+.item-nome{font-family:'Cinzel',serif;font-weight:700;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;color:#1a2a45}
+.item-raridade{font-size:8px;text-transform:uppercase;letter-spacing:1.1px;font-weight:700;margin-top:1px;color:#6a6a6a}
+.item-info{font-size:9.5px;color:#5a4a2f;line-height:1.35;padding:4px 6px;background:rgba(184,144,80,.13);border-left:2px solid #b89050;border-radius:0 3px 3px 0;overflow:hidden}
+.item-info .linha{display:flex;justify-content:space-between;gap:6px;font-size:9.5px;white-space:nowrap}
+.item-info .linha + .linha{margin-top:1px}
+.item-info .linha span:first-child{color:#7a6a4a;font-size:9px;text-transform:uppercase;letter-spacing:.4px}
+.item-info .linha b{color:#1a2a45;font-family:'Cinzel',serif;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:60%}
+.item-acoes{display:flex;gap:4px;flex-shrink:0;margin-top:2px}
+.item-acoes button{flex:1;padding:4px;font-size:9px;font-weight:700;border:1px solid #8a6a3a;background:transparent;color:#8a6a3a;border-radius:3px;cursor:pointer;font-family:'Cinzel',serif;letter-spacing:.8px;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;justify-content:center;gap:3px}
+.item-acoes button .ic-svg{width:11px;height:11px;margin:0;vertical-align:0}
+.item-acoes button:hover{background:#141d33;color:#f4d07a;border-color:#141d33}
+.item-acoes button.usar{border-color:#3a6a2a;color:#3a6a2a}
+.item-acoes button.usar:hover{background:#3a6a2a;color:#fff;border-color:#3a6a2a}
+.item-acoes button.danger{flex:0 0 28px;border-color:#8a3a3a;color:#b83232;padding:4px 2px}
+.item-acoes button.danger:hover{background:#b83232;color:#fff}
+.item-qtd{position:absolute;top:8px;right:8px;background:#141d33;color:#f4d07a;font-family:'Cinzel',serif;font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:8px;border:1px solid #c9a050}
+.mochila-vazia{grid-column:1/-1;text-align:center;padding:40px 20px;color:#8a6a3a;font-style:italic;font-size:13px}
+.mochila-rodape{background:linear-gradient(180deg,#141d33,#0a0f1e);padding:10px 18px;display:flex;justify-content:space-between;align-items:center;border-top:2px solid #c9a050}
+.mochila-rodape .total-info{font-size:11px;color:#8a9ab0}
+.explorar-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;padding:24px}
+.card-cat{background:linear-gradient(180deg,#1a2438,#141d33);border:2px solid #c9a050;border-radius:6px;padding:24px 16px;cursor:pointer;text-align:center}
+.card-cat:hover{transform:translateY(-4px);box-shadow:0 12px 30px rgba(201,160,80,.3)}
+.card-cat .icone{font-size:42px;line-height:1;color:#c9a050;margin-bottom:14px;display:flex;align-items:center;justify-content:center}
+.card-cat .icone svg{width:44px;height:44px;display:block}
+.card-cat .titulo{font-family:'Cinzel',serif;font-weight:900;font-size:16px;letter-spacing:2px;color:#f5ecd6;margin-bottom:6px}
+.card-cat .sub{font-size:11px;color:#8a9ab0;font-style:italic;line-height:1.5}
+.card-cat .count{margin-top:10px;font-family:'Cinzel',serif;font-size:10px;letter-spacing:1.5px;color:#c9a050;font-weight:700}
+.lista-geral{padding:14px 20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;background:#0a0f1e;overflow-y:auto;flex:1;align-content:start}
+.conhec-card{background:linear-gradient(180deg,#1a2438,#141d33);border:2px solid #2a3550;border-radius:4px;padding:12px;position:relative;display:flex;flex-direction:column;gap:6px;min-height:130px}
+.conhec-card.aprendida{border-color:#c9a050;box-shadow:0 0 12px rgba(201,160,80,.35)}
+.conhec-card .cc-cab{display:flex;align-items:center;gap:8px}
+.conhec-card .cc-nivel{font-family:'Cinzel',serif;font-weight:900;font-size:11px;background:#c9a050;color:#111;padding:2px 8px;border-radius:10px;letter-spacing:1px}
+.conhec-card .cc-tipo{font-size:9px;letter-spacing:1px;color:#8a9ab0;text-transform:uppercase;font-weight:700}
+.conhec-card .cc-nome{font-family:'Cinzel',serif;font-weight:700;font-size:12.5px;color:#f5ecd6;line-height:1.2}
+.conhec-card .cc-desc{font-size:10.5px;color:#8a9ab0;line-height:1.45;flex:1}
+.conhec-card .cc-acao{margin-top:auto;padding-top:4px}
+.conhec-card .cc-acao button{width:100%;padding:6px;font-size:10px;font-weight:700;border:1px solid #c9a050;background:transparent;color:#c9a050;border-radius:3px;cursor:pointer;font-family:'Cinzel',serif;letter-spacing:1px;text-transform:uppercase}
+.conhec-card .cc-acao button:hover:not(:disabled){background:#c9a050;color:#111}
+.conhec-card .cc-acao button:disabled{opacity:.4;cursor:not-allowed;border-color:#2a3550;color:#4a5570}
+.btn-voltar-explorar{background:transparent;border:1px solid #2a3550;color:#8a9ab0;padding:4px 12px;border-radius:3px;font-family:'Cinzel',serif;font-weight:700;font-size:9px;letter-spacing:1.5px;cursor:pointer;text-transform:uppercase;margin-left:8px}
+.btn-voltar-explorar:hover{color:#c9a050;border-color:#c9a050}
+.confirm-box{background:#141d33;border:3px solid #b83232;border-radius:6px;width:100%;max-width:400px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.95);color:#f5ecd6}
+.confirm-box h3{font-family:'Cinzel',serif;font-weight:900;font-size:15px;color:#f87171;letter-spacing:2px;margin-bottom:12px;text-align:center}
+.confirm-box p{font-size:12px;text-align:center;line-height:1.6;margin-bottom:20px}
+.confirm-box p b{color:#c9a050;font-family:'Cinzel',serif}
+.confirm-acoes{display:flex;gap:10px}
+.confirm-acoes button{flex:1;padding:11px;border-radius:3px;font-family:'Cinzel',serif;font-weight:900;font-size:11px;letter-spacing:1.5px;cursor:pointer;text-transform:uppercase;border:none}
+.confirm-acoes .cancelar{background:transparent;border:1px solid #2a3550;color:#8a9ab0}
+.confirm-acoes .cancelar:hover{background:#2a3550;color:#f5ecd6}
+.confirm-acoes .confirmar{background:#b83232;color:#fff}
+.confirm-acoes .confirmar:hover{background:#8a2626}
+.confirm-acoes .confirmar.ok{background:#4a7a3a}
+.anot-modal-box{background:#efe4c8;border:3px solid #8a6a3a;border-radius:6px;width:100%;max-width:520px;color:#2b1f0f;overflow:hidden}
+.anot-modal-box .modal-cab{background:linear-gradient(180deg,#141d33,#0a0f1e);color:#f5ecd6}
+.anot-modal-box .modal-cab .fechar{border-color:#c9a050;color:#c9a050}
+.anot-modal-box .modal-cab .fechar:hover{background:#c9a050;color:#111}
+.anot-form{padding:20px}
+.anot-form label{display:block;font-family:'Cinzel',serif;font-weight:700;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#8a6a3a;margin-bottom:6px;margin-top:14px}
+.anot-form label:first-child{margin-top:0}
+.anot-form input,.anot-form textarea{width:100%;padding:10px 12px;background:#f5ecd6;border:1px solid #b89050;border-radius:3px;color:#1a2a45;font-family:'EB Garamond',serif;font-size:15px}
+.anot-form input:focus,.anot-form textarea:focus{outline:none;border-color:#8a6a3a;background:#fbf5e4}
+.anot-form textarea{resize:none;min-height:130px;line-height:1.5}
+.anot-contador{text-align:right;font-size:10px;color:#8a6a3a;margin-top:4px;font-family:'Cinzel',serif;letter-spacing:1px}
+.anot-acoes{padding:12px 20px;border-top:2px solid #b89050;background:#e8dcba;display:flex;gap:10px}
+.anot-acoes button{flex:1;padding:11px;border-radius:3px;font-family:'Cinzel',serif;font-weight:900;font-size:11px;letter-spacing:1.5px;cursor:pointer;text-transform:uppercase;border:none}
+.anot-acoes .cancelar{background:transparent;border:1px solid #8a6a3a;color:#8a6a3a}
+.anot-acoes .cancelar:hover{background:#8a6a3a;color:#f5ecd6}
+.anot-acoes .salvar{background:linear-gradient(180deg,#d4ad5a,#b89050);color:#111}
+.anot-acoes .salvar:disabled{opacity:.4;cursor:not-allowed}
+.anot-lista-modal{padding:14px 20px;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;background:#efe4c8;overflow-y:auto;max-height:65vh;align-content:start}
+.anot-card{background:#f5ecd6;border:1px solid #b89050;border-left:4px solid #c9a050;border-radius:3px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;cursor:pointer}
+.anot-card:hover{background:#f0e6c4}
+.anot-card .titulo{font-family:'Cinzel',serif;font-weight:700;font-size:12.5px;color:#1a2a45;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.anot-card .del{background:transparent;border:none;color:#8a6a3a;font-size:13px;cursor:pointer;padding:0 4px;line-height:1;flex-shrink:0;display:flex;align-items:center}
+.anot-card .del .ic-svg{width:12px;height:12px;margin:0;vertical-align:0}
+.anot-card .del:hover{color:#b83232}
+.anot-detalhe{padding:24px 28px;background:#f5ecd6;overflow-y:auto;max-height:65vh}
+.anot-detalhe h3{font-family:'Cinzel',serif;font-weight:900;font-size:18px;color:#1a2a45;letter-spacing:2px;margin-bottom:8px}
+.anot-detalhe .data{font-size:10px;color:#8a6a3a;font-family:'Cinzel',serif;letter-spacing:1px;margin-bottom:14px;font-style:italic;padding-bottom:10px;border-bottom:1px solid #d4be8e}
+.anot-detalhe .corpo{font-size:14px;color:#2b1f0f;line-height:1.75;white-space:pre-wrap;word-wrap:break-word;font-family:'EB Garamond',serif}
+.crop-box{background:#141d33;border:3px solid #c9a050;border-radius:6px;width:100%;max-width:900px;max-height:92vh;display:flex;flex-direction:column;color:#f5ecd6;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.95)}
+.crop-stage{flex:1;background:#0a0f1e;overflow:hidden;display:flex;align-items:center;justify-content:center;min-height:340px}
+.crop-stage img{max-width:100%;max-height:100%;display:block}
+.crop-acoes{background:linear-gradient(180deg,#0a0f1e,#000);padding:12px 20px;border-top:2px solid #c9a050;display:flex;gap:10px}
+.crop-acoes button{flex:1;padding:11px;border-radius:3px;font-family:'Cinzel',serif;font-weight:900;font-size:11px;letter-spacing:1.5px;cursor:pointer;text-transform:uppercase;border:none}
+.crop-acoes .cancelar{background:transparent;border:1px solid #2a3550;color:#8a9ab0}
+.crop-acoes .check{background:linear-gradient(180deg,#d4ad5a,#b89050);color:#111}
+@media (max-width:900px){
+  .cab{height:130px}.cab-logo-slot{width:140px;height:80px;top:12px;left:14px}
+  .info-bloco .nome{font-size:22px;letter-spacing:2px}.info-bloco .linha{font-size:11px}
+  .foto-heroi{max-width:160px;max-height:220px}.corpo{grid-template-columns:1fr}
+  .col{border-right:none;border-bottom:1px solid #c9a050}
+  .mochila-lista{grid-template-columns:repeat(3,1fr)}.slots-equip{grid-template-columns:repeat(4,1fr)}
+  .fab-inv{bottom:16px;right:16px;width:52px;height:52px}
+  .fab-inv .ic-svg{width:22px;height:22px}.moldura-canto{width:32px;height:32px}
+}
+@media (max-width:640px){.mochila-lista{grid-template-columns:repeat(2,1fr)}.info-bloco .nome[contenteditable="true"]{-webkit-user-select:text!important;user-select:text!important;touch-action:auto!important;pointer-events:auto!important;z-index:60}}
+@media (max-width:440px){
+  body{padding:0}.ficha{border-radius:0;border-left:0;border-right:0}
+  .info-bloco .nome{font-size:18px}.atr-val{font-size:16px}
+  .mochila-lista{grid-template-columns:1fr}.slots-equip{grid-template-columns:repeat(2,1fr)}
+  .modal-box,.anot-modal-box,.crop-box{max-height:100vh;border-radius:0;border:none}
+}
+/* ============ FICHA D&D 3.5 (modo SRD isolado) ============ */
+.ficha.dnd35-mode{width:min(1160px,calc(100% - 24px));max-width:1160px;margin:18px auto;border:1px solid #c9a050;border-radius:8px;background:#11151f;color:#f5ecd6;min-height:calc(100vh - 36px);padding:clamp(16px,3vw,34px)}
+.dnd35-page{max-width:1080px;margin:0 auto}
+.dnd35-header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;border-bottom:1px solid #6b532a;padding-bottom:16px;margin-bottom:18px}
+.dnd35-kicker{font-family:'Cinzel',serif;color:#c9a050;letter-spacing:2px;font-size:12px}
+.dnd35-header h1{font-family:'Cinzel',serif;font-size:clamp(24px,4vw,38px);margin:5px 0;color:#f5ecd6;overflow-wrap:anywhere}
+.dnd35-header p{color:#c7bda7;line-height:1.5}
+.dnd35-link{color:#e0b860;border:1px solid #8a6a3a;padding:10px 14px;border-radius:4px;text-decoration:none;font-family:'Cinzel',serif;font-weight:700;white-space:nowrap}
+.dnd35-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.dnd35-panel{background:rgba(20,29,51,.85);border:1px solid #3a4a65;border-radius:6px;padding:18px;min-width:0}
+.dnd35-panel h2{font-family:'Cinzel',serif;color:#c9a050;font-size:17px;letter-spacing:1px;margin:0 0 14px}
+.dnd35-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.dnd35-stat{background:#0a0f1e;border:1px solid #334155;border-radius:4px;padding:11px}
+.dnd35-stat small{display:block;color:#9aa7bd;font-family:'Cinzel',serif;font-size:10px;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.dnd35-stat strong{font-size:16px;color:#f5ecd6;overflow-wrap:anywhere}
+.dnd35-attrs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.dnd35-attr{background:#0a0f1e;border:1px solid #3a4a65;border-radius:5px;text-align:center;padding:12px 5px}
+.dnd35-attr small{display:block;color:#c9a050;font-family:'Cinzel',serif;font-size:11px;letter-spacing:1px}
+.dnd35-attr strong{display:block;font-family:'Cinzel',serif;font-size:24px;margin:4px 0}
+.dnd35-attr span{font-size:12px;color:#c7bda7}
+.dnd35-attr select{max-width:100%;margin:5px 0;padding:5px;background:#141d33;color:#f5ecd6;border:1px solid #8a6a3a;border-radius:3px}
+.dnd35-point-budget{margin:10px 0 0;color:#e0b860;font-family:'Cinzel',serif;font-weight:700;text-align:center}
+.dnd35-list{margin:0;padding-left:20px;line-height:1.6;color:#e2e8f0}
+.dnd35-note{margin-top:12px;color:#aeb9ca;font-size:13px;line-height:1.5}
+.dnd35-name-label{display:block;color:#c9a050;font-family:'Cinzel',serif;font-size:11px;letter-spacing:1px;margin:0 0 6px}
+.dnd35-name-input{width:100%;padding:11px 12px;background:#0a0f1e;border:1px solid #c9a050;border-radius:4px;color:#f5ecd6;font-size:17px;margin-bottom:12px}
+.dnd35-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:16px}
+.dnd35-save{background:linear-gradient(180deg,#d4ad5a,#b89050);border:0;border-radius:4px;padding:12px 20px;color:#111;font-family:'Cinzel',serif;font-weight:900;cursor:pointer}
+.dnd35-save:disabled{opacity:.55;cursor:wait}
+.dnd35-status{min-height:20px;color:#f87171;font-size:14px;align-self:center}
+.dnd35-hp{font-family:'Cinzel',serif;color:#f87171;font-weight:900;font-size:22px}
+.dnd35-tabs{display:flex;gap:8px;margin:18px 0 12px;border-bottom:1px solid #6b532a}
+.dnd35-tab{background:transparent;border:1px solid #8a6a3a;border-bottom:0;color:#c7bda7;padding:10px 16px;border-radius:5px 5px 0 0;font-family:'Cinzel',serif;font-weight:700;cursor:pointer}
+.dnd35-tab.active{background:#c9a050;color:#111}
+.dnd35-build-panel{background:rgba(20,29,51,.85);border:1px solid #3a4a65;border-radius:0 6px 6px;padding:16px;min-width:0}
+.dnd35-budget{color:#e0b860;font-family:'Cinzel',serif;font-weight:700;margin:0 0 10px}
+.dnd35-skill-list,.dnd35-feat-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr));gap:10px}
+.dnd35-skill,.dnd35-feat{background:#0a0f1e;border:1px solid #3a4a65;border-radius:5px;padding:12px;min-width:0}
+.dnd35-skill-head,.dnd35-feat-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.dnd35-skill strong,.dnd35-feat strong{font-family:'Cinzel',serif;color:#f5ecd6;font-size:13px}
+.dnd35-badge{color:#e0b860;border:1px solid #8a6a3a;border-radius:12px;padding:2px 7px;font-size:10px;white-space:nowrap;max-width:100%;box-sizing:border-box}
+.dnd35-skill p,.dnd35-feat p{margin:7px 0;color:#aeb9ca;font-size:12px;line-height:1.45}
+.dnd35-skill-control,.dnd35-feat-control{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px}
+.dnd35-skill-control label,.dnd35-feat-control label{font-size:11px;color:#c9a050;font-family:'Cinzel',serif}
+.dnd35-skill-control select,.dnd35-feat-control select,.dnd35-feat-control input{max-width:100%;min-width:0;padding:7px;background:#141d33;color:#f5ecd6;border:1px solid #8a6a3a;border-radius:3px}
+.dnd35-feat-control select{flex:1;min-width:180px}
+.dnd35-formula{color:#e0b860;font-size:11px;line-height:1.5;margin-top:8px}
+.dnd35-warning{color:#fca5a5;font-size:11px;margin-top:6px;line-height:1.45}
+.dnd35-readonly{color:#d1d5db;font-size:13px;line-height:1.6}
+.dnd35-readonly li{margin:4px 0}
+.dnd35-tab-panel[hidden]{display:none}
+@media(max-width:700px){.ficha.dnd35-mode{width:100%;min-height:100vh;margin:0;border-radius:0;border-left:0;border-right:0;padding:14px}.dnd35-grid{grid-template-columns:1fr}.dnd35-header{align-items:flex-start}.dnd35-header h1{font-size:25px}.dnd35-panel{padding:14px}.dnd35-attrs{grid-template-columns:repeat(3,minmax(0,1fr))}.dnd35-link{font-size:12px;padding:9px 10px}}
+
+/* Grimório SRD 3.5: pergaminho, moldura dourada e tinta azul-noite. */
+.dnd35-grimoire{grid-column:1/-1;background:#eee2c4;color:#17233a;border:1px solid #bc9650;border-radius:7px;box-shadow:inset 0 0 0 4px rgba(255,255,255,.18),0 8px 22px rgba(0,0,0,.25);padding:18px;position:relative;overflow:hidden;font-family:'EB Garamond',Georgia,serif}
+.dnd35-grimoire:before{content:"";position:absolute;inset:7px;border:1px solid rgba(138,106,58,.45);pointer-events:none}
+.dnd35-grimoire-head{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;position:relative}
+.dnd35-grimoire h2{font-family:'Cinzel',serif;color:#17233a;font-size:20px;letter-spacing:2px;margin:0 0 4px}
+.dnd35-grimoire p{line-height:1.45;margin:4px 0;color:#51432d}
+.dnd35-grimoire-kicker{font-family:'Cinzel',serif;letter-spacing:2px;color:#8a6a3a;font-size:10px;text-transform:uppercase}
+.dnd35-grimoire-btn,.dnd35-grimoire-action{background:#17233a;border:1px solid #bc9650;color:#f4d07a;padding:9px 14px;border-radius:4px;font-family:'Cinzel',serif;font-weight:700;letter-spacing:1px;cursor:pointer;position:relative}
+.dnd35-grimoire-btn:hover,.dnd35-grimoire-action:hover:not(:disabled){background:#263854}
+.dnd35-grimoire-action:disabled{opacity:.45;cursor:not-allowed}
+.dnd35-grimoire-ledger{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin-top:13px;position:relative}
+.dnd35-grimoire-ledger article{background:rgba(255,255,255,.34);border:1px solid #cbb583;border-radius:4px;padding:9px}
+.dnd35-grimoire-ledger b{font-family:'Cinzel',serif;color:#17233a;font-size:11px;display:block}
+.dnd35-grimoire-ledger span{color:#665638;font-size:14px}
+.dnd35-grimoire-modal{position:fixed;inset:0;z-index:120;background:rgba(3,7,15,.88);display:none;align-items:center;justify-content:center;padding:18px}
+.dnd35-grimoire-modal.open{display:flex}
+.dnd35-grimoire-box{width:min(1050px,100%);max-height:92vh;display:flex;flex-direction:column;background:#eee2c4;color:#17233a;border:3px solid #bc9650;border-radius:7px;box-shadow:0 22px 65px #000;overflow:hidden;font-family:'EB Garamond',Georgia,serif}
+.dnd35-grimoire-modalhead{background:#141d33;color:#f5ecd6;border-bottom:3px solid #c9a050;padding:13px 17px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.dnd35-grimoire-modalhead h2{font-family:'Cinzel',serif;font-size:19px;letter-spacing:2px;color:#f4d07a;margin:0}
+.dnd35-grimoire-close{background:transparent;border:1px solid #c9a050;color:#f4d07a;padding:5px 10px;border-radius:3px;cursor:pointer;font-family:'Cinzel',serif}
+.dnd35-grimoire-tools{display:flex;gap:8px;flex-wrap:wrap;padding:12px 16px;border-bottom:1px solid #c5ad7d;background:#e4d4ad}
+.dnd35-grimoire-tools input{flex:1;min-width:180px;padding:8px 10px;border:1px solid #8a6a3a;border-radius:3px;background:#fff8e8;color:#17233a;font:16px 'EB Garamond',serif}
+.dnd35-grimoire-body{overflow:auto;padding:14px 16px 18px}
+.dnd35-spell-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr));gap:10px}
+.dnd35-spell-card{background:rgba(255,250,235,.8);border:1px solid #b89050;border-radius:5px;padding:11px;box-shadow:0 2px 5px rgba(60,40,10,.1)}
+.dnd35-spell-card h3{font-family:'Cinzel',serif;color:#17233a;font-size:14px;margin:0 0 4px;line-height:1.25}
+.dnd35-spell-meta{color:#725d39;font-size:12px;line-height:1.4}
+.dnd35-spell-description{border-top:1px dashed #c5ad7d;margin-top:7px;padding-top:6px;color:#3f382b;font-size:14px;line-height:1.4;white-space:pre-wrap}
+.dnd35-spell-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;color:#51432d;font-size:13px}
+.dnd35-spell-controls label{display:flex;align-items:center;gap:5px}
+.dnd35-spell-controls select{background:#fff8e8;color:#17233a;border:1px solid #9b7d46;padding:4px;border-radius:3px}
+.dnd35-spell-line{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px dotted #ae9564;color:#3f382b}
+.dnd35-spell-line:last-child{border-bottom:0}
+.dnd35-spell-empty{background:rgba(255,255,255,.35);border:1px dashed #b89050;border-radius:4px;padding:14px;text-align:center;color:#665638}
+.dnd35-grimoire-status{min-height:20px;color:#783d2b;font-size:13px;margin-top:8px}
+.dnd35-grimoire-save{margin:12px 16px 15px;align-self:flex-end;background:linear-gradient(#d4ad5a,#b89050);border:1px solid #8a6a3a;color:#111;padding:10px 18px;border-radius:4px;font-family:'Cinzel',serif;font-weight:900;cursor:pointer}
+@media(max-width:600px){.dnd35-grimoire{padding:14px}.dnd35-grimoire-modal{padding:0}.dnd35-grimoire-box{max-height:100vh;height:100vh;border-radius:0;border-left:0;border-right:0}.dnd35-grimoire-modalhead h2{font-size:15px}}
+
+@media(max-width:460px){.dnd35-tabs{gap:4px}.dnd35-tab{flex:1;padding:10px 7px;font-size:11px}.dnd35-build-panel{padding:10px}.dnd35-attr{padding:10px 2px}.dnd35-attr strong{font-size:20px}.dnd35-skill-head,.dnd35-feat-head{flex-direction:column;align-items:flex-start}.dnd35-badge{white-space:normal;text-align:left;overflow-wrap:anywhere}.dnd35-skill-control select,.dnd35-feat-control select,.dnd35-feat-control input{width:100%}}
+</style>
+</head>
+<body>
+
+<div class="ficha" id="root"><div class="erro">Carregando ficha...</div></div>
+
+<div class="modal" id="inv-overlay"><div class="modal-box inv-theme" id="inv-box"></div></div>
+<div class="modal" id="explorar-overlay"><div class="modal-box" id="explorar-box"></div></div>
+<div class="modal" id="anot-overlay"><div class="anot-modal-box" id="anot-box"></div></div>
+<div class="modal" id="confirm-modal"><div class="confirm-box" id="confirm-box"></div></div>
+
+<div class="modal" id="crop-overlay">
+  <div class="crop-box">
+    <div class="modal-cab">
+      <h2 id="crop-titulo">Recortar fundo do cabecalho</h2>
+      <button class="fechar" id="crop-fechar">X</button>
+    </div>
+    <div class="crop-stage"><img id="crop-img" alt=""></div>
+    <div class="crop-acoes">
+      <button class="cancelar" id="crop-cancelar">Cancelar</button>
+      <button class="check" id="crop-confirmar">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.js"></script>
+<script>
+(function(){
+  var SUPABASE_URL = 'https://grrgwxcagvvafdmzsmro.supabase.co';
+  var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdycmd3eGNhZ3Z2YWZkbXpzbXJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyNTY4MTQsImV4cCI6MjEwNTgzMjgxNH0.hqLiYynGXHwyUtqcbGTTa2orSStm7ko2C5R03QNmqtQ';
+
+  var URL_PARAMS = new URLSearchParams(location.search);
+  var CHAR_ID = URL_PARAMS.get('char');
+  var MODE = URL_PARAMS.get('mode');
+  var CLASS_ID = URL_PARAMS.get('classe');
+  var RACE_ID = URL_PARAMS.get('raca');
+  var RULESET = URL_PARAMS.get('ruleset');
+  var IS_SRD_MODE = RULESET === 'dnd35';
+  var isCreationMode = (MODE === 'criar');
+  var ROLE = URL_PARAMS.get('role') || 'player';
+  var ehGM = ROLE === 'gm';
+
+  if (!isCreationMode && !CHAR_ID) {
+    document.getElementById('root').innerHTML = '<div class="erro" style="height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;"><h2>Ficha não encontrada</h2><p>Selecione um personagem na galeria.</p><br><a href="lobby.html" style="color:#8a6a3a;font-weight:bold;text-decoration:none;border:1px solid #8a6a3a;padding:10px 20px;border-radius:4px;">Voltar para Mesas</a></div>';
+    return;
+  }
+
+  if (isCreationMode && IS_SRD_MODE && (!CLASS_ID || !RACE_ID)) {
+    document.getElementById('root').innerHTML = '<div class="erro" style="height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:20px;text-align:center;"><h2>Raça ou classe não especificada</h2><p>Volte ao lobby e escolha raça e classe no Grimório.</p><br><a href="lobby.html" style="color:#8a6a3a;font-weight:bold;text-decoration:none;border:1px solid #8a6a3a;padding:10px 20px;border-radius:4px;">Voltar para o Lobby</a></div>';
+    return;
+  }
+
+  if (isCreationMode && !IS_SRD_MODE && !CLASS_ID) {
+    document.getElementById('root').innerHTML = '<div class="erro" style="height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;"><h2>Classe não especificada</h2><p>Volte ao lobby e escolha uma classe na estante.</p><br><a href="lobby.html" style="color:#8a6a3a;font-weight:bold;text-decoration:none;border:1px solid #8a6a3a;padding:10px 20px;border-radius:4px;">Voltar para Mesas</a></div>';
+    return;
+  }
+
+  var LOGO_VINCULO_URL = 'logo.png';
+
+  if (typeof supabase === 'undefined') {
+    document.getElementById('root').innerHTML = '<div class="erro">Biblioteca Supabase nao carregou.</div>';
+    return;
+  }
+  var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  var ATR = ['FOR','DES','CON','INT','SAB','CAR'];
+  var ROT = {FOR:'For',DES:'Des',CON:'Con',INT:'Int',SAB:'Sab',CAR:'Car'};
+  var MARCOS = [4,7,10,13,16,19];
+  var NOTA = {
+    escudeiro:'FOR sustenta armadura; CON sustenta PV', berserk:'FOR move furia; CON sustenta PV',
+    cavaleiro:'FOR e CON equilibrados', samurai:'DES move lamina; CON sustenta PV',
+    ranger:'DES move ataques a distancia', ladino:'DES move ataques e furtividade',
+    monge:'DES move golpes; SAB sustenta RM', mago:'INT sustenta PM e RM',
+    bardo:'CAR move inspiracao e magia', construtor:'INT sustenta PM e RM',
+    druida:'INT e SAB sao primarios', feiticeiro:'INT sustenta PM e RM',
+    sacerdorte:'INT sustenta PM e RM', santo:'INT sustenta PM e RM',
+    juiz:'INT sustenta PM e RM', nobre:'CAR move lideranca e magia'
+  };
+
+  var SVG_F = '<svg class="ic-svg" viewBox="0 0 24 24" fill="currentColor">';
+  var SVG_H = '<svg class="ic-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">';
+
+  var SVG = {
+    pv: SVG_F+'<path d="M12 21C12 21 4 15.5 4 9.5a4.5 4.5 0 0 1 8-2.8 4.5 4.5 0 0 1 8 2.8C20 15.5 12 21 12 21z"/></svg>',
+    pm: SVG_F+'<path d="M12 2C12 2 5 11 5 16a7 7 0 0 0 14 0C19 11 12 2 12 2z"/></svg>',
+    ca: SVG_F+'<path d="M12 2L4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5l-8-3z"/></svg>',
+    rm: SVG_F+'<path d="M12 2l2.9 6.9L22 9.3l-5.5 4.7L18.3 21 12 17.2 5.7 21l1.8-7L2 9.3l7.1-.4L12 2z"/></svg>',
+    ini: SVG_F+'<path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg>',
+    dsl: SVG_F+'<ellipse cx="8" cy="7" rx="3" ry="5"/><ellipse cx="16" cy="17" rx="3" ry="5"/></svg>',
+    cg: SVG_F+'<path d="M3 6l9-4 9 4v12l-9 4-9-4V6z"/></svg>',
+    arma: SVG_F+'<path d="M3 3l9 9-3 3-9-9V3h3zm18 0h-3l-9 9 3 3 9-9V3z"/></svg>',
+    armadura: SVG_F+'<path d="M8 3h8l3 4v13l-7 2-7-2V7l3-4z"/></svg>',
+    escudo: SVG_F+'<path d="M12 2L4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5l-8-3z"/></svg>',
+    acessorio: SVG_H+'<circle cx="12" cy="14" r="5"/><circle cx="12" cy="6" r="2"/></svg>',
+    mochila: SVG_F+'<path d="M6 8v10h12V8a6 6 0 0 0-12 0zm3 0V6a3 3 0 0 1 6 0v2"/></svg>',
+    montaria: SVG_F+'<path d="M4 20c0-5 3-9 8-9l3-3 2 3 2 1-1 2h-3c0 3-2 5-5 6H4z"/></svg>',
+    ouro: SVG_F+'<circle cx="12" cy="12" r="9"/></svg>',
+    anot: SVG_F+'<path d="M5 3h10l4 4v14H5z"/></svg>',
+    hab: SVG_F+'<path d="M3 3l9 9-3 3-9-9V3h3zm18 0h-3L9 12l3 3 9-9V3z"/></svg>',
+    tal: SVG_F+'<path d="M12 2l2.9 6.9L22 9.3l-5.5 4.7L18.3 21 12 17.2 5.7 21l1.8-7L2 9.3l7.1-.4L12 2z"/></svg>',
+    mag: SVG_F+'<path d="M12 2l1.5 5.5L19 9l-5.5 1.5L12 16l-1.5-5.5L5 9l5.5-1.5L12 2z"/></svg>',
+    rec: SVG_F+'<path d="M4 8h16v12H4zM8 8V6a4 4 0 0 1 8 0v2"/></svg>',
+    cons: SVG_F+'<path d="M9 3h6v4l3 5v9H6v-9l3-5V3z"/></svg>',
+    ger: SVG_F+'<path d="M3 6l9-4 9 4v12l-9 4-9-4V6z"/></svg>',
+    lix: SVG_F+'<path d="M6 6h12l-1 15H7zM9 6V4h6v2z"/></svg>',
+    foto: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-5 4-8 8-8s8 3 8 8"/></svg>'
+  };
+
+  var GLIF = {
+    vitalidade: '<svg class="secao-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21C12 21 4 15.5 4 9.5a4.5 4.5 0 0 1 8-2.8 4.5 4.5 0 0 1 8 2.8C20 15.5 12 21 12 21z"/><path d="M12 9v6M9 12h6"/></svg>',
+    defesas: '<svg class="secao-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L4 5v6c0 5 3.5 9 8 11 4.5-2 8-6 8-11V5l-8-3z"/><path d="M9 12l2 2 4-4"/></svg>',
+    pericias: '<svg class="secao-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12c4-6 8-8 10-8s6 2 10 8c-4 6-8 8-10 8s-6-2-10-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+    conhecimento: '<svg class="secao-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5c3-1 6 0 9 2 3-2 6-3 9-2v14c-3-1-6 0-9 2-3-2-6-3-9-2V5z"/><path d="M12 7v14"/></svg>',
+    atributos: '<svg class="secao-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L20 12 12 22 4 12z"/><path d="M12 6v12M6 12h12"/></svg>',
+    ataques: '<svg class="secao-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l16 16M20 4L4 20"/><path d="M14 18l6 2M18 14l2 6M4 18l6 2M2 14l2 6"/></svg>',
+    equipamento: '<svg class="secao-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="13" rx="1"/><path d="M3 12h18M8 8V6a4 4 0 0 1 8 0v2"/></svg>',
+    anotacoes: '<svg class="secao-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h11l3 3v13H5z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>'
+  };
+
+  var CANTO_SVG = '<svg viewBox="0 0 44 44" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2 L2 14 M2 2 L14 2"/><path d="M6 6 L6 12 M6 6 L12 6"/><path d="M2 18 Q 6 10 14 6"/><path d="M18 2 Q 10 6 6 14" opacity="0.5"/><circle cx="9" cy="9" r="1.6" fill="currentColor" stroke="none"/><path d="M14 4 Q 20 8 18 14 Q 16 10 12 10 Z" fill="currentColor" stroke="none" opacity="0.35"/></svg>';
+
+  var ARCO_SVG = '<svg viewBox="0 0 1200 40" preserveAspectRatio="none" fill="none" stroke="#c9a050" stroke-width="1.2" stroke-linecap="round"><path d="M0 36 Q 200 6 600 8 Q 1000 6 1200 36" opacity="0.75"/><path d="M600 8 L590 0 M600 8 L610 0" stroke-width="1.6"/><circle cx="600" cy="8" r="2.2" fill="#c9a050" stroke="none"/><circle cx="300" cy="18" r="1.5" fill="#c9a050" stroke="none"/><circle cx="900" cy="18" r="1.5" fill="#c9a050" stroke="none"/><circle cx="150" cy="28" r="1.2" fill="#c9a050" stroke="none"/><circle cx="1050" cy="28" r="1.2" fill="#c9a050" stroke="none"/></svg>';
+
+  var E = {
+    PV: SVG.pv, PM: SVG.pm, CA: SVG.ca, RM: SVG.rm, INI: SVG.ini, DSL: SVG.dsl, CG: SVG.cg,
+    ARMA: SVG.arma, ARMADURA: SVG.armadura, ESCUDO: SVG.escudo, MOCHILA: SVG.mochila,
+    MONTARIA: SVG.montaria, ACESSORIO: SVG.acessorio, OURO: SVG.ouro, ANOT: SVG.anot,
+    HAB: SVG.hab, TAL: SVG.tal, MAG: SVG.mag, REC: SVG.rec, CONS: SVG.cons, GER: SVG.ger, LIX: SVG.lix, FOTO: SVG.foto
+  };
+
+  var CULT = {Central:'Altherra',Oriental:'Nippu-Jin',Neves:'Joldeheim',Sadir:'Sahdir',Sahan:'Sahan'};
+  var ARM_CA = {sem_armadura:0,acolchoada:3,couro:3,'couro-batido':3,peles:5,'cota-de-malha':5,peitoral:5,'meia-armadura':5,'cota-de-aneis':7,'armadura-de-placas':7,'armadura-completa':7};
+  var ESC_CA = {'escudo-leve':1,escudo:2,'escudo-pesado':3};
+  var ARM_DESL = {peles:-1,'cota-de-malha':-1,peitoral:-1,'meia-armadura':-1,'cota-de-aneis':-2,'armadura-de-placas':-2,'armadura-completa':-2};
+  var ESC_DESL = {'escudo-pesado':-1};
+  var CURA_FALLBACK = {'pocao-pequena':'2d4+2','pocao-media':'3d6+3','pocao-grande':'4d8+4','pocao-suprema':'5d10+5'};
+  var SLOTS = [
+    {key:'arma',label:'Mao princ.',cat:'arma'},{key:'escudo',label:'Secundaria',cat:'escudo'},
+    {key:'armadura',label:'Armadura',cat:'armadura'},{key:'acessorio1',label:'Acess. 1',cat:'acessorio'},
+    {key:'acessorio2',label:'Acess. 2',cat:'acessorio'},{key:'mochila',label:'Mochila',cat:'mochila'},
+    {key:'montaria',label:'Montaria',cat:'montaria'}
+  ];
+  var CATS_EQUIP = ['arma','armadura','escudo','acessorio','mochila','montaria'];
+  var CATS_USE = ['consumivel','recurso'];
+
+  var dados = null;
+  var fichaSRD35 = null;
+  var inventario = [];
+  var notas = [];
+  var talents = [], spells = [], meusTalents = [], minhasSpells = [];
+  var distribuicao = {FOR:0,DES:0,CON:0,INT:0,SAB:0,CAR:0};
+  var fEditor = {el:null, img:null, handle:null, arrastando:false, redimensionando:false, sx:0, sy:0, spx:0, spy:0, sw:0, sh:0};
+  var cropState = { resolve:null };
+  var cropperInstance = null;
+
+  function nivelXP(xp){ if(!xp || xp<=0) return 1; var n = Math.floor((1+Math.sqrt(1+xp/125))/2); return Math.max(1, Math.min(20, n)); }
+  function xpNivel(n){ return 500*(n-1)*n; }
+  function pontosDevidos(n){ return 15 + 3*(n-1); }
+  function ehMarco(n){ return MARCOS.indexOf(n) >= 0; }
+  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+  function normalizarCat(c){ var s = String(c||'geral').toLowerCase().trim(); if (s.indexOf('acess') === 0) return 'acessorio'; if (s.indexOf('consum') === 0) return 'consumivel'; if (s.indexOf('mont') === 0) return 'montaria'; if (s.indexOf('recurs') === 0) return 'recurso'; return s; }
+  function emojiCat(cat){ if (cat === 'arma') return E.ARMA; if (cat === 'armadura') return E.ARMADURA; if (cat === 'escudo') return E.ESCUDO; if (cat === 'mochila') return E.MOCHILA; if (cat === 'montaria') return E.MONTARIA; if (cat === 'acessorio') return E.ACESSORIO; if (cat === 'consumivel') return E.CONS; if (cat === 'recurso') return E.REC; return E.GER; }
+  function getCura(i){ if (i.dados && i.dados.cura) return i.dados.cura; if (CURA_FALLBACK[i.item_id]) return CURA_FALLBACK[i.item_id]; return null; }
+  function ehEquipavel(i){ return CATS_EQUIP.indexOf(i.categoria) >= 0; }
+  function ehUsavel(i){ return CATS_USE.indexOf(i.categoria) >= 0; }
+
+  function calcularPendentes(){
+    var nivel = isCreationMode ? 1 : nivelXP(dados.ch.xp);
+    var devidos = pontosDevidos(nivel);
+    var atual = ATR.reduce(function(s,k){ return s + ((dados.sh.atributos||{})[k]||0); }, 0);
+    return { nivel:nivel, devidos:devidos, atual:atual, faltam: devidos-atual };
+  }
+
+  function itensEquipadosPorSlot(){
+    var r = {arma:null,escudo:null,armadura:null,acessorio1:null,acessorio2:null,mochila:null,montaria:null};
+    var acess = [];
+    inventario.forEach(function(i){
+      if (!i.equipado) return;
+      if (i.categoria === 'arma' && !r.arma) r.arma = i;
+      else if (i.categoria === 'escudo' && !r.escudo) r.escudo = i;
+      else if (i.categoria === 'armadura' && !r.armadura) r.armadura = i;
+      else if (i.categoria === 'acessorio') acess.push(i);
+      else if (i.categoria === 'mochila' && !r.mochila) r.mochila = i;
+      else if (i.categoria === 'montaria' && !r.montaria) r.montaria = i;
+    });
+    r.acessorio1 = acess[0] || null; r.acessorio2 = acess[1] || null;
+    return r;
+  }
+
+  function bonusAcessorios(eqp){
+    var b = {ca:0,rm:0,pv:0,pm:0,desl:0};
+    [eqp.acessorio1, eqp.acessorio2].forEach(function(a){
+      if (!a || !a.dados) return;
+      b.ca += Number(a.dados.bonus_ca) || 0; b.rm += Number(a.dados.bonus_rm) || 0;
+      b.pv += Number(a.dados.bonus_pv) || 0; b.pm += Number(a.dados.bonus_pm) || 0;
+      b.desl += Number(a.dados.bonus_desl) || 0;
+    });
+    return b;
+  }
+
+  function bonusMontaria(eqp){
+    if (!eqp.montaria) return { desl:0, cg:0 };
+    var d = eqp.montaria.dados || {};
+    if (d.deslocamento_bonus != null || d.capacidade_bonus != null) return { desl: Number(d.deslocamento_bonus) || 0, cg: Number(d.capacidade_bonus) || 0 };
+    var n = (eqp.montaria.nome || '').toLowerCase();
+    if (n.indexOf('cavalo')>=0) return { desl:4, cg:30 };
+    if (n.indexOf('pônei')>=0 || n.indexOf('ponei')>=0) return { desl:2, cg:15 };
+    if (n.indexOf('mula')>=0) return { desl:1, cg:40 };
+    if (n.indexOf('camelo')>=0) return { desl:2, cg:30 };
+    return { desl:3, cg:20 };
+  }
+
+  function capacidadeCarga(atr, eqp){
+    var base = 10 + 2*(atr.FOR||0);
+    if (eqp.mochila){ var bonus = (eqp.mochila.dados && eqp.mochila.dados.capacidade_bonus) || 10; base += bonus; }
+    base += bonusMontaria(eqp).cg;
+    return base;
+  }
+
+  function calc(){
+    var ch=dados.ch, sh=dados.sh, cl=dados.cl, atr=sh.atributos||{};
+    var nv = isCreationMode ? 1 : nivelXP(ch.xp);
+    var eqp = itensEquipadosPorSlot();
+    var armId = eqp.armadura ? eqp.armadura.item_id : null;
+    var escId = eqp.escudo ? eqp.escudo.item_id : null;
+    var caArm = armId ? (ARM_CA[armId] || 0) : 0;
+    var caEsc = escId ? (ESC_CA[escId] || 0) : 0;
+    var deslArm = armId ? (ARM_DESL[armId] || 0) : 0;
+    var deslEsc = escId ? (ESC_DESL[escId] || 0) : 0;
+    var ac = bonusAcessorios(eqp);
+    var mt = bonusMontaria(eqp);
+    return {
+      nivel: nv, baseXP: xpNivel(nv), proxXP: xpNivel(nv+1),
+      pvMax: (cl.pv||0) + 2*(atr.CON||0) + ac.pv,
+      pmMax: (cl.pm||0) + (atr.INT||0) + ac.pm,
+      ca: caArm + caEsc + (atr.DES||0) + nv + (sh.bonus_ca||0) + ac.ca,
+      rm: (cl.rm||0) + (atr.INT||0) + (sh.bonus_rm||0) + ac.rm,
+      ini: 10 + (atr.DES||0),
+      dsl: (cl.desl||0) + (atr.DES||0) + deslArm + deslEsc + ac.desl + mt.desl,
+      cg: capacidadeCarga(atr, eqp),
+      caArm:caArm, caEsc:caEsc, deslArm:deslArm, deslEsc:deslEsc,
+      armId:armId, escId:escId, eqp:eqp, ac:ac, mt:mt
+    };
+  }
+
+  function tipoArma(arma){
+    if (!arma) return 'corpo';
+    var d = arma.dados || {};
+    var n = String(arma.nome||'').toLowerCase();
+    var props = String(d.propriedades || d.tipo || '').toLowerCase();
+    if (d.empunhadura) return d.empunhadura;
+    if (props.indexOf('distância')>=0 || props.indexOf('distancia')>=0) return 'distancia';
+    if (props.indexOf('magia')>=0 || props.indexOf('arcano')>=0) return 'magia';
+    if (/arco|besta|dardo|funda|zarabatana|shuriken|arremesso|rede/.test(n)) return 'distancia';
+    if (/cajado|varinha|cetro|orbe|tomo|grimorio|reliquia|simbolo|totem/.test(n)) return 'magia';
+    return 'corpo';
+  }
+
+  function infoAtaques(){
+    var atr = dados.sh.atributos||{};
+    var arma = itensEquipadosPorSlot().arma;
+    var t = tipoArma(arma);
+    var linhas = [];
+    var l1 = { tipo:'Corpo a corpo', ataque:'1d20 + FOR ('+(atr.FOR||0)+')', dano:'', nota:'' };
+    if (arma && t === 'corpo'){ l1.dano = (arma.dano || '1d6') + ' ' + (arma.tipoDano || 'Impacto'); l1.nota = arma.nome; }
+    linhas.push(l1);
+    var l2 = { tipo:'A distancia', ataque:'1d20 + DES ('+(atr.DES||0)+')', dano:'', nota:'' };
+    if (arma && t === 'distancia'){ l2.dano = (arma.dano || '1d6') + ' ' + (arma.tipoDano || 'Perfurante'); l2.nota = arma.nome; }
+    linhas.push(l2);
+    var l3 = { tipo:'Magia', ataque:'1d20 + INT ('+(atr.INT||0)+')', dano:'', nota:'' };
+    if (arma && t === 'magia'){ l3.dano = (arma.dano || '1d8') + ' ' + (arma.tipoDano || 'Arcano'); l3.nota = arma.nome; }
+    linhas.push(l3);
+    return linhas;
+  }
+
+  function tituloSecao(glifo, texto, extra){
+    return '<div class="secao-titulo"><span class="rot"><span class="secao-glifo">'+glifo+'</span>'+texto+'</span>'+(extra||'')+'</div>';
+  }
+
+  function molduraCantosHTML(){
+    return '<span class="moldura-canto tl">'+CANTO_SVG+'</span><span class="moldura-canto tr">'+CANTO_SVG+'</span><span class="moldura-canto bl">'+CANTO_SVG+'</span><span class="moldura-canto br">'+CANTO_SVG+'</span>';
+  }
+
+  function infoBlocoHTML(){
+    var ch=dados.ch, sh=dados.sh, cl=dados.cl;
+    var m = calc();
+    var H = '<div class="info-bloco">';
+    if (isCreationMode) {
+      H += '<div class="nome" contenteditable="true" id="input-nome" oninput="window.__dados_ch_nome(this.innerText)" spellcheck="false">'+esc(ch.nome)+'</div>';
+      H += '<div class="linha">'+esc(cl.nome)+' &middot; Nivel <b>1</b> &middot; Cultura ';
+      H += '<select id="input-cultura" class="select-cultura" onchange="window.__dados_ch_cultura(this.value)">';
+      Object.keys(CULT).forEach(function(k){ H += '<option value="'+k+'" '+(ch.cultura===k?'selected':'')+'>'+CULT[k]+'</option>'; });
+      H += '</select></div>';
+    } else {
+      var cult = CULT[ch.cultura]||ch.cultura;
+      H += '<div class="nome">'+esc(ch.nome)+'</div>';
+      H += '<div class="linha">'+esc(cl.nome)+' &middot; Nivel <b>'+m.nivel+'</b> &middot; Cultura '+esc(cult)+'</div>';
+      H += '<div class="xp-pill">XP '+(ch.xp||0)+' / '+m.proxXP+'</div>';
+    }
+    H += '</div>';
+    return H;
+  }
+
+  window.__dados_ch_nome = function(v){ if(dados) dados.ch.nome = v; };
+  window.__dados_ch_cultura = function(v){ if(dados) dados.ch.cultura = v; };
+
+  function fotoHTML(){
+    var ch = dados.ch; var ft = ch.foto_transform || {}; var hasFoto = !!ch.retrato_url;
+    var px = (ft.px != null) ? ft.px : 260; var py = (ft.py != null) ? ft.py : 240;
+    var w  = (ft.w  != null) ? ft.w  : 240; var h  = (ft.h  != null) ? ft.h  : 340;
+    var H = '<div class="foto-heroi" id="foto-heroi" style="left:'+px+'px;top:'+py+'px;width:'+w+'px;height:'+h+'px">';
+    if (hasFoto){
+      H += '<img id="foto-img" src="'+esc(ch.retrato_url)+'" alt="Foto"><div class="foto-handle" id="foto-handle"></div>';
+      H += '<div class="foto-acoes"><button data-foto="trocar">Trocar</button><button data-foto="editar">Ajustar</button><button class="confirmar" data-foto="salvar" style="display:none">Salvar</button></div>';
+    } else {
+      H += '<div class="foto-hint" id="foto-hint">'+SVG.foto+'<span>ADICIONAR FOTO</span></div>';
+    }
+    H += '</div>';
+    return H;
+  }
+
+  function ligarFoto(){
+    var el = document.getElementById('foto-heroi'); if (!el) return;
+    fEditor.el = el;
+    fEditor.img = document.getElementById('foto-img');
+    fEditor.handle = document.getElementById('foto-handle');
+    var hint = document.getElementById('foto-hint'); if (hint) hint.onclick = abrirPickerFoto;
+    el.querySelectorAll('[data-foto]').forEach(function(b){
+      b.onclick = function(ev){
+        ev.stopPropagation();
+        var acao = b.dataset.foto;
+        if (acao === 'trocar') abrirPickerFoto();
+        else if (acao === 'editar') entrarModoEdicao();
+        else if (acao === 'salvar') sairModoEdicao();
+      };
+    });
+    if (fEditor.el){ fEditor.el.addEventListener('mousedown', onFotoDrag); fEditor.el.addEventListener('touchstart', onFotoDrag, {passive:false}); }
+    if (fEditor.handle){ fEditor.handle.addEventListener('mousedown', onFotoResize); fEditor.handle.addEventListener('touchstart', onFotoResize, {passive:false}); }
+    document.addEventListener('mousemove', onFotoMove);
+    document.addEventListener('touchmove', onFotoMove, {passive:false});
+    document.addEventListener('mouseup', onFotoUp);
+    document.addEventListener('touchend', onFotoUp);
+    posicionarHandle();
+  }
+
+  function entrarModoEdicao(){ if (!fEditor.el) return; fEditor.el.classList.add('editando'); var s = fEditor.el.querySelector('[data-foto="salvar"]'); var e = fEditor.el.querySelector('[data-foto="editar"]'); if (s) s.style.display = ''; if (e) e.style.display = 'none'; }
+  function sairModoEdicao(){ if (!fEditor.el) return; fEditor.el.classList.remove('editando'); var s = fEditor.el.querySelector('[data-foto="salvar"]'); var e = fEditor.el.querySelector('[data-foto="editar"]'); if (s) s.style.display = 'none'; if (e) e.style.display = ''; salvarFotoTransform(); }
+  function posicionarHandle(){ if (!fEditor.el || !fEditor.handle) return; var w = fEditor.el.offsetWidth; var h = fEditor.el.offsetHeight; fEditor.handle.style.left = (w - 8) + 'px'; fEditor.handle.style.top = (h - 8) + 'px'; }
+  function onFotoDrag(e){ if (!fEditor.el || !fEditor.el.classList.contains('editando') || e.target === fEditor.handle) return; e.preventDefault(); var p = ponto(e); fEditor.arrastando = true; fEditor.sx = p.x; fEditor.sy = p.y; fEditor.spx = parseFloat(fEditor.el.style.left) || 0; fEditor.spy = parseFloat(fEditor.el.style.top) || 0; }
+  function onFotoResize(e){ if (!fEditor.el || !fEditor.el.classList.contains('editando')) return; e.preventDefault(); e.stopPropagation(); var p = ponto(e); fEditor.redimensionando = true; fEditor.sx = p.x; fEditor.sy = p.y; fEditor.sw = fEditor.el.offsetWidth; fEditor.sh = fEditor.el.offsetHeight; }
+  function onFotoMove(e){
+    if (!fEditor.arrastando && !fEditor.redimensionando) return;
+    e.preventDefault();
+    var p = ponto(e); var dx = p.x - fEditor.sx; var dy = p.y - fEditor.sy;
+    if (fEditor.arrastando){ fEditor.el.style.left = (fEditor.spx + dx) + 'px'; fEditor.el.style.top = (fEditor.spy + dy) + 'px'; }
+    else if (fEditor.redimensionando){ fEditor.el.style.width = Math.max(80, fEditor.sw + dx) + 'px'; fEditor.el.style.height = Math.max(80, fEditor.sh + dy) + 'px'; }
+    posicionarHandle();
+  }
+  function onFotoUp(){
+    if (!fEditor.arrastando && !fEditor.redimensionando) return;
+    fEditor.arrastando = false; fEditor.redimensionando = false;
+    if (fEditor.el && dados){
+      dados.ch.foto_transform = {
+        px: Math.round(parseFloat(fEditor.el.style.left) || 0),
+        py: Math.round(parseFloat(fEditor.el.style.top) || 0),
+        w: Math.round(fEditor.el.offsetWidth),
+        h: Math.round(fEditor.el.offsetHeight)
+      };
+    }
+  }
+  function ponto(e){ if (e.touches && e.touches[0]) return {x:e.touches[0].clientX, y:e.touches[0].clientY}; return {x:e.clientX, y:e.clientY}; }
+
+  function abrirPickerFoto(){
+    var inp = document.createElement('input');
+    inp.type = 'file';
+    inp.accept = 'image/png,image/*';
+    inp.onchange = async function(){
+      var f = inp.files[0]; if (!f) return;
+      var ext = (f.name.split('.').pop() || 'png').toLowerCase();
+      var path = isCreationMode ? 'retratos/temp-'+Date.now()+'.'+ext : 'retratos/'+CHAR_ID+'-foto-'+Date.now()+'.'+ext;
+      var up = await sb.storage.from('midia').upload(path, f, { upsert: true, contentType: f.type });
+      if (up.error){ alert('Erro: '+up.error.message); return; }
+      var url = sb.storage.from('midia').getPublicUrl(path).data.publicUrl;
+      var fichaEl = document.querySelector('.ficha');
+      var fw = fichaEl ? fichaEl.clientWidth : 1100;
+      var w = 240, h = 340;
+      var px = Math.round((fw - w) / 2 + 200); var py = 40;
+      if (px + w > fw - 20) px = fw - w - 20;
+      if (px < 20) px = 20;
+      var transform = { px:px, py:py, w:w, h:h };
+      if (!isCreationMode) {
+        await sb.from('characters').update({ retrato_url: url, foto_transform: transform }).eq('id', CHAR_ID);
+      }
+      dados.ch.retrato_url = url;
+      dados.ch.foto_transform = transform;
+      render();
+      setTimeout(entrarModoEdicao, 80);
+    };
+    inp.click();
+  }
+
+  async function salvarFotoTransform(){
+    if (!fEditor.el) return;
+    var px = Math.round(parseFloat(fEditor.el.style.left) || 0);
+    var py = Math.round(parseFloat(fEditor.el.style.top) || 0);
+    var w  = Math.round(fEditor.el.offsetWidth);
+    var h  = Math.round(fEditor.el.offsetHeight);
+    var transform = { px:px, py:py, w:w, h:h };
+    dados.ch.foto_transform = transform;
+    if (!isCreationMode) {
+      await sb.from('characters').update({ foto_transform: transform }).eq('id', CHAR_ID);
+    }
+  }
+
+  function render(){
+    if (!dados) return;
+    var ch=dados.ch, sh=dados.sh, cl=dados.cl, ab=dados.ab||[], atr=sh.atributos||{};
+    var m = calc();
+    var nota = NOTA[sh.classe] || '';
+    var pcs = sh.pericias||{};
+    var listaP = Object.keys(pcs).map(function(k){ var v=pcs[k]||{}; return {n:k,a:v.atributo,o:v.origem,b:v.bonus||2}; });
+    
+    // LISTA PADRÃO SE NÃO HOUVER PERÍCIAS DEFINIDAS
+    if (listaP.length === 0) {
+      listaP = [
+        {n:'Acrobacia', a:'DES', o:'Geral', b:'+2'}, {n:'Adestramento', a:'CAR', o:'Geral', b:'+2'},
+        {n:'Atletismo', a:'FOR', o:'Geral', b:'+2'}, {n:'Atuação', a:'CAR', o:'Geral', b:'+2'},
+        {n:'Enganação', a:'CAR', o:'Geral', b:'+2'}, {n:'Furtividade', a:'DES', o:'Geral', b:'+2'},
+        {n:'História', a:'INT', o:'Geral', b:'+2'}, {n:'Intimidação', a:'CAR', o:'Geral', b:'+2'},
+        {n:'Intuição', a:'SAB', o:'Geral', b:'+2'}, {n:'Investigação', a:'INT', o:'Geral', b:'+2'},
+        {n:'Medicina', a:'SAB', o:'Geral', b:'+2'}, {n:'Natureza', a:'INT', o:'Geral', b:'+2'},
+        {n:'Percepção', a:'SAB', o:'Geral', b:'+2'}, {n:'Persuasão', a:'CAR', o:'Geral', b:'+2'},
+        {n:'Prestidigitação', a:'DES', o:'Geral', b:'+2'}, {n:'Religião', a:'INT', o:'Geral', b:'+2'},
+        {n:'Sobrevivência', a:'SAB', o:'Geral', b:'+2'}
+      ];
+    }
+
+    var pend = calcularPendentes();
+    var teto = Math.max(3, 2 * pend.nivel);
+    var marcador = ehMarco(pend.nivel);
+    var mostrandoDist = pend.faltam > 0 || isCreationMode;
+    var ataques = infoAtaques();
+    var eqp = m.eqp;
+    var pesoTotal = inventario.reduce(function(s,i){ return s + (parseFloat(i.peso)||0) * (i.qtd||1); }, 0);
+    var disponiveis = inventario.filter(function(i){ return !i.equipado; }).length;
+    var abAtivas = ab.filter(function(h){ return h.nivel <= m.nivel; });
+    var notasResumo = notas.slice(0, 4);
+    var temBg = !!ch.header_bg_url;
+
+    var H = ''; H += molduraCantosHTML();
+    H += '<header class="cab'+(temBg?' tem-bg':'')+'" id="cab-el"'+(temBg ? ' style="background-image:url('+esc(ch.header_bg_url)+')"' : '')+'>';
+    H += '<div class="cab-arco">'+ARCO_SVG+'</div><div class="cab-logo-slot"><img src="'+esc(LOGO_VINCULO_URL)+'" alt="Vinculo"></div></header>';
+
+    if (mostrandoDist && !isCreationMode){ H += '<div class="levelup-flag">SUBIR DE NIVEL - DISTRIBUIR '+pend.faltam+' PONTO'+(pend.faltam>1?'S':'')+'</div>'; }
+
+    H += '<div class="corpo"><div class="col">';
+
+    H += '<section class="secao">'+tituloSecao(GLIF.vitalidade,'Vitalidade');
+    H += '<div class="secao-corpo"><table class="tab vit">';
+    H += '<thead><tr><th>Recurso</th><th>Max</th><th>Formula</th></tr></thead><tbody>';
+    H += '<tr><td>'+E.PV+' PV maximo</td><td>'+m.pvMax+'</td><td>'+(cl.pv||0)+' + 2xCON '+(atr.CON||0)+(m.ac.pv ? ' + acess. '+m.ac.pv : '')+'</td></tr>';
+    H += '<tr><td>'+E.PM+' PM maximo</td><td>'+m.pmMax+'</td><td>'+(cl.pm||0)+' + INT '+(atr.INT||0)+(m.ac.pm ? ' + acess. '+m.ac.pm : '')+'</td></tr>';
+    H += '</tbody></table></div></section>';
+
+    H += '<section class="secao">'+tituloSecao(GLIF.defesas,'Defesas e Movimento');
+    H += '<div class="secao-corpo"><table class="tab def"><tbody>';
+    H += '<tr><td>'+E.CA+' CA</td><td>'+m.ca+'</td>';
+    var caParts = [];
+    if (m.armId) caParts.push(esc(m.armId)+' '+m.caArm);
+    if (m.escId) caParts.push('esc '+esc(m.escId)+' '+m.caEsc);
+    caParts.push('DES '+(atr.DES||0)); caParts.push('nv '+m.nivel);
+    if (m.ac.ca) caParts.push('acess. +'+m.ac.ca);
+    H += '<td>'+caParts.join(' + ')+'</td></tr>';
+    H += '<tr><td>'+E.RM+' RM</td><td>'+m.rm+'</td><td>Base '+(cl.rm||0)+' + INT '+(atr.INT||0)+(m.ac.rm ? ' + acess. '+m.ac.rm : '')+'</td></tr>';
+    H += '<tr><td>'+E.INI+' Iniciativa</td><td>'+m.ini+'</td><td>10 + DES '+(atr.DES||0)+'</td></tr>';
+    var dslParts = ['Base '+(cl.desl||0)];
+    if (atr.DES) dslParts.push('DES '+atr.DES);
+    if (m.deslArm) dslParts.push('armadura '+m.deslArm);
+    if (m.deslEsc) dslParts.push('escudo '+m.deslEsc);
+    if (m.ac.desl) dslParts.push('acess. '+m.ac.desl);
+    if (m.mt.desl) dslParts.push('montaria '+m.mt.desl);
+    H += '<tr><td>'+E.DSL+' Desloc.</td><td>'+m.dsl+' m</td><td>'+dslParts.join(' + ')+'</td></tr>';
+    var cgParts = ['10 + 2xFOR '+(atr.FOR||0)];
+    if (eqp.mochila) cgParts.push('mochila');
+    if (m.mt.cg) cgParts.push('montaria '+m.mt.cg);
+    H += '<tr><td>'+E.CG+' Carga</td><td>'+m.cg+'</td><td>'+cgParts.join(' + ')+'</td></tr>';
+    H += '</tbody></table></div></section>';
+
+    H += '<section class="secao">'+tituloSecao(GLIF.pericias,'Pericias','<small>+2 - d20 + atributo + 2</small>');
+    H += '<div class="secao-corpo"><table class="tab per">';
+    H += '<thead><tr><th>Pericia</th><th>Atrib</th><th>Origem</th><th>Bon</th></tr></thead><tbody>';
+    listaP.forEach(function(p){ H += '<tr><td>'+esc(p.n)+'</td><td>'+p.a+'</td><td>'+p.o+'</td><td>+'+p.b+'</td></tr>'; });
+    H += '</tbody></table></div></section>';
+
+    H += '<section class="secao">'+tituloSecao(GLIF.conhecimento,'Conhecimento','<button class="btn-titulo" id="btn-explorar">Explorar</button>');
+    H += '<div class="secao-corpo">';
+
+    H += '<div class="sub-tab-titulo">'+E.HAB+' Habilidades ('+abAtivas.length+')</div>';
+    if (isCreationMode) {
+      H += '<div style="color:#8a6a3a;font-style:italic;font-size:12px;padding:10px;">As habilidades de Nivel 1 aparecerao aqui apos salvar.</div>';
+    } else if (abAtivas.length) {
+      H += '<div class="grid-rpg">';
+      abAtivas.forEach(function(h){
+        H += '<div class="card-rpg"><div class="card-header-rpg"><span class="card-titulo-rpg">'+esc(h.nome)+'</span><span class="card-tag-rpg">N'+h.nivel+'</span></div><div class="card-body-rpg">'+esc(h.efeito||'')+'</div><div class="card-footer-rpg"><span>'+esc(h.recurso||h.tipo||'-')+'</span><span>'+esc(h.limite||'—')+'</span></div></div>';
+      });
+      H += '</div>';
+    } else {
+      H += '<div class="anot-vazio">Nenhuma ainda.</div>';
+    }
+
+    var talAprend = [];
+    meusTalents.forEach(function(mt){ var tl = talents.find(function(t){ return t.id === mt.talent_id; }); if (tl) talAprend.push(tl); });
+    H += '<div class="sub-tab-titulo">'+E.TAL+' Talentos ('+talAprend.length+')</div>';
+    if (isCreationMode) {
+      H += '<div style="color:#8a6a3a;font-style:italic;font-size:12px;padding:10px;">Compre talentos usando a aba Explorar.</div>';
+    } else if (talAprend.length) {
+      H += '<div class="grid-rpg">';
+      talAprend.forEach(function(t){
+        H += '<div class="card-rpg"><div class="card-header-rpg"><span class="card-titulo-rpg">'+esc(t.nome)+'</span><span class="card-tag-rpg">'+esc(t.trilha)+'</span></div><div class="card-body-rpg">'+esc(t.efeito)+'</div><div class="card-footer-rpg"><span>Custo: '+(t.custo_pt||2)+' PT</span><span>N'+t.nivel_min+'</span></div></div>';
+      });
+      H += '</div>';
+    } else {
+      H += '<div class="anot-vazio">Nenhum - use Explorar.</div>';
+    }
+
+    var magAprend = [];
+    minhasSpells.forEach(function(ms){ var sp = spells.find(function(s){ return s.id === ms.spell_id; }); if (sp) magAprend.push(sp); });
+    H += '<div class="sub-tab-titulo">'+E.MAG+' Magias ('+magAprend.length+')</div>';
+    if (isCreationMode) {
+      H += '<div style="color:#8a6a3a;font-style:italic;font-size:12px;padding:10px;">Aprenda magias usando a aba Explorar.</div>';
+    } else if (magAprend.length) {
+      H += '<div class="grid-rpg">';
+      magAprend.forEach(function(s){
+        H += '<div class="card-rpg"><div class="card-header-rpg"><span class="card-titulo-rpg">'+esc(s.nome)+'</span><span class="card-tag-rpg">Circulo '+s.circulo+'</span></div><div class="card-body-rpg">'+esc(s.efeito||'')+'</div><div class="card-footer-rpg"><span>'+esc(s.escola||'Geral')+'</span><span>'+(s.custo_pm||(s.circulo*2))+' PM</span></div></div>';
+      });
+      H += '</div>';
+    } else {
+      H += '<div class="anot-vazio">Nenhuma - use Explorar.</div>';
+    }
+
+    H += '</div></section>';
+    H += '</div><div class="col">';
+
+    H += infoBlocoHTML();
+
+    H += '<section class="secao">'+tituloSecao(GLIF.atributos,'Atributos',(mostrandoDist?'<small style="color:#c9a050">Distribuir '+pend.faltam+'</small>':''));
+    H += '<div class="secao-corpo">';
+    if (mostrandoDist && marcador && !isCreationMode){
+      H += '<div style="background:rgba(201,160,80,.15);border-left:3px solid #c9a050;padding:5px 8px;font-size:10.5px;color:#5a4a2f;margin-bottom:6px">Marco N'+pend.nivel+' - pelo menos 2 pontos no mesmo atributo.</div>';
+    }
+    H += '<div class="atrs">';
+    ATR.forEach(function(k){
+      var base = atr[k]||0;
+      var dist = isCreationMode ? 0 : (distribuicao[k]||0);
+      var noTeto = (base+dist) >= teto;
+      H += '<div class="atr"><span class="atr-rot">'+ROT[k]+'</span><span class="atr-val">'+base+(dist?' <em>+'+dist+'</em>':'')+'</span>';
+      if (mostrandoDist){
+        var podeAdd = isCreationMode ? (base < 3 && pend.faltam > 0) : !noTeto;
+        var podeRem = isCreationMode ? (base > 0) : (dist > 0);
+        H += '<div class="atr-btns">';
+        H += '<button class="atb" data-atr="'+k+'" data-d="-1" '+(podeRem?'':'disabled')+'>-</button>';
+        H += '<button class="atb" data-atr="'+k+'" data-d="1" '+(podeAdd?'':'disabled')+'>+</button>';
+        H += '</div>';
+      }
+      H += '</div>';
+    });
+    H += '</div>';
+
+    if (mostrandoDist){
+      if (isCreationMode) {
+        H += '<div style="text-align:center;margin-top:8px;font-size:11.5px;color:#5a4a2f">Distribuidos: <b>'+(15-pend.faltam)+' / 15</b></div>';
+        H += '<button id="btn-criar-ficha" class="btn-salvar-atr"'+(pend.faltam!==0?' disabled':'')+' onclick="window.criarFicha()">CRIAR FICHA</button>';
+      } else {
+        var total = 0; for (var kx in distribuicao) total += distribuicao[kx];
+        var sobra = pend.faltam - total;
+        H += '<div style="text-align:center;margin-top:8px;font-size:11.5px;color:#5a4a2f">Distribuidos: <b>'+total+'</b> - Faltam: <b style="color:'+(sobra===0?'#2d6a4f':'#b83232')+'">'+sobra+'</b></div>';
+        H += '<button id="btn-salvar-atr" class="btn-salvar-atr"'+(sobra!==0?' disabled':'')+'>Salvar distribuicao</button>';
+      }
+    }
+    H += '<div class="atr-nota">'+esc(nota)+'</div></div></section>';
+
+    H += '<section class="secao">'+tituloSecao(GLIF.ataques,'Ataques');
+    H += '<div class="secao-corpo"><table class="tab atq">';
+    H += '<thead><tr><th>Tipo</th><th>Ataque</th><th>Dano</th></tr></thead><tbody>';
+    ataques.forEach(function(a){ H += '<tr><td>'+esc(a.tipo)+'</td><td>'+esc(a.ataque)+'</td><td>'+(a.dano ? esc(a.dano)+' <small style="color:#7a6a4a">('+esc(a.nota)+')</small>' : '')+'</td></tr>'; });
+    H += '</tbody></table></div></section>';
+
+    // Inventário/loja são operados pela mesa; a ficha é somente leitura.
+
+    H += '<section class="secao">'+tituloSecao(GLIF.anotacoes,'Anotacoes','<div style="display:flex;gap:6px"><button class="btn-titulo" id="btn-escrever" '+(isCreationMode?'disabled style="opacity:0.5"':'')+'>Escrever</button><button class="btn-titulo" id="btn-ler" '+(isCreationMode?'disabled style="opacity:0.5"':'')+'>Ler</button></div>');
+    H += '<div class="anot-lista">';
+    if (notas.length === 0) H += '<div class="anot-vazio">Nenhuma anotacao ainda.</div>';
+    else {
+      notasResumo.forEach(function(n){ H += '<div class="anot-item" data-ler="'+n.id+'"><span class="txt">'+E.ANOT+' '+esc(n.titulo)+'</span></div>'; });
+      if (notas.length > 4) H += '<div class="anot-vazio">+ '+(notas.length-4)+' anotacoes - Ler</div>';
+    }
+    H += '</div></section>';
+    H += '</div></div>';
+
+    H += fotoHTML();
+
+    H += '<footer class="rod"><span>Vinculo - ' + (isCreationMode ? 'Criacao de Ficha' : 'Ficha') + '</span><div class="rod-btns">';
+    if (isCreationMode) {
+      H += '<button class="cancelar" onclick="window.location.href=\'lobby.html\'">Cancelar</button>';
+    } else {
+      H += '<button id="btn-alterar-img">Alterar foto</button>';
+    }
+    H += '<button id="btn-bg-header">Alterar fundo do cabecalho</button>';
+    H += '</div></footer>';
+
+
+    document.getElementById('root').innerHTML = H;
+    ligarEventos();
+  }
+// ============ CRIAR FICHA ============
+  window.criarFicha = async function() {
+    var btn = document.getElementById('btn-criar-ficha');
+    if (btn) { btn.disabled = true; btn.textContent = 'Criando...'; }
+
+    try {
+      var ru = await sb.auth.getUser();
+      var user = ru && ru.data ? ru.data.user : null;
+      if (!user) throw new Error('Voce precisa estar logado.');
+
+      var r1 = await sb.from('characters').insert({
+        nome: dados.ch.nome,
+        cultura: dados.ch.cultura,
+        xp: 0,
+        ouro: 0,
+        retrato_url: dados.ch.retrato_url || null,
+        foto_transform: dados.ch.foto_transform || null,
+        header_bg_url: dados.ch.header_bg_url || null,
+        campaign_id: null,
+        user_id: user.id
+      }).select();
+      
+      if (r1.error) throw new Error(r1.error.message);
+      var newId = r1.data[0].id;
+      
+      // O formulário legado arquivado grava na tabela renomeada; a criação D&D 3.5 usa a RPC SRD.
+      var r2 = await sb.from('vinculo_character_sheets').upsert({
+        character_id: newId,
+        classe: CLASS_ID,
+        atributos: dados.sh.atributos,
+        pericias: {}
+      }, { onConflict: 'character_id' });
+      
+      if (r2.error) throw new Error(r2.error.message);
+
+      window.location.href = 'lobby.html';
+    } catch (err) {
+      alert('Erro ao criar ficha: ' + err.message);
+      if (btn) { btn.disabled = false; btn.textContent = 'CRIAR FICHA'; }
+    }
+  };
+
+  // ============ EXPLORAR (LIBERADO NA CRIAÇÃO) ============
+  function abrirExplorar(){
+    renderExplorarHome();
+    document.getElementById('explorar-overlay').classList.add('ativo');
+  }
+  function fecharExplorar(){ document.getElementById('explorar-overlay').classList.remove('ativo'); }
+
+  function renderExplorarHome(){
+    var box = document.getElementById('explorar-box');
+    var ab = dados.ab || [];
+    var nv = isCreationMode ? 1 : calc().nivel;
+    var abAtivas = ab.filter(function(h){ return h.nivel <= nv; }).length;
+    box.innerHTML =
+      '<div class="modal-cab"><h2>Compendio da Classe</h2><button class="fechar" id="explorar-fechar">X</button></div>'+
+      '<div class="explorar-grid">'+
+        '<div class="card-cat" data-tipo="habilidades"><div class="icone">'+E.HAB+'</div><div class="titulo">HABILIDADES</div><div class="sub">Nativas da classe</div><div class="count">'+abAtivas+' / '+ab.length+'</div></div>'+
+        '<div class="card-cat" data-tipo="talentos"><div class="icone">'+E.TAL+'</div><div class="titulo">TALENTOS</div><div class="sub">Customizacao</div><div class="count">'+meusTalents.length+' / '+talents.length+'</div></div>'+
+        '<div class="card-cat" data-tipo="magias"><div class="icone">'+E.MAG+'</div><div class="titulo">MAGIAS</div><div class="sub">Grimorio</div><div class="count">'+minhasSpells.length+' / '+spells.length+'</div></div>'+
+      '</div>';
+    document.getElementById('explorar-fechar').onclick = fecharExplorar;
+    document.querySelectorAll('.card-cat').forEach(function(c){ c.onclick = function(){ renderExplorarLista(c.dataset.tipo); }; });
+    document.getElementById('explorar-overlay').onclick = function(ev){ if (ev.target.id === 'explorar-overlay') fecharExplorar(); };
+  }
+
+  function renderExplorarLista(tipo, filtro){
+    filtro = filtro || 'todos';
+    var box = document.getElementById('explorar-box');
+    var nv = isCreationMode ? 1 : calc().nivel; 
+    var htmlFiltros = ''; var htmlCards = '';
+
+    if (tipo === 'habilidades') {
+      htmlCards = (dados.ab || []).map(function(h) {
+        var ativa = h.nivel <= nv;
+        return '<div class="conhec-card '+(ativa?'aprendida':'')+'"><div class="cc-cab"><span class="cc-nivel">N'+h.nivel+'</span><span class="cc-tipo">'+esc(h.recurso||h.tipo||'Passiva')+'</span></div><div class="cc-nome">'+esc(h.nome)+'</div><div class="cc-desc">'+esc(h.efeito)+'</div></div>';
+      }).join('');
+    } else if (tipo === 'talentos') {
+      htmlCards = talents.map(function(t) {
+        var aprendido = meusTalents.some(function(mt){ return mt.talent_id === t.id; });
+        var podeComprar = nv >= t.nivel_min && !aprendido;
+        return '<div class="conhec-card '+(aprendido?'aprendida':'')+'"><div class="cc-cab"><span class="cc-nivel">N'+t.nivel_min+'</span><span class="cc-tipo">'+esc(t.trilha)+'</span></div><div class="cc-nome">'+esc(t.nome)+'</div><div class="cc-desc">'+esc(t.efeito)+'</div>'+(!aprendido && !isCreationMode?'<div class="cc-acao"><button data-aprender-tal="'+t.id+'" '+(podeComprar?'':'disabled')+'>'+(podeComprar?'Comprar':'Requer N'+t.nivel_min)+'</button></div>':'')+'</div>';
+      }).join('');
+    } else if (tipo === 'magias') {
+      var circulos = ['todos','0','1','2','3','4','5'];
+      htmlFiltros = '<div style="display:flex;gap:6px;padding:10px 20px;background:#0a0f1e;flex-wrap:wrap;border-bottom:1px solid #2a3550">' +
+        circulos.map(function(c){
+          var atv = (String(filtro) === String(c)) ? 'background:#c9a050;color:#111' : 'background:transparent;color:#c9a050';
+          return '<button style="border:1px solid #c9a050;'+atv+';padding:4px 12px;border-radius:3px;font-family:Cinzel,serif;font-weight:700;font-size:9px;cursor:pointer" onclick="window.__renderExplorarLista(\'magias\',\''+c+'\')">'+(c==='todos'?'Todas':(c==='0'?'Truques':'Circulo '+c))+'</button>';
+        }).join('') + '</div>';
+      var classeAtual = dados.cl.id;
+      var magiasDaClasse = spells.filter(function(s){ return (s.classe === classeAtual || s.classe === 'todas' || s.classe === 'universal') && (filtro === 'todos' || s.circulo == filtro); });
+      htmlCards = magiasDaClasse.map(function(s) {
+        var aprendida = minhasSpells.some(function(ms){ return ms.spell_id === s.id; });
+        var podeAprender = nv >= s.circulo && !aprendida;
+        return '<div class="conhec-card '+(aprendida?'aprendida':'')+'"><div class="cc-cab"><span class="cc-nivel">C'+s.circulo+'</span><span class="cc-tipo">'+esc(s.escola||'Geral')+'</span></div><div class="cc-nome">'+esc(s.nome)+'</div><div class="cc-desc">'+esc(s.efeito)+'</div>'+(!aprendida && !isCreationMode?'<div class="cc-acao"><button data-aprender-mag="'+s.id+'" '+(podeAprender?'':'disabled')+'>'+(podeAprender?'Aprender':'Requer C'+s.circulo)+'</button></div>':'')+'</div>';
+      }).join('');
+    }
+
+    var titulos = {habilidades:'Habilidades', talentos:'Talentos', magias:'Magias'};
+    box.innerHTML =
+      '<div class="modal-cab"><div style="display:flex;align-items:center;gap:8px"><h2>'+titulos[tipo]+'</h2><button class="btn-voltar-explorar" id="btn-voltar-home">&larr; Voltar</button></div><button class="fechar" id="explorar-fechar">X</button></div>'+
+      htmlFiltros +
+      '<div class="lista-geral">'+(htmlCards || '<div class="mochila-vazia">Nada aqui.</div>')+'</div>';
+
+    document.getElementById('explorar-fechar').onclick = fecharExplorar;
+    document.getElementById('btn-voltar-home').onclick = renderExplorarHome;
+    document.querySelectorAll('[data-aprender-tal]').forEach(function(b){ b.onclick = function(){ aprenderTalento(b.dataset.aprenderTal); }; });
+    document.querySelectorAll('[data-aprender-mag]').forEach(function(b){ b.onclick = function(){ aprenderMagia(b.dataset.aprenderMag); }; });
+  }
+  window.__renderExplorarLista = renderExplorarLista;
+
+  async function aprenderTalento(tid){
+    if (isCreationMode){ alert('Salve a ficha primeiro.'); return; }
+    var r = await sb.from('character_talents').insert({ character_id: CHAR_ID, talent_id: tid, escolhido_em_nivel: calc().nivel });
+    if (r.error){ alert('Erro: '+r.error.message); return; }
+    await carregarConhecimento(); renderExplorarLista('talentos'); render();
+  }
+  async function aprenderMagia(sid){
+    if (isCreationMode){ alert('Salve a ficha primeiro.'); return; }
+    var r = await sb.from('character_spells').insert({ character_id: CHAR_ID, spell_id: sid, aprendida_em_nivel: calc().nivel, preparada: false });
+    if (r.error){ alert('Erro: '+r.error.message); return; }
+    await carregarConhecimento(); renderExplorarLista('magias'); render();
+  }
+
+  // ============ INVENTÁRIO E NOTAS ============
+  function abrirInv(){ if(isCreationMode) return; renderInv(); document.getElementById('inv-overlay').classList.add('ativo'); }
+  function fecharInv(){ document.getElementById('inv-overlay').classList.remove('ativo'); }
+
+  function descItemHTML(i){
+    var linhas = [];
+    if (i.categoria === 'arma' && i.dano){ linhas.push('<div class="linha"><span>Dano</span><b>'+esc(i.dano)+' '+esc(i.tipoDano||'')+'</b></div>'); }
+    if (i.categoria === 'armadura' || i.categoria === 'escudo'){ var ca = ARM_CA[i.item_id] || ESC_CA[i.item_id] || 0; if (ca) linhas.push('<div class="linha"><span>CA</span><b>+'+ca+'</b></div>'); }
+    if (i.categoria === 'mochila'){ var bonus = (i.dados && i.dados.capacidade_bonus) || 10; linhas.push('<div class="linha"><span>Capacidade</span><b>+'+bonus+' kg</b></div>'); }
+    if (i.categoria === 'acessorio' && i.dados){
+      var bs = []; if (i.dados.bonus_ca) bs.push('+'+i.dados.bonus_ca+' CA'); if (i.dados.bonus_rm) bs.push('+'+i.dados.bonus_rm+' RM'); if (i.dados.bonus_pv) bs.push('+'+i.dados.bonus_pv+' PV'); if (i.dados.bonus_pm) bs.push('+'+i.dados.bonus_pm+' PM'); if (i.dados.bonus_desl) bs.push('+'+i.dados.bonus_desl+' Desl'); if (bs.length) linhas.push('<div class="linha"><span>Bonus</span><b>'+bs.join(' / ')+'</b></div>');
+    }
+    if (i.categoria === 'montaria'){ var mm = bonusMontaria({ montaria: i }); if (mm.desl || mm.cg){ linhas.push('<div class="linha"><span>Desl/Carga</span><b>+'+mm.desl+'m / +'+mm.cg+'kg</b></div>'); } }
+    var cura = getCura(i); if (cura) linhas.push('<div class="linha"><span>Cura</span><b>'+esc(cura)+' PV</b></div>');
+    if (i.dados && i.dados.efeito && linhas.length === 0){ linhas.push('<div class="linha"><span>Efeito</span><b>'+esc(i.dados.efeito)+'</b></div>'); }
+    if (i.peso) linhas.push('<div class="linha"><span>Peso</span><b>'+i.peso+' kg</b></div>');
+    if (!linhas.length) linhas.push('<div class="linha"><span>Item</span><b>-</b></div>');
+    return '<div class="item-info">'+linhas.slice(0,3).join('')+'</div>';
+  }
+
+  function renderInv(){
+    if(isCreationMode) return;
+    var box = document.getElementById('inv-box');
+    var m = calc(); var eqp = m.eqp;
+    var pesoTotal = inventario.reduce(function(s,i){ return s + (parseFloat(i.peso)||0) * (i.qtd||1); }, 0);
+    var slotsHTML = SLOTS.map(function(s){
+      var item = eqp[s.key];
+      if (item){ return '<div class="slot ocupado"><button class="slot-remove" data-unequip="'+esc(item.item_id)+'" title="Desequipar">X</button><div class="slot-icone">'+emojiCat(item.categoria)+'</div><div class="slot-label">'+s.label+'</div><div class="slot-nome" title="'+esc(item.nome)+'">'+esc(item.nome)+'</div></div>'; }
+      return '<div class="slot"><div class="slot-icone" style="opacity:.35">'+emojiCat(s.cat)+'</div><div class="slot-label">'+s.label+'</div><div class="slot-vazio">vazio</div></div>';
+    }).join('');
+    var disponiveis = inventario.filter(function(i){ return !i.equipado; });
+    var cardsHTML = '';
+    if (disponiveis.length === 0){ cardsHTML = '<div class="mochila-vazia">'+(inventario.length === 0 ? 'Nada por aqui ainda.' : 'Tudo equipado.')+'</div>'; } 
+    else {
+      cardsHTML = disponiveis.map(function(i){
+        var emoji = emojiCat(i.categoria); var rar = i.raridade || 'comum';
+        var equipavel = ehEquipavel(i); var usavel = ehUsavel(i);
+        var acoes = ''; if (equipavel) acoes = '<button data-equip="'+esc(i.item_id)+'">Equipar</button>'; else if (usavel) acoes = '<button class="usar" data-usar="'+esc(i.item_id)+'">Usar</button>'; else acoes = '<button data-info="'+esc(i.item_id)+'">Detalhes</button>';
+        acoes += '<button class="danger" data-del="'+esc(i.item_id)+'" title="Excluir">'+E.LIX+'</button>';
+        return '<div class="item-card"><div class="item-cab"><div class="item-emoji">'+emoji+'</div><div class="item-titulo"><div class="item-nome">'+esc(i.nome)+'</div><div class="item-raridade">'+rar+'</div></div></div>'+descItemHTML(i)+'<div class="item-acoes">'+acoes+'</div></div>';
+      }).join('');
+    }
+    box.innerHTML = '<div class="modal-cab"><h2>'+E.MOCHILA+' Inventario</h2><button class="fechar" id="inv-fechar">X</button></div><div class="slots-equip">'+slotsHTML+'</div><div class="mochila-info"><span><b>Itens:</b> '+inventario.length+'</span><span><b>Carga:</b> '+pesoTotal.toFixed(1)+' / '+m.cg+' kg</span><span>'+E.OURO+' <b>Ouro:</b> '+(dados.ch.ouro||0)+' po</span></div><div class="mochila-lista">'+cardsHTML+'</div><div class="mochila-rodape"><span class="total-info">'+(ehGM?'Voce e GM':'')+'</span></div>';
+    document.getElementById('inv-fechar').onclick = fecharInv;
+    document.querySelectorAll('[data-equip]').forEach(function(b){ b.onclick = function(ev){ ev.stopPropagation(); equiparItem(b.dataset.equip); }; });
+    document.querySelectorAll('[data-unequip]').forEach(function(b){ b.onclick = function(ev){ ev.stopPropagation(); desequiparItem(b.dataset.unequip); }; });
+    document.querySelectorAll('[data-usar]').forEach(function(b){ b.onclick = function(ev){ ev.stopPropagation(); confirmarUso(b.dataset.usar); }; });
+    document.querySelectorAll('[data-del]').forEach(function(b){ b.onclick = function(ev){ ev.stopPropagation(); confirmarExclusao(b.dataset.del); }; });
+    document.querySelectorAll('[data-info]').forEach(function(b){ b.onclick = function(ev){ ev.stopPropagation(); abrirDetalhes(b.dataset.info); }; });
+    document.getElementById('inv-overlay').onclick = function(ev){ if (ev.target.id === 'inv-overlay') fecharInv(); };
+  }
+
+  async function equiparItem(itemId){
+    if (isCreationMode) return;
+    var item = inventario.find(function(i){ return i.item_id === itemId; }); if (!item) return;
+    var cat = item.categoria;
+    var equipados = inventario.filter(function(i){ return i.equipado && i.categoria === cat && i.item_id !== itemId; });
+    if (cat === 'acessorio'){ if (equipados.length >= 2){ await sb.from('inventory').update({equipado:false}).eq('character_id', CHAR_ID).eq('item_id', equipados[0].item_id); } }
+    else { for (var k=0; k<equipados.length; k++){ await sb.from('inventory').update({equipado:false}).eq('character_id', CHAR_ID).eq('item_id', equipados[k].item_id); } }
+    var r = await sb.from('inventory').update({equipado:true}).eq('character_id', CHAR_ID).eq('item_id', itemId);
+    if (r.error){ alert('Erro: '+r.error.message); return; }
+    await carregarInventario(); renderInv(); render();
+  }
+  async function desequiparItem(itemId){
+    if (isCreationMode) return;
+    var r = await sb.from('inventory').update({equipado:false}).eq('character_id', CHAR_ID).eq('item_id', itemId);
+    if (r.error){ alert('Erro: '+r.error.message); return; }
+    await carregarInventario(); renderInv(); render();
+  }
+  function rolarDado(notacao){
+    var match = String(notacao).match(/(\d+)d(\d+)(?:\s*\+\s*(\d+))?/i);
+    if (!match) return 0;
+    var qtd = parseInt(match[1]), lados = parseInt(match[2]), mod = parseInt(match[3]||0);
+    var total = 0; for (var i=0;i<qtd;i++) total += 1 + Math.floor(Math.random()*lados);
+    return total + mod;
+  }
+  function confirmarUso(itemId){
+    if (isCreationMode) return;
+    var item = inventario.find(function(i){ return i.item_id === itemId; }); if (!item) return;
+    var box = document.getElementById('confirm-box');
+    var cura = getCura(item); var curaTxt = cura ? '<br><b>'+esc(cura)+'</b> PV' : '';
+    box.innerHTML = '<h3>Usar item?</h3><p>Usar <b>'+esc(item.nome)+'</b>?'+curaTxt+'<br>A quantidade vai reduzir em 1.</p><div class="confirm-acoes"><button class="cancelar" id="conf-cancelar">Cancelar</button><button class="confirmar ok" id="conf-usar">Usar</button></div>';
+    document.getElementById('confirm-modal').classList.add('ativo');
+    document.getElementById('conf-cancelar').onclick = function(){ document.getElementById('confirm-modal').classList.remove('ativo'); };
+    document.getElementById('conf-usar').onclick = async function(){
+      document.getElementById('confirm-modal').classList.remove('ativo');
+      var novaQtd = (item.qtd || 1) - 1;
+      if (novaQtd <= 0){ await sb.from('inventory').delete().eq('character_id', CHAR_ID).eq('item_id', itemId); }
+      else { await sb.from('inventory').update({qtd: novaQtd}).eq('character_id', CHAR_ID).eq('item_id', itemId); }
+      if (cura){
+        var valor = rolarDado(cura); var m = calc();
+        var pvAtual = dados.sh.pv_atual != null ? dados.sh.pv_atual : m.pvMax;
+        var novoPV = Math.min(m.pvMax, pvAtual + valor);
+        await sb.from('vinculo_character_sheets').update({pv_atual: novoPV}).eq('character_id', CHAR_ID);
+        dados.sh.pv_atual = novoPV;
+      }
+      await carregarInventario(); renderInv(); render();
+    };
+  }
+  function confirmarExclusao(itemId){
+    if (isCreationMode) return;
+    var item = inventario.find(function(i){ return i.item_id === itemId; }); if (!item) return;
+    var box = document.getElementById('confirm-box');
+    box.innerHTML = '<h3>Excluir item?</h3><p>Tem certeza que quer remover <b>'+esc(item.nome)+'</b>?<br>Essa acao nao pode ser desfeita.</p><div class="confirm-acoes"><button class="cancelar" id="conf-cancelar">Cancelar</button><button class="confirmar" id="conf-excluir">Excluir</button></div>';
+    document.getElementById('confirm-modal').classList.add('ativo');
+    document.getElementById('conf-cancelar').onclick = function(){ document.getElementById('confirm-modal').classList.remove('ativo'); };
+    document.getElementById('conf-excluir').onclick = async function(){
+      document.getElementById('confirm-modal').classList.remove('ativo');
+      await sb.from('inventory').delete().eq('character_id', CHAR_ID).eq('item_id', itemId);
+      await carregarInventario(); renderInv(); render();
+    };
+  }
+  function abrirDetalhes(itemId){
+    if (isCreationMode) return;
+    var item = inventario.find(function(i){ return i.item_id === itemId; }); if (!item) return;
+    var box = document.getElementById('confirm-box'); var info = [];
+    if (item.categoria === 'arma' && item.dano) info.push('<b>Dano:</b> '+esc(item.dano)+' '+esc(item.tipoDano||''));
+    if (item.categoria === 'armadura' || item.categoria === 'escudo'){ var ca = ARM_CA[item.item_id] || ESC_CA[item.item_id] || 0; info.push('<b>CA:</b> +'+ca); }
+    var cu = getCura(item); if (cu) info.push('<b>Cura:</b> '+esc(cu));
+    if (item.dados && item.dados.efeito) info.push('<b>Efeito:</b> '+esc(item.dados.efeito));
+    if (item.peso) info.push('<b>Peso:</b> '+item.peso+' kg');
+    if (item.qtd > 1) info.push('<b>Qtd:</b> x'+item.qtd);
+    box.innerHTML = '<h3>'+esc(item.nome)+'</h3><p style="color:#8a9ab0;font-family:EB Garamond,serif;font-size:13px">'+info.join('<br>')+'</p><div class="confirm-acoes"><button class="cancelar" id="conf-fechar">Fechar</button></div>';
+    document.getElementById('confirm-modal').classList.add('ativo');
+    document.getElementById('conf-fechar').onclick = function(){ document.getElementById('confirm-modal').classList.remove('ativo'); };
+  }
+
+  function abrirNovaAnotacao(){
+    if (isCreationMode) return;
+    var box = document.getElementById('anot-box');
+    box.innerHTML = '<div class="modal-cab"><h2>Nova anotacao</h2><button class="fechar" id="anot-fechar">X</button></div><div class="anot-form"><label>Titulo</label><input type="text" id="anot-titulo" maxlength="60"><label>Anotacao</label><textarea id="anot-corpo" maxlength="200"></textarea><div class="anot-contador" id="anot-contador">0 / 200</div></div><div class="anot-acoes"><button class="cancelar" id="anot-cancelar">Cancelar</button><button class="salvar" id="anot-salvar" disabled>Salvar</button></div>';
+    document.getElementById('anot-overlay').classList.add('ativo');
+    document.getElementById('anot-fechar').onclick = fecharAnot; document.getElementById('anot-cancelar').onclick = fecharAnot;
+    var inp = document.getElementById('anot-corpo'); var cont = document.getElementById('anot-contador'); var btn = document.getElementById('anot-salvar');
+    function upd(){ var n = inp.value.length; cont.textContent = n+' / 200'; btn.disabled = !document.getElementById('anot-titulo').value.trim() || !inp.value.trim(); }
+    inp.oninput = upd; document.getElementById('anot-titulo').oninput = upd;
+    btn.onclick = async function(){
+      var titulo = document.getElementById('anot-titulo').value.trim(); var corpo = inp.value.trim(); if (!titulo || !corpo) return;
+      var r = await sb.from('character_notes').insert({ character_id: CHAR_ID, titulo: titulo, corpo: corpo });
+      if (r.error){ alert('Erro: '+r.error.message); return; }
+      await carregarNotas(); fecharAnot(); render();
+    };
+  }
+
+  function abrirLerAnotacoes(){
+    if (isCreationMode) return;
+    var box = document.getElementById('anot-box');
+    if (!notas.length){
+      box.innerHTML = '<div class="modal-cab"><h2>Anotacoes</h2><button class="fechar" id="anot-fechar">X</button></div><div style="padding:40px;text-align:center;color:#8a6a3a;font-style:italic">Nenhuma anotacao ainda.</div>';
+      document.getElementById('anot-overlay').classList.add('ativo'); document.getElementById('anot-fechar').onclick = fecharAnot; return;
+    }
+    box.innerHTML = '<div class="modal-cab"><h2>Anotacoes</h2><button class="fechar" id="anot-fechar">X</button></div><div class="anot-lista-modal">'+
+      notas.map(function(n){ return '<div class="anot-card" data-ver="'+n.id+'"><div class="titulo">'+esc(n.titulo)+'</div><button class="del" data-del-note="'+n.id+'">'+E.LIX+'</button></div>'; }).join('')+'</div>';
+    document.getElementById('anot-overlay').classList.add('ativo'); document.getElementById('anot-fechar').onclick = fecharAnot;
+    document.querySelectorAll('[data-ver]').forEach(function(c){ c.onclick = function(ev){ if (ev.target.closest('[data-del-note]')) return; abrirDetalheAnotacao(parseInt(c.dataset.ver)); }; });
+    document.querySelectorAll('[data-del-note]').forEach(function(b){ b.onclick = async function(ev){ ev.stopPropagation(); if (!confirm('Excluir esta anotacao?')) return; await sb.from('character_notes').delete().eq('id', parseInt(b.dataset.delNote)); await carregarNotas(); abrirLerAnotacoes(); render(); }; });
+  }
+
+  function abrirDetalheAnotacao(id){
+    if (isCreationMode) return;
+    var nota = notas.find(function(n){ return n.id === id; }); if (!nota) return;
+    var box = document.getElementById('anot-box'); var d = new Date(nota.criada_em); var data = d.toLocaleDateString('pt-BR')+' as '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    box.innerHTML = '<div class="modal-cab"><div style="display:flex;align-items:center;gap:8px"><h2>Anotacao</h2><button class="btn-voltar-explorar" id="btn-voltar-notas">&larr; Voltar</button></div><button class="fechar" id="anot-fechar">X</button></div><div class="anot-detalhe"><h3>'+esc(nota.titulo)+'</h3><div class="data">'+data+'</div><div class="corpo">'+esc(nota.corpo)+'</div></div>';
+    document.getElementById('anot-fechar').onclick = fecharAnot; document.getElementById('btn-voltar-notas').onclick = abrirLerAnotacoes;
+  }
+  function fecharAnot(){ document.getElementById('anot-overlay').classList.remove('ativo'); }
+
+  function abrirCrop(file){
+    return new Promise(function(resolve){
+      cropState.resolve = resolve; var reader = new FileReader();
+      reader.onload = function(e){
+        document.getElementById('crop-overlay').classList.add('ativo');
+        var img = document.getElementById('crop-img'); img.src = e.target.result;
+        setTimeout(function(){
+          if (cropperInstance) cropperInstance.destroy();
+          cropperInstance = new Cropper(img, { aspectRatio: 5.5, viewMode: 1, autoCropArea: 0.95, background: false, movable: true, zoomable: true, rotatable: false, scalable: false, responsive: true, guides: true });
+        }, 60);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  function fecharCrop(v){
+    document.getElementById('crop-overlay').classList.remove('ativo');
+    if (cropperInstance){ cropperInstance.destroy(); cropperInstance = null; }
+    if (cropState.resolve) cropState.resolve(v);
+    cropState.resolve = null;
+  }
+  document.getElementById('crop-fechar').onclick = function(){ fecharCrop(null); };
+  document.getElementById('crop-cancelar').onclick = function(){ fecharCrop(null); };
+  document.getElementById('crop-confirmar').onclick = function(){ if (!cropperInstance) return; var canvas = cropperInstance.getCroppedCanvas({ imageSmoothingEnabled: true, imageSmoothingQuality: 'high', fillColor: '#141d33' }); canvas.toBlob(function(blob){ fecharCrop(blob); }, 'image/png', 1.0); };
+
+  async function trocarHeaderBg(){
+    var inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+    inp.onchange = async function(){
+      var f = inp.files[0]; if (!f) return; var blob = await abrirCrop(f); if (!blob) return;
+      var path = isCreationMode ? 'headers/temp-bg-'+Date.now()+'.png' : 'headers/'+CHAR_ID+'-bg-'+Date.now()+'.png';
+      var up = await sb.storage.from('midia').upload(path, blob, { upsert: true, contentType: 'image/png' });
+      if (up.error){ alert('Erro: '+up.error.message); return; }
+      var url = sb.storage.from('midia').getPublicUrl(path).data.publicUrl;
+      if (!isCreationMode) { await sb.from('characters').update({ header_bg_url: url }).eq('id', CHAR_ID); }
+      dados.ch.header_bg_url = url; var cabEl = document.getElementById('cab-el'); if (cabEl){ cabEl.style.backgroundImage = 'url(' + url + ')'; cabEl.classList.add('tem-bg'); }
+    };
+    inp.click();
+  }
+
+  async function carregarInventario(){
+    if (isCreationMode) { inventario = []; return; }
+    var r = await sb.from('inventory').select('item_id, qtd, equipado, items(id,nome,categoria,peso,preco_ou,dados,raridade)').eq('character_id', CHAR_ID);
+    if (r.error){ console.error('inventory:', r.error); inventario = []; return; }
+    inventario = (r.data||[]).map(function(x){ var it = x.items || {}; var d = it.dados || {}; return { item_id: x.item_id, qtd: x.qtd || 1, equipado: !!x.equipado, nome: it.nome || x.item_id, categoria: normalizarCat(it.categoria), peso: it.peso || 0, preco: it.preco_ou || 0, raridade: (it.raridade || 'comum').toLowerCase(), dano: d.dano || d.dano_base || null, tipoDano: d.tipo_dano || d.tipoDano || null, dados: d }; });
+  }
+  async function carregarNotas(){
+    if (isCreationMode) { notas = []; return; }
+    var r = await sb.from('character_notes').select('*').eq('character_id', CHAR_ID).order('criada_em', {ascending:false});
+    notas = r.data || [];
+  }
+  async function carregarConhecimento(){
+    if (isCreationMode) { 
+      var r1 = await sb.from('talents').select('*').order('nivel_min'); talents = r1.data || [];
+      var r3 = await sb.from('spells').select('*').order('circulo'); spells = r3.data || [];
+      meusTalents = []; minhasSpells = []; return; 
+    }
+    var r1 = await sb.from('talents').select('*').order('nivel_min'); talents = r1.data || [];
+    var r2 = await sb.from('character_talents').select('*').eq('character_id', CHAR_ID); meusTalents = r2.data || [];
+    var r3 = await sb.from('spells').select('*').order('circulo'); spells = r3.data || [];
+    var r4 = await sb.from('character_spells').select('*').eq('character_id', CHAR_ID); minhasSpells = r4.data || [];
+  }
+
+  function ligarEventos(){
+    document.querySelectorAll('.atb').forEach(function(b){
+      b.onclick = function(){
+        var k = b.dataset.atr; var d = parseInt(b.dataset.d);
+        if (isCreationMode) {
+          var base = dados.sh.atributos[k] || 0; var pend = calcularPendentes();
+          if (d > 0 && (base >= 3 || pend.faltam <= 0)) return; if (d < 0 && base <= 0) return;
+          dados.sh.atributos[k] += d;
+        } else { distribuicao[k] = Math.max(0, (distribuicao[k]||0) + d); }
+        var inputFocado = document.activeElement.id; var posCursor = document.activeElement.selectionStart;
+        render();
+        if (inputFocado === 'input-nome') {
+          var el = document.getElementById('input-nome'); el.focus();
+          if (posCursor != null) { try { var range = document.createRange(); var sel = window.getSelection(); range.setStart(el.childNodes[0] || el, posCursor); range.collapse(true); sel.removeAllRanges(); sel.addRange(range); } catch(e){} }
+        }
+      };
+    });
+
+    var btnSalvar = document.getElementById('btn-salvar-atr'); if (btnSalvar) btnSalvar.onclick = salvarAtributos;
+    var fab = document.getElementById('fab-inv'); if (fab) fab.onclick = abrirInv;
+    var eqpBtn = document.getElementById('btn-abrir-inv'); if (eqpBtn && !isCreationMode) eqpBtn.onclick = abrirInv;
+    var ex = document.getElementById('btn-explorar'); if (ex) ex.onclick = abrirExplorar;
+    var escr = document.getElementById('btn-escrever'); if (escr && !isCreationMode) escr.onclick = abrirNovaAnotacao;
+    var ler = document.getElementById('btn-ler'); if (ler && !isCreationMode) ler.onclick = abrirLerAnotacoes;
+    document.querySelectorAll('[data-ler]').forEach(function(el){ el.onclick = function(){ abrirDetalheAnotacao(parseInt(el.dataset.ler)); }; });
+    var btnAlt = document.getElementById('btn-alterar-img'); if (btnAlt) btnAlt.onclick = abrirPickerFoto;
+    var btnBg = document.getElementById('btn-bg-header'); if (btnBg) btnBg.onclick = trocarHeaderBg;
+    ligarFoto();
+  }
+
+  async function salvarAtributos(){
+    if (isCreationMode) return;
+    var p = calcularPendentes(); var total = 0; for (var k in distribuicao) total += distribuicao[k];
+    if (total !== p.faltam){ alert('Distribua todos os '+p.faltam+' pontos.'); return; }
+    var teto = Math.max(3, 2 * p.nivel);
+    for (var k2 in distribuicao){ if ((dados.sh.atributos[k2]||0) + distribuicao[k2] > teto){ alert(k2+' passaria de '+teto+' (teto do N'+p.nivel+').'); return; } }
+    if (ehMarco(p.nivel)){ var maior = 0; for (var k3 in distribuicao){ if (distribuicao[k3] > maior) maior = distribuicao[k3]; } if (maior < 2){ alert('Marco N'+p.nivel+': coloque 2 ou mais no mesmo atributo.'); return; } }
+    for (var k4 in distribuicao){ dados.sh.atributos[k4] = (dados.sh.atributos[k4]||0) + distribuicao[k4]; }
+    var r = await sb.from('vinculo_character_sheets').update({ atributos: dados.sh.atributos }).eq('character_id', CHAR_ID);
+    if (r.error){ alert('Erro: '+r.error.message); return; }
+    if (dados.ch.campaign_id != null){ await sb.from('campaign_log').insert({ campaign_id: Number(dados.ch.campaign_id), type: 'nivel', visibilidade: 'PUBLIC', data: { texto: dados.ch.nome+' distribuiu '+total+' ponto'+(total>1?'s':'')+' de atributo (N'+p.nivel+').' } }); }
+    distribuicao = {FOR:0,DES:0,CON:0,INT:0,SAB:0,CAR:0}; await carregar();
+  }
+
+  function dnd35Objeto(valor) {
+    if (typeof valor === 'string') { try { return JSON.parse(valor); } catch (e) { return {}; } }
+    return valor && typeof valor === 'object' ? valor : {};
+  }
+
+  var DND35_CUSTO_COMPRA = {8:0,9:1,10:2,11:3,12:4,13:5,14:6,15:8,16:10,17:13,18:16};
+
+  function dnd35PontosCompra(base) {
+    return ATR.reduce(function(total,sigla) {
+      var custo = DND35_CUSTO_COMPRA[Number(base && base[sigla])];
+      return total + (custo == null ? 100 : custo);
+    }, 0);
+  }
+
+  function dnd35AtributosIniciais(raca, valoresBase) {
+    var ajustes = dnd35Objeto(raca && raca.ajustes_atributos);
+    var base = valoresBase || {FOR:10,DES:10,CON:10,INT:10,SAB:10,CAR:10};
+    var finais = {};
+    ATR.forEach(function(sigla) { finais[sigla] = Number(base[sigla] == null ? 10 : base[sigla]) + (Number(ajustes[sigla]) || 0); });
+    return finais;
+  }
+
+  function dnd35Modificador(valor) {
+    return Math.floor((Number(valor || 10) - 10) / 2);
+  }
+
+  function dnd35Lista(valor) {
+    var lista = Array.isArray(valor) ? valor : (valor == null || valor === '' ? [] : [valor]);
+    if (!lista.length) return '<li>Não informado no compêndio.</li>';
+    return lista.map(function(item) { return '<li>' + esc(item) + '</li>'; }).join('');
+  }
+
+  function dnd35Norm(text) {
+    return String(text == null ? '' : text).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+  }
+  function dnd35UniqueById(rows) {
+    var seen = Object.create(null);
+    return (rows || []).filter(function(row) { var id = String(row && row.id != null ? row.id : ''); if (!id || seen[id]) return false; seen[id] = true; return true; });
+  }
+  function dnd35IsHuman(race) { return dnd35Norm((race && race.id) + ' ' + (race && race.nome)).indexOf('humano') >= 0; }
+  function dnd35SkillMap(state) {
+    var classNames = dnd35Objeto(state.classe).pericias_classe;
+    if (!Array.isArray(classNames)) classNames = classNames == null ? [] : [classNames];
+    var names = Object.create(null);
+    classNames.forEach(function(name) { names[dnd35Norm(name)] = true; });
+    var ids = Object.create(null);
+    var wildcardKnowledge = !!names['conhecimento qualquer'];
+    state.skills.forEach(function(skill) {
+      var normalized = dnd35Norm(skill.nome), id = String(skill.id);
+      if (names[normalized] || (wildcardKnowledge && normalized.indexOf('conhecimento ') === 0) || (names.fuga && id === 'fuga')) ids[id] = true;
+    });
+    return ids;
+  }
+  function dnd35PericiaBudget(state, attrs) {
+    return Math.max(1, Number(state.classe.pericias_por_nivel || 0) + dnd35Modificador(attrs.INT)) * 4 + (dnd35IsHuman(state.raca) ? 4 : 0);
+  }
+  function dnd35PericiaCost(state, skillId, ranks, classMap) { return Number(ranks || 0) * (classMap[String(skillId)] ? 1 : 2); }
+  function dnd35PericiaCostTotal(state, ranks, classMap) {
+    return Object.keys(ranks || {}).reduce(function(total,id) { return total + dnd35PericiaCost(state,id,ranks[id],classMap); },0);
+  }
+  function dnd35Bab(state) {
+    var c = state.classe || {}, level = Math.max(1, Number(state.sheet.nivel) || 1);
+    var progression = dnd35Norm(c.bab_progression || '');
+    if (progression === 'good' || progression === 'bom') return level;
+    if (progression === 'average' || progression === 'medium' || progression === 'medio') return Math.floor(level * 0.75);
+    if (progression === 'poor' || progression === 'bad' || progression === 'ruim') return Math.floor(level / 2);
+    var raw = c.bab_por_nivel || c.bba_por_nivel || c.bonus_ataque_base_por_nivel || c.progressao_bba;
+    if (Array.isArray(raw)) return Number(raw[Math.max(0,(Number(state.sheet.nivel)||1)-1)]) || 0;
+    if (raw && typeof raw === 'object') return Number(raw[String(state.sheet.nivel||1)] || raw.nivel_1) || 0;
+    if (c.bab_bom === true) return level;
+    return Number(c.bab_nivel_1 || c.bab || c.bba || c.bonus_ataque_base || 0) || 0;
+  }
+  function dnd35FeatIsWeaponFocus(feat) { return /weapon focus|foco em arma/.test(dnd35Norm(feat && feat.nome)); }
+  function dnd35ReqNumber(value) { if (value == null || value === '') return null; var n = Number(value); return Number.isFinite(n) ? n : null; }
+  function dnd35FeatWarnings(feat, attrs, state) {
+    var req=dnd35Objeto(feat.requisitos), out = [], reqFor = dnd35ReqNumber(feat.for_min != null ? feat.for_min : req.for_min), reqDes = dnd35ReqNumber(feat.des_min != null ? feat.des_min : req.des_min), reqBab = dnd35ReqNumber(feat.bab_min != null ? feat.bab_min : req.bab_min);
+    if (reqFor != null && Number(attrs.FOR) < reqFor) out.push('Requer FOR ' + reqFor + '.');
+    if (reqDes != null && Number(attrs.DES) < reqDes) out.push('Requer DES ' + reqDes + '.');
+    if (reqBab != null && dnd35Bab(state) < reqBab) out.push('Requer BBA +' + reqBab + '.');
+    return out;
+  }
+
+  function dnd35RenderSkills(state, attrs, creating, classMap) {
+    var ranks = dnd35Objeto(state.sheet.pericias), budget = dnd35PericiaBudget(state,attrs), spent = dnd35PericiaCostTotal(state,ranks,classMap);
+    var level = Math.max(1,Number(state.sheet.nivel)||1), html = '';
+    var sorted = state.skills.slice().sort(function(a,b) { var ac=!!classMap[String(a.id)], bc=!!classMap[String(b.id)]; return ac===bc ? String(a.nome).localeCompare(String(b.nome),'pt-BR') : (ac?-1:1); });
+    sorted.forEach(function(skill) {
+      var id = String(skill.id), isClass = !!classMap[id], rank = Number(ranks[id] || 0), ability = String(skill.atributo || 'INT').toUpperCase();
+      var max = isClass ? level+3 : (level+3)/2, options = '';
+      if (creating) {
+        var step = isClass ? 1 : 0.5;
+        for (var v=0; v<=max+0.001; v+=step) options += '<option value="'+v+'"'+(Math.abs(v-rank)<0.001?' selected':'')+'>'+v+'</option>';
+      }
+      var abilityMod = dnd35Modificador(attrs[ability]), classBonus = isClass && rank >= 1 ? 3 : 0, computed = rank + abilityMod + classBonus;
+      var labels = [];
+      labels.push(isClass ? 'Perícia de classe' : 'Fora de classe');
+      if (skill.treinada_apenas) labels.push('Somente treinada');
+      if (skill.penalidade_armadura) labels.push('Penalidade de armadura');
+      var trainedWarning = skill.treinada_apenas && rank < 1 ? '<div class="dnd35-warning">Esta perícia exige treinamento; sem graduações, não pode ser usada.</div>' : '';
+      html += '<article class="dnd35-skill"><div class="dnd35-skill-head"><strong>'+esc(skill.nome)+'</strong><span class="dnd35-badge">'+esc(labels.join(' · '))+'</span></div>'+
+        '<p>Atributo: '+esc(ability)+' · Máximo: '+max+' graduações · Custo: '+(isClass?'1':'2')+' ponto(s) por graduação'+(rank%1?' · incremento de 0,5':'')+'</p>'+
+        (creating ? '<div class="dnd35-skill-control"><label for="skill-'+esc(id)+'">Graduações</label><select id="skill-'+esc(id)+'" data-skill="'+esc(id)+'">'+options+'</select></div>' : '<p>Graduações: <b>'+rank+'</b></p>')+
+        '<div class="dnd35-formula">Teste: 1d20 + graduações + modificador do atributo +3 se for perícia de classe com pelo menos 1 graduação.<br>Bônus agora: '+(computed>=0?'+':'')+computed+' ('+rank+' grad. '+(abilityMod>=0?'+':'')+abilityMod+' mod. '+(classBonus?'+3 classe':'')+')</div>'+trainedWarning+'</article>';
+    });
+    return {html:html,spent:spent,budget:budget};
+  }
+
+  function dnd35RenderFeats(state, attrs, creating) {
+    var count = dnd35IsHuman(state.raca) ? 2 : 1, picks = state.featPicks || [], html = '';
+    if (!creating) {
+      var saved = dnd35Objeto(state.sheet.talentos), list = Array.isArray(saved) ? saved : [];
+      if (!list.length) return '<p class="dnd35-readonly">Nenhum talento registrado.</p>';
+      return '<ul class="dnd35-readonly">'+list.map(function(pick) {
+        var feat = state.feats.filter(function(f) { return String(f.id) === String(pick && pick.id); })[0];
+        return '<li><b>'+esc(feat ? feat.nome : ('Talento '+(pick && pick.id || '')))+(pick && pick.parametro ? ' — '+esc(pick.parametro) : '')+'</b>'+(feat && feat.descricao ? ': '+esc(feat.descricao) : '')+'</li>';
+      }).join('')+'</ul>';
+    }
+    for (var i=0;i<count;i++) {
+      var pick = picks[i] || {id:'',parametro:''}, feat = state.feats.filter(function(f) { return String(f.id) === String(pick.id); })[0];
+      var optionHtml = '<option value="">Escolha um talento…</option>'+state.feats.map(function(f) { return '<option value="'+esc(String(f.id))+'"'+(String(f.id)===String(pick.id)?' selected':'')+'>'+esc(f.nome)+'</option>'; }).join('');
+      var needsParam = !!(feat && (feat.exige_parametro || dnd35FeatIsWeaponFocus(feat)));
+      var reqText = feat && feat.requisitos != null ? (typeof feat.requisitos === 'string' ? feat.requisitos : JSON.stringify(feat.requisitos)) : '';
+      var paramHtml = needsParam ? '<div class="dnd35-feat-control"><label for="feat-param-'+i+'">'+(dnd35FeatIsWeaponFocus(feat)?'Arma escolhida':'Parâmetro')+'</label><input id="feat-param-'+i+'" data-feat-param="'+i+'" maxlength="80" value="'+esc(pick.parametro||'')+'" placeholder="Informe o parâmetro"></div>' : '';
+      var warnings = feat ? dnd35FeatWarnings(feat,attrs,state) : [];
+      if (feat && needsParam && !String(pick.parametro||'').trim()) warnings.push('Informe o parâmetro exigido.');
+      if (feat && dnd35FeatIsWeaponFocus(feat)) warnings.push('A arma escolhida deve ser uma arma com a qual seu personagem seja proficiente; a ficha não possui dados de proficiência para validar isso.');
+      html += '<article class="dnd35-feat"><div class="dnd35-feat-head"><strong>Talento '+(i+1)+(dnd35IsHuman(state.raca)&&i===1?' · bônus humano':'')+'</strong></div><div class="dnd35-feat-control"><label for="feat-'+i+'">Escolha</label><select id="feat-'+i+'" data-feat="'+i+'">'+optionHtml+'</select></div>'+
+        (feat ? '<p>'+esc(feat.descricao||'Sem descrição.')+'</p>'+(reqText?'<p>Pré-requisitos: '+esc(reqText)+'</p>':'') : '')+paramHtml+(warnings.length?'<div class="dnd35-warning">'+warnings.map(esc).join(' ')+'</div>':'')+'</article>';
+    }
+    return html;
+  }
+
+  function dnd35SpellClassKey(value) {
+    var raw=String(value==null?'':value).toLowerCase();
+    if(raw.normalize)raw=raw.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    raw=raw.replace(/[^a-z0-9]/g,'');
+    if(raw==='wizard'||raw==='mago'||raw.indexOf('wizard')>=0||raw.indexOf('mago')>=0)return 'wizard';
+    if(raw==='cleric'||raw==='clerigo'||raw==='sacerdote'||raw.indexOf('cleric')>=0||raw.indexOf('clerigo')>=0||raw.indexOf('sacerdot')>=0)return 'cleric';
+    if(raw==='druid'||raw==='druida'||raw.indexOf('druid')>=0||raw.indexOf('druida')>=0)return 'druid';
+    if(raw==='sorcerer'||raw==='feiticeiro'||raw.indexOf('sorcerer')>=0||raw.indexOf('feiticeiro')>=0)return 'sorcerer';
+    return '';
+  }
+  function dnd35SpellParse(value) { if(typeof value==='string'){try{return JSON.parse(value);}catch(e){return null;}} return value; }
+  function dnd35SpellLevel(spell) {
+    var raw=spell.circulo!=null?spell.circulo:spell.nivel;
+    if(typeof raw==='number'||/^\s*\d+\s*$/.test(String(raw)))return Number(raw);
+    var match=String(raw==null?'':raw).match(/\d+/);return match?Number(match[0]):-1;
+  }
+  function dnd35SpellProgressionRow(state,field,level) {
+    var rows=dnd35SpellParse(state.progression&&state.progression[field]);
+    if(!Array.isArray(rows))return null;
+    var row=dnd35SpellParse(rows[Math.max(0,Math.min(19,level-1))]);
+    if(row&&typeof row==='object'&&!Array.isArray(row)){
+      if(Array.isArray(row.slots))row=row.slots;
+      else if(Array.isArray(row.known))row=row.known;
+      else if(Array.isArray(row.spells))row=row.spells;
+    }
+    return row;
+  }
+  function dnd35SpellProgressionCount(state,field,charLevel,circle) {
+    var row=dnd35SpellProgressionRow(state,field,charLevel),v;
+    if(Array.isArray(row))v=row[circle];
+    else if(row&&typeof row==='object')v=row[String(circle)];
+    else return null;
+    if(v&&typeof v==='object')v=v.count!=null?v.count:(v.slots!=null?v.slots:v.known);
+    var n=Number(v);return Number.isFinite(n)?Math.max(0,Math.floor(n)):null;
+  }
+  function dnd35SpellBonusSlots(mod,circle) { return circle>0&&mod>=circle?Math.floor((mod-circle)/4)+1:0; }
+  function dnd35SpellState(state) {
+    var raw=dnd35SpellParse(state.sheet.magias_preparadas),saved=raw&&typeof raw==='object'?raw:{};
+    var known=Array.isArray(saved.conhecidas)?saved.conhecidas.map(String):[],prepared=Array.isArray(saved.preparadas)?saved.preparadas:[],uses=saved.usos&&typeof saved.usos==='object'?saved.usos:{};
+    return {version:1,conhecidas:Array.from(new Set(known)),preparadas:prepared.filter(function(x){return x&&x.spell_id!=null;}).map(function(x){return {spell_id:String(x.spell_id),slot_level:Math.max(0,Number(x.slot_level)||0),expended:!!x.expended};}),usos:uses};
+  }
+  function dnd35SpellClassLabels(key) { return {wizard:['wizard','mago'],cleric:['cleric','clérigo','clerigo'],druid:['druid','druida'],sorcerer:['sorcerer','feiticeiro']}[key]||[]; }
+  function dnd35GrimoireSaveState(state) {
+    var s=dnd35SpellState(state);
+    return {version:1,conhecidas:s.conhecidas.slice(),preparadas:s.preparadas.map(function(p){return {spell_id:String(p.spell_id),slot_level:Number(p.slot_level)||0,expended:!!p.expended};}),usos:Object.keys(s.usos).reduce(function(o,k){o[String(k)]=Math.max(0,Math.floor(Number(s.usos[k])||0));return o;},{})};
+  }
+  function dnd35GrimoireAvailability(state,attrs,charLevel) {
+    var key=dnd35SpellClassKey(state.classe.nome)||dnd35SpellClassKey(state.classe.class_key)||dnd35SpellClassKey(state.classe.id),progressions=state.progressions||[],aliases=dnd35SpellClassLabels(key),candidates=progressions.filter(function(p){var pk=dnd35SpellClassKey(p.class_key);return pk===key||aliases.indexOf(String(p.class_key||'').toLowerCase())>=0;});
+    if(!candidates.length&&state.classe.class_key)candidates=progressions.filter(function(p){return String(p.class_key).toLowerCase()===String(state.classe.class_key).toLowerCase();});
+    var progression=candidates[0]||state.progression||null;
+    if(state.progressionClassKey!==key){state.progression=progression;state.progressionClassKey=key;}
+    var ability=key==='wizard'?'INT':(key==='sorcerer'?'CAR':'SAB'),score=Number(attrs[ability]||10),mod=dnd35Modificador(score),base={},slots={},max=0;
+    for(var c=0;c<=9;c++){var n=dnd35SpellProgressionCount(state,'slots_by_level',charLevel,c);base[c]=n==null?0:n;if(score<10+c)base[c]=0;if(c>0&&base[c]>0)max=c;}
+    for(var i=0;i<=max;i++)slots[i]=(base[i]||0)+dnd35SpellBonusSlots(mod,i);
+    return {key:key,ability:ability,mod:mod,base:base,slots:slots,max:max,progression:progression};
+  }
+  function dnd35SpellMatchesClass(spell,key) {
+    var classes=spell.classes;if(typeof classes==='string')classes=classes.split(/[,;|]/);if(!Array.isArray(classes))return false;
+    var aliases=dnd35SpellClassLabels(key);return classes.some(function(v){return dnd35SpellClassKey(v)===key||aliases.indexOf(String(v||'').toLowerCase())>=0;});
+  }
+  function dnd35GrimoireRender(state,attrs,charLevel,creating) {
+    var avail=dnd35GrimoireAvailability(state,attrs,charLevel),s=dnd35SpellState(state),spells=(state.srdSpells||[]).filter(function(sp){var lvl=dnd35SpellLevel(sp);return dnd35SpellMatchesClass(sp,avail.key)&&lvl>=0&&lvl<=avail.max;});
+    state.grimoireState=s;
+    var classNames={wizard:'Mago / Wizard',cleric:'Clérigo / Cleric',druid:'Druida / Druid',sorcerer:'Feiticeiro / Sorcerer'},isSorc=avail.key==='sorcerer',preparedCount=s.preparadas.length,knownCount=s.conhecidas.length;
+    var message='';
+    if(creating)message='Grimório bloqueado: salve o personagem primeiro para habilitar seleção e gravação de magias.';
+    else if(!avail.key)message='Classe fora do escopo do Grimório SRD (Mago, Clérigo, Druida e Feiticeiro).';
+    else if(!avail.progression)message=state.spellProgressionError?'Não foi possível ler srd_spell_progressions: '+state.spellProgressionError:'Progressão de magias não encontrada para esta classe; confira class_key em srd_spell_progressions.';
+    else if(!state.srdSpells||!state.srdSpells.length)message=state.spellCatalogError||'O catálogo srd_spells está vazio. Magias iniciais aparecerão após a migração popular o catálogo.';
+    else if(!spells.length)message='Nenhuma magia deste catálogo corresponde à classe e aos círculos acessíveis no nível atual.';
+    var ledger='';
+    if(avail.key&&avail.progression){for(var c=0;c<=avail.max;c++){var total=avail.slots[c]||0;if(!total)continue;var spent=Number(s.usos[String(c)]||0);if(isSorc)ledger+='<article><b>Círculo '+c+' · '+esc(avail.ability)+' '+(avail.mod>=0?'+':'')+avail.mod+'</b><span>'+Math.max(0,total-spent)+' / '+total+' espaços restantes</span></article>';else{var used=s.preparadas.filter(function(p){return Number(p.slot_level)===c;}).length;ledger+='<article><b>Círculo '+c+'</b><span>'+used+' preparadas / '+total+' espaços diários</span></article>';}}}
+    var activeHtml='';
+    if(!creating&&avail.key==='sorcerer'){
+      var selected=s.conhecidas.map(function(id){return spells.filter(function(sp){return String(sp.id)===String(id);})[0];}).filter(Boolean);
+      activeHtml=selected.map(function(sp){var l=dnd35SpellLevel(sp),remaining=(avail.slots[l]||0)-Number(s.usos[String(l)]||0);return '<div class="dnd35-spell-line"><span><b>'+esc(sp.nome)+'</b> · círculo '+l+' · '+Math.max(0,remaining)+' / '+(avail.slots[l]||0)+' espaços restantes para conjurar na mesa</span></div>';}).join('');
+    } else if(!creating){
+      activeHtml=s.preparadas.map(function(p){var sp=spells.filter(function(x){return String(x.id)===String(p.spell_id);})[0];if(!sp)return '';return '<div class="dnd35-spell-line"><span><b>'+esc(sp.nome)+'</b> · círculo '+Number(p.slot_level)+(p.expended?' · gasto':' · pronta para conjurar na mesa')+'</span></div>';}).join('');
+    }
+    if(!activeHtml)activeHtml='<div class="dnd35-spell-empty">'+(isSorc?'Nenhuma magia conhecida selecionada.':'Nenhuma magia preparada selecionada.')+'</div>';
+    var section='<section class="dnd35-grimoire"><div class="dnd35-grimoire-head"><div><span class="dnd35-grimoire-kicker">D&amp;D 3.5 · Livro de fórmulas</span><h2>Grimório</h2><p>'+(classNames[avail.key]||esc(state.classe.nome||'Classe'))+' · Nível '+charLevel+' · Atributo-chave '+esc(avail.ability||'—')+(avail.key?' ('+(avail.mod>=0?'+':'')+avail.mod+')':'')+'</p></div><button type="button" class="dnd35-grimoire-btn" data-grimoire-open '+(creating?'disabled':'')+'>Abrir Grimório</button></div>'+(message?'<p class="dnd35-note">'+esc(message)+'</p>':'')+'<div class="dnd35-grimoire-ledger">'+(ledger||'<article><b>Progressão</b><span>Sem espaços disponíveis registrados.</span></article>')+'</div><div style="margin-top:12px"><b style="font-family:Cinzel,serif;font-size:11px">'+(isSorc?'MAGIAS CONHECIDAS ('+knownCount+') E CONJURAÇÕES':'MAGIAS PREPARADAS ('+preparedCount+')')+'</b><div>'+activeHtml+'</div></div><div class="dnd35-grimoire-status" data-grimoire-status role="status" aria-live="polite">'+(creating?'Salve primeiro para usar o Grimório.':'')+'</div><button type="button" class="dnd35-grimoire-action" data-grimoire-rest '+(creating?'disabled':'')+'>Repor após descanso diário</button></section>';
+    var catalog='';
+    if(!spells.length)catalog='<div class="dnd35-spell-empty">'+esc(state.spellCatalogError||'Nenhuma magia disponível neste nível/classe.')+'</div>';
+    else catalog='<div class="dnd35-spell-list">'+spells.map(function(sp){
+      var id=String(sp.id),lvl=dnd35SpellLevel(sp),known=s.conhecidas.indexOf(id)>=0,prepared=s.preparadas.filter(function(p){return String(p.spell_id)===id;})[0],technical=sp.dados_tecnicos;
+      if(technical&&typeof technical==='object')technical=JSON.stringify(technical);
+      var meta=['Círculo '+lvl,sp.escola?'Escola: '+sp.escola:'',sp.alcance?'Alcance: '+sp.alcance:'',sp.alvo?'Alvo: '+sp.alvo:'',sp.duracao?'Duração: '+sp.duracao:'',sp.componentes?'Componentes: '+sp.componentes:''].filter(Boolean).join(' · ');
+      var controls='';
+      if(!creating){
+        if(avail.key==='wizard')controls='<label><input type="checkbox" data-spell-known="'+esc(id)+'" '+(known?'checked':'')+'> No grimório</label><label><input type="checkbox" data-spell-prepared="'+esc(id)+'" '+(prepared?'checked':'')+'> Preparar</label>';
+        else if(avail.key==='cleric'||avail.key==='druid')controls='<label><input type="checkbox" data-spell-prepared="'+esc(id)+'" '+(prepared?'checked':'')+'> Preparar</label>';
+        else if(avail.key==='sorcerer')controls='<label><input type="checkbox" data-spell-known="'+esc(id)+'" '+(known?'checked':'')+'> Conhecida</label>';
+        if(avail.key!=='sorcerer'){
+          var selectedSlot=prepared?Number(prepared.slot_level):lvl,opts='';
+          for(var slot=lvl;slot<=avail.max;slot++)opts+='<option value="'+slot+'"'+(slot===selectedSlot?' selected':'')+'>'+slot+'</option>';
+          controls+='<label>Usar espaço de círculo <select data-spell-level="'+esc(id)+'">'+opts+'</select></label>';
+        }
+      }
+      return '<article class="dnd35-spell-card" data-spell-card><h3>'+esc(sp.nome||'Magia sem nome')+'</h3><div class="dnd35-spell-meta">'+esc(meta)+'</div>'+(sp.descricao?'<div class="dnd35-spell-description">'+esc(sp.descricao)+'</div>':'')+(technical?'<div class="dnd35-spell-meta">Dados técnicos: '+esc(technical)+'</div>':'')+(controls?'<div class="dnd35-spell-controls">'+controls+'</div>':'')+'</article>';
+    }).join('')+'</div>';
+    var modal='<div class="dnd35-grimoire-modal '+(state.grimoireOpen?'open':'')+'" data-grimoire-modal role="dialog" aria-modal="true" aria-label="Grimório SRD"><div class="dnd35-grimoire-box"><div class="dnd35-grimoire-modalhead"><h2>GRIMÓRIO · '+esc(classNames[avail.key]||'SRD 3.5')+'</h2><button class="dnd35-grimoire-close" type="button" data-grimoire-close aria-label="Fechar">Fechar ×</button></div><div class="dnd35-grimoire-tools"><input type="search" data-spell-search placeholder="Buscar por nome, escola ou descrição" aria-label="Buscar magias"><span>'+spells.length+' magia(s) · círculos 0–'+avail.max+'</span></div><div class="dnd35-grimoire-body"><p class="dnd35-note">'+(avail.key==='wizard'?'O Mago mantém magias conhecidas no grimório e prepara uma cópia por espaço diário.':avail.key==='cleric'||avail.key==='druid'?'Clérigos e Druidas selecionam suas magias preparadas para os espaços disponíveis.':'O Feiticeiro escolhe magias conhecidas e consome espaços diários ao conjurar.')+'</p>'+catalog+'</div><button class="dnd35-grimoire-save" type="button" data-grimoire-save '+(creating?'disabled':'')+'>Salvar seleções</button></div></div>';
+    return section+modal;
+  }
+  function dnd35GrimoireBind(state) {
+    var open=document.querySelector('[data-grimoire-open]'),close=document.querySelector('[data-grimoire-close]'),modal=document.querySelector('[data-grimoire-modal]');
+    if(open)open.addEventListener('click',function(){state.grimoireOpen=true;renderizarFichaSRD35();});
+    if(close)close.addEventListener('click',function(){state.grimoireOpen=false;renderizarFichaSRD35();});
+    if(modal)modal.addEventListener('click',function(e){if(e.target===modal){state.grimoireOpen=false;renderizarFichaSRD35();}});
+    document.querySelectorAll('[data-spell-search]').forEach(function(input){input.addEventListener('input',function(){var q=input.value.toLowerCase();document.querySelectorAll('[data-spell-card]').forEach(function(card){card.hidden=card.textContent.toLowerCase().indexOf(q)<0;});});});
+    document.querySelectorAll('[data-spell-known]').forEach(function(input){input.addEventListener('change',function(){var s=state.grimoireState,id=String(input.dataset.spellKnown),at=s.conhecidas.indexOf(id);if(input.checked&&at<0)s.conhecidas.push(id);if(!input.checked&&at>=0)s.conhecidas.splice(at,1);});});
+    document.querySelectorAll('[data-spell-prepared]').forEach(function(input){input.addEventListener('change',function(){var s=state.grimoireState,id=String(input.dataset.spellPrepared),at=s.preparadas.findIndex(function(p){return String(p.spell_id)===id;});if(input.checked&&at<0){var select=document.querySelector('[data-spell-level="'+CSS.escape(id)+'"]'),lvl=select?Number(select.value):0;s.preparadas.push({spell_id:id,slot_level:lvl,expended:false});}if(!input.checked&&at>=0)s.preparadas.splice(at,1);});});
+    document.querySelectorAll('[data-spell-level]').forEach(function(select){select.addEventListener('change',function(){var id=String(select.dataset.spellLevel),p=state.grimoireState.preparadas.filter(function(x){return String(x.spell_id)===id;})[0];if(p){p.slot_level=Number(select.value);p.expended=false;}});});
+    var save=document.querySelector('[data-grimoire-save]');if(save)save.addEventListener('click',function(){dnd35GrimoirePersist(state);});
+    var rest=document.querySelector('[data-grimoire-rest]');if(rest)rest.addEventListener('click',async function(){if(!window.confirm('Confirmar reposição das magias após o descanso diário?'))return;rest.disabled=true;var status=document.querySelector('[data-grimoire-status]');try{var result=await sb.rpc('repor_magias_srd',{p_character_id:String(CHAR_ID)});if(result.error)throw result.error;state.grimoireState.usos={};state.grimoireState.preparadas.forEach(function(p){p.expended=false;});state.sheet.magias_preparadas=dnd35GrimoireSaveState({sheet:{magias_preparadas:state.grimoireState}});renderizarFichaSRD35();var restedStatus=document.querySelector('[data-grimoire-status]');if(restedStatus)restedStatus.textContent='Magias repostas após descanso diário.';}catch(e){if(status)status.textContent='Não foi possível repor: '+(e.message||e);rest.disabled=false;}});
+  }
+  async function dnd35GrimoirePersist(state) {
+    var status=document.querySelector('[data-grimoire-status]'),attrs=dnd35Objeto(state.sheet.atributos),level=Math.max(1,Number(state.sheet.nivel)||1),avail=dnd35GrimoireAvailability(state,attrs,level),s=state.grimoireState||dnd35SpellState(state),spells=(state.srdSpells||[]).filter(function(sp){return dnd35SpellMatchesClass(sp,avail.key)&&dnd35SpellLevel(sp)>=0&&dnd35SpellLevel(sp)<=avail.max;}),validIds=spells.map(function(sp){return String(sp.id);});
+    if(!state.grimoireState)state.grimoireState=s;
+    if(!avail.key||!avail.progression){if(status)status.textContent='Não foi possível salvar: classe ou progressão de magias indisponível.';return;}
+    s.conhecidas=Array.from(new Set(s.conhecidas.map(String).filter(function(id){return validIds.indexOf(id)>=0;})));
+    s.preparadas=s.preparadas.filter(function(p){return validIds.indexOf(String(p.spell_id))>=0;});
+    if(avail.key==='wizard'&&s.preparadas.some(function(p){return s.conhecidas.indexOf(String(p.spell_id))<0;})){if(status)status.textContent='Magias preparadas pelo Mago precisam estar no grimório (conhecidas).';return;}
+    if(avail.key==='sorcerer'){
+      var knownRows=dnd35SpellParse(avail.progression&&avail.progression.known_by_level),hasKnown=Array.isArray(knownRows),countBy={};
+      s.conhecidas.forEach(function(id){var sp=spells.filter(function(x){return String(x.id)===id;})[0];if(sp){var l=dnd35SpellLevel(sp);countBy[l]=(countBy[l]||0)+1;}});
+      if(hasKnown)for(var kl=0;kl<=avail.max;kl++){var cap=dnd35SpellProgressionCount(state,'known_by_level',level,kl);if(cap!=null&&(countBy[kl]||0)>cap){if(status)status.textContent='Limite de magias conhecidas excedido no círculo '+kl+'.';return;}}
+    }
+    if(avail.key!=='sorcerer'){
+      var perSlot={};s.preparadas.forEach(function(p){var l=Number(p.slot_level)||0;perSlot[l]=(perSlot[l]||0)+1;});
+      for(var sl=0;sl<=avail.max;sl++)if((perSlot[sl]||0)>(avail.slots[sl]||0)){if(status)status.textContent='Espaços de círculo '+sl+' excedidos ('+perSlot[sl]+' / '+(avail.slots[sl]||0)+').';return;}
+      if(s.preparadas.some(function(p){var sp=spells.filter(function(x){return String(x.id)===String(p.spell_id);})[0];return !sp||Number(p.slot_level)<dnd35SpellLevel(sp)||Number(p.slot_level)>avail.max;})){if(status)status.textContent='Há uma magia preparada em um círculo inválido.';return;}
+      s.preparadas.forEach(function(p){var sp=spells.filter(function(x){return String(x.id)===String(p.spell_id);})[0];if(sp&&Number(p.slot_level)<dnd35SpellLevel(sp))p.slot_level=dnd35SpellLevel(sp);});
+    }
+      if(avail.key==='sorcerer'){
+      for(var ul=0;ul<=avail.max;ul++)if(Number(s.usos[String(ul)]||0)>(avail.slots[ul]||0)){if(status)status.textContent='Espaços diários de círculo '+ul+' esgotados.';return;}
+    }
+    var payload=dnd35GrimoireSaveState({sheet:{magias_preparadas:s}});
+    if(status)status.textContent='Salvando Grimório…';
+    try{var result=await sb.rpc('salvar_grimorio_srd',{p_character_id:String(CHAR_ID),p_estado:payload});if(result.error)throw result.error;var saved=result.data||payload;state.sheet.magias_preparadas=saved;state.grimoireState=dnd35SpellState({sheet:saved});state.grimoireOpen=false;renderizarFichaSRD35();var newStatus=document.querySelector('[data-grimoire-status]');if(newStatus)newStatus.textContent='Grimório salvo.';}catch(e){if(status)status.textContent='Não foi possível salvar o Grimório: '+(e.message||e);}
+  }
+  function renderizarFichaSRD35() {
+    var state = fichaSRD35, creating = !!state.criacao;
+    var attrs = dnd35Objeto(state.sheet.atributos), baseAttrs = state.baseAtributos || {FOR:10,DES:10,CON:10,INT:10,SAB:10,CAR:10};
+    if (creating) attrs = dnd35AtributosIniciais(state.raca,baseAttrs);
+    if (!Object.keys(attrs).length) attrs = dnd35AtributosIniciais(state.raca);
+    var points = dnd35PontosCompra(baseAttrs), level = Math.max(1,Number(state.sheet.nivel)||1), conMod = dnd35Modificador(attrs.CON);
+    var dadoVida = Math.max(1,Number(state.classe.dado_vida)||8), hpCalc = Math.max(1,dadoVida+conMod), hpMax = Math.max(1,Number(state.sheet.pv_max)||hpCalc);
+    var hpAtual = state.sheet.pv_atual == null ? hpMax : Number(state.sheet.pv_atual), ajustes = dnd35Objeto(state.raca.ajustes_atributos);
+    var nome = creating ? '' : (state.character.nome || 'Sem nome'), classMap = dnd35SkillMap(state);
+    var dexMod=dnd35Modificador(attrs.DES), fortMod=dnd35Modificador(attrs.CON), reflexMod=dexMod, willMod=dnd35Modificador(attrs.SAB);
+    function saveGood(names,fields){var raw='';for(var i=0;i<fields.length;i++){if(state.classe[fields[i]]!=null){raw=String(state.classe[fields[i]]).toLowerCase();break;}}if(raw)return raw==='good'||raw==='bom'||raw==='forte';var cn=String(state.classe.nome||'').toLowerCase();return names.some(function(n){return cn.indexOf(n)>=0;});}
+    function saveBase(good,lvl){return good?2+Math.floor(lvl/2):Math.floor(lvl/3);}
+    var fortBase=saveBase(saveGood(['bárbaro','barbaro','guerreiro','clérigo','clerigo','druida','paladino','monge','patrulheiro','ranger'],['fortitude_progression','fortitude_progressao','fort_progression']),level);
+    var reflexBase=saveBase(saveGood(['bárbaro','barbaro','bardo','ladino','monge','patrulheiro','ranger'],['reflex_progression','reflexos_progression','ref_progression']),level);
+    var willBase=saveBase(saveGood(['bardo','clérigo','clerigo','druida','monge','paladino','feiticeiro','sorcerer','mago','wizard'],['vontade_progression','will_progression']),level);
+    var statusHtml='<section class="dnd35-panel"><h2>Defesas e Status</h2><div class="dnd35-meta"><div class="dnd35-stat"><small>CA base</small><strong>'+(10+dexMod)+'</strong><small>10 + DES; armadura/escudo pela mochila da mesa</small></div><div class="dnd35-stat"><small>Fortitude</small><strong>'+(fortBase+fortMod>=0?'+':'')+(fortBase+fortMod)+'</strong><small>base '+fortBase+' + CON '+fortMod+'</small></div><div class="dnd35-stat"><small>Reflexos</small><strong>'+(reflexBase+reflexMod>=0?'+':'')+(reflexBase+reflexMod)+'</strong><small>base '+reflexBase+' + DES '+reflexMod+'</small></div><div class="dnd35-stat"><small>Vontade</small><strong>'+(willBase+willMod>=0?'+':'')+(willBase+willMod)+'</strong><small>base '+willBase+' + SAB '+willMod+'</small></div></div></section>';
+    var spellsHtml=dnd35GrimoireRender(state,attrs,level,creating);
+    var attrHtml = ATR.map(function(sigla) {
+      var val=Number(attrs[sigla]==null?10:attrs[sigla]), base=Number(baseAttrs[sigla]==null?10:baseAttrs[sigla]), mod=dnd35Modificador(val);
+      var ctrl=creating?'<label class="dnd35-base-label">Base <select class="dnd35-score" data-attr="'+sigla+'" aria-label="Atributo base '+esc(ROT[sigla]||sigla)+'">'+Object.keys(DND35_CUSTO_COMPRA).map(function(score){return '<option value="'+score+'"'+(Number(score)===base?' selected':'')+'>'+score+'</option>';}).join('')+'</select></label>':'';
+      return '<div class="dnd35-attr"><small>'+esc(ROT[sigla]||sigla)+'</small>'+ctrl+'<strong>'+val+'</strong><span>Mod. '+(mod>=0?'+':'')+mod+'</span></div>';
+    }).join('');
+    var skillsView=dnd35RenderSkills(state,attrs,creating,classMap), featsView=dnd35RenderFeats(state,attrs,creating);
+    var skillBudgetNote='Pontos de perícia: '+skillsView.spent+' / '+skillsView.budget+' gastos';
+    var skillPanel=creating?'<div class="dnd35-tabs" role="tablist"><button type="button" class="dnd35-tab '+(state.activeTab!=='talentos'?'active':'')+'" data-tab="pericias">Perícias</button><button type="button" class="dnd35-tab '+(state.activeTab==='talentos'?'active':'')+'" data-tab="talentos">Talentos</button></div><section class="dnd35-build-panel dnd35-tab-panel" data-tab-panel="pericias" '+(state.activeTab==='talentos'?'hidden':'')+'><h2>Perícias · Nível 1</h2><p class="dnd35-budget">'+skillBudgetNote+'</p><p class="dnd35-note">Orçamento = max(1, perícias por nível + modificador final de INT) × 4'+(dnd35IsHuman(state.raca)?' + 4 (humano)':'')+'. Graduações de classe custam 1 ponto; fora de classe custam 2 e avançam em passos de 0,5.</p><div class="dnd35-skill-list">'+skillsView.html+'</div></section><section class="dnd35-build-panel dnd35-tab-panel" data-tab-panel="talentos" '+(state.activeTab!=='talentos'?'hidden':'')+'><h2>Talentos básicos</h2><p class="dnd35-note">Escolha exatamente '+(dnd35IsHuman(state.raca)?'2 talentos (talento básico + extra humano).':'1 talento básico.')+' Pré-requisitos são verificados contra os atributos finais e o BBA disponível.</p><div class="dnd35-feat-list">'+featsView+'</div></section>' : '<div class="dnd35-grid" style="margin-top:16px"><section class="dnd35-panel"><h2>Perícias</h2><ul class="dnd35-list"><li>'+esc(skillBudgetNote)+'</li></ul><div class="dnd35-skill-list">'+skillsView.html+'</div></section><section class="dnd35-panel"><h2>Talentos</h2>'+featsView+'</section></div>';
+    var html='<div class="dnd35-page"><header class="dnd35-header"><div><div class="dnd35-kicker">VÍNCULO · D&amp;D 3.5</div><h1>'+esc(nome)+'</h1><p>'+esc(state.raca.nome)+' · '+esc(state.classe.nome)+' · Nível '+level+'</p></div><a class="dnd35-link" href="lobby.html">Voltar ao Lobby</a></header>'+
+      '<div class="dnd35-grid"><section class="dnd35-panel"><h2>Identidade</h2>'+(creating?'<label class="dnd35-name-label" for="dnd35-nome">Nome do personagem</label><input class="dnd35-name-input" id="dnd35-nome" maxlength="60" autocomplete="off" placeholder="Ex.: Arannis" value="'+esc(state.nomeDraft||'')+'">':'')+
+      '<div class="dnd35-meta"><div class="dnd35-stat"><small>Raça</small><strong>'+esc(state.raca.nome)+'</strong></div><div class="dnd35-stat"><small>Classe</small><strong>'+esc(state.classe.nome)+'</strong></div><div class="dnd35-stat"><small>Nível</small><strong>'+level+'</strong></div><div class="dnd35-stat"><small>Dado de Vida</small><strong>d'+dadoVida+'</strong></div><div class="dnd35-stat"><small>Pontos de Vida</small><strong class="dnd35-hp">'+hpAtual+' / '+hpMax+'</strong></div><div class="dnd35-stat"><small>Deslocamento</small><strong>'+esc(state.raca.deslocamento==null?'—':state.raca.deslocamento+' m')+'</strong></div><div class="dnd35-stat"><small>Tamanho</small><strong>'+esc(state.raca.tamanho||'—')+'</strong></div><div class="dnd35-stat"><small>XP</small><strong>'+Math.max(0,Number(state.sheet.xp)||0)+'</strong></div></div>'+(creating?'<p class="dnd35-note">Distribua até 25 pontos de compra entre valores-base de 8 a 18. Os ajustes raciais são aplicados depois. PV inicial = dado de vida máximo + modificador de Constituição (mínimo 1).</p>':'')+'</section>'+
+      '<section class="dnd35-panel"><h2>Atributos</h2><div class="dnd35-attrs">'+attrHtml+'</div>'+(creating?'<p id="dnd35-point-budget" class="dnd35-point-budget">Pontos de compra: '+points+' / 25 · Restam '+(25-points)+'</p>':'')+'<p class="dnd35-note">Ajustes raciais: '+esc(Object.keys(ajustes).length?Object.keys(ajustes).map(function(k){return k+' '+(Number(ajustes[k])>0?'+':'')+ajustes[k];}).join(' · '):'nenhum')+'</p></section>'+
+      '<section class="dnd35-panel"><h2>Traços Raciais</h2><ul class="dnd35-list">'+dnd35Lista(state.raca.habilidades_raciais)+'</ul></section><section class="dnd35-panel"><h2>Perícias de Classe</h2><p class="dnd35-note">'+Number(state.classe.pericias_por_nivel||0)+' pontos de perícia por nível, antes dos ajustes de Inteligência.</p><ul class="dnd35-list">'+dnd35Lista(state.classe.pericias_classe)+'</ul></section></div>'+statusHtml+spellsHtml+skillPanel+
+      (creating?'<div class="dnd35-actions"><span class="dnd35-status" id="dnd35-status" role="status" aria-live="polite"></span><button type="button" class="dnd35-save" id="dnd35-save">Criar personagem</button></div>':'')+'</div>';
+    var root=document.getElementById('root'); root.classList.add('dnd35-mode'); root.innerHTML=html;
+    dnd35GrimoireBind(state);
+    if (creating) {
+      var nameInput=document.getElementById('dnd35-nome'); nameInput.addEventListener('input',function(){state.nomeDraft=nameInput.value;});
+      document.querySelectorAll('.dnd35-score').forEach(function(select){select.addEventListener('change',function(){state.nomeDraft=nameInput.value;state.baseAtributos[select.dataset.attr]=Number(select.value);renderizarFichaSRD35();});});
+      document.querySelectorAll('.dnd35-tab').forEach(function(tab){tab.addEventListener('click',function(){state.activeTab=tab.dataset.tab;renderizarFichaSRD35();});});
+      document.querySelectorAll('[data-skill]').forEach(function(select){select.addEventListener('change',function(){var value=Number(select.value);if(value)state.sheet.pericias[select.dataset.skill]=value;else delete state.sheet.pericias[select.dataset.skill];state.nomeDraft=nameInput.value;renderizarFichaSRD35();});});
+      document.querySelectorAll('[data-feat]').forEach(function(select){select.addEventListener('change',function(){var i=Number(select.dataset.feat), prev=state.featPicks[i]||{};state.featPicks[i]={id:select.value,parametro:prev.parametro||''};state.nomeDraft=nameInput.value;renderizarFichaSRD35();});});
+      document.querySelectorAll('[data-feat-param]').forEach(function(input){input.addEventListener('input',function(){var i=Number(input.dataset.featParam);if(state.featPicks[i])state.featPicks[i].parametro=input.value;});});
+      var save=document.getElementById('dnd35-save'); save.disabled=points>25; save.addEventListener('click',salvarFichaSRD35);
+    }
+  }
+
+  async function carregarCatalogosSRD35() {
+    var results=await Promise.all([sb.from('srd_skills').select('id,nome,atributo,treinada_apenas,penalidade_armadura'),sb.from('srd_feats').select('id,nome,descricao,requisitos,exige_parametro'),sb.from('srd_spells').select('id,nome,nivel,circulo,escola,alcance,alvo,duracao,componentes,classes,descricao,dados_tecnicos'),sb.from('srd_spell_progressions').select('class_key,slots_by_level,known_by_level')]);
+    var error=results.slice(0,2).filter(function(r){return r.error;})[0];
+    if(error) throw new Error('Migração SRD pendente: não foi possível carregar srd_skills/srd_feats. Confirme que a migração do catálogo e das colunas pericias/talentos foi aplicada. Detalhe: '+error.error.message);
+    var spellError=results[2].error?results[2].error.message:'',progressionError=results[3].error?results[3].error.message:'';
+    return {skills:dnd35UniqueById(results[0].data||[]),feats:dnd35UniqueById(results[1].data||[]),spells:results[2].error?[]:dnd35UniqueById(results[2].data||[]),progressions:results[3].error?[]:(results[3].data||[]),spellError:spellError,progressionError:progressionError};
+  }
+  async function carregarNovaFichaSRD35() {
+    var results=await Promise.all([sb.from('srd_races').select('*').eq('id',String(RACE_ID)).single(),sb.from('srd_classes').select('*').eq('id',String(CLASS_ID)).single(),carregarCatalogosSRD35()]);
+    if(results[0].error)throw new Error('Raça não encontrada: '+results[0].error.message);
+    if(results[1].error)throw new Error('Classe não encontrada: '+results[1].error.message);
+    var catalogs=results[2];
+    fichaSRD35={criacao:true,character:{},baseAtributos:{FOR:10,DES:10,CON:10,INT:10,SAB:10,CAR:10},nomeDraft:'',sheet:{nivel:1,xp:0,ouro:0,atributos:{},pericias:{},talentos:[],magias_preparadas:{version:1,conhecidas:[],preparadas:[],usos:{}}},raca:results[0].data,classe:results[1].data,skills:catalogs.skills,feats:catalogs.feats,srdSpells:catalogs.spells,progressions:catalogs.progressions,spellCatalogError:catalogs.spellError,spellProgressionError:catalogs.progressionError,featPicks:[],activeTab:'pericias'};
+    renderizarFichaSRD35();
+  }
+  async function carregarFichaSRD35(characterId,sheet) {
+    if(!Object.prototype.hasOwnProperty.call(sheet,'pericias')||!Object.prototype.hasOwnProperty.call(sheet,'talentos')) throw new Error('Migração SRD pendente: faltam as colunas srd_character_sheets.pericias e/ou talentos. Aplique a migração SRD antes de abrir esta ficha.');
+    var results=await Promise.all([sb.from('characters').select('*').eq('id',characterId).single(),sb.from('srd_races').select('*').eq('id',String(sheet.raca_id)).single(),sb.from('srd_classes').select('*').eq('id',String(sheet.classe_id)).single(),carregarCatalogosSRD35()]);
+    if(results[0].error)throw new Error('Personagem: '+results[0].error.message);
+    if(results[1].error)throw new Error('Raça SRD: '+results[1].error.message);
+    if(results[2].error)throw new Error('Classe SRD: '+results[2].error.message);
+    fichaSRD35={criacao:false,character:results[0].data,sheet:sheet,raca:results[1].data,classe:results[2].data,skills:results[3].skills,feats:results[3].feats,srdSpells:results[3].spells,progressions:results[3].progressions,spellCatalogError:results[3].spellError,spellProgressionError:results[3].progressionError,featPicks:[],activeTab:'pericias'};
+    renderizarFichaSRD35();
+  }
+  async function salvarFichaSRD35() {
+    var state=fichaSRD35,input=document.getElementById('dnd35-nome'),button=document.getElementById('dnd35-save'),status=document.getElementById('dnd35-status');
+    var nome=String(input&&input.value||'').trim(),attrs=dnd35AtributosIniciais(state.raca,state.baseAtributos),classMap=dnd35SkillMap(state),ranks=dnd35Objeto(state.sheet.pericias);
+    function mostrarErro(message,tab){state.activeTab=tab;renderizarFichaSRD35();var msg=document.getElementById('dnd35-status');if(msg)msg.textContent=message;}
+    if(!nome){status.textContent='Informe um nome para o personagem.';input.focus();return;}
+    var custo=dnd35PontosCompra(state.baseAtributos);if(custo>25){status.textContent='A distribuição ultrapassa o limite de 25 pontos.';return;}
+    var budget=dnd35PericiaBudget(state,attrs),spent=dnd35PericiaCostTotal(state,ranks,classMap);
+    if(spent>budget){mostrarErro('Pontos de perícia excedidos: '+spent+' / '+budget+'.','pericias');return;}
+    var skillLevel=Math.max(1,Number(state.sheet.nivel)||1);
+    for(var skillId of Object.keys(ranks)){
+      var skillRank=Number(ranks[skillId]||0), isClass=!!classMap[String(skillId)], maximum=isClass?skillLevel+3:(skillLevel+3)/2;
+      if(!Number.isFinite(skillRank)||skillRank<0||skillRank>maximum){mostrarErro('Graduações inválidas ou acima do máximo para '+skillId+'.','pericias');return;}
+      if(isClass&&!Number.isInteger(skillRank)){mostrarErro('Perícias de classe usam graduações inteiras.','pericias');return;}
+      if(!isClass&&Math.abs(skillRank*2-Math.round(skillRank*2))>0.001){mostrarErro('Perícias fora de classe avançam em passos de 0,5.','pericias');return;}
+    }
+    var needed=dnd35IsHuman(state.raca)?2:1,picks=state.featPicks||[];
+    if(picks.length!==needed||picks.some(function(p){return !p||!p.id;})){mostrarErro('Escolha exatamente '+needed+' talento(s).','talentos');return;}
+    var ids=picks.map(function(p){return String(p.id);});
+    if(new Set(ids).size!==ids.length){mostrarErro('Escolha talentos diferentes; não é permitido repetir o mesmo ID.','talentos');return;}
+    var selected=picks.map(function(p){return state.feats.filter(function(f){return String(f.id)===String(p.id);})[0];});
+    for(var i=0;i<picks.length;i++){
+      var feat=selected[i];if(!feat){mostrarErro('Um dos talentos escolhidos não está no catálogo.','talentos');return;}
+      var warns=dnd35FeatWarnings(feat,attrs,state),requires=!!(feat.exige_parametro||dnd35FeatIsWeaponFocus(feat));
+      if(requires&&!String(picks[i].parametro||'').trim())warns.push('Informe o parâmetro do talento '+feat.nome+'.');
+      if(warns.length){mostrarErro(warns[0],'talentos');return;}
+    }
+    var talentos=picks.map(function(p){return {id:String(p.id),parametro:String(p.parametro||'').trim()||null};});
+    button.disabled=true;status.textContent='Gravando personagem…';
+    try {
+      var result=await sb.rpc('criar_personagem_srd_completo',{p_nome:nome,p_raca_id:String(RACE_ID),p_classe_id:String(CLASS_ID),p_atributos:state.baseAtributos,p_pericias:ranks,p_talentos:talentos});
+      if(result.error){var message=result.error.message||'erro desconhecido';if(/criar_personagem_srd_completo|function|schema cache|column|pericias|talentos|relation|does not exist/i.test(message))throw new Error('Migração SRD pendente ou RPC indisponível. Aplique a migração com srd_character_sheets.pericias/talentos, catálogo srd_feats e criar_personagem_srd_completo. Detalhe: '+message);throw new Error(message);}
+      var id=result.data;if(Array.isArray(id))id=id[0];if(id&&typeof id==='object')id=id.character_id||id.id;
+      if(!id)throw new Error('A ficha foi criada, mas o banco não retornou o identificador do personagem.');
+      window.location.href='lobby.html?mostrar-fichas=1';
+    } catch(err) {status.textContent='Não foi possível salvar: '+(err.message||err);button.disabled=false;}
+  }
+
+  async function carregar(){
+    if (isCreationMode && IS_SRD_MODE) {
+      await carregarNovaFichaSRD35();
+      return;
+    }
+    if (!isCreationMode && CHAR_ID) {
+      var rsrd = await sb.from('srd_character_sheets').select('*').eq('character_id', CHAR_ID).maybeSingle();
+      if (rsrd.error) throw new Error('srd_character_sheets: ' + rsrd.error.message);
+      if (rsrd.data) {
+        await carregarFichaSRD35(CHAR_ID, rsrd.data);
+        return;
+      }
+    }
+    if (isCreationMode) {
+      var r3 = await sb.from('classes').select('*').eq('id', CLASS_ID).single(); if (r3.error) throw new Error('Classe nao encontrada: '+r3.error.message);
+      var r4 = await sb.from('abilities').select('*').eq('classe', CLASS_ID).order('nivel');
+      dados = { ch: { nome: 'NOME DO PERSONAGEM', cultura: 'Central', xp: 0, ouro: 0 }, sh: { atributos: {FOR:0,DES:0,CON:0,INT:0,SAB:0,CAR:0}, pericias: {} }, cl: r3.data, ab: r4.data || [] };
+      distribuicao = {FOR:0,DES:0,CON:0,INT:0,SAB:0,CAR:0};
+      await carregarConhecimento(); // Carrega talentos e magias para o explorar na criação
+      render(); return;
+    }
+    var r1 = await sb.from('characters').select('*').eq('id', CHAR_ID).single(); if (r1.error) throw new Error('characters: '+r1.error.message);
+    var r2 = await sb.from('vinculo_character_sheets').select('*').eq('character_id', CHAR_ID).single(); if (r2.error) throw new Error('sheet legado: '+r2.error.message);
+    var r3b = await sb.from('classes').select('*').eq('id', r2.data.classe).single(); if (r3b.error) throw new Error('classes: '+r3b.error.message);
+    var r4b = await sb.from('abilities').select('*').eq('classe', r2.data.classe).order('nivel');
+    dados = { ch: r1.data, sh: r2.data, cl: r3b.data, ab: r4b.data || [] };
+    await Promise.all([carregarInventario(), carregarNotas(), carregarConhecimento()]);
+    distribuicao = {FOR:0,DES:0,CON:0,INT:0,SAB:0,CAR:0}; render();
+  }
+
+  carregar().catch(function(e){ console.error(e); document.getElementById('root').innerHTML = '<div class="erro">Erro: '+esc(e.message)+'</div>'; });
+})();
+</script>
+</body>
+</html>
