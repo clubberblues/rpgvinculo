@@ -2402,6 +2402,15 @@ button,input,textarea{font-family:inherit}
     if(!container.querySelector('.btn-rolar-teste')) container.remove();
   }
 
+  function removerPedidosIniciativaDaFicha(personagemId){
+    var container=document.getElementById('botoes-rolagem-pendente');
+    if(!container) return;
+    Array.from(container.querySelectorAll('.btn-rolar-teste')).forEach(function(btn){
+      if(btn.dataset.characterId===String(personagemId) && btn.dataset.isInitiative==='true') btn.remove();
+    });
+    if(!container.querySelector('.btn-rolar-teste')) container.remove();
+  }
+
   function criarBotaoRolagemTeste(tipoTeste, personagemId, requestKey){
     var personagem=personajesById(personagemId);
     var responseKey=String(requestKey)+'|'+String(personagemId);
@@ -2421,6 +2430,7 @@ button,input,textarea{font-family:inherit}
     btn.dataset.responseKey=responseKey;
     btn.dataset.requestKey=String(requestKey);
     btn.dataset.characterId=String(personagemId);
+    btn.dataset.isInitiative=String(String(tipoTeste).toLocaleLowerCase('pt-BR').includes('iniciativa'));
     var nomePersonagem=personagem&&personagem.ch?String(personagem.ch.nome||'Personagem'):'Personagem';
     btn.textContent='⚡ Rolar '+tipoTeste+' · '+nomePersonagem;
     btn.setAttribute('aria-label','Rolar '+tipoTeste+' para '+nomePersonagem+' com o dado de vinte faces');
@@ -2445,6 +2455,7 @@ button,input,textarea{font-family:inherit}
           }
           pedidosTesteRespondidos[responseKey]=true;
           removerBotaoRolagemTeste(requestKey,personagemId);
+          if(isInitiative) removerPedidosIniciativaDaFicha(personagemId);
           var extras={teste:tipoTeste,d20:resultado,bonus:bonus,bonus_talento:featBonus,total:total,request_id:requestKey,character_id:personagemId};
           if(isInitiative) extras.iniciativa=true;
           try{
@@ -2875,6 +2886,7 @@ button,input,textarea{font-family:inherit}
         if(pedidoTesteAtivo && pedidoTesteAtivo.responseKey===responseKey){
           pedidoTesteAtivo = null;
         }
+        if(d.iniciativa) removerPedidosIniciativaDaFicha(d.character_id);
       }
       return '<div class="chat-msg rolagem">🎲 <b>'+esc(d.autor_nome||'—')+'</b>: '+sanitizarHTMLRolagem(d.texto||'')+'</div>';
     }
