@@ -1435,6 +1435,17 @@ button,input,textarea{font-family:inherit}
     return Math.max(1,tamanho);
   }
 
+  function tamanhoOcupacaoTokenCBA(item){
+    var tamanho=String(item&&item.monsterStats&&item.monsterStats.tamanho||item&&item.tamanho||'');
+    if(item){var personagem=personagens.find(function(p){return String(p.ch.id)===String(item.id);});if(personagem&&personagem.tamanho)tamanho=String(personagem.tamanho);}
+    tamanho=tamanho.toLowerCase();
+    if(/^colossal/.test(tamanho))return 5;
+    if(/^gargantuan/.test(tamanho))return 4;
+    if(/^huge/.test(tamanho))return 3;
+    if(/^large/.test(tamanho))return 2;
+    return 1;
+  }
+
   function renderizarTokensCBA(layer,scene){
     if(!layer) return;
     scene = scene || cbaState;
@@ -1445,8 +1456,9 @@ button,input,textarea{font-family:inherit}
     var columns = Math.max(1,Math.floor((layer.clientWidth||rect.width/cbaZoom)/cell));
     var rows = Math.max(1,Math.floor((layer.clientHeight||rect.height/cbaZoom)/cell));
     scene.tokens.forEach(function(item){
-      item.gridX = Math.max(0,Math.min(columns-1,parseInt(item.gridX,10)||0));
-      item.gridY = Math.max(0,Math.min(rows-1,parseInt(item.gridY,10)||0));
+      var ocupacao=tamanhoOcupacaoTokenCBA(item);
+      item.gridX = Math.max(0,Math.min(Math.max(0,columns-ocupacao),parseInt(item.gridX,10)||0));
+      item.gridY = Math.max(0,Math.min(Math.max(0,rows-ocupacao),parseInt(item.gridY,10)||0));
       item.x = item.gridX*cell;
       item.y = item.gridY*cell;
       var token = document.createElement('div');
@@ -1456,8 +1468,9 @@ button,input,textarea{font-family:inherit}
       token.addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' ')&&!ataqueSelecionado){e.preventDefault();abrirMenuContextualToken(item,token);}});
       token.dataset.gridX = String(item.gridX);
       token.dataset.gridY = String(item.gridY);
-      token.style.width = cell+'px';
-      token.style.height = cell+'px';
+      token.style.width = (cell*ocupacao)+'px';
+      token.style.height = (cell*ocupacao)+'px';
+      token.dataset.ocupacao = String(ocupacao);
       token.style.left = item.x+'px';
       token.style.top = item.y+'px';
       token.title = item.detalhe ? item.nome+' · '+item.detalhe : item.nome;
@@ -2024,8 +2037,9 @@ button,input,textarea{font-family:inherit}
       var rect = layer.getBoundingClientRect();
       var cell = arrasto.cell;
       var baseWidth=layer.clientWidth||rect.width/cbaZoom, baseHeight=layer.clientHeight||rect.height/cbaZoom;
-      var maxLeft = Math.max(0,baseWidth-cell);
-      var maxTop = Math.max(0,baseHeight-cell);
+      var ocupacao=tamanhoOcupacaoTokenCBA(arrasto.item);
+      var maxLeft = Math.max(0,baseWidth-cell*ocupacao);
+      var maxTop = Math.max(0,baseHeight-cell*ocupacao);
       var left = Math.max(0,Math.min(maxLeft,(e.clientX-rect.left)/cbaZoom-arrasto.offsetX));
       var top = Math.max(0,Math.min(maxTop,(e.clientY-rect.top)/cbaZoom-arrasto.offsetY));
       arrasto.item.x = left;
@@ -2044,8 +2058,9 @@ button,input,textarea{font-family:inherit}
       var rows = Math.max(1,Math.floor((layer.clientHeight||rect.height/cbaZoom)/cell));
       var left = Number(arrasto.item.x)||0;
       var top = Number(arrasto.item.y)||0;
-      arrasto.item.gridX = Math.max(0,Math.min(columns-1,Math.round((left+cell/2)/cell-0.5)));
-      arrasto.item.gridY = Math.max(0,Math.min(rows-1,Math.round((top+cell/2)/cell-0.5)));
+      var ocupacao=tamanhoOcupacaoTokenCBA(arrasto.item);
+      arrasto.item.gridX = Math.max(0,Math.min(Math.max(0,columns-ocupacao),Math.round(left/cell)));
+      arrasto.item.gridY = Math.max(0,Math.min(Math.max(0,rows-ocupacao),Math.round(top/cell)));
       var didMove=arrasto.moved||arrasto.item.gridX!==arrasto.startGridX||arrasto.item.gridY!==arrasto.startGridY;
       arrasto.item.x = arrasto.item.gridX*cell;
       arrasto.item.y = arrasto.item.gridY*cell;
@@ -2919,7 +2934,8 @@ button,input,textarea{font-family:inherit}
 
     var raceIds=Object.values(shs).map(function(s){return String(s.raca_id||'');}).filter(function(x,i,a){return x&&a.indexOf(x)===i;});
     var raceSpeedById=Object.create(null);
-    if(raceIds.length){var raceResult=await sb.from('srd_races').select('id,deslocamento').in('id',raceIds);if(!raceResult.error)(raceResult.data||[]).forEach(function(race){var speed=Number(race.deslocamento);raceSpeedById[String(race.id)]=Number.isFinite(speed)&&speed>=0?speed:null;});else console.warn('Não foi possível ler velocidades raciais para preview:',raceResult.error.message);}
+    var raceSizeById=Object.create(null);
+    if(raceIds.length){var raceResult=await sb.from('srd_races').select('id,deslocamento,tamanho').in('id',raceIds);if(!raceResult.error)(raceResult.data||[]).forEach(function(race){var speed=Number(race.deslocamento);raceSpeedById[String(race.id)]=Number.isFinite(speed)&&speed>=0?speed:null;raceSizeById[String(race.id)]=String(race.tamanho||'Medium');});else console.warn('Não foi possível ler dados raciais para preview:',raceResult.error.message);}
 
     var classesIds = Object.values(shs).map(function(s){ return s.classe_id; }).filter(function(x,i,a){ return x && a.indexOf(x)===i; });
     var cls = Object.create(null);
@@ -2935,7 +2951,7 @@ button,input,textarea{font-family:inherit}
     else console.warn('Inventário SRD indisponível:',invResult.error.message);
     personagens = chs.map(function(c){
       var s = shs[String(c.id)] || {};
-      return { ch:c, sh:s, cl: cls[String(s.classe_id)] || {}, perfil:perfisMap[c.user_id]||{}, equipamento:equipmentByChar[String(c.id)]||[], deslocamento_m:raceSpeedById[String(s.raca_id)]==null?null:raceSpeedById[String(s.raca_id)] };
+      return { ch:c, sh:s, cl: cls[String(s.classe_id)] || {}, perfil:perfisMap[c.user_id]||{}, equipamento:equipmentByChar[String(c.id)]||[], tamanho:raceSizeById[String(s.raca_id)]||'Medium', deslocamento_m:raceSpeedById[String(s.raca_id)]==null?null:raceSpeedById[String(s.raca_id)] };
     });
     personagensCarregados=true;
     renderCards();
