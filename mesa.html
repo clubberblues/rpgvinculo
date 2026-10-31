@@ -1000,7 +1000,7 @@ button,input,textarea{font-family:inherit}
       if(Number(d20)===1)return false;
       var confirmTitle='Confirmação de crítico · '+weaponName+' contra '+target.nome;
       abrirDado(confirmTitle,async function(confirmRoll){
-        var confirmTotal=Number(confirmRoll)+bonus, confirmed=Number(confirmRoll)===20||confirmTotal>=targetAC;
+        var confirmTotal=Number(confirmRoll)+bonus, confirmed=Number(confirmRoll)!==1&&(Number(confirmRoll)===20||confirmTotal>=targetAC);
         registrarResultadoAtaque(d20,confirmed);
       },true,true,'1d20');
       return true;
