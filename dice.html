@@ -4988,6 +4988,11 @@ integrationStyle.textContent = `
     transform: scale(0.85);
     transform-origin: top right;
   }
+  .dice-column.preset-locked,
+  .modifier-strip.preset-locked {
+    opacity: 0.72;
+    pointer-events: none !important;
+  }
   @media (max-height: 580px) {
     .dice-column {
       top: 8px !important;
@@ -5049,8 +5054,11 @@ if (throwButtonForLabel) throwButtonForLabel.setAttribute('aria-label', 'Rolar d
   }
 
   function getTargetOrigin() {
-    var origin = window.location.origin;
-    return origin && origin !== 'null' ? origin : '*';
+    try {
+      return document.referrer ? new URL(document.referrer).origin : '*';
+    } catch (err) {
+      return '*';
+    }
   }
 
   function triggerNativeThrow() {
@@ -5104,11 +5112,13 @@ if (throwButtonForLabel) throwButtonForLabel.setAttribute('aria-label', 'Rolar d
 
   window.addEventListener('message', function (event) {
     if (event.source !== window.parent) return;
-    var ownOrigin = window.location.origin;
-    if (ownOrigin && ownOrigin !== 'null' && event.origin !== ownOrigin) return;
-    if (!event.data || event.data.action !== 'roll' || rollPending) return;
+    var parentOrigin = getTargetOrigin();
+    if (parentOrigin !== '*' && event.origin !== parentOrigin) return;
+    if (!event.data || (event.data.action !== 'roll' && event.data.action !== 'prepareRoll') || rollPending) return;
+    var aguardarClique = event.data.action === 'prepareRoll';
 
     var diceColumn = document.getElementById('dice-column');
+    var modifierStrip = document.getElementById('modifier-strip');
     var d20Row = document.querySelector('.die-pick-row[data-die="20"]');
     if (!throwButton || !d20Row || (diceColumn && diceColumn.classList.contains('locked'))) return;
 
@@ -5141,9 +5151,13 @@ if (throwButtonForLabel) throwButtonForLabel.setAttribute('aria-label', 'Rolar d
       while (modifier < 0 && modUp && !modUp.disabled) { modUp.click(); modifier++; }
     }
 
+    if (diceColumn) diceColumn.classList.toggle('preset-locked', aguardarClique);
+    if (modifierStrip) modifierStrip.classList.toggle('preset-locked', aguardarClique);
+
     if (throwButton.disabled) return;
-    // Reuse the real app button and charge/release events for parent requests.
-    triggerNativeThrow();
+    // Initiative prepares 1d20 and waits for the player to press ROLAR.
+    // Other mesa actions keep their existing automatic throw behavior.
+    if (!aguardarClique) triggerNativeThrow();
   });
 })();
 </script>
