@@ -12,7 +12,7 @@ Estabilizar a mesa virtual para uma nova rodada de simulação entre Mestre e jo
 - Verificação após a limpeza: `campaigns`, `characters`, `members`, `campaign_log`, `tokens` e `srd_character_sheets` estão com zero registros.
 - O banco tem catálogos distintos para D&D 3.5 (`srd_*`) e Vínculo (`vinculo_*`). Eles não devem ser misturados.
 - Contagens atuais: D&D 3.5 — 114 equipamentos, 14 magias, 7 raças, 11 classes, 6 talentos, 38 perícias e 10 monstros. Vínculo — 16 classes, 160 habilidades de classe, 95 magias, 191 itens e 72 talentos.
-- A tabela `srd_character_equipment` não existe no banco conectado, embora o fluxo da aplicação espere essa relação. A estrutura de `srd_equipment` também difere da estrutura definida em scripts recentes do repositório. É necessário alinhar o esquema antes de importar ou expor o catálogo.
+- A tabela `srd_character_equipment` não existe no banco conectado, embora o fluxo da aplicação espere essa relação. A estrutura de `srd_equipment` também difere da estrutura definida em scripts recentes do repositório. A CA de monstros está armazenada como texto (por exemplo, `15 (+1 Des, +3 armadura...)`), mas a tela tenta convertê-la diretamente em número e obtém valor nulo. É necessário alinhar o esquema e normalizar estatísticas antes de importar ou expor o catálogo.
 - O fluxo de ataque atual publica o total do ataque e deixa a confirmação da CA e a aplicação do dano para o Mestre. Ainda não faz a resolução completa de acerto e dano.
 
 ## Decisões recuperadas das conversas
@@ -34,7 +34,7 @@ Estabilizar a mesa virtual para uma nova rodada de simulação entre Mestre e jo
 ### Progressão e magia de Vínculo
 
 - As classes devem manter identidades mecânicas próprias, sem habilidades genéricas compartilhadas como substituto da progressão de classe.
-- O trabalho anterior previa validar Escudeiro, Berserk e Mago antes de expandir o catálogo de habilidades por nível.
+- O trabalho anterior previa validar Escudeiro, Berserk e Mago antes de expandir o catálogo de habilidades por nível. A conversa anterior refere 320 habilidades de classe; a tabela atual do banco contém 160. Essa diferença precisa ser reconciliada com o material fonte.
 - Talentos gerais e habilidades exclusivas de classe são catálogos separados.
 - Magias básicas podem ser universais; magias avançadas dependem de aprendizado, fonte ou condição narrativa.
 - A fórmula de PM discutida para Vínculo era PM máximo = base da classe + INT, com custos e efeitos das magias definidos separadamente. Essa regra deve permanecer no catálogo Vínculo, sem ser misturada às regras SRD de D&D 3.5.
@@ -67,7 +67,7 @@ Estabilizar a mesa virtual para uma nova rodada de simulação entre Mestre e jo
 
 - Organizar a criação em passos curtos: identidade; raça; classe; atributos; habilidades/perícias; talentos; equipamento; magia quando aplicável; revisão final.
 - Mostrar apenas escolhas válidas para a ficha atual, com explicação breve do efeito, requisitos, recursos e impacto.
-- Incluir minitutoriais contextuais, que possam ser ignorados e reabertos, e não bloquear quem já conhece as regras.
+- Incluir tutorial guiado em cada etapa, no estilo dos tutoriais de MMORPG: escurecer o restante da tela, destacar o botão ou área da etapa e explicar sua função. O usuário pode avançar de etapa ou fechar o tutorial quando concluir; o dado 3D existente continua integrado e as exigências de rolagem devem aparecer no chat.
 - Calcular derivados a partir do catálogo e exibir a origem de cada número.
 - Salvar como rascunho e validar todos os requisitos antes de confirmar a ficha.
 
@@ -80,9 +80,8 @@ Estabilizar a mesa virtual para uma nova rodada de simulação entre Mestre e jo
 
 ## Decisões ainda abertas
 
-1. Escopo definitivo dos catálogos: D&D 3.5 SRD/OGL, Vínculo RPG 5.0, ou ambos separados. O banco mantém os dois sistemas e os números atuais não demonstram cobertura completa.
-2. Não localizei, nas conversas referenciadas e disponíveis, o texto dos minitutoriais anteriormente combinados. Recuperar o chat certo ou aprovar uma nova redação antes de tratar os textos como decisão anterior.
-3. Confirmar as regras críticas de combate que o sistema deve automatizar: ameaça/confirmação de crítico, resistências/redução de dano e quando um acerto pode exigir intervenção do Mestre.
+1. Escopo confirmado: completar agora o catálogo D&D 3.5 SRD/OGL. O catálogo Vínculo permanece separado para uma etapa posterior.
+2. A conversa indicada define o formato do tutorial guiado, mas o roteiro e os textos de cada etapa ainda precisam ser redigidos e alinhados com as telas existentes.
 
 ## Critérios de pronto para iniciar a simulação
 
