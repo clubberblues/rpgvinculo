@@ -1588,8 +1588,8 @@ body{background:#0d0b07;font-family:'EB Garamond',Georgia,serif;color:#2b1f0f;
     if(!spells.length)catalog='<div class="dnd35-spell-empty">'+esc(state.spellCatalogError||'Nenhuma magia disponível neste nível/classe.')+'</div>';
     else catalog='<div class="dnd35-spell-list">'+spells.map(function(sp){
       var id=String(sp.id),lvl=dnd35SpellLevel(sp,avail.key),known=s.conhecidas.indexOf(id)>=0,prepared=s.preparadas.filter(function(p){return String(p.spell_id)===id;})[0],technical=sp.dados_tecnicos;
-      if(technical&&typeof technical==='object')technical=JSON.stringify(technical);
-      var meta=['Círculo '+lvl,sp.escola?'Escola: '+sp.escola:'',sp.alcance?'Alcance: '+sp.alcance:'',sp.alvo?'Alvo: '+sp.alvo:'',sp.duracao?'Duração: '+sp.duracao:'',sp.componentes?'Componentes: '+sp.componentes:''].filter(Boolean).join(' · ');
+      var techFields=technical&&technical.source_field_values||{},technicalText=['Casting Time','Saving Throw','Spell Resistance'].map(function(key){return techFields[key]?key+': '+techFields[key]:'';}).filter(Boolean).join(' · ');
+      var meta=['Círculo '+lvl,sp.escola?'Escola: '+sp.escola:'',sp.alcance?'Alcance: '+sp.alcance:'',sp.alvo?'Alvo/efeito: '+sp.alvo:'',sp.area?'Área: '+sp.area:'',sp.duracao?'Duração: '+sp.duracao:'',sp.componentes?'Componentes: '+sp.componentes:''].filter(Boolean).join(' · ');
       var controls='';
       if(!creating){
         if(avail.key==='wizard')controls='<label><input type="checkbox" data-spell-known="'+esc(id)+'" '+(known?'checked':'')+'> No grimório</label><label><input type="checkbox" data-spell-prepared="'+esc(id)+'" '+(prepared?'checked':'')+'> Preparar</label>';
@@ -1601,7 +1601,7 @@ body{background:#0d0b07;font-family:'EB Garamond',Georgia,serif;color:#2b1f0f;
           controls+='<label>Usar espaço de círculo <select data-spell-level="'+esc(id)+'">'+opts+'</select></label>';
         }
       }
-      return '<article class="dnd35-spell-card" data-spell-card><h3>'+esc(sp.nome||'Magia sem nome')+'</h3><div class="dnd35-spell-meta">'+esc(meta)+'</div>'+(sp.descricao?'<div class="dnd35-spell-description">'+esc(sp.descricao)+'</div>':'')+(technical?'<div class="dnd35-spell-meta">Dados técnicos: '+esc(technical)+'</div>':'')+(controls?'<div class="dnd35-spell-controls">'+controls+'</div>':'')+'</article>';
+      return '<article class="dnd35-spell-card" data-spell-card><h3>'+esc(sp.nome||'Magia sem nome')+'</h3><div class="dnd35-spell-meta">'+esc(meta)+'</div>'+(sp.descricao?'<div class="dnd35-spell-description">'+esc(sp.descricao)+'</div>':'')+(technicalText?'<div class="dnd35-spell-meta">'+esc(technicalText)+'</div>':'')+(sp.srd_source_url?'<a class="dnd35-spell-meta" href="'+esc(sp.srd_source_url)+'" target="_blank" rel="noopener noreferrer">Consultar descrição SRD (OGL) ↗</a>':'')+(controls?'<div class="dnd35-spell-controls">'+controls+'</div>':'')+'</article>';
     }).join('')+'</div>';
     var modal='<div class="dnd35-grimoire-modal '+(state.grimoireOpen?'open':'')+'" data-grimoire-modal role="dialog" aria-modal="true" aria-label="Catálogo de magias SRD"><div class="dnd35-grimoire-box"><div class="dnd35-grimoire-modalhead"><h2>'+esc(bookTitle.toLocaleUpperCase('pt-BR'))+' · '+esc(classNames[avail.key]||'SRD 3.5')+'</h2><button class="dnd35-grimoire-close" type="button" data-grimoire-close aria-label="Fechar">Fechar ×</button></div><div class="dnd35-grimoire-tools"><input type="search" data-spell-search placeholder="Buscar por nome, escola ou descrição" aria-label="Buscar magias"><span>'+spells.length+' magia(s) · círculos 0–'+avail.max+'</span></div><div class="dnd35-grimoire-body"><p class="dnd35-note">'+(avail.key==='wizard'?'O Mago registra magias no livro de fórmulas e prepara uma cópia por espaço diário.':avail.key==='cleric'||avail.key==='druid'?'Clérigos e Druidas preparam magias após o descanso diário; o Clérigo também recebe uma magia de domínio por círculo.':avail.key==='paladin'||avail.key==='ranger'?'Paladinos e Patrulheiros começam a conjurar no 4º nível; preparam magias após o descanso.':'Bardos e Feiticeiros aprendem um número limitado de magias e conjuram espontaneamente, sem preparar cada espaço.')+'</p>'+catalog+'</div><button class="dnd35-grimoire-save" type="button" data-grimoire-save '+(creating?'disabled':'')+'>Salvar seleções</button></div></div>';
     return section+modal;
@@ -1688,7 +1688,7 @@ body{background:#0d0b07;font-family:'EB Garamond',Georgia,serif;color:#2b1f0f;
   }
 
   async function carregarCatalogosSRD35() {
-    var results=await Promise.all([sb.from('srd_skills').select('id,nome,atributo,treinada_apenas,penalidade_armadura'),sb.from('srd_feats').select('id,nome,descricao,requisitos,exige_parametro'),sb.from('srd_spells').select('id,nome,nivel,circulo,escola,alcance,alvo,duracao,componentes,classes,descricao,dados_tecnicos'),sb.from('srd_spell_progressions').select('class_key,slots_by_level,known_by_level')]);
+    var results=await Promise.all([sb.from('srd_skills').select('id,nome,atributo,treinada_apenas,penalidade_armadura'),sb.from('srd_feats').select('id,nome,descricao,requisitos,exige_parametro'),sb.from('srd_spells').select('id,nome,nivel,circulo,escola,alcance,alvo,area,duracao,componentes,classes,descricao,dados_tecnicos,srd_source_url'),sb.from('srd_spell_progressions').select('class_key,slots_by_level,known_by_level')]);
     var error=results.slice(0,2).filter(function(r){return r.error;})[0];
     if(error) throw new Error('Migração SRD pendente: não foi possível carregar srd_skills/srd_feats. Confirme que a migração do catálogo e das colunas pericias/talentos foi aplicada. Detalhe: '+error.error.message);
     var spellError=results[2].error?results[2].error.message:'',progressionError=results[3].error?results[3].error.message:'';
