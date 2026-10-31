@@ -2602,7 +2602,9 @@ button,input,textarea{font-family:inherit}
       }
       controlled.forEach(function(token){
         var sheet=sheetsById[String(token.id)];
+        if(token.dexMod!=null&&Number.isFinite(Number(token.dexMod))) token.dexMod=Math.max(-20,Math.min(20,Math.trunc(Number(token.dexMod))));
         if(token.dexMod==null&&sheet&&sheet.atributos&&sheet.atributos.DES!=null) token.dexMod=Math.floor((Number(sheet.atributos.DES)-10)/2);
+        if(token.bonusIniciativa!=null&&Number.isFinite(Number(token.bonusIniciativa))) token.bonusIniciativa=Math.max(-20,Math.min(20,Math.trunc(Number(token.bonusIniciativa))));
         if(token.bonusIniciativa==null&&sheet&&personagemTemTalento({talentos:sheet.talentos},'iniciativa_aprimorada')) token.bonusIniciativa=4;
         if(token.dexMod==null){
           var resposta=prompt('Modificador de Destreza para iniciativa de '+token.nome+' (se não souber, use 0):','0');
@@ -2818,7 +2820,7 @@ button,input,textarea{font-family:inherit}
     rollResultReceived = true;
     if(pedidoTesteAtivo&&pedidoTesteAtivo.button) pedidoTesteAtivo.button.disabled=false;
     pedidoTesteAtivo=null;
-    if(iniciativaBusy) iniciativaBusy=false;
+    if(!rollResultReceived){if(iniciativaBusy) iniciativaBusy=false;if(reforcoBusy) reforcoBusy=false;}
   }
   // O botão de fechar está declarado com onclick no HTML do modal.
   window.fecharDado = fecharDado;
