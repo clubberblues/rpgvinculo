@@ -1783,10 +1783,24 @@ button,input,textarea{font-family:inherit}
     var list=document.getElementById('lista-npcs-rapida');
     modal.classList.add('ativo');
     if(tipoAba==='player'){
-      cbaPlayerCatalog=personagens.filter(function(p){
-        return p.ch.user_id!==eu.id && membros.some(function(m){return m.user_id===p.ch.user_id&&m.role==='PLAYER';});
-      }).map(function(p){return p.ch;});
-      renderizarAbaReforcoRapido('player');
+      var listaJogadores=document.getElementById('lista-npcs-rapida');
+      feedbackCatalogoRapido(listaJogadores,'Atualizando fichas vinculadas a esta mesa…');
+      try{
+        var resultadosJogadores=await Promise.all([
+          sb.from('characters').select('id,user_id,nome,retrato_url').eq('campaign_id',MESA_ID).order('id',{ascending:false}),
+          sb.from('members').select('user_id,role').eq('campaign_id',MESA_ID).eq('role','PLAYER')
+        ]);
+        if(resultadosJogadores[0].error) throw new Error('Fichas: '+resultadosJogadores[0].error.message);
+        if(resultadosJogadores[1].error) throw new Error('Jogadores: '+resultadosJogadores[1].error.message);
+        var jogadoresPermitidos=new Set((resultadosJogadores[1].data||[]).map(function(m){return String(m.user_id);}));
+        cbaPlayerCatalog=(resultadosJogadores[0].data||[]).filter(function(ch){
+          return String(ch.user_id)!==String(eu.id)&&jogadoresPermitidos.has(String(ch.user_id));
+        });
+        renderizarAbaReforcoRapido('player');
+      }catch(err){
+        console.error('Falha ao atualizar fichas dos jogadores da mesa:',err);
+        feedbackCatalogoRapido(listaJogadores,'Não foi possível carregar as fichas dos jogadores: '+(err.message||err));
+      }
       return;
     }
     if(tipoAba==='monstro'){ feedbackCatalogoRapido(document.getElementById('lista-monstros-rapida'),'Carregando bestiário SRD…');try{await carregarCatalogoMonstrosSRD();renderizarAbaReforcoRapido('monstro');}catch(err){feedbackCatalogoRapido(document.getElementById('lista-monstros-rapida'),'Não foi possível carregar o bestiário: '+err.message);}return; }
