@@ -21,7 +21,7 @@ Estabilizar a mesa virtual para uma nova rodada de simulação entre Mestre e jo
 
 - Na exploração, o jogador move livremente o próprio token, sem economia de ações de combate; deslocamento, grade e permissões continuam validados.
 - No combate, o movimento é arrastar e soltar com validação automática de deslocamento, alcance, obstáculos e regras habilitadas.
-- O tamanho mecânico do token é independente da imagem. Pequenas e Médias ocupam 1×1; Grandes 2×2; Enormes 3×3; Imensas 4×4; Colossais 5×5 ou mais. Minúsculas e Diminutas podem compartilhar quadrados individualmente.
+- O tamanho mecânico do token é independente da imagem. Criaturas Pequenas e Médias são representadas individualmente: cada token ocupa seu próprio quadrado 1×1 e não compartilha esse espaço. Grandes ocupam 2×2; Enormes 3×3; Imensas 4×4; Colossais 5×5 ou mais. Minúsculas e Diminutas podem compartilhar quadrados, mantendo tokens individuais.
 - O jogador controla seu personagem. O Mestre controla NPCs, monstros e pode intervir em qualquer token.
 
 ### Iniciativa
