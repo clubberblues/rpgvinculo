@@ -1422,7 +1422,7 @@ body{background:#0d0b07;font-family:'EB Garamond',Georgia,serif;color:#2b1f0f;
   function dnd35PericiaBudget(state, attrs) {
     return Math.max(1, Number(state.classe.pericias_por_nivel || 0) + dnd35Modificador(attrs.INT)) * 4 + (dnd35IsHuman(state.raca) ? 4 : 0);
   }
-  function dnd35PericiaCost(state, skillId, ranks, classMap) { return Number(ranks || 0) * (classMap[String(skillId)] ? 1 : 2); }
+  function dnd35PericiaCost(state, skillId, ranks, classMap) { return Number(ranks || 0) * (String(skillId)==='srd35_skill_speak_language'?1:(classMap[String(skillId)]?1:2)); }
   function dnd35PericiaCostTotal(state, ranks, classMap) {
     return Object.keys(ranks || {}).reduce(function(total,id) { return total + dnd35PericiaCost(state,id,ranks[id],classMap); },0);
   }
@@ -1454,9 +1454,9 @@ body{background:#0d0b07;font-family:'EB Garamond',Georgia,serif;color:#2b1f0f;
     var sorted = state.skills.slice().sort(function(a,b) { var ac=!!classMap[String(a.id)], bc=!!classMap[String(b.id)]; return ac===bc ? String(a.nome).localeCompare(String(b.nome),'pt-BR') : (ac?-1:1); });
     sorted.forEach(function(skill) {
       var id = String(skill.id), isClass = !!classMap[id], rank = Number(ranks[id] || 0), ability = String(skill.atributo || 'INT').toUpperCase();
-      var max = isClass ? level+3 : (level+3)/2, options = '';
+      var isLanguage=String(skill.id)==='srd35_skill_speak_language',max=isLanguage?budget:(isClass?level+3:(level+3)/2),options='';
       if (creating) {
-        var step = isClass ? 1 : 0.5;
+        var step=isLanguage?1:(isClass?1:0.5);
         for (var v=0; v<=max+0.001; v+=step) options += '<option value="'+v+'"'+(Math.abs(v-rank)<0.001?' selected':'')+'>'+v+'</option>';
       }
       var abilityMod = dnd35Modificador(attrs[ability]), classBonus = isClass && rank >= 1 ? 3 : 0, computed = rank + abilityMod + classBonus;
@@ -1468,7 +1468,7 @@ body{background:#0d0b07;font-family:'EB Garamond',Georgia,serif;color:#2b1f0f;
       html += '<article class="dnd35-skill"><div class="dnd35-skill-head"><strong>'+esc(skill.nome)+'</strong><span class="dnd35-badge">'+esc(labels.join(' · '))+'</span></div>'+
         '<p>Atributo: '+esc(ability)+' · Máximo: '+max+' graduações · Custo: '+(isClass?'1':'2')+' ponto(s) por graduação'+(rank%1?' · incremento de 0,5':'')+'</p>'+
         (creating ? '<div class="dnd35-skill-control"><label for="skill-'+esc(id)+'">Graduações</label><select id="skill-'+esc(id)+'" data-skill="'+esc(id)+'">'+options+'</select></div>' : '<p>Graduações: <b>'+rank+'</b></p>')+
-        '<div class="dnd35-formula">Teste: 1d20 + graduações + modificador do atributo +3 se for perícia de classe com pelo menos 1 graduação.<br>Bônus agora: '+(computed>=0?'+':'')+computed+' ('+rank+' grad. '+(abilityMod>=0?'+':'')+abilityMod+' mod. '+(classBonus?'+3 classe':'')+')</div>'+trainedWarning+'</article>';
+        (isLanguage?'<div class="dnd35-formula">Sem rolagem: cada graduação compra conhecimento de um idioma. Informe os idiomas na área de notas da ficha.</div>':'<div class="dnd35-formula">Teste: 1d20 + graduações + modificador do atributo +3 se for perícia de classe com pelo menos 1 graduação.<br>Bônus agora: '+(computed>=0?'+':'')+computed+' ('+rank+' grad. '+(abilityMod>=0?'+':'')+abilityMod+' mod. '+(classBonus?'+3 classe':'')+')</div>')+trainedWarning+(skill.descricao?'<details class="dnd35-skill-rules"><summary>Regras e usos da perícia</summary><p>'+esc(String(skill.descricao).replace(/<\/tr>/gi,'\n').replace(/<\/t[dh]>/gi,' · ').replace(/<[^>]+>/g,'').replace(/&nbsp;/gi,' ').replace(/&amp;/gi,'&').replace(/&mdash;/gi,'—').replace(/&lt;/gi,'<').replace(/&gt;/gi,'>'))+'</p>'+(skill.srd_source_url?'<a href="'+esc(skill.srd_source_url)+'" target="_blank" rel="noopener noreferrer">Fonte SRD ↗</a>':'')+'</details>':'')+'</article>';
     });
     return {html:html,spent:spent,budget:budget};
   }
@@ -1688,7 +1688,7 @@ body{background:#0d0b07;font-family:'EB Garamond',Georgia,serif;color:#2b1f0f;
   }
 
   async function carregarCatalogosSRD35() {
-    var results=await Promise.all([sb.from('srd_skills').select('id,nome,atributo,treinada_apenas,penalidade_armadura'),sb.from('srd_feats').select('id,nome,descricao,requisitos,exige_parametro'),sb.from('srd_spells').select('id,nome,nivel,circulo,escola,alcance,alvo,area,duracao,componentes,classes,descricao,dados_tecnicos,srd_source_url'),sb.from('srd_spell_progressions').select('class_key,slots_by_level,known_by_level')]);
+    var results=await Promise.all([sb.from('srd_skills').select('id,nome,atributo,treinada_apenas,penalidade_armadura,descricao,srd_source_url,dados_tecnicos'),sb.from('srd_feats').select('id,nome,descricao,requisitos,exige_parametro'),sb.from('srd_spells').select('id,nome,nivel,circulo,escola,alcance,alvo,area,duracao,componentes,classes,descricao,dados_tecnicos,srd_source_url'),sb.from('srd_spell_progressions').select('class_key,slots_by_level,known_by_level')]);
     var error=results.slice(0,2).filter(function(r){return r.error;})[0];
     if(error) throw new Error('Migração SRD pendente: não foi possível carregar srd_skills/srd_feats. Confirme que a migração do catálogo e das colunas pericias/talentos foi aplicada. Detalhe: '+error.error.message);
     var spellError=results[2].error?results[2].error.message:'',progressionError=results[3].error?results[3].error.message:'';
