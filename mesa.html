@@ -2694,7 +2694,7 @@ button,input,textarea{font-family:inherit}
   window.fecharDado = fecharDado;
 
   // Recebe apenas mensagens do iframe do dado, na mesma origem.
-  window.addEventListener('message', function(event) {
+  window.addEventListener('message', async function(event) {
     var iframe = document.getElementById('dado-iframe');
     if (!iframe || event.source !== iframe.contentWindow) return;
     // The exact iframe window is checked below; this also supports a dice iframe
