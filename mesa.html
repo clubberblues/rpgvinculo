@@ -934,6 +934,8 @@ button,input,textarea{font-family:inherit}
     document.getElementById('iniciativa-status').textContent='Mira ativa: selecione um token inimigo no tabuleiro.';
   }
   function modifier35(score){return Math.floor((Number(score||10)-10)/2);}
+  function valorCA35(value){if(value==null||value==='')return null;var direct=Number(value);if(Number.isFinite(direct))return direct;var match=String(value).trim().match(/^(-?\\d+)/);return match?Number(match[1]):null;}
+  function critico35(value){var text=String(value||'x2'),range=text.match(/(\\d{1,2})(?:-(\\d{1,2}))?\\s*\\/\\s*x\\s*(\\d+)/i),mult=text.match(/x\\s*(\\d+)/i);return {min:range?Number(range[1]):20,max:range&&range[2]?Number(range[2]):20,multiplier:mult?Math.max(2,Number(mult[1])):2};}
   function bab35(cls,level){var prog=String(cls&&(cls.bab_progression||cls.progressao_bba)||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); if(prog==='good'||prog==='bom')return level; if(prog==='average'||prog==='medium'||prog==='medio')return Math.floor(3*level/4); if(prog==='poor'||prog==='ruim')return Math.floor(level/2); return 0;}
   function selecionarAlvoAtaque(tokenKey){
     var type=ataqueSelecionado; ataqueSelecionado=null; document.getElementById('area-tabuleiro').classList.remove('selecionando-alvo');
@@ -941,6 +943,8 @@ button,input,textarea{font-family:inherit}
     var own=personagemDoTurnoDoJogador(), ownToken=own&&state&&state.tokens.find(function(t){return t.tipo==='player'&&String(t.id)===String(own.ch.id);});
     if(!target||!ownToken){alert('Não foi possível localizar seu token e o alvo publicado.');return;}
     if(target.tipo==='player'){alert('Escolha um NPC ou monstro como alvo.');return;}
+    var targetAC=valorCA35(target.ac);
+    if(targetAC==null){alert('Este alvo está sem CA cadastrada. Peça ao Mestre para atualizar os dados da criatura antes de atacar.');return;}
     if(type==='atk-corpo'){
       var squares=Math.max(Math.abs(Number(target.gridX)-Number(ownToken.gridX)),Math.abs(Number(target.gridY)-Number(ownToken.gridY)));
       if(squares>1){alert('Alvo fora de alcance: ataque corpo a corpo exige adjacência (até 1,5 m).');return;}
@@ -951,14 +955,62 @@ button,input,textarea{font-family:inherit}
     if(type==='atk-dist'&&!weapon){alert('Equipe uma arma à distância antes de atacar.');return;}
     var weaponName=weapon?weapon.nome:'Ataque desarmado',damage=weapon&&weapon.dano||'1d3',weaponFocus=0,powerPenalty=0,powerDamage=0;
     var feats=own.sh.talentos||[];if(typeof feats==='string'){try{feats=JSON.parse(feats);}catch(e){feats=[];}}
-    var normalizeName=function(value){return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();};
+    var normalizeName=function(value){return String(value||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().trim();};
     var focus=Array.isArray(feats)&&feats.find(function(feat){return feat&&feat.id==='foco_em_arma'&&normalizeName(feat.parametro)===normalizeName(weaponName);});
     if(focus)weaponFocus=1;
     if(type==='atk-corpo'&&personagemTemTalento(own.sh,'ataque_poderoso')){var rawPenalty=prompt('Penalidade de ataque de Ataque Poderoso (0 a '+Math.max(0,bab)+'):', '0');if(rawPenalty===null)return;powerPenalty=Number(rawPenalty);if(!Number.isInteger(powerPenalty)||powerPenalty<0||powerPenalty>bab){alert('A penalidade deve ser um inteiro entre 0 e '+Math.max(0,bab)+'.');return;}powerDamage=powerPenalty*(weapon&&weapon.detalhes&&weapon.detalhes.duas_maos?2:1);}
     var bonus=bab+ability+weaponFocus-powerPenalty;
     if(type==='atk-dist'&&weapon&&weapon.detalhes&&Number(weapon.detalhes.alcance_m)>0){var rangeSquares=Math.max(Math.abs(Number(target.gridX)-Number(ownToken.gridX)),Math.abs(Number(target.gridY)-Number(ownToken.gridY)));if(rangeSquares*1.5>Number(weapon.detalhes.alcance_m)){alert('Alvo fora do alcance da arma ('+weapon.detalhes.alcance_m+' m).');return;}}
-    var title=type==='atk-corpo'?'Ataque Corpo a Corpo':'Ataque à Distância';
-    abrirDado(title+' · '+weaponName+' contra '+target.nome,async function(d20){try{await consumirAcaoTurnoServidor(own.ch.id,'padrao');}catch(err){alert('Ataque não realizado: '+err.message+' A ação padrão não foi consumida.');return;}var total=Number(d20)+bonus;await enviarMensagemChat('⚔️ '+title+' com '+weaponName+' contra '+target.nome+': 1d20 '+d20+' + BBA '+bab+' + '+(type==='atk-dist'?'DES':'FOR')+' '+ability+(weaponFocus?' + Foco em Arma +1':'')+(powerPenalty?' − Ataque Poderoso '+powerPenalty:'')+' = **'+total+'**. Dano da arma: '+damage+(powerDamage?' + '+powerDamage:'')+'. O Mestre confirma a CA e aplica o dano.','rolagem',{evento:'ataque_dnd35',atacante:String(own.ch.id),alvo:target.id,resultado:total,bab:bab,modificador:ability,bonus_foco:weaponFocus,penalidade_ataque_poderoso:powerPenalty,bonus_dano_ataque_poderoso:powerDamage,arma:weaponName,dano:damage});},true);
+    var title=type==='atk-corpo'?'Ataque Corpo a Corpo':'Ataque à Distância', critical=critico35(weapon&&weapon.critico);
+    function abrirRolagemDano(isCritical){
+      var rawDamage=String(damage||'1d3').split('/')[0].trim(), parsed=rawDamage.match(/^(\\d+)d(3|4|6|8|10|12|20|100)(?:([+-]\\d+))?$/i);
+      if(!parsed){alert('O ataque acertou, mas a expressão de dano da arma não pôde ser interpretada: '+rawDamage+'. O Mestre pode aplicar o dano manualmente.');return;}
+      var diceCount=Math.max(1,Math.min(20,Number(parsed[1]))),sides=Number(parsed[2]),baseFlat=Number(parsed[3]||0),multiplier=isCritical?critical.multiplier:1;
+      var strengthDamage=type==='atk-corpo'?ability:0,flat=(baseFlat+strengthDamage+powerDamage)*multiplier,diceTotal=diceCount*multiplier;
+      var formula=diceTotal+'d'+sides+(flat>0?'+'+flat:flat<0?String(flat):''),critLabel=isCritical?' · CRÍTICO x'+multiplier:'';
+      function registrarDano(total,rollDescription){
+        var applied=Math.max(1,Number(total));
+        var text='💥 Dano de '+weaponName+' contra '+target.nome+critLabel+': '+rollDescription+' = **'+applied+'** PV. O Mestre pode aplicar o dano ao alvo.';
+        enviarMensagemChat(text,'rolagem',{evento:'dano_ataque_dnd35',atacante:String(own.ch.id),alvo:target.id,arma:weaponName,dano_base:rawDamage,bonus_forca:strengthDamage,bonus_ataque_poderoso:powerDamage,multiplicador:multiplier,dano_total:applied,critico:isCritical,target_ac:targetAC});
+      }
+      if(sides===3){
+        var accumulated=0,index=0;
+        function rollMappedD3(){
+          if(index>=diceTotal){registrarDano(Math.max(1,accumulated+flat),'1d3'+(diceTotal>1?' × '+diceTotal:'')+(flat>0?' + '+flat:flat<0?' − '+Math.abs(flat):''));return;}
+          index++;
+          abrirDado('Dano '+weaponName+' · d3 '+index+'/'+diceTotal+' (use o dado 3D)',async function(raw){accumulated+=Math.ceil(Number(raw)/2);rollMappedD3();},true,true,'1d6');
+        }
+        rollMappedD3();
+        return;
+      }
+      abrirDado('Dano '+weaponName+' · '+formula+critLabel,async function(result){registrarDano(Math.max(1,Number(result)),'Rolagem 3D '+formula);},true,true,formula);
+    }
+    function registrarResultadoAtaque(d20,isCritical){
+      var total=Number(d20)+bonus,automaticMiss=Number(d20)===1,automaticHit=Number(d20)===20,hit=!automaticMiss&&(automaticHit||total>=targetAC);
+      var breakdown='1d20 '+d20+' + BBA '+bab+' + '+(type==='atk-dist'?'DES':'FOR')+' '+ability+(weaponFocus?' + Foco em Arma +1':'')+(powerPenalty?' − Ataque Poderoso '+powerPenalty:'');
+      if(!hit){
+        enviarMensagemChat('⚔️ '+title+' com '+weaponName+' contra '+target.nome+': '+breakdown+' = **'+total+'** contra CA '+targetAC+' — ERRO. O dano não será rolado.','rolagem',{evento:'ataque_dnd35',atacante:String(own.ch.id),alvo:target.id,resultado:total,d20:Number(d20),ca_alvo:targetAC,acerto:false,bab:bab,modificador:ability,bonus_foco:weaponFocus,penalidade_ataque_poderoso:powerPenalty,arma:weaponName,dano:damage});
+        return;
+      }
+      var criticalLabel=isCritical?' · ACERTO CRÍTICO x'+critical.multiplier:'';
+      enviarMensagemChat('⚔️ '+title+' com '+weaponName+' contra '+target.nome+': '+breakdown+' = **'+total+'** contra CA '+targetAC+' — ACERTO'+criticalLabel+'. Iniciando rolagem de dano no dado 3D.','rolagem',{evento:'ataque_dnd35',atacante:String(own.ch.id),alvo:target.id,resultado:total,d20:Number(d20),ca_alvo:targetAC,acerto:true,critico:isCritical,bab:bab,modificador:ability,bonus_foco:weaponFocus,penalidade_ataque_poderoso:powerPenalty,arma:weaponName,dano:damage});
+      abrirRolagemDano(isCritical);
+    }
+    function confirmarCritico(d20){
+      if(Number(d20)===1)return false;
+      var confirmTitle='Confirmação de crítico · '+weaponName+' contra '+target.nome;
+      abrirDado(confirmTitle,async function(confirmRoll){
+        var confirmTotal=Number(confirmRoll)+bonus, confirmed=Number(confirmRoll)===20||confirmTotal>=targetAC;
+        registrarResultadoAtaque(d20,confirmed);
+      },true,true,'1d20');
+      return true;
+    }
+    abrirDado(title+' · '+weaponName+' contra '+target.nome,async function(d20){
+      try{await consumirAcaoTurnoServidor(own.ch.id,'padrao');}catch(err){alert('Ataque não realizado: '+err.message+' A ação padrão não foi consumida.');return;}
+      var natural=Number(d20),threat=natural>=critical.min&&natural<=critical.max;
+      if(natural!==1&&threat){confirmarCritico(d20);return;}
+      registrarResultadoAtaque(d20,false);
+    },true,true,'1d20');
   }
   function abrirAjustePV(characterId){
     var p=personagens.find(function(x){return String(x.ch.id)===String(characterId);}); if(!ehGM||!p)return;
@@ -1618,7 +1670,7 @@ button,input,textarea{font-family:inherit}
   function jsonValueSRD(value,fallback){if(value&&typeof value==='object')return value;try{return JSON.parse(value||'');}catch(e){return fallback;}}
   function carregarCatalogoMonstrosSRD(){
     if(cbaMonsterCatalogLoaded)return Promise.resolve(cbaMonsterCatalog);if(cbaMonsterCatalogLoading)return cbaMonsterCatalogLoading;
-    cbaMonsterCatalogLoading=sb.from('srd_monsters').select('*').then(function(r){if(r.error)throw new Error(r.error.message);cbaMonsterCatalog=(r.data||[]).map(function(m){var tech=jsonValueSRD(m.dados_tecnicos,{});var dex=Number(m.destreza);if(!Number.isFinite(dex))dex=Number(tech.destreza||tech.dexterity||10);var detail=[m.tipo||'',m.tamanho||''].filter(Boolean).join(' · ')||'SRD';return Object.assign({},m,{id:String(m.id),nome:String(m.nome||'Criatura'),nivel:Number(m.nd)||0,regiao:detail,monsterId:String(m.id),hp:m.pv!=null&&m.pv!==''&&Number.isFinite(Number(m.pv))?Number(m.pv):null,maxHp:m.pv!=null&&m.pv!==''&&Number.isFinite(Number(m.pv))?Number(m.pv):null,dexMod:Number.isFinite(Number(tech.dex_mod))?Number(tech.dex_mod):modifier35(dex),ac:m.ca!=null&&m.ca!==''&&Number.isFinite(Number(m.ca))?Number(m.ca):null,attacks:m.ataques,srdSourceUrl:String(m.srd_source_url||''),monsterStats:{nd:m.nd,tamanho:m.tamanho,tipo:m.tipo,tendencia:m.tendencia,dados_vida:m.dados_vida,pv:m.pv,iniciativa:m.iniciativa,deslocamento:m.deslocamento,ca:m.ca,base_attack_grapple:m.base_attack_grapple,ataques:m.ataques,espaco_alcance:m.espaco_alcance,fortitude:m.fortitude,reflexos:m.reflexos,vontade:m.vontade,forca:m.forca,destreza:m.destreza,constituicao:m.constituicao,inteligencia:m.inteligencia,sabedoria:m.sabedoria,carisma:m.carisma,pericias:m.pericias,talentos:m.talentos,qualidades_especiais:m.qualidades_especiais,descricao:m.descricao,dados_tecnicos:tech,srd_source_url:m.srd_source_url}});});cbaMonsterCatalogLoaded=true;return cbaMonsterCatalog;}).catch(function(err){cbaMonsterCatalogLoading=null;throw err;});return cbaMonsterCatalogLoading;
+    cbaMonsterCatalogLoading=sb.from('srd_monsters').select('*').then(function(r){if(r.error)throw new Error(r.error.message);cbaMonsterCatalog=(r.data||[]).map(function(m){var tech=jsonValueSRD(m.dados_tecnicos,{});var dex=Number(m.destreza);if(!Number.isFinite(dex))dex=Number(tech.destreza||tech.dexterity||10);var detail=[m.tipo||'',m.tamanho||''].filter(Boolean).join(' · ')||'SRD';return Object.assign({},m,{id:String(m.id),nome:String(m.nome||'Criatura'),nivel:Number(m.nd)||0,regiao:detail,monsterId:String(m.id),hp:m.pv!=null&&m.pv!==''&&Number.isFinite(Number(m.pv))?Number(m.pv):null,maxHp:m.pv!=null&&m.pv!==''&&Number.isFinite(Number(m.pv))?Number(m.pv):null,dexMod:Number.isFinite(Number(tech.dex_mod))?Number(tech.dex_mod):modifier35(dex),ac:valorCA35(m.ca),attacks:m.ataques,srdSourceUrl:String(m.srd_source_url||''),monsterStats:{nd:m.nd,tamanho:m.tamanho,tipo:m.tipo,tendencia:m.tendencia,dados_vida:m.dados_vida,pv:m.pv,iniciativa:m.iniciativa,deslocamento:m.deslocamento,ca:m.ca,base_attack_grapple:m.base_attack_grapple,ataques:m.ataques,espaco_alcance:m.espaco_alcance,fortitude:m.fortitude,reflexos:m.reflexos,vontade:m.vontade,forca:m.forca,destreza:m.destreza,constituicao:m.constituicao,inteligencia:m.inteligencia,sabedoria:m.sabedoria,carisma:m.carisma,pericias:m.pericias,talentos:m.talentos,qualidades_especiais:m.qualidades_especiais,descricao:m.descricao,dados_tecnicos:tech,srd_source_url:m.srd_source_url}});});cbaMonsterCatalogLoaded=true;return cbaMonsterCatalog;}).catch(function(err){cbaMonsterCatalogLoading=null;throw err;});return cbaMonsterCatalogLoading;
   }
   function publicarInfoMonstro(monstro){if(!monstro)return;var attacks=typeof monstro.ataques==='string'?monstro.ataques:JSON.stringify(monstro.ataques||'—');var url=String(monstro.srd_source_url||'');var text='🐉 '+monstro.nome+' · ND '+(monstro.nd||'—')+'\nCA: '+(monstro.ca||'—')+' · PV: '+(monstro.pv||'—')+' · Iniciativa: '+(monstro.iniciativa||'—')+'\nAtaques: '+attacks+'\nFonte SRD: '+(url||'não informada');return enviarMensagemChat(text,'sistema',{evento:'srd_monster_stat_block',monster_id:String(monstro.id),srd_source_url:url||null});}
   function adicionarCardMonstro(list,monstro){
@@ -2661,7 +2713,7 @@ button,input,textarea{font-family:inherit}
   }
 
   // ============ LÓGICA DO DADO (IFRAME) ============
-  function abrirDado(titulo, callback, rolarD20Automaticamente, aguardarClique) {
+  function abrirDado(titulo, callback, rolarD20Automaticamente, aguardarClique, diceExpression) {
     if (rollResultTimer) { clearTimeout(rollResultTimer); rollResultTimer = null; }
     var sessaoAtual = ++rollSessionId;
     document.getElementById('dado-titulo').textContent = titulo;
@@ -2678,7 +2730,7 @@ button,input,textarea{font-family:inherit}
         if (sessaoAtual !== rollSessionId || rollResultReceived) return;
         try {
           var targetOrigin = new URL(iframe.src, window.location.href).origin;
-          iframe.contentWindow.postMessage({ action: aguardarClique ? 'prepareRoll' : 'roll' }, targetOrigin);
+          var payload={action:aguardarClique?'prepareRoll':'roll'};if(diceExpression)payload.expression=String(diceExpression);iframe.contentWindow.postMessage(payload,targetOrigin);
         } catch (err) {
           console.error('Não foi possível iniciar o dado incorporado:', err);
           fecharDado();
