@@ -5116,29 +5116,35 @@ if (throwButtonForLabel) throwButtonForLabel.setAttribute('aria-label', 'Rolar d
     if (parentOrigin !== '*' && event.origin !== parentOrigin) return;
     if (!event.data || (event.data.action !== 'roll' && event.data.action !== 'prepareRoll') || rollPending) return;
     var aguardarClique = event.data.action === 'prepareRoll';
+    var expression = String(event.data.expression || '1d20').replace(/\\s+/g, '');
+    var parsed = expression.match(/^(\\d{1,2})d(4|6|8|10|12|20|100)([+-]\\d+)?$/i);
+    if (!parsed) {
+      console.warn('Expressão de rolagem da mesa inválida ou não suportada:', expression);
+      return;
+    }
+    var desiredCount = Number(parsed[1]);
+    var desiredDie = parsed[2];
+    var desiredModifier = Number(parsed[3] || 0);
+    if (desiredCount < 1 || desiredCount > 20) {
+      console.warn('Quantidade de dados fora do limite suportado:', desiredCount);
+      return;
+    }
 
     var diceColumn = document.getElementById('dice-column');
     var modifierStrip = document.getElementById('modifier-strip');
-    var d20Row = document.querySelector('.die-pick-row[data-die="20"]');
-    if (!throwButton || !d20Row || (diceColumn && diceColumn.classList.contains('locked'))) return;
+    var desiredRow = document.querySelector('.die-pick-row[data-die="' + desiredDie + '"]');
+    if (!throwButton || !desiredRow || (diceColumn && diceColumn.classList.contains('locked'))) return;
 
-    // A mesa request is a D20 roll. Set the picker to exactly 1d20 + 0
-    // through its existing controls so the original dice application state stays in sync.
     document.querySelectorAll('.die-pick-row').forEach(function (row) {
       var countEl = row.querySelector('.count');
       var down = row.querySelector('.step-down');
       var up = row.querySelector('.step-up');
       var count = countEl ? (parseInt(countEl.textContent, 10) || 0) : 0;
-      var isD20 = row.dataset.die === '20';
-      while (isD20 && count > 1 && down && !down.disabled) {
-        down.click(); count--;
-      }
-      while (!isD20 && count > 0 && down && !down.disabled) {
-        down.click(); count--;
-      }
-      if (isD20 && count === 0 && up && !up.disabled) {
-        up.click(); count = 1;
-      }
+      var wanted = row.dataset.die === desiredDie ? desiredCount : 0;
+      var guard = 0;
+      while (count > wanted && down && !down.disabled && guard++ < 30) { down.click(); count--; }
+      guard = 0;
+      while (count < wanted && up && !up.disabled && guard++ < 30) { up.click(); count++; }
     });
 
     var modifierStepper = document.querySelector('.stepper[data-mod]');
@@ -5147,19 +5153,24 @@ if (throwButtonForLabel) throwButtonForLabel.setAttribute('aria-label', 'Rolar d
       var modifier = modifierText ? (parseInt(modifierText.textContent, 10) || 0) : 0;
       var modDown = modifierStepper.querySelector('.step-down');
       var modUp = modifierStepper.querySelector('.step-up');
-      while (modifier > 0 && modDown && !modDown.disabled) { modDown.click(); modifier--; }
-      while (modifier < 0 && modUp && !modUp.disabled) { modUp.click(); modifier++; }
+      var guard = 0;
+      while (modifier > desiredModifier && modDown && !modDown.disabled && guard++ < 300) { modDown.click(); modifier--; }
+      guard = 0;
+      while (modifier < desiredModifier && modUp && !modUp.disabled && guard++ < 300) { modUp.click(); modifier++; }
+    }
+
+    var actualCount = parseInt(desiredRow.querySelector('.count')?.textContent || '0', 10) || 0;
+    var actualModifier = parseInt(modifierStepper?.querySelector('.count')?.textContent || '0', 10) || 0;
+    if (actualCount !== desiredCount || actualModifier !== desiredModifier) {
+      console.warn('O dado 3D não conseguiu preparar a expressão completa:', expression);
+      return;
     }
 
     if (diceColumn) diceColumn.classList.toggle('preset-locked', aguardarClique);
     if (modifierStrip) modifierStrip.classList.toggle('preset-locked', aguardarClique);
-
     if (throwButton.disabled) return;
-    // Initiative prepares 1d20 and waits for the player to press ROLAR.
-    // Other mesa actions keep their existing automatic throw behavior.
     if (!aguardarClique) triggerNativeThrow();
-  });
-})();
+  });})();
 </script>
 </body>
 </html>
