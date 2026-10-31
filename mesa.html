@@ -937,7 +937,7 @@ button,input,textarea{font-family:inherit}
   function bab35(cls,level){var prog=String(cls&&(cls.bab_progression||cls.progressao_bba)||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); if(prog==='good'||prog==='bom')return level; if(prog==='average'||prog==='medium'||prog==='medio')return Math.floor(3*level/4); if(prog==='poor'||prog==='ruim')return Math.floor(level/2); return 0;}
   function selecionarAlvoAtaque(tokenKey){
     var type=ataqueSelecionado; ataqueSelecionado=null; document.getElementById('area-tabuleiro').classList.remove('selecionando-alvo');
-    var state=normalizarCBAData(campanha.cba_data), target=state&&state.tokens.find(function(t){return String(t.key)===String(tokenKey);});
+    var state=cbaPublishedState||normalizarCBAData(campanha.cba_data), target=state&&state.tokens.find(function(t){return String(t.key)===String(tokenKey);});
     var own=personagemDoTurnoDoJogador(), ownToken=own&&state&&state.tokens.find(function(t){return t.tipo==='player'&&String(t.id)===String(own.ch.id);});
     if(!target||!ownToken){alert('Não foi possível localizar seu token e o alvo publicado.');return;}
     if(target.tipo==='player'){alert('Escolha um NPC ou monstro como alvo.');return;}
