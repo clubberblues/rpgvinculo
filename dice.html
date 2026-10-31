@@ -3148,6 +3148,7 @@ window.addEventListener('libs-ready', function() {
     const totalEl = document.getElementById('result-total');
     const breakdownEl = document.getElementById('result-breakdown');
     totalEl.textContent = result.total.toString();
+    totalEl.dataset.individualValues = JSON.stringify(result.groupResults.flatMap(group => group.diceValues.map(die => die.value)));
     // Build breakdown text: per-group breakdown plus modifier
     const groupStrings = currentRoll.dice.map((groupSpec, groupIdx) => {
       const group = result.groupResults[groupIdx];
@@ -5037,6 +5038,7 @@ if (throwButtonForLabel) throwButtonForLabel.setAttribute('aria-label', 'Rolar d
     if (!throwButton || throwButton.disabled) return;
     rollPending = true;
     resultSent = false;
+    if (resultTotal) delete resultTotal.dataset.individualValues;
     if (resetPendingTimer) window.clearTimeout(resetPendingTimer);
     resetPendingTimer = window.setTimeout(function () {
       rollPending = false;
@@ -5096,7 +5098,9 @@ if (throwButtonForLabel) throwButtonForLabel.setAttribute('aria-label', 'Rolar d
     resultSent = true;
     rollPending = false;
     if (resetPendingTimer) window.clearTimeout(resetPendingTimer);
-    window.parent.postMessage({ action: 'rollResult', value: value }, getTargetOrigin());
+    var values = [];
+    try { values = JSON.parse(resultTotal.dataset.individualValues || '[]'); } catch (err) { values = []; }
+    window.parent.postMessage({ action: 'rollResult', value: value, values: values }, getTargetOrigin());
   }
 
   if (resultOverlay && window.MutationObserver) {
