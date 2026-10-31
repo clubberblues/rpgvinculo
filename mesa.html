@@ -2364,7 +2364,11 @@ button,input,textarea{font-family:inherit}
     personagens.forEach(function(personagemAlvo){
       if(personagemAlvo.ch.user_id !== eu.id || alvos.indexOf(String(personagemAlvo.ch.id)) === -1) return;
       var isInitiative=String(data.tipo||'').toLocaleLowerCase('pt-BR').includes('iniciativa');
-      if(isInitiative&&combatDataState&&Array.isArray(combatDataState.turn_order)&&combatDataState.turn_order.some(function(entry){return !entry.is_monster&&String(entry.id)===String(personagemAlvo.ch.id);})){removerPedidosIniciativaDaFicha(personagemAlvo.ch.id);return;}
+      if(isInitiative){
+        var expected=combatDataState&&Array.isArray(combatDataState.expected_character_ids)?combatDataState.expected_character_ids.map(String):[];
+        if(expected.indexOf(String(personagemAlvo.ch.id))===-1)return;
+        if(Array.isArray(combatDataState.turn_order)&&combatDataState.turn_order.some(function(entry){return !entry.is_monster&&String(entry.id)===String(personagemAlvo.ch.id);})){removerPedidosIniciativaDaFicha(personagemAlvo.ch.id);return;}
+      }
       var responseKey=String(requestKey)+'|'+String(personagemAlvo.ch.id);
       if(pedidosTesteRespondidos[responseKey]) return;
       criarBotaoRolagemTeste(String(data.tipo||'Teste de habilidade'), personagemAlvo.ch.id, requestKey);
