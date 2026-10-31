@@ -1919,15 +1919,30 @@ button,input,textarea{font-family:inherit}
         var modInput=prompt('Modificador de Destreza de '+token.nome+' para iniciativa (ex.: +2 ou -1):','0');
         if(modInput===null) modInput='0';
         var modDes=Number(modInput); if(!Number.isFinite(modDes)) modDes=0; modDes=Math.max(-20,Math.min(20,Math.trunc(modDes)));
-        var d20=Math.floor(Math.random()*20)+1, valor=d20+modDes;
-        var ordem=await sb.rpc('adicionar_combatente_iniciativa',{p_campaign_id:Number(MESA_ID),p_combatente_id:id,p_nome:token.nome,p_valor:valor,p_tipo:token.tipo});
-        if(ordem.error) alert('O token foi salvo no mapa, mas não pôde entrar na iniciativa. Confira a migração SQL atualizada e tente novamente. Detalhe: '+ordem.error.message);
-        else{ combatDataState=ordem.data||combatDataState; renderizarIniciativa(combatDataState); try{ await enviarMensagemChat('⚡ '+token.nome+' entrou na iniciativa com '+d20+' + '+modDes+' DES = '+valor+'.','rolagem',{evento:'reforco_iniciativa',combatante_id:id,valor:valor,bonus:0}); }catch(e){ console.warn('Iniciativa salva; aviso do chat não enviado.',e); } }
+        token.dexMod=modDes;
+        token.bonusIniciativa=Number(token.bonusIniciativa)||0;
+        var savedTokenScene=await gravarCBAnaCampanha(serializarEstadoCBA(scene));
+        campanha.cba_data=savedTokenScene;cbaPublishedState=normalizarCBAData(savedTokenScene);
+        abrirDado('Iniciativa · '+token.nome,function(total,values){
+          if(!Array.isArray(values)||values.length!==1||Number(values[0])!==Number(total)) throw new Error('O dado 3D não retornou o resultado individual do reforço.');
+          return (async function(){
+            try{
+              var ordem=await sb.rpc('adicionar_combatente_iniciativa',{p_campaign_id:Number(MESA_ID),p_combatente_id:id,p_nome:token.nome,p_valor:Number(values[0])+modDes+token.bonusIniciativa,p_tipo:token.tipo});
+              if(ordem.error) throw new Error(ordem.error.message);
+              combatDataState=ordem.data||combatDataState;renderizarIniciativa(combatDataState);
+              await enviarMensagemChat('⚡ '+token.nome+' entrou na iniciativa: d20 '+values[0]+' + DES '+(modDes>=0?'+':'')+modDes+(token.bonusIniciativa?' + Iniciativa Aprimorada +4':'')+' = '+(Number(values[0])+modDes+token.bonusIniciativa)+'.','rolagem',{evento:'reforco_iniciativa',combatente_id:id,d20:Number(values[0]),bonus:Number(token.bonusIniciativa),valor:Number(values[0])+modDes+token.bonusIniciativa});
+            }finally{reforcoBusy=false;}
+          })();
+        },true,false,'1d20');
       }
     }catch(e){
       console.error('Falha ao adicionar reforço:',e);
       alert('Não foi possível adicionar o reforço. Verifique se a migração SQL atualizada foi executada e se a campanha está acessível. Detalhe: '+e.message);
-    }finally{ reforcoBusy=false; }
+    }catch(e){
+      reforcoBusy=false;
+      console.error('Falha ao adicionar reforço:',e);
+      alert('Não foi possível adicionar o reforço. Detalhe: '+e.message);
+    }
   }
 
   function fecharSubModaisCBA(){
@@ -2557,14 +2572,6 @@ button,input,textarea{font-family:inherit}
   async function pedirIniciativaGlobal(){
     if(!ehGM || iniciativaBusy) return;
     if((campanha.state||'') !== 'COMBATE'){ alert('Mude a mesa para COMBATE antes de solicitar iniciativa.'); return; }
-    var ids=[];
-    personagens.forEach(function(p){
-      var membro=membros.find(function(m){ return m.user_id===p.ch.user_id && m.role==='PLAYER'; });
-      if(membro && ids.indexOf(String(p.ch.id))===-1) ids.push(String(p.ch.id));
-    });
-    var cena=normalizarCBAData(campanha.cba_data);
-    var criaturasCBA=cena?cena.tokens.filter(function(t){return t.tipo==='npc'||t.tipo==='monstro';}):[];
-    if(!ids.length && !criaturasCBA.length){ alert('Não há fichas de jogadores nem NPCs/monstros no CBA para iniciar a iniciativa.'); return; }
     iniciativaBusy=true;
     try{
       var atual=await sb.from('campaigns').select('state,cba_data').eq('id',MESA_ID).single();
@@ -2572,23 +2579,71 @@ button,input,textarea{font-family:inherit}
       if((atual.data.state||'')!=='COMBATE') throw new Error('A campanha saiu do modo COMBATE.');
       campanha.state=atual.data.state;
       campanha.cba_data=atual.data.cba_data;
-      var cenaAtual=normalizarCBAData(campanha.cba_data);
-      criaturasCBA=cenaAtual?cenaAtual.tokens.filter(function(t){return t.tipo==='npc'||t.tipo==='monstro';}):[];
-      if(!ids.length && !criaturasCBA.length) throw new Error('Não há fichas de jogadores nem NPCs/monstros no CBA para iniciar a iniciativa.');
-      criaturasCBA.forEach(function(token){if(token.dexMod==null){var resposta=prompt('Modificador de Destreza para iniciativa de '+token.nome+' (se não souber, use 0):','0');var mod=resposta==null?0:Number(resposta);token.dexMod=Number.isFinite(mod)?Math.max(-20,Math.min(20,Math.trunc(mod))):0;}});
-      if(criaturasCBA.length){var cbaAtualizado=await gravarCBAnaCampanha(serializarEstadoCBA(cenaAtual));cbaPublishedState=normalizarCBAData(cbaAtualizado);campanha.cba_data=cbaAtualizado;}
+      var charsResult=await sb.from('characters').select('id,user_id,nome').eq('campaign_id',MESA_ID);
+      if(charsResult.error) throw new Error('Não foi possível atualizar as fichas da mesa: '+charsResult.error.message);
+      var membersResult=await sb.from('members').select('user_id,role').eq('campaign_id',MESA_ID);
+      if(membersResult.error) throw new Error('Não foi possível atualizar os participantes: '+membersResult.error.message);
+      var chars=charsResult.data||[], membersNow=membersResult.data||[];
+      var ids=chars.filter(function(ch){return membersNow.some(function(m){return m.user_id===ch.user_id&&m.role==='PLAYER';});}).map(function(ch){return String(ch.id);});
+      var scene=normalizarCBAData(campanha.cba_data)||{backgroundUrl:'',imgScale:1,gridSize:50,gridRatio:null,gridOpacity:.3,tokens:[]};
+      var gmCharacterIds=Object.create(null);
+      chars.forEach(function(ch){if(ch.user_id===eu.id)gmCharacterIds[String(ch.id)]=ch;});
+      var controlled=scene.tokens.filter(function(t){
+        if(t.tipo==='npc'||t.tipo==='monstro') return true;
+        return t.tipo==='player'&&gmCharacterIds[String(t.id)];
+      });
+      if(!ids.length&&!controlled.length) throw new Error('Não há fichas de jogadores nem tokens do Mestre no CBA para iniciar a iniciativa.');
+      var sheetIds=controlled.filter(function(t){return gmCharacterIds[String(t.id)];}).map(function(t){return String(t.id);});
+      var sheetsById=Object.create(null);
+      if(sheetIds.length){
+        var sheetsResult=await sb.from('srd_character_sheets').select('character_id,atributos,talentos').in('character_id',sheetIds);
+        if(sheetsResult.error) throw new Error('Não foi possível carregar os modificadores das fichas do Mestre: '+sheetsResult.error.message);
+        (sheetsResult.data||[]).forEach(function(sh){sheetsById[String(sh.character_id)]=sh;});
+      }
+      controlled.forEach(function(token){
+        var sheet=sheetsById[String(token.id)];
+        if(token.dexMod==null&&sheet&&sheet.atributos&&sheet.atributos.DES!=null) token.dexMod=Math.floor((Number(sheet.atributos.DES)-10)/2);
+        if(token.bonusIniciativa==null&&sheet&&personagemTemTalento({talentos:sheet.talentos},'iniciativa_aprimorada')) token.bonusIniciativa=4;
+        if(token.dexMod==null){
+          var resposta=prompt('Modificador de Destreza para iniciativa de '+token.nome+' (se não souber, use 0):','0');
+          if(resposta===null) throw new Error('Rolagem cancelada; nenhuma iniciativa foi iniciada.');
+          var mod=Number(resposta);
+          if(!Number.isFinite(mod)) throw new Error('Informe um modificador de Destreza válido para '+token.nome+'.');
+          token.dexMod=Math.max(-20,Math.min(20,Math.trunc(mod)));
+        }
+      });
+      if(controlled.some(function(t){return t.tipo==='npc'||t.tipo==='monstro';})){
+        var savedScene=await gravarCBAnaCampanha(serializarEstadoCBA(scene));
+        cbaPublishedState=normalizarCBAData(savedScene); campanha.cba_data=savedScene;
+      }
       var requestId=ids.length?((window.crypto&&crypto.randomUUID)?crypto.randomUUID():(Date.now()+'-'+Math.random().toString(36).slice(2))):null;
-      var reset=await sb.rpc('iniciar_iniciativa_com_pedido',{p_campaign_id:Number(MESA_ID),p_expected_character_ids:ids,p_request_id:requestId});
-      if(reset.error) throw new Error(reset.error.message);
-      combatDataState=reset.data||{turn_order:[],current_turn:0,active:false,round:1,expected_character_ids:ids};
-      renderizarIniciativa(combatDataState);
-      var resumo=criaturasCBA.length?'🎲 '+criaturasCBA.length+' NPC(s)/monstro(s) do CBA receberam iniciativa automática (1d20 + modificador de DES).':'🎲 Iniciativa iniciada sem criaturas no CBA.';
-      var log=await enviarMensagemChat(resumo,'sistema',{evento:'iniciativa_global',criaturas:criaturasCBA.length,personagens:ids.length});
-      if(log && log.error) console.warn('Iniciativa aberta; o resumo não entrou no chat.');
+      var iniciar=async function(d20Values){
+        try{
+          if(!Array.isArray(d20Values)||d20Values.length!==controlled.length||d20Values.some(function(n){return !Number.isInteger(Number(n))||Number(n)<1||Number(n)>20;})) throw new Error('O dado 3D não retornou um resultado individual válido para cada token do Mestre.');
+          var reset=await sb.rpc('iniciar_iniciativa_com_dados',{p_campaign_id:Number(MESA_ID),p_expected_character_ids:ids,p_request_id:requestId,p_gm_d20_results:d20Values});
+          if(reset.error) throw new Error(reset.error.message);
+          combatDataState=reset.data||{turn_order:[],current_turn:0,active:false,round:1,expected_character_ids:ids};
+          renderizarIniciativa(combatDataState);
+          var rollSummary=(combatDataState.turn_order||[]).filter(function(entry){return entry.is_monster;}).map(function(entry){return entry.nome+': d20 '+entry.d20+' + DES '+(Number(entry.dex_mod)>=0?'+':'')+entry.dex_mod+(Number(entry.bonus_iniciativa)?' + outros '+entry.bonus_iniciativa:'')+' = '+entry.valor;}).join(' · ');
+          var resumo=controlled.length?'🎲 Iniciativa do Mestre rolada no dado 3D e distribuída entre os tokens: '+rollSummary+'.':'🎲 Iniciativa aberta; aguardando as rolagens dos jogadores.';
+          var log=await enviarMensagemChat(resumo,'sistema',{evento:'iniciativa_global',criaturas:controlled.length,personagens:ids.length,d20_resultados:d20Values});
+          if(log&&log.error) console.warn('Iniciativa aberta; o resumo não entrou no chat.');
+        }catch(err){
+          console.error('Falha ao iniciar iniciativa:',err);
+          alert('Não foi possível iniciar a iniciativa: '+(err.message||err));
+        }finally{iniciativaBusy=false;}
+      };
+      if(controlled.length){
+        abrirDado('Iniciativa do Mestre · '+controlled.length+'d20',function(total,values){
+          if(!Array.isArray(values)||values.length!==controlled.length||values.reduce(function(a,n){return a+Number(n);},0)!==Number(total)) throw new Error('A mesa precisa receber os resultados individuais do dado 3D.');
+          return iniciar(values.map(Number));
+        },true,false,controlled.length+'d20');
+      }else await iniciar([]);
     }catch(e){
-      console.error('Falha ao iniciar iniciativa:',e);
-      alert('Não foi possível iniciar a iniciativa. Confirme se a migração SQL foi executada e se o Supabase permite Realtime. Detalhe: '+e.message);
-    }finally{ iniciativaBusy=false; }
+      iniciativaBusy=false;
+      console.error('Falha ao preparar iniciativa:',e);
+      alert('Não foi possível preparar a iniciativa: '+e.message);
+    }
   }
 
   async function salvarIniciativa(charId,nome,valor){
@@ -2763,6 +2818,7 @@ button,input,textarea{font-family:inherit}
     rollResultReceived = true;
     if(pedidoTesteAtivo&&pedidoTesteAtivo.button) pedidoTesteAtivo.button.disabled=false;
     pedidoTesteAtivo=null;
+    if(iniciativaBusy) iniciativaBusy=false;
   }
   // O botão de fechar está declarado com onclick no HTML do modal.
   window.fecharDado = fecharDado;
@@ -2789,7 +2845,8 @@ button,input,textarea{font-family:inherit}
       document.getElementById('dado-iframe-overlay').style.display = 'none';
     }, 2000);
     try {
-      if (callback) await callback(resultado);
+      var valoresDado=Array.isArray(event.data.values)?event.data.values.map(Number):null;
+      if (callback) await callback(resultado,valoresDado);
     } catch (err) {
       console.error('Falha ao concluir a rolagem:', err);
       if (pedidoTesteAtivo && pedidoTesteAtivo.button) pedidoTesteAtivo.button.disabled = false;
