@@ -1626,7 +1626,7 @@ body{background:#0d0b07;font-family:'EB Garamond',Georgia,serif;color:#2b1f0f;
     if(avail.key==='sorcerer'||avail.key==='bard'){ 
       var knownRows=dnd35SpellParse(avail.progression&&avail.progression.known_by_level),hasKnown=Array.isArray(knownRows),countBy={};
       s.conhecidas.forEach(function(id){var sp=spells.filter(function(x){return String(x.id)===id;})[0];if(sp){var l=dnd35SpellLevel(sp);countBy[l]=(countBy[l]||0)+1;}});
-      if(hasKnown)for(var kl=0;kl<=avail.max;kl++){var cap=dnd35SpellProgressionCount(state,'known_by_level',level,kl);if(cap!=null&&(countBy[kl]||0)>cap){if(status)status.textContent='Limite de magias conhecidas excedido no círculo '+kl+'.';return;}}
+      if(hasKnown)for(var kl=0;kl<=avail.max;kl++){var cap=dnd35SpellProgressionCount(state,'known_by_level',level,kl);if(cap!=null&&cap>=0&&(countBy[kl]||0)>cap){if(status)status.textContent='Limite de magias conhecidas excedido no círculo '+kl+'.';return;}}
     }
     if(avail.key!=='sorcerer'&&avail.key!=='bard'){
       var perSlot={};s.preparadas.forEach(function(p){var l=Number(p.slot_level)||0;perSlot[l]=(perSlot[l]||0)+1;});
