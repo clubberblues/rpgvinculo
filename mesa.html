@@ -492,7 +492,19 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
 #acoes-dir .dado-card{width:100%;height:min(58vh,640px);max-width:none;max-height:none;border-radius:8px;box-shadow:none}
 @media(min-width:901px){.mesa-corpo:has(#acoes-dir #dado-iframe-overlay[style*="display: flex"]){grid-template-columns:300px minmax(0,1fr) 360px}}
 @media(max-width:900px){#acoes-dir #dado-iframe-overlay{flex:1 0 100%}#acoes-dir .dado-card{height:min(62vh,560px)}}
+/* Cards de combate compactos em faixas verticais, ajustados à coluna lateral. */
+.cards-strip{width:100%;min-width:0;max-width:100%;padding:6px;gap:5px;overflow-x:hidden!important;overflow-y:auto;align-items:stretch}
+.card-pers{width:100%;min-width:0;max-width:100%;min-height:66px;padding:6px;gap:7px;overflow:hidden}
+.card-pers-avatar{width:38px;height:38px;flex:0 0 38px}
+.card-pers-info{min-width:0;width:100%;overflow:hidden}
+.card-pers-nome,.card-pers-classe{max-width:100%;overflow-wrap:anywhere}
+.card-pers-initiative{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 6px;min-width:0}
+.card-pers-pv-txt{white-space:normal;overflow-wrap:anywhere;line-height:1.15;font-size:9px}
+.painel-aventureiros{min-width:0}
+#fila-iniciativa{display:none!important}
+#iniciativa-status{border-left:3px solid var(--char-gold,#e0b65c);padding:5px 8px;background:rgba(224,182,92,.08);color:#e8d7ad;font-weight:700}
 </style>
+<link rel="stylesheet" href="vinculo-ui.css">
 </head>
 <body>
 
@@ -700,6 +712,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
   <section class="modal-final-card"><h2 id="titulo-modal-magias">Conjurar Magia</h2><p id="magia-personagem"></p><p id="magia-alerta" role="status" aria-live="polite">Selecione uma magia preparada ou conhecida e seu alvo (opcional).</p><div id="modal-magias-lista" role="listbox" aria-label="Magias disponíveis"></div><label for="magia-slot">Espaço de magia</label><select id="magia-slot"></select><label for="magia-alvo">Alvo do CBA publicado</label><select id="magia-alvo"><option value="">Sem alvo</option></select><div class="modal-final-actions"><button type="button" data-magic-close>Cancelar</button><button type="button" class="confirm" id="confirmar-conjuracao" disabled>Conjurar</button></div></section>
 </div>
 <div id="token-context-menu" role="menu" aria-label="Ações do token" aria-hidden="true"></div>
+<input id="token-image-file" type="file" accept="image/*" hidden aria-label="Escolher imagem do token">
 <section id="painel-economia" aria-label="Economia de ações do turno" aria-live="polite" hidden>
   <div class="economia-titulo">ECONOMIA DE AÇÕES</div>
   <div class="economia-lista">
@@ -1039,6 +1052,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     if(menu.classList.contains('ativo')&&String(ctxTokenAtualKey)===String(item.key))return;
     fecharMenuContextualToken(false);menu.replaceChildren();ctxTokenAtualKey=String(item.key);ctxFocusTokenKey=String(item.key);
     if(ehGM){
+      adicionarBotaoContextual(menu,'token-image','🖼️ Alterar retrato do token');
       if(item.tipo==='player'){
         adicionarBotaoContextual(menu,'pv-personagem','❤️ Ajustar PV do personagem');
         var playerTurn=combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
@@ -1069,6 +1083,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     var item=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key)===String(ctxTokenAtualKey);});if(!item){fecharMenuContextualToken(false);return;}
     fecharMenuContextualToken(false);
     if(acao==='fechar')return;
+    if(acao==='token-image'){selecionarImagemToken(item);return;}
     if(acao==='pv-personagem'){if(ehGM&&item.tipo==='player')abrirAjustePV(item.id);return;}
     if(acao==='pv-token'){if(ehGM&&item.tipo!=='player')abrirAjustePVToken(item.key);return;}
     if(acao==='monster-info'){if(ehGM&&item.tipo==='monstro')infoTokenNoChat(item);return;}
@@ -1085,7 +1100,20 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     if(acao==='atk-mag'){abrirListaMagias(item.id);return;}
     if(acao==='inventario'){abrirInventarioSRD(item.id);return;}
   }
+  var tokenImageKeyPending=null;
+  function selecionarImagemToken(item){if(!ehGM||!item)return;tokenImageKeyPending=String(item.key);var input=document.getElementById('token-image-file');if(input){input.value='';input.click();}}
+  async function salvarImagemTokenSelecionada(event){
+    var file=event.target.files&&event.target.files[0];event.target.value='';var key=tokenImageKeyPending;tokenImageKeyPending=null;if(!file||!key||!ehGM)return;
+    if(String(file.type||'').indexOf('image/')!==0){await window.vttUI.alert('Escolha um arquivo de imagem compatível.');return;}
+    if(file.size>20*1024*1024){await window.vttUI.alert('A imagem deve ter até 20 MB.');return;}
+    try{var token=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key)===key;});if(!token)throw new Error('O token não está mais no mapa.');
+      var ext=(file.type.split('/')[1]||'png').split('+')[0].replace(/[^a-z0-9]/gi,'')||'png';var path='campaigns/'+String(MESA_ID)+'/tokens/'+encodeURIComponent(String(token.id))+'-'+Date.now()+'-'+Math.random().toString(36).slice(2,8)+'.'+ext;
+      var up=await sb.storage.from('midia').upload(path,file,{upsert:false,contentType:file.type});if(up.error)throw new Error(up.error.message);var publicUrl=sb.storage.from('midia').getPublicUrl(path);if(!publicUrl.data||!publicUrl.data.publicUrl)throw new Error('O armazenamento não forneceu um endereço para a imagem.');
+      token.imagem=publicUrl.data.publicUrl;cbaState.tokens=cbaPublishedState.tokens.map(function(t){return Object.assign({},t);});var saved=await gravarCBAnaCampanha(serializarEstadoCBA(cbaPublishedState));campanha.cba_data=saved;aplicarCBAnaMesa(saved,false);await enviarMensagemChat('🖼️ O Mestre atualizou o retrato de '+token.nome+'.','sistema',{evento:'token_retrato_atualizado',token_id:String(token.id)});
+    }catch(error){console.error('Falha ao salvar retrato do token:',error);await window.vttUI.alert('Não foi possível salvar o retrato: '+(error.message||error));}
+  }
   function ligarMenuContextualToken(){
+    var imageInput=document.getElementById('token-image-file');if(imageInput&&imageInput.dataset.bound!=='1'){imageInput.dataset.bound='1';imageInput.addEventListener('change',salvarImagemTokenSelecionada);}
     var menu=document.getElementById('token-context-menu');if(!menu||menu.dataset.bound==='1')return;menu.dataset.bound='1';
     menu.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('[data-ctx-action]');if(!b)return;e.preventDefault();e.stopPropagation();executarAcaoMenuToken(b.dataset.ctxAction);});
     document.addEventListener('click',function(e){if(!menu.classList.contains('ativo')||menu.contains(e.target))return;if(e.target.closest&&e.target.closest('.token-cba'))return;fecharMenuContextualToken(false);});
@@ -1154,7 +1182,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
   }
   async function registrarOutraAcaoMestre(item){
     if(!ehGM||!item||!combatDataState||!combatDataState.active)return;var turn=combatDataState.turn_order[Number(combatDataState.current_turn)||0];if(!turn||!turn.is_monster||String(turn.id)!==String(item.id)){alert('Este token não está no turno ativo do Mestre.');return;}
-    var category=prompt('Qual ação será usada? Digite padrao ou rapida:','padrao');if(!category)return;category=category.trim().toLowerCase();if(['padrao','rapida'].indexOf(category)<0){alert('Escolha padrao ou rapida. O movimento é aplicado ao arrastar o token.');return;}var note=prompt('Descreva a ação de '+item.nome+':');if(!note||!note.trim())return;await registrarAcaoTokenGM(item,category,note);
+    var category=await window.vttUI.ask({title:'Registrar ação do token',label:'Escolha o tipo de ação',kind:'select',options:[{value:'padrao',label:'Ação padrão'},{value:'rapida',label:'Ação rápida'}],defaultValue:'padrao'});if(!category)return;category=category.trim().toLowerCase();if(['padrao','rapida'].indexOf(category)<0){alert('Escolha padrao ou rapida. O movimento é aplicado ao arrastar o token.');return;}var note=await window.vttUI.ask({title:'Ação de '+item.nome,label:'Descreva brevemente a ação',defaultValue:''});if(!note||!note.trim())return;await registrarAcaoTokenGM(item,category,note);
   }
   async function publicarFichaNPC35(item){
     if(!ehGM||!item)return;var s=item.monsterStats||{},a=s.attributes||{},skills=Array.isArray(s.skills)?s.skills:[],feats=Array.isArray(s.feats)?s.feats:[],state=tokenSpellState35(item),ids=Array.from(new Set([].concat(state.conhecidas||[],(state.preparadas||[]).map(function(x){return x.spell_id;})).map(String).filter(Boolean))),spellNames=[];
@@ -1166,11 +1194,11 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     var message='📜 '+item.nome+' · '+String(s.race_name||'Raça não identificada')+' '+String(s.class_name||'classe não identificada')+' nível '+String(s.level||'—')+'. PV '+String(item.hp==null?'—':item.hp)+'/'+String(item.maxHp||'—')+' · CA '+caToken35(item)+' · BBA +'+String(s.bab==null?'—':s.bab)+'.\nAtributos: '+attrText+'.\nResistências: Fort '+String(saves.fortitude==null?'—':saves.fortitude)+' · Ref '+String(saves.reflexos==null?'—':saves.reflexos)+' · Von '+String(saves.vontade==null?'—':saves.vontade)+'.\nPerícias: '+skillText+'.\nTalentos: '+featText+'.\nMagias: '+(spellNames.join(', ')||'nenhuma selecionada')+'.\nTraços raciais: '+traits+'.\nClasse: '+classDesc+'.\nEquipamento: '+gearNames+'.';
     await enviarMensagemChat(message,'sistema',{evento:'ficha_npc_gerada',token_id:String(item.id),level:Number(s.level)||1});
   }
-  function iniciarAtaqueMestre(item){
+  async function iniciarAtaqueMestre(item){
     if(!ehGM||!item||!combatDataState||!combatDataState.active){alert('O ataque do Mestre exige iniciativa ativa e um token controlado por ele.');return;}var turn=combatDataState.turn_order[Number(combatDataState.current_turn)||0];if(!turn||!turn.is_monster||String(turn.id)!==String(item.id)){alert('O Mestre só pode atacar com o token que está no turno atual.');return;}
     var bonus,formula,raw=item.monsterStats&&item.monsterStats.ataques||item.detalhe||'',equipped=equipamentoToken35(item).find(function(it){return it.equipado&&slotEquipamento35(it)==='arma';});
     if(item.tipo==='player'){var p=acharPersonagemDoToken(item);if(!p||p.ch.user_id!==eu.id){alert('Essa ficha não pertence ao Mestre.');return;}var level=Math.max(1,Number(p.sh.nivel)||1),weapon=(p.equipamento||[]).find(function(it){return it.equipado&&it.categoria==='arma';});bonus=bab35(p.cl,level)+modifier35((p.sh.atributos||{}).FOR);formula=weapon&&weapon.dano||'1d3';}
-    else{if(typeof raw!=='string')raw=JSON.stringify(raw);var bonusMatch=raw.match(/[+\-]\d+\s+(?:melee|ranged|corpo a corpo|à distância|ataque básico)/i),damageMatch=raw.match(/\((\d+d(?:3|4|6|8|10|12|20|100)(?:[+\-]\d+)?)\)/i);bonus=bonusMatch?Number(bonusMatch[0].match(/[+\-]\d+/)[0]):Number(prompt('Bônus de ataque de '+item.nome+' conforme a ficha:','0'));if(!Number.isFinite(bonus))return;formula=damageMatch?damageMatch[1]:(item.damageDice||'');if(equipped&&equipped.dano)formula=equipped.dano;if(!formula)formula=prompt('Fórmula de dano de '+item.nome+' (ex.: 1d8+3):','1d6');if(!formula)return;if(equipped&&equipped.dano){var strength=modifier35((item.monsterStats||{}).forca);if(strength&&!/[+\-]\d+$/.test(formula))formula+=strength>0?'+'+strength:String(strength);}}
+    else{if(typeof raw!=='string')raw=JSON.stringify(raw);var bonusMatch=raw.match(/[+\-]\d+\s+(?:melee|ranged|corpo a corpo|à distância|ataque básico)/i),damageMatch=raw.match(/\((\d+d(?:3|4|6|8|10|12|20|100)(?:[+\-]\d+)?)\)/i);bonus=bonusMatch?Number(bonusMatch[0].match(/[+\-]\d+/)[0]):Number(await window.vttUI.ask({title:'Bônus de ataque',label:'Bônus de ataque de '+item.nome+' conforme a ficha',defaultValue:'0',inputMode:'numeric'}));if(!Number.isFinite(bonus))return;formula=damageMatch?damageMatch[1]:(item.damageDice||'');if(equipped&&equipped.dano)formula=equipped.dano;if(!formula)formula=await window.vttUI.ask({title:'Dano do token',label:'Fórmula de dano de '+item.nome+' (por exemplo, 1d8+3)',defaultValue:'1d6'});if(!formula)return;if(equipped&&equipped.dano){var strength=modifier35((item.monsterStats||{}).forca);if(strength&&!/[+\-]\d+$/.test(formula))formula+=strength>0?'+'+strength:String(strength);}}
     formula=String(formula).replace(/\s+/g,'');if(!/^\d{1,2}d(?:3|4|6|8|10|12|20|100)(?:[+\-]\d{1,3})?$/i.test(formula)){alert('Fórmula de dano inválida.');return;}ataqueMestreSelecionado={attacker:item,bonus:bonus,formula:formula};document.getElementById('iniciativa-status').textContent='Turno do Mestre · '+item.nome+': selecione um alvo no tabuleiro.';document.getElementById('area-tabuleiro').classList.add('selecionando-alvo');
   }
   function selecionarAlvoAtaqueMestre(target){
@@ -1179,7 +1207,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
       abrirDado('Dano · '+selected.attacker.nome+' → '+target.nome+' · '+selected.formula,async function(rawDamage){var damage=Math.max(1,Math.trunc(Number(rawDamage))),applied;if(target.tipo==='player')applied=await sb.rpc('alterar_pv_personagem',{p_campaign_id:Number(MESA_ID),p_character_id:String(target.id),p_variacao:-damage});else applied=await sb.rpc('alterar_pv_token_cba',{p_campaign_id:Number(MESA_ID),p_token_id:String(target.id),p_variacao:-damage,p_pv_max:target.maxHp==null?null:Number(target.maxHp)});if(applied.error)throw new Error(applied.error.message);if(target.tipo==='player'){var targetChar=personagens.find(function(p){return String(p.ch.id)===String(target.id);});if(targetChar)targetChar.sh.pv_atual=applied.data.pv_atual;renderCards();}else{campanha.cba_data=applied.data.cba_data;aplicarCBAnaMesa(applied.data.cba_data,false);}await enviarMensagemChat('💥 '+selected.attacker.nome+' causou '+damage+' de dano em '+target.nome+'. PV restantes: '+(applied.data.pv_atual==null?applied.data.hp:applied.data.pv_atual)+' / '+(applied.data.pv_max==null?applied.data.max_hp:applied.data.pv_max)+'.','rolagem',{evento:'dano_token_mestre_aplicado',token_id:String(selected.attacker.id),alvo_token_id:String(target.id),dano:damage});},true,true,selected.formula);
     },true,true);
   }
-  function selecionarAlvoAtaque(tokenKey){
+  async function selecionarAlvoAtaque(tokenKey){
     var type=ataqueSelecionado; ataqueSelecionado=null; document.getElementById('area-tabuleiro').classList.remove('selecionando-alvo');
     var state=cbaPublishedState||normalizarCBAData(campanha.cba_data), target=state&&state.tokens.find(function(t){return String(t.key)===String(tokenKey);});
     var own=personagemDoTurnoDoJogador(), ownToken=own&&state&&state.tokens.find(function(t){return t.tipo==='player'&&String(t.id)===String(own.ch.id);});
@@ -1200,7 +1228,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     var normalizeName=function(value){return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();};
     var focus=Array.isArray(feats)&&feats.find(function(feat){return feat&&feat.id==='foco_em_arma'&&normalizeName(feat.parametro)===normalizeName(weaponName);});
     if(focus)weaponFocus=1;
-    if(type==='atk-corpo'&&personagemTemTalento(own.sh,'ataque_poderoso')){var rawPenalty=prompt('Penalidade de ataque de Ataque Poderoso (0 a '+Math.max(0,bab)+'):', '0');if(rawPenalty===null)return;powerPenalty=Number(rawPenalty);if(!Number.isInteger(powerPenalty)||powerPenalty<0||powerPenalty>bab){alert('A penalidade deve ser um inteiro entre 0 e '+Math.max(0,bab)+'.');return;}powerDamage=powerPenalty*(weapon&&weapon.detalhes&&weapon.detalhes.duas_maos?2:1);}
+    if(type==='atk-corpo'&&personagemTemTalento(own.sh,'ataque_poderoso')){var rawPenalty=await window.vttUI.ask({title:'Ataque Poderoso',label:'Penalidade de ataque (0 a '+Math.max(0,bab)+')',defaultValue:'0',inputMode:'numeric'});if(rawPenalty===null)return;powerPenalty=Number(rawPenalty);if(!Number.isInteger(powerPenalty)||powerPenalty<0||powerPenalty>bab){alert('A penalidade deve ser um inteiro entre 0 e '+Math.max(0,bab)+'.');return;}powerDamage=powerPenalty*(weapon&&weapon.detalhes&&weapon.detalhes.duas_maos?2:1);}
     var bonus=bab+ability+weaponFocus-powerPenalty;
     if(type==='atk-dist'&&weapon&&weapon.detalhes&&Number(weapon.detalhes.alcance_m)>0){var rangeSquares=Math.max(Math.abs(Number(target.gridX)-Number(ownToken.gridX)),Math.abs(Number(target.gridY)-Number(ownToken.gridY)));if(rangeSquares*1.5>Number(weapon.detalhes.alcance_m)){alert('Alvo fora do alcance da arma ('+weapon.detalhes.alcance_m+' m).');return;}}
     var title=type==='atk-corpo'?'Ataque Corpo a Corpo':'Ataque à Distância', critical=critico35(weapon&&weapon.critico);
@@ -1264,9 +1292,9 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     personagemPVSelecionado={tipo:'personagem',registro:p}; document.getElementById('pv-personagem-nome').textContent=p.ch.nome+' · '+(p.sh.pv_atual==null?pvMax(p.sh,p.cl):p.sh.pv_atual)+' / '+pvMax(p.sh,p.cl)+' PV';
     document.getElementById('pv-variacao').value='-1'; document.getElementById('modal-pv-personagem').classList.add('ativo');
   }
-  function abrirAjustePVToken(tokenKey){
+  async function abrirAjustePVToken(tokenKey){
     var token=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key)===String(tokenKey);});if(!token||token.tipo==='player')return;
-    var max=token.maxHp==null?Number(prompt('PV máximo de '+token.nome+' (será salvo no token):','10')):Number(token.maxHp);if(!Number.isInteger(max)||max<1||max>100000)return;
+    var max=token.maxHp==null?Number(await window.vttUI.ask({title:'Definir pontos de vida',label:'PV máximo de '+token.nome,defaultValue:'10',inputMode:'numeric'})):Number(token.maxHp);if(!Number.isInteger(max)||max<1||max>100000)return;
     var current=token.hp==null?max:Number(token.hp);personagemPVSelecionado={tipo:'token',registro:Object.assign({},token,{maxHp:max,hp:current})};document.getElementById('pv-personagem-nome').textContent=token.nome+' · '+current+' / '+max+' PV';document.getElementById('pv-variacao').value='-1';document.getElementById('modal-pv-personagem').classList.add('ativo');
   }
   function abrirModalExcluirCampanha(){
@@ -1276,7 +1304,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     var camp=document.getElementById('modal-excluir-campanha'), name=document.getElementById('confirmar-nome-campanha'), del=document.getElementById('confirmar-excluir-campanha');
     name.addEventListener('input',function(){del.disabled=name.value!==String(campanha.name||'');});
     camp.addEventListener('click',function(e){if(e.target===camp||e.target.closest('[data-campaign-delete-close]'))camp.classList.remove('ativo');});
-    del.addEventListener('click',async function(){if(del.disabled)return; if(!confirm('Confirma a exclusão DEFINITIVA da campanha e do histórico?'))return;del.disabled=true;try{var r=await sb.rpc('excluir_campanha_propria',{p_campaign_id:Number(MESA_ID),p_confirmation_name:name.value});if(r.error)throw new Error(r.error.message);location.replace('lobby.html');}catch(err){alert('Não foi possível excluir a campanha: '+err.message);del.disabled=false;}});
+    del.addEventListener('click',async function(){if(del.disabled)return; ;del.disabled=true;try{var r=await sb.rpc('excluir_campanha_propria',{p_campaign_id:Number(MESA_ID),p_confirmation_name:name.value});if(r.error)throw new Error(r.error.message);location.replace('lobby.html');}catch(err){alert('Não foi possível excluir a campanha: '+err.message);del.disabled=false;}});
     var pv=document.getElementById('modal-pv-personagem'); pv.addEventListener('click',function(e){if(e.target===pv||e.target.closest('[data-pv-close]'))pv.classList.remove('ativo');});
     document.getElementById('confirmar-ajuste-pv').addEventListener('click',async function(){if(!ehGM||!personagemPVSelecionado)return;var delta=Number(document.getElementById('pv-variacao').value);if(!Number.isInteger(delta)||delta===0){alert('Informe uma quantidade inteira diferente de zero.');return;}try{if(personagemPVSelecionado.tipo==='token'){var token=personagemPVSelecionado.registro;var r=await sb.rpc('alterar_pv_token_cba',{p_campaign_id:Number(MESA_ID),p_token_id:String(token.id),p_variacao:delta,p_pv_max:Number(token.maxHp)});if(r.error)throw new Error(r.error.message);campanha.cba_data=r.data.cba_data;pv.classList.remove('ativo');aplicarCBAnaMesa(r.data.cba_data,false);return;}var p=personagemPVSelecionado.registro;var r=await sb.rpc('alterar_pv_personagem',{p_campaign_id:Number(MESA_ID),p_character_id:String(p.ch.id),p_variacao:delta});if(r.error)throw new Error(r.error.message);p.sh.pv_atual=r.data.pv_atual;pv.classList.remove('ativo');renderCards();aplicarCBAnaMesa(campanha.cba_data,false);}catch(err){alert('Falha ao atualizar PV: '+err.message);}});
     var inv=document.getElementById('modal-inventario-srd');inv.addEventListener('click',function(e){if(e.target===inv||e.target.closest('[data-inventory-close]'))inv.classList.remove('ativo');});
@@ -1309,7 +1337,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     var result=await sb.from('srd_skills').select('id,nome,atributo');if(result.error){alert('Catálogo de perícias indisponível: '+result.error.message);return;}
     var trained=p.sh.pericias||{}, skills=result.data||[];var options=skills.map(function(sk){var rank=Number(trained[String(sk.id)]||0);return {sk:sk,rank:rank};}).filter(function(x){return x.rank>0;});
     if(!options.length){alert('Esta ficha não tem graduações de perícia registradas.');return;}
-    var pick=prompt('Perícias treinadas:\n'+options.map(function(x,i){return (i+1)+'. '+x.sk.nome+' ('+x.rank+' grad.)';}).join('\n')+'\nDigite o número da perícia:');var idx=Number(pick)-1;if(!Number.isInteger(idx)||!options[idx])return;
+    var pick=await window.vttUI.ask({title:'Escolher perícia',label:'Selecione uma perícia treinada',kind:'select',defaultValue:'1',options:options.map(function(x,i){return {value:String(i+1),label:x.sk.nome+' · '+x.rank+' grad.'};})});var idx=Number(pick)-1;if(!Number.isInteger(idx)||!options[idx])return;
     var chosen=options[idx],ability=String(chosen.sk.atributo||'INT').toUpperCase(),mod=modifier35((p.sh.atributos||{})[ability]);
     var classList=p.cl.pericias_classe||[];if(typeof classList==='string'){try{classList=JSON.parse(classList);}catch(e){classList=classList.split(',');}}
     var norm=function(t){return String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();};
@@ -2370,7 +2398,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
       try{ await enviarMensagemChat('✨ O Mestre adicionou '+token.nome+' ao campo de batalha.','sistema',{evento:'reforco_adicionado',token_id:id}); }catch(e){ console.warn('Token salvo; aviso do chat não enviado.',e); }
 
       if(String(campanha.state||'').toLocaleUpperCase('pt-BR')==='COMBATE' && (token.tipo==='npc'||token.tipo==='monstro')){
-        var modInput=prompt('Modificador de Destreza de '+token.nome+' para iniciativa (ex.: +2 ou -1):','0');
+        var modInput=await window.vttUI.ask({title:'Iniciativa de '+token.nome,label:'Modificador de Destreza',defaultValue:'0',inputMode:'numeric'});
         if(modInput===null) modInput='0';
         var modDes=Number(modInput); if(!Number.isFinite(modDes)) modDes=0; modDes=Math.max(-20,Math.min(20,Math.trunc(modDes)));
         token.dexMod=modDes;
@@ -2902,7 +2930,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
       var isInitiative=String(data.tipo||'').toLocaleLowerCase('pt-BR').includes('iniciativa');
       if(isInitiative){
         var expected=combatDataState&&Array.isArray(combatDataState.expected_character_ids)?combatDataState.expected_character_ids.map(String):[];
-        if(expected.indexOf(String(personagemAlvo.ch.id))===-1)return;
+        if(expected.indexOf(String(personagemAlvo.ch.id))===-1){if(!pedidosTestePendentes.some(function(pendente){return String(pendente.key)===String(requestKey);}))pedidosTestePendentes.push({data:data,key:requestKey});return;}
         if(Array.isArray(combatDataState.turn_order)&&combatDataState.turn_order.some(function(entry){return !entry.is_monster&&String(entry.id)===String(personagemAlvo.ch.id);})){removerPedidosIniciativaDaFicha(personagemAlvo.ch.id);return;}
       }
       var responseKey=String(requestKey)+'|'+String(personagemAlvo.ch.id);
@@ -3042,7 +3070,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
       var scene=normalizarCBAData(campanha.cba_data)||{backgroundUrl:'',imgScale:1,gridSize:50,gridRatio:null,gridOpacity:.3,tokens:[]};
       var playerCharacterIds=Object.create(null);
       chars.forEach(function(ch){if(membersNow.some(function(m){return m.user_id===ch.user_id&&m.role==='PLAYER';}))playerCharacterIds[String(ch.id)]=true;});
-      var ids=Array.from(new Set(scene.tokens.filter(function(token){return token.tipo==='player'&&playerCharacterIds[String(token.id)];}).map(function(token){return String(token.id);})));
+      var ids=Object.keys(playerCharacterIds);
       var gmCharacterIds=Object.create(null);
       chars.forEach(function(ch){if(ch.user_id===eu.id)gmCharacterIds[String(ch.id)]=ch;});
       var controlled=scene.tokens.filter(function(t){
@@ -3064,7 +3092,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
         if(token.bonusIniciativa!=null&&Number.isFinite(Number(token.bonusIniciativa))) token.bonusIniciativa=Math.max(-20,Math.min(20,Math.trunc(Number(token.bonusIniciativa))));
         if(token.bonusIniciativa==null&&sheet&&personagemTemTalento({talentos:sheet.talentos},'iniciativa_aprimorada')) token.bonusIniciativa=4;
         if(token.dexMod==null){
-          var resposta=prompt('Modificador de Destreza para iniciativa de '+token.nome+' (se não souber, use 0):','0');
+          var resposta=await window.vttUI.ask({title:'Iniciativa de '+token.nome,label:'Modificador de Destreza (use 0 se não souber)',defaultValue:'0',inputMode:'numeric'});
           if(resposta===null) throw new Error('Rolagem cancelada; nenhuma iniciativa foi iniciada.');
           var mod=Number(resposta);
           if(!Number.isFinite(mod)) throw new Error('Informe um modificador de Destreza válido para '+token.nome+'.');
@@ -3191,7 +3219,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     if(cbaPublishedState) renderizarTokensCBA(document.getElementById('cba-token-layer'),cbaPublishedState);
     var eMinhaVez=!ehGM && ativo && atual && !atual.is_monster && personagens.some(function(p){return String(p.ch.id)===String(atual.id)&&p.ch.user_id===eu.id;});
     var turnoTokenMestre=ehGM&&ativo&&atual&&atual.is_monster;
-    if(turnoTokenMestre){var controlToken=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.id)===String(atual.id);});if(controlToken){var gmTitle=document.createElement('span');gmTitle.textContent='Turno do Mestre · '+controlToken.nome;gmActions.appendChild(gmTitle);if(controlToken.tipo!=='player'||(acharPersonagemDoToken(controlToken)&&acharPersonagemDoToken(controlToken).ch.user_id===eu.id)){var attackBtn=document.createElement('button');attackBtn.type='button';attackBtn.textContent='⚔️ Atacar';attackBtn.onclick=function(){iniciarAtaqueMestre(controlToken);};gmActions.appendChild(attackBtn);}if(tokenTemMagiaPreparada35(controlToken)){var magicBtn=document.createElement('button');magicBtn.type='button';magicBtn.textContent='✨ Magia preparada';magicBtn.onclick=function(){abrirMagiasTokenMestre(controlToken);};gmActions.appendChild(magicBtn);}var moveBtn=document.createElement('button');moveBtn.type='button';moveBtn.textContent='↔️ Mover';moveBtn.onclick=function(){document.getElementById('iniciativa-status').textContent='Mova '+controlToken.nome+' arrastando seu token no tabuleiro. O deslocamento e a ação serão validados ao soltar.';var tokenEl=Array.from(document.querySelectorAll('#cba-token-layer .token-cba')).find(function(el){return String(el.dataset.cbaTokenKey)===String(controlToken.key);});if(tokenEl)tokenEl.focus();};gmActions.appendChild(moveBtn);['padrao','rapida'].forEach(function(actionName){var actionBtn=document.createElement('button');actionBtn.type='button';actionBtn.textContent=({padrao:'Ação padrão',rapida:'Ação rápida'})[actionName];actionBtn.onclick=function(){var note=prompt('Descreva a ação de '+controlToken.nome+':');if(note&&note.trim())registrarAcaoTokenGM(controlToken,actionName,note);};gmActions.appendChild(actionBtn);});var finish=document.createElement('button');finish.type='button';finish.textContent='⏭️ Encerrar turno do token';finish.onclick=avancarTurno;gmActions.appendChild(finish);}}
+    if(turnoTokenMestre){var controlToken=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.id)===String(atual.id);});if(controlToken){var gmTitle=document.createElement('span');gmTitle.textContent='Turno do Mestre · '+controlToken.nome;gmActions.appendChild(gmTitle);if(controlToken.tipo!=='player'||(acharPersonagemDoToken(controlToken)&&acharPersonagemDoToken(controlToken).ch.user_id===eu.id)){var attackBtn=document.createElement('button');attackBtn.type='button';attackBtn.textContent='⚔️ Atacar';attackBtn.onclick=function(){iniciarAtaqueMestre(controlToken);};gmActions.appendChild(attackBtn);}if(tokenTemMagiaPreparada35(controlToken)){var magicBtn=document.createElement('button');magicBtn.type='button';magicBtn.textContent='✨ Magia preparada';magicBtn.onclick=function(){abrirMagiasTokenMestre(controlToken);};gmActions.appendChild(magicBtn);}var moveBtn=document.createElement('button');moveBtn.type='button';moveBtn.textContent='↔️ Mover';moveBtn.onclick=function(){document.getElementById('iniciativa-status').textContent='Mova '+controlToken.nome+' arrastando seu token no tabuleiro. O deslocamento e a ação serão validados ao soltar.';var tokenEl=Array.from(document.querySelectorAll('#cba-token-layer .token-cba')).find(function(el){return String(el.dataset.cbaTokenKey)===String(controlToken.key);});if(tokenEl)tokenEl.focus();};gmActions.appendChild(moveBtn);['padrao','rapida'].forEach(function(actionName){var actionBtn=document.createElement('button');actionBtn.type='button';actionBtn.textContent=({padrao:'Ação padrão',rapida:'Ação rápida'})[actionName];actionBtn.onclick=async function(){var note=await window.vttUI.ask({title:'Ação de '+controlToken.nome,label:'Descreva brevemente a ação',defaultValue:''});if(note&&note.trim())registrarAcaoTokenGM(controlToken,actionName,note);};gmActions.appendChild(actionBtn);});var finish=document.createElement('button');finish.type='button';finish.textContent='⏭️ Encerrar turno do token';finish.onclick=avancarTurno;gmActions.appendChild(finish);}}
     if(eMinhaVez){
       if(!antigo){
         antigo=document.createElement('button');
@@ -3205,6 +3233,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     renderizarPainelEconomiaAcoes(!!(eMinhaVez||turnoTokenMestre),atual,currentIndex);
     if(controlsPanel){controlsPanel.hidden=!(ativo&&(eMinhaVez||turnoTokenMestre));var actorLabel=document.getElementById('turno-controle-status');if(actorLabel)actorLabel.textContent=eMinhaVez?'Sua vez · '+String(atual.nome||'Aventureiro'):'Turno do Mestre · '+String((cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.id)===String(atual&&atual.id);})||{}).nome||atual.nome||'Criatura');}
     renderCards();
+    processarPedidosTestePendentes();
   }
 
   async function moverNaIniciativa(indice,direcao){
@@ -3610,5 +3639,6 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
   init().catch(function(e){ document.getElementById('root').innerHTML = '<div class="loading-full" style="color:#f87171">Erro: '+esc(e.message)+'</div>'; });
 })();
 </script>
+<script src="vinculo-ui.js"></script>
 </body>
 </html>
