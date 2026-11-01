@@ -1206,7 +1206,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     if(r.error){status.textContent='Inventário SRD indisponível. Aplique vtt_dnd35_final_migration.sql. Detalhe: '+r.error.message;return;}
     var rows=r.data||[]; if(!rows.length){status.textContent='A mochila está vazia. Peça ao Mestre para entregar equipamento pela mesa.';return;}
     status.textContent='Atributos calculados com o equipamento atualmente equipado.';
-    list.innerHTML=rows.map(function(row){var it=row.equipment||{},usable=it.categoria==='consumivel',equipable=!!slotEquipamento35(it);return '<article style="padding:10px;margin:8px 0;border:1px solid #3a4a65;border-radius:6px"><strong>'+esc(it.nome||row.equipment_id)+'</strong><div style="color:#9eabc0;font-size:13px">'+esc(it.categoria||'item')+' · x'+row.quantidade+(it.dano?' · dano '+esc(it.dano):'')+(bonusCAEquipamento35(it)?' · CA +'+bonusCAEquipamento35(it):'')+(row.equipado?' · Equipado':'')+'</div>'+(usable||equipable?'<button type="button" class="btn-acao" data-equip-id="'+esc(row.equipment_id)+'" data-equip-action="'+(usable?'consume':'equip')+'" data-equipped="'+(!row.equipado)+'" style="margin-top:8px">'+(usable?'Usar':(row.equipado?'Desequipar':'Equipar'))+'</button>':'')+'</article>';}).join('');
+    list.innerHTML=rows.map(function(row){var it=row.equipment||{},usable=it.categoria==='consumivel',equipable=!!slotEquipamento35(it);return '<article style="padding:10px;margin:8px 0;border:1px solid #3a4a65;border-radius:6px"><strong>'+esc(it.nome||row.equipment_id)+'</strong><div style="color:#9eabc0;font-size:13px">'+esc(nomeCategoriaEquipamento35(it.categoria||'item'))+' · x'+row.quantidade+(it.dano?' · dano '+esc(it.dano):'')+(bonusCAEquipamento35(it)?' · CA +'+bonusCAEquipamento35(it):'')+(row.equipado?' · Equipado':'')+'</div>'+(usable||equipable?'<button type="button" class="btn-acao" data-equip-id="'+esc(row.equipment_id)+'" data-equip-action="'+(usable?'consume':'equip')+'" data-equipped="'+(!row.equipado)+'" style="margin-top:8px">'+(usable?'Usar':(row.equipado?'Desequipar':'Equipar'))+'</button>':'')+'</article>';}).join('');
     list.querySelectorAll('[data-equip-id]').forEach(function(button){button.addEventListener('click',async function(){button.disabled=true;if(button.dataset.equipAction==='consume'){var used=await sb.rpc('usar_pocao_cura_srd',{p_character_id:String(p.ch.id),p_equipment_id:button.dataset.equipId});if(used.error){alert('Não foi possível usar o item: '+used.error.message);button.disabled=false;return;}p.sh.pv_atual=used.data.pv_atual;await enviarMensagemChat('🧪 '+p.ch.nome+' usou '+(button.closest('article').querySelector('strong').textContent)+' e recuperou '+used.data.healing_rolled+' PV.','sistema',{evento:'pocao_usada',character_id:String(p.ch.id),cura:used.data.healing_rolled});await carregarPersonagens();abrirInventarioSRD(p.ch.id);return;}var q=await sb.rpc('equipar_item_srd',{p_character_id:String(p.ch.id),p_equipment_id:button.dataset.equipId,p_equipado:button.dataset.equipped==='true'});if(q.error){alert('Não foi possível atualizar o equipamento: '+q.error.message);button.disabled=false;return;}await carregarPersonagens();abrirInventarioSRD(p.ch.id);});});
   }
   async function abrirInventarioTokenSRD(token){
@@ -1385,6 +1385,13 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
   function catalogoEquipamentos(){
     return catalogoEquipamentosSRD;
   }
+  function nomeCategoriaEquipamento35(value){
+    var raw=String(value||'outro').trim(),cat=raw.toLowerCase();
+    var names={arma:'Armas',armadura:'Armaduras',escudo:'Escudos',acessorio:'Acessórios',mochila:'Mochilas',consumivel:'Consumíveis',gear:'Equipamento de aventura',outro:'Outros',specific_weapons:'Armas especiais',specific_armors:'Armaduras especiais',specific_shields:'Escudos especiais',armor_and_shields:'Armaduras e escudos',rings:'Anéis',rods:'Bastões',staffs:'Cajados',wands:'Varinhas',wondrous_items:'Itens maravilhosos',potions_and_oils:'Poções e óleos',specific_cursed_items:'Itens amaldiçoados',shields:'Escudos','light armor':'Armadura leve','medium armor':'Armadura média','heavy armor':'Armadura pesada'};
+    if(names[cat])return names[cat];
+    if(cat.indexOf('weapon')>=0||cat.indexOf('weapons')>=0){var end=cat.split('·').pop().trim(),suffix=end.indexOf('ranged')>=0?' à distância':end.indexOf('two-handed')>=0?' de duas mãos':end.indexOf('one-handed')>=0?' de uma mão':end.indexOf('light')>=0?' leves':'';return 'Armas'+suffix;}
+    return raw.charAt(0).toLocaleUpperCase('pt-BR')+raw.slice(1);
+  }
 
   function detalhesEquipamento35(item){var raw=item&&item.detalhes||{};if(typeof raw==='string'){try{raw=JSON.parse(raw);}catch(e){raw={};}}var price=item&&(item.custo_po!=null?item.custo_po:item.preco);price=price!=null?String(price)+' po':(raw.market_price||raw.cost_text||'');var source=raw.source_file||raw.section||'';var description=item&&(item.descricao||item.description)||raw.description||raw.effect||raw.summary||'';if(!description&&Array.isArray(raw.raw_table_row))description=raw.raw_table_row.join(' · ');return {price:price,source:source,description:String(description||'')};}
 
@@ -1395,14 +1402,14 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     var select=document.getElementById('equipamento-categoria');
     var cats=Array.from(new Set(catalogoEquipamentosSRD.map(function(it){return String(it.categoria||'outro');}))).sort();
     select.replaceChildren(new Option('Todas as categorias',''));
-    cats.forEach(function(cat){select.appendChild(new Option(cat.charAt(0).toLocaleUpperCase('pt-BR')+cat.slice(1),cat));});
+    cats.forEach(function(cat){select.appendChild(new Option(nomeCategoriaEquipamento35(cat),cat));});
     renderizarCatalogoEquipamentos();
   }
   function renderizarCatalogoEquipamentos(){
     var list=document.getElementById('lista-equipamentos'),query=normalizarTextoCBA(document.getElementById('equipamento-busca').value.trim()),category=document.getElementById('equipamento-categoria').value;
     var rows=catalogoEquipamentosSRD.filter(function(it){return (!category||it.categoria===category)&&(!query||normalizarTextoCBA([it.nome,it.categoria,it.descricao,it.dano].join(' ')).includes(query));});
     if(!rows.length){list.innerHTML='<div class="quick-feedback">Nenhum equipamento corresponde à busca.</div>';return;}
-    list.innerHTML=rows.map(function(item){var meta=detalhesEquipamento35(item),detail=[item.categoria,item.dano?'Dano '+item.dano:null,bonusCAEquipamento35(item)?'CA +'+bonusCAEquipamento35(item):null,meta.price||null].filter(Boolean).join(' · '),more=meta.description||meta.source;return '<button type="button" class="card-equipamento" data-equipment-id="'+esc(item.id)+'"><div class="equip-icone">'+(slotEquipamento35(item)==='arma'?'⚔️':['armadura','escudo'].indexOf(slotEquipamento35(item))>=0?'🛡️':item.categoria==='mochila'?'🎒':'📦')+'</div><div class="equip-nome">'+esc(item.nome)+'</div><div class="equip-info">'+esc(detail||'Equipamento SRD')+(more?'<br>'+esc(more):'')+'</div></button>';}).join('');
+    list.innerHTML=rows.map(function(item){var meta=detalhesEquipamento35(item),detail=[nomeCategoriaEquipamento35(item.categoria),item.dano?'Dano '+item.dano:null,bonusCAEquipamento35(item)?'CA +'+bonusCAEquipamento35(item):null,meta.price||null].filter(Boolean).join(' · '),more=meta.description||meta.source;return '<button type="button" class="card-equipamento" data-equipment-id="'+esc(item.id)+'"><div class="equip-icone">'+(slotEquipamento35(item)==='arma'?'⚔️':['armadura','escudo'].indexOf(slotEquipamento35(item))>=0?'🛡️':item.categoria==='mochila'?'🎒':'📦')+'</div><div class="equip-nome">'+esc(item.nome)+'</div><div class="equip-info">'+esc(detail||'Equipamento SRD')+(more?'<br>'+esc(more):'')+'</div></button>';}).join('');
   }
 
   async function abrirModalEquipamentos(){
