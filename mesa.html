@@ -1370,7 +1370,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
   }
 
   async function carregarCatalogoEquipamentos(){
-    var r=await sb.from('srd_equipment').select('*').order('nome',{ascending:true});
+    var r=await sb.from('srd_equipment').select('*').order('nome',{ascending:true}).range(0,1999);
     if(r.error)throw new Error(r.error.message);
     catalogoEquipamentosSRD=r.data||[];
     var select=document.getElementById('equipamento-categoria');
