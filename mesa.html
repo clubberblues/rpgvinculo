@@ -503,6 +503,17 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
 .painel-aventureiros{min-width:0}
 #fila-iniciativa{display:none!important}
 #iniciativa-status{border-left:3px solid var(--char-gold,#e0b65c);padding:5px 8px;background:rgba(224,182,92,.08);color:#e8d7ad;font-weight:700}
+
+.mesa-status-bootstrap{max-width:230px;padding:6px 9px;border:1px solid rgba(201,160,80,.35);border-radius:6px;background:rgba(10,15,30,.72);color:#c9a050;font:11px 'Cinzel',serif;text-align:center;line-height:1.25}
+.mesa-status-bootstrap[hidden]{display:none}
+.mesa-status-bootstrap.erro{border-color:#f87171;color:#fecaca}
+.mesa-erro-entrada{display:flex;flex-direction:column;gap:12px;min-height:100vh;height:auto;padding:24px;color:#f5ecd6}
+.mesa-erro-entrada h2{font:700 22px 'Cinzel',serif;color:#f87171}
+.mesa-erro-entrada p{max-width:560px;color:#d7deeb;line-height:1.5;letter-spacing:0}
+.mesa-erro-acoes{display:flex;gap:10px;flex-wrap:wrap}
+.mesa-erro-acoes .btn-acao{min-width:150px;justify-content:center}
+@media(max-width:720px){.mesa-status-bootstrap{max-width:120px;font-size:9px;padding:4px 6px}.turno-info{min-width:auto;font-size:9px}}
+
 </style>
 <link rel="stylesheet" href="vinculo-ui.css">
 </head>
@@ -808,41 +819,84 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
   }
   function iniciais(nome){ if(!nome) return '?'; var p = nome.trim().split(/\s+/); return (p[0][0] + (p[1]?p[1][0]:'')).toUpperCase(); }
 
+  function comPrazoMesa(operacao,promessa,limiteMs){
+    var ms=Math.max(1000,Number(limiteMs)||12000),timer;
+    return Promise.race([
+      Promise.resolve(promessa),
+      new Promise(function(_,reject){timer=window.setTimeout(function(){reject(new Error(operacao+' demorou mais de '+Math.round(ms/1000)+' segundos. Verifique sua conexão e tente novamente.'));},ms);})
+    ]).finally(function(){if(timer)window.clearTimeout(timer);});
+  }
+  function atualizarStatusMesa(texto,tipo){
+    var el=document.getElementById('mesa-status-bootstrap');if(!el)return;
+    el.textContent=String(texto||'');el.hidden=!texto;el.classList.toggle('erro',tipo==='erro');
+  }
+  function mostrarFalhaEntradaMesa(mensagem){
+    var root=document.getElementById('root');if(!root)return;
+    root.replaceChildren();
+    var card=document.createElement('section');card.className='loading-full mesa-erro-entrada';card.setAttribute('role','alert');
+    var titulo=document.createElement('h2');titulo.textContent='Não foi possível abrir a mesa';
+    var detalhe=document.createElement('p');detalhe.textContent=String(mensagem||'Falha de conexão com a mesa.');
+    var acoes=document.createElement('div');acoes.className='mesa-erro-acoes';
+    var tentar=document.createElement('button');tentar.type='button';tentar.className='btn-acao';tentar.textContent='Tentar novamente';tentar.onclick=function(){location.reload();};
+    var lobby=document.createElement('button');lobby.type='button';lobby.className='btn-acao';lobby.textContent='Voltar ao lobby';lobby.onclick=function(){location.replace('lobby.html');};
+    acoes.append(tentar,lobby);card.append(titulo,detalhe,acoes);root.appendChild(card);
+  }
+
   async function init(){
-    var r0 = await sb.auth.getUser();
-    if(!r0.data || !r0.data.user){ location.replace('index.html'); return; }
-    eu = r0.data.user;
+    atualizarStatusMesa('Conectando à campanha…');
+    var auth=await comPrazoMesa('A sessão de acesso',sb.auth.getSession(),10000);
+    if(auth.error)throw new Error('Não foi possível ler sua sessão: '+auth.error.message);
+    var session=auth.data&&auth.data.session;
+    if(!session||!session.user){location.replace('index.html');return;}
+    eu=session.user;
 
-    var rp = await sb.from('profiles').select('username').eq('id', eu.id).maybeSingle();
-    meuPerfil = rp.data || { username: eu.email.split('@')[0] };
+    var rp=await comPrazoMesa('O perfil',sb.from('profiles').select('username').eq('id',eu.id).maybeSingle(),12000);
+    meuPerfil=rp.data||{username:(eu.email||'aventureiro').split('@')[0]};
 
-    var rc = await sb.from('campaigns').select('*').eq('id', MESA_ID).single();
-    if(rc.error){ document.getElementById('root').innerHTML = '<div class="loading-full" style="color:#f87171">Mesa nao encontrada.</div>'; return; }
-    campanha = rc.data;
+    atualizarStatusMesa('Carregando a campanha…');
+    var rc=await comPrazoMesa('A campanha',sb.from('campaigns').select('*').eq('id',MESA_ID).single(),12000);
+    if(rc.error)throw new Error('Mesa não encontrada ou sem acesso: '+rc.error.message);
+    campanha=rc.data;
 
-    var rm = await sb.from('members').select('role').eq('campaign_id', MESA_ID).eq('user_id', eu.id).maybeSingle();
-    if(!rm.data){ document.getElementById('root').innerHTML = '<div class="loading-full" style="color:#f87171">Voce nao e membro desta mesa.</div>'; return; }
-    // The campaign owner is the sole GM; the URL and stale membership roles never grant control.
-    ehGM = String(campanha.owner_id) === String(eu.id);
-    meuPapel = ehGM ? 'GM' : 'PLAYER';
+    var rm=await comPrazoMesa('Sua participação na campanha',sb.from('members').select('role').eq('campaign_id',MESA_ID).eq('user_id',eu.id).maybeSingle(),12000);
+    if(rm.error)throw new Error('Não foi possível confirmar sua participação: '+rm.error.message);
+    if(!rm.data){mostrarFalhaEntradaMesa('Sua conta não está vinculada a esta mesa. Volte ao lobby e entre com a ficha correta.');return;}
+    // O proprietário é o Mestre; papéis antigos de membros não concedem controles.
+    ehGM=String(campanha.owner_id)===String(eu.id);
+    meuPapel=ehGM?'GM':'PLAYER';
 
     if(!ehGM){
-      var seated=await sb.from('characters').select('id').eq('campaign_id',MESA_ID).eq('user_id',eu.id).limit(1);
+      var seated=await comPrazoMesa('A ficha sentada à mesa',sb.from('characters').select('id').eq('campaign_id',MESA_ID).eq('user_id',eu.id).limit(1),12000);
       if(seated.error)throw new Error('Não foi possível confirmar sua ficha sentada à mesa: '+seated.error.message);
-      if(!seated.data||!seated.data.length){document.getElementById('root').innerHTML='<div class="loading-full" style="color:#f0d080">Escolha sua ficha no lobby antes de sentar à mesa.</div>';setTimeout(function(){location.replace('lobby.html');},1800);return;}
+      if(!seated.data||!seated.data.length){mostrarFalhaEntradaMesa('Escolha sua ficha no lobby antes de sentar à mesa.');window.setTimeout(function(){location.replace('lobby.html');},2200);return;}
     }
 
     renderLayout();
-    if(campanha.cba_data) aplicarCBAnaMesa(campanha.cba_data,false);
-    combatDataState = campanha.combat_data || null;
-    renderizarIniciativa(combatDataState);
-    await Promise.all([carregarMembros(), carregarPersonagens(), carregarChat()]);
-    await carregarEquipamentosTokens();
-    if(ehGM) await repararMonstrosSemEstatisticasCBA();
+    if(campanha.cba_data)aplicarCBAnaMesa(campanha.cba_data,false);
+    combatDataState=campanha.combat_data||null;
     renderizarIniciativa(combatDataState);
     ligarRealtime();
-  }
+    ligarRecuperacaoPedidoIniciativa();
 
+    // O tabuleiro aparece sem esperar consultas secundárias. Cada painel carrega
+    // em paralelo e recebe um prazo, para falha de catálogo/chat não congelar a mesa.
+    var cargas=[
+      comPrazoMesa('A lista de participantes',carregarMembros(),15000),
+      comPrazoMesa('As fichas da campanha',carregarPersonagens(),15000),
+      comPrazoMesa('O histórico do chat',carregarChat(),15000)
+    ];
+    Promise.allSettled(cargas).then(async function(resultados){
+      var falhas=resultados.filter(function(r){return r.status==='rejected';});
+      var extras=[comPrazoMesa('O inventário de combate',carregarEquipamentosTokens(),15000)];
+      if(ehGM)extras.push(comPrazoMesa('A atualização das fichas de monstros',repararMonstrosSemEstatisticasCBA(),15000));
+      var extraResults=await Promise.allSettled(extras);
+      falhas=falhas.concat(extraResults.filter(function(r){return r.status==='rejected';}));
+      renderizarIniciativa(combatDataState);
+      await sincronizarPedidoIniciativaPendente();
+      if(falhas.length)atualizarStatusMesa('Mesa aberta; alguns dados não sincronizaram. Recarregue para tentar novamente.','erro');
+      else{atualizarStatusMesa('Mesa pronta.');window.setTimeout(function(){atualizarStatusMesa('');},1800);}
+    }).catch(function(err){console.warn('A mesa abriu, mas houve falha ao carregar dados secundários:',err);atualizarStatusMesa('Mesa aberta; a sincronização está instável.','erro');});
+  }
   function renderLayout(){
     var estado = campanha.state || 'EXPLORACAO';
     document.getElementById('root').innerHTML =
@@ -853,6 +907,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
             '<div class="nome">'+esc(campanha.name)+'</div>'+
             '<div class="estado '+estado+'">'+estado+'</div>'+
           '</div>'+
+          '<div id="mesa-status-bootstrap" class="mesa-status-bootstrap" role="status" aria-live="polite" hidden></div>'+
           '<div class="turno-info">MODO '+meuPapel+'</div>'+
         '</header>'+
         '<div class="mesa-corpo">'+
@@ -2937,6 +2992,52 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
       if(pedidosTesteRespondidos[responseKey]) return;
       criarBotaoRolagemTeste(String(data.tipo||'Teste de habilidade'), personagemAlvo.ch.id, requestKey);
     });
+  }
+
+  var iniciativaRecuperacaoTimer=null;
+  var iniciativaRecuperacaoBusy=false;
+  function ligarRecuperacaoPedidoIniciativa(){
+    if(ehGM||iniciativaRecuperacaoTimer)return;
+    iniciativaRecuperacaoTimer=window.setInterval(sincronizarPedidoIniciativaPendente,3500);
+    window.setTimeout(sincronizarPedidoIniciativaPendente,900);
+  }
+  async function sincronizarPedidoIniciativaPendente(){
+    if(ehGM||iniciativaRecuperacaoBusy||!personagensCarregados||!combatDataState)return;
+    if(String(campanha&&campanha.state||'').toUpperCase()!=='COMBATE')return;
+    if(combatDataState.active)return;
+    var expected=Array.isArray(combatDataState.expected_character_ids)?combatDataState.expected_character_ids.map(String):[];
+    if(!expected.length)return;
+    var jaRolados=Object.create(null);
+    (Array.isArray(combatDataState.turn_order)?combatDataState.turn_order:[]).forEach(function(entry){if(entry&&!entry.is_monster)jaRolados[String(entry.id)]=true;});
+    var meus=personagens.filter(function(p){return p.ch&&p.ch.user_id===eu.id&&expected.indexOf(String(p.ch.id))!==-1&&!jaRolados[String(p.ch.id)];});
+    if(!meus.length)return;
+    iniciativaRecuperacaoBusy=true;
+    try{
+      // Recupera o aviso do chat quando disponível; se o Realtime o perdeu,
+      // a lista esperada pelo servidor já é a fonte autoritativa do pedido.
+      var rows=await comPrazoMesa('A sincronização da iniciativa',sb.from('campaign_log').select('id,data').eq('campaign_id',MESA_ID).eq('type','test_request').order('ts',{ascending:false}).limit(40),8000);
+      var request=null,requestKey=null;
+      if(!rows.error){
+        var wanted=expected.slice().sort().join('|');
+        (rows.data||[]).some(function(row){
+          var data=row.data||{},targets=Array.isArray(data.alvos)?data.alvos.map(String).sort().join('|'):'';
+          if(String(data.tipo||'').toLocaleLowerCase('pt-BR').includes('iniciativa')&&targets===wanted){request=data;requestKey=String(row.id);return true;}
+          return false;
+        });
+      }
+      if(!request){
+        request={tipo:'Iniciativa (DES)',alvos:expected};
+        requestKey='iniciativa-recuperada-'+String(MESA_ID)+'-'+expected.slice().sort().join('-');
+      }
+      ativarPedidoTeste(request,requestKey);
+    }catch(error){
+      console.warn('A ordem do servidor está aguardando iniciativa; o botão será tentado novamente.',error);
+      // Mesmo com falha ao ler o chat, cria a ação usando o estado oficial da campanha.
+      var expectedFallback=Array.isArray(combatDataState.expected_character_ids)?combatDataState.expected_character_ids.map(String):[];
+      var rolled=Object.create(null);(combatDataState.turn_order||[]).forEach(function(entry){if(entry&&!entry.is_monster)rolled[String(entry.id)]=true;});
+      var mine=personagens.filter(function(p){return p.ch&&p.ch.user_id===eu.id&&expectedFallback.indexOf(String(p.ch.id))!==-1&&!rolled[String(p.ch.id)];});
+      if(mine.length)ativarPedidoTeste({tipo:'Iniciativa (DES)',alvos:expectedFallback},'iniciativa-recuperada-'+String(MESA_ID)+'-'+expectedFallback.slice().sort().join('-'));
+    }finally{iniciativaRecuperacaoBusy=false;}
   }
 
   function bonusDoTeste(tipoTeste, atributos){
