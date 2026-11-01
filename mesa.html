@@ -776,6 +776,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     renderizarIniciativa(combatDataState);
     await Promise.all([carregarMembros(), carregarPersonagens(), carregarChat()]);
     await carregarEquipamentosTokens();
+    if(ehGM) await repararMonstrosSemEstatisticasCBA();
     renderizarIniciativa(combatDataState);
     ligarRealtime();
   }
@@ -3225,6 +3226,17 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     equipamentoTokens=Object.create(null);
     (r.data||[]).forEach(function(row){(equipamentoTokens[String(row.token_id)]||(equipamentoTokens[String(row.token_id)]=[])).push(Object.assign({},row.equipment||{},{equipment_id:row.equipment_id,quantidade:row.quantidade,equipado:!!row.equipado}));});
     renderCards();
+  }
+
+  async function repararMonstrosSemEstatisticasCBA(){
+    var scene=normalizarCBAData(campanha&&campanha.cba_data);if(!scene)return;
+    var ids=Array.from(new Set(scene.tokens.filter(function(t){return t.tipo==='monstro'&&t.monsterId&&(valorCA35(t.ac)==null||!t.monsterStats);}).map(function(t){return String(t.monsterId);})));
+    if(!ids.length)return;
+    var result=await sb.from('srd_monsters').select('*').in('id',ids);if(result.error){console.warn('Não foi possível recuperar estatísticas antigas do bestiário:',result.error.message);return;}
+    var byId=Object.create(null);(result.data||[]).forEach(function(m){byId[String(m.id)]=m;});
+    var mudou=false;
+    scene.tokens.forEach(function(t){var m=byId[String(t.monsterId)];if(t.tipo!=='monstro'||!m)return;var ac=valorCA35(m.ca),hp=Number(m.pv);if(t.ac==null&&ac!=null){t.ac=ac;t.baseAc=ac;mudou=true;}if(t.maxHp==null&&Number.isFinite(hp)&&hp>0){t.maxHp=hp;t.hp=t.hp==null?hp:t.hp;mudou=true;}if(!t.monsterStats){t.monsterStats={nd:m.nd,tipo:m.tipo,tamanho:m.tamanho,ca:m.ca,pv:m.pv,dados_vida:m.dados_vida,iniciativa:m.iniciativa,deslocamento:m.deslocamento,ataques:m.ataques,base_attack_grapple:m.base_attack_grapple,fortitude:m.fortitude,reflexos:m.reflexos,vontade:m.vontade,forca:m.forca,destreza:m.destreza,constituicao:m.constituicao,inteligencia:m.inteligencia,sabedoria:m.sabedoria,carisma:m.carisma,pericias:m.pericias,talentos:m.talentos,qualidades_especiais:m.qualidades_especiais,descricao:m.descricao};mudou=true;}});
+    if(mudou){var saved=await gravarCBAnaCampanha(serializarEstadoCBA(scene));campanha.cba_data=saved;aplicarCBAnaMesa(saved,false);}
   }
 
   function renderCards(){
