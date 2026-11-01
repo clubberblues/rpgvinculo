@@ -10,6 +10,12 @@ O modo D&D 3.5 usa `srd_character_sheets`; a compatibilidade arquivada usa `vinc
 
 `role_ownership_migration.sql` corrige o papel de Mestre usando `campaigns.owner_id` como fonte única: o proprietário fica como Mestre, os demais membros como Jogador (ou Observador quando já designado assim), e um gatilho impede que um não proprietário obtenha papel de Mestre. A migração também substitui `lobby_list_v2` para retornar o papel calculado pelo proprietário e cria `sentar_personagem_na_mesa`, que só permite ao próprio jogador associar sua ficha à campanha. Esta migração ainda precisa ser aplicada no projeto Supabase antes de publicar/usar o fluxo atualizado do lobby.
 
+`srd35_initiative_turn_controls_migration.sql` corrige aliases SQL inválidos na RPC de iniciativa que impediam abrir a ordem; inclui na espera apenas personagens jogadores com token publicado; mantém o início automático quando a última ficha solicitada registra a rolagem; e cria `mover_token_gm_cba_srd`, que valida turno, deslocamento, ocupação do quadrado e ação de movimento do token controlado pelo Mestre. Aplique este arquivo no Supabase antes de publicar o `mesa.html` atualizado.
+
+`srd35_token_equipment_migration.sql` cria inventário para NPCs e monstros, amplia as categorias do compêndio para mochila/acessórios, aplica a regra de guardar na mochila ou equipar automaticamente quando não há mochila, atualiza CA ao equipar tokens e inclui tabelas de presença/fichas/equipamento na publicação Realtime. Aplique depois de `vtt_dnd35_final_migration.sql` e `srd35_compendium_migration.sql`.
+
+Na mesa, o rodapé agora reúne a ordem da iniciativa e cards de jogadores, NPCs e monstros; os cards exibem a iniciativa, PV atual e CA. A CA do personagem é derivada da ficha e dos itens equipados; tokens de criaturas recebem seu inventário e podem ter itens equipados pelo Mestre. O chat anuncia em uma frase curta a ativação da rodada e cada troca de turno.
+
 O lobby exibe “Administrar Mesa” apenas ao proprietário e exige que os demais escolham uma ficha própria. A mesa confere propriedade e ficha vinculada antes de montar os controles; cada interface recebe grupos de ações próprios. Na ficha, os controles do Grimório não são liberados por parâmetros da URL. A criação foi dividida em etapas curtas, com ajuda aberta apenas quando solicitada; a etapa de magia aparece somente para classes com espaços de magia no nível escolhido e as seleções ficam como rascunho até salvar a ficha.
 
 O usuário informou que as migrações SRD anteriores foram executadas com sucesso. A entrega anterior não acessou nem alterou o Supabase remoto. Para habilitar o Grimório e a conjuração, a migração `srd35_spellcasting_migration.sql` deve estar aplicada depois das tabelas/migrações base de personagens, classes, magias, compêndio e CBA — em especial `srd35_character_migration.sql`, `srd35_skills_feats_migration.sql`, `srd35_compendium_migration.sql` e `vtt_dnd35_final_migration.sql`.
@@ -38,6 +44,14 @@ O CBA usa quadrados de 1,5 m, encaixe no grid, suporte a toque/zoom e barras de 
 
 O Mestre pode entregar itens do catálogo ao inventário SRD. A ficha lê armas/armaduras equipadas para exibir CA, bônus de ataque e dado de dano; ataques à distância verificam alcance conhecido. Poção de cura consome uma unidade, rola `2d4+2` e não ultrapassa o PV máximo.
 
+## Cards de combate, CA e equipamentos da mesa
+
+Os cards inferiores reúnem fichas de jogadores e tokens de NPCs/monstros, mostram PV atual, CA e posição na iniciativa. A ordem de iniciativa e os controles do Mestre ficam junto desses cards; as mensagens de turno no chat são curtas. A CA do personagem é calculada a partir de Destreza, limite de Destreza da armadura e bônus dos itens equipados. A CA de NPC/monstro é mantida no token, com bônus de armadura, escudo e acessório somados aos itens equipados.
+
+O catálogo da mesa consulta `srd_equipment`. O Mestre pode entregar itens para uma ficha de jogador ou token de NPC/monstro. Se o destinatário não tiver mochila, itens equipáveis são equipados automaticamente; com mochila, os itens são guardados. Jogadores equipam e desequipam itens da própria ficha; o Mestre controla o inventário de NPCs/monstros. O recálculo de CA do token acontece dentro da mesma RPC transacional que entrega o equipamento.
+
+Antes de usar a nova iniciativa e os inventários de tokens em produção, aplique `srd35_initiative_turn_controls_migration.sql` depois de `srd35_initiative_3d_roll.sql` e `srd35_combat_resolution_migration.sql`. Aplique `srd35_token_equipment_migration.sql` depois de `vtt_dnd35_final_migration.sql` e `srd35_compendium_migration.sql`. Essas duas migrações novas estão preparadas no repositório, mas sua aplicação no banco remoto ainda precisa ser confirmada.
+
 ## Biblioteca SRD
 
 No lobby, clique em **Biblioteca SRD** no menu lateral esquerdo — logo abaixo de **Minhas Fichas** — para abrir diretamente o compêndio. O botão **Abrir Biblioteca SRD · D&D 3.5** também continua disponível em **Livros**. A Biblioteca pesquisa monstros, magias, equipamentos e classes, pagina os resultados, filtra por categoria, mostra blocos técnicos e abre a fonte SRD em nova aba. Os dados são renderizados como texto seguro.
@@ -59,3 +73,4 @@ As migrações `srd35_npc_archetypes_migration.sql` e `srd35_combat_resolution_m
 Na mesa, Mestre e jogador recebem identificações e ações próprias. O menu de cada token mostra somente os comandos compatíveis com o papel e com o turno ativo; no turno de uma criatura administrada pelo Mestre, o painel permite atacar, registrar uma ação e encerrar o turno. O ataque compara o resultado com a CA e, em caso de acerto, abre a rolagem do dado de dano e aplica o dano aos PV do alvo. Mover o token ativo do Mestre consome a ação de movimento no servidor. O gerador **Criar NPC** oferece cinco arquétipos por raça/classe e nível, e insere a criatura na mesa e na iniciativa.
 
 A ficha recebeu um tema de HUD rústico e um guia contextual na criação: ao focar um campo de nome, atributo, perícia, talento ou grimório, aparece uma explicação que pode ser fechada ou dispensada. Os dados da ficha continuam carregados pelo identificador de personagem e protegidos pelas políticas/RPCs existentes; o parâmetro `role=gm` altera recursos de interface legados, não concede acesso no banco.
+
