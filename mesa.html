@@ -1387,10 +1387,21 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     list.innerHTML=r.data.map(function(row){var it=row.equipment||{},canEquip=!!slotEquipamento35(it);return '<article style="padding:10px;margin:8px 0;border:1px solid #3a4a65;border-radius:6px"><strong>'+esc(it.nome||row.equipment_id)+'</strong><div style="color:#9eabc0;font-size:13px">'+esc(it.categoria||'item')+' · x'+row.quantidade+(it.dano?' · dano '+esc(it.dano):'')+(bonusCAEquipamento35(it)?' · CA +'+bonusCAEquipamento35(it):'')+'</div>'+(canEquip?'<button type="button" class="btn-acao" data-token-equip-id="'+esc(row.equipment_id)+'" data-equipped="'+(!row.equipado)+'" style="margin-top:8px">'+(row.equipado?'Desequipar':'Equipar')+'</button>':'')+'</article>';}).join('');
     list.querySelectorAll('[data-token-equip-id]').forEach(function(button){button.addEventListener('click',async function(){button.disabled=true;var q=await sb.rpc('equipar_item_token_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(token.id),p_equipment_id:String(button.dataset.tokenEquipId),p_equipado:button.dataset.equipped==='true'});if(q.error){alert('Não foi possível atualizar o equipamento: '+q.error.message);button.disabled=false;return;}campanha.cba_data=q.data.cba_data;aplicarCBAnaMesa(q.data.cba_data,false);await carregarEquipamentosTokens();abrirInventarioTokenSRD(token);});});
   }
+  function bonusRacialPericia35(racaId,skillId){
+    var race=String(racaId||''),skill=String(skillId||'');
+    if(race==='elfo'&&['ouvir','procurar','observar'].indexOf(skill)>=0)return 2;
+    if(race==='meio-elfo'){
+      if(['ouvir','procurar','observar'].indexOf(skill)>=0)return 1;
+      if(['diplomacia','srd35_skill_gather_information'].indexOf(skill)>=0)return 2;
+    }
+    if(race==='gnomo'&&skill==='ouvir')return 2;
+    if(race==='halfling'&&['escalar','srd35_skill_jump','ouvir','mover_silenciosamente'].indexOf(skill)>=0)return 2;
+    return 0;
+  }
   async function abrirTestePericiaJogador(){
     var p=personagemDoTurnoDoJogador()||personagens.find(function(x){return x.ch.user_id===eu.id;});if(!p){alert('Nenhuma ficha própria disponível.');return;}
-    var result=await sb.from('srd_skills').select('id,nome,atributo');if(result.error){alert('Catálogo de perícias indisponível: '+result.error.message);return;}
-    var trained=p.sh.pericias||{}, skills=result.data||[];var options=skills.map(function(sk){var rank=Number(trained[String(sk.id)]||0);return {sk:sk,rank:rank};}).filter(function(x){return x.rank>0;});
+    var result=await sb.from('srd_skills').select('id,nome,atributo,source_status');if(result.error){alert('Catálogo de perícias indisponível: '+result.error.message);return;}
+    var trained=p.sh.pericias||{}, skills=(result.data||[]).filter(function(sk){return sk.source_status!=='excluded';});var options=skills.map(function(sk){var rank=Number(trained[String(sk.id)]||0);return {sk:sk,rank:rank};}).filter(function(x){return x.rank>0;});
     if(!options.length){alert('Esta ficha não tem graduações de perícia registradas.');return;}
     var pick=await window.vttUI.ask({title:'Escolher perícia',label:'Selecione uma perícia treinada',kind:'select',defaultValue:'1',options:options.map(function(x,i){return {value:String(i+1),label:x.sk.nome+' · '+x.rank+' grad.'};})});var idx=Number(pick)-1;if(!Number.isInteger(idx)||!options[idx])return;
     var chosen=options[idx],ability=String(chosen.sk.atributo||'INT').toUpperCase(),mod=modifier35((p.sh.atributos||{})[ability]);
@@ -1398,8 +1409,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     var norm=function(t){return String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();};
     var normalizedClassSkills=(Array.isArray(classList)?classList:[classList]).map(norm), skillName=norm(chosen.sk.nome);
     var classSkill=normalizedClassSkills.indexOf(skillName)>=0||normalizedClassSkills.indexOf('conhecimento qualquer')>=0&&skillName.indexOf('conhecimento ')===0;
-    var classBonus=classSkill&&chosen.rank>=1?3:0,bonus=chosen.rank+mod+classBonus;
-    abrirDado('Perícia · '+chosen.sk.nome,function(d20){var total=Number(d20)+bonus;enviarMensagemChat('📚 Teste de '+chosen.sk.nome+': 1d20 '+d20+' + '+chosen.rank+' grad. + '+ability+' '+mod+(classBonus?' + bônus de perícia de classe +3':'')+' = **'+total+'**.','rolagem',{evento:'pericia_dnd35',character_id:String(p.ch.id),skill_id:chosen.sk.id,total:total,graduações:chosen.rank,modificador_atributo:mod,bônus_classe:classBonus});},true);
+    var classBonus=classSkill&&chosen.rank>=1?3:0,racialBonus=bonusRacialPericia35(p.sh.raca_id,chosen.sk.id),bonus=chosen.rank+mod+classBonus+racialBonus;
+    abrirDado('Perícia · '+chosen.sk.nome,function(d20){var total=Number(d20)+bonus;enviarMensagemChat('📚 Teste de '+chosen.sk.nome+': 1d20 '+d20+' + '+chosen.rank+' grad. + '+ability+' '+mod+(classBonus?' + bônus de perícia de classe +3':'')+(racialBonus?' + bônus racial +'+racialBonus:'')+' = **'+total+'**.','rolagem',{evento:'pericia_dnd35',character_id:String(p.ch.id),skill_id:chosen.sk.id,total:total,graduações:chosen.rank,modificador_atributo:mod,bônus_classe:classBonus,bonus_racial:racialBonus});},true);
   }
   var magiaPersonagemAtiva=null, magiaSelecionada=null, focoAnteriorMagia=null, magiaTokenMestreAtiva=null;
   function parseJsonSeguro35(value,fallback){if(value&&typeof value==='object')return value;try{return JSON.parse(value||'');}catch(e){return fallback;}}
