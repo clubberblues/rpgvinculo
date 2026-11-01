@@ -163,8 +163,7 @@ WHERE id='mago';
 
 UPDATE public.srd_classes
 SET source_status='verified_srd',
-    source_notes='Dados básicos, tendências, perícias de classe, dado de vida e proficiências conferidos contra a página da classe no SRD 3.5. Características e motor de cada habilidade continuam em revisão.',
-    updated_at=now();
+    source_notes='Dados básicos, tendências, perícias de classe, dado de vida e proficiências conferidos contra a página da classe no SRD 3.5. Características e motor de cada habilidade continuam em revisão.';
 
 -- Correct every base-attack/save value in all 220 class levels from the SRD progression formulas.
 UPDATE public.srd_class_level_progressions p
@@ -260,8 +259,7 @@ WHERE id='meio-orc';
 
 UPDATE public.srd_races
 SET source_status='verified_srd',
-    source_notes='Tamanho, deslocamento, ajustes de atributo, traços, idiomas e classe favorecida conferidos contra a página de raças do SRD 3.5. A aplicação automática de cada traço no motor de jogo continua em andamento.',
-    updated_at=now();
+    source_notes='Tamanho, deslocamento, ajustes de atributo, traços, idiomas e classe favorecida conferidos contra a página de raças do SRD 3.5. A aplicação automática de cada traço no motor de jogo continua em andamento.';
 
 -- Record verified source coverage separately from unfinished automation.
 UPDATE public.srd_catalog_coverage
