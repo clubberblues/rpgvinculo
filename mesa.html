@@ -538,10 +538,10 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     </div>
     <div class="equip-modal-body">
       <p class="equip-modal-hint" id="equipamentos-hint">Escolha um item para selecionar o personagem destinatário.</p>
-      <div class="quick-filter-row"><input type="search" id="equipamento-busca" placeholder="Buscar no catálogo completo..." aria-label="Buscar equipamento"><select id="equipamento-categoria" aria-label="Filtrar equipamento"><option value="">Todas as categorias</option></select></div>
+      <div class="quick-filter-row" id="equipamento-filtros"><input type="search" id="equipamento-busca" placeholder="Buscar no catálogo completo..." aria-label="Buscar equipamento"><select id="equipamento-categoria" aria-label="Filtrar equipamento"><option value="">Todas as categorias</option></select></div>
       <div class="catalogo-grid" id="lista-equipamentos"></div>
       <section id="equipamentos-destinatarios" hidden>
-        <h3 class="equip-target-title" id="equipamentos-destinatarios-titulo">Escolha quem receberá o item</h3>
+        <h3 class="equip-target-title" id="equipamentos-destinatarios-titulo">Escolha quem receberá o item</h3><button type="button" class="btn-acao" data-equip-action="change-item" style="margin:0 auto 12px">← Voltar ao catálogo</button>
         <div id="lista-destinatarios-equipamento"></div>
       </section>
     </div>
@@ -1418,6 +1418,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     var lista = document.getElementById('lista-equipamentos');
     itemEquipamentoSelecionado = null;
     document.getElementById('equipamentos-destinatarios').hidden = true;
+    document.getElementById('equipamento-filtros').hidden = false;
+    document.getElementById('lista-equipamentos').hidden = false;
     document.getElementById('equipamentos-hint').textContent = 'Catálogo SRD completo. Sem mochila, itens equipáveis são equipados automaticamente; com mochila, vão para o inventário.';
     modal.classList.add('ativo');
     modal.setAttribute('aria-hidden','false');
@@ -1432,6 +1434,9 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
       return membros.some(function(m){ return m.user_id === p.ch.user_id && m.role === 'PLAYER'; });
     });
     section.hidden = false;
+    document.getElementById('equipamento-filtros').hidden = true;
+    document.getElementById('lista-equipamentos').hidden = true;
+    document.getElementById('equipamentos-hint').textContent='Selecione um personagem ou token. Itens vestíveis podem ser equipados automaticamente; equipamentos gerais ficam no inventário.';
     var tokens=(cbaPublishedState&&cbaPublishedState.tokens||[]).filter(function(t){return t.tipo==='npc'||t.tipo==='monstro';});
     var html=jogadores.map(function(p){
       return '<button type="button" class="destinatario-equipamento" data-character-id="'+esc(p.ch.id)+'">'+
@@ -1450,6 +1455,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
         modal.setAttribute('aria-hidden','true');
         return;
       }
+      if(e.target.closest&&e.target.closest('[data-equip-action="change-item"]')){document.getElementById('equipamentos-destinatarios').hidden=true;document.getElementById('equipamento-filtros').hidden=false;document.getElementById('lista-equipamentos').hidden=false;document.getElementById('equipamentos-hint').textContent='Escolha um item para selecionar o personagem ou token destinatário.';itemEquipamentoSelecionado=null;return;}
       var itemBtn = e.target.closest ? e.target.closest('[data-equipment-id]') : null;
       if(itemBtn){
         itemEquipamentoSelecionado = catalogoEquipamentos().find(function(item){ return item.id === itemBtn.dataset.equipmentId; });
