@@ -399,6 +399,14 @@ button,input,textarea,select{font-family:inherit}
 #modal-criacao .grimorio-status{font-size:12px;color:#b9ad95;text-align:left}
 @media(max-width:850px){#modal-criacao .grimorio-box{width:98vw;height:94dvh;min-height:0;padding:16px}.grimorio-seletor{grid-template-columns:minmax(240px,.9fr) minmax(0,1.1fr);gap:9px}.grimorio-catalogo{padding:9px}#modal-criacao .grimorio-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.grimorio-detalhe{padding:15px}}
 @media(max-width:620px){#modal-criacao{padding:4px}.grimorio-cabecalho{grid-template-columns:1fr 36px;gap:8px;padding-bottom:10px}.grimorio-progresso{grid-column:1/-1;grid-row:2}.grimorio-seletor{grid-template-columns:1fr;grid-template-rows:minmax(180px,40%) minmax(0,1fr)}.grimorio-catalogo{min-height:0}.grimorio-detalhe{min-height:0;padding:12px}.card-opcao-arte{height:50px}#modal-criacao .card-opcao{min-height:104px}.grimorio-passo-acoes{margin-top:7px}.grimorio-briefing-titulo{font-size:23px}.grimorio-briefing-resumo{font-size:14px}.grimorio-info-row span,.grimorio-info-row pre{font-size:13px}}
+
+/* Hall of campaigns: refreshed layout */
+body{background:#080e17;color:#e7e0d0}.bg-image{opacity:.08;filter:grayscale(.8) blur(1px)}.bg-overlay{background:radial-gradient(ellipse at 72% 0,#263c50 0,transparent 38%),linear-gradient(145deg,#080e17f2,#0d1724f5 55%,#080e17f5)}
+.lobby{grid-template-columns:228px minmax(0,1fr);gap:0;background:transparent}.sidebar{background:linear-gradient(180deg,#131f2e,#0c1420 70%);border-right:1px solid #364b61;padding:25px 16px;box-shadow:12px 0 40px #0005}.side-logo img{max-width:158px;max-height:80px}.side-user{border:1px solid #40546a;background:#111d2a;border-radius:12px;text-align:left;box-shadow:none}.side-user .papel{color:#93a7bd}.side-nav{gap:7px}.side-nav a{border:1px solid transparent;border-radius:9px;border-left:3px solid transparent;padding:11px 10px;text-shadow:none;color:#b8c6d5;font-size:10px;letter-spacing:1px}.side-nav a.ativo{border-color:#42566d;border-left-color:#e0bb68;background:linear-gradient(100deg,#20334a,#142131);color:#f3d78f}.side-nav a.nav-biblioteca-srd{border-radius:9px}.side-sair{border-radius:9px;background:#101a27}
+.main{max-width:1600px;width:100%;margin:0 auto;padding:clamp(24px,4vw,58px) clamp(18px,4vw,64px) 80px}.topo{align-items:flex-end;margin-bottom:32px;padding:20px 0 24px;border-bottom:1px solid #33475d}.titulo{font-size:clamp(27px,3vw,42px);letter-spacing:2px;text-shadow:none}.subtitulo{color:#9aafc3;text-shadow:none}.acoes{gap:8px}.input-codigo{width:152px;border:1px solid #40536b;border-radius:9px;background:#101a27;color:#f4ead4;box-shadow:none}.btn{border-radius:9px;min-height:42px;letter-spacing:1px}.btn-dourado{background:linear-gradient(180deg,#edd18a,#ba8e43);box-shadow:0 5px 18px #0005}.btn-sec{background:#142236;border-color:#4e6580;color:#d6c28f}
+.grid{grid-template-columns:repeat(auto-fill,minmax(min(100%,310px),1fr));gap:18px}.card{overflow:hidden;border:1px solid #3a4e64;border-radius:14px;padding:0;background:linear-gradient(155deg,#172638,#0f1825 74%);box-shadow:0 14px 32px #0006;transition:transform .2s,border-color .2s,box-shadow .2s}.card:hover{transform:translateY(-3px);border-color:#bd9a58;box-shadow:0 20px 42px #0009,0 0 20px #bb98501c}.card-capa{height:156px;margin:0;border-radius:0;background:#0a111b}.card-capa img{opacity:.86;transition:transform .35s}.card:hover .card-capa img{transform:scale(1.035)}.card-estado{top:12px;right:12px;border:1px solid #66788b;border-radius:99px;padding:5px 10px;background:#101b2beF;color:#c6d5e2}.card-corpo{padding:16px;gap:9px}.card-nome{font-size:18px;color:#f4e6c5}.card-mestre{font-size:10px;letter-spacing:1px;color:#9cafc1}.card-mestre b{color:#e0bb68}.card-briefing{min-height:40px;color:#b8c4d1;font-size:14px}.btn-entrar{border:1px solid #8e743f!important;border-radius:9px;margin-top:6px;padding:12px;background:linear-gradient(180deg,#e8c879,#b98a42);font-size:10px;letter-spacing:1px}.card[data-role="PLAYER"] .btn-entrar{background:linear-gradient(180deg,#304d68,#1c3349);border-color:#5b7894!important;color:#e1edf6}.card[data-role="PLAYER"] .card-estado{color:#a9d6b4;border-color:#4e8362}
+.modal-box{border-radius:15px;border-width:1px;background:linear-gradient(150deg,#1c2d40,#0e1723);box-shadow:0 24px 70px #000b}.modal-box h2{color:#f0d080}.card-ficha-user{border-radius:12px!important;background:linear-gradient(145deg,#1b2b3e,#111a27)!important;transition:.17s}.card-ficha-user:hover{transform:translateY(-2px);border-color:#e0bb68!important}.vazio{border:1px dashed #4d6175;border-radius:14px;color:#a9b9c9;background:#111c28}
+@media(max-width:780px){.lobby{grid-template-columns:1fr}.sidebar{position:relative;top:auto;width:100%;height:auto;padding:10px 14px;display:grid;grid-template-columns:64px 1fr auto;gap:8px;align-items:center;border-right:0;border-bottom:1px solid #364b61}.side-logo{margin:0}.side-logo img{width:62px;height:40px}.side-divisor{display:none}.side-user{margin:0;padding:8px}.side-nav{grid-column:1/-1;grid-row:2;display:flex;flex-direction:row;overflow-x:auto}.side-nav a{flex:0 0 auto;padding:9px}.side-sair{grid-column:3;grid-row:1;margin:0;padding:8px}.main{padding:22px 14px 50px}.topo{align-items:flex-start;flex-direction:column;margin-bottom:18px}.acoes{width:100%}.input-codigo{flex:1;min-width:0}.grid{gap:12px}}
 </style>
 </head>
 <body>
@@ -1396,6 +1404,15 @@ button,input,textarea,select{font-family:inherit}
       grid.innerHTML = '<div class="vazio" style="color:#f87171">Erro ao carregar mesas: ' + escapeHtml(r.error.message) + '</div>';
       return;
     }
+    var ownerIds = Object.create(null);
+    if (r.data && r.data.length) {
+      var ownerRows = await sb.from('campaigns').select('id,owner_id').in('id', r.data.map(function(m){ return m.id; }));
+      if (ownerRows.error) {
+        grid.innerHTML = '<div class="vazio" style="color:#f87171">Não foi possível confirmar os papéis da mesa: ' + escapeHtml(ownerRows.error.message) + '</div>';
+        return;
+      }
+      (ownerRows.data || []).forEach(function(row){ if(String(row.owner_id)===String(eu.id)) ownerIds[String(row.id)]=true; });
+    }
     if (!r.data || r.data.length === 0) {
       grid.innerHTML = '<div class="vazio">Nenhuma mesa encontrada. Seja o primeiro a criar!</div>';
       return;
@@ -1404,19 +1421,19 @@ button,input,textarea,select{font-family:inherit}
     grid.innerHTML = r.data.map(function(m) {
       var img = m.capa_url || 'bg_lobby.png';
       var estado = m.state || 'EXPLORAÇÃO';
-      var isDono = m.meu_papel === 'GM';
+      var isDono = ownerIds[String(m.id)] === true;
       var qtdJogadores = Number(m.participantes) || 0;
       var mestreNome = m.mestre || 'Desconhecido';
       var btnCapa = isDono
         ? '<button class="btn-edit-capa" data-id="' + escapeHtml(m.id) + '" title="Alterar Capa" aria-label="Alterar capa da mesa" style="position:absolute;top:10px;left:10px;background:rgba(0,0,0,.7);border:1px solid #c9a050;color:#c9a050;border-radius:50%;width:30px;height:30px;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>'
         : '';
-      return '<article class="card">' +
+      return '<article class="card" data-role="' + (isDono ? 'GM' : 'PLAYER') + '">' +
         '<div class="card-capa">' + btnCapa + '<img src="' + escapeHtml(img) + '" alt="Capa da mesa"><div class="card-estado">' + escapeHtml(estado) + '</div></div>' +
         '<div class="card-corpo"><div class="card-nome">' + escapeHtml(m.name || 'Mesa sem nome') + '</div>' +
         '<div class="card-mestre">Mestre: <b>' + escapeHtml(mestreNome) + '</b> · ' + qtdJogadores + ' participante(s)</div>' +
         '<div class="card-briefing">' + escapeHtml(m.briefing || (m.cidade ? 'Local: ' + m.cidade : 'Uma nova aventura aguarda...')) + '</div>' +
         (isDono && m.codigo_convite ? '<div class="card-briefing">Código de convite: <b>' + escapeHtml(m.codigo_convite) + '</b></div>' : '') +
-        '<button type="button" class="btn-entrar js-entrar-mesa" data-id="' + escapeHtml(m.id) + '" data-dono="' + (isDono ? 'true' : 'false') + '" style="border:none;cursor:pointer">Entrar na Mesa</button></div></article>';
+        '<button type="button" class="btn-entrar js-entrar-mesa" data-id="' + escapeHtml(m.id) + '" data-dono="' + (isDono ? 'true' : 'false') + '" style="cursor:pointer">' + (isDono ? 'Administrar Mesa' : 'Escolher ficha e sentar') + '</button></div></article>';
     }).join('');
 
     document.querySelectorAll('.btn-edit-capa').forEach(function(btn) {
@@ -1448,15 +1465,11 @@ button,input,textarea,select{font-family:inherit}
     }
     if (!eu) throw new Error('Sua sessão expirou. Entre novamente.');
     if (isDono) {
-      location.href = 'mesa.html?mesa=' + encodeURIComponent(mesaId) + '&role=gm';
+      location.href = 'mesa.html?mesa=' + encodeURIComponent(mesaId);
       return;
     }
     var r = await sb.from('members').select('role').eq('campaign_id', mesaId).eq('user_id', eu.id).limit(1).maybeSingle();
     if (r.error) throw new Error(r.error.message);
-    if (r.data && r.data.role === 'GM') {
-      location.href = 'mesa.html?mesa=' + encodeURIComponent(mesaId) + '&role=gm';
-      return;
-    }
     if (!r.data) throw new Error('Para entrar nesta mesa, informe o código de convite no campo acima e clique em Sentar.');
     // Jogadores escolhem qual das próprias fichas usar sempre que entram,
     // inclusive quando já estão cadastrados como membros da mesa.
@@ -1501,9 +1514,9 @@ button,input,textarea,select{font-family:inherit}
     entradaMesaEmAndamento = true;
     containerEntrarFichas.innerHTML = '<div style="color:#c9a050;text-align:center;grid-column:1/-1;padding:40px">Entrando na mesa...</div>';
     try {
-      var rChar = await sb.from('characters').update({ campaign_id: mesaId }).eq('id', charId).eq('user_id', eu.id).select('id').maybeSingle();
-      if (rChar.error) throw new Error('Erro ao vincular personagem: ' + rChar.error.message);
-      if (!rChar.data) throw new Error('A ficha não existe ou não pertence à sua conta. Atualize a lista e tente novamente.');
+      var rChar = await sb.rpc('sentar_personagem_na_mesa', { p_campaign_id: Number(mesaId), p_character_id: String(charId) });
+      if (rChar.error) throw new Error('Não foi possível sentar com esta ficha: ' + rChar.error.message);
+      if (!rChar.data || !rChar.data.ok) throw new Error('A mesa não confirmou a entrada com esta ficha.');
 
       setTimeout(function() {
         location.href = 'mesa.html?mesa=' + encodeURIComponent(mesaId);

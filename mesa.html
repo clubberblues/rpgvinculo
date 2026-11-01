@@ -424,6 +424,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
 .mesa--gm #acoes-dir:before,.mesa--player #acoes-dir:before{display:block;width:100%;padding:4px 7px 9px;border-bottom:1px solid #35465b;color:#f0d080;font:9px Cinzel,serif;letter-spacing:2px;text-align:center}
 .mesa--gm #acoes-dir:before{content:'COMANDO DO MESTRE'}.mesa--player #acoes-dir:before{content:'AÇÕES DO AVENTUREIRO'}
 .mesa--gm .turno-info{color:#f0d080;border-color:#95763e}.mesa--player .turno-info{color:#91ddb0;border-color:#4d8264}
+.col-dir{align-content:flex-start;gap:12px;padding:14px;background:linear-gradient(180deg,#111d2c,#0a121d)}.painel-acoes-grupo{display:flex;flex-direction:column;gap:7px;padding:10px;border:1px solid #35495e;border-radius:11px;background:linear-gradient(145deg,#18283b,#101a27);box-shadow:0 8px 18px #0003}.painel-acoes-grupo h3{margin:0 0 2px;color:#93a8bd;font:700 9px Cinzel,serif;letter-spacing:1.8px;text-transform:uppercase}.painel-acoes-grupo .btn-acao{width:100%;min-height:41px;border-radius:8px;background:#122033;border-color:#394f67;font-size:10px}.mesa--gm .painel-acoes-grupo h3{color:#e3c575}.mesa--player .painel-acoes-grupo h3{color:#9ed4b0}
+@media(max-width:900px){.col-dir{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));align-content:start}.painel-acoes-grupo{min-width:0}}
 
 </style>
 </head>
@@ -737,8 +739,15 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
 
     var rm = await sb.from('members').select('role').eq('campaign_id', MESA_ID).eq('user_id', eu.id).maybeSingle();
     if(!rm.data){ document.getElementById('root').innerHTML = '<div class="loading-full" style="color:#f87171">Voce nao e membro desta mesa.</div>'; return; }
-    meuPapel = rm.data.role || 'PLAYER';
-    ehGM = meuPapel === 'GM';
+    // The campaign owner is the sole GM; the URL and stale membership roles never grant control.
+    ehGM = String(campanha.owner_id) === String(eu.id);
+    meuPapel = ehGM ? 'GM' : 'PLAYER';
+
+    if(!ehGM){
+      var seated=await sb.from('characters').select('id').eq('campaign_id',MESA_ID).eq('user_id',eu.id).limit(1);
+      if(seated.error)throw new Error('Não foi possível confirmar sua ficha sentada à mesa: '+seated.error.message);
+      if(!seated.data||!seated.data.length){document.getElementById('root').innerHTML='<div class="loading-full" style="color:#f0d080">Escolha sua ficha no lobby antes de sentar à mesa.</div>';setTimeout(function(){location.replace('lobby.html');},1800);return;}
+    }
 
     renderLayout();
     if(campanha.cba_data) aplicarCBAnaMesa(campanha.cba_data,false);
@@ -872,6 +881,17 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
         return '<button class="btn-acao" data-acao="'+b.id+'" title="'+esc(b.txt)+'"><span class="icone">'+b.ic+'</span><span>'+esc(b.txt)+'</span></button>';
       }).join('');
     }
+
+    var actionButtons=Array.from(el.querySelectorAll('.btn-acao'));
+    var actionGroups=ehGM?[
+      {title:'Combate',ids:['alternar-combate','iniciativa','avancar-turno']},
+      {title:'Campo de batalha',ids:['cba','npc','monstros']},
+      {title:'Mesa e jogadores',ids:['testes','equipamentos','xp','dados','config-campanha']}
+    ]:estado==='COMBATE'?
+      [{title:'Seu turno',ids:['atk-corpo','atk-dist','atk-mag','pericia','inventario','avancar-turno']}]:
+      [{title:'Aventureiro',ids:['ficha','dados','pericia','atk-mag','inventario']}];
+    el.replaceChildren();
+    actionGroups.forEach(function(group){var section=document.createElement('section');section.className='painel-acoes-grupo';var heading=document.createElement('h3');heading.textContent=group.title;section.appendChild(heading);group.ids.forEach(function(id){var button=actionButtons.find(function(candidate){return candidate.dataset.acao===id;});if(button)section.appendChild(button);});if(section.querySelector('.btn-acao'))el.appendChild(section);});
 
     el.querySelectorAll('.btn-acao').forEach(function(b){
       if(b.dataset.acao==='alternar-combate' && estadoMesaBusy) b.disabled=true;
