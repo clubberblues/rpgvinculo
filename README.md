@@ -86,3 +86,5 @@ A migração `srd35_cba_token_combat_migration.sql` foi aplicada ao Supabase con
 
 Na mesa, o botão **Adicionar à mesa** do bestiário usa o catálogo definido antes do clique e salva tokens com as estatísticas numéricas. Fichas do Mestre usadas como NPCs levam PV, CA, atributos e arma equipada para o token. Armas equipadas no inventário do token substituem a fórmula de dano padrão; o ataque também usa o modificador de Força registrado. O rodapé organiza todos os cards pela iniciativa a partir do combatente atual, fazendo a fila avançar para a esquerda com movimento suave (respeitando a preferência do sistema por movimento reduzido). Os cards mostram PV, CA, bônus de ataque e dado de dano quando esses dados estão disponíveis.
 
+
+Além disso, ao abrir a mesa como Mestre, a interface busca no catálogo SRD os dados de CA, PV e bloco de ataque de monstros antigos que já estavam no CBA sem esses campos e salva a correção na cena.
