@@ -50,7 +50,7 @@ Os cards inferiores reúnem fichas de jogadores e tokens de NPCs/monstros, mostr
 
 O catálogo da mesa consulta `srd_equipment`. O Mestre pode entregar itens para uma ficha de jogador ou token de NPC/monstro. Se o destinatário não tiver mochila, itens equipáveis são equipados automaticamente; com mochila, os itens são guardados. Jogadores equipam e desequipam itens da própria ficha; o Mestre controla o inventário de NPCs/monstros. O recálculo de CA do token acontece dentro da mesma RPC transacional que entrega o equipamento.
 
-As migrações `srd35_initiative_turn_controls_migration.sql` e `srd35_token_equipment_migration.sql` foram aplicadas ao projeto Supabase `Vinculo` em 01/11/2026, depois das tabelas e funções base de iniciativa, combate, ficha e compêndio.
+As migrações `srd35_initiative_turn_controls_migration.sql`, `srd35_token_equipment_migration.sql` e `srd35_equipment_category_mapping_migration.sql` foram aplicadas ao projeto Supabase `Vinculo` em 01/11/2026, depois das tabelas e funções base de iniciativa, combate, ficha e compêndio. O catálogo SRD atual possui 1.021 registros; a mesa pagina a busca para carregá-los integralmente e normaliza categorias importadas na hora de equipar, preservando a categoria de origem.
 
 ## Biblioteca SRD
 
