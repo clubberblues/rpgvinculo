@@ -1,0 +1,23 @@
+:root {
+  --vtt-ink:#080e18;
+  --vtt-panel:#121e2e;
+  --vtt-raised:#1a2b40;
+  --vtt-gold:#e0b65c;
+  --vtt-gold-soft:#f4d993;
+  --vtt-paper:#f4ecd8;
+  --vtt-muted:#a9b6c7;
+  --vtt-line:#394d65;
+}
+.vtt-ui-dialog{width:min(92vw,520px);max-height:88vh;padding:0;border:1px solid var(--vtt-gold);border-radius:14px;background:linear-gradient(155deg,#162437,#0a111d);color:var(--vtt-paper);box-shadow:0 28px 90px #000c}
+.vtt-ui-dialog::backdrop{background:#03070dcc;backdrop-filter:blur(5px)}
+.vtt-ui-head{padding:17px 20px;border-bottom:1px solid #35475d;background:linear-gradient(90deg,#18283b,#101a29)}
+.vtt-ui-head h2{margin:0;color:var(--vtt-gold-soft);font:700 17px/1.2 Cinzel,Georgia,serif;letter-spacing:.06em}
+.vtt-ui-body{padding:19px 20px;color:var(--vtt-paper);line-height:1.5;white-space:pre-wrap}
+.vtt-ui-field{display:block;width:100%;margin-top:12px;padding:11px 12px;border:1px solid #52677f;border-radius:8px;background:#080f1b;color:var(--vtt-paper);font:16px Georgia,serif}
+.vtt-ui-field:focus{outline:2px solid var(--vtt-gold);border-color:var(--vtt-gold)}
+.vtt-ui-actions{display:flex;justify-content:flex-end;gap:9px;padding:0 20px 18px}
+.vtt-ui-actions button{min-height:42px;padding:9px 16px;border:1px solid #53677d;border-radius:8px;background:#1a293b;color:var(--vtt-paper);font:700 12px Cinzel,Georgia,serif;cursor:pointer}
+.vtt-ui-actions button:hover{border-color:var(--vtt-gold);background:#26374b}
+.vtt-ui-actions .primary{border-color:var(--vtt-gold);background:linear-gradient(135deg,#e6bd68,#bd8b3b);color:#111827}
+.vtt-ui-actions .danger{border-color:#d76565;background:#8f2e36;color:#fff}
+@media(max-width:540px){.vtt-ui-dialog{width:calc(100vw - 24px)}.vtt-ui-head,.vtt-ui-body{padding:15px}.vtt-ui-actions{padding:0 15px 15px}}
