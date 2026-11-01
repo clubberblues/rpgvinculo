@@ -1,6 +1,6 @@
 # Arquitetura do motor D&D 3.5
 
-Estado: **fundação de arquitetura e esquema em implantação; motor e catálogo ainda não completos**.  
+Estado em 01/11/2026: **fundação de arquitetura e esquema aplicados no Supabase de produção; catálogo e motor ainda não completos**.  
 Escopo de conteúdo inicial: D&D 3.5 SRD / Open Game Content (OGL 1.0a). O Vínculo RPG permanece em catálogo separado.
 
 ## Limite de conteúdo
@@ -78,3 +78,16 @@ A tabela de cobertura mantém, por catálogo, contagem importada, contagem confe
 ## Estado de pronto
 
 O objetivo final só pode ser chamado “completo” quando cada módulo SRD habilitado tiver catálogo fonte-verificado, progressões e dependências resolvidas, sem lacunas mecânicas silenciosas; os cenários de aceite concluídos; e o estado em tempo real coincidir para Mestre e jogador. Até lá, a interface identifica o que está automatizado e o que aguarda decisão do Mestre.
+
+## Auditoria do estado aplicado — 01/11/2026
+
+A migração `srd35_rule_engine_foundation` foi aplicada à produção e também está versionada no repositório. Verificação pós-migração:
+
+- 220 progressões de classe (11 classes × 20 níveis).
+- 1.400 linhas de progressão de espaços (7 classes × 20 níveis × 10 círculos).
+- 7 trilhas de classe existentes preservadas e normalizadas.
+- 11 categorias no ledger de cobertura; todas pendentes e nenhuma entrada marcada como verificada.
+- Ainda vazios: domínios e magias de domínio, características por nível, condições, efeitos tipados de magia, grimórios e estado normalizado de magias preparadas.
+- Snapshot de catálogo: 7 raças, 11 classes, 49 perícias, 110 talentos, 1.021 equipamentos, 601 magias e 445 monstros. Esses totais não provam completude nem fidelidade mecânica; é necessária conferência por fonte/licença e por campo.
+
+Logo, esta entrega define e instala a fundação relacional e os critérios de auditoria; ela não implementa ainda todos os cálculos de combate, conjuração, condições ou escolhas de personagem descritos neste documento.
