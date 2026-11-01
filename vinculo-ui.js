@@ -24,7 +24,7 @@
       function onCancel(event){event.preventDefault();finish(opts.type==='confirm'?false:null);}
       dialog.addEventListener('cancel',onCancel);
       cancel.onclick=function(){finish(opts.type==='confirm'?false:null);};
-      ok.onclick=function(){finish(opts.type==='confirm'?true:(opts.kind==='input'||opts.kind==='textarea'?input.value:(opts.kind==='select'?select.value:true));};
+      ok.onclick=function(){finish(opts.type==='confirm'?true:(opts.kind==='input'||opts.kind==='textarea'?input.value:(opts.kind==='select'?select.value:true)));};
       dialog.showModal();
       if(opts.kind==='input'||opts.kind==='textarea')input.focus();else if(opts.kind==='select')select.focus();else ok.focus();
       if(opts.kind==='input')input.onkeydown=function(event){if(event.key==='Enter'){event.preventDefault();ok.click();}};
