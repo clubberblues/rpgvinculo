@@ -1927,33 +1927,21 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
   }
 
   function adicionarCardReforcoRapido(list,entidade,tipo){
-    var card=document.createElement(tipo==='monstro'?'div':'button');
-    if(tipo!=='monstro')card.type='button';else card.tabIndex=0;
-    card.className='card-catalogo';
-    card.dataset.reforcoTipo=tipo;
-    card.dataset.reforcoId=String(entidade.id);
+    var card=document.createElement(tipo==='monstro'?'article':'button');if(tipo!=='monstro')card.type='button';else card.tabIndex=0;
+    card.className='card-catalogo'+(tipo==='monstro'?' monster-catalog-card':'');card.dataset.reforcoTipo=tipo;card.dataset.reforcoId=String(entidade.id);
     var imagem=String(tipo!=='monstro'?entidade.retrato_url||'':'').trim();
-    if(/^https?:\/\/[^\s"'<>]+$/i.test(imagem)){
-      var img=document.createElement('img');
-      img.src=imagem;
-      img.alt='';
-      img.loading='lazy';
-      card.appendChild(img);
-    }else{
-      var avatar=document.createElement('span');
-      avatar.className='cba-avatar-placeholder';
-      avatar.setAttribute('aria-hidden','true');
-      avatar.textContent=tipo==='monstro'?'🐉':'👤';
-      card.appendChild(avatar);
-    }
-    var nome=document.createElement('span');
-    nome.className='nome';
-    nome.textContent=String(entidade.nome||'Criatura');
-    var detalhe=document.createElement('span');
-    detalhe.className='detalhe';
-    detalhe.textContent=tipo==='player'?'Ficha de jogador':(tipo==='npc'?'Ficha da conta do Mestre':('Nível '+String(entidade.nivel||'—')+' · '+String(entidade.regiao||'Bestiário')));
+    if(/^https?:\/\/[^\s"'<>]+$/i.test(imagem)){var img=document.createElement('img');img.src=imagem;img.alt='';img.loading='lazy';card.appendChild(img);}
+    else{var avatar=document.createElement('span');avatar.className='cba-avatar-placeholder';avatar.setAttribute('aria-hidden','true');avatar.textContent=tipo==='monstro'?'🐉':'👤';card.appendChild(avatar);}
+    var nome=document.createElement('span');nome.className='nome';nome.textContent=String(entidade.nome||'Criatura');
+    var detalhe=document.createElement('span');detalhe.className='detalhe';detalhe.textContent=tipo==='player'?'Ficha de jogador':(tipo==='npc'?'Ficha do Mestre':'ND '+String(entidade.nd||'—')+' · CA '+String(entidade.ca||'—')+' · PV '+String(entidade.pv||'—'));
     card.append(nome,detalhe);
-    if(tipo==='monstro'){var addMonster=document.createElement('button');addMonster.type='button';addMonster.className='btn-acao';addMonster.textContent='Adicionar monstro';addMonster.setAttribute('aria-label','Adicionar '+String(entidade.nome||'monstro')+' à mesa');card.appendChild(addMonster);var info=document.createElement('button');info.type='button';info.className='btn-acao';info.textContent='ⓘ Informações';info.dataset.monsterInfo=String(entidade.id);info.setAttribute('aria-label','Compartilhar estatísticas de '+String(entidade.nome||'criatura')+' no chat');card.appendChild(info);}
+    if(tipo==='monstro'){
+      var details=document.createElement('details');details.className='monster-card-details';var summary=document.createElement('summary');summary.textContent='Ver ficha resumida';
+      var body=document.createElement('div');body.className='monster-card-facts';
+      [['Tipo e tamanho',[entidade.tipo,entidade.tamanho].filter(Boolean).join(' · ')],['Ataques',typeof entidade.ataques==='string'?entidade.ataques:JSON.stringify(entidade.ataques||'—')],['Deslocamento',entidade.deslocamento],['Descrição',entidade.descricao||'Sem descrição no catálogo.']].forEach(function(pair){if(!pair[1])return;var row=document.createElement('p'),strong=document.createElement('strong');strong.textContent=pair[0]+': ';row.append(strong,document.createTextNode(String(pair[1])));body.appendChild(row);});
+      details.append(summary,body);card.appendChild(details);
+      var add=document.createElement('button');add.type='button';add.className='monster-add-button';add.dataset.reforcoAdd='true';add.textContent='Adicionar à mesa';card.appendChild(add);
+    }
     list.appendChild(card);
   }
 
@@ -2111,6 +2099,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
         if(!card) return;
         var info=e.target.closest&&e.target.closest('[data-monster-info]');
         var tipo=card.dataset.reforcoTipo;
+        if(tipo==='monstro'&&e.target.closest('.monster-card-details')&&!e.target.closest('[data-reforco-add]'))return;
+        if(tipo==='monstro'&&e.target.closest('[data-reforco-add]')){var addMonster=catalogo.find(function(x){return String(x.id)===String(card.dataset.reforcoId);});if(addMonster)adicionarReforcoRapido(addMonster,'monstro');return;}
         var catalogo=tipo==='monstro'?cbaMonsterCatalog:(tipo==='player'?cbaPlayerCatalog:cbaNpcCatalog);
         if(info&&tipo==='monstro'){e.preventDefault();e.stopPropagation();var monster=catalogo.find(function(x){return String(x.id)===String(info.dataset.monsterInfo);});if(monster)publicarInfoMonstro(monster);return;}
         var entidade=catalogo.find(function(ch){ return String(ch.id)===card.dataset.reforcoId; });
