@@ -47,3 +47,7 @@ As descrições em português incluídas são paráfrases; os valores de jogo ma
 ## Validação
 
 Passaram localmente: parse de HTML e JavaScript inline com Node/HTMLParser; parse PostgreSQL das migrações de conjuração e economia de ações com `pglast`; smoke tests Playwright com Supabase simulado da ficha (carregar, abrir Grimório e conferir payload RPC) e da mesa (conjurar via wrapper, conferir economia de ações, abrir menus por papel, carregar bestiário, publicar estatísticas, adicionar token e validar alerta de movimento racial acima de 9 m). Estes testes não acessam nem comprovam o banco, os dados ou as permissões de produção.
+
+## Atualização de NPCs e resolução de combate
+
+As migrações `srd35_npc_archetypes_migration.sql` e `srd35_combat_resolution_migration.sql` registram no repositório as alterações aplicadas ao projeto Supabase em 31/10/2026. A primeira cria cinco arquétipos por combinação de raça e classe para geração de NPCs com nível selecionável. A segunda adiciona as rotinas autenticadas de resolução/aplicação de dano e consumo de ações do Mestre por token. A geração de fichas e os controles de combate do Mestre dependem dessas estruturas e da interface correspondente.
