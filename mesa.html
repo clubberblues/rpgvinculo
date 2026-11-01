@@ -417,6 +417,14 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
 @media(max-width:900px){.mesa-header{padding:9px 12px}.mesa-corpo{gap:0}.col-esq,.col-dir{background:#0d1522}.cards-strip{min-height:100px}.card-pers{min-width:210px}#painel-iniciativa{top:74px;width:min(90vw,820px)}}
 @media(max-width:600px){.mesa-header{min-height:58px}.titulo-mesa .nome{font-size:13px;letter-spacing:1.5px}.mesa-corpo{grid-template-columns:1fr}.col-esq{border:0}.col-dir{border-top:1px solid #35465b}.tabuleiro{background-color:#080c12}.cards-strip{padding:8px}.card-pers{min-width:195px}.iniciativa-item{min-width:82px}.npc-generator{grid-template-columns:1fr}.npc-generator button{grid-column:auto}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
+
+#iniciativa-acoes-mestre{display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;margin-top:9px;padding-top:8px;border-top:1px solid #3b4d61;pointer-events:auto}#iniciativa-acoes-mestre>span{color:#f3d78f;font:700 10px Cinzel,serif;letter-spacing:.6px;margin:0 5px}#iniciativa-acoes-mestre button{min-height:34px;border:1px solid #846a3a;border-radius:7px;background:linear-gradient(145deg,#26384e,#172437);color:#f4d07a;padding:7px 10px;font:700 9px Cinzel,serif;cursor:pointer}#iniciativa-acoes-mestre button:hover{background:linear-gradient(145deg,#f0cd78,#bd9148);color:#17140e}
+@media(max-width:600px){#iniciativa-acoes-mestre{gap:5px}#iniciativa-acoes-mestre button{min-height:38px;padding:7px;font-size:8px}.quick-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.mesa--gm #acoes-dir:before,.mesa--player #acoes-dir:before{display:block;width:100%;padding:4px 7px 9px;border-bottom:1px solid #35465b;color:#f0d080;font:9px Cinzel,serif;letter-spacing:2px;text-align:center}
+.mesa--gm #acoes-dir:before{content:'COMANDO DO MESTRE'}.mesa--player #acoes-dir:before{content:'AÇÕES DO AVENTUREIRO'}
+.mesa--gm .turno-info{color:#f0d080;border-color:#95763e}.mesa--player .turno-info{color:#91ddb0;border-color:#4d8264}
+
 </style>
 </head>
 <body>
@@ -587,12 +595,12 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     <nav class="quick-tabs" role="tablist" aria-label="Categoria de combatente">
       <button type="button" role="tab" aria-selected="true" data-reforco-tab="npc">Suas Fichas</button>
       <button type="button" role="tab" aria-selected="false" data-reforco-tab="player">Jogadores</button>
-      <button type="button" role="tab" aria-selected="false" data-reforco-tab="monstro">Monstros</button>
+      <button type="button" role="tab" aria-selected="false" data-reforco-tab="monstro">Monstros</button><button type="button" role="tab" aria-selected="false" data-reforco-tab="archetype">Criar NPC</button>
     </nav>
     <div class="modal-reforco-body">
       <div class="quick-filter-row" id="rapido-monstro-filtros" hidden><input type="search" id="rapido-monstro-busca" placeholder="Buscar criatura..." aria-label="Buscar criatura"><select id="rapido-monstro-regiao" aria-label="Filtrar por região"><option value="">Todas as regiões</option></select></div>
       <div class="quick-catalog-grid" id="lista-npcs-rapida" role="tabpanel"></div>
-      <div class="quick-catalog-grid" id="lista-monstros-rapida" role="tabpanel" hidden></div>
+      <div class="quick-catalog-grid" id="lista-monstros-rapida" role="tabpanel" hidden></div><section id="npc-generator" hidden><div class="npc-generator"><label>Raça<select id="npc-race-select"></select></label><label>Classe<select id="npc-class-select"></select></label><label>Nível (1–20)<input id="npc-level-input" type="number" min="1" max="20" value="1"></label><button type="button" id="npc-generate-button">Gerar cinco arquétipos</button></div><div id="npc-archetype-results" class="npc-archetype-results" aria-live="polite"></div></section>
     </div>
   </section>
 </div>
@@ -667,6 +675,10 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
   var itemEquipamentoSelecionado = null;
   var cbaNpcCatalog = [];
   var cbaPlayerCatalog = [];
+  var srdRaceCatalog = [];
+  var srdClassCatalog = [];
+  var cbaNpcArchetypes = [];
+  var ataqueMestreSelecionado = null;
   var reforcoAbaAtiva = 'npc';
   var ataqueSelecionado = null;
   var personagemPVSelecionado = null;
@@ -740,7 +752,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
   function renderLayout(){
     var estado = campanha.state || 'EXPLORACAO';
     document.getElementById('root').innerHTML =
-      '<div class="mesa">'+
+      '<div class="mesa '+(ehGM?'mesa--gm':'mesa--player')+'">'+
         '<header class="mesa-header">'+
           '<button class="btn-voltar" id="btn-voltar">← LOBBY</button>'+
           '<div class="titulo-mesa">'+
@@ -805,7 +817,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     ligarGestosCBA();
     ligarMenuContextualToken();
     var tokenLayer=document.getElementById('cba-token-layer');
-    tokenLayer.addEventListener('click',function(e){var hpButton=e.target.closest&&e.target.closest('.token-pv-btn');if(hpButton){e.preventDefault();e.stopPropagation();abrirAjustePVToken(hpButton.dataset.cbaPvKey);return;}var token=e.target.closest&&e.target.closest('.token-cba');if(!token||Date.now()<suppressTokenClickUntil)return;var item=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key)===String(token.dataset.cbaTokenKey);});if(!item)return;if(ataqueSelecionado){selecionarAlvoAtaque(item.key);return;}abrirMenuContextualToken(item,token);});
+    tokenLayer.addEventListener('click',function(e){var hpButton=e.target.closest&&e.target.closest('.token-pv-btn');if(hpButton){e.preventDefault();e.stopPropagation();abrirAjustePVToken(hpButton.dataset.cbaPvKey);return;}var token=e.target.closest&&e.target.closest('.token-cba');if(!token||Date.now()<suppressTokenClickUntil)return;var item=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key)===String(token.dataset.cbaTokenKey);});if(!item)return;if(ataqueMestreSelecionado){selecionarAlvoAtaqueMestre(item);return;}if(ataqueSelecionado){selecionarAlvoAtaque(item.key);return;}abrirMenuContextualToken(item,token);});
     tokenLayer.addEventListener('dblclick',function(e){var token=e.target.closest&&e.target.closest('.token-cba');if(token&&ehGM&&!ataqueSelecionado)abrirAjustePVToken(token.dataset.cbaTokenKey);});
     tokenLayer.addEventListener('contextmenu',function(e){var el=e.target.closest&&e.target.closest('.token-cba');if(!el)return;var t=cbaPublishedState&&cbaPublishedState.tokens.find(function(x){return String(x.key)===String(el.dataset.cbaTokenKey);});if(!t||t.tipo!=='monstro'||!t.monsterId)return;e.preventDefault();var m=cbaMonsterCatalog.find(function(x){return String(x.id)===String(t.monsterId);});if(m)publicarInfoMonstro(m);else if(t.monsterStats){publicarInfoMonstro({id:t.monsterId,nome:t.nome,nd:t.monsterStats.nd,ca:t.ac,pv:t.maxHp,ataques:t.monsterStats.ataques,srd_source_url:t.srdSourceUrl});}});
   }
@@ -923,8 +935,13 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     if(menu.classList.contains('ativo')&&String(ctxTokenAtualKey)===String(item.key))return;
     fecharMenuContextualToken(false);menu.replaceChildren();ctxTokenAtualKey=String(item.key);ctxFocusTokenKey=String(item.key);
     if(ehGM){
-      if(item.tipo==='player')adicionarBotaoContextual(menu,'pv-personagem','❤️ Ajustar PV do personagem');
-      else{adicionarBotaoContextual(menu,'criatura-atacar','⚔️ Rolar ataque (Mestre)');adicionarBotaoContextual(menu,'pv-token','❤️ Ajustar PV da criatura');if(item.tipo==='monstro')adicionarBotaoContextual(menu,'monster-info','📜 Ver ficha no chat');}
+      if(item.tipo==='player'){adicionarBotaoContextual(menu,'pv-personagem','❤️ Ajustar PV do personagem');}
+      else{
+        var gmTurn=combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
+        var gmOwnTurn=!!(gmTurn&&gmTurn.is_monster&&String(gmTurn.id)===String(item.id));
+        if(gmOwnTurn){adicionarBotaoContextual(menu,'gm-token-attack','⚔️ Atacar com este token');adicionarBotaoContextual(menu,'gm-token-action','📜 Registrar outra ação');adicionarBotaoContextual(menu,'gm-token-end','⏭️ Encerrar turno do token');}
+        adicionarBotaoContextual(menu,'criatura-atacar','🎲 Rolagem livre do token');adicionarBotaoContextual(menu,'pv-token','❤️ Ajustar PV da criatura');if(item.tipo==='monstro')adicionarBotaoContextual(menu,'monster-info','📜 Ver ficha no chat');
+      }
     }else{
       adicionarBotaoContextual(menu,'atk-corpo','⚔️ Ataque corpo a corpo');adicionarBotaoContextual(menu,'atk-dist','🏹 Ataque à distância');adicionarBotaoContextual(menu,'atk-mag','✨ Conjurar magia');adicionarBotaoContextual(menu,'inventario','🎒 Inventário');
     }
@@ -951,6 +968,9 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     if(acao==='pv-token'){if(ehGM&&item.tipo!=='player')abrirAjustePVToken(item.key);return;}
     if(acao==='monster-info'){if(ehGM&&item.tipo==='monstro')infoTokenNoChat(item);return;}
     if(acao==='criatura-atacar'){rolarAtaqueCriaturaGM(item);return;}
+    if(acao==='gm-token-attack'){iniciarAtaqueMestre(item);return;}
+    if(acao==='gm-token-action'){registrarOutraAcaoMestre(item);return;}
+    if(acao==='gm-token-end'){if(ehGM)avancarTurno();return;}
     if(!acharPersonagemDoToken(item)||acharPersonagemDoToken(item).ch.user_id!==eu.id)return;
     if(acao==='atk-corpo'||acao==='atk-dist'){iniciarSelecaoAtaque(acao);return;}
     if(acao==='atk-mag'){abrirListaMagias(item.id);return;}
@@ -1000,6 +1020,23 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
   function valorCA35(value){if(value==null||value==='')return null;var direct=Number(value);if(Number.isFinite(direct))return direct;var match=String(value).trim().match(/^(-?\d+)/);return match?Number(match[1]):null;}
   function critico35(value){var text=String(value||'x2'),range=text.match(/(\d{1,2})(?:-(\d{1,2}))?\s*\/\s*x\s*(\d+)/i),mult=text.match(/x\s*(\d+)/i);return {min:range?Number(range[1]):20,max:range&&range[2]?Number(range[2]):20,multiplier:mult?Math.max(2,Number(mult[1])):2};}
   function bab35(cls,level){var prog=String(cls&&(cls.bab_progression||cls.progressao_bba)||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); if(prog==='good'||prog==='bom')return level; if(prog==='average'||prog==='medium'||prog==='medio')return Math.floor(3*level/4); if(prog==='poor'||prog==='ruim')return Math.floor(level/2); return 0;}
+  async function registrarAcaoTokenGM(item,category,note){
+    if(!ehGM||!item||!combatDataState||!combatDataState.active)return;var used=await sb.rpc('consumir_acao_token_gm_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(item.id),p_acao:category});if(used.error){alert('Ação não realizada: '+used.error.message);return;}combatDataState=used.data.combat_data||combatDataState;renderizarIniciativa(combatDataState);await enviarMensagemChat('🎭 '+item.nome+' usou '+category+': '+String(note).trim(),'sistema',{evento:'acao_token_mestre',token_id:String(item.id),round:used.data.round,acao:category});
+  }
+  async function registrarOutraAcaoMestre(item){
+    if(!ehGM||!item||!combatDataState||!combatDataState.active)return;var turn=combatDataState.turn_order[Number(combatDataState.current_turn)||0];if(!turn||!turn.is_monster||String(turn.id)!==String(item.id)){alert('Este token não está no turno ativo do Mestre.');return;}
+    var category=prompt('Qual ação será usada? Digite padrao ou rapida:','padrao');if(!category)return;category=category.trim().toLowerCase();if(['padrao','rapida'].indexOf(category)<0){alert('Escolha padrao, movimento ou rapida.');return;}var note=prompt('Descreva a ação de '+item.nome+':');if(!note||!note.trim())return;await registrarAcaoTokenGM(item,category,note);
+  }
+  function iniciarAtaqueMestre(item){
+    if(!ehGM||!item||item.tipo==='player'||!combatDataState||!combatDataState.active){alert('O ataque do Mestre exige iniciativa ativa e um token NPC/monstro.');return;}var turn=combatDataState.turn_order[Number(combatDataState.current_turn)||0];if(!turn||!turn.is_monster||String(turn.id)!==String(item.id)){alert('O Mestre só pode atacar com o token que está no turno atual.');return;}
+    var raw=item.monsterStats&&item.monsterStats.ataques||item.detalhe||'';if(typeof raw!=='string')raw=JSON.stringify(raw);var bonusMatch=raw.match(/[+\-]\d+\s+(?:melee|ranged|corpo a corpo|à distância|ataque básico)/i),damageMatch=raw.match(/\((\d+d(?:3|4|6|8|10|12|20|100)(?:[+\-]\d+)?)\)/i);var bonus=bonusMatch?Number(bonusMatch[0].match(/[+\-]\d+/)[0]):Number(prompt('Bônus de ataque de '+item.nome+' conforme a ficha:','0'));if(!Number.isFinite(bonus))return;var formula=damageMatch?damageMatch[1]:prompt('Fórmula de dano de '+item.nome+' (ex.: 1d8+3):','1d6');if(!formula)return;formula=String(formula).replace(/\s+/g,'');if(!/^\d{1,2}d(?:3|4|6|8|10|12|20|100)(?:[+\-]\d{1,3})?$/i.test(formula)){alert('Fórmula de dano inválida.');return;}ataqueMestreSelecionado={attacker:item,bonus:bonus,formula:formula};document.getElementById('iniciativa-status').textContent='Turno do Mestre · '+item.nome+': selecione um alvo no tabuleiro.';document.getElementById('area-tabuleiro').classList.add('selecionando-alvo');
+  }
+  function selecionarAlvoAtaqueMestre(target){
+    var selected=ataqueMestreSelecionado;ataqueMestreSelecionado=null;document.getElementById('area-tabuleiro').classList.remove('selecionando-alvo');if(!selected||String(target.id)===String(selected.attacker.id)){alert('Selecione outro token como alvo.');return;}var ac=valorCA35(target.ac!=null?target.ac:(target.monsterStats&&target.monsterStats.ca));if(ac==null){alert('O alvo precisa ter uma CA numérica.');return;}
+    abrirDado('Ataque · '+selected.attacker.nome+' contra '+target.nome,async function(d20){var used=await sb.rpc('consumir_acao_token_gm_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(selected.attacker.id),p_acao:'padrao'});if(used.error)throw new Error('Ação do token não consumida: '+used.error.message);combatDataState=used.data.combat_data||combatDataState;renderizarIniciativa(combatDataState);var total=Number(d20)+selected.bonus,hit=Number(d20)===20||(Number(d20)!==1&&total>=ac);await enviarMensagemChat('⚔️ '+selected.attacker.nome+' atacou '+target.nome+': d20 '+d20+' + bônus '+selected.bonus+' = '+total+' contra CA '+ac+' — '+(hit?'ACERTO':'ERRO')+'.','rolagem',{evento:'ataque_token_mestre',token_id:String(selected.attacker.id),alvo_token_id:String(target.id),d20:Number(d20),bonus:selected.bonus,resultado:total,ca:ac,acertou:hit});if(!hit)return;
+      abrirDado('Dano · '+selected.attacker.nome+' → '+target.nome+' · '+selected.formula,async function(rawDamage){var damage=Math.max(1,Math.trunc(Number(rawDamage))),applied;if(target.tipo==='player')applied=await sb.rpc('alterar_pv_personagem',{p_campaign_id:Number(MESA_ID),p_character_id:String(target.id),p_variacao:-damage});else applied=await sb.rpc('alterar_pv_token_cba',{p_campaign_id:Number(MESA_ID),p_token_id:String(target.id),p_variacao:-damage,p_pv_max:target.maxHp==null?null:Number(target.maxHp)});if(applied.error)throw new Error(applied.error.message);if(target.tipo==='player'){var targetChar=personagens.find(function(p){return String(p.ch.id)===String(target.id);});if(targetChar)targetChar.sh.pv_atual=applied.data.pv_atual;renderCards();}else{campanha.cba_data=applied.data.cba_data;aplicarCBAnaMesa(applied.data.cba_data,false);}await enviarMensagemChat('💥 '+selected.attacker.nome+' causou '+damage+' de dano em '+target.nome+'. PV restantes: '+(applied.data.pv_atual==null?applied.data.hp:applied.data.pv_atual)+' / '+(applied.data.pv_max==null?applied.data.max_hp:applied.data.pv_max)+'.','rolagem',{evento:'dano_token_mestre_aplicado',token_id:String(selected.attacker.id),alvo_token_id:String(target.id),dano:damage});},true,true,selected.formula);
+    },true,true);
+  }
   function selecionarAlvoAtaque(tokenKey){
     var type=ataqueSelecionado; ataqueSelecionado=null; document.getElementById('area-tabuleiro').classList.remove('selecionando-alvo');
     var state=cbaPublishedState||normalizarCBAData(campanha.cba_data), target=state&&state.tokens.find(function(t){return String(t.key)===String(tokenKey);});
@@ -1841,10 +1878,14 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     var filtros=document.getElementById('rapido-monstro-filtros');
     var listaFichas=document.getElementById('lista-npcs-rapida');
     var listaMonstros=document.getElementById('lista-monstros-rapida');
+    var gerador=document.getElementById('npc-generator');
     var eMonstro=tipo==='monstro';
+    var eGerador=tipo==='archetype';
     filtros.hidden=!eMonstro;
-    listaFichas.hidden=eMonstro;
+    listaFichas.hidden=eMonstro||eGerador;
     listaMonstros.hidden=!eMonstro;
+    gerador.hidden=!eGerador;
+    if(eGerador){renderizarArquetiposNPC();return;}
     if(eMonstro){ renderizarMonstrosRapido(); return; }
     var catalogo=tipo==='player'?cbaPlayerCatalog:cbaNpcCatalog;
     if(!catalogo.length){ feedbackCatalogoRapido(listaFichas,tipo==='player'?'Nenhuma ficha de jogador está vinculada a esta mesa.':'Nenhuma ficha encontrada na conta do Mestre.'); return; }
@@ -1880,6 +1921,18 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
       return;
     }
     if(tipoAba==='monstro'){ feedbackCatalogoRapido(document.getElementById('lista-monstros-rapida'),'Carregando bestiário SRD…');try{await carregarCatalogoMonstrosSRD();renderizarAbaReforcoRapido('monstro');}catch(err){feedbackCatalogoRapido(document.getElementById('lista-monstros-rapida'),'Não foi possível carregar o bestiário: '+err.message);}return; }
+    if(tipoAba==='archetype'){
+      renderizarAbaReforcoRapido('archetype');
+      var status=document.getElementById('npc-archetype-results');status.textContent='Carregando raças, classes e cinco arquétipos por combinação…';
+      try{
+        var catalogs=await Promise.all([sb.from('srd_races').select('id,nome,ajustes_atributos,deslocamento,tamanho').order('nome'),sb.from('srd_classes').select('*').order('nome'),sb.from('srd_npc_archetypes').select('*').order('race_id').order('class_id').order('variant')]);
+        for(var ci=0;ci<catalogs.length;ci++)if(catalogs[ci].error)throw new Error(catalogs[ci].error.message);
+        srdRaceCatalog=catalogs[0].data||[];srdClassCatalog=catalogs[1].data||[];cbaNpcArchetypes=catalogs[2].data||[];
+        if(!srdRaceCatalog.length||!srdClassCatalog.length||!cbaNpcArchetypes.length)throw new Error('Os catálogos ou a migração srd35_npc_archetypes_migration.sql ainda não estão disponíveis.');
+        popularSelectNPC35('npc-race-select',srdRaceCatalog);popularSelectNPC35('npc-class-select',srdClassCatalog);renderizarArquetiposNPC();
+      }catch(err){status.textContent='Não foi possível abrir o gerador: '+err.message;}
+      return;
+    }
     feedbackCatalogoRapido(list,'Buscando fichas da sua conta...');
     try{
       var r=await sb.from('characters').select('id,nome,retrato_url').eq('user_id',eu.id);
@@ -1890,6 +1943,42 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
       console.error('Falha ao carregar fichas do Mestre:',e);
       feedbackCatalogoRapido(list,'Não foi possível carregar as fichas. Verifique as permissões e tente novamente.');
     }
+  }
+
+  function popularSelectNPC35(id,rows){var select=document.getElementById(id);var selected=select.value;select.replaceChildren();(rows||[]).forEach(function(row){var option=document.createElement('option');option.value=String(row.id);option.textContent=String(row.nome||row.id);select.appendChild(option);});if(selected&&rows.some(function(row){return String(row.id)===selected;}))select.value=selected;}
+  function rolarAtributoNPC35(){var dice=[Math.floor(Math.random()*6)+1,Math.floor(Math.random()*6)+1,Math.floor(Math.random()*6)+1,Math.floor(Math.random()*6)+1].sort(function(a,b){return b-a;});return dice[0]+dice[1]+dice[2];}
+  function gerarFichaNPC35(race,cls,archetype,level){
+    var attrs={FOR:rolarAtributoNPC35(),DES:rolarAtributoNPC35(),CON:rolarAtributoNPC35(),INT:rolarAtributoNPC35(),SAB:rolarAtributoNPC35(),CAR:rolarAtributoNPC35()};
+    var priority=Array.isArray(archetype.foco_atributos)?archetype.foco_atributos:jsonValueSRD(archetype.foco_atributos,[]);
+    if(priority.length>1){var high=priority[0],low=priority[priority.length-1];if(attrs[high]<attrs[low]){var swap=attrs[high];attrs[high]=attrs[low];attrs[low]=swap;}}
+    var racial=jsonValueSRD(race.ajustes_atributos,{});Object.keys(racial||{}).forEach(function(key){if(attrs[key]!=null)attrs[key]+=Number(racial[key])||0;});
+    for(var abilityLevel=4;abilityLevel<=level;abilityLevel+=4){var primary=priority[0]||'FOR';attrs[primary]++;}
+    var conMod=modifier35(attrs.CON),die=Math.max(4,Number(cls.dado_vida)||8),hp=die+conMod;
+    for(var i=2;i<=level;i++)hp+=Math.max(1,Math.floor(die/2)+1+conMod);
+    hp=Math.max(1,hp);var dexMod=modifier35(attrs.DES),bab=bab35(cls,level),attackBonus=bab+modifier35(attrs.FOR),damageMod=modifier35(attrs.FOR);
+    return {attributes:attrs,hp:hp,maxHp:hp,ac:10+dexMod,dexMod:dexMod,bab:bab,attackBonus:attackBonus,attacks:'Ataque básico '+(attackBonus>=0?'+':'')+attackBonus+' melee (1d6'+(damageMod>=0?'+':'')+damageMod+')',raceId:String(race.id),classId:String(cls.id),level:level,variant:Number(archetype.variant),skills:[],feats:[]};
+  }
+  function renderizarArquetiposNPC(){
+    var list=document.getElementById('npc-archetype-results');if(!list)return;
+    if(!srdNpcClassReady()){list.replaceChildren();return;}
+    var race=srdRaceCatalog.find(function(x){return String(x.id)===String(document.getElementById('npc-race-select').value);});
+    var cls=srdClassCatalog.find(function(x){return String(x.id)===String(document.getElementById('npc-class-select').value);});
+    if(!race||!cls)return;var entries=cbaNpcArchetypes.filter(function(x){return String(x.race_id)===String(race.id)&&String(x.class_id)===String(cls.id);});
+    list.replaceChildren();if(entries.length!==5){list.textContent='Esta combinação ainda não tem cinco arquétipos no banco. Execute a migração do acervo de NPCs.';return;}
+    var level=Math.max(1,Math.min(20,Math.trunc(Number(document.getElementById('npc-level-input').value)||1)));
+    entries.forEach(function(entry){var stats=gerarFichaNPC35(race,cls,entry,level),card=document.createElement('article');card.className='npc-archetype-card';var title=document.createElement('strong');title.textContent=entry.nome+' · Nv '+level;var brief=document.createElement('p');brief.textContent=entry.briefing+' PV '+stats.hp+' · CA '+stats.ac+' · BBA +'+stats.bab+' · Ataque '+stats.attacks+'.';var button=document.createElement('button');button.type='button';button.textContent='Adicionar esta variação ao CBA';button.onclick=function(){adicionarNPCGerado35(race,cls,entry,stats);};card.append(title,brief,button);list.appendChild(card);});
+  }
+  function srdNpcClassReady(){return srdRaceCatalog.length>0&&srdClassCatalog.length>0&&cbaNpcArchetypes.length>0;}
+  async function adicionarNPCGerado35(race,cls,archetype,stats){
+    if(!ehGM||reforcoBusy)return;reforcoBusy=true;
+    try{
+      var scene=normalizarCBAData(campanha.cba_data)||{backgroundUrl:'',imgScale:1,gridSize:50,gridRatio:null,gridOpacity:.3,tokens:[]};
+      var cell=escolherCelulaLivreRapida(scene);if(!cell)throw new Error('Não há quadrados livres para posicionar o NPC.');
+      var id=novoIdReforco(),name=String(archetype.nome||race.nome+' '+cls.nome).slice(0,120);
+      var token={key:'cba-'+id,id:id,nome:name,imagem:'',tipo:'npc',detalhe:'Nv '+stats.level+' · '+race.nome+' '+cls.nome+' · '+archetype.nome,gridX:cell.gridX,gridY:cell.gridY,boardColumns:cell.boardColumns,boardRows:cell.boardRows,hp:stats.hp,maxHp:stats.maxHp,ac:stats.ac,dexMod:stats.dexMod,monsterStats:{nd:String(stats.level),ataques:stats.attacks,ca:String(stats.ac),pv:stats.hp,forca:stats.attributes.FOR,destreza:stats.attributes.DES,constituicao:stats.attributes.CON,inteligencia:stats.attributes.INT,sabedoria:stats.attributes.SAB,carisma:stats.attributes.CAR,archetype:archetype.role_key,race_id:stats.raceId,class_id:stats.classId,level:stats.level,variant:stats.variant}};
+      scene.tokens.push(token);var saved=await gravarCBAnaCampanha(serializarEstadoCBA(scene));campanha.cba_data=saved;aplicarCBAnaMesa(saved,false);fecharModaisReforcoRapido();await enviarMensagemChat('✨ O Mestre criou '+name+' para a mesa · nível '+stats.level+' · PV '+stats.hp+' · CA '+stats.ac+'.','sistema',{evento:'npc_arquetipo_criado',token_id:id,race_id:stats.raceId,class_id:stats.classId,level:stats.level,variant:stats.variant});
+      if(String(campanha.state||'').toUpperCase()==='COMBATE'){var d20=Math.floor(Math.random()*20)+1,value=d20+Number(stats.dexMod||0);var init=await sb.rpc('adicionar_combatente_iniciativa',{p_campaign_id:Number(MESA_ID),p_combatente_id:id,p_nome:name,p_valor:value,p_tipo:'npc'});if(init.error)alert('NPC criado no mapa, mas não entrou na iniciativa: '+init.error.message);else{combatDataState=init.data||combatDataState;renderizarIniciativa(combatDataState);await enviarMensagemChat('⚡ '+name+' entrou na iniciativa: d20 '+d20+' + DES '+stats.dexMod+' = '+value+'.','rolagem',{evento:'npc_arquetipo_iniciativa',token_id:id,valor:value,d20:d20,modificador_destreza:stats.dexMod});}}
+    }catch(err){alert('Não foi possível criar o NPC: '+err.message);}finally{reforcoBusy=false;}
   }
 
   function preencherFiltroMonstrosRapido(){
@@ -1929,6 +2018,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     modalNPC.querySelectorAll('[data-reforco-tab]').forEach(function(btn){
       btn.addEventListener('click',function(){ abrirNPCsRapido(btn.dataset.reforcoTab); });
     });
+    document.getElementById('npc-generate-button').addEventListener('click',renderizarArquetiposNPC);
+    ['npc-race-select','npc-class-select','npc-level-input'].forEach(function(id){document.getElementById(id).addEventListener('change',renderizarArquetiposNPC);});
     ['lista-npcs-rapida','lista-monstros-rapida'].forEach(function(idLista){
       document.getElementById(idLista).addEventListener('click',function(e){
         var card=e.target.closest ? e.target.closest('[data-reforco-tipo]') : null;
@@ -2085,6 +2176,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
       if(!scene) return;
       var item = scene.tokens.find(function(t){ return t.key === token.dataset.cbaTokenKey; });
       if(!item) return;
+      if(!ePreview && ehGM && String(campanha.state||'').toUpperCase()==='COMBATE' && combatDataState&&combatDataState.active){var gmTurn=combatDataState.turn_order&&combatDataState.turn_order[Number(combatDataState.current_turn)||0];if(!gmTurn||!gmTurn.is_monster||String(gmTurn.id)!==String(item.id))return;}
       if(!ePreview && !ehGM && item.tipo!=='player') return;
       if(!ePreview && !ehGM && (!ehMeuTokenNoTurno(item))) return;
       var rect = token.getBoundingClientRect();
@@ -2136,7 +2228,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
         var editingItem = cbaState.tokens.find(function(t){ return t.key === arrasto.item.key; });
         if(editingItem){ editingItem.gridX=arrasto.item.gridX; editingItem.gridY=arrasto.item.gridY; editingItem.x=arrasto.item.x; editingItem.y=arrasto.item.y; }
       }
-      if(!ePreview&&didMove){suppressTokenClickUntil=Date.now()+450;if(ehGM)salvarPosicaoTokenCBA();else salvarPosicaoTokenJogador(arrasto.item);}
+      if(!ePreview&&didMove){suppressTokenClickUntil=Date.now()+450;if(ehGM)salvarPosicaoTokenCBA(arrasto.item);else salvarPosicaoTokenJogador(arrasto.item);}
       else if(!ePreview){if(ataqueSelecionado){suppressTokenClickUntil=Date.now()+450;selecionarAlvoAtaque(arrasto.item.key);}else{suppressTokenClickUntil=0;abrirMenuContextualToken(arrasto.item,arrasto.token);suppressTokenClickUntil=Date.now()+450;}}
       try { if(arrasto.token.hasPointerCapture(arrasto.pointerId)) arrasto.token.releasePointerCapture(arrasto.pointerId); } catch(err) {}
       arrasto = null;
@@ -2251,17 +2343,16 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     }
   }
 
-  async function salvarPosicaoTokenCBA(){
-    if(!ehGM || !cbaPublishedState) return;
+  async function salvarPosicaoTokenCBA(movedToken){
+    if(!ehGM||!cbaPublishedState)return;
     try{
-      var data=serializarEstadoCBA(cbaPublishedState);
-      var salvo=await gravarCBAnaCampanha(data);
-      if(salvo) aplicarCBAnaMesa(salvo,false);
-    }catch(e){
-      console.error('Falha ao sincronizar posição do token:',e);
-      if(document.getElementById('modal-cba').classList.contains('ativo')) setStatusCBA('A posição mudou localmente, mas não foi sincronizada: '+e.message);
-      else alert('A posição do token mudou nesta tela, mas não foi sincronizada com os jogadores. '+e.message);
-    }
+      var current=combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
+      if(String(campanha.state||'').toUpperCase()==='COMBATE'&&movedToken&&movedToken.tipo!=='player'){
+        if(!combatDataState||!combatDataState.active||!current||!current.is_monster||String(current.id)!==String(movedToken.id))throw new Error('O Mestre só pode mover o token do seu turno ativo.');
+        var spent=await sb.rpc('consumir_acao_token_gm_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(movedToken.id),p_acao:'movimento'});if(spent.error)throw new Error(spent.error.message||'A ação de movimento não está disponível.');combatDataState=spent.data.combat_data||combatDataState;renderizarIniciativa(combatDataState);
+      }
+      var data=serializarEstadoCBA(cbaPublishedState),salvo=await gravarCBAnaCampanha(data);if(salvo)aplicarCBAnaMesa(salvo,false);
+    }catch(e){console.error('Falha ao sincronizar posição do token:',e);if(campanha&&campanha.cba_data)aplicarCBAnaMesa(campanha.cba_data,false);if(document.getElementById('modal-cba').classList.contains('ativo'))setStatusCBA('A posição não foi sincronizada: '+e.message);else alert('Movimento não permitido: '+e.message);}
   }
 
   async function urlPublicaFundoCBA(){
@@ -2741,7 +2832,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     if(!eMinhaVez||!atual||!combatDataState){panel.hidden=true;return;}
     var economy=combatDataState.action_economy||{},round=Math.max(1,Number(combatDataState.round)||1),all=Number(economy.round)===round&&economy.by_character&&typeof economy.by_character==='object'?economy.by_character:{};
     var used=all[String(atual.id)]||{},movement=combatDataState.movement_usage||{},moveUsed=String(movement.character_id)===String(atual.id)&&Number(movement.round)===round&&Number(movement.current_turn)===Number(currentIndex)&&Number(movement.moved_squares)>0;
-    panel.hidden=false;[['padrao',!!used.padrao],['movimento',moveUsed],['rapida',!!used.rapida]].forEach(function(pair){var box=panel.querySelector('.acao-box[data-acao="'+pair[0]+'"]');if(box){box.classList.toggle('usada',pair[1]);box.setAttribute('aria-label',box.textContent.replace(/\s+/g,' ').trim()+(pair[1]?' usada neste turno':' disponível neste turno'));}});
+    panel.hidden=false;[['padrao',!!used.padrao],['movimento',!!used.movimento||moveUsed],['rapida',!!used.rapida]].forEach(function(pair){var box=panel.querySelector('.acao-box[data-acao="'+pair[0]+'"]');if(box){box.classList.toggle('usada',pair[1]);box.setAttribute('aria-label',box.textContent.replace(/\s+/g,' ').trim()+(pair[1]?' usada neste turno':' disponível neste turno'));}});
   }
   function renderizarIniciativa(combatData){
     var painel=document.getElementById('painel-iniciativa');
@@ -2752,6 +2843,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     var ordem=combatDataState && Array.isArray(combatDataState.turn_order)?combatDataState.turn_order:[];
     var esperados=combatDataState && Array.isArray(combatDataState.expected_character_ids)?combatDataState.expected_character_ids:[];
     var ativo=!!(combatDataState && combatDataState.active && ordem.length);
+    var gmActions=document.getElementById('iniciativa-acoes-mestre');if(!gmActions){gmActions=document.createElement('div');gmActions.id='iniciativa-acoes-mestre';fila.parentNode.insertBefore(gmActions,fila.nextSibling);}gmActions.replaceChildren();
     ordem.forEach(function(entry){if(entry&&!entry.is_monster&&entry.id!=null)removerPedidosIniciativaDaFicha(entry.id);});
     if(!ordem.length && !esperados.length){
       renderizarPainelEconomiaAcoes(false,null,null);
@@ -2805,6 +2897,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     var atual=ordem[currentIndex];
     if(cbaPublishedState) renderizarTokensCBA(document.getElementById('cba-token-layer'),cbaPublishedState);
     var eMinhaVez=!ehGM && ativo && atual && !atual.is_monster && personagens.some(function(p){return String(p.ch.id)===String(atual.id)&&p.ch.user_id===eu.id;});
+    var turnoTokenMestre=ehGM&&ativo&&atual&&atual.is_monster;
+    if(turnoTokenMestre){var controlToken=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.id)===String(atual.id);});if(controlToken){var gmTitle=document.createElement('span');gmTitle.textContent='Turno do Mestre · '+controlToken.nome;gmActions.appendChild(gmTitle);var attackBtn=document.createElement('button');attackBtn.type='button';attackBtn.textContent='⚔️ Atacar';attackBtn.onclick=function(){iniciarAtaqueMestre(controlToken);};gmActions.appendChild(attackBtn);['padrao','rapida'].forEach(function(actionName){var actionBtn=document.createElement('button');actionBtn.type='button';actionBtn.textContent=({padrao:'Ação padrão',rapida:'Ação rápida'})[actionName];actionBtn.onclick=function(){var note=prompt('Descreva a ação de '+controlToken.nome+':');if(note&&note.trim())registrarAcaoTokenGM(controlToken,actionName,note);};gmActions.appendChild(actionBtn);});var finish=document.createElement('button');finish.type='button';finish.textContent='⏭️ Encerrar turno do token';finish.onclick=avancarTurno;gmActions.appendChild(finish);}}
     if(eMinhaVez){
       if(!antigo){
         antigo=document.createElement('button');
@@ -2815,7 +2909,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
         document.body.appendChild(antigo);
       }
     }else if(antigo) antigo.remove();
-    renderizarPainelEconomiaAcoes(eMinhaVez,atual,currentIndex);
+    renderizarPainelEconomiaAcoes(!!(eMinhaVez||turnoTokenMestre),atual,currentIndex);
   }
 
   async function moverNaIniciativa(indice,direcao){
