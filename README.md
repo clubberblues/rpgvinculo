@@ -88,3 +88,11 @@ Na mesa, o botão **Adicionar à mesa** do bestiário usa o catálogo definido a
 
 
 Além disso, ao abrir a mesa como Mestre, a interface busca no catálogo SRD os dados de CA, PV e bloco de ataque de monstros antigos que já estavam no CBA sem esses campos e salva a correção na cena.
+
+## Mesa: cards de combate e ordem do turno
+
+A interface da mesa mostra fichas, NPCs e monstros em faixas verticais na coluna de aventureiros. Durante combate, a fila acompanha a iniciativa: o combatente ativo fica no topo e, ao avançar o turno, os demais sobem na ordem circular. O card e o token no tabuleiro usam a mesma entrada de iniciativa (incluindo a distinção entre ficha de jogador e token controlado pelo Mestre), para manter o destaque sincronizado.
+
+O controle de combate e a economia de ações ficam no painel lateral do turno ativo. Os tokens mostram CA numérica: fichas usam atributos e equipamento; monstros usam o bloco SRD; NPCs sem bloco completo recebem um valor derivado dos atributos, armadura natural e equipamento. Ao abrir a mesa como Mestre, tokens antigos sem CA são reparados e salvos na cena.
+
+Tokens do Mestre com magias preparadas podem selecionar uma delas no turno correspondente. O sistema consome a ação padrão e marca o espaço como gasto; o alcance, resistência e efeitos específicos continuam sob resolução do Mestre quando os dados da ficha não permitem cálculo automático seguro.
