@@ -473,6 +473,18 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
 @media(max-width:900px){.mesa{grid-template-rows:auto 1fr;height:100vh}.mesa-corpo{grid-template-columns:1fr;grid-template-rows:minmax(230px,40vh) minmax(280px,1fr) auto;overflow-y:auto}.col-esq{max-height:none;min-height:230px}.col-esq>.painel:first-child{min-height:220px}.cards-strip{max-height:36vh}.col-dir{display:flex;flex-direction:row;align-content:flex-start}.painel-aventureiros{min-height:200px!important}}
 @media(max-width:600px){.mesa-corpo{grid-template-rows:minmax(210px,34vh) minmax(260px,1fr) auto}.cards-strip{max-height:40vh}.card-pers{min-height:72px}.roster-members{max-height:76px}}
 @media(prefers-reduced-motion:reduce){.card-pers,.token-cba{transition:none!important;animation:none!important}}
+
+/* Panels stay in the side columns; only the explicitly opened dice dialog may cover the board. */
+#botoes-rolagem-pendente{position:relative!important;inset:auto!important;transform:none!important;z-index:2!important;width:100%!important;max-width:none!important;max-height:20vh!important;overflow:auto;display:flex;flex-direction:column;gap:6px;margin:8px 0;pointer-events:auto}
+#botoes-rolagem-pendente .btn-rolar-teste{width:100%;text-align:left}
+#token-context-menu{position:relative!important;inset:auto!important;transform:none!important;width:100%;max-width:none;max-height:30vh;margin-top:8px;box-shadow:none}
+#token-context-menu.ativo{display:flex}
+.cba-live-movement-preview{display:none!important}
+#painel-iniciativa{z-index:auto!important}
+@media(max-width:900px){#botoes-rolagem-pendente{max-height:18vh!important}#token-context-menu{max-height:24vh}}
+
+#barra-confirmar-teste{position:relative!important;left:auto!important;bottom:auto!important;transform:none!important;width:100%!important;margin:8px 0;padding:8px 9px;text-align:left;z-index:2;box-shadow:none!important}
+#barra-confirmar-teste #txt-teste-selecionado{font-size:12px;margin-bottom:6px}
 </style>
 </head>
 <body>
@@ -708,8 +720,9 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
 (function(){
   var SUPABASE_URL = 'https://grrgwxcagvvafdmzsmro.supabase.co';
   var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdycmd3eGNhZ3Z2YWZkbXpzbXJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyNTY4MTQsImV4cCI6MjEwNTgzMjgxNH0.hqLiYynGXHwyUtqcbGTTa2orSStm7ko2C5R03QNmqtQ';
-  var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  var sb = window.supabase && typeof window.supabase.createClient === 'function' ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 
+  if(!sb){var loadingRoot=document.getElementById('root');if(loadingRoot)loadingRoot.innerHTML='<div class="loading-full" style="color:#f87171">Não foi possível carregar o serviço da mesa. Atualize a página; se continuar, o serviço de conexão está indisponível.</div>';return;}
   var MESA_ID = new URLSearchParams(location.search).get('mesa');
   var eu = null, meuPerfil = null, meuPapel = 'PLAYER', ehGM = false;
   var campanha = null, membros = [], personagens = [];
@@ -729,6 +742,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
   var srdRaceCatalog = [];
   var srdClassCatalog = [];
   var cbaNpcArchetypes = [];
+  var srdNpcSkillCatalog=[],srdNpcFeatCatalog=[],srdNpcSpellCatalog=[],srdNpcSpellProgressions=[],srdNpcStartingPackages=[],srdNpcEquipmentCatalog=[];
   var ataqueMestreSelecionado = null;
   var reforcoAbaAtiva = 'npc';
   var ataqueSelecionado = null;
@@ -887,7 +901,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
   }
 
   function renderBotoesAcao(){
-    var el = document.getElementById('acoes-dir');
+    var el = document.getElementById('acoes-dir');var tokenMenu=document.getElementById('token-context-menu');if(tokenMenu&&tokenMenu.parentNode)tokenMenu.parentNode.removeChild(tokenMenu);
     var estado = campanha ? (campanha.state || 'EXPLORACAO') : 'EXPLORACAO';
     
     if (ehGM) {
@@ -959,6 +973,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     combatPanel.innerHTML='<h3>CONTROLE DO TURNO</h3><p id="turno-controle-status">Aguardando a iniciativa.</p><div id="iniciativa-acoes-mestre"></div>';
     el.appendChild(combatPanel);
     if(economyPanel)combatPanel.appendChild(economyPanel);
+    if(tokenMenu)el.appendChild(tokenMenu);
     if(document.getElementById('painel-iniciativa'))renderizarIniciativa(combatDataState);
   }
 
@@ -1026,7 +1041,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
       else{
         var gmTurn=combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
         var gmOwnTurn=!!(gmTurn&&gmTurn.is_monster&&String(gmTurn.id)===String(item.id));
-        if(gmOwnTurn){adicionarBotaoContextual(menu,'gm-token-attack','⚔️ Atacar com este token');if(tokenTemMagiaPreparada35(item))adicionarBotaoContextual(menu,'gm-token-magic','✨ Conjurar magia preparada');adicionarBotaoContextual(menu,'gm-token-move','↔️ Mover token');adicionarBotaoContextual(menu,'gm-token-action','📜 Registrar outra ação');adicionarBotaoContextual(menu,'gm-token-end','⏭️ Encerrar turno do token');}
+        if(item.tipo==='npc'&&item.monsterStats&&item.monsterStats.attributes)adicionarBotaoContextual(menu,'npc-sheet','📜 Ver ficha completa');if(gmOwnTurn){adicionarBotaoContextual(menu,'gm-token-attack','⚔️ Atacar com este token');if(tokenTemMagiaPreparada35(item))adicionarBotaoContextual(menu,'gm-token-magic','✨ Conjurar magia disponível');adicionarBotaoContextual(menu,'gm-token-move','↔️ Mover token');adicionarBotaoContextual(menu,'gm-token-action','📜 Registrar outra ação');adicionarBotaoContextual(menu,'gm-token-end','⏭️ Encerrar turno do token');}
         adicionarBotaoContextual(menu,'inventario','🎒 Inventário do token');
         adicionarBotaoContextual(menu,'pv-token','❤️ Ajustar PV da criatura');if(item.tipo==='monstro')adicionarBotaoContextual(menu,'monster-info','📜 Ver ficha no chat');
       }
@@ -1035,7 +1050,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     }
     var close=adicionarBotaoContextual(menu,'fechar','✕ Fechar',true);
     menu.classList.add('ativo');menu.setAttribute('aria-hidden','false');tokenEl.setAttribute('aria-expanded','true');
-    var rect=tokenEl.getBoundingClientRect();var width=menu.offsetWidth||200,height=menu.offsetHeight||160;var left=rect.right+8;if(left+width>innerWidth-8)left=rect.left-width-8;left=Math.max(8,Math.min(innerWidth-width-8,left));var top=Math.max(8,Math.min(innerHeight-height-8,rect.top));menu.style.left=left+'px';menu.style.top=top+'px';
+    menu.style.left='';menu.style.top='';
     (menu.querySelector('[data-ctx-action]:not([data-ctx-action="fechar"])')||close).focus();
   }
   function infoTokenNoChat(item){
@@ -1051,6 +1066,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     if(acao==='pv-personagem'){if(ehGM&&item.tipo==='player')abrirAjustePV(item.id);return;}
     if(acao==='pv-token'){if(ehGM&&item.tipo!=='player')abrirAjustePVToken(item.key);return;}
     if(acao==='monster-info'){if(ehGM&&item.tipo==='monstro')infoTokenNoChat(item);return;}
+    if(acao==='npc-sheet'){if(ehGM)publicarFichaNPC35(item).catch(function(err){alert('Não foi possível publicar a ficha do NPC: '+err.message);});return;}
     if(acao==='criatura-atacar'){iniciarAtaqueMestre(item);return;}
     if(acao==='gm-token-attack'){iniciarAtaqueMestre(item);return;}
     if(acao==='gm-token-magic'){abrirMagiasTokenMestre(item);return;}
@@ -1104,7 +1120,22 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     document.getElementById('iniciativa-status').textContent='Mira ativa: selecione um token inimigo no tabuleiro.';
   }
   function modifier35(score){return Math.floor((Number(score||10)-10)/2);}
-  function valorCA35(value){if(value==null||value==='')return null;var direct=Number(value);if(Number.isFinite(direct))return direct;var match=String(value).trim().match(/^(-?\d+)/);return match?Number(match[1]):null;}function caToken35(token){if(!token)return 10;var record=token.tipo==='player'?acharPersonagemDoToken(token):null;if(record)return caFichaMesa(record);var direct=valorCA35(token.ac);if(direct!=null)return Math.max(1,direct);var stats=token.monsterStats||{},base=valorCA35(token.baseAc),fullStatBlock=valorCA35(stats.ca),dex=token.dexMod!=null?Number(token.dexMod):modifier35(stats.destreza==null?10:stats.destreza),natural=Number(stats.armadura_natural||stats.natural_armor||stats.bonus_armadura_natural||0);if(!Number.isFinite(dex))dex=0;if(!Number.isFinite(natural))natural=0;if(base==null&&fullStatBlock!=null){base=fullStatBlock;dex=0;natural=0;}if(base==null)base=10+dex+natural;var gear=equipamentoTokens[String(token.id)]||[],worn=gear.filter(function(it){return it.equipado&&['armadura','escudo','acessorio'].indexOf(slotEquipamento35(it))>=0;}),bonus=worn.reduce(function(sum,it){return sum+bonusCAEquipamento35(it);},0),cap=worn.reduce(function(value,it){var max=slotEquipamento35(it)==='armadura'?maxDexEquipamento35(it):null;return max==null?value:Math.min(value,max);},99);return Math.max(1,Math.floor(base+Math.min(dex,cap)+bonus));}
+  function valorCA35(value){if(value==null||value==='')return null;var direct=Number(value);if(Number.isFinite(direct))return direct;var match=String(value).trim().match(/^(-?\d+)/);return match?Number(match[1]):null;}function equipamentoToken35(token){var merged=Object.create(null),embedded=token&&token.monsterStats&&Array.isArray(token.monsterStats.loadout)?token.monsterStats.loadout:[],stored=equipamentoTokens[String(token&&token.id)]||[];embedded.concat(stored).forEach(function(item){if(!item)return;var id=String(item.equipment_id||item.id||item.nome||Math.random());merged[id]=Object.assign({},merged[id]||{},item);});return Object.keys(merged).map(function(id){return merged[id];});}
+  function caToken35(token){
+    if(!token)return 10;
+    var record=token.tipo==='player'?acharPersonagemDoToken(token):null;if(record)return caFichaMesa(record);
+    var stats=token.monsterStats||{},gear=equipamentoToken35(token),worn=gear.filter(function(it){return it.equipado&&['armadura','escudo','acessorio'].indexOf(slotEquipamento35(it))>=0;}),isGenerated=token.tipo==='npc'&&stats.attributes&&typeof stats.attributes==='object';
+    var direct=valorCA35(token.ac),base=valorCA35(token.baseAc),full=valorCA35(stats.ca),dex=token.dexMod!=null?Number(token.dexMod):modifier35(isGenerated?stats.attributes.DES:(stats.destreza==null?10:stats.destreza)),natural=Number(stats.armadura_natural||stats.natural_armor||stats.bonus_armadura_natural||0);
+    if(!Number.isFinite(dex))dex=0;if(!Number.isFinite(natural))natural=0;
+    if(isGenerated){base=10+natural+(Number(stats.size_modifier)||0);}
+    else if(token.tipo==='monstro'&&base!=null){dex=0;natural=0;}
+    else if(base==null&&full!=null){base=full;dex=0;natural=0;}
+    else if(base==null&&direct!=null){base=direct;dex=0;natural=0;}
+    if(base==null)base=10+dex+natural;
+    if(!isGenerated&&!worn.length&&direct!=null)return Math.max(1,direct);
+    var bonus=worn.reduce(function(sum,it){return sum+bonusCAEquipamento35(it);},0),cap=worn.reduce(function(value,it){var max=slotEquipamento35(it)==='armadura'?maxDexEquipamento35(it):null;return max==null?value:Math.min(value,max);},99);
+    return Math.max(1,Math.floor(base+Math.min(dex,cap)+bonus));
+  }
   function slotEquipamento35(item){var cat=String(item&&item.categoria||'').toLowerCase().trim(),name=String(item&&item.nome||'').toLowerCase();if(cat==='arma'||cat.indexOf('weapon')>=0||cat==='specific_weapons')return 'arma';if(cat==='armadura'||cat==='light armor'||cat==='medium armor'||cat==='heavy armor'||cat==='specific_armors'||cat==='armor_and_shields'&&name.indexOf('shield')<0)return 'armadura';if(cat==='escudo'||cat==='shields'||cat==='specific_shields'||cat==='armor_and_shields'&&name.indexOf('shield')>=0)return 'escudo';if(cat==='acessorio'||['rings','rods','staffs','wands','wondrous_items'].indexOf(cat)>=0)return 'acessorio';return '';}
   function bonusCAEquipamento35(item){var value=Number(item&&item.bonus_ca)||Number(item&&item.ca_bonus)||0;if(value)return value;if(String(item&&(item.categoria_original||item.categoria)||'').toLowerCase()==='armor_and_shields'){var match=String(item.nome||'').match(/\+(\d+)/);if(match)return Number(match[1]);}return 0;}
   function maxDexEquipamento35(item){var value=item&&item.bonus_max_des!=null?item.bonus_max_des:item&&item.max_des;if(value==null||value==='')return null;var n=Number(value);return Number.isFinite(n)?n:null;}
@@ -1119,9 +1150,19 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     if(!ehGM||!item||!combatDataState||!combatDataState.active)return;var turn=combatDataState.turn_order[Number(combatDataState.current_turn)||0];if(!turn||!turn.is_monster||String(turn.id)!==String(item.id)){alert('Este token não está no turno ativo do Mestre.');return;}
     var category=prompt('Qual ação será usada? Digite padrao ou rapida:','padrao');if(!category)return;category=category.trim().toLowerCase();if(['padrao','rapida'].indexOf(category)<0){alert('Escolha padrao ou rapida. O movimento é aplicado ao arrastar o token.');return;}var note=prompt('Descreva a ação de '+item.nome+':');if(!note||!note.trim())return;await registrarAcaoTokenGM(item,category,note);
   }
+  async function publicarFichaNPC35(item){
+    if(!ehGM||!item)return;var s=item.monsterStats||{},a=s.attributes||{},skills=Array.isArray(s.skills)?s.skills:[],feats=Array.isArray(s.feats)?s.feats:[],state=tokenSpellState35(item),ids=Array.from(new Set([].concat(state.conhecidas||[],(state.preparadas||[]).map(function(x){return x.spell_id;})).map(String).filter(Boolean))),spellNames=[];
+    if(ids.length){var result=await sb.from('srd_spells').select('id,nome').in('id',ids);if(!result.error)spellNames=(result.data||[]).map(function(sp){return sp.nome;});}
+    var attrText=['FOR','DES','CON','INT','SAB','CAR'].map(function(k){return k+' '+Number(a[k]||10)+' ('+(modifier35(a[k])>=0?'+':'')+modifier35(a[k])+')';}).join(' · ');
+    var skillText=skills.slice(0,12).map(function(sk){return sk.nome+' '+sk.graduacoes;}).join(', ')||'sem graduações cadastradas';
+    var featText=feats.map(function(x){return x.nome+(x.parametro&&x.parametro!=='arma inicial'?' ('+x.parametro+')':'');}).join(', ')||'nenhum';
+    var packageText=s.starting_package&&s.starting_package.name||'sem pacote inicial',gearNames=(s.loadout||[]).map(function(it){return it.nome+' ×'+(it.quantidade||1);}).join(', ')||packageText,saves=s.saves||{},traits=JSON.stringify(s.racial_traits||[]),classDesc=String(s.class_description||'').slice(0,320);
+    var message='📜 '+item.nome+' · '+String(s.race_name||'Raça não identificada')+' '+String(s.class_name||'classe não identificada')+' nível '+String(s.level||'—')+'. PV '+String(item.hp==null?'—':item.hp)+'/'+String(item.maxHp||'—')+' · CA '+caToken35(item)+' · BBA +'+String(s.bab==null?'—':s.bab)+'.\nAtributos: '+attrText+'.\nResistências: Fort '+String(saves.fortitude==null?'—':saves.fortitude)+' · Ref '+String(saves.reflexos==null?'—':saves.reflexos)+' · Von '+String(saves.vontade==null?'—':saves.vontade)+'.\nPerícias: '+skillText+'.\nTalentos: '+featText+'.\nMagias: '+(spellNames.join(', ')||'nenhuma selecionada')+'.\nTraços raciais: '+traits+'.\nClasse: '+classDesc+'.\nEquipamento: '+gearNames+'.';
+    await enviarMensagemChat(message,'sistema',{evento:'ficha_npc_gerada',token_id:String(item.id),level:Number(s.level)||1});
+  }
   function iniciarAtaqueMestre(item){
     if(!ehGM||!item||!combatDataState||!combatDataState.active){alert('O ataque do Mestre exige iniciativa ativa e um token controlado por ele.');return;}var turn=combatDataState.turn_order[Number(combatDataState.current_turn)||0];if(!turn||!turn.is_monster||String(turn.id)!==String(item.id)){alert('O Mestre só pode atacar com o token que está no turno atual.');return;}
-    var bonus,formula,raw=item.monsterStats&&item.monsterStats.ataques||item.detalhe||'',equipped=(equipamentoTokens[String(item.id)]||[]).find(function(it){return it.equipado&&slotEquipamento35(it)==='arma';});
+    var bonus,formula,raw=item.monsterStats&&item.monsterStats.ataques||item.detalhe||'',equipped=equipamentoToken35(item).find(function(it){return it.equipado&&slotEquipamento35(it)==='arma';});
     if(item.tipo==='player'){var p=acharPersonagemDoToken(item);if(!p||p.ch.user_id!==eu.id){alert('Essa ficha não pertence ao Mestre.');return;}var level=Math.max(1,Number(p.sh.nivel)||1),weapon=(p.equipamento||[]).find(function(it){return it.equipado&&it.categoria==='arma';});bonus=bab35(p.cl,level)+modifier35((p.sh.atributos||{}).FOR);formula=weapon&&weapon.dano||'1d3';}
     else{if(typeof raw!=='string')raw=JSON.stringify(raw);var bonusMatch=raw.match(/[+\-]\d+\s+(?:melee|ranged|corpo a corpo|à distância|ataque básico)/i),damageMatch=raw.match(/\((\d+d(?:3|4|6|8|10|12|20|100)(?:[+\-]\d+)?)\)/i);bonus=bonusMatch?Number(bonusMatch[0].match(/[+\-]\d+/)[0]):Number(prompt('Bônus de ataque de '+item.nome+' conforme a ficha:','0'));if(!Number.isFinite(bonus))return;formula=damageMatch?damageMatch[1]:(item.damageDice||'');if(equipped&&equipped.dano)formula=equipped.dano;if(!formula)formula=prompt('Fórmula de dano de '+item.nome+' (ex.: 1d8+3):','1d6');if(!formula)return;if(equipped&&equipped.dano){var strength=modifier35((item.monsterStats||{}).forca);if(strength&&!/[+\-]\d+$/.test(formula))formula+=strength>0?'+'+strength:String(strength);}}
     formula=String(formula).replace(/\s+/g,'');if(!/^\d{1,2}d(?:3|4|6|8|10|12|20|100)(?:[+\-]\d{1,3})?$/i.test(formula)){alert('Fórmula de dano inválida.');return;}ataqueMestreSelecionado={attacker:item,bonus:bonus,formula:formula};document.getElementById('iniciativa-status').textContent='Turno do Mestre · '+item.nome+': selecione um alvo no tabuleiro.';document.getElementById('area-tabuleiro').classList.add('selecionando-alvo');
@@ -1295,7 +1336,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     var spent=Number(slot.expended||0),total=Number(slotsDia[level]||0);return {level:level,spent:!!slot.expended,info:total?('Espaços/dia nível '+level+': '+total):('Espaço nível '+level)};
   }
   function magiaAindaNoTurno(p){return String(campanha&&campanha.state||'').toUpperCase()!=='COMBATE'||!!(personagemDoTurnoDoJogador()&&String(personagemDoTurnoDoJogador().ch.id)===String(p&&p.ch&&p.ch.id));}
-  function fecharModalMagias(){var m=document.getElementById('modal-magias');m.classList.remove('ativo');m.hidden=true;magiaPersonagemAtiva=null;magiaSelecionada=null;magiaTokenMestreAtiva=null;magiaTokenMestreAtiva=null;if(focoAnteriorMagia&&focoAnteriorMagia.focus)focoAnteriorMagia.focus();}
+  function fecharModalMagias(){var m=document.getElementById('modal-magias');m.classList.remove('ativo');m.hidden=true;magiaPersonagemAtiva=null;magiaSelecionada=null;magiaTokenMestreAtiva=null;if(focoAnteriorMagia&&focoAnteriorMagia.focus)focoAnteriorMagia.focus();}
   function popularSlotsMagia(){
     var p=magiaPersonagemAtiva,spell=magiaSelecionada,select=document.getElementById('magia-slot');select.replaceChildren();if(!p||!spell)return;
     if(!magiaAindaNoTurno(p)){document.getElementById('magia-alerta').textContent='Apenas o personagem do jogador no turno atual pode conjurar.';document.getElementById('confirmar-conjuracao').disabled=true;return;}
@@ -1332,31 +1373,32 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     var first=list.querySelector('[data-spell-id]');if(first)first.focus();
   }
   function tokenSpellState35(item){return parseJsonSeguro35(item&&item.spellState,null)||{};}
-  function tokenTemMagiaPreparada35(item){var state=tokenSpellState35(item),prepared=Array.isArray(state.preparadas)?state.preparadas:[];return prepared.some(function(row){return row&&row.spell_id!=null&&!row.expended&&!row.gasta;});}
+  function tokenTemMagiaPreparada35(item){var state=tokenSpellState35(item),prepared=Array.isArray(state.preparadas)?state.preparadas:[],remaining=state.slots_restantes||{};return prepared.some(function(row){return row&&row.spell_id!=null&&!row.expended&&!row.gasta;})||Array.isArray(state.conhecidas)&&state.conhecidas.length>0&&Object.keys(remaining).some(function(level){return Number(remaining[level])>0;});}
   function tokenEhTurnoMestre35(item){var order=combatDataState&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order:[],idx=Math.max(0,Number(combatDataState&&combatDataState.current_turn)||0),entry=order[idx];return !!(ehGM&&combatDataState&&combatDataState.active&&item&&entry&&entry.is_monster&&String(entry.id)===String(item.id));}
   async function abrirMagiasTokenMestre(item){
     if(!tokenEhTurnoMestre35(item)){alert('Só é possível conjurar no turno ativo deste token.');return;}
     var state=tokenSpellState35(item),prepared=Array.isArray(state.preparadas)?state.preparadas:[];
-    var rows=prepared.map(function(row,index){return {row:row,index:index};}).filter(function(x){return x.row&&x.row.spell_id!=null&&!x.row.expended&&!x.row.gasta;});
-    if(!rows.length){alert('Este token não tem magias preparadas disponíveis.');return;}
-    var ids=Array.from(new Set(rows.map(function(x){return String(x.row.spell_id);})));
+    var rows=prepared.map(function(row,index){return {row:row,index:index,mode:'prepared',slotLevel:Number(row&&row.slot_level)};}).filter(function(x){return x.row&&x.row.spell_id!=null&&!x.row.expended&&!x.row.gasta;});
+    var classKey=String(state.class_key||((item.monsterStats||{}).spellcasting_key)||''),remaining=state.slots_restantes||{},knownIds=Array.isArray(state.conhecidas)?state.conhecidas.map(String):[];
+    var ids=Array.from(new Set(rows.map(function(x){return String(x.row.spell_id);}).concat(knownIds)));if(!ids.length){alert('Este token não tem magias disponíveis para o turno.');return;}
     var result=await sb.from('srd_spells').select('*').in('id',ids);
     if(result.error){alert('Não foi possível carregar o grimório: '+result.error.message);return;}
     var byId=Object.create(null);(result.data||[]).forEach(function(sp){byId[String(sp.id)]=sp;});
+    knownIds.forEach(function(id,index){var spell=byId[String(id)];if(!spell)return;var tech=jsonValueSRD(spell.dados_tecnicos,{}),levels=tech.class_levels||{},level=Number(levels[classKey]==null?spell.circulo:levels[classKey]);if(Number(remaining[level])>0)rows.push({row:{spell_id:String(id),slot_level:level},index:index,mode:'known',slotLevel:level});});if(!rows.length){alert('Não há magias ou espaços de magia disponíveis neste turno.');return;}
     var list=document.getElementById('modal-magias-lista'),modal=document.getElementById('modal-magias'),status=document.getElementById('magia-alerta');
     list.replaceChildren();magiaTokenMestreAtiva={tokenKey:String(item.key),tokenId:String(item.id),selected:null};
     document.getElementById('magia-personagem').textContent='Conjurador do Mestre: '+item.nome;
     document.getElementById('magia-slot').replaceChildren();
     var target=document.getElementById('magia-alvo');target.replaceChildren();var empty=document.createElement('option');empty.value='';empty.textContent='Sem alvo';target.appendChild(empty);
     (cbaPublishedState&&cbaPublishedState.tokens||[]).forEach(function(t){if(String(t.key)===String(item.key))return;var op=document.createElement('option');op.value=String(t.key);op.textContent=String(t.nome)+' · '+(t.tipo==='monstro'?'Monstro':t.tipo==='player'?'Jogador':'NPC');target.appendChild(op);});
-    rows.forEach(function(entry){var spell=byId[String(entry.row.spell_id)];if(!spell)return;var button=document.createElement('button');button.type='button';button.className='magia-opcao';button.setAttribute('role','option');button.setAttribute('aria-pressed','false');button.dataset.preparedIndex=String(entry.index);button.dataset.spellId=String(spell.id);var name=document.createElement('strong');name.textContent=String(spell.nome||spell.name||'Magia');var meta=document.createElement('span');meta.className='magia-meta';meta.textContent='Preparada · nível '+String(entry.row.slot_level==null?nivelMagia(spell):entry.row.slot_level)+' · '+String(spell.escola||spell.school||'SRD');button.append(name,meta);button.addEventListener('click',function(){list.querySelectorAll('.magia-opcao').forEach(function(b){b.setAttribute('aria-pressed',b===button?'true':'false');});var slot=Number(entry.row.slot_level==null?nivelMagia(spell):entry.row.slot_level);var option=document.createElement('option');option.value=String(slot);option.textContent='Espaço de nível '+slot;document.getElementById('magia-slot').replaceChildren(option);magiaTokenMestreAtiva.selected={preparedIndex:entry.index,spell:spell,slotLevel:slot};document.getElementById('confirmar-conjuracao').disabled=false;status.textContent='Magia preparada de '+item.nome+'. O Mestre confirma alvo e efeitos conforme a ficha.';});list.appendChild(button);});
+    rows.forEach(function(entry){var spell=byId[String(entry.row.spell_id)];if(!spell)return;var button=document.createElement('button');button.type='button';button.className='magia-opcao';button.setAttribute('role','option');button.setAttribute('aria-pressed','false');button.dataset.preparedIndex=String(entry.index);button.dataset.spellId=String(spell.id);button.dataset.castMode=entry.mode;var name=document.createElement('strong');name.textContent=String(spell.nome||spell.name||'Magia');var meta=document.createElement('span');meta.className='magia-meta';meta.textContent=(entry.mode==='known'?'Conhecida':'Preparada')+' · nível '+String(entry.slotLevel)+' · '+String(spell.escola||spell.school||'SRD');button.append(name,meta);button.addEventListener('click',function(){list.querySelectorAll('.magia-opcao').forEach(function(b){b.setAttribute('aria-pressed',b===button?'true':'false');});var slot=Number(entry.row.slot_level==null?nivelMagia(spell):entry.row.slot_level);var option=document.createElement('option');option.value=String(slot);option.textContent='Espaço de nível '+slot;document.getElementById('magia-slot').replaceChildren(option);magiaTokenMestreAtiva.selected={preparedIndex:entry.index,mode:entry.mode,spell:spell,slotLevel:slot};document.getElementById('confirmar-conjuracao').disabled=false;status.textContent=(entry.mode==='known'?'Magia conhecida':'Magia preparada')+' de '+item.nome+'. O Mestre confirma alvo e efeitos conforme a ficha.';});list.appendChild(button);});
     if(!list.children.length){fecharModalMagias();alert('As magias preparadas não correspondem ao catálogo SRD.');return;}
     document.getElementById('confirmar-conjuracao').disabled=true;status.textContent='Escolha uma magia preparada. O sistema consome a ação e marca o espaço usado; o Mestre confirma os efeitos.';focoAnteriorMagia=document.activeElement;modal.hidden=false;modal.classList.add('ativo');
   }
   async function confirmarConjuracaoTokenMestre(){
     var active=magiaTokenMestreAtiva,selected=active&&active.selected,btn=document.getElementById('confirmar-conjuracao');
     if(!active||!selected||!tokenEhTurnoMestre35(cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key)===active.tokenKey;}))){alert('O token não está mais no turno ativo.');return;}
-    btn.disabled=true;var item=cbaPublishedState.tokens.find(function(t){return String(t.key)===active.tokenKey;}),spell=selected.spell,tech=parseJsonSeguro35(spell.dados_tecnicos,{}),effect=String(tech.tipo_efeito||'').toLowerCase(),isAttack=effect==='ataque'||effect==='dano';
+    btn.disabled=true;var item=cbaPublishedState.tokens.find(function(t){return String(t.key)===active.tokenKey;}),spell=selected.spell,tech=parseJsonSeguro35(spell.dados_tecnicos,{}),effect=String(tech.tipo_efeito||'').toLowerCase(),spellRules=JSON.stringify(tech.source_field_values||{})+' '+String(spell.descricao||''),isAttack=effect==='ataque'||effect==='dano'||/(touch attack|ranged touch|melee touch|attack roll)/i.test(spellRules);
     async function cast(roll){
       try{
         if(!tokenEhTurnoMestre35(item))throw new Error('O turno deste token terminou.');
@@ -1364,7 +1406,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
         combatDataState=used.data.combat_data||combatDataState;renderizarIniciativa(combatDataState);
         var fresh=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key)===active.tokenKey;});if(!fresh)throw new Error('Token removido durante a conjuração.');
         var state=tokenSpellState35(fresh),prepared=Array.isArray(state.preparadas)?state.preparadas.slice():[],index=selected.preparedIndex,row=prepared[index];if(!row||row.expended||row.gasta)throw new Error('Esse espaço de magia já foi gasto.');
-        prepared[index]=Object.assign({},row,{expended:true});fresh.spellState=Object.assign({},state,{preparadas:prepared});var saved=await gravarCBAnaCampanha(serializarEstadoCBA(cbaPublishedState));campanha.cba_data=saved;aplicarCBAnaMesa(saved,false);
+        if(selected.mode==='known'){var remaining=Object.assign({},state.slots_restantes||{}),available=Number(remaining[selected.slotLevel])||0;if(available<=0)throw new Error('Não há espaços disponíveis para essa magia.');remaining[selected.slotLevel]=available>=999?available:available-1;fresh.spellState=Object.assign({},state,{slots_restantes:remaining});}else{prepared[index]=Object.assign({},row,{expended:true});fresh.spellState=Object.assign({},state,{preparadas:prepared});}var saved=await gravarCBAnaCampanha(serializarEstadoCBA(cbaPublishedState));campanha.cba_data=saved;aplicarCBAnaMesa(saved,false);
         var targetKey=document.getElementById('magia-alvo').value||null,target=(cbaPublishedState&&cbaPublishedState.tokens||[]).find(function(t){return String(t.key)===String(targetKey);}),msg='✨ '+item.nome+' conjurou '+String(spell.nome||spell.name||'Magia')+' (nível '+selected.slotLevel+')'+(target?' em '+target.nome:'')+'.';
         var meta={evento:'magia_token_mestre',token_id:String(item.id),spell_id:String(spell.id),slot_level:selected.slotLevel,target_token_key:targetKey};
         if(isAttack&&roll){msg+=' Ataque mágico: 1d20 '+roll.d20+' + bônus '+roll.bonus+' = **'+roll.total+'**. O Mestre confirma CA, resistência e dano.';meta.d20=roll.d20;meta.bonus=roll.bonus;meta.total=roll.total;}
@@ -1372,7 +1414,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
         await enviarMensagemChat(msg,'rolagem',meta);fecharModalMagias();
       }catch(error){btn.disabled=false;alert('Não foi possível conjurar: '+error.message);}
     }
-    if(isAttack){var raw=Number((item.monsterStats||{}).attackBonus),bonus=Number.isFinite(raw)?raw:0;abrirDado('Magia · '+String(spell.nome||spell.name||'Magia'),function(d20){return cast({d20:Number(d20),bonus:bonus,total:Number(d20)+bonus});},true);return;}
+    if(isAttack){var stats=item.monsterStats||{},key=String(stats.spellcasting_key||''),attr=({wizard:'INT',sorcerer:'CAR',bard:'CAR',cleric:'SAB',druid:'SAB',paladin:'SAB',ranger:'SAB'})[key]||'INT',rules=JSON.stringify(tech.source_field_values||{}),ability=/ranged touch/i.test(rules)?'DES':attr,baseBab=Number(stats.bab),bonus=(Number.isFinite(baseBab)?baseBab:0)+modifier35((stats.attributes||{})[ability])+(Number(stats.size_modifier)||0);abrirDado('Magia · '+String(spell.nome||spell.name||'Magia'),function(d20){return cast({d20:Number(d20),bonus:bonus,total:Number(d20)+bonus});},true);return;}
     await cast(null);
   }
   async function confirmarConjuracao(){
@@ -2093,9 +2135,9 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
       renderizarAbaReforcoRapido('archetype');
       var status=document.getElementById('npc-archetype-results');status.textContent='Carregando raças, classes e cinco arquétipos por combinação…';
       try{
-        var catalogs=await Promise.all([sb.from('srd_races').select('id,nome,ajustes_atributos,deslocamento,tamanho').order('nome'),sb.from('srd_classes').select('*').order('nome'),sb.from('srd_npc_archetypes').select('*').order('race_id').order('class_id').order('variant')]);
+        var catalogs=await Promise.all([sb.from('srd_races').select('id,nome,ajustes_atributos,deslocamento,tamanho,habilidades_raciais').order('nome'),sb.from('srd_classes').select('*').order('nome'),sb.from('srd_npc_archetypes').select('*').order('race_id').order('class_id').order('variant'),sb.from('srd_skills').select('id,nome,atributo,treinada_apenas,penalidade_armadura'),sb.from('srd_feats').select('id,nome,requisitos,exige_parametro'),sb.from('srd_spells').select('id,nome,circulo,nivel,classes,dados_tecnicos,escola'),sb.from('srd_spell_progressions').select('class_key,slots_by_level,known_by_level'),sb.from('srd_starting_packages').select('class_id,nome,items,observacao'),sb.from('srd_equipment').select('*')]);
         for(var ci=0;ci<catalogs.length;ci++)if(catalogs[ci].error)throw new Error(catalogs[ci].error.message);
-        srdRaceCatalog=catalogs[0].data||[];srdClassCatalog=catalogs[1].data||[];cbaNpcArchetypes=catalogs[2].data||[];
+        srdRaceCatalog=catalogs[0].data||[];srdClassCatalog=catalogs[1].data||[];cbaNpcArchetypes=catalogs[2].data||[];srdNpcSkillCatalog=catalogs[3].data||[];srdNpcFeatCatalog=catalogs[4].data||[];srdNpcSpellCatalog=catalogs[5].data||[];srdNpcSpellProgressions=catalogs[6].data||[];srdNpcStartingPackages=catalogs[7].data||[];srdNpcEquipmentCatalog=catalogs[8].data||[];
         if(!srdRaceCatalog.length||!srdClassCatalog.length||!cbaNpcArchetypes.length)throw new Error('Os catálogos ou a migração srd35_npc_archetypes_migration.sql ainda não estão disponíveis.');
         popularSelectNPC35('npc-race-select',srdRaceCatalog);popularSelectNPC35('npc-class-select',srdClassCatalog);renderizarArquetiposNPC();
       }catch(err){status.textContent='Não foi possível abrir o gerador: '+err.message;}
@@ -2115,16 +2157,77 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
 
   function popularSelectNPC35(id,rows){var select=document.getElementById(id);var selected=select.value;select.replaceChildren();(rows||[]).forEach(function(row){var option=document.createElement('option');option.value=String(row.id);option.textContent=String(row.nome||row.id);select.appendChild(option);});if(selected&&rows.some(function(row){return String(row.id)===selected;}))select.value=selected;}
   function rolarAtributoNPC35(){var dice=[Math.floor(Math.random()*6)+1,Math.floor(Math.random()*6)+1,Math.floor(Math.random()*6)+1,Math.floor(Math.random()*6)+1].sort(function(a,b){return b-a;});return dice[0]+dice[1]+dice[2];}
+  function npcClasseMagia35(cls){return normalizarChaveClasseMagia(cls&&cls.id)||normalizarChaveClasseMagia(cls&&cls.nome)||'';}
+  function npcSkillClassMatch35(skill,classSkills){var n=normalizarTextoCBA(skill.nome).replace(/\\s*\\([^)]*\\)/g,'').trim();return classSkills.some(function(name){var c=normalizarTextoCBA(name).replace(/\\s*\\([^)]*\\)/g,'').trim();return c===n||c.indexOf('conhecimento qualquer')===0&&n.indexOf('conhecimento')===0;});}
+  function npcGenerateSkills35(cls,attrs,level){
+    var raw=cls.pericias_classe,classes=Array.isArray(raw)?raw:jsonValueSRD(raw,[]);if(!Array.isArray(classes))classes=String(raw||'').split(',');
+    var candidates=srdNpcSkillCatalog.filter(function(sk){return npcSkillClassMatch35(sk,classes)&&!((sk.treinada_apenas===true||String(sk.treinada_apenas).toLowerCase()==='true')&&Number(level)<1);});
+    var intMod=modifier35(attrs.INT),perLevel=Math.max(1,(Number(cls.pericias_por_nivel)||2)+intMod),points=perLevel*4+Math.max(0,level-1)*perLevel,maxRanks=level+3,ranks=Object.create(null);
+    candidates.forEach(function(sk){ranks[String(sk.id)]=0;});
+    var priority=String(cls.id||'').toLowerCase(),weights={};candidates.forEach(function(sk){var attr=String(sk.atributo||'INT').toUpperCase(),weight=modifier35(attrs[attr])*2;var name=normalizarTextoCBA(sk.nome);if((priority==='bardo'||priority==='ladino')&&['car','des'].indexOf(attr)>=0)weight+=4;if((priority==='barbaro'||priority==='guerreiro'||priority==='paladino')&&attr==='FOR')weight+=4;if((priority==='mago'||priority==='feiticeiro')&&attr==='INT')weight+=4;if(priority==='ranger'&&['des','sab'].indexOf(attr.toLowerCase())>=0)weight+=3;if(name.indexOf('conhecimento')===0&&['mago','bardo','clerigo'].indexOf(priority)>=0)weight+=2;weights[String(sk.id)]=weight;});
+    candidates.sort(function(a,b){return (weights[String(b.id)]||0)-(weights[String(a.id)]||0)||String(a.nome).localeCompare(String(b.nome),'pt-BR');});
+    while(points>0&&candidates.length){var assigned=false;for(var i=0;i<candidates.length&&points>0;i++){var id=String(candidates[i].id);if(ranks[id]>=maxRanks)continue;ranks[id]++;points--;assigned=true;}if(!assigned)break;}
+    return {ranks:ranks,details:candidates.filter(function(sk){return ranks[String(sk.id)]>0;}).map(function(sk){return {id:String(sk.id),nome:sk.nome,atributo:sk.atributo,graduacoes:ranks[String(sk.id)]};})};
+  }
+  function npcFeatAllowed35(feat,attrs,bab,chosen){
+    var id=String(feat.id||''),req=jsonValueSRD(feat.requisitos,{}),raw=String(req.raw||'').toLowerCase();
+    if(id==='ataque_poderoso'&&Number(attrs.FOR)<13)return false;
+    if(id==='esquiva'&&Number(attrs.DES)<13)return false;
+    if(id==='foco_em_arma'&&Number(bab)<1)return false;
+    if(/str(?:ength)?\\s*13/.test(raw)&&Number(attrs.FOR)<13)return false;
+    if(/dex(?:terity)?\\s*13/.test(raw)&&Number(attrs.DES)<13)return false;
+    if(/base attack bonus[^.]*\\+\\s*(\\d+)/.test(raw)){var match=raw.match(/base attack bonus[^.]*\\+\\s*(\\d+)/);if(match&&bab<Number(match[1]))return false;}
+    var references=['power attack','dodge','weapon focus','combat expertise','improved trip','spell focus','greater spell focus','improved initiative'];for(var i=0;i<references.length;i++){if(raw.indexOf(references[i])>=0&&!chosen.some(function(x){return normalizarTextoCBA(x.nome)===normalizarTextoCBA(references[i]);}))return false;}
+    return true;
+  }
+  function npcGenerateFeats35(cls,attrs,bab,level,race,variant,weaponName){
+    var count=1+Math.floor(level/3)+(String(cls.id)==='guerreiro'?Math.floor(level/2):0)+(dnd35IsHuman(race)?1:0),pref=String(cls.id||'').toLowerCase(),orders={barbaro:['ataque_poderoso','iniciativa_aprimorada','reflexos_de_combate'],bardo:['iniciativa_aprimorada','esquiva','alertness'],clerigo:['iniciativa_aprimorada','foco_em_arma'],druida:['iniciativa_aprimorada','esquiva'],guerreiro:['ataque_poderoso','foco_em_arma','iniciativa_aprimorada'],ladino:['esquiva','iniciativa_aprimorada','foco_em_arma'],mago:['iniciativa_aprimorada','esquiva'],monge:['iniciativa_aprimorada','esquiva','reflexos_de_combate'],paladino:['ataque_poderoso','iniciativa_aprimorada','foco_em_arma'],ranger:['esquiva','iniciativa_aprimorada','foco_em_arma'],feiticeiro:['iniciativa_aprimorada','esquiva']}[pref]||['iniciativa_aprimorada','esquiva','reflexos_de_combate'];
+    var chosen=[],taken=Object.create(null),catalog=srdNpcFeatCatalog.slice(),orderIds=orders.map(function(id){return id==='alertness'?'srd35_feat_alertness':id;});
+    for(var pick=0;pick<count;pick++){
+      var candidates=catalog.filter(function(feat){return !taken[String(feat.id)]&&npcFeatAllowed35(feat,attrs,bab,chosen);});
+      candidates.sort(function(a,b){var ai=orderIds.indexOf(String(a.id)),bi=orderIds.indexOf(String(b.id));if(ai<0)ai=99;if(bi<0)bi=99;return ai-bi||String(a.nome).localeCompare(String(b.nome));});
+      var feat=candidates[0];if(!feat)break;taken[String(feat.id)]=true;var param=String(feat.id)==='foco_em_arma'?String(weaponName||'arma proficiente'):null;chosen.push({id:String(feat.id),nome:String(feat.nome||feat.id),parametro:param,origem:'geração automática',nivel:pick===0?1:Math.min(level,3+pick*3)});
+    }
+    return chosen;
+  }
+  function npcSelectSpells35(cls,attrs,level,variant){
+    var key=npcClasseMagia35(cls),progress=srdNpcSpellProgressions.find(function(row){return normalizarChaveClasseMagia(row.class_key)===key;});
+    if(!key||!progress)return {version:1,conhecidas:[],preparadas:[],usos:{},slots_restantes:{},class_key:key,spellbook:[]};
+    var slotsTable=jsonValueSRD(progress.slots_by_level,[]),knownTable=jsonValueSRD(progress.known_by_level,[]),slotRow=Array.isArray(slotsTable)?jsonValueSRD(slotsTable[Math.max(0,level-1)],[]):[],knownRow=Array.isArray(knownTable)?jsonValueSRD(knownTable[Math.max(0,level-1)],[]):[];
+    var ability=({wizard:'INT',sorcerer:'CAR',bard:'CAR',cleric:'SAB',druid:'SAB',paladin:'SAB',ranger:'SAB'})[key]||'INT',score=Number(attrs[ability])||10,mod=modifier35(score),daily=Object.create(null);
+    for(var circle=0;circle<10;circle++){var base=Number(slotRow[circle]);if(!Number.isFinite(base)||base<0||score<10+circle)continue;var total=base;if(circle>0&&mod>=circle)total+=Math.floor((mod-circle)/4)+1;if(total>0)daily[circle]=total;}
+    if((key==='bard'||key==='sorcerer')&&daily[0])daily[0]=999;
+    var spells=srdNpcSpellCatalog.filter(function(spell){var classes=Array.isArray(spell.classes)?spell.classes:jsonValueSRD(spell.classes,[]),tech=jsonValueSRD(spell.dados_tecnicos,{}),levels=tech.class_levels||{},spellLevel=Number(levels[key]==null?spell.circulo:levels[key]),spontaneous=key==='bard'||key==='sorcerer',allowed=spontaneous?Number(knownRow[spellLevel])>=0:Object.prototype.hasOwnProperty.call(daily,spellLevel);return classes.indexOf(key)>=0&&Number.isFinite(spellLevel)&&spellLevel>=0&&spellLevel<10&&allowed;});
+    spells.sort(function(a,b){return Number(a.circulo||0)-Number(b.circulo||0)||String(a.nome).localeCompare(String(b.nome));});
+    var state={version:1,conhecidas:[],preparadas:[],usos:{},slots_restantes:Object.assign({},daily),class_key:key,spellbook:[]};
+    function poolFor(circle){return spells.filter(function(sp){var t=jsonValueSRD(sp.dados_tecnicos,{}),l=t.class_levels||{};return Number(l[key]==null?sp.circulo:l[key])===circle;});}
+    var spontaneous=key==='bard'||key==='sorcerer';
+    if(spontaneous){
+      for(var c=0;c<10;c++){var amount=Number(knownRow[c]);if(!Number.isFinite(amount)||amount<0)continue;var pool=poolFor(c);if(!pool.length)continue;if(c===0)amount=Math.min(amount,pool.length);for(var j=0;j<amount;j++)state.conhecidas.push(String(pool[(j+Math.max(0,Number(variant)||0))%pool.length].id));}
+    }else{
+      if(key==='wizard'){var cantrips=poolFor(0),bookSeen=Object.create(null);cantrips.forEach(function(sp){var id=String(sp.id);if(!bookSeen[id]){bookSeen[id]=true;state.spellbook.push(id);}});var wizardPool=spells.filter(function(sp){var tech=jsonValueSRD(sp.dados_tecnicos,{}),levels=tech.class_levels||{},circle=Number(levels[key]==null?sp.circulo:levels[key]);return circle>0;});var spellbookCount=Math.min(wizardPool.length,Math.max(1,3+modifier35(score))+Math.max(0,level-1)*2);for(var bi=0;bi<spellbookCount;bi++){var bookSpell=wizardPool[(bi+Math.max(0,Number(variant)||0))%wizardPool.length],bookId=String(bookSpell.id);if(!bookSeen[bookId]){bookSeen[bookId]=true;state.spellbook.push(bookId);}}}
+      for(var lev=0;lev<10;lev++){var count=Number(daily[lev])||0,pool=poolFor(lev);if(!count||!pool.length)continue;var book=key==='wizard'?state.spellbook.map(function(id){return srdNpcSpellCatalog.find(function(sp){return String(sp.id)===id;});}).filter(function(sp){if(!sp)return false;var tech=jsonValueSRD(sp.dados_tecnicos,{}),levels=tech.class_levels||{},spellLevel=Number(levels[key]==null?sp.circulo:levels[key]);return spellLevel===lev;}):pool;if(!book.length)book=pool;for(var si=0;si<count;si++){var chosen=book[(si+Math.max(0,Number(variant)||0))%book.length];state.preparadas.push({spell_id:String(chosen.id),slot_level:lev,expended:false});}}
+    }
+    return state;
+  }
   function gerarFichaNPC35(race,cls,archetype,level){
     var attrs={FOR:rolarAtributoNPC35(),DES:rolarAtributoNPC35(),CON:rolarAtributoNPC35(),INT:rolarAtributoNPC35(),SAB:rolarAtributoNPC35(),CAR:rolarAtributoNPC35()};
     var priority=Array.isArray(archetype.foco_atributos)?archetype.foco_atributos:jsonValueSRD(archetype.foco_atributos,[]);
     if(priority.length>1){var high=priority[0],low=priority[priority.length-1];if(attrs[high]<attrs[low]){var swap=attrs[high];attrs[high]=attrs[low];attrs[low]=swap;}}
     var racial=jsonValueSRD(race.ajustes_atributos,{});Object.keys(racial||{}).forEach(function(key){if(attrs[key]!=null)attrs[key]+=Number(racial[key])||0;});
     for(var abilityLevel=4;abilityLevel<=level;abilityLevel+=4){var primary=priority[0]||'FOR';attrs[primary]++;}
+    var sizeKey=normalizarTextoCBA(race.tamanho||''),sizeMod=/tiny|miudo|miúdo/.test(sizeKey)?2:/small|pequeno/.test(sizeKey)?1:/large|grande/.test(sizeKey)?-1:/huge|enorme/.test(sizeKey)?-2:0;
     var conMod=modifier35(attrs.CON),die=Math.max(4,Number(cls.dado_vida)||8),hp=die+conMod;
     for(var i=2;i<=level;i++)hp+=Math.max(1,Math.floor(die/2)+1+conMod);
-    hp=Math.max(1,hp);var dexMod=modifier35(attrs.DES),bab=bab35(cls,level),attackBonus=bab+modifier35(attrs.FOR),damageMod=modifier35(attrs.FOR);
-    return {attributes:attrs,hp:hp,maxHp:hp,ac:10+dexMod,dexMod:dexMod,bab:bab,attackBonus:attackBonus,attacks:'Ataque básico '+(attackBonus>=0?'+':'')+attackBonus+' melee (1d6'+(damageMod>=0?'+':'')+damageMod+')',raceId:String(race.id),classId:String(cls.id),level:level,variant:Number(archetype.variant),skills:[],feats:[]};
+    hp=Math.max(1,hp);var dexMod=modifier35(attrs.DES),bab=bab35(cls,level),attackBonus=bab+modifier35(attrs.FOR)+sizeMod,damageMod=modifier35(attrs.FOR);
+    var skillData=npcGenerateSkills35(cls,attrs,level),spells=npcSelectSpells35(cls,attrs,level,archetype.variant);
+    var packageRow=srdNpcStartingPackages.find(function(row){return String(row.class_id)===String(cls.id);}),gear=[];
+    (packageRow&&Array.isArray(packageRow.items)?packageRow.items:[]).forEach(function(packItem){var found=srdNpcEquipmentCatalog.find(function(it){return String(it.id)===String(packItem.id);});if(!found)return;var slot=slotEquipamento35(found),equip=slot==='arma'||slot==='armadura'||slot==='escudo';gear.push(Object.assign({},found,{quantidade:Number(packItem.quantidade)||1,equipado:equip}));});
+    var weapon=gear.find(function(it){return it.equipado&&slotEquipamento35(it)==='arma';}),armor=gear.filter(function(it){return it.equipado&&['armadura','escudo'].indexOf(slotEquipamento35(it))>=0;});var feats=npcGenerateFeats35(cls,attrs,bab,level,race,archetype.variant,weapon&&weapon.nome);
+    var attackText=weapon?String(weapon.nome)+' +'+attackBonus+' melee ('+(weapon.dano||'1d6')+(damageMod>=0?'+':'')+damageMod+')':'Ataque básico +'+attackBonus+' melee (1d3'+(damageMod>=0?'+':'')+damageMod+')';
+    var maxDex=armor.reduce(function(cap,it){var max=maxDexEquipamento35(it);return max==null?cap:Math.min(cap,max);},99),ca=10+Math.min(dexMod,maxDex)+sizeMod+armor.reduce(function(sum,it){return sum+bonusCAEquipamento35(it);},0);
+    var saves={fortitude:(String(cls.id)==='barbaro'||String(cls.id)==='guerreiro'||String(cls.id)==='paladino'?Math.floor(level/2)+2:Math.floor(level/3))+modifier35(attrs.CON),reflexos:(String(cls.id)==='bardo'||String(cls.id)==='ladino'||String(cls.id)==='ranger'?Math.floor(level/2)+2:Math.floor(level/3))+dexMod,vontade:(['clerigo','druida','mago','monge','feiticeiro'].indexOf(String(cls.id))>=0?Math.floor(level/2)+2:Math.floor(level/3))+modifier35(attrs.SAB)};
+    return {attributes:attrs,hp:hp,maxHp:hp,ac:ca,dexMod:dexMod,sizeModifier:sizeMod,bab:bab,attackBonus:attackBonus,attacks:attackText,raceId:String(race.id),classId:String(cls.id),raceName:String(race.nome),className:String(cls.nome),level:level,variant:Number(archetype.variant),skills:skillData.details,skillRanks:skillData.ranks,feats:feats,saves:saves,spellState:spells,startingPackage:packageRow?{name:packageRow.nome,items:gear}:null,loadout:gear,racialTraits:jsonValueSRD(race.habilidades_raciais,[]),raceBriefing:String(race.briefing||''),classTraits:jsonValueSRD(cls.dados_tecnicos,{}).habilidades_especiais||[],classDescription:String(cls.descricao||''),spellcastingKey:npcClasseMagia35(cls)};
   }
   function renderizarArquetiposNPC(){
     var list=document.getElementById('npc-archetype-results');if(!list)return;
@@ -2134,7 +2237,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     if(!race||!cls)return;var entries=cbaNpcArchetypes.filter(function(x){return String(x.race_id)===String(race.id)&&String(x.class_id)===String(cls.id);});
     list.replaceChildren();if(entries.length!==5){list.textContent='Esta combinação ainda não tem cinco arquétipos no banco. Execute a migração do acervo de NPCs.';return;}
     var level=Math.max(1,Math.min(20,Math.trunc(Number(document.getElementById('npc-level-input').value)||1)));
-    entries.forEach(function(entry){var stats=gerarFichaNPC35(race,cls,entry,level),card=document.createElement('article');card.className='npc-archetype-card';var title=document.createElement('strong');title.textContent=entry.nome+' · Nv '+level;var brief=document.createElement('p');brief.textContent=entry.briefing+' PV '+stats.hp+' · CA '+stats.ac+' · BBA +'+stats.bab+' · Ataque '+stats.attacks+'.';var button=document.createElement('button');button.type='button';button.textContent='Adicionar esta variação ao CBA';button.onclick=function(){adicionarNPCGerado35(race,cls,entry,stats);};card.append(title,brief,button);list.appendChild(card);});
+    entries.forEach(function(entry){var stats=gerarFichaNPC35(race,cls,entry,level),card=document.createElement('article');card.className='npc-archetype-card';var title=document.createElement('strong');title.textContent=entry.nome+' · Nv '+level;var brief=document.createElement('p');brief.textContent=entry.briefing+' PV '+stats.hp+' · CA '+stats.ac+' · BBA +'+stats.bab+' · '+stats.skills.length+' perícias · '+stats.feats.length+' talentos · '+(stats.spellState.conhecidas.length+stats.spellState.preparadas.length)+' escolhas de magia · '+(stats.startingPackage?stats.startingPackage.name:'sem pacote inicial')+'.';var button=document.createElement('button');button.type='button';button.textContent='Adicionar esta variação ao CBA';button.onclick=function(){adicionarNPCGerado35(race,cls,entry,stats);};card.append(title,brief,button);list.appendChild(card);});
   }
   function srdNpcClassReady(){return srdRaceCatalog.length>0&&srdClassCatalog.length>0&&cbaNpcArchetypes.length>0;}
   async function adicionarNPCGerado35(race,cls,archetype,stats){
@@ -2143,7 +2246,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
       var scene=normalizarCBAData(campanha.cba_data)||{backgroundUrl:'',imgScale:1,gridSize:50,gridRatio:null,gridOpacity:.3,tokens:[]};
       var cell=escolherCelulaLivreRapida(scene);if(!cell)throw new Error('Não há quadrados livres para posicionar o NPC.');
       var id=novoIdReforco(),name=String(archetype.nome||race.nome+' '+cls.nome).slice(0,120);
-      var token={key:'cba-'+id,id:id,nome:name,imagem:'',tipo:'npc',detalhe:'Nv '+stats.level+' · '+race.nome+' '+cls.nome+' · '+archetype.nome,gridX:cell.gridX,gridY:cell.gridY,boardColumns:cell.boardColumns,boardRows:cell.boardRows,hp:stats.hp,maxHp:stats.maxHp,ac:stats.ac,baseAc:stats.ac,dexMod:stats.dexMod,attackBonus:stats.attackBonus,damageDice:stats.attacks.match(/\(([^)]+)\)/)?stats.attacks.match(/\(([^)]+)\)/)[1]:'1d6',monsterStats:{nd:String(stats.level),ataques:stats.attacks,ca:String(stats.ac),pv:stats.hp,forca:stats.attributes.FOR,destreza:stats.attributes.DES,constituicao:stats.attributes.CON,inteligencia:stats.attributes.INT,sabedoria:stats.attributes.SAB,carisma:stats.attributes.CAR,archetype:archetype.role_key,race_id:stats.raceId,class_id:stats.classId,level:stats.level,variant:stats.variant}};
+      var token={key:'cba-'+id,id:id,nome:name,imagem:'',tipo:'npc',detalhe:'Nv '+stats.level+' · '+race.nome+' '+cls.nome+' · '+archetype.nome,gridX:cell.gridX,gridY:cell.gridY,boardColumns:cell.boardColumns,boardRows:cell.boardRows,hp:stats.hp,maxHp:stats.maxHp,ac:stats.ac,baseAc:10,dexMod:stats.dexMod,attackBonus:stats.attackBonus,damageDice:stats.attacks.match(/\(([^)]+)\)/)?stats.attacks.match(/\(([^)]+)\)/)[1]:'1d6',spellState:stats.spellState,monsterStats:{nd:String(stats.level),ataques:stats.attacks,ca:String(stats.ac),pv:stats.hp,forca:stats.attributes.FOR,destreza:stats.attributes.DES,constituicao:stats.attributes.CON,inteligencia:stats.attributes.INT,sabedoria:stats.attributes.SAB,carisma:stats.attributes.CAR,attributes:stats.attributes,skills:stats.skills,skill_ranks:stats.skillRanks,feats:stats.feats,saves:stats.saves,spellState:stats.spellState,spellcasting_key:stats.spellcastingKey,bab:stats.bab,size_modifier:stats.sizeModifier,size:race.tamanho,loadout:stats.loadout,starting_package:stats.startingPackage,racial_traits:stats.racialTraits,race_briefing:stats.raceBriefing,class_traits:stats.classTraits,class_description:stats.classDescription,archetype:archetype.role_key,race_id:stats.raceId,race_name:stats.raceName,class_id:stats.classId,class_name:stats.className,level:stats.level,variant:stats.variant}};
       scene.tokens.push(token);var saved=await gravarCBAnaCampanha(serializarEstadoCBA(scene));campanha.cba_data=saved;aplicarCBAnaMesa(saved,false);fecharModaisReforcoRapido();await enviarMensagemChat('✨ O Mestre criou '+name+' para a mesa · nível '+stats.level+' · PV '+stats.hp+' · CA '+stats.ac+'.','sistema',{evento:'npc_arquetipo_criado',token_id:id,race_id:stats.raceId,class_id:stats.classId,level:stats.level,variant:stats.variant});
       if(String(campanha.state||'').toUpperCase()==='COMBATE'){var d20=Math.floor(Math.random()*20)+1,value=d20+Number(stats.dexMod||0);var init=await sb.rpc('adicionar_combatente_iniciativa',{p_campaign_id:Number(MESA_ID),p_combatente_id:id,p_nome:name,p_valor:value,p_tipo:'npc'});if(init.error)alert('NPC criado no mapa, mas não entrou na iniciativa: '+init.error.message);else{combatDataState=init.data||combatDataState;renderizarIniciativa(combatDataState);await enviarMensagemChat('⚡ '+name+' entrou na iniciativa: d20 '+d20+' + DES '+stats.dexMod+' = '+value+'.','rolagem',{evento:'npc_arquetipo_iniciativa',token_id:id,valor:value,d20:d20,modificador_destreza:stats.dexMod});}}
     }catch(err){alert('Não foi possível criar o NPC: '+err.message);}finally{reforcoBusy=false;}
@@ -2445,8 +2548,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     preview.classList.toggle('excede',speed!=null&&spent>speed);
     if(speed==null)preview.textContent='Movimento previsto: '+spent.toLocaleString('pt-BR',{maximumFractionDigits:1})+' m · velocidade racial indisponível; o servidor validará.';
     else preview.textContent='Movimento no turno: '+spent.toLocaleString('pt-BR',{maximumFractionDigits:1})+' / '+speed.toLocaleString('pt-BR',{maximumFractionDigits:1})+' m'+(spent>speed?' · EXCEDE O DESLOCAMENTO!':' · restam '+Math.max(0,speed-spent).toLocaleString('pt-BR',{maximumFractionDigits:1})+' m');
-    preview.setAttribute('aria-label',preview.textContent);preview.hidden=false;preview.style.display='block';
-    var w=preview.offsetWidth||260,h=preview.offsetHeight||54;preview.style.left=Math.max(8,Math.min(innerWidth-w-8,Number(clientX)+14))+'px';preview.style.top=Math.max(8,Math.min(innerHeight-h-8,Number(clientY)+14))+'px';
+    preview.setAttribute('aria-label',preview.textContent);preview.hidden=true;var status=document.getElementById('iniciativa-status');if(status)status.textContent=preview.textContent;
   }
 
   function normalizarCBAData(data){
@@ -2727,7 +2829,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     modoSelecaoTeste = true;
     alvosSelecionados = [];
     document.getElementById('modal-testes').style.display = 'none';
-    document.getElementById('barra-confirmar-teste').style.display = 'block';
+    var testBar=document.getElementById('barra-confirmar-teste'),testRoster=document.querySelector('.painel-aventureiros');if(testRoster)testRoster.insertBefore(testBar,document.getElementById('cards-strip'));testBar.style.display = 'block';
     document.getElementById('txt-teste-selecionado').textContent = nomeTeste+' — selecione os alvos';
     document.getElementById('cards-strip').classList.add('selecionando-teste');
     document.querySelectorAll('.card-pers').forEach(function(card){ card.classList.remove('selecionado-para-teste'); });
@@ -2855,7 +2957,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
       container.id='botoes-rolagem-pendente';
       container.setAttribute('role','region');
       container.setAttribute('aria-label','Rolagens pendentes');
-      document.body.appendChild(container);
+      var roster=document.querySelector('.painel-aventureiros');if(roster)roster.insertBefore(container,roster.querySelector('#cards-strip'));else document.getElementById('acoes-dir').appendChild(container);
     }
     if(Array.from(container.querySelectorAll('.btn-rolar-teste')).some(function(btn){return btn.dataset.responseKey===responseKey;})) return;
     var btn=document.createElement('button');
@@ -3314,7 +3416,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
 
   async function repararMonstrosSemEstatisticasCBA(){
     var scene=normalizarCBAData(campanha&&campanha.cba_data);if(!scene)return;
-    var ids=Array.from(new Set(scene.tokens.filter(function(t){return t.tipo==='monstro'&&t.monsterId&&(valorCA35(t.ac)==null||!t.monsterStats);}).map(function(t){return String(t.monsterId);}));
+    var ids=Array.from(new Set(scene.tokens.filter(function(t){return t.tipo==='monstro'&&t.monsterId&&(valorCA35(t.ac)==null||!t.monsterStats);}).map(function(t){return String(t.monsterId);})));
     var byId=Object.create(null);
     if(ids.length){var result=await sb.from('srd_monsters').select('*').in('id',ids);if(result.error)console.warn('Não foi possível recuperar estatísticas antigas do bestiário:',result.error.message);else(result.data||[]).forEach(function(m){byId[String(m.id)]=m;});}
     var mudou=false;
@@ -3381,7 +3483,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
       var hp=token.tipo==='player'&&sourceCharacter?Number(sourceCharacter.sh.pv_atual==null?max:sourceCharacter.sh.pv_atual):(token.hp==null?max:Number(token.hp));
       var pct=max&&max>0?Math.max(0,Math.min(100,hp/max*100)):0;
       var ca=token.tipo==='player'&&sourceCharacter?caFichaMesa(sourceCharacter):caToken35(token);
-      var gear=equipamentoTokens[String(token.id)]||[],weapon=gear.find(function(it){return it.equipado&&slotEquipamento35(it)==='arma';});
+      var gear=equipamentoToken35(token),weapon=gear.find(function(it){return it.equipado&&slotEquipamento35(it)==='arma';});
       var damage=weapon&&weapon.dano||token.damageDice||'—',bonus=token.attackBonus;
       if(bonus==null){var attackText=String(token.monsterStats&&token.monsterStats.ataques||''),match=attackText.match(/[+\-]\d+\s+(?:melee|ranged|corpo a corpo|à distância|ataque básico)/i);bonus=match?Number(match[0].match(/[+\-]\d+/)[0]):null;}
       var detail=token.tipo==='monstro'?'Monstro · ND '+String((token.monsterStats&&token.monsterStats.nd)||'—'):token.tipo==='player'?'Ficha do Mestre':'NPC · Nv '+String((token.monsterStats&&token.monsterStats.level)||'—');
