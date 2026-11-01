@@ -1413,6 +1413,11 @@ body:has(.ficha.dnd35-mode){display:block;background:radial-gradient(ellipse at 
     return Math.floor((Number(valor || 10) - 10) / 2);
   }
 
+  function dnd35ModificadorTamanho(tamanho) {
+    var normalizado=dnd35Norm(tamanho);
+    return normalizado==='pequeno'||normalizado==='small'?1:0;
+  }
+
   function dnd35Lista(valor) {
     var lista = Array.isArray(valor) ? valor : (valor == null || valor === '' ? [] : [valor]);
     if (!lista.length) return '<li>Não informado no compêndio.</li>';
@@ -1729,13 +1734,13 @@ body:has(.ficha.dnd35-mode){display:block;background:radial-gradient(ellipse at 
     var dadoVida = Math.max(1,Number(state.classe.dado_vida)||8), hpCalc = Math.max(1,dadoVida+conMod), hpMax = Math.max(1,Number(state.sheet.pv_max)||hpCalc);
     var hpAtual = state.sheet.pv_atual == null ? hpMax : Number(state.sheet.pv_atual), ajustes = dnd35Objeto(state.raca.ajustes_atributos);
     var nome = creating ? '' : (state.character.nome || 'Sem nome'), classMap = dnd35SkillMap(state);
-    var dexMod=dnd35Modificador(attrs.DES), fortMod=dnd35Modificador(attrs.CON), reflexMod=dexMod, willMod=dnd35Modificador(attrs.SAB);
+    var dexMod=dnd35Modificador(attrs.DES), fortMod=dnd35Modificador(attrs.CON), reflexMod=dexMod, willMod=dnd35Modificador(attrs.SAB), sizeBonus=dnd35ModificadorTamanho(state.raca.tamanho);
     function saveGood(names,fields){var raw='';for(var i=0;i<fields.length;i++){if(state.classe[fields[i]]!=null){raw=String(state.classe[fields[i]]).toLowerCase();break;}}if(raw)return raw==='good'||raw==='bom'||raw==='forte';var cn=String(state.classe.nome||'').toLowerCase();return names.some(function(n){return cn.indexOf(n)>=0;});}
     function saveBase(good,lvl){return good?2+Math.floor(lvl/2):Math.floor(lvl/3);}
     var fortBase=saveBase(saveGood(['bárbaro','barbaro','guerreiro','clérigo','clerigo','druida','paladino','monge','patrulheiro','ranger'],['fortitude_progression','fortitude_progressao','fort_progression']),level);
     var reflexBase=saveBase(saveGood(['bárbaro','barbaro','bardo','ladino','monge','patrulheiro','ranger'],['reflex_progression','reflexos_progression','ref_progression']),level);
     var willBase=saveBase(saveGood(['bardo','clérigo','clerigo','druida','monge','paladino','feiticeiro','sorcerer','mago','wizard'],['vontade_progression','will_progression']),level);
-    var startingEquipmentHtml=dnd35StartMarkup(state);var statusHtml='<section class="dnd35-panel"><h2>Defesas e Status</h2><div class="dnd35-meta"><div class="dnd35-stat"><small>CA base</small><strong>'+(10+dexMod)+'</strong><small>10 + DES; armadura/escudo pela mochila da mesa</small></div><div class="dnd35-stat"><small>Fortitude</small><strong>'+(fortBase+fortMod>=0?'+':'')+(fortBase+fortMod)+'</strong><small>base '+fortBase+' + CON '+fortMod+'</small></div><div class="dnd35-stat"><small>Reflexos</small><strong>'+(reflexBase+reflexMod>=0?'+':'')+(reflexBase+reflexMod)+'</strong><small>base '+reflexBase+' + DES '+reflexMod+'</small></div><div class="dnd35-stat"><small>Vontade</small><strong>'+(willBase+willMod>=0?'+':'')+(willBase+willMod)+'</strong><small>base '+willBase+' + SAB '+willMod+'</small></div></div></section>';
+    var startingEquipmentHtml=dnd35StartMarkup(state);var statusHtml='<section class="dnd35-panel"><h2>Defesas e Status</h2><div class="dnd35-meta"><div class="dnd35-stat"><small>CA base</small><strong>'+(10+dexMod+sizeBonus)+'</strong><small>10 + DES'+(sizeBonus?' + tamanho +1':'')+'; armadura/escudo pela mochila da mesa</small></div><div class="dnd35-stat"><small>Fortitude</small><strong>'+(fortBase+fortMod>=0?'+':'')+(fortBase+fortMod)+'</strong><small>base '+fortBase+' + CON '+fortMod+'</small></div><div class="dnd35-stat"><small>Reflexos</small><strong>'+(reflexBase+reflexMod>=0?'+':'')+(reflexBase+reflexMod)+'</strong><small>base '+reflexBase+' + DES '+reflexMod+'</small></div><div class="dnd35-stat"><small>Vontade</small><strong>'+(willBase+willMod>=0?'+':'')+(willBase+willMod)+'</strong><small>base '+willBase+' + SAB '+willMod+'</small></div></div></section>';
     var spellsHtml=dnd35GrimoireRender(state,attrs,level,creating);
     var attrHtml = ATR.map(function(sigla) {
       var val=Number(attrs[sigla]==null?10:attrs[sigla]), base=Number(baseAttrs[sigla]==null?10:baseAttrs[sigla]), mod=dnd35Modificador(val);
