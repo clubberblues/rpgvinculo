@@ -102,7 +102,7 @@ BEGIN
       EXECUTE format('UPDATE public.%I SET source_status=CASE WHEN NULLIF(srd_source_url,'''') IS NULL THEN ''unreviewed'' ELSE ''source_attached'' END WHERE source_status=''unreviewed''',t);
     END IF;
   END LOOP;
-END $;
+END $$;
 UPDATE public.srd_starting_packages SET source_status='derived' WHERE source_status='unreviewed';
 UPDATE public.srd_npc_archetypes SET source_status='derived' WHERE source_status='unreviewed';
 
@@ -177,7 +177,7 @@ CREATE TABLE IF NOT EXISTS public.srd_spell_level_progressions (
   class_level SMALLINT NOT NULL CHECK (class_level BETWEEN 1 AND 20),
   spell_level SMALLINT NOT NULL CHECK (spell_level BETWEEN 0 AND 9),
   base_slots SMALLINT NOT NULL DEFAULT 0 CHECK (base_slots >= 0),
-  known_spells SMALLINT CHECK (known_spells IS NULL OR known_spells >= 0),
+  known_spells SMALLINT CHECK (known_spells IS NULL OR known_spells >= -1),
   source_id TEXT REFERENCES public.srd_rule_sources(source_id),
   verification_status TEXT NOT NULL DEFAULT 'derived_pending_review'
     CHECK (verification_status IN ('derived_pending_review','verified_srd','needs_review')),
@@ -186,11 +186,11 @@ CREATE TABLE IF NOT EXISTS public.srd_spell_level_progressions (
 
 INSERT INTO public.srd_spell_level_progressions
  (class_id,class_level,spell_level,base_slots,known_spells,source_id,verification_status)
-SELECT c.id,lv.ordinality::smallint,sl.ordinality::smallint,
+SELECT c.id,lv.ordinality::smallint,(sl.ordinality-1)::smallint,
        greatest(0,(sl.value #>> '{}')::smallint),
        CASE WHEN jsonb_typeof(p.known_by_level)='array'
                    AND jsonb_array_length(p.known_by_level)>0
-                   AND jsonb_typeof(p.known_by_level->(lv.ordinality-1))='array'
+                   AND jsonb_typeof(p.known_by_level->((lv.ordinality-1)::integer))='array'
             THEN (kn.value #>> '{}')::smallint ELSE NULL END,
        'dnd35-srd-ogl','derived_pending_review'
 FROM public.srd_spell_progressions p
@@ -204,8 +204,8 @@ CROSS JOIN LATERAL jsonb_array_elements(
 LEFT JOIN LATERAL jsonb_array_elements(
   CASE WHEN jsonb_typeof(p.known_by_level)='array'
          AND jsonb_array_length(p.known_by_level)>=lv.ordinality
-         AND jsonb_typeof(p.known_by_level->(lv.ordinality-1))='array'
-       THEN p.known_by_level->(lv.ordinality-1) ELSE '[]'::jsonb END
+         AND jsonb_typeof(p.known_by_level->((lv.ordinality-1)::integer))='array'
+       THEN p.known_by_level->((lv.ordinality-1)::integer) ELSE '[]'::jsonb END
 ) WITH ORDINALITY AS kn(value,ordinality) ON kn.ordinality=sl.ordinality
 ON CONFLICT (class_id,class_level,spell_level) DO UPDATE
 SET base_slots=EXCLUDED.base_slots,known_spells=EXCLUDED.known_spells,
