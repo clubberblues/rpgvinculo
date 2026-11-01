@@ -171,48 +171,7 @@ BEGIN
       IF v_domain_id IS NULL OR v_domain_spell_id IS NULL
          OR jsonb_typeof(v_entry->'slot_level')<>'number'
          OR jsonb_typeof(v_entry->'expended')<>'boolean'
-         OR (v_entry->>'slot_level') !~ '^[1-9]
-  FOR v_count IN 0..jsonb_array_length(v_prepared_out)-1 LOOP
-    v_entry := v_prepared_out -> v_count;
-    v_spell_id := v_entry->>'spell_id'; v_slot := (v_entry->>'slot_level')::integer;
-    v_slot_key := v_spell_id || ':' || v_slot::text;
-    SELECT count(*) INTO v_new_ordinal FROM jsonb_array_elements(v_prepared_out) WITH ORDINALITY q(value,ord)
-      WHERE value->>'spell_id'=v_spell_id AND (value->>'slot_level')::integer=v_slot AND ord<=v_count+1;
-    SELECT count(*) INTO v_old_expended FROM jsonb_array_elements(coalesce(v_old->'preparadas','[]'::jsonb)) q(value)
-      WHERE value->>'spell_id'=v_spell_id AND (value->>'slot_level')::integer=v_slot
-        AND coalesce((value->>'expended')::boolean,false);
-    IF v_new_ordinal<=v_old_expended THEN
-      v_prepared_out := jsonb_set(v_prepared_out,ARRAY[v_count::text,'expended'],'true'::jsonb,true);
-    END IF;
-  END LOOP;
-  -- Preserve previously expended slots even if the client submits a different spell list.
-  FOR v_entry IN SELECT value FROM jsonb_array_elements(coalesce(v_old->'preparadas','[]'::jsonb)) q(value)
-    WHERE coalesce((value->>'expended')::boolean,false)
-  LOOP
-    v_spell_id:=v_entry->>'spell_id'; v_slot:=(v_entry->>'slot_level')::integer;
-    SELECT count(*) INTO v_old_expended FROM jsonb_array_elements(coalesce(v_old->'preparadas','[]'::jsonb)) q(value)
-      WHERE value->>'spell_id'=v_spell_id AND (value->>'slot_level')::integer=v_slot
-        AND coalesce((value->>'expended')::boolean,false);
-    SELECT count(*) INTO v_new_ordinal FROM jsonb_array_elements(v_prepared_out) q(value)
-      WHERE value->>'spell_id'=v_spell_id AND (value->>'slot_level')::integer=v_slot
-        AND coalesce((value->>'expended')::boolean,false);
-    IF v_new_ordinal<v_old_expended THEN
-      v_prepared_out:=v_prepared_out||jsonb_build_array(jsonb_set(v_entry,'{expended}','true'::jsonb,true));
-    END IF;
-  END LOOP;
-  FOR v_circle IN 0..9 LOOP
-    SELECT count(*) INTO v_count FROM jsonb_array_elements(v_prepared_out) e
-      WHERE (e->>'slot_level')::integer=v_circle;
-    v_capacity := public._srd35_slots(v_class,v_level,v_score,v_circle);
-    IF v_count>v_capacity THEN RAISE EXCEPTION 'Preparadas excedem espaços diários do círculo % (% > %)',v_circle,v_count,v_capacity; END IF;
-  END LOOP;
-  UPDATE public.srd_character_sheets
-     SET magias_preparadas=jsonb_build_object('version',1,'conhecidas',v_known_out,'preparadas',v_prepared_out,'dominio_preparadas',v_domain_out,'usos',v_usos_out)
-   WHERE character_id::text=p_character_id;
-  RETURN jsonb_build_object('version',1,'conhecidas',v_known_out,'preparadas',v_prepared_out,'dominio_preparadas',v_domain_out,'usos',v_usos_out);
-END
-$function$
- THEN
+         OR (v_entry->>'slot_level') !~ '^[1-9]$' THEN
         RAISE EXCEPTION 'Cada espaço de domínio requer domain_id, spell_id, círculo 1..9 e expended';
       END IF;
       v_domain_level:=(v_entry->>'slot_level')::integer;
@@ -282,9 +241,9 @@ $function$
     IF v_count>v_capacity THEN RAISE EXCEPTION 'Preparadas excedem espaços diários do círculo % (% > %)',v_circle,v_count,v_capacity; END IF;
   END LOOP;
   UPDATE public.srd_character_sheets
-     SET magias_preparadas=jsonb_build_object('version',1,'conhecidas',v_known_out,'preparadas',v_prepared_out,'usos',v_usos_out)
+     SET magias_preparadas=jsonb_build_object('version',1,'conhecidas',v_known_out,'preparadas',v_prepared_out,'dominio_preparadas',v_domain_out,'usos',v_usos_out)
    WHERE character_id::text=p_character_id;
-  RETURN jsonb_build_object('version',1,'conhecidas',v_known_out,'preparadas',v_prepared_out,'usos',v_usos_out);
+  RETURN jsonb_build_object('version',1,'conhecidas',v_known_out,'preparadas',v_prepared_out,'dominio_preparadas',v_domain_out,'usos',v_usos_out);
 END
 $function$;
 
