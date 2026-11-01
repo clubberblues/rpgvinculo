@@ -408,6 +408,7 @@ body{background:#080e17;color:#e7e0d0}.bg-image{opacity:.08;filter:grayscale(.8)
 .modal-box{border-radius:15px;border-width:1px;background:linear-gradient(150deg,#1c2d40,#0e1723);box-shadow:0 24px 70px #000b}.modal-box h2{color:#f0d080}.card-ficha-user{border-radius:12px!important;background:linear-gradient(145deg,#1b2b3e,#111a27)!important;transition:.17s}.card-ficha-user:hover{transform:translateY(-2px);border-color:#e0bb68!important}.vazio{border:1px dashed #4d6175;border-radius:14px;color:#a9b9c9;background:#111c28}
 @media(max-width:780px){.lobby{grid-template-columns:1fr}.sidebar{position:relative;top:auto;width:100%;height:auto;padding:10px 14px;display:grid;grid-template-columns:64px 1fr auto;gap:8px;align-items:center;border-right:0;border-bottom:1px solid #364b61}.side-logo{margin:0}.side-logo img{width:62px;height:40px}.side-divisor{display:none}.side-user{margin:0;padding:8px}.side-nav{grid-column:1/-1;grid-row:2;display:flex;flex-direction:row;overflow-x:auto}.side-nav a{flex:0 0 auto;padding:9px}.side-sair{grid-column:3;grid-row:1;margin:0;padding:8px}.main{padding:22px 14px 50px}.topo{align-items:flex-start;flex-direction:column;margin-bottom:18px}.acoes{width:100%}.input-codigo{flex:1;min-width:0}.grid{gap:12px}}
 </style>
+<link rel="stylesheet" href="vinculo-ui.css">
 </head>
 <body>
 
@@ -1502,8 +1503,8 @@ body{background:#080e17;color:#e7e0d0}.bg-image{opacity:.08;filter:grayscale(.8)
     }).join('');
 
     containerEntrarFichas.querySelectorAll('.js-selecionar-heroi').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        if (btn.dataset.transferir === 'true' && !confirm('Esta ficha está vinculada a outra mesa. Ao continuar, ela deixará de aparecer na mesa anterior. Deseja transferi-la para esta mesa?')) return;
+      btn.addEventListener('click', async function() {
+        if (btn.dataset.transferir === 'true' && !await window.vttUI.confirm({title:'Transferir ficha',message:'Esta ficha está vinculada a outra mesa. Ao continuar, ela deixará de aparecer na mesa anterior. Deseja transferi-la para esta mesa?',okLabel:'Transferir'})) return;
         confirmarEntradaMesa(containerEntrarFichas.dataset.mesaId, btn.getAttribute('data-char-id'));
       });
     });
@@ -1630,8 +1631,8 @@ body{background:#080e17;color:#e7e0d0}.bg-image{opacity:.08;filter:grayscale(.8)
         e.stopPropagation();
         if (btn.disabled) return;
         var nomeFicha = btn.getAttribute('data-char-name') || 'esta ficha';
-        if (!confirm('Tem certeza que deseja excluir ' + nomeFicha + '?')) return;
-        if (!confirm('CONFIRMAÇÃO FINAL: esta ação apagará a ficha, inventário e histórico associado e não pode ser desfeita.')) return;
+        if (!await window.vttUI.confirm({title:'Excluir ficha',message:'Tem certeza que deseja excluir '+nomeFicha+'?',okLabel:'Continuar'})) return;
+        if (!await window.vttUI.confirm({title:'Confirmação final',message:'Esta ação apagará a ficha, o inventário e o histórico associado e não pode ser desfeita.',okLabel:'Excluir definitivamente',danger:true})) return;
         btn.disabled = true;
         btn.textContent = 'Excluindo…';
         try {
@@ -1889,5 +1890,6 @@ body{background:#080e17;color:#e7e0d0}.bg-image{opacity:.08;filter:grayscale(.8)
   });
 })();
 </script>
+<script src="vinculo-ui.js"></script>
 </body>
 </html>
