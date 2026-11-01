@@ -247,7 +247,5 @@ BEGIN
 END
 $function$;
 
-REVOKE ALL ON FUNCTION public.salvar_dominios_personagem_srd(text,text[]) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.salvar_dominios_personagem_srd(text,text[]) TO authenticated;
 
 COMMIT;
