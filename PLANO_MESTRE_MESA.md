@@ -1,6 +1,6 @@
 # Plano Mestre da Mesa Virtual
 
-Atualizado em 31/10/2026. Repositório: `clubberblues/rpgvinculo`.
+Atualizado em 01/11/2026. Repositório: `clubberblues/rpgvinculo`.
 
 ## Objetivo
 
@@ -8,11 +8,10 @@ Estabilizar a mesa virtual para uma nova rodada de simulação entre Mestre e jo
 
 ## Estado atual
 
-- As 8 campanhas e os 15 personagens existentes foram apagados a pedido do proprietário. As tabelas e os catálogos foram preservados.
-- Verificação após a limpeza: `campaigns`, `characters`, `members`, `campaign_log`, `tokens` e `srd_character_sheets` estão com zero registros.
+- Snapshot do banco em 01/11/2026: `campaigns` 3, `characters` 7, `members` 7, `campaign_log` 142, `tokens` 0 e `srd_character_sheets` 7. Não foram apagados dados nesta etapa.
 - O banco tem catálogos distintos para D&D 3.5 (`srd_*`) e Vínculo (`vinculo_*`). Eles não devem ser misturados.
-- Contagens atuais: D&D 3.5 — 114 equipamentos, 14 magias, 7 raças, 11 classes, 6 talentos, 38 perícias e 10 monstros. Vínculo — 16 classes, 160 habilidades de classe, 95 magias, 191 itens e 72 talentos.
-- A relação `srd_character_equipment` e colunas compatíveis com a aplicação foram criadas em `srd35_schema_reconciliation.sql`, com RLS de leitura por dono/Mestre e RPCs protegidas para entregar, equipar e usar poções de cura. O inventário está vazio porque as campanhas/personagens foram removidos. O esquema legado foi preservado.
+- Contagens atuais: D&D 3.5 — 1.021 equipamentos, 601 magias, 7 raças, 11 classes, 110 talentos, 49 perícias e 445 monstros; ainda há 7 progressões de magia, 385 arquétipos NPC e 11 pacotes iniciais. Vínculo — 16 classes, 160 habilidades de classe, 95 magias, 191 itens e 72 talentos.
+- A relação `srd_character_equipment` e colunas compatíveis com a aplicação foram criadas em `srd35_schema_reconciliation.sql`, com RLS de leitura por dono/Mestre e RPCs protegidas para entregar, equipar e usar poções de cura. O inventário de personagem tem 20 registros e o inventário de tokens tem 1 registro. O esquema legado foi preservado.
 - A função `mover_token_player_cba` tinha permissão efetiva para `anon`; o acesso foi revogado. A verificação posterior mostrou `anon_can_execute=false` e `authenticated=true`. O advisor deixou de apontar função SECURITY DEFINER acessível a anônimos; ainda há avisos genéricos para funções SECURITY DEFINER acessíveis a usuários autenticados, que exigem revisão de autorização por função.
 - O fluxo de ataque foi atualizado para extrair CA numérica, resolver acerto/erro e abrir dado 3D de dano apenas em acerto; falta simulação ponta a ponta e o dano calculado ainda precisa ser aplicado pelo Mestre aos PV do token.
 - O Grimório atual usa botões estreitos de texto, sem campo de imagem no catálogo. O fundo de papel é esticado pelo CSS para 100% da largura e altura do modal, o que pode deformar a textura; as classes também estão sem dados técnicos e fontes no banco.
@@ -59,10 +58,12 @@ Estabilizar a mesa virtual para uma nova rodada de simulação entre Mestre e jo
 
 ### Lacunas confirmadas no catálogo D&D 3.5
 
-- Contagens atuais: 114 equipamentos, 14 magias, 7 raças, 11 classes, 6 talentos, 38 perícias, 10 monstros e 4 progressões de magia.
-- As 14 magias não têm URL de fonte. As 11 classes estão com `dados_tecnicos={}` e sem URL de fonte. Só 2 dos 6 talentos têm requisitos preenchidos. Os 10 monstros têm CA e PV, mas isso não representa o catálogo completo de monstros SRD.
-- A tabela de equipamentos contém categorias legadas e dados mecânicos incompletos; não há catálogo estruturado de itens mágicos. A tabela de classes não contém a progressão/recursos de cada classe por nível. Não existe ainda catálogo completo de condições e regras.
-- Conteúdo completo dos livros oficiais de Jogador, Mestre e Monstros não é equivalente ao SRD/OGL e inclui texto, nomes e imagens classificados como Product Identity. O escopo confirmado é preencher o SRD 3.5/OGL, registrar licença/fontes e criar resumos originais para material fora desse escopo, sem transcrever livros ou copiar ilustrações.
+- Contagens atuais do snapshot de 01/11/2026: 1.021 equipamentos, 601 magias, 7 raças, 11 classes, 110 talentos, 49 perícias, 445 monstros e 7 progressões de magia. Há ainda 385 arquétipos NPC e 11 pacotes iniciais.
+- Esses números são inventário, não atestado de completude. As 11 linhas da auditoria de cobertura permanecem pendentes e com zero entradas verificadas. Fontes/licenças precisam ser associadas e cada entrada validada.
+- Domínios, características de classe por nível, condições SRD e efeitos tipados de magia ainda estão vazios. A progressão numérica das classes e os espaços de magia foram normalizados, mas não substituem a implementação de habilidades, talentos, regras de conjuração ou efeitos.
+- Equipamentos, magias, monstros e progressões atuais ainda precisam de conferência de campos e efeitos mecânicos; as interfaces existentes não constituem o motor completo.
+- O escopo confirmado é SRD 3.5/OGL, mantendo Vínculo em catálogo separado. Livros não SRD não serão copiados integralmente; registrar fonte/licença autorizada e usar resumos próprios quando necessário.
+
 
 ## Caminho de implementação
 
@@ -114,3 +115,18 @@ Estabilizar a mesa virtual para uma nova rodada de simulação entre Mestre e jo
 - Nenhuma rolagem pendente duplicada após recarregar; iniciativa e turnos coerentes.
 - O ataque informa acerto/erro automaticamente; apenas acertos abrem o dado de dano; PV e log são atualizados sem ambiguidade.
 - Um jogador consegue criar uma ficha válida pelo fluxo guiado sem ajuda externa, e o Mestre consegue preparar a mesa e iniciar o combate.
+
+
+## Fundação do motor SRD 3.5/OGL — 01/11/2026
+
+Migração aplicada ao Supabase de produção: `srd35_rule_engine_foundation` (`20261101201351`). A migração é aditiva e preservou campanhas, personagens e fichas.
+
+- Progressões de classe: 220 linhas (11 classes × 20 níveis), geradas dos campos de progressão já existentes.
+- Progressões de espaços de magia: 1.400 linhas normalizadas (7 classes conjuradoras × 20 níveis × 10 círculos).
+- Trilhas de classe: 7 registros de personagem preservados e copiados para a relação normalizada.
+- Catálogo de origem/licença, regrasets, módulos por campanha, características por nível, domínios, grimório, magias conhecidas/preparadas, estado de espaços, condições, efeitos e auditoria de cobertura agora têm estrutura própria.
+- O catálogo de cobertura mantém 11 categorias como pendentes, sem alegar completude por contagem. Classes, equipamento, talentos, raças, perícias, monstros e magias precisam ser conferidos entrada por entrada e associados às fontes autorizadas.
+- Domínios, características por nível, condições SRD e efeitos tipados de magia continuam sem registros; estes módulos foram preparados, não preenchidos. As listas de domínio e os efeitos por magia ainda não são aplicados pelo motor.
+- RLS está ativa nas novas tabelas; consultas autenticadas de leitura são permitidas, leitura anônima e gravação direta autenticada estão bloqueadas. Escrita de estado de jogo deverá passar por operações validadas do servidor.
+
+A especificação normativa de módulos, dependências e critérios de cobertura está em `DND35_RULE_ENGINE_ARCHITECTURE.md`. “Completo” só poderá ser declarado quando os catálogos forem verificados por fonte e cada regra automatizável tiver um resolver e cenários de aceitação. O texto integral de livros não SRD não é parte desta ingestão.
