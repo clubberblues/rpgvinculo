@@ -79,3 +79,10 @@ Na mesa, Mestre e jogador recebem identificações e ações próprias. O menu d
 
 A ficha recebeu um tema de HUD rústico e um guia contextual na criação: ao focar um campo de nome, atributo, perícia, talento ou grimório, aparece uma explicação que pode ser fechada ou dispensada. Os dados da ficha continuam carregados pelo identificador de personagem e protegidos pelas políticas/RPCs existentes; o parâmetro `role=gm` altera recursos de interface legados, não concede acesso no banco.
 
+
+## Correções de combate de tokens (01/11/2026)
+
+A migração `srd35_cba_token_combat_migration.sql` foi aplicada ao Supabase conectado. A nova RPC `adicionar_token_cba_completo` mantém no CBA os dados de combate que o banco antes descartava (bloco SRD, CA, PV, Destreza, bônus/fórmula de ataque e estado de magia); ela delega a validação de Mestre, identidade e posição à RPC existente. `alterar_pv_token_cba(bigint,text,integer,integer)` permite ao Mestre aplicar dano/cura em NPCs e monstros, limita PV ao máximo e devolve a cena atualizada. A assinatura fica disponível no cache do PostgREST após o aviso de recarga emitido pela migração.
+
+Na mesa, o botão **Adicionar à mesa** do bestiário usa o catálogo definido antes do clique e salva tokens com as estatísticas numéricas. Fichas do Mestre usadas como NPCs levam PV, CA, atributos e arma equipada para o token. Armas equipadas no inventário do token substituem a fórmula de dano padrão; o ataque também usa o modificador de Força registrado. O rodapé organiza todos os cards pela iniciativa a partir do combatente atual, fazendo a fila avançar para a esquerda com movimento suave (respeitando a preferência do sistema por movimento reduzido). Os cards mostram PV, CA, bônus de ataque e dado de dano quando esses dados estão disponíveis.
+
