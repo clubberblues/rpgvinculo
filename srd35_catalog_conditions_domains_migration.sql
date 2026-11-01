@@ -324,7 +324,7 @@ BEGIN
     'slot_level',p_slot_level,'slots_remaining',v_slots_remaining,'slots_total',v_slot_total
   );
 END
-$function$
+$function$;
 
 
 COMMIT;
