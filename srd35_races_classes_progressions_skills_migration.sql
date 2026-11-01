@@ -21,7 +21,7 @@ ON CONFLICT (id) DO UPDATE SET
 UPDATE public.srd_skills
 SET source_status='excluded',
     source_notes='Não é uma perícia autônoma do SRD D&D 3.5 ou é um duplicado. Preservada para não quebrar fichas antigas.'
-WHERE id IN ('atletismo','enganacao','intuicao','natação','fuga','srd35_skill_knowledge');
+WHERE id IN ('atletismo','enganacao','intuicao','natação','srd35_skill_knowledge');
 
 UPDATE public.srd_skills
 SET treinada_apenas=false,
