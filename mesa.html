@@ -354,6 +354,69 @@ button,input,textarea{font-family:inherit}
   .tabuleiro{min-height:280px}
   .turno-info{display:none}
 }
+
+/* VÍNCULO TACTICAL HUD · REDESIGN 2026 */
+:root{--hud-ink:#090d15;--hud-panel:#111a28;--hud-raised:#182538;--hud-line:#34465e;--hud-gold:#e0b65c;--hud-gold-soft:#f3d993;--hud-paper:#f4ecd9;--hud-muted:#9ba9bb;--hud-green:#70d59a;--hud-red:#e87868;--hud-blue:#77baff;--hud-shadow:0 16px 42px rgba(0,0,0,.4)}
+body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--hud-ink) 78%);color:var(--hud-paper)}
+.mesa{gap:0;background:linear-gradient(180deg,rgba(12,18,29,.3),rgba(7,11,18,.8))}
+.mesa-header{min-height:68px;padding:10px 22px;background:linear-gradient(180deg,#18273a,#101827);border-bottom:1px solid var(--hud-gold);box-shadow:0 5px 24px #0008}
+.titulo-mesa .nome{font-size:17px;letter-spacing:3px;color:var(--hud-gold-soft)}
+.titulo-mesa .estado{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border:1px solid currentColor;border-radius:999px;background:#080d16a8;font:700 9px 'Cinzel',serif;letter-spacing:2px}
+.estado.COMBATE{color:#ff9383;text-shadow:0 0 12px #e34d4d66}.estado.EXPLORACAO{color:#8be4ad}.estado.PAUSA{color:var(--hud-gold)}
+.btn-voltar{border-color:#52647b;color:#c2cddd;border-radius:999px;padding:8px 14px}.btn-voltar:hover{background:#253750;border-color:var(--hud-gold);color:var(--hud-gold-soft)}
+.turno-info{padding:7px 12px;border:1px solid #3a4c63;border-radius:999px;background:#0b111c;color:var(--hud-gold-soft);font-size:9px}
+.mesa-corpo{grid-template-columns:clamp(260px,21vw,340px) minmax(0,1fr) clamp(220px,17vw,290px)}
+.col-esq,.col-dir{background:linear-gradient(180deg,#101a29f5,#0b111bf7)}
+.col-esq{border-right:1px solid #35455a}.col-dir{border-left:1px solid #35455a;padding:14px 12px;gap:8px}
+.painel + .painel{border-top:1px solid #34465e}
+.painel-cab{background:linear-gradient(90deg,#1d2c40,#142033 78%);border-bottom:1px solid #2d3e54;padding:11px 15px;color:var(--hud-gold-soft);font-size:9px;letter-spacing:2.5px}
+.painel-corpo{padding:13px 15px}
+.chat-msg{font-size:14px;line-height:1.5}.chat-msg .autor{color:var(--hud-gold-soft)}
+.chat-msg.sistema{color:#b5c1d0;border-color:#33445a}.chat-msg.rolagem{background:linear-gradient(90deg,#e0b65c17,transparent);border-left-color:var(--hud-gold);padding:8px 10px}
+.chat-input{background:#111b2a;border-top:1px solid #314258;padding:10px}
+.chat-input input{background:#080e18;border-color:#34475f;border-radius:8px}.chat-input button{border-radius:8px;background:linear-gradient(180deg,#f0cb75,#c2923e);box-shadow:0 3px 10px #0006}
+.jogador{padding:8px 9px;border:1px solid transparent;border-radius:8px}.jogador:hover{background:#ffffff08;border-color:#34465e}.jogador.eu{border-left:2px solid var(--hud-green);background:linear-gradient(90deg,#70d59a12,transparent)}
+.jogador-avatar{width:38px;height:38px;border-color:#53657d;background-color:#192940}.jogador-papel{font-size:8px;letter-spacing:1.5px}
+.tabuleiro{background-color:#080c12;background-image:radial-gradient(ellipse at center,#182536 0,transparent 70%)}
+#cba-bg-live{filter:saturate(.88) brightness(.84)}
+.btn-acao{position:relative;min-height:44px;padding:11px 12px;border:1px solid #34475f;border-radius:8px;background:linear-gradient(145deg,#1b2a3e,#111a28);color:#edc875;font-size:10px;letter-spacing:1.1px;box-shadow:0 3px 9px #0004;overflow:hidden}
+.btn-acao:before{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 25%,#ffffff0a 50%,transparent 75%);transform:translateX(-110%);transition:transform .45s;pointer-events:none}
+.btn-acao:hover{transform:translateY(-1px);background:linear-gradient(145deg,#263a53,#172438);border-color:var(--hud-gold);color:#fff1c9;box-shadow:0 6px 16px #0006,0 0 0 1px #e0b65c20}.btn-acao:hover:before{transform:translateX(110%)}
+.btn-acao.destaque{background:linear-gradient(145deg,#b94640,#782e31);border-color:#e87868;box-shadow:0 4px 14px #752e3155}.btn-acao.destaque:hover{background:linear-gradient(145deg,#d2584d,#91373a)}
+.cards-strip{min-height:108px;padding:10px 14px;background:linear-gradient(180deg,#121c2a,#0a1019);border-top:1px solid var(--hud-gold);gap:9px}
+.card-pers{position:relative;min-width:230px;padding:9px 11px;border:1px solid #34465d;border-radius:9px;background:linear-gradient(145deg,#19273a,#101927);box-shadow:0 4px 13px #0005}
+.card-pers:hover{transform:translateY(-2px);border-color:#d8b762;background:linear-gradient(145deg,#24364c,#152236)}
+.card-pers.turno-ativo{border:1px solid #f2ca69;background:linear-gradient(145deg,#40371f,#192537);box-shadow:0 0 0 1px #f2ca6940,0 0 20px #f2ca6940;animation:brilho-turno 1.8s ease-in-out infinite alternate}
+.card-pers-avatar{width:50px;height:50px;border-color:#566a82;border-radius:7px}.card-pers-nome{font-size:11px}.card-pers-classe{font-size:11px;color:#afbdd0}.card-pers-pv{height:7px;border-radius:99px}.card-pers-pv-bar{border-radius:99px}
+#painel-iniciativa{top:80px;width:min(76vw,880px);max-height:22vh;padding:10px 14px;border:1px solid #c9a050aa;border-radius:12px;background:linear-gradient(145deg,#0d1522f2,#172438ee);box-shadow:var(--hud-shadow),0 0 32px #0008;pointer-events:none}
+.iniciativa-titulo{font-size:10px;color:#f4d07a;letter-spacing:2.5px}.iniciativa-titulo:before{content:'⚔  '}.iniciativa-titulo:after{content:'  ⚔'}
+#iniciativa-status{color:#b0bdcc;font-size:12px;margin-bottom:8px}#fila-iniciativa{gap:7px}
+.iniciativa-item{position:relative;min-width:112px;padding:8px 10px;border:1px solid #364a63;border-radius:8px;background:linear-gradient(145deg,#1a2a40,#111b2a);color:#d6dfeb;font-size:10px}
+.iniciativa-item .valor{color:#d7b65f;font-size:9px}.iniciativa-item.ativo{background:linear-gradient(145deg,#f2d17c,#bd8c3e);border-color:#ffe9ad;color:#1a1a18;box-shadow:0 0 20px #e0b65c66}.iniciativa-item.ativo .valor{color:#48371a}
+.iniciativa-mover{border-radius:6px;background:#0e1622}
+.token-cba{box-shadow:0 5px 16px #000b,0 0 0 3px #080d16aa;font-size:16px}
+.token-cba.monstro{border-color:#f07868;box-shadow:0 5px 16px #000b,0 0 0 3px #401f23aa}.token-cba.npc{border-color:#80dca2}.token-cba.player{border-color:#81bcff;box-shadow:0 5px 16px #000b,0 0 0 3px #172e49aa}
+.token-cba .token-nome{top:calc(100% + 5px);max-width:150px;padding:3px 8px;border:1px solid #647083;border-radius:999px;background:#0b111deF;color:#f7f0df;font-size:11px;box-shadow:0 3px 8px #0007}
+.token-cba .token-hp{top:calc(100% + 25px);height:6px;border-color:#080d16}
+#token-context-menu{background:linear-gradient(145deg,#19283c,#0d1522);border:1px solid var(--hud-gold);border-radius:10px;box-shadow:var(--hud-shadow)}
+.ctx-btn{border-radius:7px;background:#111b2a;border-color:#354960;color:#f0d080}.ctx-btn:hover{background:#d7ad58;border-color:#f2d88d}
+.quick-tabs{gap:6px;background:#101a29;border-bottom:1px solid #314258}.quick-tabs button{border-radius:7px;background:linear-gradient(145deg,#19283b,#111a28);border-color:#34475e;color:#b5c2d1;font-size:10px;letter-spacing:.7px}
+.quick-tabs button[aria-selected="true"]{background:linear-gradient(145deg,#594a2b,#263247);border-color:#e0b65c;color:#ffe6a0;box-shadow:inset 0 -2px #e0b65c}
+.modal-reforco-card,.equip-modal-card,.modal-final-card,.card-xp{border:1px solid #c9a050;border-radius:12px;background:linear-gradient(145deg,#172538,#0d1521);box-shadow:0 24px 70px #000b}
+.modal-reforco-head,.equip-modal-header,.xp-header{background:linear-gradient(180deg,#1d2d42,#101a29);border-color:#35465b}.modal-reforco-head h2,.equip-modal-header h2,.xp-header h2{color:#f0d080;letter-spacing:1.5px}
+.modal-reforco-body,.equip-modal-body{background:linear-gradient(180deg,#121d2c,#0d1521)}
+.card-catalogo,.card-equipamento,.destinatario-equipamento{border-color:#34475e;border-radius:9px;background:linear-gradient(145deg,#1a293c,#111a28)}
+.card-catalogo:hover,.card-equipamento:hover,.destinatario-equipamento:hover{border-color:#e0b65c;box-shadow:0 8px 20px #0006,0 0 0 1px #e0b65c20}
+.card-catalogo .nome,.equip-nome{color:#f3d78f}.card-catalogo .detalhe,.equip-info{color:#a7b6c8}
+.npc-generator{padding:16px;border:1px solid #34475e;border-radius:10px;background:linear-gradient(145deg,#17263a,#0d1521);box-shadow:inset 0 1px #ffffff08}
+.npc-generator label{font-size:9px;letter-spacing:1px}.npc-generator select,.npc-generator input{border-color:#3e526b;border-radius:7px;background:#0b121e}.npc-generator button{border-radius:7px;background:linear-gradient(180deg,#f0cc78,#bd8f43);box-shadow:0 4px 14px #0006}
+.npc-archetype-card{border-color:#354a62;border-radius:9px;background:linear-gradient(145deg,#1b2b40,#101a28);box-shadow:0 5px 14px #0004}.npc-archetype-card strong{color:#f4d887}.npc-archetype-card p{color:#bfcbda}.npc-archetype-card button{border-radius:6px;background:#111b29}.npc-archetype-card button:hover{background:#d2a94e;color:#141414}
+#painel-economia{border:1px solid #c9a050aa;border-radius:10px;background:linear-gradient(145deg,#152338f2,#0d1522f5);box-shadow:var(--hud-shadow)}.economia-titulo{color:#f0d080;letter-spacing:1.5px}.acao-box{border-radius:7px;border-color:#354960;background:#111b29;color:#8be0a8}.acao-box.usada{color:#ff9383}
+.modal-final-card h2{color:#f0d080}.modal-final-card p{color:#bdc7d3}.modal-final-card input,.modal-final-card select{border-color:#40546c;border-radius:7px;background:#0b121e}.modal-final-actions button{border-radius:7px}.modal-final-actions .confirm{background:linear-gradient(145deg,#be4943,#7b3032);border-color:#e87868}
+#btn-encerrar-turno-player{border-radius:999px;background:linear-gradient(145deg,#bc463f,#772d30);box-shadow:0 7px 24px #0008,0 0 24px #be494355}
+@media(max-width:900px){.mesa-header{padding:9px 12px}.mesa-corpo{gap:0}.col-esq,.col-dir{background:#0d1522}.cards-strip{min-height:100px}.card-pers{min-width:210px}#painel-iniciativa{top:74px;width:min(90vw,820px)}}
+@media(max-width:600px){.mesa-header{min-height:58px}.titulo-mesa .nome{font-size:13px;letter-spacing:1.5px}.mesa-corpo{grid-template-columns:1fr}.col-esq{border:0}.col-dir{border-top:1px solid #35465b}.tabuleiro{background-color:#080c12}.cards-strip{padding:8px}.card-pers{min-width:195px}.iniciativa-item{min-width:82px}.npc-generator{grid-template-columns:1fr}.npc-generator button{grid-column:auto}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
 </style>
 </head>
 <body>
