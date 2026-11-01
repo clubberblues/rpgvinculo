@@ -1466,11 +1466,29 @@ body:has(.ficha.dnd35-mode){display:block;background:radial-gradient(ellipse at 
   }
   function dnd35FeatIsWeaponFocus(feat) { return /weapon focus|foco em arma/.test(dnd35Norm(feat && feat.nome)); }
   function dnd35ReqNumber(value) { if (value == null || value === '') return null; var n = Number(value); return Number.isFinite(n) ? n : null; }
-  function dnd35FeatWarnings(feat, attrs, state) {
-    var req=dnd35Objeto(feat.requisitos), out = [], reqFor = dnd35ReqNumber(feat.for_min != null ? feat.for_min : req.for_min), reqDes = dnd35ReqNumber(feat.des_min != null ? feat.des_min : req.des_min), reqBab = dnd35ReqNumber(feat.bab_min != null ? feat.bab_min : req.bab_min);
-    if (reqFor != null && Number(attrs.FOR) < reqFor) out.push('Requer FOR ' + reqFor + '.');
-    if (reqDes != null && Number(attrs.DES) < reqDes) out.push('Requer DES ' + reqDes + '.');
-    if (reqBab != null && dnd35Bab(state) < reqBab) out.push('Requer BBA +' + reqBab + '.');
+  function dnd35FeatParameterType(feat) { return String(dnd35Objeto(feat&&feat.requisitos).parameter_type||''); }
+  function dnd35FeatParameterLabel(feat) { var type=dnd35FeatParameterType(feat);return ({weapon:'Arma escolhida',weapon_exotic:'Arma exótica escolhida',weapon_martial:'Arma marcial escolhida',crossbow:'Tipo de besta',spell_school:'Escola de magia',skill:'Perícia escolhida',spell_list:'Magias de Maestria'}[type]||(dnd35FeatIsWeaponFocus(feat)?'Arma escolhida':'Parâmetro')); }
+  function dnd35FeatParameterHint(feat,attrs) { var type=dnd35FeatParameterType(feat);if(type==='weapon_exotic')return 'Informe uma arma exótica do catálogo; espada bastarda e machado de guerra anão também exigem FOR 13.';if(type==='weapon_martial')return 'Informe uma arma marcial do catálogo.';if(type==='crossbow')return 'Escolha besta de mão, besta leve ou besta pesada.';if(type==='spell_school')return 'Informe uma escola de magia; talentos encadeados precisam repetir a mesma escola.';if(type==='skill')return 'Informe uma perícia do catálogo.';if(type==='spell_list')return 'Mago: escolha '+Math.max(0,dnd35Modificador(Number(attrs.INT)||10))+' magia(s) já conhecida(s), separadas por vírgula.';if(type==='weapon')return 'Informe a arma; talentos encadeados precisam repetir a mesma escolha.';return 'Informe a escolha específica exigida por este talento.'; }
+  function dnd35FeatParamNorm(value) { var n=dnd35Norm(value),aliases={'bastard sword':'espada bastarda','dwarven waraxe':'machado de guerra anao','conjuration':'conjuracao','abjuration':'abjuracao','divination':'adivinhacao','enchantment':'encantamento','evocation':'invocacao','illusion':'ilusao','necromancy':'necromancia','transmutation':'transmutacao'};return aliases[n]||n; }
+  function dnd35FeatWarnings(feat, attrs, state, pickIndex, featParameter) {
+    var req=dnd35Objeto(feat.requisitos),out=[],abilities=[['FOR','for_min'],['DES','des_min'],['CON','con_min'],['INT','int_min'],['SAB','sab_min'],['CAR','car_min']];
+    var weaponChoice=dnd35FeatParamNorm(featParameter||(state.featPicks&&state.featPicks[pickIndex]&&state.featPicks[pickIndex].parametro)||'');
+    abilities.forEach(function(pair){var minimum=dnd35ReqNumber(feat[pair[1]]!=null?feat[pair[1]]:req[pair[1]]);if(feat.id==='srd35_feat_exotic_weapon_proficiency'&&pair[1]==='for_min'&&['espada bastarda','machado de guerra anao'].indexOf(weaponChoice)<0)return;if(minimum!=null&&Number(attrs[pair[0]])<minimum)out.push('Requer '+pair[0]+' '+minimum+'.');});
+    if(feat.id==='srd35_feat_exotic_weapon_proficiency'&&['espada bastarda','machado de guerra anao'].indexOf(weaponChoice)>=0&&Number(attrs.FOR)<13)out.push('Espada bastarda e machado de guerra anão exigem FOR 13.');
+    var reqBab=dnd35ReqNumber(feat.bab_min!=null?feat.bab_min:req.bab_min);if(reqBab!=null&&dnd35Bab(state)<reqBab)out.push('Requer BBA +'+reqBab+'.');
+    var level=Math.max(1,Number(state.sheet&&state.sheet.nivel)||1),reqLevel=dnd35ReqNumber(req.character_level_min);if(reqLevel!=null&&level<reqLevel)out.push('Requer nível de personagem '+reqLevel+'.');
+    var reqClassLevel=dnd35ReqNumber(req.class_level_min),requiredClass=dnd35Norm(req.class_key_required||''),classValues=state.classe||{},classKey=dnd35SpellClassKey(classValues.class_key||classValues.nome||classValues.id);if(reqClassLevel!=null&&(!classKey||requiredClass&&classKey!==requiredClass||level<reqClassLevel))out.push('Requer nível '+reqClassLevel+' na classe indicada.');
+    var reqCaster=dnd35ReqNumber(req.caster_level_min);if(reqCaster!=null){var casterLevel=0;if(['wizard','sorcerer','cleric','druid','bard'].indexOf(classKey)>=0)casterLevel=level;else if(classKey==='paladin'||classKey==='ranger')casterLevel=Math.max(0,level-3);if(casterLevel<reqCaster)out.push('Requer nível de conjurador '+reqCaster+'.');}
+    var ranks=dnd35Objeto(state.sheet&&state.sheet.pericias);Object.keys(req.skill_ranks||{}).forEach(function(skillId){var minimum=Number(req.skill_ranks[skillId])||0;if((Number(ranks[skillId])||0)<minimum){var skill=(state.skills||[]).find(function(s){return String(s.id)===String(skillId);});out.push('Requer '+(skill?skill.nome:skillId)+' '+minimum+' graduação(ões).');}});
+    var saved=dnd35Objeto(state.sheet&&state.sheet.talentos),owned=Array.isArray(saved)?saved.map(function(x){return String(x&&x.id||x);}):[],picks=state.featPicks||[];picks.forEach(function(p,i){if(p&&p.id&&i!==Number(pickIndex))owned.push(String(p.id));});
+    (Array.isArray(req.feat_ids)?req.feat_ids:[]).forEach(function(id){if(owned.indexOf(String(id))<0){var prerequisite=(state.feats||[]).find(function(f){return String(f.id)===String(id);});out.push('Requer o talento '+(prerequisite?prerequisite.nome:id)+'.');}});
+    var featParams=req.feat_parameters||{};Object.keys(featParams).forEach(function(id){var needed=dnd35FeatParamNorm(featParams[id]),has=owned.some(function(ownedId){return String(ownedId)===String(id);});if(has){var selected=picks.find(function(p){return String(p&&p.id)===String(id);}),existing=Array.isArray(saved)?saved.find(function(p){return String(p&&p.id)===String(id);}):null,parameter=dnd35FeatParamNorm((selected&&selected.parametro)||(existing&&existing.parametro)||'');if(parameter!==needed)out.push('O talento pré-requisito precisa do parâmetro correto.');}});
+    (Array.isArray(req.feat_parameter_matches)?req.feat_parameter_matches:[]).forEach(function(id){if(!owned.some(function(ownedId){return String(ownedId)===String(id);}))return;var selected=picks.find(function(p){return String(p&&p.id)===String(id);}),existing=Array.isArray(saved)?saved.find(function(p){return String(p&&p.id)===String(id);}):null,parameter=dnd35FeatParamNorm((selected&&selected.parametro)||(existing&&existing.parametro)||'');if(!parameter||parameter!==dnd35FeatParamNorm(featParameter||(state.featPicks&&state.featPicks[pickIndex]&&state.featPicks[pickIndex].parametro)||''))out.push('Este talento exige a mesma arma ou escola do talento pré-requisito.');});
+    if(dnd35FeatParameterType(feat)==='spell_list'){
+      var intMod=dnd35Modificador(Number(attrs.INT)||10),selectedSpells=String(featParameter||(state.featPicks&&state.featPicks[pickIndex]&&state.featPicks[pickIndex].parametro)||'').split(/[,;\n]/).map(function(x){return x.trim();}).filter(Boolean);
+      if(selectedSpells.length!==Math.max(0,intMod))out.push('Spell Mastery exige escolher '+Math.max(0,intMod)+' magia(s), conforme seu modificador de INT.');
+      if(new Set(selectedSpells.map(dnd35FeatParamNorm)).size!==selectedSpells.length)out.push('Não repita a mesma magia em Spell Mastery.');
+    }
     return out;
   }
 
@@ -1512,19 +1530,21 @@ body:has(.ficha.dnd35-mode){display:block;background:radial-gradient(ellipse at 
     for (var i=0;i<count;i++) {
       var pick = picks[i] || {id:'',parametro:''}, feat = state.feats.filter(function(f) { return String(f.id) === String(pick.id); })[0];
       var optionHtml = '<option value="">Escolha um talento…</option>'+state.feats.map(function(f) { return '<option value="'+esc(String(f.id))+'"'+(String(f.id)===String(pick.id)?' selected':'')+'>'+esc(f.nome)+'</option>'; }).join('');
-      var needsParam = !!(feat && (feat.exige_parametro || dnd35FeatIsWeaponFocus(feat)));
-      var reqText = feat && feat.requisitos != null ? (typeof feat.requisitos === 'string' ? feat.requisitos : JSON.stringify(feat.requisitos)) : '';
-      var paramHtml = needsParam ? '<div class="dnd35-feat-control"><label for="feat-param-'+i+'">'+(dnd35FeatIsWeaponFocus(feat)?'Arma escolhida':'Parâmetro')+'</label><input id="feat-param-'+i+'" data-feat-param="'+i+'" maxlength="80" value="'+esc(pick.parametro||'')+'" placeholder="Informe o parâmetro"></div>' : '';
-      var warnings = feat ? dnd35FeatWarnings(feat,attrs,state) : [];
-      if (feat && needsParam && !String(pick.parametro||'').trim()) warnings.push('Informe o parâmetro exigido.');
+      var paramType=feat?dnd35FeatParameterType(feat):'',needsParam = !!(feat && (feat.exige_parametro || paramType || dnd35FeatIsWeaponFocus(feat)));
+      var reqData=feat?dnd35Objeto(feat.requisitos):{},reqText=feat?(typeof reqData==='string'?reqData:String(reqData.raw||'')):'';
+      var paramRequired=!!(feat&&feat.exige_parametro)&&!(paramType==='spell_list'&&dnd35Modificador(Number(attrs.INT)||10)<=0);
+      var paramHtml = needsParam ? '<div class="dnd35-feat-control"><label for="feat-param-'+i+'">'+esc(dnd35FeatParameterLabel(feat))+'</label><input id="feat-param-'+i+'" data-feat-param="'+i+'" maxlength="240" value="'+esc(pick.parametro||'')+'" placeholder="'+(paramType==='crossbow'?'Mão, leve ou pesada':paramType==='spell_list'?'Magias separadas por vírgula':'Informe a escolha')+'" aria-describedby="feat-param-hint-'+i+'"><small id="feat-param-hint-'+i+'">'+esc(dnd35FeatParameterHint(feat,attrs))+'</small></div>' : '';
+      var warnings = feat ? dnd35FeatWarnings(feat,attrs,state,i,pick.parametro) : [];
+      if (feat && paramRequired && !String(pick.parametro||'').trim()) warnings.push('Informe o parâmetro exigido.');
       if (feat && dnd35FeatIsWeaponFocus(feat)) warnings.push('A arma escolhida deve ser uma arma com a qual seu personagem seja proficiente; a ficha não possui dados de proficiência para validar isso.');
       html += '<article class="dnd35-feat"><div class="dnd35-feat-head"><strong>Talento '+(i+1)+(dnd35IsHuman(state.raca)&&i===1?' · bônus humano':'')+'</strong></div><div class="dnd35-feat-control"><label for="feat-'+i+'">Escolha</label><select id="feat-'+i+'" data-feat="'+i+'">'+optionHtml+'</select></div>'+
-        (feat ? '<p>'+esc(feat.descricao||'Sem descrição.')+'</p>'+(reqText?'<p>Pré-requisitos: '+esc(reqText)+'</p>':'') : '')+paramHtml+(warnings.length?'<div class="dnd35-warning">'+warnings.map(esc).join(' ')+'</div>':'')+'</article>';
+        (feat ? '<p>'+esc(feat.descricao||'Sem descrição.')+'</p>'+(reqText?'<p>Pré-requisitos: '+esc(reqText)+'</p>':'')+(feat.srd_source_url?'<p><a href="'+esc(feat.srd_source_url)+'" target="_blank" rel="noopener noreferrer">Consultar fonte SRD ↗</a></p>':'') : '')+paramHtml+(warnings.length?'<div class="dnd35-warning">'+warnings.map(esc).join(' ')+'</div>':'')+'</article>';
     }
     return html;
   }
 
-  function dnd35SpellClassKey(value) {
+  
+function dnd35SpellClassKey(value) {
     var raw=String(value==null?'':value).toLowerCase();
     if(raw.normalize)raw=raw.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
     raw=raw.replace(/[^a-z0-9]/g,'');
@@ -1775,8 +1795,8 @@ body:has(.ficha.dnd35-mode){display:block;background:radial-gradient(ellipse at 
 
   async function carregarCatalogosSRD35() {
     var results=await Promise.all([
-      sb.from('srd_skills').select('id,nome,atributo,treinada_apenas,penalidade_armadura,descricao,srd_source_url,dados_tecnicos,source_status'),
-      sb.from('srd_feats').select('id,nome,descricao,requisitos,exige_parametro'),
+      sb.from('srd_skills').select('id,nome,atributo,treinada_apenas,penalidade_armadura,descricao,srd_source_url,dados_tecnicos,source_status').neq('source_status','excluded'),
+      sb.from('srd_feats').select('id,nome,descricao,requisitos,exige_parametro,srd_source_url'),
       sb.from('srd_spells').select('id,nome,nivel,circulo,escola,alcance,alvo,area,duracao,componentes,classes,descricao,dados_tecnicos,srd_source_url'),
       sb.from('srd_spell_progressions').select('class_key,slots_by_level,known_by_level'),
       sb.from('srd_domains').select('domain_id,name,granted_power_summary,mechanics,source_url,verification_status').order('name'),
@@ -1839,8 +1859,8 @@ body:has(.ficha.dnd35-mode){display:block;background:radial-gradient(ellipse at 
     var selected=picks.map(function(p){return state.feats.filter(function(f){return String(f.id)===String(p.id);})[0];});
     for(var i=0;i<picks.length;i++){
       var feat=selected[i];if(!feat){mostrarErro('Um dos talentos escolhidos não está no catálogo.','talentos');return;}
-      var warns=dnd35FeatWarnings(feat,attrs,state),requires=!!(feat.exige_parametro||dnd35FeatIsWeaponFocus(feat));
-      if(requires&&!String(picks[i].parametro||'').trim())warns.push('Informe o parâmetro do talento '+feat.nome+'.');
+      var paramType=dnd35FeatParameterType(feat),requires=!!(feat.exige_parametro||paramType||dnd35FeatIsWeaponFocus(feat)),paramOptional=paramType==='spell_list'&&dnd35Modificador(Number(attrs.INT)||10)<=0;
+      if(requires&&!paramOptional&&!String(picks[i].parametro||'').trim())warns.push('Informe o parâmetro do talento '+feat.nome+'.');
       if(warns.length){mostrarErro(warns[0],'talentos');return;}
     }
     var talentos=picks.map(function(p){return {id:String(p.id),parametro:String(p.parametro||'').trim()||null};});
