@@ -485,6 +485,13 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
 
 #barra-confirmar-teste{position:relative!important;left:auto!important;bottom:auto!important;transform:none!important;width:100%!important;margin:8px 0;padding:8px 9px;text-align:left;z-index:2;box-shadow:none!important}
 #barra-confirmar-teste #txt-teste-selecionado{font-size:12px;margin-bottom:6px}
+
+/* O dado abre na coluna lateral para manter o campo de batalha sempre visível. */
+#acoes-dir #dado-iframe-overlay{position:relative!important;inset:auto!important;z-index:2!important;width:100%;height:auto;min-height:0;padding:0;margin-top:8px;background:transparent;backdrop-filter:none;pointer-events:auto;align-items:stretch;justify-content:stretch}
+#acoes-dir #dado-iframe-overlay[style*="display: flex"]{display:flex!important}
+#acoes-dir .dado-card{width:100%;height:min(58vh,640px);max-width:none;max-height:none;border-radius:8px;box-shadow:none}
+@media(min-width:901px){.mesa-corpo:has(#acoes-dir #dado-iframe-overlay[style*="display: flex"]){grid-template-columns:300px minmax(0,1fr) 360px}}
+@media(max-width:900px){#acoes-dir #dado-iframe-overlay{flex:1 0 100%}#acoes-dir .dado-card{height:min(62vh,560px)}}
 </style>
 </head>
 <body>
@@ -901,7 +908,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
   }
 
   function renderBotoesAcao(){
-    var el = document.getElementById('acoes-dir');var tokenMenu=document.getElementById('token-context-menu');if(tokenMenu&&tokenMenu.parentNode)tokenMenu.parentNode.removeChild(tokenMenu);
+    var el = document.getElementById('acoes-dir');var tokenMenu=document.getElementById('token-context-menu'),diceOverlay=document.getElementById('dado-iframe-overlay');if(tokenMenu&&tokenMenu.parentNode)tokenMenu.parentNode.removeChild(tokenMenu);if(diceOverlay&&diceOverlay.parentNode)diceOverlay.parentNode.removeChild(diceOverlay);
     var estado = campanha ? (campanha.state || 'EXPLORACAO') : 'EXPLORACAO';
     
     if (ehGM) {
@@ -973,7 +980,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     combatPanel.innerHTML='<h3>CONTROLE DO TURNO</h3><p id="turno-controle-status">Aguardando a iniciativa.</p><div id="iniciativa-acoes-mestre"></div>';
     el.appendChild(combatPanel);
     if(economyPanel)combatPanel.appendChild(economyPanel);
-    if(tokenMenu)el.appendChild(tokenMenu);
+    if(tokenMenu)el.appendChild(tokenMenu);if(diceOverlay)el.appendChild(diceOverlay);
     if(document.getElementById('painel-iniciativa'))renderizarIniciativa(combatDataState);
   }
 
