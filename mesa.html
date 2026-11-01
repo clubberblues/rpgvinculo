@@ -118,7 +118,7 @@ button,input,textarea{font-family:inherit}
 #painel-iniciativa.ativo{display:block}
 .iniciativa-titulo{font-family:'Cinzel',serif;color:#c9a050;font-size:12px;letter-spacing:2px;margin-bottom:4px}
 #iniciativa-status{color:#8a9ab0;font-size:11px;margin-bottom:7px}
-#fila-iniciativa{display:flex;gap:8px;align-items:center;overflow-x:auto;padding:4px 2px}
+#fila-iniciativa{display:none!important}
 .iniciativa-item{flex:0 0 auto;min-width:100px;padding:7px 12px;border-radius:5px;border:1px solid #3a4a65;background:#141d33;color:#8a9ab0;font-family:'Cinzel',serif;font-size:11px;transition:.25s}
 .iniciativa-item .valor{display:block;color:#c9a050;font-size:10px;margin-top:3px}
 .iniciativa-item.ativo{background:#c9a050;color:#111;font-weight:900;border-color:#ffe39b;transform:scale(1.06);box-shadow:0 0 18px rgba(201,160,80,.75)}
@@ -853,8 +853,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
               '</div>'+
             '</section>'+
             '<section class="painel painel-aventureiros" style="flex:1;min-height:0">'+
-              '<div class="painel-cab">Aventureiros · Ordem de turno</div>'+
-              '<div class="painel-corpo roster-members" id="jogadores-lista"></div>'+
+              '<div class="painel-cab">Combatentes · Ordem de turno</div>'+
               '<div class="cards-strip" id="cards-strip" aria-label="Cards de combate em ordem de iniciativa"></div>'+
             '</section>'+
           '</aside>'+
@@ -3357,6 +3356,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
 
   function renderMembros(){
     var el = document.getElementById('jogadores-lista');
+    if(!el) return;
     el.innerHTML = membros.map(function(m){
       var euMesmo = m.user_id === eu.id ? ' eu' : '';
       var avatarUrl=String(m.avatar_url||'').trim();
@@ -3454,7 +3454,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     var panel=document.getElementById('painel-iniciativa');
     var priorTop=Object.create(null);
     Array.from(el.querySelectorAll('.card-pers')).forEach(function(node){priorTop[node.dataset.actorKey||node.dataset.char||node.dataset.cbaTokenKey]=node.getBoundingClientRect().top;});
-    if(panel&&panel.parentNode)panel.parentNode.removeChild(panel);
+    if(panel&&el.parentNode&&panel.parentNode!==el.parentNode)el.parentNode.insertBefore(panel,el);
 
     var turnIndex=Math.max(0,Math.min(Math.max(0,ordem.length-1),Number(combatDataState&&combatDataState.current_turn)||0));
     var active=combatDataState&&combatDataState.active&&ordem.length?ordem[turnIndex]:null;
@@ -3503,7 +3503,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
 
     cards.sort(function(a,b){return a.rank-b.rank||a.key.localeCompare(b.key);});
     el.replaceChildren();
-    if(panel)el.appendChild(panel);
+    if(panel&&panel.parentNode!==el.parentNode)el.parentNode.insertBefore(panel,el);
     if(!cards.length){var empty=document.createElement('div');empty.className='cards-empty';empty.textContent='Aguardando fichas e tokens da mesa.';el.appendChild(empty);}
     cards.forEach(function(card){var wrapper=document.createElement('div');wrapper.innerHTML=card.html;var node=wrapper.firstElementChild;if(node){el.appendChild(node);node.dataset.actorKey=card.key;}});
     if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
