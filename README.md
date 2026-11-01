@@ -96,3 +96,12 @@ A interface da mesa mostra fichas, NPCs e monstros em faixas verticais na coluna
 O controle de combate e a economia de ações ficam no painel lateral do turno ativo. Os tokens mostram CA numérica: fichas usam atributos e equipamento; monstros usam o bloco SRD; NPCs sem bloco completo recebem um valor derivado dos atributos, armadura natural e equipamento. Ao abrir a mesa como Mestre, tokens antigos sem CA são reparados e salvos na cena.
 
 Tokens do Mestre com magias preparadas podem selecionar uma delas no turno correspondente. O sistema consome a ação padrão e marca o espaço como gasto; o alcance, resistência e efeitos específicos continuam sob resolução do Mestre quando os dados da ficha não permitem cálculo automático seguro.
+
+
+## Motor de regras D&D 3.5 SRD/OGL — estado em 01/11/2026
+
+A arquitetura e a migração-base do motor estão documentadas em [DND35_RULE_ENGINE_ARCHITECTURE.md](DND35_RULE_ENGINE_ARCHITECTURE.md); o plano e a auditoria estão em [PLANO_MESTRE_MESA.md](PLANO_MESTRE_MESA.md). A migração `srd35_rule_engine_foundation_migration.sql` foi aplicada ao Supabase de produção.
+
+O estado confirmado contém 220 progressões de classe e 1.400 registros de progressão de espaços de magia, além de 7 trilhas de classe normalizadas para as fichas existentes. Os catálogos têm 7 raças, 11 classes, 49 perícias, 110 talentos, 1.021 equipamentos, 601 magias e 445 monstros. Esses totais não significam que cada entrada e regra tenha sido verificada.
+
+**O motor SRD ainda não está completo.** O ledger conserva as 11 áreas de cobertura como pendentes. Domínios, características por nível, condições, efeitos tipados de magia e estado relacional de grimório/preparação ainda não têm dados completos; cálculos e resoluções dessas regras ainda precisam ser implementados e conferidos. Nenhum livro fechado foi copiado para o catálogo.
