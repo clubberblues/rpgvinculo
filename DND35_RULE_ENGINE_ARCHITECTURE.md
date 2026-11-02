@@ -111,3 +111,10 @@ A auditoria genérica (srd_catalog_entry_audit) está em 1.403/1.403 entradas co
 O motor já possui RPCs de criação de personagem, espaços de magia, CD, inventário/equipamento, condições, dano/cura, ataque, combate e consumo de ações. As funções SECURITY DEFINER públicas tiveram search_path = public, pg_temp fixado. Testes de fumaça confirmaram CD de magia, classificação de slots, reconhecimento de classe e classificação de equipamento.
 
 Pendências remanescentes de produto, não de auditoria de fonte: executar a matriz de cenários de aceitação ponta a ponta da ficha e da mesa; revisar os 76 avisos do linter sobre RPCs SECURITY DEFINER conforme o modelo de permissões da aplicação; e habilitar a proteção contra senhas vazadas no painel de Auth do Supabase. Esses itens não foram declarados completos sem teste/decisão correspondente.
+
+
+## Correção de integração do motor — 2026-11-02
+
+A validação ponta a ponta em transação isolada encontrou e corrigiu referências legadas ao antigo modelo de tokens. As RPCs `attack`, `start_combat`, `add_monster_to_scene`, `apply_damage`, `apply_heal`, `combat_set_turn`, `set_turn`, `end_combat` e `move_token` agora usam `tokens.col/row`, `srd_character_sheets`, `monster_instances` e `srd_monsters`. A FK de `monster_instances.monster_id` também aponta para `srd_monsters`.
+
+Teste transacional executado com autenticação GM simulada: inclusão temporária de dois monstros SRD, início de combate, iniciativa, ataque, dano, cura e encerramento; todos os registros foram revertidos com ROLLBACK. O teste retornou ataque válido, defesa numérica, atualização de PV/HP e encerramento OK. Quando a fonte não fornece uma expressão de dano segura, o resultado informa dano pendente em vez de inventá-lo.
