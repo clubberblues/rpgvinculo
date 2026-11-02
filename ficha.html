@@ -1631,8 +1631,8 @@ function dnd35WeaponProficient(state,weaponName){
   }
   function dnd35LevelupFeatAllowed(feat,type,nextLevel){
     var id=String(feat&&feat.id||''),req=dnd35Objeto(feat&&feat.requisitos),category=String(req.type||'General');
-    if(type==='general')return category==='General';
-    if(type==='wizard')return category==='Item Creation'||category==='Metamagic'||id==='srd35_feat_spell_mastery';
+    if(type==='general')return category==='General'||(id==='srd35_feat_spell_mastery'&&dnd35ClassRuleKey(state.classe&&((state.classe.class_key||state.classe.nome||state.classe.id)))==='wizard');
+    if(type==='wizard')return category==='Item Creation'||category==='Metamagic';
     if(type==='monk')return nextLevel===1?['srd35_feat_improved_grapple','srd35_feat_stunning_fist'].indexOf(id)>=0:nextLevel===2?id==='srd35_feat_deflect_arrows':['srd35_feat_improved_disarm','srd35_feat_improved_trip'].indexOf(id)>=0;
     if(type==='fighter')return [
       'srd35_feat_blind_fight','srd35_feat_cleave','srd35_feat_combat_expertise','srd35_feat_deflect_arrows','esquiva',
