@@ -631,6 +631,15 @@ html,body{min-height:100%;height:100%;overflow:hidden}body{min-width:320px}
 @media(max-width:600px){.mesa{grid-template-rows:58px auto auto}.mesa-header{position:sticky;top:0}.mesa-corpo{grid-template-rows:auto minmax(44dvh,56dvh) auto}.col-esq{min-height:260px}.col-esq>.painel:first-child{min-height:185px}.col-dir{grid-template-columns:repeat(2,minmax(0,1fr));padding:10px;gap:8px}.mesa--gm #acoes-dir:before,.mesa--player #acoes-dir:before{grid-column:1/-1}.painel-acoes-grupo{padding:8px}.painel-acoes-grupo .btn-acao{min-height:44px;padding:8px;font-size:9px}.cards-strip{max-height:34dvh;padding:8px;flex-wrap:wrap;overflow-x:hidden;overflow-y:auto}.cards-strip .card-pers{flex:1 1 100%;min-width:0;max-width:none}.card-pers.token-card{flex-basis:100%;max-width:none}#modal-magias{align-items:flex-end;padding:8px}#modal-magias .modal-final-card{width:100%;max-height:92dvh;border-radius:16px 16px 10px 10px;padding:16px}#modal-magias-lista{grid-template-columns:1fr;max-height:30dvh}#modal-magias .modal-final-actions{flex-direction:column-reverse}.modal-final-actions button{min-height:48px}}
 
 </style>
+<style>
+/* A ordem e os atores usam linhas distintas para não empurrar os cartões para fora da tela. */
+.cards-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));grid-auto-rows:minmax(96px,auto);align-content:start;gap:9px;overflow-x:hidden;overflow-y:auto}
+.cards-strip #painel-iniciativa.ativo{grid-column:1/-1;grid-row:1;width:100%;max-width:none}
+.cards-strip .card-pers{width:100%;min-width:0;max-width:none;flex:none}
+.card-pers.token-card{min-width:0;max-width:none}
+@media(max-width:900px){.cards-strip{grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));height:auto;max-height:34dvh;overflow-y:auto}}
+@media(max-width:600px){.cards-strip{grid-template-columns:minmax(0,1fr);max-height:34dvh;overflow-y:auto}.cards-strip #painel-iniciativa.ativo{min-width:0}.cards-strip .card-pers{min-width:0}}
+</style>
 </head>
 <body>
 
