@@ -634,15 +634,15 @@ html,body{min-height:100%;height:100%;overflow:hidden}body{min-width:320px}
 <style>
 /* Initiative stays inside the footer so it cannot create an implicit grid row. */
 .mesa.mesa-com-iniciativa{grid-template-rows:64px minmax(0,1fr) auto}
-.mesa-footer{display:grid;grid-template-rows:auto auto minmax(136px,1fr);gap:5px;min-height:236px;max-height:252px;height:auto;overflow:hidden}
+.mesa-footer{display:grid;grid-template-rows:auto auto minmax(170px,1fr);gap:5px;min-height:280px;max-height:286px;height:auto;overflow:hidden}
 #painel-iniciativa{position:relative!important;inset:auto!important;left:auto!important;top:auto!important;transform:none!important;width:100%;max-width:none;max-height:42px;overflow:auto;margin:0;padding:5px 9px;border-radius:7px;pointer-events:auto}
 #painel-iniciativa.ativo{display:block;position:relative!important}
-.cards-strip{display:flex;min-height:82px;max-height:112px;height:auto;flex-wrap:nowrap;align-items:stretch;gap:9px;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain}
+ .cards-strip{display:flex;min-height:170px;max-height:170px;height:auto;flex-wrap:nowrap;align-items:stretch;gap:9px;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain}
 .cards-strip #painel-iniciativa.ativo{flex:0 0 100%}
-.cards-strip .card-pers{width:auto;min-width:205px;max-width:280px;flex:0 0 260px}
+.cards-strip .card-pers{width:auto;min-width:205px;max-width:280px;min-height:150px;flex:0 0 260px}
 .card-pers.token-card{min-width:0;max-width:280px}
-@media(max-width:900px){.mesa-footer{min-height:236px;max-height:252px}.cards-strip{min-height:132px;max-height:142px}.cards-strip .card-pers{min-height:120px;padding:7px}}
-@media(max-width:600px){.mesa.mesa-com-iniciativa{grid-template-rows:58px auto auto}.mesa-footer{min-height:232px;max-height:270px;padding:7px}.cards-strip{min-height:112px;max-height:145px}.cards-strip .card-pers{min-width:78vw;flex-basis:78vw;max-width:78vw;min-height:100px}}
+@media(max-width:900px){.mesa-footer{min-height:280px;max-height:286px}.cards-strip{min-height:170px;max-height:170px}.cards-strip .card-pers{min-height:150px;padding:7px}}
+@media(max-width:600px){.mesa.mesa-com-iniciativa{grid-template-rows:58px auto auto}.mesa-footer{min-height:240px;max-height:none;padding:7px}.cards-strip{min-height:130px;max-height:150px}.cards-strip .card-pers{min-width:78vw;flex-basis:78vw;max-width:78vw;min-height:120px}}
 </style>
 </head>
 <body>
