@@ -171,3 +171,8 @@ Em transações revertidas, um jogador conseguiu avançar o turno quando o turno
 ## Aceite de mapa e token — 2026-11-02
 
 Em transações revertidas, o Mestre adicionou um monstro do catálogo SRD e moveu seu token no mapa; o jogador proprietário também moveu o próprio token. As posições foram atualizadas em `tokens.col/row`, sem persistir os dados de teste.
+
+
+## Aceite de conjuração SRD — 2026-11-02
+
+A RPC `conjurar_magia_srd` foi executada em transação revertida com a ficha de Mago nível 1: uma magia SRD preparada foi validada, o espaço foi consumido e o retorno informou a capacidade/uso restante. Nenhuma alteração de ficha de teste permaneceu persistida.
