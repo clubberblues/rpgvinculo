@@ -194,3 +194,7 @@ O resolver identifica mortos-vivos e os trata como dano de energia positiva no f
 ### Correção de escopo do aceite de cura em massa — 2026-11-02
 
 Correção: o aceite executado cobre alvos vivos (personagem, NPC e monstro não-morto-vivo). A RPC detecta mortos-vivos e os rejeita explicitamente para não aplicar cura incorreta; o dano de energia positiva para mortos-vivos permanece pendente até o próximo ajuste.
+
+## Integração da interface de cura em massa — 2026-11-02
+
+`mesa.html` agora transforma o seletor de alvo em múltiplo somente quando `dados_tecnicos.target_mode=multiple_targets_pending`, exige pelo menos um alvo e chama `conjurar_magia_com_acao_srd_multialvo`. Magias comuns continuam usando `conjurar_magia_com_acao_srd`; a mensagem de chat registra a quantidade e os alvos atingidos.
