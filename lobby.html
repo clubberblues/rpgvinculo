@@ -409,6 +409,16 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
 @media(max-width:780px){.lobby{grid-template-columns:1fr}.sidebar{position:relative;top:auto;width:100%;height:auto;padding:10px 14px;display:grid;grid-template-columns:64px 1fr auto;gap:8px;align-items:center;border-right:0;border-bottom:1px solid #364b61}.side-logo{margin:0}.side-logo img{width:62px;height:40px}.side-divisor{display:none}.side-user{margin:0;padding:8px}.side-nav{grid-column:1/-1;grid-row:2;display:flex;flex-direction:row;overflow-x:auto}.side-nav a{flex:0 0 auto;padding:9px}.side-sair{grid-column:3;grid-row:1;margin:0;padding:8px}.main{padding:22px 14px 50px}.topo{align-items:flex-start;flex-direction:column;margin-bottom:18px}.acoes{width:100%}.input-codigo{flex:1;min-width:0}.grid{gap:12px}}
 </style>
 <link rel="stylesheet" href="vinculo-ui.css">
+<style id="vinculo-lobby-theme">
+:root{--lobby-green:#8ccf75;--lobby-gold:#d5b46a;--lobby-edge:rgba(170,196,139,.24)}
+.sidebar{background:linear-gradient(180deg,#1b2419,#10160f 70%);border-color:var(--lobby-edge)}.side-user{border-color:var(--lobby-edge);background:#151c14}.side-user .papel,.subtitulo{color:#aeb89e}
+.side-nav a{color:#c2cbb7}.side-nav a.ativo{border-color:var(--lobby-edge);border-left-color:var(--lobby-gold);background:linear-gradient(100deg,#293822,#182116);color:#f1e4bd}.side-sair{background:#151c14}
+.topo{border-color:var(--lobby-edge)}.titulo{color:#f1e4bd}.input-codigo{border-color:#52664c;background:#11180f;color:#e8eadc}.btn-sec{background:#1b2419;border-color:#52664c;color:#d5b46a}
+.card{border-color:#465640;background:linear-gradient(155deg,#202a1e,#121911 74%);box-shadow:0 14px 32px #0008}.card:hover{border-color:#d5b46a;box-shadow:0 20px 42px #000a,0 0 20px #8ccf751c}.card-nome{color:#f1e4bd}.card-mestre{color:#aeb89e}.card-mestre b{color:#d5b46a}.card-briefing{color:#c2cbb7}.card-estado{border-color:#52664c;background:#151c14;color:#c2cbb7}
+.modal-box{background:linear-gradient(150deg,#202a1e,#11180f);border-color:#9a844b}.modal-box h2{color:#e7d39c}.card-ficha-user{background:linear-gradient(145deg,#202a1e,#151c14)!important;border-color:var(--lobby-edge)!important;color:#e8eadc}
+.btn-dourado,.btn-entrar{border-color:#b99b5a!important;background:linear-gradient(180deg,#d5b46a,#8d713d);color:#11150e}.btn-entrar:hover{filter:brightness(1.12)}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+</style>
 </head>
 <body>
 
