@@ -285,6 +285,7 @@ O servidor mantém `avancar_turno` autenticado e limitado a membros da campanha:
 - Descanso longo SRD conectado à ficha, protegido no servidor: apenas proprietário, campanha correspondente, fora de combate e intervalo mínimo de 8 horas. Recupera 1 PV por nível até o máximo e repõe magias diárias.
 - Cartões da mesa preservam o parâmetro `mesa` ao abrir a ficha, requisito para descanso dentro do contexto correto.
 - RPCs novas sem EXECUTE para `anon` e permitidas a `authenticated`; validações internas exigem papel/dono. Migrações versionadas no Supabase e GitHub.
+- A antiga RPC direta de reposição foi retirada de `authenticated`; o descanso longo a invoca internamente, protegendo o intervalo. Repetidas concessões de XP recalculam níveis pendentes sem duplicar a contagem.
 - Scripts inline de mesa/ficha/lobby passaram por parse de sintaxe JavaScript.
 - Auditoria atual: 90 funções `SECURITY DEFINER`; 83 avisos do Advisor correspondem à execução por usuários autenticados, nenhuma executável por `anon`. Oito funções sem checagem textual direta foram inspecionadas como políticas/helpers/triggers ou delegam a `priv.need_gm`. O aviso isolado não prova vulnerabilidade; a confirmação dos 83 corpos e testes por papel continua aberta.
 - Nenhum dado de campanha foi alterado para testes. Validação visual via navegador e fluxo autenticado E2E seguem pendentes.
