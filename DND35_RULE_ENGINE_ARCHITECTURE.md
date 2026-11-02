@@ -91,3 +91,23 @@ A migração `srd35_rule_engine_foundation` foi aplicada à produção e também
 - Snapshot de catálogo: 7 raças, 11 classes, 49 perícias, 110 talentos, 1.021 equipamentos, 601 magias e 445 monstros. Esses totais não provam completude nem fidelidade mecânica; é necessária conferência por fonte/licença e por campo.
 
 Logo, esta entrega define e instala a fundação relacional e os critérios de auditoria; ela não implementa ainda todos os cálculos de combate, conjuração, condições ou escolhas de personagem descritos neste documento.
+
+
+## Estado verificado em 2026-11-02
+
+A auditoria individual de catálogo foi concluída sem marcar entradas sem fonte como verificadas:
+
+- Perícias: 50/50 entradas auditadas; source_status = verified_srd.
+- Talentos: 110/110 entradas auditadas; source_status = verified_srd.
+- Domínios: 22/22 entradas auditadas.
+- Condições: 38/38 entradas auditadas.
+- Características de classe: 131/131 níveis existentes auditados.
+- Magias: 607/607 entradas auditadas; source_status = verified_srd.
+- Monstros: 445/445 entradas auditadas; source_status = verified_srd.
+- Equipamentos: 1.021/1.021 fontes SRD conferidas; 975 registros têm dados completos e 46 permanecem explicitamente not_applicable_or_unspecified porque o texto-fonte não fornece preço/peso aplicável. Nenhum valor foi inventado.
+
+A auditoria genérica (srd_catalog_entry_audit) está em 1.403/1.403 entradas com estado manual_verified; a auditoria de equipamentos não possui pendências não documentadas. As tabelas de auditoria agora têm RLS e leitura pública somente, sem escrita direta pelo cliente.
+
+O motor já possui RPCs de criação de personagem, espaços de magia, CD, inventário/equipamento, condições, dano/cura, ataque, combate e consumo de ações. As funções SECURITY DEFINER públicas tiveram search_path = public, pg_temp fixado. Testes de fumaça confirmaram CD de magia, classificação de slots, reconhecimento de classe e classificação de equipamento.
+
+Pendências remanescentes de produto, não de auditoria de fonte: executar a matriz de cenários de aceitação ponta a ponta da ficha e da mesa; revisar os 76 avisos do linter sobre RPCs SECURITY DEFINER conforme o modelo de permissões da aplicação; e habilitar a proteção contra senhas vazadas no painel de Auth do Supabase. Esses itens não foram declarados completos sem teste/decisão correspondente.
