@@ -1633,7 +1633,7 @@ function dnd35WeaponProficient(state,weaponName){
     var id=String(feat&&feat.id||''),req=dnd35Objeto(feat&&feat.requisitos),category=String(req.type||'General');
     if(type==='general')return category==='General';
     if(type==='wizard')return true;
-    if(type==='monk')return nextLevel===1?['srd35_feat_improved_grapple','srd35_feat_stunning_fist'].indexOf(id)>=0:nextLevel===2?id==='srd35_feat_deflect_arrows':['srd35_feat_improved_disarm','srd35_feat_improved_trip'].indexOf(id)>=0;
+    if(type==='monk')return nextLevel===1?['srd35_feat_improved_grapple','srd35_feat_stunning_fist'].indexOf(id)>=0:nextLevel===2?['reflexos_de_combate','srd35_feat_deflect_arrows'].indexOf(id)>=0:['srd35_feat_improved_disarm','srd35_feat_improved_trip'].indexOf(id)>=0;
     if(type==='fighter')return [
       'srd35_feat_blind_fight','srd35_feat_cleave','srd35_feat_combat_expertise','srd35_feat_deflect_arrows','esquiva',
       'srd35_feat_far_shot','srd35_feat_great_cleave','srd35_feat_improved_bull_rush','srd35_feat_improved_critical',
