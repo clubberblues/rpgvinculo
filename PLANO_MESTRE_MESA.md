@@ -183,3 +183,10 @@ A RPC `conjurar_magia_srd` foi executada em transação revertida com a ficha de
 As fórmulas das magias de cura foram conferidas nas páginas SRD 3.5 do d20srd.org e registradas em `srd_spells.dados_tecnicos`, preservando os metadados de fonte existentes. O motor agora interpreta Curar Ferimentos Mínimos, Leves, Moderados, Sérios e Críticos, além de Heal, com dado, bônus por nível e limite de nível. As versões em massa também têm a fórmula verificada, mas permanecem explicitamente marcadas como `multiple_targets_pending` até o resolver de múltiplos alvos ser implementado.
 
 O RPC `conjurar_magia_srd` foi testado em transação revertida com `srd35_cure_light_wounds`: o espaço preparado foi consumido, a cura foi rolada e o PV foi limitado ao máximo, sem persistir o cenário de teste. Fontes: [Cure Minor Wounds](https://www.d20srd.org/srd/spells/cureMinorWounds.htm), [Cure Light Wounds](https://www.d20srd.org/srd/spells/cureLightWounds.htm), [Cure Moderate Wounds](https://www.d20srd.org/srd/spells/cureModerateWounds.htm), [Cure Serious Wounds](https://www.d20srd.org/srd/spells/cureSeriousWounds.htm), [Cure Critical Wounds](https://www.d20srd.org/srd/spells/cureCriticalWounds.htm), [Heal](https://www.d20srd.org/srd/spells/heal.htm), [Mass Cure Light Wounds](https://www.d20srd.org/srd/spells/cureLightWoundsMass.htm) e [Mass Heal](https://www.d20srd.org/srd/spells/healMass.htm).
+
+
+## Aceite de cura em massa — 2026-11-02
+
+Foram instaladas as RPCs autenticadas `conjurar_magia_srd_multialvo` e `conjurar_magia_com_acao_srd_multialvo`. Elas recebem de 1 a 20 tokens, rejeitam chaves duplicadas ou inexistentes, consomem um único espaço preparado e, em combate, uma única ação padrão. O teste transacional com `Cure Light Wounds, Mass` curou um monstro animal e um personagem, respeitou o PV máximo e deixou o banco sem alterações após rollback. Execução anônima foi revogada; apenas `authenticated` pode chamar as RPCs.
+
+O resolver identifica mortos-vivos e os trata como dano de energia positiva no fluxo de múltiplos alvos; a validação de HP e a atualização de token permanecem atômicas.
