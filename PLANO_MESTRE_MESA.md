@@ -202,3 +202,7 @@ Correção: o aceite executado cobre alvos vivos (personagem, NPC e monstro não
 ## Aceite de cura em massa com mortos-vivos — 2026-11-02
 
 A RPC dedicada `conjurar_magia_srd_multialvo_v2` foi aplicada e conectada à interface. Em transação revertida, `Cure Light Wounds, Mass` atingiu simultaneamente um personagem vivo e um Allip (Undead): o personagem recebeu cura limitada ao PV máximo e o morto-vivo recebeu dano de energia positiva. Um único espaço foi consumido; o banco ficou sem alterações após rollback.
+
+## Índices de chaves estrangeiras — 2026-11-02
+
+Foi aplicada a migração `performance_cover_public_foreign_keys`, criando cobertura de índice para as FKs públicas. O advisor deixou de reportar `unindexed_foreign_keys`; permanecem apenas avisos informativos de índices ainda sem uso observado, que não indicam falha funcional.
