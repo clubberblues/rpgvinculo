@@ -2051,8 +2051,7 @@ function dnd35LevelupFeatSpec(state,nextLevel){
     for(var i=0;i<picks.length;i++){
       var feat=selected[i];if(!feat){mostrarErro('Um dos talentos escolhidos não está no catálogo.','talentos');return;}
       var paramType=dnd35FeatParameterType(feat),requires=!!(feat.exige_parametro||paramType||dnd35FeatIsWeaponFocus(feat)),paramOptional=paramType==='spell_list'&&dnd35Modificador(Number(attrs.INT)||10)<=0;
-      if(requires&&!paramOptional&&!String(picks[i].parametro||'').trim())warns.push('Informe o parâmetro do talento '+feat.nome+'.');
-      if(warns.length){mostrarErro(warns[0],'talentos');return;}
+      if(requires&&!paramOptional&&!String(picks[i].parametro||'').trim()){mostrarErro('Informe o parâmetro do talento '+feat.nome+'.','talentos');return;}
     }
     var talentos=picks.map(function(p){return {id:String(p.id),parametro:String(p.parametro||'').trim()||null};});
     if(input)state.nomeDraft=nome;
