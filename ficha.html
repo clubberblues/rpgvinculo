@@ -1568,14 +1568,14 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -15%,#2938
     }
     for (var i=0;i<count;i++) {
       var pick = picks[i] || {id:'',parametro:''}, feat = state.feats.filter(function(f) { return String(f.id) === String(pick.id); })[0];
-      var optionHtml = '<option value="">Escolha um talento…</option>'+state.feats.map(function(f) { return '<option value="'+esc(String(f.id))+'"'+(String(f.id)===String(pick.id)?' selected':'')+'>'+esc(f.nome)+'</option>'; }).join('');
+      var classRuleKey=dnd35ClassRuleKey(state.classe&&((state.classe.class_key||state.classe.nome||state.classe.id))),optionFeats=state.feats.filter(function(f){return !(classRuleKey==='monk'&&String(f.id)==='srd35_feat_improved_unarmed_strike')&&!(classRuleKey==='wizard'&&String(f.id)==='srd35_feat_scribe_scroll');});var optionHtml = '<option value="">Escolha um talento…</option>'+optionFeats.map(function(f) { return '<option value="'+esc(String(f.id))+'"'+(String(f.id)===String(pick.id)?' selected':'')+'>'+esc(f.nome)+'</option>'; }).join('');
       var paramType=feat?dnd35FeatParameterType(feat):'',needsParam = !!(feat && (feat.exige_parametro || paramType || dnd35FeatIsWeaponFocus(feat)));
       var reqData=feat?dnd35Objeto(feat.requisitos):{},reqText=feat?(typeof reqData==='string'?reqData:String(reqData.raw||'')):'';
       var paramRequired=!!(feat&&feat.exige_parametro)&&!(paramType==='spell_list'&&dnd35Modificador(Number(attrs.INT)||10)<=0);
       var paramHtml = needsParam ? '<div class="dnd35-feat-control"><label for="feat-param-'+i+'">'+esc(dnd35FeatParameterLabel(feat))+'</label><input id="feat-param-'+i+'" data-feat-param="'+i+'" maxlength="240" value="'+esc(pick.parametro||'')+'" placeholder="'+(paramType==='crossbow'?'Mão, leve ou pesada':paramType==='spell_list'?'Magias separadas por vírgula':'Informe a escolha')+'" aria-describedby="feat-param-hint-'+i+'"><small id="feat-param-hint-'+i+'">'+esc(dnd35FeatParameterHint(feat,attrs))+'</small></div>' : '';
       var warnings = feat ? dnd35FeatWarnings(feat,attrs,state,i,pick.parametro) : [];
       if (feat && paramRequired && !String(pick.parametro||'').trim()) warnings.push('Informe o parâmetro exigido.');
-      if (feat && dnd35FeatIsWeaponFocus(feat)) warnings.push('A arma escolhida deve ser uma arma com a qual seu personagem seja proficiente; a ficha não possui dados de proficiência para validar isso.');
+      if(feat&&dnd35FeatIsWeaponFocus(feat)){if(!String(pick.parametro||'').trim())warnings.push('Informe a arma escolhida.');else if(!dnd35WeaponProficient(state,pick.parametro))warnings.push('A classe não é proficiente com a arma escolhida.');}
       html += '<article class="dnd35-feat"><div class="dnd35-feat-head"><strong>Talento '+(i+1)+(dnd35IsHuman(state.raca)&&i===1?' · bônus humano':'')+'</strong></div><div class="dnd35-feat-control"><label for="feat-'+i+'">Escolha</label><select id="feat-'+i+'" data-feat="'+i+'">'+optionHtml+'</select></div>'+
         (feat ? '<p>'+esc(feat.descricao||'Sem descrição.')+'</p>'+(reqText?'<p>Pré-requisitos: '+esc(reqText)+'</p>':'<p>Pré-requisitos: nenhum.</p>')+(reqData.dynamic_prerequisites?'<p class="dnd35-note">'+esc(String(reqData.dynamic_prerequisites))+'</p>':'')+(feat.srd_source_url?'<p><a href="'+esc(feat.srd_source_url)+'" target="_blank" rel="noopener noreferrer">Consultar fonte SRD ↗</a></p>':'') : '')+paramHtml+(warnings.length?'<div class="dnd35-warning">'+warnings.map(esc).join(' ')+'</div>':'')+'</article>';
     }
@@ -1583,7 +1583,44 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -15%,#2938
   }
 
   
-function dnd35LevelupFeatSpec(state,nextLevel){
+function dnd35WeaponProficient(state,weaponName){
+    var normalized=dnd35FeatParamNorm(weaponName),weapon=(state.equipment||[]).find(function(item){return String(item.categoria||item.tipo||'').toLowerCase()==='arma'&&dnd35FeatParamNorm(item.nome)===normalized;});
+    if(!weapon)return false;
+    var details=dnd35Objeto(weapon.detalhes),category=String(details.weapon_proficiency||''),proficiencies=dnd35Objeto(state.classe&&state.classe.dados_tecnicos).proficiencias||{},weapons=Array.isArray(proficiencies.armas)?proficiencies.armas:[proficiencies.armas].filter(Boolean);
+    return weapons.some(function(entry){var p=dnd35Norm(entry).replace(/\s+/g,'');return dnd35FeatParamNorm(entry)===normalized||(p==='armassimples'&&category==='simple')||(p==='todasasarmassimplesemarciais'&&['simple','martial'].indexOf(category)>=0);});
+  }
+  function dnd35InitialClassBonusSpec(state){
+    var key=dnd35ClassRuleKey(state.classe&&((state.classe.class_key||state.classe.nome||state.classe.id)));
+    if(key==='fighter')return {type:'fighter',title:'Talento bônus de Guerreiro',hint:'Escolha um talento da lista de bônus do Guerreiro. Os pré-requisitos continuam valendo.'};
+    if(key==='monk')return {type:'monk',title:'Talento bônus de Monge',hint:'No nível 1, escolha Agarrar Aprimorado ou Ataque Atordoante. Esta escolha ignora os pré-requisitos normais; Ataque Desarmado Aprimorado é concedido automaticamente.'};
+    if(key==='wizard')return {type:'wizard',title:'Característica de Mago',hint:'Escrever Pergaminho é concedido automaticamente no 1º nível.'};
+    return null;
+  }
+  function dnd35InitialClassBonusMarkup(state,attrs){
+    var spec=dnd35InitialClassBonusSpec(state);if(!spec)return '';
+    if(spec.type==='wizard')return '<section class="dnd35-build-panel dnd35-class-bonus"><h3>'+esc(spec.title)+'</h3><p>Escrever Pergaminho será adicionado automaticamente à ficha ao concluir a criação.</p><p class="dnd35-note">'+esc(spec.hint)+'</p></section>';
+    var picks=state.classFeatPicks||[];if(!picks.length)state.classFeatPicks=[{id:'',parametro:''}];
+    var pick=state.classFeatPicks[0]||{id:'',parametro:''},owned=(state.featPicks||[]).map(function(p){return String(p&&p.id||'');});
+    var candidates=(state.feats||[]).filter(function(feat){
+      if(!dnd35LevelupFeatAllowed(feat,spec.type,1)||owned.indexOf(String(feat.id))>=0)return false;
+      if(spec.type==='monk')return true;
+      var tempState=Object.assign({},state,{featPicks:state.featPicks||[]});
+      return dnd35FeatWarnings(feat,attrs,tempState,(tempState.featPicks||[]).length,'').length===0;
+    }).sort(function(a,b){return String(a.nome).localeCompare(String(b.nome),'pt-BR');});
+    var selected=candidates.find(function(feat){return String(feat.id)===String(pick.id);})||(state.feats||[]).find(function(feat){return String(feat.id)===String(pick.id);});
+    var options='<option value="">Escolha um talento bônus…</option>'+candidates.map(function(feat){return '<option value="'+esc(feat.id)+'"'+(String(feat.id)===String(pick.id)?' selected':'')+'>'+esc(feat.nome)+'</option>';}).join('');
+    var needsParam=!!(selected&&(selected.exige_parametro||dnd35FeatParameterType(selected)||dnd35FeatIsWeaponFocus(selected)));
+    var parameterHtml=needsParam?'<div class="dnd35-feat-control"><label for="class-feat-param">'+esc(dnd35FeatParameterLabel(selected))+'</label><input id="class-feat-param" data-class-feat-param maxlength="240" value="'+esc(pick.parametro||'')+'" placeholder="Informe a escolha"><small>'+esc(dnd35FeatParameterHint(selected,attrs))+'</small></div>':'';
+    var warnings=[];
+    if(selected&&spec.type==='fighter'){
+      var combined=(state.featPicks||[]).concat([{id:selected.id,parametro:pick.parametro||''}]),tempState=Object.assign({},state,{featPicks:combined});
+      warnings=dnd35FeatWarnings(selected,attrs,tempState,combined.length-1,pick.parametro||'');
+      if(needsParam&&!String(pick.parametro||'').trim())warnings.push('Informe o parâmetro exigido.');
+      if(dnd35FeatIsWeaponFocus(selected)&&String(pick.parametro||'').trim()&&!dnd35WeaponProficient(state,pick.parametro))warnings.push('A classe não é proficiente com a arma escolhida.');
+    }
+    return '<section class="dnd35-build-panel dnd35-class-bonus"><h3>'+esc(spec.title)+'</h3><p class="dnd35-note">'+esc(spec.hint)+'</p><div class="dnd35-feat-control"><label for="class-feat">Escolha</label><select id="class-feat" data-class-feat>'+options+'</select></div>'+(selected?'<p>'+esc(selected.descricao||'Sem descrição.')+'</p>':'')+parameterHtml+(warnings.length?'<div class="dnd35-warning">'+warnings.map(esc).join(' ')+'</div>':'')+'</section>';
+  }
+  function dnd35LevelupFeatSpec(state,nextLevel){
     var key=dnd35Norm(state.classe.class_key||state.classe.id||state.classe.nome);
     var general=nextLevel%3===0?1:0,bonus=null;
     if((key==='guerreiro'||key==='fighter')&&nextLevel%2===0)bonus='fighter';
@@ -1596,7 +1633,7 @@ function dnd35LevelupFeatSpec(state,nextLevel){
     var id=String(feat&&feat.id||''),req=dnd35Objeto(feat&&feat.requisitos),category=String(req.type||'General');
     if(type==='general')return category==='General';
     if(type==='wizard')return category==='Item Creation'||category==='Metamagic'||id==='srd35_feat_spell_mastery';
-    if(type==='monk')return nextLevel===2?id==='srd35_feat_deflect_arrows':['srd35_feat_improved_disarm','srd35_feat_improved_trip'].indexOf(id)>=0;
+    if(type==='monk')return nextLevel===1?['srd35_feat_improved_grapple','srd35_feat_stunning_fist'].indexOf(id)>=0:nextLevel===2?id==='srd35_feat_deflect_arrows':['srd35_feat_improved_disarm','srd35_feat_improved_trip'].indexOf(id)>=0;
     if(type==='fighter')return [
       'srd35_feat_blind_fight','srd35_feat_cleave','srd35_feat_combat_expertise','srd35_feat_deflect_arrows','esquiva',
       'srd35_feat_far_shot','srd35_feat_great_cleave','srd35_feat_improved_bull_rush','srd35_feat_improved_critical',
@@ -1962,7 +1999,7 @@ function dnd35LevelupFeatSpec(state,nextLevel){
     var skillBudgetNote='Pontos de perícia: '+skillsView.spent+' / '+skillsView.budget+' gastos';
     var createStep=state.activeStep||'identity',spellAccess=dnd35GrimoireAvailability(state,attrs,level),magicClass=!!spellAccess.key&&Object.keys(spellAccess.slots).some(function(circle){return Number(spellAccess.slots[circle])>0;}),createSteps=[['identity','1 · Herói','Nome e identidade'],['attributes','2 · Atributos','Distribua 25 pontos'],['training','3 · Treino','Perícias e talentos']];if(magicClass)createSteps.push(['magic','4 · Magias','Conhecer e preparar']);createSteps.push(['equipment',(magicClass?'5':'4')+' · Equipamento','Kit ou ouro inicial']);
     var createNav=creating?'<nav class="dnd35-create-nav" aria-label="Etapas da ficha">'+createSteps.map(function(s){return '<button type="button" class="dnd35-create-step '+(createStep===s[0]?'active':'')+'" data-create-step="'+s[0]+'">'+s[1]+'<small>'+s[2]+'</small></button>';}).join('')+'</nav>':'';
-    var skillPanel=creating?'<div class="dnd35-tabs" role="tablist"><button type="button" class="dnd35-tab '+(state.activeTab!=='talentos'?'active':'')+'" data-tab="pericias">Perícias</button><button type="button" class="dnd35-tab '+(state.activeTab==='talentos'?'active':'')+'" data-tab="talentos">Talentos</button></div><section class="dnd35-build-panel dnd35-tab-panel" data-tab-panel="pericias" '+(state.activeTab==='talentos'?'hidden':'')+'><h2>Perícias · Nível 1 <button type="button" class="dnd35-help" data-dnd35-help="skill">?</button></h2><p class="dnd35-budget">'+skillBudgetNote+'</p><p class="dnd35-note">Orçamento = max(1, perícias por nível + modificador final de INT) × 4'+(dnd35IsHuman(state.raca)?' + 4 (humano)':'')+'. Graduações de classe custam 1 ponto; fora de classe custam 2 e avançam em passos de 0,5.</p><div class="dnd35-skill-list">'+skillsView.html+'</div></section><section class="dnd35-build-panel dnd35-tab-panel" data-tab-panel="talentos" '+(state.activeTab!=='talentos'?'hidden':'')+'><h2>Talentos básicos <button type="button" class="dnd35-help" data-dnd35-help="feat">?</button></h2><p class="dnd35-note">Escolha exatamente '+(dnd35IsHuman(state.raca)?'2 talentos (talento básico + extra humano).':'1 talento básico.')+' Pré-requisitos são verificados contra os atributos finais e o BBA disponível.</p><div class="dnd35-feat-list">'+featsView+'</div></section>' : '<div class="dnd35-grid" style="margin-top:16px"><section class="dnd35-panel"><h2>Perícias</h2><ul class="dnd35-list"><li>'+esc(skillBudgetNote)+'</li></ul><div class="dnd35-skill-list">'+skillsView.html+'</div></section><section class="dnd35-panel"><h2>Talentos</h2>'+featsView+'</section></div>';
+    var initialClassBonusHtml=creating?dnd35InitialClassBonusMarkup(state,attrs):'';var skillPanel=creating?'<div class="dnd35-tabs" role="tablist"><button type="button" class="dnd35-tab '+(state.activeTab!=='talentos'?'active':'')+'" data-tab="pericias">Perícias</button><button type="button" class="dnd35-tab '+(state.activeTab==='talentos'?'active':'')+'" data-tab="talentos">Talentos</button></div><section class="dnd35-build-panel dnd35-tab-panel" data-tab-panel="pericias" '+(state.activeTab==='talentos'?'hidden':'')+'><h2>Perícias · Nível 1 <button type="button" class="dnd35-help" data-dnd35-help="skill">?</button></h2><p class="dnd35-budget">'+skillBudgetNote+'</p><p class="dnd35-note">Orçamento = max(1, perícias por nível + modificador final de INT) × 4'+(dnd35IsHuman(state.raca)?' + 4 (humano)':'')+'. Graduações de classe custam 1 ponto; fora de classe custam 2 e avançam em passos de 0,5.</p><div class="dnd35-skill-list">'+skillsView.html+'</div></section><section class="dnd35-build-panel dnd35-tab-panel" data-tab-panel="talentos" '+(state.activeTab!=='talentos'?'hidden':'')+'><h2>Talentos básicos <button type="button" class="dnd35-help" data-dnd35-help="feat">?</button></h2><p class="dnd35-note">Escolha exatamente '+(dnd35IsHuman(state.raca)?'2 talentos (talento básico + extra humano).':'1 talento básico.')+' Pré-requisitos são verificados contra os atributos finais e o BBA disponível.</p><div class="dnd35-feat-list">'+featsView+'</div>'+initialClassBonusHtml+'</section>' : '<div class="dnd35-grid" style="margin-top:16px"><section class="dnd35-panel"><h2>Perícias</h2><ul class="dnd35-list"><li>'+esc(skillBudgetNote)+'</li></ul><div class="dnd35-skill-list">'+skillsView.html+'</div></section><section class="dnd35-panel"><h2>Talentos</h2>'+featsView+'</section></div>';
     var profs=dnd35Objeto(state.classe.dados_tecnicos).proficiencias||{};
     var html='<div class="dnd35-page"><header class="dnd35-header"><div><div class="dnd35-kicker">VÍNCULO · D&amp;D 3.5</div><h1>'+esc(nome)+'</h1><p>'+esc(state.raca.nome)+' · '+esc(state.classe.nome)+' · Nível '+level+'</p></div><a class="dnd35-link" href="lobby.html">Voltar ao Lobby</a></header>'+
       createNav+levelupNotice+levelupPanel+'<div class="dnd35-grid"><section class="dnd35-panel" '+(creating?'data-creation-step="identity" '+(createStep!=='identity'?'hidden':''):'')+'><h2>Identidade'+(creating?' <button type="button" class="dnd35-help" data-dnd35-help="identity">?</button>':'')+'</h2>'+(creating?'<label class="dnd35-name-label" for="dnd35-nome">Nome do personagem</label><input class="dnd35-name-input" id="dnd35-nome" maxlength="60" autocomplete="off" placeholder="Ex.: Arannis" value="'+esc(state.nomeDraft||'')+'">':'')+
@@ -1980,6 +2017,8 @@ function dnd35LevelupFeatSpec(state,nextLevel){
       document.querySelectorAll('[data-skill]').forEach(function(select){select.addEventListener('change',function(){var value=Number(select.value);if(value)state.sheet.pericias[select.dataset.skill]=value;else delete state.sheet.pericias[select.dataset.skill];if(nameInput)state.nomeDraft=nameInput.value;renderizarFichaSRD35();});});
       document.querySelectorAll('[data-feat]').forEach(function(select){select.addEventListener('change',function(){var i=Number(select.dataset.feat), prev=state.featPicks[i]||{};state.featPicks[i]={id:select.value,parametro:prev.parametro||''};if(nameInput)state.nomeDraft=nameInput.value;renderizarFichaSRD35();});});
       document.querySelectorAll('[data-feat-param]').forEach(function(input){input.addEventListener('input',function(){var i=Number(input.dataset.featParam);if(state.featPicks[i])state.featPicks[i].parametro=input.value;});});
+       var classFeatSelect=document.querySelector('[data-class-feat]');if(classFeatSelect)classFeatSelect.addEventListener('change',function(){state.classFeatPicks=[{id:classFeatSelect.value,parametro:''}];renderizarFichaSRD35();});
+       var classFeatParam=document.querySelector('[data-class-feat-param]');if(classFeatParam)classFeatParam.addEventListener('input',function(){if(state.classFeatPicks&&state.classFeatPicks[0])state.classFeatPicks[0].parametro=classFeatParam.value;});
       var save=document.getElementById('dnd35-save'); save.disabled=points>25||!dnd35StartReady(state); save.addEventListener('click',salvarFichaSRD35);
     }
   }
@@ -2011,7 +2050,7 @@ function dnd35LevelupFeatSpec(state,nextLevel){
     if(results[0].error)throw new Error('Raça não encontrada: '+results[0].error.message);
     if(results[1].error)throw new Error('Classe não encontrada: '+results[1].error.message);
     var catalogs=results[2];if(results[3].error)throw new Error('Kit inicial indisponível: '+results[3].error.message);var eq=await sb.from('srd_equipment').select('*').order('nome').range(0,1999);if(eq.error)throw new Error('Catálogo de equipamentos indisponível: '+eq.error.message);
-    fichaSRD35={criacao:true,character:{},baseAtributos:{FOR:10,DES:10,CON:10,INT:10,SAB:10,CAR:10},nomeDraft:'',activeStep:'identity',sheet:{nivel:1,xp:0,ouro:0,atributos:{},pericias:{},talentos:[],magias_preparadas:{version:1,conhecidas:[],preparadas:[],dominio_preparadas:[],usos:{}}},raca:results[0].data,classe:results[1].data,startingPackage:results[3].data,equipment:eq.data||[],equipamentoInicial:{metodo:'',resultados:null,itens:{},busca:''},skills:catalogs.skills,feats:catalogs.feats,srdSpells:catalogs.spells,progressions:catalogs.progressions,srdDomains:catalogs.domains,srdDomainSpells:catalogs.domainSpells,domainError:catalogs.domainError,domainChoices:[],spellCatalogError:catalogs.spellError,spellProgressionError:catalogs.progressionError,featPicks:[],activeTab:'pericias'};
+    fichaSRD35={criacao:true,character:{},baseAtributos:{FOR:10,DES:10,CON:10,INT:10,SAB:10,CAR:10},nomeDraft:'',activeStep:'identity',sheet:{nivel:1,xp:0,ouro:0,atributos:{},pericias:{},talentos:[],magias_preparadas:{version:1,conhecidas:[],preparadas:[],dominio_preparadas:[],usos:{}}},raca:results[0].data,classe:results[1].data,startingPackage:results[3].data,equipment:eq.data||[],equipamentoInicial:{metodo:'',resultados:null,itens:{},busca:''},skills:catalogs.skills,feats:catalogs.feats,srdSpells:catalogs.spells,progressions:catalogs.progressions,srdDomains:catalogs.domains,srdDomainSpells:catalogs.domainSpells,domainError:catalogs.domainError,domainChoices:[],spellCatalogError:catalogs.spellError,spellProgressionError:catalogs.progressionError,featPicks:[],classFeatPicks:[],activeTab:'pericias'};
     renderizarFichaSRD35();
   }
   async function carregarFichaSRD35(characterId,sheet) {
