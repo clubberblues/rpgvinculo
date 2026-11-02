@@ -1632,7 +1632,7 @@ function dnd35LevelupFeatSpec(state,nextLevel){
     var tempSkills=Object.assign({},dnd35Objeto(state.sheet.pericias));Object.keys(lu.skills||{}).forEach(function(id){tempSkills[id]=(Number(tempSkills[id])||0)+(Number(lu.skills[id])||0);});
     var tempAttrs=Object.assign({},attrs);if(nextLevel%4===0&&lu.attribute)tempAttrs[lu.attribute]=(Number(tempAttrs[lu.attribute])||10)+1;
     var tempState=Object.assign({},state,{sheet:Object.assign({},state.sheet,{nivel:nextLevel,pericias:tempSkills}),featPicks:feats});
-    var prereqsReady=featsReady&&feats.every(function(pick,index){var feat=(state.feats||[]).find(function(item){return String(item.id)===String(pick.id);});return feat&&dnd35FeatWarnings(feat,tempAttrs,tempState,index,pick.parametro||'').length===0;});
+    var prereqsReady=featsReady&&feats.every(function(pick,index){var feat=(state.feats||[]).find(function(item){return String(item.id)===String(pick.id);});return feat&&(specs[index].type==='monk'||dnd35FeatWarnings(feat,tempAttrs,tempState,index,pick.parametro||'').length===0);});
     return Number.isInteger(Number(lu.roll))&&Number(lu.roll)>=1&&Number(lu.roll)<=die&&prereqsReady&&(nextLevel%4!==0||!!lu.attribute)&&spent<=budget;
   }
   function dnd35LevelupMarkup(state,attrs){
@@ -1668,7 +1668,7 @@ function dnd35LevelupFeatSpec(state,nextLevel){
       var warnings=[];
       if(selected){
         var tempSkills=Object.assign({},dnd35Objeto(state.sheet.pericias));Object.keys(lu.skills||{}).forEach(function(id){tempSkills[id]=(Number(tempSkills[id])||0)+(Number(lu.skills[id])||0);});var tempAttrs=Object.assign({},attrs);if(nextLevel%4===0&&lu.attribute)tempAttrs[lu.attribute]=(Number(tempAttrs[lu.attribute])||10)+1;var tempState=Object.assign({},state,{sheet:Object.assign({},state.sheet,{nivel:nextLevel,pericias:tempSkills}),featPicks:lu.feats});
-        warnings=dnd35FeatWarnings(selected,tempAttrs,tempState,i,pick.parametro||'');
+        warnings=spec.type==='monk'?[]:dnd35FeatWarnings(selected,tempAttrs,tempState,i,pick.parametro||'');
         if(needsParam&&selected.exige_parametro&&!String(pick.parametro||'').trim())warnings.push('Informe o parâmetro exigido.');
       }
       return '<article class="dnd35-feat"><div class="dnd35-feat-head"><strong>'+esc(spec.label)+'</strong></div><div class="dnd35-feat-control"><label for="lu-feat-'+i+'">Escolha</label><select id="lu-feat-'+i+'" data-lu-feat="'+i+'" data-lu-feat-type="'+spec.type+'">'+options+'</select></div>'+(selected?'<p>'+esc(selected.descricao||'Sem descrição.')+'</p>'+(dnd35Objeto(selected.requisitos).raw?'<p>Pré-requisitos: '+esc(dnd35Objeto(selected.requisitos).raw)+'</p>':'')+paramHtml+(warnings.length?'<div class="dnd35-warning">'+warnings.map(esc).join(' ')+'</div>':''):'')+'</article>';
