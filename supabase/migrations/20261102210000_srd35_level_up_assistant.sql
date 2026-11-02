@@ -50,6 +50,7 @@ DECLARE
   v_choice_count INTEGER := 0;
   v_choice RECORD;
   v_feat public.srd_feats%ROWTYPE;
+  v_feat_id TEXT;
   v_req JSONB;
   v_req_item TEXT;
   v_owned_ids TEXT[] := ARRAY[]::TEXT[];
@@ -238,8 +239,7 @@ BEGIN
     END IF;
 
     IF v_feat_id=ANY(v_owned_ids) THEN RAISE EXCEPTION 'Este personagem já possui o talento %.',v_feat.nome; END IF;
-    FOR v_json_value IN SELECT value FROM jsonb_array_elements_text(COALESCE(v_req->'feat_ids','[]'::jsonb)) AS reqs(value) LOOP
-      v_req_item:=v_json_value::text;
+    FOR v_req_item IN SELECT value FROM jsonb_array_elements_text(COALESCE(v_req->'feat_ids','[]'::jsonb)) AS reqs(value) LOOP
       IF NOT (v_req_item=ANY(v_owned_ids)) THEN
         RAISE EXCEPTION 'O talento % exige o pré-requisito %.',v_feat.nome,v_req_item;
       END IF;
@@ -264,8 +264,9 @@ BEGIN
       RAISE EXCEPTION '% exige BBA +%.',v_feat.nome,(v_req->>'bab_min');
     END IF;
     IF COALESCE(NULLIF(v_req->>'character_level_min','')::integer,0)>v_next_level
-      OR COALESCE(NULLIF(v_req->>'class_level_min','')::integer,0)>v_next_level THEN
-      RAISE EXCEPTION 'O nível atual ainda não atende aos pré-requisitos de %.',v_feat.nome;
+      OR COALESCE(NULLIF(v_req->>'class_level_min','')::integer,0)>v_next_level
+      OR (NULLIF(v_req->>'class_key_required','') IS NOT NULL AND v_req->>'class_key_required' IS DISTINCT FROM v_class.class_key) THEN
+      RAISE EXCEPTION 'O nível ou a classe atual ainda não atende aos pré-requisitos de %.',v_feat.nome;
     END IF;
 
     v_caster_level:=CASE
@@ -277,8 +278,7 @@ BEGIN
       RAISE EXCEPTION '% exige nível de conjurador %.',v_feat.nome,(v_req->>'caster_level_min');
     END IF;
     IF v_req ? 'skill_ranks' THEN
-      FOR v_json_value IN SELECT key FROM jsonb_each(v_req->'skill_ranks') LOOP
-        v_skill_id:=v_json_value#>>'{}';
+      FOR v_skill_id IN SELECT key FROM jsonb_each(v_req->'skill_ranks') LOOP
         IF COALESCE(NULLIF(v_skill_state->>v_skill_id,'')::numeric,0)<COALESCE(NULLIF(v_req->'skill_ranks'->>v_skill_id,'')::numeric,0) THEN
           RAISE EXCEPTION '% exige mais graduações na perícia %.',v_feat.nome,v_skill_id;
         END IF;
