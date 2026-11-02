@@ -1089,10 +1089,10 @@ body{font-family:'EB Garamond',Georgia,serif;background:radial-gradient(ellipse 
         {id:'equipamentos',ic:'🛡️',txt:'Equipamentos'},
         {id:'xp',ic:'⭐',txt:'Dar XP'},
         {id:'dados',ic:'🎲',txt:'Dados'},
-        {id:'config-campanha',ic:'⚙️',txt:'Configurações'}
+        {id:'config-campanha',ic:'🗑️',txt:'Excluir campanha',destaque:true}
       ];
       el.innerHTML = listaGM.map(function(b){
-        return '<button class="btn-acao" data-acao="'+b.id+'" title="'+esc(b.txt)+'"><span class="icone">'+b.ic+'</span><span>'+esc(b.txt)+'</span></button>';
+        return '<button class="btn-acao '+(b.destaque?'destaque':'')+'" data-acao="'+b.id+'" title="'+esc(b.txt)+'"><span class="icone">'+b.ic+'</span><span>'+esc(b.txt)+'</span></button>';
       }).join('');
     } 
     else if (estado === 'COMBATE') {
