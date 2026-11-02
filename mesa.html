@@ -516,6 +516,104 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
 
 </style>
 <link rel="stylesheet" href="vinculo-ui.css">
+
+<style id="mesa-mmorpg-redesign">
+:root{
+  --mm-ink:#162018;--mm-deep:#101713;--mm-panel:#1a241d;--mm-panel2:#202c23;
+  --mm-parchment:#ead9b6;--mm-muted:#b8ad92;--mm-gold:#d8ad5f;--mm-border:#75623f;
+  --mm-green:#6fa77a;--mm-blue:#79a9c7;--mm-red:#c96d5b;
+}
+html,body,#root{width:100%;height:100%;min-height:0;overflow:hidden;background:var(--mm-deep);color:var(--mm-parchment)}
+body{font-family:'EB Garamond',Georgia,serif;background:radial-gradient(ellipse at 55% 40%,#243329 0,#101713 72%)}
+.mesa{height:100dvh;min-height:0;grid-template-rows:64px minmax(0,1fr) auto;background:transparent}
+.mesa-header{min-height:64px;padding:8px 18px;background:linear-gradient(180deg,#26372c,#19241d);border-bottom:1px solid var(--mm-gold);box-shadow:0 5px 22px #0008;gap:18px}
+.btn-voltar{border-color:var(--mm-border);color:var(--mm-parchment);background:#111913;border-radius:7px;letter-spacing:1px}
+.titulo-mesa .nome{font-size:18px;letter-spacing:2px;color:#f2e6ca}
+.titulo-mesa .estado{display:inline-block;padding:3px 11px;border:1px solid currentColor;border-radius:999px;font-size:9px;letter-spacing:1.5px}
+.turno-info{min-width:130px;padding:8px 12px;border:1px solid #75623f;border-radius:8px;background:#111913;color:var(--mm-gold);font-size:10px}
+.mesa-corpo{min-height:0;grid-template-columns:minmax(225px,260px) minmax(0,1fr) minmax(252px,290px);gap:0}
+.col-esq,.col-dir{min-height:0;background:linear-gradient(180deg,#18221b,#111813);border-color:#564a32}
+.col-esq{border-right:1px solid var(--mm-border)}
+.col-dir{border-left:1px solid var(--mm-border);padding:14px 12px;gap:10px;overflow-y:auto;overscroll-behavior:contain}
+.painel{min-height:0}
+.painel-cab{padding:12px 14px;background:linear-gradient(90deg,#27372b,#1a251d);color:var(--mm-gold);border-bottom:1px solid #584a32;font-size:10px;letter-spacing:2px}
+.painel-corpo{padding:13px;scrollbar-color:#7a6742 #141b16}
+#chat-lista{gap:9px}
+.chat-msg{padding:8px 10px;border:1px solid #414a37;border-radius:8px;background:#202a21;color:#e3d6bb;font-size:13px}
+.chat-msg.sistema{border:1px dashed #74623f;background:#252a20;color:#c9bc9e}
+.chat-msg.rolagem{background:#27352a;border-left:3px solid var(--mm-blue)}
+.chat-input{padding:10px;background:#141c16;border-top:1px solid #574a32}
+.chat-input input{background:#0d130f;border:1px solid #62563a;color:var(--mm-parchment);border-radius:7px}
+.chat-input button{min-width:42px;background:var(--mm-gold);border-radius:7px}
+.tabuleiro{min-width:0;min-height:0;background:#0b100d;isolation:isolate}
+#cba-live-world{width:100%;height:100%;min-width:0;min-height:0}
+#cba-bg-live{filter:saturate(.86) contrast(1.04)}
+#cba-grid-live{opacity:.72}
+#cba-token-layer{z-index:3}
+.token-cba{filter:drop-shadow(0 3px 5px #000b)}
+.col-dir>.painel-acoes-grupo,.col-dir>.painel-combate-acoes,.col-dir .painel-acoes-grupo{
+  padding:12px;border:1px solid #574a32;border-radius:10px;
+  background:linear-gradient(160deg,#253329,#19231c);box-shadow:0 8px 18px #0004
+}
+.painel-acoes-grupo h3,.painel-combate-acoes h3{margin:0 0 9px;color:var(--mm-gold);font:700 10px 'Cinzel',serif;letter-spacing:1.8px}
+.btn-acao{width:100%;min-height:44px;padding:10px 12px;border-color:#65573a;border-radius:7px;background:#17211a;color:#eadbb9;font-size:10px;letter-spacing:1px;transition:background .16s,border-color .16s,transform .16s}
+.btn-acao:hover{background:#304330;border-color:var(--mm-gold);color:#fff1cf;transform:translateY(-1px)}
+.btn-acao.destaque{background:#794338;border-color:#c96d5b}
+#painel-combate-acoes[hidden]{display:none!important}
+.mesa-footer{min-height:116px;max-height:168px;padding:9px 14px 11px;border-top:1px solid var(--mm-gold);background:linear-gradient(180deg,#1e2b22,#121a15);display:flex;flex-direction:column;gap:7px;overflow:hidden}
+.mesa-footer-heading{display:flex;justify-content:space-between;align-items:center;color:var(--mm-gold);font:700 9px 'Cinzel',serif;letter-spacing:2px}
+.cards-strip{min-height:0;flex:1;padding:0;border:0;background:transparent;overflow-x:auto;overflow-y:hidden;align-items:stretch}
+.card-pers{min-width:210px;max-width:290px;padding:9px 11px;border-color:#675638;border-radius:9px;background:linear-gradient(145deg,#26352a,#18211b)}
+.card-pers:hover{border-color:var(--mm-gold);background:#30412f}
+.card-pers.turno-ativo{border-color:#efd184;background:linear-gradient(145deg,#3a4029,#202b20)}
+.card-pers-nome{color:#f2e4c5}
+.card-pers-classe,.card-pers-pv-txt{color:#bdaf90}
+#painel-iniciativa{top:74px;width:min(86vw,900px);max-height:130px;background:#17221b;border-color:var(--mm-gold);border-radius:10px;pointer-events:auto}
+#painel-iniciativa:not(.ativo){display:none!important}
+.iniciativa-item{background:#202b22;border-color:#675638;color:#eadbb9}
+.iniciativa-item.ativo{background:#d8ad5f;color:#171d15;border-color:#f4dc9a}
+#botoes-rolagem-pendente{right:16px;bottom:calc(188px + env(safe-area-inset-bottom))}
+#btn-encerrar-turno-player{bottom:calc(188px + env(safe-area-inset-bottom));background:#714238;border-color:var(--mm-gold);border-radius:10px}
+@media(max-width:1050px){
+ .mesa-corpo{grid-template-columns:minmax(205px,235px) minmax(0,1fr) minmax(230px,260px)}
+ .col-dir{padding:10px 8px}
+ .btn-acao{font-size:9px}
+}
+@media(max-width:760px){
+ html,body,#root{overflow:hidden}
+ .mesa{grid-template-rows:58px minmax(0,1fr) 132px;height:100dvh}
+ .mesa-header{min-height:58px;padding:6px 9px;gap:8px}
+ .btn-voltar{padding:6px 8px;font-size:9px}
+ .titulo-mesa .nome{font-size:14px;letter-spacing:1px}
+ .turno-info{min-width:0;padding:6px;font-size:8px}
+ .mesa-corpo{grid-template-columns:minmax(0,1fr) 210px;grid-template-rows:minmax(0,1fr) 180px}
+ .tabuleiro{grid-column:1/-1;grid-row:1}
+ .col-esq{grid-column:1;grid-row:2;border-top:1px solid var(--mm-border);border-right:1px solid var(--mm-border)}
+ .col-dir{grid-column:2;grid-row:2;border-top:1px solid var(--mm-border);border-left:0;display:flex;flex-direction:row;align-items:flex-start;overflow-x:auto;overflow-y:hidden}
+ .col-dir>.painel-acoes-grupo,.col-dir .painel-acoes-grupo{min-width:190px;height:100%;overflow:auto}
+ .col-dir .btn-acao{min-height:38px;margin:4px 0}
+ .painel-cab{padding:7px 9px}
+ .chat-input{padding:5px}
+ .chat-input input{padding:7px}
+ .mesa-footer{min-height:132px;max-height:132px;padding:7px}
+ .card-pers{min-width:178px}
+ #painel-iniciativa{top:62px;left:2vw;transform:none;width:96vw;max-height:100px}
+ #botoes-rolagem-pendente{right:8px;bottom:calc(146px + env(safe-area-inset-bottom));width:min(300px,calc(100vw - 16px))}
+ #btn-encerrar-turno-player{bottom:calc(140px + env(safe-area-inset-bottom));padding:10px 13px}
+}
+@media(max-width:520px){
+ .mesa-corpo{grid-template-columns:minmax(0,1fr) 150px;grid-template-rows:minmax(0,1fr) 190px}
+ .col-dir>.painel-acoes-grupo,.col-dir .painel-acoes-grupo{min-width:142px;padding:8px}
+ .col-dir>.painel-acoes-grupo h3,.col-dir .painel-acoes-grupo h3{font-size:8px}
+ .btn-acao{gap:5px;padding:8px;font-size:8px}
+ .btn-acao .icone{width:15px;font-size:13px}
+ .cards-strip{gap:7px}
+ .card-pers{min-width:155px}
+}
+@media(prefers-reduced-motion:reduce){
+ *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+</style>
 </head>
 <body>
 
@@ -920,10 +1018,6 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
                 '<button id="chat-enviar">➤</button>'+
               '</div>'+
             '</section>'+
-            '<section class="painel painel-aventureiros" style="flex:1;min-height:0">'+
-              '<div class="painel-cab">Combatentes · Ordem de turno</div>'+
-              '<div class="cards-strip" id="cards-strip" aria-label="Cards de combate em ordem de iniciativa"></div>'+
-            '</section>'+
           '</aside>'+
           '<main class="tabuleiro" id="area-tabuleiro">'+
             '<div id="cba-live-movement-preview" class="cba-live-movement-preview" role="status" aria-live="polite" hidden></div>'+
@@ -940,6 +1034,10 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
           '</main>'+
           '<aside class="col-dir" id="acoes-dir"></aside>'+
         '</div>'+
+        '<footer class="mesa-footer">'+
+          '<div class="mesa-footer-heading"><span>COMBATENTES</span><span>ORDEM DE TURNO</span></div>'+
+          '<div class="cards-strip" id="cards-strip" aria-label="Cards de combate em ordem de iniciativa"></div>'+
+        '</footer>'+
       '</div>';
 
     renderBotoesAcao();
@@ -3281,7 +3379,7 @@ async function abrirModalEquipamentos(){
     var ativo=!!(combatDataState && combatDataState.active && ordem.length);
     var gmActions=document.getElementById('iniciativa-acoes-mestre');if(!gmActions){gmActions=document.createElement('div');gmActions.id='iniciativa-acoes-mestre';var controlsHost=document.getElementById('painel-combate-acoes');if(controlsHost)controlsHost.appendChild(gmActions);else fila.parentNode.insertBefore(gmActions,fila.nextSibling);}gmActions.replaceChildren();
     ordem.forEach(function(entry){if(entry&&!entry.is_monster&&entry.id!=null)removerPedidosIniciativaDaFicha(entry.id);});
-    if(!ordem.length && !esperados.length){
+    if((campanha && String(campanha.state||'').toUpperCase()!=='COMBATE') || (!ordem.length && !esperados.length)){
       renderizarPainelEconomiaAcoes(false,null,null);
       painel.classList.remove('ativo');
       var controlsPanel=document.getElementById('painel-combate-acoes');if(controlsPanel)controlsPanel.hidden=true;
