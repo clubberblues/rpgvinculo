@@ -1675,8 +1675,10 @@ function dnd35LevelupFeatSpec(state,nextLevel){
     }).join('');
     var featureRows=Array.isArray(state.nextLevelFeatures)?state.nextLevelFeatures:[];
     var featuresHtml=featureRows.length?'<ul class="dnd35-list">'+featureRows.map(function(feature){
-      var status=dnd35Objeto(feature.mechanics).engine_status;
-      return '<li><b>'+esc(feature.name||feature.summary||'Característica')+'</b>'+(feature.summary&&feature.summary!==feature.name?': '+esc(feature.summary):'')+(status==='needs_implementation'?' <small>· catálogo verificado; efeito automático ainda não implementado</small>':'')+'</li>';
+      var status=dnd35Objeto(feature.mechanics).engine_status,featureName=String(feature.name||feature.summary||'Característica'),normalizedName=dnd35Norm(featureName);
+      var coveredBonus=normalizedName==='talento adicional'&&dnd35LevelupFeatSpec(state,nextLevel).length>0;
+      var statusText=coveredBonus?' · escolha de talento feita na seção acima':(status==='needs_implementation'?' · catálogo verificado; efeito automático ainda não implementado':'');
+      return '<li><b>'+esc(featureName)+'</b>'+(feature.summary&&feature.summary!==feature.name?': '+esc(feature.summary):'')+(statusText?' <small>'+statusText+'</small>':'')+'</li>';
     }).join('')+'</ul>':'<p class="dnd35-note">Não há características de classe catalogadas para este nível. Isso não bloqueia o avanço, mas o Mestre deve conferir a progressão de classe.</p>';
     var attrHtml=nextLevel%4===0?'<div class="dnd35-feat-control"><label for="lu-attribute">Aumento de atributo (+1)</label><select id="lu-attribute" data-lu-attribute><option value="">Escolha um atributo…</option>'+ATR.map(function(a){return '<option value="'+a+'"'+(lu.attribute===a?' selected':'')+'>'+esc(ROT[a]||a)+' ('+Number(attrs[a]||10)+' → '+(Number(attrs[a]||10)+1)+')</option>';}).join('')+'</select></div>':'<p class="dnd35-note">Aumento de atributo nos níveis múltiplos de 4.</p>';
     var featCount=featSpec.length,featsReady=lu.feats.length===featCount&&lu.feats.every(function(p){return p&&p.id&&(!((state.feats||[]).find(function(f){return String(f.id)===String(p.id);})||{}).exige_parametro||String(p.parametro||'').trim());});
