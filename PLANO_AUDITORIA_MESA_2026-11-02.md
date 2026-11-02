@@ -62,3 +62,11 @@ A proteção contra senhas vazadas foi formalmente descartada para este projeto 
 - Criação de branch E2E tentou-se e foi recusada pelo Supabase: branching requer Pro ou superior. Não foram executadas ações de jogo na campanha 17 em combate.
 - A migração para remover duplicatas está aplicada e versionada; advisor agora indica zero pares duplicados e 88 índices não utilizados (informativo).
 - As 81 funções SECURITY DEFINER autenticadas foram filtradas por evidência de auth/guarda; todas têm checagem direta ou delegam a helper de GM/autorização. A única sem marcador direto no corpo é `set_turn`, que delega a `combat_set_turn`, o qual exige GM via `priv.need_gm`. Nenhuma executável por `anon`.
+
+
+### Confirmação após deploy (2026-11-02)
+
+- Deploy do GitHub Pages do commit `4d8dde42efc8b7f7fdfab9211964ecf89d84c8b5` concluiu com sucesso.
+- Captura desktop 1280×720 confirmou o painel de iniciativa e os três cartões (personagem, NPC e monstro) dentro do rodapé, sem corte; a faixa de combate foi ajustada para três colunas no desktop e rolagem horizontal em viewport estreita.
+- A verificação visual do layout está concluída nesta tela do Mestre. O fluxo mágico ainda não foi executado em campanha porque a sessão atual está em combate e a conta Free não permite branch de teste.
+- Permanecem pendentes: teste transacional real de Míssil Mágico em personagem autenticado descartável, visualização como jogador com sessão correspondente, cobertura E2E/Realtime em duas sessões e implementação dos resolvers para outras magias ofensivas e 131 características de classe.
