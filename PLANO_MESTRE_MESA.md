@@ -256,3 +256,23 @@ Foi corrigido `mesa.html`: o menu do Mestre mostra “Mover token do jogador” 
 PV inicial definido: valor máximo do dado de vida + modificador de Constituição, mínimo 1. A ficha SRD já apresenta essa regra; manter essa fórmula como referência normativa e confirmar o valor persistido pelo fluxo de criação na próxima validação autenticada.
 
 Pendências restantes: revisar a cobertura de capacidades por classe/nível contra catálogo e RPCs; validar visualmente a mesa autenticada; executar a matriz ponta a ponta com sessões Mestre e jogador. A proteção contra senhas vazadas foi descartada pelo proprietário por indisponibilidade no plano Free.
+
+
+## Redesign da interface do Mestre — 2026-11-02
+
+A mesa recebeu uma reorganização visual gamificada com referência a MMORPG: tabuleiro CBA central, chat em painel lateral, comandos do Mestre agrupados em cartões próprios e combatentes em faixa horizontal inferior. O painel lateral passou a rolar sem cortar os controles; a folha de estilo inclui ajustes responsivos e respeito a redução de movimento. A faixa de combatentes e o mapa permanecem ligados aos mesmos dados e handlers.
+
+Foi corrigida a exibição de iniciativa antiga durante exploração: `renderizarIniciativa` limpa o painel se o estado da campanha não for COMBATE. A ação de exclusão de campanha foi renomeada de “Configurações” para “Excluir campanha” e destacada visualmente, alinhando o rótulo ao handler destrutivo.
+
+Validação visual autenticada na campanha 17: layout do Mestre renderizado sem sobreposição principal; chat, catálogo de NPC/monstros, livro de testes, catálogo de equipamentos e iframe de `dice.html` abriram e fecharam. O estado EXPLORAÇÃO não exibiu painel de iniciativa obsoleto. Não foram enviados dados, rolados dados, adicionados tokens, publicados mapas, alterados PV/XP nem iniciados/encerrados combates.
+
+O servidor mantém `avancar_turno` autenticado e limitado a membros da campanha: o Mestre pode avançar a fila; jogador só pode avançar quando o turno atual pertence à própria ficha. O botão do jogador continua “Encerrar Turno”. A separação foi revisada no corpo da RPC e mantida.
+
+### Pendências da validação da mesa
+
+- Abrir e revisar visualmente todos os menus/modais de combate e ação contextual de NPC, monstro e jogador, incluindo permissões e seletores; validação segura de seus efeitos exige campanha de teste descartável.
+- Verificar a interface em viewport menor e sob conta de jogador.
+- Executar cenários de escrita (iniciativa, movimento, ataque, magia, inventário, XP, alternar combate) em campanha de teste ou transação reversível; não executar na campanha real 17.
+- Auditar cobertura de capacidades por classe e nível. Catálogos/handlers existentes não provam cobertura de toda classe ou habilidade especial.
+- Confirmar com fluxo de criação autenticado que PV inicial persistido usa DV máximo + modificador de Constituição, mínimo 1.
+- A proteção contra senhas vazadas permanece descartada por decisão do proprietário devido ao plano Free.
