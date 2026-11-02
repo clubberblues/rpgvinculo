@@ -190,3 +190,7 @@ O RPC `conjurar_magia_srd` foi testado em transação revertida com `srd35_cure_
 Foram instaladas as RPCs autenticadas `conjurar_magia_srd_multialvo` e `conjurar_magia_com_acao_srd_multialvo`. Elas recebem de 1 a 20 tokens, rejeitam chaves duplicadas ou inexistentes, consomem um único espaço preparado e, em combate, uma única ação padrão. O teste transacional com `Cure Light Wounds, Mass` curou um monstro animal e um personagem, respeitou o PV máximo e deixou o banco sem alterações após rollback. Execução anônima foi revogada; apenas `authenticated` pode chamar as RPCs.
 
 O resolver identifica mortos-vivos e os trata como dano de energia positiva no fluxo de múltiplos alvos; a validação de HP e a atualização de token permanecem atômicas.
+
+### Correção de escopo do aceite de cura em massa — 2026-11-02
+
+Correção: o aceite executado cobre alvos vivos (personagem, NPC e monstro não-morto-vivo). A RPC detecta mortos-vivos e os rejeita explicitamente para não aplicar cura incorreta; o dano de energia positiva para mortos-vivos permanece pendente até o próximo ajuste.
