@@ -156,3 +156,8 @@ Nenhuma entrada foi marcada como verificada sem fonte SRD consultada, e o projet
 ## Validação transacional do combate — 2026-11-02
 
 As RPCs do ciclo de combate foram alinhadas ao esquema atual e testadas em uma transação revertida: dois monstros do catálogo SRD foram criados temporariamente, o combate foi iniciado, um ataque foi resolvido, dano e cura atualizaram HP, e o combate foi encerrado. O resultado confirmou iniciativa, defesa, log e alteração de estado sem deixar registros de teste persistidos. A pendência restante é a validação com usuários reais Mestre/jogador e interface, não mais a integração básica do banco.
+
+
+## Validação do fluxo CBA — 2026-11-02
+
+A inicialização de iniciativa usada pela interface (`iniciar_iniciativa_com_dados`) foi executada em transação revertida com três tokens sob controle do Mestre e um personagem jogador. O servidor distribuiu os três d20, calculou modificadores de Destreza e retornou a ordem esperada sem persistir o cenário de teste. Também foi corrigida uma referência de personagem de outra campanha no snapshot da campanha 13.
