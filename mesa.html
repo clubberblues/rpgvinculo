@@ -646,6 +646,26 @@ html,body{min-height:100%;height:100%;overflow:hidden}body{min-width:320px}
 @media(min-width:901px){.cards-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-flow:row;overflow:hidden}.cards-strip .card-pers{width:100%;min-width:0;max-width:none;min-height:150px;flex:none}}
 
 </style>
+
+<style>
+/* Ações por categoria e rotação de fichas: mantém cada controle acessível sem rolagem interna escondida. */
+#acoes-dir{min-width:0;min-height:0;overflow:hidden!important;display:flex!important;flex-direction:column;align-content:stretch;gap:8px;padding:10px}
+.action-group-tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:5px;flex:0 0 auto}
+.action-group-tab{min-width:0;min-height:38px;padding:6px 5px;border:1px solid #445872;border-radius:7px;background:#101a28;color:#aebdd0;font:700 8px/1.2 Cinzel,serif;letter-spacing:.4px;cursor:pointer}
+.action-group-tab[aria-selected="true"]{border-color:#e0b65c;background:linear-gradient(145deg,#493e29,#1d2b3d);color:#ffe3a0;box-shadow:inset 0 -2px #d7ae58}
+.action-group-tab:focus-visible,.cards-strip-pager button:focus-visible{outline:2px solid #f3d993;outline-offset:2px}
+#acoes-dir>.painel-acoes-grupo{width:100%;min-width:0;min-height:0;overflow:visible;flex:1 1 auto;display:flex;flex-direction:column;gap:6px}
+#acoes-dir>.painel-acoes-grupo[hidden]{display:none!important}
+#acoes-dir>.painel-acoes-grupo .btn-acao{min-height:38px}
+.cards-strip{position:relative;padding-bottom:31px}
+.cards-strip>.card-pers[hidden]{display:none!important}
+.cards-strip-pager{position:absolute;right:8px;bottom:3px;z-index:5;display:flex;align-items:center;gap:8px;padding:3px 7px;border:1px solid #445872;border-radius:999px;background:#0b121eee;color:#c6d2e0;font:700 9px Cinzel,serif}
+.cards-strip-pager[hidden]{display:none!important}
+.cards-strip-pager button{width:27px;height:24px;border:1px solid #78623b;border-radius:50%;background:#1a293c;color:#f0d080;font-size:17px;line-height:1;cursor:pointer}
+.cards-strip-pager button:disabled{opacity:.35;cursor:not-allowed}
+@media(max-width:900px){#acoes-dir{display:flex!important;flex-direction:column;overflow:visible!important}.action-group-tabs{grid-template-columns:repeat(auto-fit,minmax(0,1fr))}.cards-strip{position:relative}}
+@media(max-width:600px){#acoes-dir{grid-column:1/-1!important;padding:10px}.action-group-tab{font-size:9px;min-height:42px}.cards-strip-pager{right:6px;bottom:3px}}
+</style>
 </head>
 <body>
 
@@ -893,6 +913,7 @@ html,body{min-height:100%;height:100%;overflow:hidden}body{min-width:320px}
   var cbaWriteQueue = Promise.resolve();
   var combatDataState = null;
   var iniciativaBusy = false;
+  var cardsPage = 0;
   var estadoMesaBusy = false;
   var reforcoBusy = false;
   var itemEquipamentoSelecionado = null;
@@ -1167,9 +1188,22 @@ html,body{min-height:100%;height:100%;overflow:hidden}body{min-width:320px}
       [{title:'Seu turno',ids:['atk-corpo','atk-dist','atk-mag','pericia','inventario','avancar-turno']}]:
       [{title:'Aventureiro',ids:['ficha','dados','pericia','atk-mag','inventario']}];
     var economyPanel=document.getElementById('painel-economia');if(economyPanel&&economyPanel.parentNode)economyPanel.parentNode.removeChild(economyPanel);
+    var previousGroup=el.dataset.activeGroup||'';
     el.replaceChildren();
-    actionGroups.forEach(function(group){var section=document.createElement('section');section.className='painel-acoes-grupo';var heading=document.createElement('h3');heading.textContent=group.title;section.appendChild(heading);group.ids.forEach(function(id){var button=actionButtons.find(function(candidate){return candidate.dataset.acao===id;});if(button)section.appendChild(button);});if(section.querySelector('.btn-acao'))el.appendChild(section);});
-
+    var tabs=document.createElement('nav');tabs.className='action-group-tabs';tabs.setAttribute('role','tablist');tabs.setAttribute('aria-label',ehGM?'Categorias de ferramentas do Mestre':'Ações do jogador');
+    var activeGroup=actionGroups.some(function(group){return group.title===previousGroup;})?previousGroup:(actionGroups[0]&&actionGroups[0].title)||'';
+    actionGroups.forEach(function(group,index){
+      var panelId='acoes-grupo-'+index,tabId='acoes-grupo-tab-'+index;
+      var tab=document.createElement('button');tab.type='button';tab.className='action-group-tab';tab.id=tabId;tab.setAttribute('role','tab');tab.setAttribute('aria-controls',panelId);tab.setAttribute('aria-selected',group.title===activeGroup?'true':'false');tab.tabIndex=group.title===activeGroup?0:-1;tab.textContent=group.title;
+      tab.addEventListener('click',function(){el.dataset.activeGroup=group.title;el.querySelectorAll('.action-group-tab').forEach(function(item){var selected=item===tab;item.setAttribute('aria-selected',selected?'true':'false');item.tabIndex=selected?0:-1;});el.querySelectorAll('.painel-acoes-grupo').forEach(function(panel){panel.hidden=panel.id!==panelId;});});
+      tabs.appendChild(tab);
+      var section=document.createElement('section');section.className='painel-acoes-grupo';section.id=panelId;section.setAttribute('role','tabpanel');section.setAttribute('aria-labelledby',tabId);section.hidden=group.title!==activeGroup;
+      var heading=document.createElement('h3');heading.textContent=group.title;section.appendChild(heading);
+      group.ids.forEach(function(id){var button=actionButtons.find(function(candidate){return candidate.dataset.acao===id;});if(button)section.appendChild(button);});
+      if(section.querySelector('.btn-acao'))el.appendChild(section);
+    });
+    if(actionGroups.length>1)el.prepend(tabs);
+    el.dataset.activeGroup=activeGroup;
     el.querySelectorAll('.btn-acao').forEach(function(b){
       if(b.dataset.acao==='alternar-combate' && estadoMesaBusy) b.disabled=true;
       b.onclick = function(){ acao(b.dataset.acao); };
@@ -3794,6 +3828,14 @@ async function abrirModalEquipamentos(){
     if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
       Array.from(el.querySelectorAll('.card-pers')).forEach(function(node){var before=priorTop[node.dataset.actorKey];if(before==null)return;var delta=before-node.getBoundingClientRect().top;if(Math.abs(delta)<2)return;node.style.transition='none';node.style.transform='translateY('+delta+'px)';requestAnimationFrame(function(){node.style.transition='transform 420ms cubic-bezier(.2,.75,.25,1)';node.style.transform='';});});
     }
+    var rosterCards=Array.from(el.querySelectorAll(':scope > .card-pers')),pageSize=window.matchMedia('(min-width:901px)').matches?3:1,pageCount=Math.max(1,Math.ceil(rosterCards.length/pageSize));
+    cardsPage=Math.max(0,Math.min(cardsPage,pageCount-1));
+    rosterCards.forEach(function(card,index){card.hidden=Math.floor(index/pageSize)!==cardsPage;});
+    var pager=document.getElementById('cards-strip-pager');
+    if(!pager){pager=document.createElement('nav');pager.id='cards-strip-pager';pager.className='cards-strip-pager';pager.setAttribute('aria-label','Navegação de fichas e tokens');el.appendChild(pager);}
+    pager.hidden=pageCount<=1;
+    pager.innerHTML='<button type="button" data-cards-page="prev" aria-label="Página anterior de fichas" '+(cardsPage===0?'disabled':'')+'>‹</button><span aria-live="polite">'+(cardsPage+1)+' / '+pageCount+' · '+rosterCards.length+' tokens</span><button type="button" data-cards-page="next" aria-label="Próxima página de fichas" '+(cardsPage>=pageCount-1?'disabled':'')+'>›</button>';
+    pager.onclick=function(event){var button=event.target.closest&&event.target.closest('[data-cards-page]');if(!button||button.disabled)return;cardsPage+=button.dataset.cardsPage==='next'?1:-1;renderCards();};
     if(cbaPublishedState)renderizarTokensCBA(document.getElementById('cba-token-layer'),cbaPublishedState);
   }
 
