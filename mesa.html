@@ -1207,9 +1207,8 @@ body{font-family:'EB Garamond',Georgia,serif;background:radial-gradient(ellipse 
     if(ehGM){
       adicionarBotaoContextual(menu,'token-image','🖼️ Alterar retrato do token');
       if(item.tipo==='player'){
-        adicionarBotaoContextual(menu,'pv-personagem','❤️ Ajustar PV do personagem');
         var playerTurn=combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
-        if(playerTurn&&!playerTurn.is_monster&&String(playerTurn.id)===String(item.id)){adicionarBotaoContextual(menu,'gm-token-move','↔️ Mover token do jogador');}
+        if(playerTurn&&!playerTurn.is_monster&&String(playerTurn.id)===String(item.id))adicionarBotaoContextual(menu,'gm-token-move','↔️ Mover token do jogador');
       }
       else{
         var gmTurn=combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
@@ -1237,7 +1236,7 @@ body{font-family:'EB Garamond',Georgia,serif;background:radial-gradient(ellipse 
     fecharMenuContextualToken(false);
     if(acao==='fechar')return;
     if(acao==='token-image'){selecionarImagemToken(item);return;}
-    if(acao==='pv-personagem'){if(ehGM&&item.tipo==='player')abrirAjustePV(item.id);return;}
+    if(acao==='pv-personagem'){return;}
     if(acao==='pv-token'){if(ehGM&&item.tipo!=='player')abrirAjustePVToken(item.key);return;}
     if(acao==='monster-info'){if(ehGM&&item.tipo==='monstro')infoTokenNoChat(item);return;}
     if(acao==='npc-sheet'){if(ehGM)publicarFichaNPC35(item).catch(function(err){alert('Não foi possível publicar a ficha do NPC: '+err.message);});return;}
@@ -1245,7 +1244,7 @@ body{font-family:'EB Garamond',Georgia,serif;background:radial-gradient(ellipse 
     if(acao==='gm-token-attack'){iniciarAtaqueMestre(item);return;}
     if(acao==='gm-token-magic'){abrirMagiasTokenMestre(item);return;}
     if(acao==='gm-token-action'){registrarOutraAcaoMestre(item);return;}
-    if(acao==='gm-token-move'){document.getElementById('iniciativa-status').textContent='Mova '+item.nome+' arrastando seu token no tabuleiro. O deslocamento e a ação serão validados ao soltar.';return;}
+    if(acao==='gm-token-move'){if(!ehGM||item.tipo!=='player'||!ehMeuTokenNoTurno(item)){alert('O Mestre só pode mover o token do jogador no turno ativo dessa ficha.');return;}document.getElementById('iniciativa-status').textContent='Mova '+item.nome+' arrastando seu token no tabuleiro. O deslocamento e a ação serão validados ao soltar.';return;}
     if(acao==='gm-token-end'){if(ehGM)avancarTurno();return;}
     if(acao==='inventario'&&ehGM&&item.tipo!=='player'){abrirInventarioTokenSRD(item);return;}
     if(!acharPersonagemDoToken(item)||acharPersonagemDoToken(item).ch.user_id!==eu.id)return;
