@@ -130,3 +130,24 @@ Migração aplicada ao Supabase de produção: `srd35_rule_engine_foundation` (`
 - RLS está ativa nas novas tabelas; consultas autenticadas de leitura são permitidas, leitura anônima e gravação direta autenticada estão bloqueadas. Escrita de estado de jogo deverá passar por operações validadas do servidor.
 
 A especificação normativa de módulos, dependências e critérios de cobertura está em `DND35_RULE_ENGINE_ARCHITECTURE.md`. “Completo” só poderá ser declarado quando os catálogos forem verificados por fonte e cada regra automatizável tiver um resolver e cenários de aceitação. O texto integral de livros não SRD não é parte desta ingestão.
+
+
+## Atualização de estado verificado — 2026-11-02
+
+As seções históricas acima preservam o contexto das decisões, mas os números e pendências antigos não representam mais o estado atual. O estado autoritativo atual é:
+
+- Auditoria SRD: 1.403/1.403 entradas genéricas verificadas; 1.021/1.021 equipamentos com fonte conferida, incluindo 46 exceções documentadas como não aplicáveis.
+- Catálogo fonte-verificado: 607 magias, 445 monstros, 131 características de nível, 110 talentos, 50 perícias, 38 condições e 22 domínios.
+- RLS foi ativado nas tabelas de auditoria; nenhuma auditoria possui pendência não documentada.
+- RPCs centrais do motor estão instaladas: criação de personagem, espaços e CD de magia, inventário, condições, dano/cura, ataque, combate e consumo de ações.
+- Todas as 82 funções públicas SECURITY DEFINER têm search_path fixado; rotinas de trigger não são executáveis diretamente por anon/authenticated, e o backfill legado de habilidades agora exige proprietário da ficha ou GM.
+- Testes de fumaça executados: CD, progressão de espaços, reconhecimento de classe e classificação de equipamento.
+
+Pendências reais restantes para a simulação final:
+
+1. Executar a matriz ponta a ponta com uma campanha de teste e usuários Mestre/jogador, cobrindo ficha, permissões, movimento, iniciativa, acerto/erro, dano, PV, magia, inventário e recarga sem duplicação.
+2. Revisar os avisos restantes do advisor sobre RPCs SECURITY DEFINER que são deliberadamente chamadas da aplicação autenticada; a proteção estrutural e os guards existentes devem ser validados contra cada fluxo.
+3. Ativar a proteção contra senhas vazadas nas configurações de Auth do projeto Supabase, pois essa configuração não é exposta pelo conector SQL.
+4. Validar visualmente o tutorial guiado e o layout da mesa com navegador compartilhado.
+
+Nenhuma entrada foi marcada como verificada sem fonte SRD consultada, e o projeto não deve ser declarado “completo” antes dos quatro itens acima terem evidência de execução.
