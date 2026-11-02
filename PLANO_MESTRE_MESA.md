@@ -161,3 +161,8 @@ As RPCs do ciclo de combate foram alinhadas ao esquema atual e testadas em uma t
 ## Validação do fluxo CBA — 2026-11-02
 
 A inicialização de iniciativa usada pela interface (`iniciar_iniciativa_com_dados`) foi executada em transação revertida com três tokens sob controle do Mestre e um personagem jogador. O servidor distribuiu os três d20, calculou modificadores de Destreza e retornou a ordem esperada sem persistir o cenário de teste. Também foi corrigida uma referência de personagem de outra campanha no snapshot da campanha 13.
+
+
+## Aceite de permissões no turno — 2026-11-02
+
+Em transações revertidas, um jogador conseguiu avançar o turno quando o turno era do próprio personagem; o mesmo jogador foi rejeitado quando o turno pertencia a uma criatura do Mestre. O consumo de ação padrão foi aceito uma vez e a repetição na mesma rodada foi rejeitada pelo servidor.
