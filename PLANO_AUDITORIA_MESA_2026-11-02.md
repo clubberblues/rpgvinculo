@@ -165,3 +165,58 @@ Nenhum registro de campanha, personagem, token, log ou combate foi alterado. As 
 - Teste transacional revertido para Guerreiro, Monge e Mago: Guerreiro recebeu Blind-Fight como talento bônus; Monge recebeu Agarrar Aprimorado e Ataque Desarmado Aprimorado como característica de classe; Mago recebeu Escrever Pergaminho automaticamente. Todos os três fluxos passaram pelas RPCs de criação e concessão de bônus.
 - Verificado após `ROLLBACK`: zero personagens temporários permaneceram no banco.
 - O workflow GitHub Pages do commit `f8b9320617c8112976eab16eccdef9f8a7b76193` concluiu com sucesso. O commit inclui a correção de classificação de Maestria em Magia como talento geral de Mago, e mantém as correções anteriores de criação e avanço de nível.
+
+## Continuação da execução imediata — nível 1, talentos de classe e Maestria em Magia (2026-11-03)
+
+### Criação de personagem — talentos de nível 1
+
+- RPC salvar_talentos_bonus_classe_inicial_srd aplicada, com autenticação e verificação de proprietário. anon não executa; authenticated executa.
+- Guerreiro: um talento bônus da lista específica, com validação de pré-requisitos e proficiência para Foco em Arma.
+- Monge: escolha entre Agarrar Aprimorado ou Ataque Atordoante; Ataque Desarmado Aprimorado é adicionado automaticamente. Os bônus permitidos ignoram os pré-requisitos normais.
+- Mago: Escrever Pergaminho é adicionado automaticamente.
+- A RPC é idempotente para retentativas e impede uma segunda escolha diferente após já existir talento bônus de classe.
+- UI de criação agora expõe escolha de classe para Guerreiro/Monge e informa concessão automática do Mago. O save chama a RPC após criar a ficha.
+- criar_personagem_srd_completo valida que talentos básicos escolhidos pertencem à categoria General.
+
+### Maestria em Magia (Spell Mastery)
+
+- Corrigida a classificação: Maestria em Magia é uma opção de talento bônus do Mago nos níveis 5, 10, 15 e 20, não um talento geral de criação.
+- A RPC de avanço exige Mago, modificador positivo de INT, número exato de magias igual ao modificador de INT e que cada magia esteja no grimório.
+- Teste transacional: Mago nível 4 → 5, INT 14 e duas magias no grimório; escolha de Maestria em Magia aceita. A transação foi revertida de propósito.
+
+### Testes de integração em subtransações com rollback
+
+- Guerreiro nível 1: talentos gerais, Foco em Arma (Espada Longa) como bônus e retry idempotente — aceitos.
+- Monge nível 1: talentos gerais, Ataque Desarmado Aprimorado automático e Ataque Atordoante como bônus; retry idempotente — aceitos.
+- Mago nível 1: talentos gerais e Escrever Pergaminho automático — aceitos.
+- Criação básica rejeitou Escrever Pergaminho como talento geral.
+- Guerreiro 1 → 2 aceitou Foco em Arma com Espada Longa; Mago foi impedido de escolhê-la sem proficiência.
+- Monge 1 → 2 aceitou Defletir Flechas apesar dos pré-requisitos usuais, pela exceção da lista de bônus.
+- Maestria em Magia foi aceita no bônus de Mago 4 → 5 com duas magias do grimório.
+- As subtransações foram revertidas; consulta posterior confirmou zero personagens de teste remanescentes.
+- Scripts inline de ficha.html e mesa.html passaram na validação de sintaxe.
+
+### Catálogo de armas
+
+- As 53 armas de srd_equipment têm proficiência classificada e referência SRD: 15 simples, 28 marciais e 10 exóticas; zero sem categoria.
+
+### Commits desta continuação
+
+- 62198814c69ed05ef498c194688f4da93b3abd38 — RPC de talentos bônus de classe no nível 1.
+- b6ab0a309f3078d65b5bb3cd71e9fe54021d1325, d29e1603839a1c14119e9036139a39e0b512d76b, 6a40b65f2f226c14f75edb9b7a4189d59c1efb41 — idempotência e unicidade.
+- 0e5e0acf76ff4af3ec775bb248e6f9149f5f16ed, 81804255c84a9f2286eb1ba715f817da687fee2b — UI e integração da criação.
+- b0bae40f43e71320b2371a53a9b4d5d51e529e21, c595b424306a568f2b59b4cd071f6f063dfdee7f — validação e filtro de talentos gerais.
+- 97f156ae4371ce30fd3bac48b81a195cef7847d5 — proficiências das 53 armas.
+- 2517b62825ad97b3ebaf48119a64378327d63dd9, 0513719fdf96434b67395b533f55e11bf5b2d9a5 — Maestria em Magia como talento bônus de Mago.
+
+### Pendências restantes — continuam abertas
+
+1. A ficha e a mesa passaram em validação sintática, mas não houve sessão de navegador autenticada após publicação/cache; o carregamento funcional real da ficha continua sem prova observacional.
+2. E2E simultâneo Mestre/jogador e Realtime não foi executado. Não havia segunda sessão autenticada; branch Supabase isolada exige plano Pro e não foi criada. Nenhuma campanha real foi alterada.
+3. Inspeção visual desktop e em viewport móvel após publicação continua pendente; não havia emulador/redimensionamento de viewport nesta execução.
+4. Os 607 registros de efeito de magia continuam manual/manual_only: não há cobertura genérica tipada. Cura e Míssil Mágico são fluxos especializados; outros efeitos permanecem bloqueados sem consumir recursos.
+5. As 131 características de classe continuam engine_status=needs_implementation; são exibidas no painel, mas suas habilidades, usos, limites e efeitos ainda requerem implementação por grupos de regra.
+6. Avanço de nível ainda não acrescenta automaticamente novas magias conhecidas ao repertório de Bardo/Feiticeiro, novas magias ao grimório de Mago, nem aplica todas as progressões de classe.
+7. Não foi possível confirmar neste ambiente o deploy público do GitHub Pages nem comportamento após atualização de cache.
+
+Nenhum personagem, ficha, campanha, token ou log de jogo real foi alterado. Todas as fichas de teste foram revertidas.
