@@ -645,6 +645,22 @@ html,body{min-height:100%;height:100%;overflow:hidden}body{min-width:320px}
 @media(max-width:600px){.mesa.mesa-com-iniciativa{grid-template-rows:58px auto auto}.mesa-footer{min-height:240px;max-height:none;padding:7px}.cards-strip{min-height:130px;max-height:150px}.cards-strip .card-pers{min-width:78vw;flex-basis:78vw;max-width:78vw;min-height:120px}}
 @media(min-width:901px){.cards-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-flow:row;overflow:hidden}.cards-strip .card-pers{width:100%;min-width:0;max-width:none;min-height:150px;flex:none}}
 
+
+.cards-strip .card-pers{display:block!important;position:relative;padding:0!important;overflow:hidden;perspective:900px;isolation:isolate}
+.card-pers-inner{position:relative;width:100%;height:100%;min-height:inherit;transform-style:preserve-3d;transition:transform .48s cubic-bezier(.2,.75,.25,1)}
+.card-pers.is-flipped .card-pers-inner{transform:rotateY(180deg)}
+.card-pers-face{position:absolute;inset:0;display:flex;align-items:center;gap:10px;padding:8px;overflow:hidden;border-radius:inherit;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.card-pers-front{z-index:1}
+.card-pers-back{transform:rotateY(180deg);z-index:2;align-items:flex-start;flex-direction:column;justify-content:center;gap:5px;background:linear-gradient(145deg,#202f43,#101a2a);color:#e8e1ce;padding:10px 12px}
+.card-pers-back strong{font:700 10px Cinzel,serif;letter-spacing:1px;color:#f2d58c}
+.card-pers-back p{font:12px/1.25 'EB Garamond',serif;color:#d7dfdf;margin:0}
+.card-pers-back small{font:9px/1.25 'EB Garamond',serif;color:#b6c2d0}
+.card-flip-button{position:absolute;right:6px;top:6px;z-index:4;width:26px;height:26px;border:1px solid #c9a050;border-radius:50%;background:#0b1320;color:#f3d48a;font-size:15px;line-height:1;cursor:pointer;box-shadow:0 2px 7px #0008}
+.card-flip-button:hover{background:#c9a050;color:#101722}
+.card-pers-back .card-flip-button{top:auto;right:8px;bottom:7px}
+.card-pers-face .card-pers-info{padding-right:22px}
+.card-pers-back .card-pers-info{padding-right:0}
+@media(prefers-reduced-motion:reduce){.card-pers-inner{transition:none}}
 </style>
 
 <style>
@@ -1163,6 +1179,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     ligarEventosReforcos();
     var cardsStrip = document.getElementById('cards-strip');
     cardsStrip.addEventListener('click', function(e){
+      var flipButton=e.target.closest?e.target.closest('[data-card-flip]'):null;
+      if(flipButton){e.preventDefault();e.stopPropagation();var flipCard=flipButton.closest('.card-pers');if(flipCard)flipCard.classList.toggle('is-flipped');return;}
       var cardAcao = e.target.closest ? e.target.closest('.card-pers') : null;
       if(ehGM && cardAcao && cardAcao.dataset.cbaTokenKey && !modoSelecaoTeste){
         e.preventDefault();var token=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key)===String(cardAcao.dataset.cbaTokenKey);});
@@ -3845,7 +3863,8 @@ async function abrirModalEquipamentos(){
       var token=playerTokenById[String(p.ch.id)],tokenAttr=token?' data-cba-token-key="'+esc(token.key)+'"':'';
       var avatarUrl=String((p.perfil&&p.perfil.avatar_url)||'').trim(),avatar=/^https?:\/\/[^\s"'<>]+$/i.test(avatarUrl)?'<div class="card-pers-avatar" style="background-image:url(&quot;'+esc(avatarUrl)+'&quot;)"></div>':'<div class="card-pers-avatar">'+iniciais((p.perfil&&p.perfil.username)||p.ch.nome)+'</div>';
       var selected=alvosSelecionados.indexOf(String(p.ch.id))!==-1?' selecionado-para-teste':'';
-      var html='<a class="card-pers'+(p.ch.user_id===eu.id?' eu':'')+selected+(activeCard?' turno-ativo':'')+'" data-actor-key="'+esc(actorKey)+'" data-char="'+esc(p.ch.id)+'"'+tokenAttr+' href="ficha.html?char='+encodeURIComponent(p.ch.id)+'&mesa='+encodeURIComponent(MESA_ID)+(ehGM?'&role=gm':'')+'">'+avatar+'<div class="card-pers-info"><div class="card-pers-nome">'+esc(p.ch.nome)+'</div><div class="card-pers-classe">'+esc((p.cl&&p.cl.nome)||p.sh.classe||p.sh.classe_id||'—')+' · N'+nivel+'</div><div class="card-pers-initiative'+(activeCard?' ativo':'')+'"><span>'+esc(initText)+'</span><span>'+esc(p.perfil.username?'@'+p.perfil.username:'Jogador')+'</span></div><div class="card-pers-pv"><div class="card-pers-pv-bar'+hpClass+'" style="width:'+pct+'%"></div></div><div class="card-pers-pv-txt">'+pvAtual+' / '+maxPV+' PV · CA '+ca+' · Ataque '+(bab+attackMod>=0?'+':'')+(bab+attackMod)+' · Dano '+esc(damage)+'</div></div></a>';
+      var attrBack=['FOR','DES','CON','INT','SAB','CAR'].map(function(k){return k+' '+Number((p.sh.atributos||{})[k]||10);}).join(' · '),skillCount=Object.keys(p.sh.pericias||{}).length,featCount=Array.isArray(p.sh.talentos)?p.sh.talentos.length:0;
+       var html='<a class="card-pers'+(p.ch.user_id===eu.id?' eu':'')+selected+(activeCard?' turno-ativo':'')+'" data-actor-key="'+esc(actorKey)+'" data-char="'+esc(p.ch.id)+'"'+tokenAttr+' href="ficha.html?char='+encodeURIComponent(p.ch.id)+'&mesa='+encodeURIComponent(MESA_ID)+(ehGM?'&role=gm':'')+'"><div class="card-pers-inner"><div class="card-pers-face card-pers-front">'+avatar+'<div class="card-pers-info"><div class="card-pers-nome">'+esc(p.ch.nome)+'</div><div class="card-pers-classe">'+esc((p.cl&&p.cl.nome)||p.sh.classe||p.sh.classe_id||'—')+' · N'+nivel+'</div><div class="card-pers-initiative'+(activeCard?' ativo':'')+'"><span>'+esc(initText)+'</span><span>'+esc(p.perfil.username?'@'+p.perfil.username:'Jogador')+'</span></div><div class="card-pers-pv"><div class="card-pers-pv-bar'+hpClass+'" style="width:'+pct+'%"></div></div><div class="card-pers-pv-txt">'+pvAtual+' / '+maxPV+' PV · CA '+ca+' · Ataque '+(bab+attackMod>=0?'+':'')+(bab+attackMod)+' · Dano '+esc(damage)+'</div></div><button type="button" class="card-flip-button" data-card-flip aria-label="Virar card de '+esc(p.ch.nome)+'">↻</button></div><div class="card-pers-face card-pers-back"><strong>FICHA · RESUMO</strong><p>'+esc(attrBack)+'</p><p>'+skillCount+' perícias · '+featCount+' talentos registrados</p><small>Toque no ícone para voltar. Abrir o card continua levando à ficha.</small><button type="button" class="card-flip-button" data-card-flip aria-label="Voltar frente do card">↻</button></div></div></a>';
       cards.push({key:actorKey,rank:initIndex>=0?(combatDataState&&combatDataState.active?(initIndex-turnIndex+ordem.length)%ordem.length:initIndex):100000,html:html});
     });
 
@@ -3866,7 +3885,8 @@ async function abrirModalEquipamentos(){
       var initText=entry?'Iniciativa #'+(initIndex+1)+' · '+String(entry.valor):'Aguardando iniciativa';
       var avatar=token.imagem&&/^https?:\/\/[^\s"'<>]+$/i.test(token.imagem)?'<img src="'+esc(token.imagem)+'" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">':(token.tipo==='monstro'?'🐉':token.tipo==='player'?'🎭':'👤');
       var hpText=hp==null?'PV não definido':Math.max(0,hp)+' / '+max+' PV';
-      var html='<article class="card-pers token-card '+(token.tipo==='monstro'?'monstro':'npc')+(activeCard?' turno-ativo':'')+'" data-actor-key="'+esc(actorKey)+'" data-cba-token-key="'+esc(token.key)+'" tabindex="0" role="button" aria-label="'+esc(token.nome)+' · '+esc(detail)+'"><div class="card-pers-avatar">'+avatar+'</div><div class="card-pers-info"><div class="card-pers-nome">'+esc(token.nome)+'</div><div class="card-pers-classe">'+esc(detail)+'</div><div class="card-pers-initiative'+(activeCard?' ativo':'')+'"><span>'+esc(initText)+'</span><span>CA '+ca+'</span></div><div class="card-pers-pv"><div class="card-pers-pv-bar'+(pct<20?' critico':pct<50?' baixo':'')+'" style="width:'+pct+'%"></div></div><div class="card-pers-pv-txt">'+hpText+' · CA '+ca+(bonus==null?'':' · Ataque '+(Number(bonus)>=0?'+':'')+bonus)+' · Dano '+esc(damage)+'</div></div></article>';
+      var ms=token.monsterStats||{},backText=String(ms.qualidades_especiais||ms.ataques||ms.descricao||'Sem detalhes adicionais no cadastro.').replace(/<[^>]*>/g,' ').slice(0,220),savesText=['Fort '+(ms.fortitude==null?'—':ms.fortitude),'Ref '+(ms.reflexos==null?'—':ms.reflexos),'Von '+(ms.vontade==null?'—':ms.vontade)].join(' · ');
+       var html='<article class="card-pers token-card '+(token.tipo==='monstro'?'monstro':'npc')+(activeCard?' turno-ativo':'')+'" data-actor-key="'+esc(actorKey)+'" data-cba-token-key="'+esc(token.key)+'" tabindex="0" role="button" aria-label="'+esc(token.nome)+' · '+esc(detail)+'"><div class="card-pers-inner"><div class="card-pers-face card-pers-front"><div class="card-pers-avatar">'+avatar+'</div><div class="card-pers-info"><div class="card-pers-nome">'+esc(token.nome)+'</div><div class="card-pers-classe">'+esc(detail)+'</div><div class="card-pers-initiative'+(activeCard?' ativo':'')+'"><span>'+esc(initText)+'</span><span>CA '+ca+'</span></div><div class="card-pers-pv"><div class="card-pers-pv-bar'+(pct<20?' critico':pct<50?' baixo':'')+'" style="width:'+pct+'%"></div></div><div class="card-pers-pv-txt">'+hpText+' · CA '+ca+(bonus==null?'':' · Ataque '+(Number(bonus)>=0?'+':'')+bonus)+' · Dano '+esc(damage)+'</div></div><button type="button" class="card-flip-button" data-card-flip aria-label="Virar card de '+esc(token.nome)+'">↻</button></div><div class="card-pers-face card-pers-back"><strong>'+esc(token.nome)+' · DETALHES</strong><p>'+esc(savesText)+'</p><small>'+esc(backText)+'</small><button type="button" class="card-flip-button" data-card-flip aria-label="Voltar frente do card">↻</button></div></div></article>';
       cards.push({key:actorKey,rank:initIndex>=0?(combatDataState&&combatDataState.active?(initIndex-turnIndex+ordem.length)%ordem.length:initIndex):100000,html:html});
     });
 
