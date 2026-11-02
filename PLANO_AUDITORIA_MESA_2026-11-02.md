@@ -150,3 +150,11 @@ Nenhuma ficha, personagem, campanha, token, log de jogo ou estado de combate rea
 6. Validar visualmente a ficha e os cards em viewport móvel e validar sincronização Realtime em duas sessões. A compilação sintática não substitui esses testes.
 
 Nenhum registro de campanha, personagem, token, log ou combate foi alterado. As mudanças no banco foram apenas de privilégios padrão e privilégios do papel `anon`.
+
+
+### Sincronização da trilha de classe no avanço de nível — 2026-11-02 (23:49 UTC)
+
+- Corrigida a RPC `concluir_avanco_nivel_personagem_srd` para sincronizar `srd_character_class_levels` na mesma transação do avanço: atualiza o nível da classe, mantém o nível de aquisição original, registra PV acumulados e grava o custo total de pontos de perícia por perícia. Isso corrige uma lacuna: a ficha avançava, mas a trilha normalizada permanecia no nível anterior.
+- Teste transacional de fumaça executado com campanha/personagem descartáveis dentro de `BEGIN … ROLLBACK`: Bárbaro Humano nível 1, XP 1.000, rolagem de vida 6. A RPC retornou sem erro; nível da ficha e trilha passaram para 2, níveis pendentes foram para 0 e PV máximo passou de 12 para 18. O teste verificou também que nenhum registro temporário de campanha/personagem permaneceu após o rollback.
+- Migration aplicada e versionada: `20261102234916_srd35_levelup_class_track_sync`.
+- A validação acima cobre a trilha de classe e PV do caso de teste. Não cobre escolha de magias, todas as classes, multiclasse ou interação no navegador.
