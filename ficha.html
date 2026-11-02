@@ -1491,6 +1491,16 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -15%,#2938
     if (c.bab_bom === true) return level;
     return Number(c.bab_nivel_1 || c.bab || c.bba || c.bonus_ataque_base || 0) || 0;
   }
+  function dnd35ClassRuleKey(value){
+    var n=dnd35Norm(value),aliases={
+      barbarian:['barbarian','barbaro'],bard:['bard','bardo'],cleric:['cleric','clerigo','sacerdote'],
+      druid:['druid','druida'],fighter:['fighter','guerreiro'],monk:['monk','monge'],
+      paladin:['paladin','paladino'],ranger:['ranger','patrulheiro'],rogue:['rogue','ladino'],
+      sorcerer:['sorcerer','feiticeiro'],wizard:['wizard','mago']
+    };
+    for(var key in aliases)if(aliases[key].indexOf(n)>=0)return key;
+    return '';
+  }
   function dnd35FeatIsWeaponFocus(feat) { return /weapon focus|foco em arma/.test(dnd35Norm(feat && feat.nome)); }
   function dnd35ReqNumber(value) { if (value == null || value === '') return null; var n = Number(value); return Number.isFinite(n) ? n : null; }
   function dnd35FeatParameterType(feat) { return String(dnd35Objeto(feat&&feat.requisitos).parameter_type||(String(feat&&feat.id)==='srd35_feat_spell_mastery'?'spell_list':'')); }
@@ -1504,7 +1514,7 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -15%,#2938
     if(feat.id==='srd35_feat_exotic_weapon_proficiency'&&['espada bastarda','machado de guerra anao'].indexOf(weaponChoice)>=0&&Number(attrs.FOR)<13)out.push('Espada bastarda e machado de guerra anão exigem FOR 13.');
     var reqBab=dnd35ReqNumber(feat.bab_min!=null?feat.bab_min:req.bab_min);if(reqBab!=null&&dnd35Bab(state)<reqBab)out.push('Requer BBA +'+reqBab+'.');
     var level=Math.max(1,Number(state.sheet&&state.sheet.nivel)||1),reqLevel=dnd35ReqNumber(req.character_level_min);if(reqLevel!=null&&level<reqLevel)out.push('Requer nível de personagem '+reqLevel+'.');
-    var reqClassLevel=dnd35ReqNumber(req.class_level_min),requiredClass=dnd35Norm(req.class_key_required||''),classValues=state.classe||{},classKey=dnd35SpellClassKey(classValues.class_key||classValues.nome||classValues.id);if(reqClassLevel!=null&&(!classKey||requiredClass&&classKey!==requiredClass||level<reqClassLevel))out.push('Requer nível '+reqClassLevel+' na classe indicada.');
+    var reqClassLevel=dnd35ReqNumber(req.class_level_min),requiredClass=dnd35Norm(req.class_key_required||''),classValues=state.classe||{},classKey=dnd35ClassRuleKey(classValues.class_key||classValues.nome||classValues.id);if(reqClassLevel!=null&&(!classKey||requiredClass&&classKey!==requiredClass||level<reqClassLevel))out.push('Requer nível '+reqClassLevel+' na classe indicada.');
     var classNorm=dnd35Norm(classValues.class_key||classValues.nome||classValues.id||''),features=Array.isArray(req.special_ability_required)?req.special_ability_required:(req.special_ability_required?[req.special_ability_required]:[]);
     features.forEach(function(feature){var key=String(feature||'');if(key==='wild_shape'&&(!(classNorm.indexOf('druida')>=0||classNorm.indexOf('druid')>=0)||level<5))out.push('Requer Forma Selvagem (progressão básica de druida a partir do nível 5).');else if(key==='turn_or_rebuke_creatures'&&!((classNorm.indexOf('clerigo')>=0||classNorm.indexOf('cleric')>=0)&&level>=1)&&!((classNorm.indexOf('paladino')>=0||classNorm.indexOf('paladin')>=0)&&level>=4))out.push('Requer habilidade de expulsar/repreender criaturas (clérigo nível 1 ou paladino nível 4 na progressão básica).');else if(key==='familiar'&&!((classNorm.indexOf('mago')>=0||classNorm.indexOf('wizard')>=0||classNorm.indexOf('feiticeiro')>=0||classNorm.indexOf('sorcerer')>=0)&&level>=1))out.push('Requer uma classe com habilidade de adquirir familiar.');});
     var reqCaster=dnd35ReqNumber(req.caster_level_min);if(reqCaster!=null){var casterLevel=0;if(['wizard','sorcerer','cleric','druid','bard'].indexOf(classKey)>=0)casterLevel=level;else if(classKey==='paladin'||classKey==='ranger')casterLevel=Math.max(0,level-3);if(casterLevel<reqCaster)out.push('Requer nível de conjurador '+reqCaster+'.');}
