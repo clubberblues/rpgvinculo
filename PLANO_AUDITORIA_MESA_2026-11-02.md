@@ -70,3 +70,13 @@ A proteção contra senhas vazadas foi formalmente descartada para este projeto 
 - Captura desktop 1280×720 confirmou o painel de iniciativa e os três cartões (personagem, NPC e monstro) dentro do rodapé, sem corte; a faixa de combate foi ajustada para três colunas no desktop e rolagem horizontal em viewport estreita.
 - A verificação visual do layout está concluída nesta tela do Mestre. O fluxo mágico ainda não foi executado em campanha porque a sessão atual está em combate e a conta Free não permite branch de teste.
 - Permanecem pendentes: teste transacional real de Míssil Mágico em personagem autenticado descartável, visualização como jogador com sessão correspondente, cobertura E2E/Realtime em duas sessões e implementação dos resolvers para outras magias ofensivas e 131 características de classe.
+
+
+## Retomada após a conversa — correção crítica da ficha (2026-11-02)
+
+- Ao reabrir o código publicado, a validação sintática do script inline de `ficha.html` falhou. Foram identificadas duas causas no bloco do Grimório: uma sequência literal `\\n` antes da declaração de `spellsHtml`, e um trecho duplicado/incompleto do handler de descanso longo que deixava um `try` sem fechamento válido.
+- Corrigida a sequência literal e reconstruído o handler de descanso longo como callback assíncrono completo, preservando a RPC existente e a atualização da ficha após o descanso.
+- Validação local do conteúdo remoto atual: `new Function(scriptInline)` concluiu sem erro de sintaxe.
+- Commits: `0566300` (remoção da sequência literal), `10f273e` (remoção do trecho duplicado, etapa intermediária), `a79d2d2` (reconstrução correta do handler). O commit final é o estado válido; os commits intermediários foram corrigidos em sequência.
+- Ainda não houve inspeção de navegador nem teste autenticado da ficha após a correção. Portanto, a causa de parsing está corrigida no código, mas o carregamento funcional precisa ser confirmado no site publicado.
+- Próxima prioridade: validar a ficha no browser e verificar requests/erros de rede; depois implementar o assistente de avanço de nível de forma transacional, incluindo dado de vida, PV, perícias, talentos e atributos, sem atualizar nível nem consumir XP antes de todas as escolhas serem válidas.
