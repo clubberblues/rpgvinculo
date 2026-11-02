@@ -1529,7 +1529,7 @@ html,body{min-height:100%;height:100%;overflow:hidden}body{min-width:320px}
   }
   var magiaPersonagemAtiva=null, magiaSelecionada=null, focoAnteriorMagia=null, magiaTokenMestreAtiva=null;
   function parseJsonSeguro35(value,fallback){if(value&&typeof value==='object')return value;try{return JSON.parse(value||'');}catch(e){return fallback;}}
-  function magicEffect35(spell){var tech=parseJsonSeguro35(spell&&spell.dados_tecnicos,{}),declared=String(tech.tipo_efeito||'').toLowerCase();if(declared==='cura'||declared==='healing'||tech.cura||tech.healing)return 'cura';if(String(spell&&spell.id)==='srd35_magic_missile')return 'missil_magico';if(['ataque','dano','damage','attack'].indexOf(declared)>=0)return 'ataque_pendente';var text=[spell&&spell.descricao,spell&&spell.alvo,spell&&spell.area].join(' ').toLowerCase();if(/\\b(?:damage|dano)\\b/.test(text))return 'ataque_pendente';return 'utilitaria';}
+  function magicEffect35(spell){var tech=parseJsonSeguro35(spell&&spell.dados_tecnicos,{}),declared=String(tech.tipo_efeito||'').toLowerCase();if(declared==='cura'||declared==='healing'||tech.cura||tech.healing)return 'cura';if(String(spell&&spell.id)==='srd35_magic_missile')return 'missil_magico';if(['ataque','dano','damage','attack'].indexOf(declared)>=0)return 'ataque_pendente';var text=[spell&&spell.descricao,spell&&spell.alvo,spell&&spell.area].join(' ').toLowerCase();if(text.indexOf('damage')>=0||text.indexOf('dano')>=0)return 'ataque_pendente';return 'utilitaria';}
   function personagemParaMagia(preferredId){
     var combatando=String(campanha&&campanha.state||'').toUpperCase()==='COMBATE';
     if(combatando){var atual=personagemDoTurnoDoJogador();return !preferredId||atual&&String(atual.ch.id)===String(preferredId)?atual:null;}
