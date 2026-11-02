@@ -666,6 +666,46 @@ html,body{min-height:100%;height:100%;overflow:hidden}body{min-width:320px}
 @media(max-width:900px){#acoes-dir{display:flex!important;flex-direction:column;overflow:visible!important}.action-group-tabs{grid-template-columns:repeat(auto-fit,minmax(0,1fr))}.cards-strip{position:relative}}
 @media(max-width:600px){#acoes-dir{grid-column:1/-1!important;padding:10px}.action-group-tab{font-size:9px;min-height:42px}.cards-strip-pager{right:6px;bottom:3px}}
 </style>
+<style id="vinculo-cockpit-theme">
+/* Vínculo · Cockpit Dark Fantasy. Camada visual; mantém geometria e comportamento definidos acima. */
+:root{--v-bg-deep:#0d110e;--v-bg-panel:#141a16;--v-bg-card:#1c241e;--v-bg-hover:#263329;--v-gold:#c9a050;--v-line:#3a473c;--v-text:#f4ecd9;--v-muted:#a39f91;--v-red:#8b3a3a;--v-green:#4ade80}
+body{background:radial-gradient(ellipse at 55% 30%,#202a22 0,var(--v-bg-deep) 78%);color:var(--v-text)}
+::-webkit-scrollbar-track{background:#0b100c}::-webkit-scrollbar-thumb{background:#465348}::-webkit-scrollbar-thumb:hover{background:var(--v-gold)}
+.mesa-header{background:linear-gradient(180deg,var(--v-bg-card),var(--v-bg-deep));border-color:var(--v-gold)}
+.titulo-mesa .nome{color:var(--v-text)}.titulo-mesa .estado{background:#0d110eaa}
+.btn-voltar{border-color:var(--v-line);color:var(--v-muted)}.btn-voltar:hover{border-color:var(--v-gold);color:var(--v-gold)}
+.col-esq,.col-dir{background:linear-gradient(180deg,#182019,#111711);border-color:var(--v-line)}
+.painel-cab{background:linear-gradient(90deg,#202a22,#171e18);color:#e4c77e;border-color:var(--v-line)}
+.painel + .painel{border-color:var(--v-line)}.painel-corpo{color:var(--v-text)}
+.chat-msg{color:var(--v-text)}.chat-msg .autor{color:#e4c77e}.chat-msg.sistema{color:#b1b0a2;border-color:var(--v-line)}
+.chat-msg.rolagem{background:#c9a05014;border-left-color:var(--v-gold)}
+.chat-input{background:#1a211b;border-color:var(--v-line)}.chat-input input{background:#0d110e;border-color:#465348;color:var(--v-text)}.chat-input button{background:linear-gradient(180deg,#e7c878,#b9893c);color:#17130b}
+.tabuleiro{background-color:#080c09;background-image:radial-gradient(ellipse at center,#172019 0,transparent 72%)}
+.btn-acao{background:linear-gradient(145deg,#202a22,#141a16);border-color:#465348;color:#ead18f}
+.btn-acao:hover:not(:disabled){background:var(--v-bg-hover);border-color:var(--v-gold);color:#ffe4a2}
+.btn-acao.destaque{background:linear-gradient(145deg,#9b4640,#672c2d);border-color:#b85a4e;color:#fff}.btn-acao.destaque:hover:not(:disabled){background:#a34242}
+.painel-acoes-grupo{background:linear-gradient(145deg,#202a22,#151b16);border-color:#465348}.painel-acoes-grupo h3{color:#e4c77e;border-color:var(--v-line)}
+.action-group-tab{background:#161d17;border-color:#465348;color:#c0bfae}.action-group-tab[aria-selected="true"]{background:linear-gradient(145deg,#51452a,#273128);border-color:var(--v-gold);color:#ffe3a0}
+.mesa-footer{background:#131a14;border-color:var(--v-gold)}.mesa-footer-heading{color:#e4c77e;border-color:var(--v-line)}
+.cards-strip{background:linear-gradient(180deg,#151c16,#0c110d)}
+.card-pers{background:linear-gradient(145deg,#202a22,#151c16);border-color:#465348;color:var(--v-text)}
+.card-pers:hover:not(.turno-ativo){background:#29372b;border-color:var(--v-gold)}.card-pers-nome{color:var(--v-text)}.card-pers-classe,.card-pers-pv-txt{color:#b7b5a8}
+.card-pers.turno-ativo,.card-pers.turno-ativo:hover{background:linear-gradient(145deg,#40371f,#202a22);border-color:#fbbf24;color:#fff2c5}
+.card-pers.selecionado-para-teste{border-color:#fbbf24;box-shadow:0 0 18px #fbbf2480,inset 0 0 8px #fbbf242b}
+.cards-strip-pager{background:#0b100dee;border-color:#59664d;color:#eee2c7}.cards-strip-pager button{background:#202a22;border-color:#8c7442;color:#f0d080}
+#painel-iniciativa{background:linear-gradient(145deg,#172019f5,#222c23f2);border-color:#b69a58}
+.iniciativa-titulo,.iniciativa-item .valor{color:#ead18f}.iniciativa-item{background:#182019;border-color:#465348;color:#e4e2d6}
+.iniciativa-item.ativo{background:linear-gradient(145deg,#f2d17c,#bd8c3e);border-color:#ffe9ad;color:#1a1a18}
+.token-cba{border-color:#829579}.token-cba.player{border-color:#81bcff}.token-cba.monstro{border-color:#e87868}.token-cba.npc{border-color:#80dca2}
+#token-context-menu{background:linear-gradient(145deg,#202a22,#111711);border-color:var(--v-gold)}.ctx-btn{background:#182019;border-color:#465348;color:#f0d080}.ctx-btn:hover{background:#d7ad58;color:#141610}
+.modal-final-card,.card-xp,.equip-modal-card,.modal-reforco-card,.dado-card{background:linear-gradient(145deg,#202a22,#121812);border-color:var(--v-gold)}
+.modal-final-card h2,.xp-header h2,.equip-modal-header h2,.modal-reforco-head h2{color:#f0d080}
+.modal-final-card input,.modal-final-card select,.npc-generator input,.npc-generator select{background:#0e140f;border-color:#465348;color:var(--v-text)}
+.quick-tabs{background:#111811;border-color:var(--v-line)}.quick-tabs button{background:#1b241c;border-color:#465348;color:#c0bfae}.quick-tabs button[aria-selected="true"]{background:#40391f;border-color:var(--v-gold);color:#ffe3a0}
+.cba-header,.cba-tools{background:#182019;border-color:var(--v-line)}.cba-tool-btn{background:#202a22;border-color:#465348;color:var(--v-text)}.cba-tool-btn:hover{background:#29372b;border-color:var(--v-gold);color:#ffe4a2}
+button:disabled,.btn-acao:disabled{opacity:.55;filter:saturate(.55);cursor:not-allowed}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #f3d993;outline-offset:2px}
+</style>
 </head>
 <body>
 
