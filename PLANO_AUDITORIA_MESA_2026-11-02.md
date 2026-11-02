@@ -53,3 +53,12 @@ A etapa não declara cobertura total ou aceite ponta a ponta. A campanha 17 não
 5. Resolver aplicação de resistência à magia e demais efeitos de ataque para magias além de Míssil Mágico. Elas ficam bloqueadas com segurança, sem gastar recursos.
 
 A proteção contra senhas vazadas foi formalmente descartada para este projeto Free. Os 88 avisos de índice sem uso são somente observações de estatística atual e permanecem para revisão após carga real.
+
+
+### Resultado da inspeção visual (17:55 UTC)
+
+- A primeira captura confirmou que a iniciativa estava fora do layout e cortava os cartões. O painel foi movido para o rodapé e a faixa foi compactada.
+- A nova captura mostrou o painel encaixado, mas os cartões ainda parcialmente cortados. A correção seguinte, commit `f82f52b22fe256b1732ce4c3546581f15a6dc1cf`, aumentou e reorganizou a faixa do rodapé. No momento do registro, o workflow do GitHub Pages ainda estava em execução; não declarar aceite visual até recapturar após o deploy.
+- Criação de branch E2E tentou-se e foi recusada pelo Supabase: branching requer Pro ou superior. Não foram executadas ações de jogo na campanha 17 em combate.
+- A migração para remover duplicatas está aplicada e versionada; advisor agora indica zero pares duplicados e 88 índices não utilizados (informativo).
+- As 81 funções SECURITY DEFINER autenticadas foram filtradas por evidência de auth/guarda; todas têm checagem direta ou delegam a helper de GM/autorização. A única sem marcador direto no corpo é `set_turn`, que delega a `combat_set_turn`, o qual exige GM via `priv.need_gm`. Nenhuma executável por `anon`.
