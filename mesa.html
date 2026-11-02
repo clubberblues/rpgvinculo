@@ -706,6 +706,24 @@ body{background:radial-gradient(ellipse at 55% 30%,#202a22 0,var(--v-bg-deep) 78
 button:disabled,.btn-acao:disabled{opacity:.55;filter:saturate(.55);cursor:not-allowed}
 button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #f3d993;outline-offset:2px}
 </style>
+
+<style id="vinculo-cockpit-theme">
+:root{--mesa-bg:#10150f;--mesa-panel:#1b2419;--mesa-panel-hi:#253123;--mesa-ink:#e8eadc;--mesa-muted:#aeb89e;--mesa-green:#8ccf75;--mesa-gold:#d5b46a;--mesa-edge:rgba(170,196,139,.24)}
+body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120d 100%);color:var(--mesa-ink)}
+.mesa-header,.col-esq,.col-dir,.painel-cab,.chat-input,.cards-strip{background-color:var(--mesa-panel);border-color:var(--mesa-edge)}
+.titulo-mesa .nome,.painel-cab,.btn-acao,.chat-msg .autor,.card-pers-nome,.iniciativa-titulo{color:#e7d39c}
+.painel,.painel-corpo{background-color:#151c14}.btn-acao{background:linear-gradient(145deg,#243123,#182117);border-color:#50664a;border-radius:9px}
+.btn-acao:hover{background:#30442e;border-color:var(--mesa-gold);color:#fff2c6}.btn-acao:focus-visible,button:focus-visible{outline:2px solid var(--mesa-green);outline-offset:2px}
+.chat-input input,.quick-filter-row input,.quick-filter-row select{background:#11180f;border-color:#52664c;color:var(--mesa-ink)}
+.cards-strip{border-top-color:var(--mesa-gold)}.card-pers{background:linear-gradient(145deg,#202a1e,#151c14);border-color:#465640;border-radius:10px}.card-pers:hover{background:#293923;border-color:var(--mesa-gold)}
+#painel-iniciativa,.card-xp,.equip-modal-card,.modal-reforco-card{background:linear-gradient(145deg,#202a1e,#11180f);border-color:#a28b53}
+.quick-tabs,.equip-modal-header,.modal-reforco-head,.xp-header{background:#151c14;border-color:var(--mesa-edge)}
+.modal-reforco-card h2,.equip-modal-header h2,.xp-header h2{color:#e7d39c}
+::-webkit-scrollbar-track{background:#10150f}::-webkit-scrollbar-thumb{background:#52664c}::-webkit-scrollbar-thumb:hover{background:var(--mesa-gold)}
+@media(max-width:850px){.mesa-corpo{grid-template-columns:minmax(210px,28vw) minmax(0,1fr) 205px}.col-dir{padding:9px 7px}}
+@media(max-width:640px){.mesa-header{padding:8px 10px}.mesa-corpo{grid-template-columns:minmax(0,1fr) 145px}.col-esq{display:none}.col-dir{padding:7px 5px}.cards-strip{min-height:84px;padding:6px}.card-pers{min-width:190px}.titulo-mesa .nome{font-size:14px;letter-spacing:1px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
 </head>
 <body>
 
@@ -3093,15 +3111,7 @@ async function abrirModalEquipamentos(){
         var personagem = selecionados[i];
         var charId = personagem.ch.id;
         try {
-          var atual = await sb.from('characters').select('xp').eq('id',charId).eq('campaign_id',MESA_ID).maybeSingle();
-          if(atual.error || !atual.data){ falhas.push(personagem.ch.nome||'Personagem'); continue; }
-          var xpAtual = atual.data.xp == null ? 0 : Number(atual.data.xp);
-          var novoXP = xpAtual + qtd;
-          if(!Number.isSafeInteger(xpAtual) || xpAtual < 0 || !Number.isSafeInteger(novoXP)){
-            falhas.push(personagem.ch.nome||'Personagem');
-            continue;
-          }
-          var salvo = await sb.from('characters').update({xp:novoXP}).eq('id',charId).eq('campaign_id',MESA_ID).select('id').maybeSingle();
+          var salvo = await sb.rpc('conceder_xp_personagem_srd',{p_campaign_id:Number(MESA_ID),p_character_id:String(charId),p_xp:qtd});
           if(salvo.error || !salvo.data){ falhas.push(personagem.ch.nome||'Personagem'); continue; }
           recebidos.push({id:String(charId),nome:String(personagem.ch.nome||'Personagem')});
         } catch(erroPersonagem){
