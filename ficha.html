@@ -1568,7 +1568,7 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -15%,#2938
     }
     for (var i=0;i<count;i++) {
       var pick = picks[i] || {id:'',parametro:''}, feat = state.feats.filter(function(f) { return String(f.id) === String(pick.id); })[0];
-      var classRuleKey=dnd35ClassRuleKey(state.classe&&((state.classe.class_key||state.classe.nome||state.classe.id))),optionFeats=state.feats.filter(function(f){var category=String(dnd35Objeto(f.requisitos).type||'General');return (category==='General'||(classRuleKey==='wizard'&&String(f.id)==='srd35_feat_spell_mastery'))&&!(classRuleKey==='monk'&&String(f.id)==='srd35_feat_improved_unarmed_strike')&&!(classRuleKey==='wizard'&&String(f.id)==='srd35_feat_scribe_scroll');});var optionHtml = '<option value="">Escolha um talento…</option>'+optionFeats.map(function(f) { return '<option value="'+esc(String(f.id))+'"'+(String(f.id)===String(pick.id)?' selected':'')+'>'+esc(f.nome)+'</option>'; }).join('');
+      var classRuleKey=dnd35ClassRuleKey(state.classe&&((state.classe.class_key||state.classe.nome||state.classe.id))),optionFeats=state.feats.filter(function(f){var category=String(dnd35Objeto(f.requisitos).type||'General');return category==='General'&&!(classRuleKey==='monk'&&String(f.id)==='srd35_feat_improved_unarmed_strike')&&!(classRuleKey==='wizard'&&String(f.id)==='srd35_feat_scribe_scroll');});var optionHtml = '<option value="">Escolha um talento…</option>'+optionFeats.map(function(f) { return '<option value="'+esc(String(f.id))+'"'+(String(f.id)===String(pick.id)?' selected':'')+'>'+esc(f.nome)+'</option>'; }).join('');
       var paramType=feat?dnd35FeatParameterType(feat):'',needsParam = !!(feat && (feat.exige_parametro || paramType || dnd35FeatIsWeaponFocus(feat)));
       var reqData=feat?dnd35Objeto(feat.requisitos):{},reqText=feat?(typeof reqData==='string'?reqData:String(reqData.raw||'')):'';
       var paramRequired=!!(feat&&feat.exige_parametro)&&!(paramType==='spell_list'&&dnd35Modificador(Number(attrs.INT)||10)<=0);
@@ -1631,8 +1631,8 @@ function dnd35WeaponProficient(state,weaponName){
   }
   function dnd35LevelupFeatAllowed(feat,type,nextLevel){
     var id=String(feat&&feat.id||''),req=dnd35Objeto(feat&&feat.requisitos),category=String(req.type||'General');
-    if(type==='general')return category==='General'||(id==='srd35_feat_spell_mastery'&&dnd35ClassRuleKey(state.classe&&((state.classe.class_key||state.classe.nome||state.classe.id)))==='wizard');
-    if(type==='wizard')return category==='Item Creation'||category==='Metamagic';
+    if(type==='general')return category==='General';
+    if(type==='wizard')return category==='Item Creation'||category==='Metamagic'||id==='srd35_feat_spell_mastery';
     if(type==='monk')return nextLevel===1?['srd35_feat_improved_grapple','srd35_feat_stunning_fist'].indexOf(id)>=0:nextLevel===2?id==='srd35_feat_deflect_arrows':['srd35_feat_improved_disarm','srd35_feat_improved_trip'].indexOf(id)>=0;
     if(type==='fighter')return [
       'srd35_feat_blind_fight','srd35_feat_cleave','srd35_feat_combat_expertise','srd35_feat_deflect_arrows','esquiva',
