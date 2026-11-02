@@ -122,3 +122,31 @@ A proteção contra senhas vazadas foi formalmente descartada para este projeto 
 7. Não foi possível confirmar o deploy publicado nem o comportamento após a atualização de cache do site nesta execução. Os commits estão no `main`; status de sintaxe não substitui validação de publicação.
 
 Nenhuma ficha, personagem, campanha, token, log de jogo ou estado de combate real foi alterado nesta execução. As alterações de banco limitaram-se a definição de funções e permissões via migrations.
+
+
+## Retomada executada — 2026-11-02 (23:46 UTC)
+
+### Correções e hardening aplicados
+
+- `ficha.html`: corrigido um erro de execução no fluxo de criação SRD. O handler de validação de talentos referenciava `warns` sem declaração; a variável causava `ReferenceError` ao validar cada talento, impedindo concluir a criação da ficha. A validação de parâmetro agora mostra a mensagem e interrompe o fluxo diretamente. Commit: `37620ccd100f2f36b45ceb584af4629ea7ffad62`.
+- Supabase: removidos todos os privilégios do papel `anon` em 11 tabelas privadas de estado de jogo (`campaign_log`, `character_talents`, `combat_state`, `monster_instances`, `scenes`, `srd_cba_token_equipment`, `srd_character_equipment`, `srd_character_sheets`, `srd_starting_packages`, `tokens` e `vinculo_character_notes`). Políticas e privilégios de `authenticated` foram preservados; `profiles` foi excluída porque possui políticas públicas explícitas.
+- Supabase: removidos privilégios padrão de `anon` para tabelas, sequências e funções novas no schema `public`, exigindo concessão explícita quando um novo catálogo realmente precisar ser público.
+- Migrations aplicadas e versionadas: `20261102234449_revoke_anon_private_table_grants`, `20261102234522_revoke_anon_default_privileges_public` e `20261102234531_revoke_all_anon_default_table_sequence_privileges`.
+
+### Verificações após as alterações
+
+- `ficha.html` e `mesa.html`: os scripts inline passaram novamente na compilação sintática (`new Function`), sem erros.
+- Supabase: zero privilégios de SELECT/INSERT/UPDATE/DELETE de `anon` nas 11 tabelas privadas; zero privilégios padrão residuais de `anon` para tabelas/sequências futuras; RPC de avanço de nível continua sem EXECUTE para `anon`.
+- Supabase: leitura de `authenticated` preservada nas tabelas privadas. O advisor de segurança ainda reporta 84 funções SECURITY DEFINER executáveis por `authenticated` e proteção contra senha vazada desativada (plano Free); advisor de performance reporta 84 índices sem uso observado. Não removi índices sem evidência de redundância nem alterei guards das RPCs.
+- GitHub Pages: os workflows intermediários foram cancelados automaticamente por commits mais recentes; o deploy do commit `0e5e0acf76ff4af3ec775bb248e6f9149f5f16ed` estava em fila no momento da auditoria. Confirmar o resultado final antes de considerar a publicação concluída.
+
+### Pendências que permanecem abertas
+
+1. Reproduzir o carregamento da ficha em navegador com sessão autenticada e capturar requests/erros. Não há sessão de navegador autenticada disponível nesta execução; os logs recentes consultados não continham erros PostgREST que permitissem apontar a causa do spinner.
+2. Executar E2E real em campanha descartável com duas contas (Mestre e jogador), incluindo avanço de nível, magias, combate, permissões e Realtime. A campanha 17 permanece intocada e não foi usada para testes.
+3. Integrar a aquisição de magias conhecidas/grimório no avanço de nível de Mago, Feiticeiro e Bardo de forma transacional.
+4. Implementar os efeitos mecânicos das 131 características de classe; todas continuam com `engine_status=needs_implementation`.
+5. Implementar resolvers genéricos de magia e classificar/validar os 607 efeitos; todos continuam em `manual_only` no catálogo de efeitos, embora existam fluxos especializados para cura e Míssil Mágico.
+6. Validar visualmente a ficha e os cards em viewport móvel e validar sincronização Realtime em duas sessões. A compilação sintática não substitui esses testes.
+
+Nenhum registro de campanha, personagem, token, log ou combate foi alterado. As mudanças no banco foram apenas de privilégios padrão e privilégios do papel `anon`.
