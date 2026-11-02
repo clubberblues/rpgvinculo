@@ -614,6 +614,23 @@ body{font-family:'EB Garamond',Georgia,serif;background:radial-gradient(ellipse 
  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
 </style>
+<style>
+/* Mesa em painéis consistentes: cada região rola no próprio contexto. */
+html,body{min-height:100%;height:100%;overflow:hidden}body{min-width:320px}
+.mesa{height:100dvh;min-height:0;grid-template-rows:68px minmax(0,1fr) clamp(112px,19vh,190px);overflow:hidden}
+.mesa-corpo{min-height:0;height:auto;grid-template-columns:minmax(245px,clamp(270px,22vw,340px)) minmax(0,1fr) minmax(225px,clamp(235px,19vw,300px));overflow:hidden}
+.col-esq,.col-dir,.tabuleiro{min-width:0;min-height:0}.col-esq{overflow:hidden}.col-esq>.painel:first-child{flex:1 1 auto;min-height:0}.col-esq>.painel:last-child{flex:0 0 auto;max-height:34%}
+.tabuleiro{height:100%;min-height:0}.col-dir{display:flex;flex-direction:column;overflow-y:auto;overscroll-behavior:contain}.painel-acoes-grupo{width:100%;flex:0 0 auto}
+.cards-strip{min-height:0;max-height:none;height:100%;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;align-items:stretch;overscroll-behavior-x:contain}.card-pers.token-card{flex:0 0 clamp(210px,22vw,280px);max-width:clamp(210px,22vw,280px)}
+#modal-magias{z-index:10040;overflow-y:auto;overscroll-behavior:contain;align-items:center;padding:clamp(10px,3vh,28px)}#modal-magias[hidden]{display:none!important}
+#modal-magias .modal-final-card{width:min(760px,100%);max-height:min(88dvh,860px);overflow:auto;display:flex;flex-direction:column;gap:8px;padding:clamp(16px,2.5vw,28px)}
+#modal-magias-lista{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:8px;max-height:min(36dvh,340px);overflow:auto;padding:2px;margin:4px 0}#modal-magias-lista .magia-opcao{min-width:0;min-height:64px;margin:0;overflow-wrap:anywhere}
+#modal-magias label{display:block;margin:4px 0;color:#f3d993;font:700 10px Cinzel,serif;letter-spacing:.8px}#modal-magias select{width:100%;min-height:44px;padding:9px 11px;border:1px solid #40546c;border-radius:7px;background:#0b121e;color:#f4ecd9;font-size:16px}
+#modal-magias .modal-final-actions{position:sticky;bottom:-1px;padding-top:10px;background:linear-gradient(180deg,transparent,#101a28 20%)}
+@media(max-width:900px){html,body{height:auto;min-height:100%;overflow:auto}.mesa{height:auto;min-height:100dvh;grid-template-rows:auto auto auto;overflow:visible}.mesa-corpo{height:auto;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(48dvh,65dvh) auto;overflow:visible}.col-esq{max-height:none;min-height:300px;border:0;border-bottom:1px solid #35465b}.col-esq>.painel:first-child{min-height:220px}.col-esq>.painel:last-child{max-height:150px}.tabuleiro{height:auto;min-height:48dvh}.col-dir{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));max-height:none;overflow:visible}.cards-strip{height:auto;min-height:120px;max-height:32dvh;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden}.card-pers.token-card{flex-basis:min(78vw,280px);max-width:min(78vw,280px)}}
+@media(max-width:600px){.mesa{grid-template-rows:58px auto auto}.mesa-header{position:sticky;top:0}.mesa-corpo{grid-template-rows:auto minmax(44dvh,56dvh) auto}.col-esq{min-height:260px}.col-esq>.painel:first-child{min-height:185px}.col-dir{grid-template-columns:repeat(2,minmax(0,1fr));padding:10px;gap:8px}.mesa--gm #acoes-dir:before,.mesa--player #acoes-dir:before{grid-column:1/-1}.painel-acoes-grupo{padding:8px}.painel-acoes-grupo .btn-acao{min-height:44px;padding:8px;font-size:9px}.cards-strip{max-height:30dvh;padding:8px}.card-pers.token-card{flex-basis:78vw;max-width:78vw}#modal-magias{align-items:flex-end;padding:8px}#modal-magias .modal-final-card{width:100%;max-height:92dvh;border-radius:16px 16px 10px 10px;padding:16px}#modal-magias-lista{grid-template-columns:1fr;max-height:30dvh}#modal-magias .modal-final-actions{flex-direction:column-reverse}.modal-final-actions button{min-height:48px}}
+
+</style>
 </head>
 <body>
 
@@ -1462,6 +1479,7 @@ body{font-family:'EB Garamond',Georgia,serif;background:radial-gradient(ellipse 
     var inv=document.getElementById('modal-inventario-srd');inv.addEventListener('click',function(e){if(e.target===inv||e.target.closest('[data-inventory-close]'))inv.classList.remove('ativo');});
     var mag=document.getElementById('modal-magias');mag.addEventListener('click',function(e){if(e.target===mag||e.target.closest('[data-magic-close]'))fecharModalMagias();});
     document.getElementById('confirmar-conjuracao').addEventListener('click',confirmarConjuracao);
+    document.getElementById('magia-alvo').addEventListener('change',function(){if(magiaSelecionada)popularSlotsMagia();});
     document.addEventListener('keydown',function(e){if(!mag.classList.contains('ativo'))return;if(e.key==='Escape'){fecharModalMagias();return;}if(e.key==='Tab'){var f=Array.from(mag.querySelectorAll('button:not(:disabled),select,input,[tabindex="0"]')).filter(function(x){return !x.hidden;});if(!f.length)return;var i=f.indexOf(document.activeElement);if(e.shiftKey&&i<=0){e.preventDefault();f[f.length-1].focus();}else if(!e.shiftKey&&i===f.length-1){e.preventDefault();f[0].focus();}}if(e.key==='Enter'&&document.activeElement&&document.activeElement.classList.contains('magia-opcao')){e.preventDefault();}});
   }
   async function abrirInventarioSRD(characterId){
@@ -1511,6 +1529,7 @@ body{font-family:'EB Garamond',Georgia,serif;background:radial-gradient(ellipse 
   }
   var magiaPersonagemAtiva=null, magiaSelecionada=null, focoAnteriorMagia=null, magiaTokenMestreAtiva=null;
   function parseJsonSeguro35(value,fallback){if(value&&typeof value==='object')return value;try{return JSON.parse(value||'');}catch(e){return fallback;}}
+  function magicEffect35(spell){var tech=parseJsonSeguro35(spell&&spell.dados_tecnicos,{}),declared=String(tech.tipo_efeito||'').toLowerCase();if(declared==='cura'||declared==='healing'||tech.cura||tech.healing)return 'cura';if(String(spell&&spell.id)==='srd35_magic_missile')return 'missil_magico';if(['ataque','dano','damage','attack'].indexOf(declared)>=0)return 'ataque_pendente';var text=[spell&&spell.descricao,spell&&spell.alvo,spell&&spell.area].join(' ').toLowerCase();if(/\\b(?:damage|dano)\\b/.test(text))return 'ataque_pendente';return 'utilitaria';}
   function personagemParaMagia(preferredId){
     var combatando=String(campanha&&campanha.state||'').toUpperCase()==='COMBATE';
     if(combatando){var atual=personagemDoTurnoDoJogador();return !preferredId||atual&&String(atual.ch.id)===String(preferredId)?atual:null;}
@@ -1544,10 +1563,10 @@ body{font-family:'EB Garamond',Georgia,serif;background:radial-gradient(ellipse 
     options.forEach(function(o){var opt=document.createElement('option');opt.value=String(o.level);opt.textContent=o.text;select.appendChild(opt);});
     var target=document.getElementById('magia-alvo'),isMass=String(tech.target_mode||'')==='multiple_targets_pending';target.multiple=isMass;target.size=isMass?Math.min(8,Math.max(3,((cbaPublishedState&&cbaPublishedState.tokens)||[]).length+1)):1;target.replaceChildren();var empty=document.createElement('option');empty.value='';empty.textContent=isMass?'Selecione um ou mais alvos':'Sem alvo';target.appendChild(empty);
     var state=cbaPublishedState||normalizarCBAData(campanha&&campanha.cba_data);(state&&state.tokens||[]).forEach(function(t){var op=document.createElement('option');op.value=String(t.key);op.textContent=t.nome+(t.tipo==='monstro'?' · Monstro':(t.tipo==='player'?' · Jogador':' · NPC'));target.appendChild(op);});
-    var effect=String(tech.tipo_efeito||'').toLowerCase();var isAttack=effect==='ataque'||effect==='dano';
-    document.getElementById('magia-alerta').textContent=isAttack?'Ataques mágicos usam 1d20 + BBA + modificador de '+atributoConjuracaoClasse(p)+'. Dano e CA permanecem sujeitos à confirmação do Mestre.':(tech.cura||tech.healing||effect==='cura'||effect==='healing'?'A cura é determinada e aplicada somente pelo servidor; sem alvo, o conjurador é o alvo.':'Magia utilitária: ao confirmar, o servidor consome o espaço e a ação será anunciada no chat.');
+    var effect=magicEffect35(spell),isAttack=effect==='ataque',targetRequired=effect==='missil_magico';document.getElementById('magia-alvo').required=targetRequired;
+    document.getElementById('magia-alerta').textContent=targetRequired?'Míssil Mágico acerta automaticamente: escolha um alvo. O dado 3D rolará 1d4+1 por míssil; o número de mísseis cresce com o nível.':effect==='ataque_pendente'?'Esta magia causa dano, mas ainda não tem resolução de ataque/dano implementada. Ela não será consumida.':isAttack?'Ataque mágico exige resolução própria por alvo, CA e efeito.':(effect==='cura'?'A cura é determinada e aplicada somente pelo servidor; sem alvo, o conjurador é o alvo.':'Magia utilitária: ao confirmar, o servidor consome o espaço e a ação será anunciada no chat.');
     if(classKey==='cleric')document.getElementById('magia-alerta').textContent+=' Bônus de domínio não incluído: esta ficha não expõe seleção de domínio.';
-    document.getElementById('confirmar-conjuracao').disabled=!options.length;
+    document.getElementById('confirmar-conjuracao').disabled=!options.length||effect==='ataque_pendente'||effect==='ataque'||targetRequired&&!document.getElementById('magia-alvo').value;
   }
   var magiaCatalogSlots={};
   function selecionarMagiaModal(id){
@@ -1616,13 +1635,15 @@ body{font-family:'EB Garamond',Georgia,serif;background:radial-gradient(ellipse 
   }
   async function confirmarConjuracao(){
     if(magiaTokenMestreAtiva){await confirmarConjuracaoTokenMestre();return;}var p=magiaPersonagemAtiva,spell=magiaSelecionada;if(!p||!spell)return;if(!magiaAindaNoTurno(p)){alert('Apenas o personagem do jogador no turno atual pode conjurar.');return;}var slot=Number(document.getElementById('magia-slot').value);if(!Number.isFinite(slot)){alert('Escolha um espaço de magia disponível.');return;}
-    var targetSelect=document.getElementById('magia-alvo'),targetKeys=Array.from(targetSelect.selectedOptions||[]).map(function(o){return String(o.value||'').trim();}).filter(Boolean),targetKey=targetKeys[0]||null,state=normalizarCBAData(campanha&&campanha.cba_data),target=targetKey&&state&&state.tokens.find(function(t){return String(t.key)===String(targetKey);});var tech=parseJsonSeguro35(spell.dados_tecnicos,{}),effect=String(tech.tipo_efeito||'').toLowerCase(),isMass=String(tech.target_mode||'')==='multiple_targets_pending',isAttack=effect==='ataque'||effect==='dano',isHeal=effect==='cura'||effect==='healing'||!!tech.cura||!!tech.healing;
+    var targetSelect=document.getElementById('magia-alvo'),targetKeys=Array.from(targetSelect.selectedOptions||[]).map(function(o){return String(o.value||'').trim();}).filter(Boolean),targetKey=targetKeys[0]||null,state=normalizarCBAData(campanha&&campanha.cba_data),target=targetKey&&state&&state.tokens.find(function(t){return String(t.key)===String(targetKey);});var tech=parseJsonSeguro35(spell.dados_tecnicos,{}),effect=String(tech.tipo_efeito||'').toLowerCase(),isMass=String(tech.target_mode||'')==='multiple_targets_pending',isAttack=effect==='ataque'||effect==='dano',isHeal=effect==='cura'||effect==='healing'||!!tech.cura||!!tech.healing,isMagicMissile=String(spell.id)==='srd35_magic_missile';
+    if(effect==='ataque_pendente'||isAttack){alert('Esta magia ainda não tem um resolver completo. Espaço e ação não foram consumidos.');return;}
     if(isMass&&!targetKeys.length){alert('Selecione pelo menos um alvo para esta magia.');return;}
     var btn=document.getElementById('confirmar-conjuracao');btn.disabled=true;
     async function cast(roll){try{
       if(!magiaAindaNoTurno(p))throw new Error('Apenas o personagem do jogador no turno atual pode conjurar.');
       var result=isMass
         ?await sb.rpc('conjurar_magia_com_acao_srd_multialvo_v2',{p_character_id:String(p.ch.id),p_spell_id:String(spell.id),p_slot_level:Number(slot),p_target_token_keys:targetKeys})
+        :isMagicMissile?await sb.rpc('conjurar_missil_magico_srd',{p_character_id:String(p.ch.id),p_spell_id:String(spell.id),p_slot_level:Number(slot),p_target_token_key:targetKey,p_damage:Number(roll&&roll.damage)})
         :await sb.rpc('conjurar_magia_com_acao_srd',{p_character_id:String(p.ch.id),p_spell_id:String(spell.id),p_slot_level:Number(slot),p_target_token_key:targetKey});
       if(result.error)throw new Error(result.error.message);var data=result.data||{};
       if(data.estado!==undefined)p.sh.magias_preparadas=data.estado;if(data.combat_data){combatDataState=data.combat_data;renderizarIniciativa(combatDataState);}
@@ -1631,11 +1652,13 @@ body{font-family:'EB Garamond',Georgia,serif;background:radial-gradient(ellipse 
       var msg='✨ '+p.ch.nome+' conjurou '+String(spell.nome||spell.name||'Magia')+' (espaço nível '+slot+')'+(targetName?' em '+targetName:'')+'.';
       var meta={evento:'magia_conjurada',character_id:String(p.ch.id),spell_id:String(spell.id),spell_name:String(spell.nome||spell.name||'Magia'),slot_level:slot,target_token_key:targetKey,target_name:targetName||null};
       if(isHeal){if(isMass){msg+=' O servidor aplicou a cura em '+String(data.target_count||targetKeys.length)+' alvo(s): '+targetName+'.';meta.targets=data.targets||[];meta.target_count=Number(data.target_count||targetKeys.length);}else if(healing!==null&&healing>0)msg+=' O servidor aplicou '+healing+' PV de cura'+(targetName?' em '+targetName:'')+'.';else msg+=' O servidor não aplicou cura.';if(pv!=null)msg+=' PV atual: '+pv+'.';meta.healing=healing;meta.pv_atual=pv;}
-      else if(isAttack){msg+=' Ataque mágico: 1d20 '+roll.d20+' + BBA '+roll.bab+' + '+roll.ability+' '+(roll.mod>=0?'+':'')+roll.mod+' = **'+roll.total+'**. Dano e CA aguardam confirmação do Mestre.';meta.roll=roll.d20;meta.total=roll.total;meta.bab=roll.bab;meta.modificador=roll.mod;meta.ability=roll.ability;meta.gm_confirms_damage=true;}
+      else if(isMagicMissile){msg+=' '+data.missiles+' míssil(is), acerto automático; dano '+data.damage+'. PV do alvo: '+data.pv_atual+' / '+data.pv_max+'. Resistência à magia ainda não automatizada.';meta.damage=data.damage;meta.missiles=data.missiles;meta.pv_atual=data.pv_atual;meta.pv_max=data.pv_max;meta.spell_resistance_pending=true;}
+      else if(isAttack){msg+=' Ataque mágico não resolvido; dados da magia ainda aguardam implementação.';meta.gm_confirms_damage=true;}
       else msg+=' Efeito utilitário registrado pelo servidor.';
       var log=await enviarMensagemChat(msg,'rolagem',meta);if(log&&log.error)console.warn('Magia consumida; mensagem não entrou no chat:',log.error.message);fecharModalMagias();await carregarPersonagens();
     }catch(err){btn.disabled=false;alert('Não foi possível conjurar: '+err.message);}}
-    if(isAttack){var ability=atributoConjuracaoClasse(p),mod=attrModifier35(p.sh.atributos,ability),bab=bab35(p.cl,Math.max(1,Number(p.sh.nivel)||1));abrirDado('Magia · '+String(spell.nome||spell.name||'Magia'),function(d20){cast({d20:Number(d20),bab:bab,mod:mod,ability:ability,total:Number(d20)+bab+mod});},true);}
+    if(isMagicMissile){if(!targetKey){btn.disabled=false;alert('Escolha o alvo de Míssil Mágico.');return;}var missileCount=Math.min(5,Math.ceil(Math.max(1,Number(p.sh.nivel)||1)/2));abrirDado('Míssil Mágico · '+missileCount+' × (1d4+1)',function(damage){cast({damage:Number(damage)});},true,true,missileCount+'d4+'+missileCount);}
+    else if(isAttack){btn.disabled=false;}
     else cast(null);
   }
 
