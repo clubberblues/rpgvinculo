@@ -1111,7 +1111,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
       if(item.tipo==='player'){
         adicionarBotaoContextual(menu,'pv-personagem','❤️ Ajustar PV do personagem');
         var playerTurn=combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
-        if(playerTurn&&playerTurn.is_monster&&String(playerTurn.id)===String(item.id)){if(own&&own.ch.user_id===eu.id)adicionarBotaoContextual(menu,'gm-token-attack','⚔️ Atacar com este token');adicionarBotaoContextual(menu,'gm-token-move','↔️ Mover token');adicionarBotaoContextual(menu,'gm-token-action','📜 Registrar outra ação');adicionarBotaoContextual(menu,'gm-token-end','⏭️ Encerrar turno do token');}
+        if(playerTurn&&!playerTurn.is_monster&&String(playerTurn.id)===String(item.id)){adicionarBotaoContextual(menu,'gm-token-move','↔️ Mover token do jogador');}
       }
       else{
         var gmTurn=combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
