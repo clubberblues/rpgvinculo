@@ -198,3 +198,7 @@ Correção: o aceite executado cobre alvos vivos (personagem, NPC e monstro não
 ## Integração da interface de cura em massa — 2026-11-02
 
 `mesa.html` agora transforma o seletor de alvo em múltiplo somente quando `dados_tecnicos.target_mode=multiple_targets_pending`, exige pelo menos um alvo e chama `conjurar_magia_com_acao_srd_multialvo`. Magias comuns continuam usando `conjurar_magia_com_acao_srd`; a mensagem de chat registra a quantidade e os alvos atingidos.
+
+## Aceite de cura em massa com mortos-vivos — 2026-11-02
+
+A RPC dedicada `conjurar_magia_srd_multialvo_v2` foi aplicada e conectada à interface. Em transação revertida, `Cure Light Wounds, Mass` atingiu simultaneamente um personagem vivo e um Allip (Undead): o personagem recebeu cura limitada ao PV máximo e o morto-vivo recebeu dano de energia positiva. Um único espaço foi consumido; o banco ficou sem alterações após rollback.
