@@ -245,3 +245,14 @@ Leitura estática de `mesa.html`, `ficha.html`, `dice.html` e migrações SRD do
 2. Fazer inventário de ações e capacidades por classe/nível (conjuração, habilidades, recursos e uso por turno) e identificar quais já têm dados, controles e validação no servidor.
 3. Definir a regra de PV de nível 1 (máximo automático ou rolagem) e refletir a decisão no fluxo, salvamento e validação da ficha.
 4. Executar teste ponta a ponta com duas sessões autenticadas; até lá, os fluxos listados como integrados têm evidência de código, não aceite operacional completo.
+
+
+## Controle de movimento dos tokens de jogador pelo Mestre — 2026-11-02
+
+Regra confirmada pelo proprietário: o Mestre pode controlar somente o deslocamento dos tokens de jogadores; ações de combate, magia, inventário e demais recursos continuam com o dono da ficha.
+
+Foi corrigido `mesa.html`: o menu do Mestre mostra “Mover token do jogador” somente durante o turno do personagem e não oferece ataque, ação ou encerramento de turno para esse token. A migração `gm_move_player_tokens_on_their_turn.sql` atualiza `mover_token_gm_cba_srd` para aceitar o turno ativo do próprio token de jogador e qualquer ficha player vinculada à campanha, mantendo as validações de Mestre, campanha em combate, posição, ocupação, deslocamento e economia de movimento. As verificações SQL confirmaram que a restrição ao dono-Mestre foi removida, o controle por turno permanece, `anon` não executa a RPC e `authenticated` pode executá-la como antes.
+
+PV inicial definido: valor máximo do dado de vida + modificador de Constituição, mínimo 1. A ficha SRD já apresenta essa regra; manter essa fórmula como referência normativa e confirmar o valor persistido pelo fluxo de criação na próxima validação autenticada.
+
+Pendências restantes: revisar a cobertura de capacidades por classe/nível contra catálogo e RPCs; validar visualmente a mesa autenticada; executar a matriz ponta a ponta com sessões Mestre e jogador. A proteção contra senhas vazadas foi descartada pelo proprietário por indisponibilidade no plano Free.
