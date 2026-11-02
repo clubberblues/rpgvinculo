@@ -1525,7 +1525,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
     async function cast(roll){try{
       if(!magiaAindaNoTurno(p))throw new Error('Apenas o personagem do jogador no turno atual pode conjurar.');
       var result=isMass
-        ?await sb.rpc('conjurar_magia_com_acao_srd_multialvo',{p_character_id:String(p.ch.id),p_spell_id:String(spell.id),p_slot_level:Number(slot),p_target_token_keys:targetKeys})
+        ?await sb.rpc('conjurar_magia_com_acao_srd_multialvo_v2',{p_character_id:String(p.ch.id),p_spell_id:String(spell.id),p_slot_level:Number(slot),p_target_token_keys:targetKeys})
         :await sb.rpc('conjurar_magia_com_acao_srd',{p_character_id:String(p.ch.id),p_spell_id:String(spell.id),p_slot_level:Number(slot),p_target_token_key:targetKey});
       if(result.error)throw new Error(result.error.message);var data=result.data||{};
       if(data.estado!==undefined)p.sh.magias_preparadas=data.estado;if(data.combat_data){combatDataState=data.combat_data;renderizarIniciativa(combatDataState);}
