@@ -2093,6 +2093,22 @@ function dnd35WeaponProficient(state,weaponName){
       if(requires&&!paramOptional&&!String(picks[i].parametro||'').trim()){mostrarErro('Informe o parâmetro do talento '+feat.nome+'.','talentos');return;}
     }
     var talentos=picks.map(function(p){return {id:String(p.id),parametro:String(p.parametro||'').trim()||null};});
+    var classBonusSpec=dnd35InitialClassBonusSpec(state),classBonusPicks=state.classFeatPicks||[],classBonusTalentos=[];
+    if(classBonusSpec&&(classBonusSpec.type==='fighter'||classBonusSpec.type==='monk')){
+      var classPick=classBonusPicks[0],classFeat=classPick&&(state.feats||[]).find(function(f){return String(f.id)===String(classPick.id);});
+      if(!classPick||!classPick.id||!classFeat){mostrarErro('Escolha o talento bônus de classe do nível 1.','talentos');return;}
+      if(talentos.some(function(p){return String(p.id)===String(classPick.id);})){mostrarErro('O talento bônus de classe não pode repetir um talento básico.','talentos');return;}
+      if(!dnd35LevelupFeatAllowed(classFeat,classBonusSpec.type,1)){mostrarErro('Este talento não pertence à lista de bônus da classe.','talentos');return;}
+      var classParam=String(classPick.parametro||'').trim(),classNeedsParam=!!(classFeat.exige_parametro||dnd35FeatParameterType(classFeat)||dnd35FeatIsWeaponFocus(classFeat));
+      if(classNeedsParam&&!classParam){mostrarErro('Informe a escolha exigida pelo talento bônus '+classFeat.nome+'.','talentos');return;}
+      if(classBonusSpec.type==='fighter'){
+        var combinedFeatPicks=picks.concat([{id:classFeat.id,parametro:classParam}]),classCheckState=Object.assign({},state,{featPicks:combinedFeatPicks});
+        var classWarnings=dnd35FeatWarnings(classFeat,attrs,classCheckState,combinedFeatPicks.length-1,classParam);
+        if(dnd35FeatIsWeaponFocus(classFeat)&&!dnd35WeaponProficient(state,classParam))classWarnings.push('O Guerreiro não é proficiente com a arma escolhida.');
+        if(classWarnings.length){mostrarErro(classWarnings[0],'talentos');return;}
+      }
+      classBonusTalentos=[{id:String(classPick.id),parametro:classParam||null}];
+    }
     if(input)state.nomeDraft=nome;
     button.disabled=true;status.textContent='Gravando personagem…';
     try {
@@ -2102,7 +2118,8 @@ function dnd35WeaponProficient(state,weaponName){
         id=result.data;if(Array.isArray(id))id=id[0];if(id&&typeof id==='object')id=id.character_id||id.id;
         if(!id)throw new Error('A ficha foi criada, mas o banco não retornou o identificador do personagem.');state.createdCharacterId=String(id);
       }
-      var magicKey=dnd35SpellClassKey(state.classe.nome)||dnd35SpellClassKey(state.classe.class_key)||dnd35SpellClassKey(state.classe.id),spellState=state.grimoireState||dnd35SpellState(state);
+      var classBonusResult=await sb.rpc('salvar_talentos_bonus_classe_inicial_srd',{p_character_id:String(id),p_talentos:classBonusTalentos});if(classBonusResult.error)throw new Error('Não foi possível registrar os talentos bônus da classe. '+classBonusResult.error.message);
+       var magicKey=dnd35SpellClassKey(state.classe.nome)||dnd35SpellClassKey(state.classe.class_key)||dnd35SpellClassKey(state.classe.id),spellState=state.grimoireState||dnd35SpellState(state);
       if(magicKey==='cleric'){var savedDomains=await sb.rpc('salvar_dominios_personagem_srd',{p_character_id:String(id),p_domain_ids:(state.domainChoices||[]).map(function(x){return String(x.domain_id);})});if(savedDomains.error)throw new Error('Personagem criado, mas os domínios não foram salvos. '+savedDomains.error.message);}
       if(magicKey&&(spellState.conhecidas.length||spellState.preparadas.length||(spellState.dominioPreparadas||[]).length)){
         var spellResult=await sb.rpc('salvar_grimorio_srd',{p_character_id:String(id),p_estado:dnd35GrimoireSaveState({sheet:{magias_preparadas:spellState}})});
