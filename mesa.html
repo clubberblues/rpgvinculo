@@ -3617,7 +3617,7 @@ async function abrirModalEquipamentos(){
   function abrirMinhaFicha(){
     var meus = personagens.filter(function(p){ return p.ch.user_id === eu.id; });
     if(meus.length === 0){ alert('Voce ainda nao tem ficha nesta mesa.'); return; }
-    location.href = 'ficha.html?char='+meus[0].ch.id+(ehGM?'&role=gm':'');
+    location.href = 'ficha.html?char='+meus[0].ch.id+'&mesa='+encodeURIComponent(MESA_ID)+(ehGM?'&role=gm':'');
   }
 
   // ============ LÓGICA DO DADO (IFRAME) ============
@@ -3845,7 +3845,7 @@ async function abrirModalEquipamentos(){
       var token=playerTokenById[String(p.ch.id)],tokenAttr=token?' data-cba-token-key="'+esc(token.key)+'"':'';
       var avatarUrl=String((p.perfil&&p.perfil.avatar_url)||'').trim(),avatar=/^https?:\/\/[^\s"'<>]+$/i.test(avatarUrl)?'<div class="card-pers-avatar" style="background-image:url(&quot;'+esc(avatarUrl)+'&quot;)"></div>':'<div class="card-pers-avatar">'+iniciais((p.perfil&&p.perfil.username)||p.ch.nome)+'</div>';
       var selected=alvosSelecionados.indexOf(String(p.ch.id))!==-1?' selecionado-para-teste':'';
-      var html='<a class="card-pers'+(p.ch.user_id===eu.id?' eu':'')+selected+(activeCard?' turno-ativo':'')+'" data-actor-key="'+esc(actorKey)+'" data-char="'+esc(p.ch.id)+'"'+tokenAttr+' href="ficha.html?char='+encodeURIComponent(p.ch.id)+(ehGM?'&role=gm':'')+'">'+avatar+'<div class="card-pers-info"><div class="card-pers-nome">'+esc(p.ch.nome)+'</div><div class="card-pers-classe">'+esc((p.cl&&p.cl.nome)||p.sh.classe||p.sh.classe_id||'—')+' · N'+nivel+'</div><div class="card-pers-initiative'+(activeCard?' ativo':'')+'"><span>'+esc(initText)+'</span><span>'+esc(p.perfil.username?'@'+p.perfil.username:'Jogador')+'</span></div><div class="card-pers-pv"><div class="card-pers-pv-bar'+hpClass+'" style="width:'+pct+'%"></div></div><div class="card-pers-pv-txt">'+pvAtual+' / '+maxPV+' PV · CA '+ca+' · Ataque '+(bab+attackMod>=0?'+':'')+(bab+attackMod)+' · Dano '+esc(damage)+'</div></div></a>';
+      var html='<a class="card-pers'+(p.ch.user_id===eu.id?' eu':'')+selected+(activeCard?' turno-ativo':'')+'" data-actor-key="'+esc(actorKey)+'" data-char="'+esc(p.ch.id)+'"'+tokenAttr+' href="ficha.html?char='+encodeURIComponent(p.ch.id)+'&mesa='+encodeURIComponent(MESA_ID)+(ehGM?'&role=gm':'')+'">'+avatar+'<div class="card-pers-info"><div class="card-pers-nome">'+esc(p.ch.nome)+'</div><div class="card-pers-classe">'+esc((p.cl&&p.cl.nome)||p.sh.classe||p.sh.classe_id||'—')+' · N'+nivel+'</div><div class="card-pers-initiative'+(activeCard?' ativo':'')+'"><span>'+esc(initText)+'</span><span>'+esc(p.perfil.username?'@'+p.perfil.username:'Jogador')+'</span></div><div class="card-pers-pv"><div class="card-pers-pv-bar'+hpClass+'" style="width:'+pct+'%"></div></div><div class="card-pers-pv-txt">'+pvAtual+' / '+maxPV+' PV · CA '+ca+' · Ataque '+(bab+attackMod>=0?'+':'')+(bab+attackMod)+' · Dano '+esc(damage)+'</div></div></a>';
       cards.push({key:actorKey,rank:initIndex>=0?(combatDataState&&combatDataState.active?(initIndex-turnIndex+ordem.length)%ordem.length:initIndex):100000,html:html});
     });
 
