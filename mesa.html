@@ -632,17 +632,17 @@ html,body{min-height:100%;height:100%;overflow:hidden}body{min-width:320px}
 
 </style>
 <style>
-/* A ordem e os atores usam linhas distintas para não empurrar os cartões para fora da tela. */
-.mesa.mesa-com-iniciativa{grid-template-rows:68px minmax(0,1fr) auto clamp(112px,16vh,160px)}
-#painel-iniciativa.ativo{position:relative;top:auto;left:auto;transform:none;width:auto;max-width:none;max-height:none;margin:0;padding:7px 12px;border-radius:0;overflow:visible;pointer-events:auto}
-@media(max-width:900px){.mesa.mesa-com-iniciativa{grid-template-rows:auto auto auto auto}}
-
-.cards-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));grid-auto-rows:minmax(96px,auto);align-content:start;gap:9px;overflow-x:hidden;overflow-y:auto}
-.cards-strip #painel-iniciativa.ativo{grid-column:1/-1;grid-row:1;width:100%;max-width:none}
-.cards-strip .card-pers{width:100%;min-width:0;max-width:none;flex:none}
-.card-pers.token-card{min-width:0;max-width:none}
-@media(max-width:900px){.cards-strip{grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));height:auto;max-height:34dvh;overflow-y:auto}}
-@media(max-width:600px){.cards-strip{grid-template-columns:minmax(0,1fr);max-height:34dvh;overflow-y:auto}.cards-strip #painel-iniciativa.ativo{min-width:0}.cards-strip .card-pers{min-width:0}}
+/* Initiative stays inside the footer so it cannot create an implicit grid row. */
+.mesa.mesa-com-iniciativa{grid-template-rows:64px minmax(0,1fr) auto}
+.mesa-footer{display:grid;grid-template-rows:auto auto minmax(82px,1fr);gap:6px;min-height:172px;max-height:206px;height:auto;overflow:hidden}
+#painel-iniciativa{position:relative!important;inset:auto!important;left:auto!important;top:auto!important;transform:none!important;width:100%;max-width:none;max-height:48px;overflow:auto;margin:0;padding:6px 10px;border-radius:7px;pointer-events:auto}
+#painel-iniciativa.ativo{display:block;position:relative!important}
+.cards-strip{display:flex;min-height:82px;max-height:112px;height:auto;flex-wrap:nowrap;align-items:stretch;gap:9px;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain}
+.cards-strip #painel-iniciativa.ativo{flex:0 0 100%}
+.cards-strip .card-pers{width:auto;min-width:205px;max-width:280px;flex:0 0 260px}
+.card-pers.token-card{min-width:0;max-width:280px}
+@media(max-width:900px){.mesa-footer{min-height:188px;max-height:220px}.cards-strip{max-height:112px}}
+@media(max-width:600px){.mesa.mesa-com-iniciativa{grid-template-rows:58px auto auto}.mesa-footer{min-height:198px;max-height:245px;padding:7px}.cards-strip{min-height:88px;max-height:130px}.cards-strip .card-pers{min-width:78vw;flex-basis:78vw;max-width:78vw}}
 </style>
 </head>
 <body>
@@ -1070,6 +1070,9 @@ html,body{min-height:100%;height:100%;overflow:hidden}body{min-width:320px}
         '</footer>'+
       '</div>';
 
+    var initiativePanel = document.getElementById('painel-iniciativa');
+    var mesaFooter = document.querySelector('.mesa-footer');
+    if (initiativePanel && mesaFooter) mesaFooter.insertBefore(initiativePanel, mesaFooter.querySelector('.cards-strip'));
     renderBotoesAcao();
     ligarChatUI();
     ligarEventosTestes();
