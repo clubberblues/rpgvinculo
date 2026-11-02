@@ -633,6 +633,10 @@ html,body{min-height:100%;height:100%;overflow:hidden}body{min-width:320px}
 </style>
 <style>
 /* A ordem e os atores usam linhas distintas para não empurrar os cartões para fora da tela. */
+.mesa.mesa-com-iniciativa{grid-template-rows:68px minmax(0,1fr) auto clamp(112px,16vh,160px)}
+#painel-iniciativa.ativo{position:relative;top:auto;left:auto;transform:none;width:auto;max-width:none;max-height:none;margin:0;padding:7px 12px;border-radius:0;overflow:visible;pointer-events:auto}
+@media(max-width:900px){.mesa.mesa-com-iniciativa{grid-template-rows:auto auto auto auto}}
+
 .cards-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));grid-auto-rows:minmax(96px,auto);align-content:start;gap:9px;overflow-x:hidden;overflow-y:auto}
 .cards-strip #painel-iniciativa.ativo{grid-column:1/-1;grid-row:1;width:100%;max-width:none}
 .cards-strip .card-pers{width:100%;min-width:0;max-width:none;flex:none}
@@ -3407,7 +3411,7 @@ async function abrirModalEquipamentos(){
     combatDataState=combatData||null;
     var ordem=combatDataState && Array.isArray(combatDataState.turn_order)?combatDataState.turn_order:[];
     var esperados=combatDataState && Array.isArray(combatDataState.expected_character_ids)?combatDataState.expected_character_ids:[];
-    var ativo=!!(combatDataState && combatDataState.active && ordem.length);
+    var ativo=!!(combatDataState && combatDataState.active && ordem.length),painelVisivel=String(campanha&&campanha.state||'').toUpperCase()==='COMBATE'&&!!(ordem.length||esperados.length),mesaRoot=document.querySelector('.mesa');if(mesaRoot)mesaRoot.classList.toggle('mesa-com-iniciativa',painelVisivel);
     var gmActions=document.getElementById('iniciativa-acoes-mestre');if(!gmActions){gmActions=document.createElement('div');gmActions.id='iniciativa-acoes-mestre';var controlsHost=document.getElementById('painel-combate-acoes');if(controlsHost)controlsHost.appendChild(gmActions);else fila.parentNode.insertBefore(gmActions,fila.nextSibling);}gmActions.replaceChildren();
     ordem.forEach(function(entry){if(entry&&!entry.is_monster&&entry.id!=null)removerPedidosIniciativaDaFicha(entry.id);});
     if((campanha && String(campanha.state||'').toUpperCase()!=='COMBATE') || (!ordem.length && !esperados.length)){
