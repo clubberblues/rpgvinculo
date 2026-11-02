@@ -218,3 +218,30 @@ Verificação pós-auditoria: privilégios efetivos consultados com `has_functio
 ## Decisão sobre proteção contra senhas vazadas — 2026-11-02
 
 O proprietário confirmou que o projeto não possui plano Pro e decidiu descartar a ativação da proteção contra senhas vazadas. Não fazer upgrade nem ativar SMTP para esse fim. Esta opção deixa de ser uma pendência; as demais validações finais continuam em aberto.
+
+## Matriz de fluxos da mesa e fichas — 2026-11-02
+
+Leitura estática de `mesa.html`, `ficha.html`, `dice.html` e migrações SRD do repositório. Esta matriz registra evidência no código; “integrado” significa que há interface/handler e chamada correspondente, não aceite ponta a ponta de todos os casos.
+
+| Papel/fluxo | Evidência existente | Situação / lacuna |
+|---|---|---|
+| Mestre — controlar campanha | `alternar-combate` → `alternar_estado_campanha`; tela de iniciativa, avanço de turno e ferramentas de preparação | Integrado. Matriz real de campanha e tokens ainda requer teste de sessão. |
+| Mestre — preparar mapa e inserir criaturas | CBA com fundo, zoom, grade, prévia; catálogo NPC/monstros; `adicionar_token_cba_completo`, `salvar_cena_cba` | Integrado para preparação. |
+| Mestre — movimento e estado de token | `mover_token_gm_cba_srd`; menu contextual permite imagem, PV, inventário e detalhes; ações de combate incluem ataque, magia preparada, movimento e encerrar turno | Parcial. Algumas ações dependem do turno ativo. Confirmar se o requisito é permitir ao Mestre executar ações fora do turno correspondente ou controlar o token quando chegar a vez dele. |
+| Mestre — ações sobre token de jogador | Menu contextual de token player possui ajuste de PV e opções de ataque/movimento/ação/encerramento sob condição de turno específica | Suspeita de condição inconsistente: ramo testa turno marcado como monstro e identificador igual ao do personagem. Validar e corrigir em implementação separada. |
+| Jogador — movimento e turno | Próprio token; `mover_token_player_cba`; `consumir_acao_turno_srd`; verificação do dono e turno | Há validações de servidor; movimento em exploração e combate deve ser confirmado pela matriz ponta a ponta. |
+| Jogador — ataque | Botões corpo a corpo/à distância, seleção de alvo, dado e RPC `aplicar_dano_token_ataque_srd` | Fluxo existe. Confirmar todas as combinações de arma, alcance, CA, dano, crítico e mensagens de resultado; não presumir cobertura completa. |
+| Jogador — magia | Ficha mantém grimório/preparação conforme classe; mesa apresenta seleção de magia e chama `conjurar_magia_com_acao_srd` ou variante multialvo | Integrado para magias e estados suportados. Habilidades de classe que não são conjuração ainda não aparecem como sistema geral de ações. |
+| Jogador — perícias, testes e dados | Modal de testes, ação de perícia e `dice.html` embutido; rolagens são comunicadas pelo chat | Interface existente. Confirmar fórmula e bônus específicos da ficha em cada caminho. |
+| Jogador — mochila/equipamento | `abrirInventarioSRD`, `equipar_item_srd`, uso de poção e atualização de CA | Integrado para inventário SRD e operações implementadas. |
+| Criação — identidade e escolhas | Passos de identidade, atributos, perícias, talentos e tutorial; `criar_personagem_srd_completo` valida/salva escolhas | Fluxo existente. Verificar requisitos e reabertura/rascunho em teste real. |
+| Criação — magia/domínios | `salvar_grimorio_srd`, `salvar_dominios_personagem_srd`; lógica de classe diferencia preparar e conhecer magias | Parcial por regras/catalogação. Não demonstra que toda capacidade de classe esteja modelada como ação. |
+| Criação — equipamento inicial | `finalizar_equipamento_inicial_srd` grava método, resultados e itens | Interface e persistência existentes; precisa aceite em sessão completa. |
+| Criação — PV inicial | Texto da ficha define PV inicial como dado de vida máximo + modificador de Constituição (mínimo 1) | Não há evidência aqui de rolagem do jogador para PV. A regra atual exibida é determinística; escolha da regra precisa ser confirmada antes de mudar o cálculo. |
+
+### Próximas correções e verificações, por prioridade
+
+1. Corrigir/confirmar o menu do Mestre sobre tokens de jogador e alinhar o RPC de ataque/ação para aceitar a autoridade GM sem permitir alteração por jogador não proprietário.
+2. Fazer inventário de ações e capacidades por classe/nível (conjuração, habilidades, recursos e uso por turno) e identificar quais já têm dados, controles e validação no servidor.
+3. Definir a regra de PV de nível 1 (máximo automático ou rolagem) e refletir a decisão no fluxo, salvamento e validação da ficha.
+4. Executar teste ponta a ponta com duas sessões autenticadas; até lá, os fluxos listados como integrados têm evidência de código, não aceite operacional completo.
