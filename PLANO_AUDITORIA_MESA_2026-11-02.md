@@ -158,3 +158,10 @@ Nenhum registro de campanha, personagem, token, log ou combate foi alterado. As 
 - Teste transacional de fumaça executado com campanha/personagem descartáveis dentro de `BEGIN … ROLLBACK`: Bárbaro Humano nível 1, XP 1.000, rolagem de vida 6. A RPC retornou sem erro; nível da ficha e trilha passaram para 2, níveis pendentes foram para 0 e PV máximo passou de 12 para 18. O teste verificou também que nenhum registro temporário de campanha/personagem permaneceu após o rollback.
 - Migration aplicada e versionada: `20261102234916_srd35_levelup_class_track_sync`.
 - A validação acima cobre a trilha de classe e PV do caso de teste. Não cobre escolha de magias, todas as classes, multiclasse ou interação no navegador.
+
+
+### Validação de talentos bônus de classe no nível 1 — 2026-11-02 (23:52 UTC)
+
+- Teste transacional revertido para Guerreiro, Monge e Mago: Guerreiro recebeu Blind-Fight como talento bônus; Monge recebeu Agarrar Aprimorado e Ataque Desarmado Aprimorado como característica de classe; Mago recebeu Escrever Pergaminho automaticamente. Todos os três fluxos passaram pelas RPCs de criação e concessão de bônus.
+- Verificado após `ROLLBACK`: zero personagens temporários permaneceram no banco.
+- O workflow GitHub Pages do commit `f8b9320617c8112976eab16eccdef9f8a7b76193` concluiu com sucesso. O commit inclui a correção de classificação de Maestria em Magia como talento geral de Mago, e mantém as correções anteriores de criação e avanço de nível.
