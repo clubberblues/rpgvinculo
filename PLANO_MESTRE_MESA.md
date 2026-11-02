@@ -166,3 +166,8 @@ A inicialização de iniciativa usada pela interface (`iniciar_iniciativa_com_da
 ## Aceite de permissões no turno — 2026-11-02
 
 Em transações revertidas, um jogador conseguiu avançar o turno quando o turno era do próprio personagem; o mesmo jogador foi rejeitado quando o turno pertencia a uma criatura do Mestre. O consumo de ação padrão foi aceito uma vez e a repetição na mesma rodada foi rejeitada pelo servidor.
+
+
+## Aceite de mapa e token — 2026-11-02
+
+Em transações revertidas, o Mestre adicionou um monstro do catálogo SRD e moveu seu token no mapa; o jogador proprietário também moveu o próprio token. As posições foram atualizadas em `tokens.col/row`, sem persistir os dados de teste.
