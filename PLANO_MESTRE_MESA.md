@@ -276,3 +276,24 @@ O servidor mantém `avancar_turno` autenticado e limitado a membros da campanha:
 - Auditar cobertura de capacidades por classe e nível. Catálogos/handlers existentes não provam cobertura de toda classe ou habilidade especial.
 - Confirmar com fluxo de criação autenticado que PV inicial persistido usa DV máximo + modificador de Constituição, mínimo 1.
 - A proteção contra senhas vazadas permanece descartada por decisão do proprietário devido ao plano Free.
+
+## Atualização — experiência visual, XP e descanso longo (2026-11-02)
+
+- Aplicado e publicado tema dark fantasy verde musgo/dourado no cockpit da mesa, ficha SRD e lobby, preservando componentes e IDs de interação.
+- XP do Mestre usa RPC transacional com checagem de papel GM e sincroniza `characters.xp` com `srd_character_sheets.xp`.
+- XP suficiente registra `niveis_pendentes`, sem avançar automaticamente nível, PV ou recursos. A ficha informa que há escolhas pendentes; o assistente de avanço (dado de vida, perícias, talentos e incrementos de atributo) ainda não foi implementado.
+- Descanso longo SRD conectado à ficha, protegido no servidor: apenas proprietário, campanha correspondente, fora de combate e intervalo mínimo de 8 horas. Recupera 1 PV por nível até o máximo e repõe magias diárias.
+- Cartões da mesa preservam o parâmetro `mesa` ao abrir a ficha, requisito para descanso dentro do contexto correto.
+- RPCs novas sem EXECUTE para `anon` e permitidas a `authenticated`; validações internas exigem papel/dono. Migrações versionadas no Supabase e GitHub.
+- Scripts inline de mesa/ficha/lobby passaram por parse de sintaxe JavaScript.
+- Auditoria atual: 90 funções `SECURITY DEFINER`; 83 avisos do Advisor correspondem à execução por usuários autenticados, nenhuma executável por `anon`. Oito funções sem checagem textual direta foram inspecionadas como políticas/helpers/triggers ou delegam a `priv.need_gm`. O aviso isolado não prova vulnerabilidade; a confirmação dos 83 corpos e testes por papel continua aberta.
+- Nenhum dado de campanha foi alterado para testes. Validação visual via navegador e fluxo autenticado E2E seguem pendentes.
+
+### Pendências funcionais remanescentes
+
+1. Assistente de evolução de nível com rolagem via `dice.html`, PV, perícias, talentos e incrementos de atributo.
+2. Teste de combate SRD com matriz de raças/classes e sessões autenticadas de Mestre/jogador em campanha descartável.
+3. Resolvedores genéricos de magias ofensivas, salvamentos, resistência à magia/concentração e economia completa de ações.
+4. Automatização dos efeitos de classe/nível, condições, visão/fog of war, armadilhas, sobrecarga e economia/saque conforme a especificação.
+5. Validação visual ponta a ponta em navegador desktop/celular e com menu autenticado de jogador.
+6. Observar índices não usados com carga real antes de qualquer remoção. Proteção contra senhas vazadas segue descartada por escolha do proprietário/plano Free.
