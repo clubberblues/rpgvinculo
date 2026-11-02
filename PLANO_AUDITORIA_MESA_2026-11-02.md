@@ -80,3 +80,45 @@ A proteção contra senhas vazadas foi formalmente descartada para este projeto 
 - Commits: `0566300` (remoção da sequência literal), `10f273e` (remoção do trecho duplicado, etapa intermediária), `a79d2d2` (reconstrução correta do handler). O commit final é o estado válido; os commits intermediários foram corrigidos em sequência.
 - Ainda não houve inspeção de navegador nem teste autenticado da ficha após a correção. Portanto, a causa de parsing está corrigida no código, mas o carregamento funcional precisa ser confirmado no site publicado.
 - Próxima prioridade: validar a ficha no browser e verificar requests/erros de rede; depois implementar o assistente de avanço de nível de forma transacional, incluindo dado de vida, PV, perícias, talentos e atributos, sem atualizar nível nem consumir XP antes de todas as escolhas serem válidas.
+
+
+## Execução imediata das pendências — 2026-11-02 (continuação)
+
+### Alterações aplicadas
+
+- `ficha.html`: implementado painel de avanço de nível, integrado à ficha SRD. Apresenta rolagem do dado de vida, distribuição de graduações com custos e limites, escolha de talentos gerais e adicionais de Guerreiro/Mago/Monge, aumento de atributo nos níveis múltiplos de 4 e características catalogadas do próximo nível. A aplicação atualiza a ficha somente após a RPC confirmar a operação.
+- Nova RPC `concluir_avanco_nivel_personagem_srd`, versionada em `supabase/migrations/20261102210000_srd35_level_up_assistant.sql` e aplicada. Usa locks da ficha/personagem, valida propriedade e campanha, XP/níveis pendentes, dado de vida, PV, perícias, limites e pré-requisitos de talentos. A alteração de nível, PV, atributos, perícias e talentos ocorre na mesma transação. Execução concedida a `authenticated` e negada a `anon`.
+- Migration `20261102213000_srd35_level_up_ability_retroactivity.sql` aplicada: aumento de INT considera pontos de perícia retroativos e aumento de CON considera os PV retroativos dos dados de vida anteriores.
+- Migration `20261102214000_srd35_level_up_bab_progression_fix.sql` aplicada: pré-requisito de BBA usa `bab_progression` (`good` / `average` / `poor`). O campo legado `bab_bom` estava marcado como verdadeiro para todas as classes e não é mais usado no cálculo.
+- `mesa.html`: adicionada virada visual dos cards de personagens e tokens. O verso do personagem mostra atributos, quantidade de perícias e talentos; o verso de NPC/monstro mostra salvamentos e detalhes disponíveis. Os controles originais do Mestre/token e o link para a ficha foram preservados.
+- `mesa.html`: magias sem tipo de efeito explícito passam a ser bloqueadas como `resolucao_manual`. A interface não as classifica mais automaticamente como utilitárias, evitando consumo inadvertido de ação/espaço sem efeito mecânico definido. Magias de cura e o resolver especializado de Míssil Mágico mantêm os fluxos já existentes.
+
+### Commits desta execução
+
+- `1c39dee0f01e77b92ff4b1ae0e4f995ca02e4502` — migration de avanço transacional.
+- `2196e7797ec4c50e357304e448787d3de242cf6d` — retroatividade de CON/INT.
+- `1c7623216bd3e4bd03a0d1d9713fb84c035dc39f` — correção de progressão de BBA.
+- `7fb0d1650cd3bdc559c747cefc141c79f55189ea` e `7633f44722b3ba14dd61ae64a363251c838a51ef` — painel e refinamentos de avanço na ficha.
+- `6b8a00792ce5b973c7482875449ff4b8476428e4` — cards com frente/verso.
+- `957de6ec99e189d81fc74ee8b5631976d2926d96` — bloqueio seguro de magias sem efeito tipado.
+
+### Evidências verificadas nesta execução
+
+- Script inline de `ficha.html`: compilação por `new Function`, sem erro.
+- Script inline de `mesa.html`: compilação por `new Function`, sem erro.
+- Supabase: assinatura da RPC existe e a definição SQL foi lida após as migrations.
+- Supabase: `has_function_privilege` confirmou `anon_execute=false` e `authenticated_execute=true` para a RPC de avanço.
+- Supabase: conferência da definição confirmou uso de `bab_progression` e ausência do atalho `bab_bom IS TRUE`.
+- Supabase: a relação `srd_spell_effects` ainda tem 607 linhas `manual/manual_only`. Portanto, o catálogo fonte-verificado não é equivalente a resolver efeitos automaticamente.
+
+### Pendências ainda abertas — não declarar concluídas
+
+1. A correção de sintaxe da ficha está confirmada, mas o carregamento funcional com sessão autenticada, chamadas de rede e renderização real não foi testado em navegador nesta execução.
+2. O assistente de nível ainda precisa de E2E real em personagem de teste: cenários de PV mínimo/máximo, incremento de CON/INT, classes e talentos com pré-requisitos, múltiplos níveis pendentes, rejeição de escolhas inválidas e reabertura da ficha. A seleção/ganho de magias conhecidas ou adição de magias ao grimório em progressão de Mago/Feiticeiro/Bardo não está integrada a este fluxo.
+3. As 131 entradas de características de classe continuam com `engine_status=needs_implementation`; o painel as exibe, mas não aplica automaticamente habilidades como Fúria, Ataque Furtivo, Evasão, Música de Bardo, Forma Selvagem, Companheiro Animal, Usos de habilidade e outras progressões.
+4. A automação genérica de magia continua incompleta. Os 607 efeitos seguem manuais; Míssil Mágico e cura são casos especializados existentes. Resistência à magia, salvamentos, ataque de toque, dano tipado, condições, buffs/debuffs, duração, concentração e efeitos em área ainda exigem resolvers e cobertura por casos.
+5. Os testes ponta a ponta simultâneos como Mestre e jogador não foram executados: não há sessão secundária autenticada nem ambiente Supabase isolado disponível no plano atual. A campanha real 17 não foi usada nem alterada.
+6. A inspeção visual em viewport móvel não foi executada: esta execução não dispõe de navegador com emulação/redimensionamento de viewport. O HTML/CSS foi alterado e validado estaticamente, mas o flip-card precisa de conferência visual após publicação em desktop e celular.
+7. Não foi possível confirmar o deploy publicado nem o comportamento após a atualização de cache do site nesta execução. Os commits estão no `main`; status de sintaxe não substitui validação de publicação.
+
+Nenhuma ficha, personagem, campanha, token, log de jogo ou estado de combate real foi alterado nesta execução. As alterações de banco limitaram-se a definição de funções e permissões via migrations.
