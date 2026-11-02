@@ -151,3 +151,8 @@ Pendências reais restantes para a simulação final:
 4. Validar visualmente o tutorial guiado e o layout da mesa com navegador compartilhado.
 
 Nenhuma entrada foi marcada como verificada sem fonte SRD consultada, e o projeto não deve ser declarado “completo” antes dos quatro itens acima terem evidência de execução.
+
+
+## Validação transacional do combate — 2026-11-02
+
+As RPCs do ciclo de combate foram alinhadas ao esquema atual e testadas em uma transação revertida: dois monstros do catálogo SRD foram criados temporariamente, o combate foi iniciado, um ataque foi resolvido, dano e cura atualizaram HP, e o combate foi encerrado. O resultado confirmou iniciativa, defesa, log e alteração de estado sem deixar registros de teste persistidos. A pendência restante é a validação com usuários reais Mestre/jogador e interface, não mais a integração básica do banco.
