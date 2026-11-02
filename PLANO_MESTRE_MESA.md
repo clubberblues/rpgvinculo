@@ -206,3 +206,11 @@ A RPC dedicada `conjurar_magia_srd_multialvo_v2` foi aplicada e conectada à int
 ## Índices de chaves estrangeiras — 2026-11-02
 
 Foi aplicada a migração `performance_cover_public_foreign_keys`, criando cobertura de índice para as FKs públicas. O advisor deixou de reportar `unindexed_foreign_keys`; permanecem apenas avisos informativos de índices ainda sem uso observado, que não indicam falha funcional.
+
+## Revisão das funções SECURITY DEFINER — 2026-11-02
+
+Auditoria executada no projeto Supabase Vinculo (`grrgwxcagvvafdmzsmro`) após os avisos do advisor. Inventário do catálogo: 86 funções SECURITY DEFINER em `public`; 79 executáveis por `authenticated`, nenhuma executável por `anon`, e 7 restritas ao lado servidor. O advisor de segurança confirma 79 avisos informativos de RPC SECURITY DEFINER acessível a usuário autenticado; isso descreve a superfície de chamada, não confirma por si só uma falha de autorização.
+
+Foi conferido o corpo das rotinas e o padrão de autorização: as RPCs da aplicação fazem checagem de autenticação e/ou pertencimento à campanha, propriedade da ficha ou papel de Mestre antes de operar. A exceção aparente, `set_turn(cid, p_token)`, valida que o token pertence à campanha informada e delega a alteração a `combat_set_turn(p_token)`, que deriva a campanha do próprio token, exige `priv.need_gm` e valida combate ativo e presença do token na ordem. Assim, não foi necessário revogar acesso de RPCs usadas pela aplicação nem alterar o fluxo. As outras funções sem guarda de usuário são rotinas de trigger, sem EXECUTE para `anon` ou `authenticated`.
+
+Verificação pós-auditoria: privilégios efetivos consultados com `has_function_privilege`; `anon_execute=0`, `authenticated_execute=79`, `server_only=7`. Não foi aplicada alteração de schema ou permissão nesta revisão. Permanecem os avisos do advisor para RPCs autenticadas deliberadamente expostas; seu fundamento de autorização foi confirmado no banco.
