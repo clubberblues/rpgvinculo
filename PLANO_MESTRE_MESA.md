@@ -147,7 +147,7 @@ Pendências reais restantes para a simulação final:
 
 1. Executar a matriz ponta a ponta com uma campanha de teste e usuários Mestre/jogador, cobrindo ficha, permissões, movimento, iniciativa, acerto/erro, dano, PV, magia, inventário e recarga sem duplicação.
 2. Revisar os avisos restantes do advisor sobre RPCs SECURITY DEFINER que são deliberadamente chamadas da aplicação autenticada; a proteção estrutural e os guards existentes devem ser validados contra cada fluxo.
-3. Ativar a proteção contra senhas vazadas nas configurações de Auth do projeto Supabase, pois essa configuração não é exposta pelo conector SQL.
+3. Proteção contra senhas vazadas descartada pelo proprietário: o projeto está no plano Free, e a configuração exige Pro ou superior.
 4. Validar visualmente o tutorial guiado e o layout da mesa com navegador compartilhado.
 
 Nenhuma entrada foi marcada como verificada sem fonte SRD consultada, e o projeto não deve ser declarado “completo” antes dos quatro itens acima terem evidência de execução.
@@ -214,3 +214,7 @@ Auditoria executada no projeto Supabase Vinculo (`grrgwxcagvvafdmzsmro`) após o
 Foi conferido o corpo das rotinas e o padrão de autorização: as RPCs da aplicação fazem checagem de autenticação e/ou pertencimento à campanha, propriedade da ficha ou papel de Mestre antes de operar. A exceção aparente, `set_turn(cid, p_token)`, valida que o token pertence à campanha informada e delega a alteração a `combat_set_turn(p_token)`, que deriva a campanha do próprio token, exige `priv.need_gm` e valida combate ativo e presença do token na ordem. Assim, não foi necessário revogar acesso de RPCs usadas pela aplicação nem alterar o fluxo. As outras funções sem guarda de usuário são rotinas de trigger, sem EXECUTE para `anon` ou `authenticated`.
 
 Verificação pós-auditoria: privilégios efetivos consultados com `has_function_privilege`; `anon_execute=0`, `authenticated_execute=79`, `server_only=7`. Não foi aplicada alteração de schema ou permissão nesta revisão. Permanecem os avisos do advisor para RPCs autenticadas deliberadamente expostas; seu fundamento de autorização foi confirmado no banco.
+
+## Decisão sobre proteção contra senhas vazadas — 2026-11-02
+
+O proprietário confirmou que o projeto não possui plano Pro e decidiu descartar a ativação da proteção contra senhas vazadas. Não fazer upgrade nem ativar SMTP para esse fim. Esta opção deixa de ser uma pendência; as demais validações finais continuam em aberto.
