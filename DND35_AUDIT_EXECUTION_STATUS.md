@@ -34,11 +34,11 @@
 ## Integração inicial de condições na Mesa
 
 - Criadas funções seguras no Supabase para o Mestre aplicar e remover condições D&D 3.5 por campanha, com validação de autenticação, papel de Mestre, alvo pertencente à campanha e condição existente no catálogo SRD.
-- A aplicação registra rodada inicial, duração em rodadas (ou duração indefinida) e metadados de origem; reaplicar a mesma condição ao mesmo alvo substitui a instância ativa anterior para evitar duplicação acidental.
+- A aplicação registra rodada inicial, duração em rodadas (ou duração indefinida) e metadados de origem; reaplicar a mesma condição ao mesmo alvo substitui a instância ativa anterior para evitar duplicação acidental.\n- O avanço de turno agora chama uma rotina segura que desativa condições temporizadas quando a rodada atual alcança a rodada de expiração; condições sem duração permanecem ativas até remoção manual.
 - O menu contextual de cada token agora oferece **Administrar condições D&D 3.5** para o Mestre, tanto em personagens jogadores quanto em NPCs/monstros. A interface consulta o catálogo SRD, permite aplicar ou remover condições e publica o evento no chat/log.
 - O catálogo e os registros são os já existentes em `srd_conditions` e `srd_campaign_conditions`; não foi criado um estado paralelo na ficha.
 
-**Limite desta entrega:** esta etapa permite administrar e persistir condições, mas ainda não aplica automaticamente todos os modificadores nas jogadas de ataque, CA, salvamentos, perícias, deslocamento, ações e ataques de oportunidade. A expiração automática por rodada também precisa ser conectada ao avanço de turno. Portanto, condições continuam sendo um módulo parcialmente implementado.
+**Limite desta entrega:** esta etapa permite administrar e persistir condições, mas ainda não aplica automaticamente todos os modificadores nas jogadas de ataque, CA, salvamentos, perícias, deslocamento, ações e ataques de oportunidade. A expiração por rodada já foi conectada ao avanço de turno; ainda precisa ser validada em uma sessão autenticada com múltiplos combatentes e rodada completa. Portanto, condições continuam sendo um módulo parcialmente implementado.
 
 ## Testes executados
 
