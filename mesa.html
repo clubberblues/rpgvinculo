@@ -1623,6 +1623,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(menu.classList.contains('ativo')&&String(ctxTokenAtualKey)===String(item.key))return;
     fecharMenuContextualToken(false);menu.replaceChildren();ctxTokenAtualKey=String(item.key);ctxFocusTokenKey=String(item.key);
     if(ehGM){
+      adicionarBotaoContextual(menu,'srd-conditions','🛡️ Administrar condições D&D 3.5');
       if(item.tipo==='player'){
         var playerTurn=combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
         if(playerTurn&&!playerTurn.is_monster&&String(playerTurn.id)===String(item.id))adicionarBotaoContextual(menu,'gm-token-move','↔️ Mover token do jogador');
@@ -1648,10 +1649,46 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(item.tipo==='monstro'&&item.monsterStats){publicarInfoMonstro({id:item.monsterId||item.id,nome:item.nome,nd:item.monsterStats.nd,ca:item.ac,pv:item.maxHp,ataques:item.monsterStats.ataques,srd_source_url:item.srdSourceUrl});return;}
     enviarMensagemChat('📜 '+item.nome+' · '+(item.tipo==='npc'?'NPC':'criatura')+' · PV '+(item.hp==null?'?':item.hp)+' / '+(item.maxHp==null?'?':item.maxHp)+'.','sistema',{evento:'cba_token_info',token_id:String(item.id)});
   }
+  async function administrarCondicoesToken(item){
+    if(!ehGM||!item)return;
+    var targetKind=item.tipo==='player'?'character':'token';
+    var targetId=String(item.id);
+    try{
+      var catalogResult=await sb.from('srd_conditions').select('condition_id,name,summary').order('name');
+      if(catalogResult.error)throw new Error(catalogResult.error.message);
+      var activeResult=await sb.from('srd_campaign_conditions').select('condition_id,notes').eq('campaign_id',Number(MESA_ID)).eq('target_kind',targetKind).eq('target_id',targetId).eq('active',true);
+      if(activeResult.error)throw new Error(activeResult.error.message);
+      var activeIds=(activeResult.data||[]).map(function(row){return String(row.condition_id);});
+      var actionOptions=[{value:'apply',label:'Aplicar uma condição'}];
+      if(activeIds.length)actionOptions.push({value:'remove',label:'Remover uma condição ativa'});
+      var action=await window.vttUI.ask({title:'Condições · '+item.nome,label:'O que deseja fazer?',kind:'select',options:actionOptions,defaultValue:'apply'});
+      if(!action)return;
+      var available=action==='remove'?(catalogResult.data||[]).filter(function(c){return activeIds.indexOf(String(c.condition_id))>=0;}):(catalogResult.data||[]);
+      if(!available.length){await window.vttUI.alert('Não há condições disponíveis para esta operação.');return;}
+      var choice=await window.vttUI.ask({title:action==='remove'?'Remover condição':'Aplicar condição',label:'Selecione a condição D&D 3.5',kind:'select',options:available.map(function(c){return {value:String(c.condition_id),label:c.name+' — '+c.summary};}),defaultValue:String(available[0].condition_id)});
+      if(!choice)return;
+      var selected=available.find(function(c){return String(c.condition_id)===String(choice);});
+      if(action==='remove'){
+        var removed=await sb.rpc('srd_remove_campaign_condition',{p_campaign_id:Number(MESA_ID),p_target_kind:targetKind,p_target_id:targetId,p_condition_id:String(choice)});
+        if(removed.error)throw new Error(removed.error.message);
+        await enviarMensagemChat('🛡️ O Mestre removeu a condição '+(selected?selected.name:'')+' de '+item.nome+'.','sistema',{evento:'condicao_srd_removida',target_kind:targetKind,target_id:targetId,condition_id:String(choice)});
+      }else{
+        var durationText=await window.vttUI.ask({title:'Duração da condição',label:'Quantidade de rodadas (deixe vazio para duração indefinida)',defaultValue:'',inputMode:'numeric'});
+        if(durationText===null||durationText===undefined)return;
+        var durationRaw=String(durationText).trim();
+        var duration=durationRaw===''?null:Number(durationRaw);
+        if(duration!==null&&(!Number.isInteger(duration)||duration<1)){await window.vttUI.alert('Informe um número inteiro de rodadas maior que zero ou deixe vazio.');return;}
+        var applied=await sb.rpc('srd_apply_campaign_condition',{p_campaign_id:Number(MESA_ID),p_target_kind:targetKind,p_target_id:targetId,p_condition_id:String(choice),p_duration_rounds:duration,p_notes:{source:'gm_token_context',target_name:String(item.nome||'')}});
+        if(applied.error)throw new Error(applied.error.message);
+        await enviarMensagemChat('🛡️ O Mestre aplicou '+(selected?selected.name:'uma condição')+' em '+item.nome+(duration===null?' (duração indefinida).':' por '+duration+' rodada(s).'),'sistema',{evento:'condicao_srd_aplicada',target_kind:targetKind,target_id:targetId,condition_id:String(choice),duration_rounds:duration});
+      }
+    }catch(error){console.error('Falha ao administrar condição D&D 3.5:',error);await window.vttUI.alert('Não foi possível atualizar a condição: '+(error.message||error));}
+  }
   function executarAcaoMenuToken(acao){
     var item=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key)===String(ctxTokenAtualKey);});if(!item){fecharMenuContextualToken(false);return;}
     fecharMenuContextualToken(false);
     if(acao==='fechar')return;
+    if(acao==='srd-conditions'){if(ehGM)administrarCondicoesToken(item);return;}
     if(acao==='token-image'){selecionarImagemToken(item);return;}
     if(acao==='pv-personagem'){var owner=acharPersonagemDoToken(item);if(!ehGM&&item.tipo==='player'&&owner&&owner.ch.user_id===eu.id)abrirAjustePV(item.id);return;}
     if(acao==='pv-token'){if(ehGM&&item.tipo!=='player')abrirAjustePVToken(item.key);return;}
