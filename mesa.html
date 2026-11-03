@@ -1668,7 +1668,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       abrirDado('Dano · '+selected.attacker.nome+' → '+target.nome+' · '+selected.formula,async function(rawDamage){
         var damageValue=Number(rawDamage);
         if(!Number.isFinite(damageValue)||damageValue<0)throw new Error('O dado não retornou um valor de dano válido. Role novamente antes de aplicar o dano.');
-        var damage=Math.max(0,Math.trunc(damageValue)),applied;
+        var damage=Math.max(1,Math.trunc(damageValue)),applied;
         if(target.tipo==='player')applied=await sb.rpc('aplicar_dano_token_gm_personagem_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(selected.attacker.id),p_character_id:String(target.id),p_dano:damage});
         else applied=await sb.rpc('alterar_pv_token_cba',{p_campaign_id:Number(MESA_ID),p_token_id:String(target.id),p_variacao:-damage,p_pv_max:target.maxHp==null?null:Number(target.maxHp)});
         if(applied.error)throw new Error('Não foi possível aplicar o dano: '+applied.error.message);
