@@ -907,7 +907,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
 #cards-strip .deck-card .card-pers-pv-txt{font-size:8px!important}
 #cards-strip .cards-strip-pager{position:sticky!important;right:0!important;flex:0 0 auto!important;align-self:flex-end!important}
 .col-esq{min-height:0!important;overflow:hidden!important}
-.col-esq>.painel:first-child{flex:1 1 50%!important;min-height:0!important}
+.col-esq>.painel:first-child{flex:1 1 100%!important;min-height:0!important}
+.col-esq:has(#dado-iframe-overlay[style*="display: flex"])>.painel:first-child{flex:1 1 50%!important}
 .col-esq #dado-iframe-overlay{position:relative!important;inset:auto!important;display:none;flex:1 1 50%!important;width:100%!important;min-height:210px!important;height:auto!important;margin:0!important;padding:0!important;background:transparent!important;backdrop-filter:none!important;z-index:3!important;align-items:stretch!important;justify-content:stretch!important;pointer-events:auto!important}
 .col-esq #dado-iframe-overlay[style*="display: flex"]{display:flex!important}
 .col-esq .dado-card{width:100%!important;height:100%!important;min-height:0!important;max-height:none!important;border:1px solid #b99b5a!important;border-radius:7px!important;box-shadow:0 5px 18px #0008!important}
