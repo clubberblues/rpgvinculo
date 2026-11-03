@@ -1430,7 +1430,6 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         if(playerTurn&&!playerTurn.is_monster&&String(playerTurn.id)===String(item.id))adicionarBotaoContextual(menu,'gm-token-move','↔️ Mover token do jogador');
       }
       else{
-        adicionarBotaoContextual(menu,'token-image','🖼️ Alterar retrato do token');
         var gmTurn=combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
         var gmOwnTurn=!!(gmTurn&&gmTurn.is_monster&&String(gmTurn.id)===String(item.id));
         if(item.tipo==='npc'&&item.monsterStats&&item.monsterStats.attributes)adicionarBotaoContextual(menu,'npc-sheet','📜 Ver ficha completa');if(gmOwnTurn){adicionarBotaoContextual(menu,'gm-token-attack','⚔️ Atacar com este token');if(tokenTemMagiaPreparada35(item))adicionarBotaoContextual(menu,'gm-token-magic','✨ Conjurar magia disponível');adicionarBotaoContextual(menu,'gm-token-move','↔️ Mover token');adicionarBotaoContextual(menu,'gm-token-action','📜 Registrar outra ação');adicionarBotaoContextual(menu,'gm-token-end','⏭️ Encerrar turno do token');}
