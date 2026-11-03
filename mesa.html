@@ -1806,7 +1806,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(type==='atk-dist'&&!weapon){alert('Equipe uma arma à distância antes de atacar.');return;}
     var finesseWeapon=type==='atk-corpo'&&personagemTemTalento(own.sh,'srd35_feat_weapon_finesse')&&(!weapon||!!(weapon.detalhes&&weapon.detalhes.weapon_finesse_eligible===true));
     var attackAttribute=type==='atk-dist'||finesseWeapon?'DES':'FOR',ability=modifier35(attrs[attackAttribute]),strengthModifier=modifier35(attrs.FOR);
-    var weaponName=weapon?weapon.nome:'Ataque desarmado',damage=weapon&&weapon.dano||'1d3',weaponFocus=0,powerPenalty=0,powerDamage=0;
+    var weaponName=weapon?weapon.nome:'Ataque desarmado',damage=weapon&&weapon.dano||'1d3',weaponFocus=0,powerPenalty=0,powerDamage=0,proficiencyPenalty=personagemProficienteArma35(own,weapon)?0:4;
     var feats=own.sh.talentos||[];if(typeof feats==='string'){try{feats=JSON.parse(feats);}catch(e){feats=[];}}
     var normalizeName=function(value){return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();};
     var focus=Array.isArray(feats)&&feats.find(function(feat){return feat&&feat.id==='foco_em_arma'&&normalizeName(feat.parametro)===normalizeName(weaponName);});
@@ -1822,7 +1822,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       if(rangeIncrements>10){alert('Alvo fora do alcance máximo da arma (10 incrementos de '+rangeIncrementMeters+' m).');return;}
       rangePenalty=(rangeIncrements-1)*2;
     }
-    var sizeModifier=modifierTamanho35(own.tamanho),bonus=bab+ability+weaponFocus-powerPenalty+sizeModifier-rangePenalty;
+    var sizeModifier=modifierTamanho35(own.tamanho),bonus=bab+ability+weaponFocus-powerPenalty+sizeModifier-rangePenalty-proficiencyPenalty;
     var title=type==='atk-corpo'?'Ataque Corpo a Corpo':'Ataque à Distância', critical=critico35(weapon&&weapon.critico);
     function abrirRolagemDano(isCritical){
       var rawDamage=String(damage||'1d3').split('/')[0].trim(), parsed=rawDamage.match(/^(\d+)d(2|3|4|6|8|10|12|20|100)(?:([+-]\d+))?$/i);
@@ -1853,7 +1853,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     }
     function registrarResultadoAtaque(d20,isCritical){
       var total=Number(d20)+bonus,automaticMiss=Number(d20)===1,automaticHit=Number(d20)===20,hit=!automaticMiss&&(automaticHit||total>=targetAC);
-      var breakdown='1d20 '+d20+' + BBA '+bab+' + '+attackAttribute+' '+ability+(sizeModifier?' + tamanho '+(sizeModifier>0?'+':'')+sizeModifier:'')+(weaponFocus?' + Foco em Arma +1':'')+(powerPenalty?' − Ataque Poderoso '+powerPenalty:'')+(rangePenalty?' − distância '+rangePenalty:'');
+      var breakdown='1d20 '+d20+' + BBA '+bab+' + '+attackAttribute+' '+ability+(sizeModifier?' + tamanho '+(sizeModifier>0?'+':'')+sizeModifier:'')+(weaponFocus?' + Foco em Arma +1':'')+(powerPenalty?' − Ataque Poderoso '+powerPenalty:'')+(rangePenalty?' − distância '+rangePenalty:'')+(proficiencyPenalty?' − sem proficiência '+proficiencyPenalty:'');
       if(!hit){
         enviarMensagemChat('⚔️ '+title+' com '+weaponName+' contra '+target.nome+': '+breakdown+' = **'+total+'** contra CA '+targetAC+' — ERRO. O dano não será rolado.','rolagem',{evento:'ataque_dnd35',atacante:String(own.ch.id),alvo:target.id,resultado:total,d20:Number(d20),ca_alvo:targetAC,acerto:false,bab:bab,modificador:ability,bonus_foco:weaponFocus,bonus_tamanho:sizeModifier,penalidade_ataque_poderoso:powerPenalty,arma:weaponName,dano:damage});
         return;
@@ -3719,6 +3719,23 @@ async function abrirModalEquipamentos(){
     var valor = Number(atributos[atributoDoTeste]);
     if(!Number.isFinite(valor)) return 0;
     return valor >= 4 ? Math.floor((valor-10)/2) : valor;
+  }
+  function personagemProficienteArma35(personagem,weapon){
+    if(!weapon)return true;
+    var detalhes=weapon.detalhes||{},tipo=String(detalhes.weapon_proficiency||'').toLowerCase();
+    var raw=personagem&&personagem.cl&&personagem.cl.dados_tecnicos&&personagem.cl.dados_tecnicos.proficiencias&&personagem.cl.dados_tecnicos.proficiencias.armas;
+    if(typeof raw==='string'){try{raw=JSON.parse(raw);}catch(e){raw=[];}}
+    var normalize=function(value){return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();};
+    var profs=Array.isArray(raw)?raw.map(normalize):[];
+    var nome=normalize(weapon.nome),allSimple=profs.includes('armas simples'),allSimpleMartial=profs.includes('todas as armas simples e marciais');
+    var exact=profs.includes(nome),feats=personagem&&personagem.sh&&personagem.sh.talentos||[];
+    if(typeof feats==='string'){try{feats=JSON.parse(feats);}catch(e){feats=[];}}
+    var hasFeat=function(id){return Array.isArray(feats)&&feats.some(function(f){return String(f&&f.id||f)===id;});};
+    var hasParamFeat=function(id){return Array.isArray(feats)&&feats.some(function(f){return f&&String(f.id)===id&&normalize(f.parametro)===nome;});};
+    if(tipo==='simple')return exact||allSimple||allSimpleMartial||hasFeat('srd35_feat_simple_weapon_proficiency');
+    if(tipo==='martial')return exact||allSimpleMartial||hasParamFeat('srd35_feat_martial_weapon_proficiency');
+    if(tipo==='exotic')return exact||hasParamFeat('srd35_feat_exotic_weapon_proficiency');
+    return false;
   }
   function personagemTemTalento(sheet,featId){
     var feats=sheet&&sheet.talentos||[];if(typeof feats==='string'){try{feats=JSON.parse(feats);}catch(e){return false;}}
