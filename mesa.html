@@ -1802,7 +1802,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     }
     var level=Math.max(1,Number(own.sh.nivel)||1), attrs=own.sh.atributos||{}, bab=bab35(own.cl,level);
     var weapons=(own.equipamento||[]).filter(function(it){return it.equipado&&it.categoria==='arma';});
-    var weapon=weapons.find(function(it){return type==='atk-dist'?!!(it.detalhes&&it.detalhes.distancia):!(it.detalhes&&it.detalhes.distancia);});
+    var weapon=weapons.find(function(it){var d=it.detalhes||{};return type==='atk-dist'?d.weapon_ranged===true:d.weapon_melee!==false;});
     if(type==='atk-dist'&&!weapon){alert('Equipe uma arma à distância antes de atacar.');return;}
     var finesseWeapon=type==='atk-corpo'&&personagemTemTalento(own.sh,'srd35_feat_weapon_finesse')&&(!weapon||!!(weapon.detalhes&&weapon.detalhes.weapon_finesse_eligible===true));
     var attackAttribute=type==='atk-dist'||finesseWeapon?'DES':'FOR',ability=modifier35(attrs[attackAttribute]),strengthModifier=modifier35(attrs.FOR);
@@ -1812,14 +1812,25 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var focus=Array.isArray(feats)&&feats.find(function(feat){return feat&&feat.id==='foco_em_arma'&&normalizeName(feat.parametro)===normalizeName(weaponName);});
     if(focus)weaponFocus=1;
     if(type==='atk-corpo'&&personagemTemTalento(own.sh,'ataque_poderoso')){var rawPenalty=await window.vttUI.ask({title:'Ataque Poderoso',label:'Penalidade de ataque (0 a '+Math.max(0,bab)+')',defaultValue:'0',inputMode:'numeric'});if(rawPenalty===null)return;powerPenalty=Number(rawPenalty);if(!Number.isInteger(powerPenalty)||powerPenalty<0||powerPenalty>bab){alert('A penalidade deve ser um inteiro entre 0 e '+Math.max(0,bab)+'.');return;}powerDamage=powerPenalty*(weapon&&weapon.detalhes&&weapon.detalhes.duas_maos?2:1);}
-    var sizeModifier=modifierTamanho35(own.tamanho),bonus=bab+ability+weaponFocus-powerPenalty+sizeModifier;
-    if(type==='atk-dist'&&weapon&&weapon.detalhes&&Number(weapon.detalhes.alcance_m)>0){var rangeSquares=Math.max(Math.abs(Number(target.gridX)-Number(ownToken.gridX)),Math.abs(Number(target.gridY)-Number(ownToken.gridY)));if(rangeSquares*1.5>Number(weapon.detalhes.alcance_m)){alert('Alvo fora do alcance da arma ('+weapon.detalhes.alcance_m+' m).');return;}}
+    var rangePenalty=0,rangeDistanceMeters=0,rangeIncrementMeters=0,rangeIncrements=0;
+    if(type==='atk-dist'){
+      rangeIncrementMeters=Number(weapon.detalhes&&weapon.detalhes.range_increment_m);
+      if(!Number.isFinite(rangeIncrementMeters)||rangeIncrementMeters<=0){alert('O catálogo ainda não possui o incremento de distância desta arma.');return;}
+      var dx=Math.abs(Number(target.gridX)-Number(ownToken.gridX)),dy=Math.abs(Number(target.gridY)-Number(ownToken.gridY));
+      var diagonalSteps=Math.min(dx,dy),distanceSquares=Math.max(dx,dy)+Math.floor(diagonalSteps/2);
+      rangeDistanceMeters=distanceSquares*1.5;
+      rangeIncrements=Math.max(1,Math.ceil(rangeDistanceMeters/rangeIncrementMeters));
+      if(rangeIncrements>10){alert('Alvo fora do alcance máximo da arma (10 incrementos de '+rangeIncrementMeters+' m).');return;}
+      rangePenalty=(rangeIncrements-1)*2;
+    }
+    var sizeModifier=modifierTamanho35(own.tamanho),bonus=bab+ability+weaponFocus-powerPenalty+sizeModifier-rangePenalty;
     var title=type==='atk-corpo'?'Ataque Corpo a Corpo':'Ataque à Distância', critical=critico35(weapon&&weapon.critico);
     function abrirRolagemDano(isCritical){
       var rawDamage=String(damage||'1d3').split('/')[0].trim(), parsed=rawDamage.match(/^(\d+)d(2|3|4|6|8|10|12|20|100)(?:([+-]\d+))?$/i);
       if(!parsed){alert('O ataque acertou, mas a expressão de dano da arma não pôde ser interpretada: '+rawDamage+'. O Mestre pode aplicar o dano manualmente.');return;}
       var diceCount=Math.max(1,Math.min(20,Number(parsed[1]))),sides=Number(parsed[2]),baseFlat=Number(parsed[3]||0),multiplier=isCritical?critical.multiplier:1;
-      var strengthDamage=type==='atk-corpo'?strengthModifier:0,flat=(baseFlat+strengthDamage+powerDamage)*multiplier,diceTotal=diceCount*multiplier;
+      var rangedStrengthDamage=type==='atk-dist'&&weapon&&weapon.detalhes&&weapon.detalhes.ranged_damage_uses_strength===true;
+      var strengthDamage=(type==='atk-corpo'||rangedStrengthDamage)?strengthModifier:0,flat=(baseFlat+strengthDamage+powerDamage)*multiplier,diceTotal=diceCount*multiplier;
       var formula=diceTotal+'d'+sides+(flat>0?'+'+flat:flat<0?String(flat):''),critLabel=isCritical?' · CRÍTICO x'+multiplier:'';
       async function registrarDano(total,rollDescription){
         var dano=Math.max(1,Math.trunc(Number(total)));
@@ -1843,7 +1854,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     }
     function registrarResultadoAtaque(d20,isCritical){
       var total=Number(d20)+bonus,automaticMiss=Number(d20)===1,automaticHit=Number(d20)===20,hit=!automaticMiss&&(automaticHit||total>=targetAC);
-      var breakdown='1d20 '+d20+' + BBA '+bab+' + '+attackAttribute+' '+ability+(sizeModifier?' + tamanho '+(sizeModifier>0?'+':'')+sizeModifier:'')+(weaponFocus?' + Foco em Arma +1':'')+(powerPenalty?' − Ataque Poderoso '+powerPenalty:'');
+      var breakdown='1d20 '+d20+' + BBA '+bab+' + '+attackAttribute+' '+ability+(sizeModifier?' + tamanho '+(sizeModifier>0?'+':'')+sizeModifier:'')+(weaponFocus?' + Foco em Arma +1':'')+(powerPenalty?' − Ataque Poderoso '+powerPenalty:'')+(rangePenalty?' − distância '+rangePenalty:'');
       if(!hit){
         enviarMensagemChat('⚔️ '+title+' com '+weaponName+' contra '+target.nome+': '+breakdown+' = **'+total+'** contra CA '+targetAC+' — ERRO. O dano não será rolado.','rolagem',{evento:'ataque_dnd35',atacante:String(own.ch.id),alvo:target.id,resultado:total,d20:Number(d20),ca_alvo:targetAC,acerto:false,bab:bab,modificador:ability,bonus_foco:weaponFocus,bonus_tamanho:sizeModifier,penalidade_ataque_poderoso:powerPenalty,arma:weaponName,dano:damage});
         return;
