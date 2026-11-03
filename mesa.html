@@ -3148,11 +3148,18 @@ async function abrirModalEquipamentos(){
     }
   }
 
+  function custoMovimentoGrade35(dx,dy,diagonaisAnteriores){
+    var horizontal=Math.abs(Math.trunc(Number(dx)||0)),vertical=Math.abs(Math.trunc(Number(dy)||0));
+    var diagonais=Math.min(horizontal,vertical),base=Math.max(horizontal,vertical);
+    var anteriores=Math.max(0,Math.trunc(Number(diagonaisAnteriores)||0));
+    var adicional=Math.floor((anteriores+diagonais)/2)-Math.floor(anteriores/2);
+    return {costSquares:base+adicional,diagonalSteps:anteriores+diagonais};
+  }
   function calcularDistanciaMetros(token1,token2){
     if(!token1 || !token2) return 0;
-    var dx = Math.abs((Number(token1.gridX)||0)-(Number(token2.gridX)||0));
-    var dy = Math.abs((Number(token1.gridY)||0)-(Number(token2.gridY)||0));
-    return Math.max(dx,dy)*1.5;
+    var dx=(Number(token1.gridX)||0)-(Number(token2.gridX)||0);
+    var dy=(Number(token1.gridY)||0)-(Number(token2.gridY)||0);
+    return custoMovimentoGrade35(dx,dy,0).costSquares*1.5;
   }
 
   function adicionarTokenCBA(id,nome,imagem,tipo,detalhe,monster){
@@ -3280,10 +3287,12 @@ async function abrirModalEquipamentos(){
     var preview=document.getElementById('cba-live-movement-preview');if(!preview)return;
     var p=personagens.find(function(x){return String(x.ch.id)===String(token.id)&&x.ch.user_id===eu.id;});if(!p){preview.hidden=true;return;}
     var endX=Math.max(0,Math.round((left+cell/2)/cell-0.5)),endY=Math.max(0,Math.round((top+cell/2)/cell-0.5));
-    var segmentSquares=Math.max(Math.abs(endX-startGridX),Math.abs(endY-startGridY));
     var usage=combatDataState&&combatDataState.movement_usage,round=Math.max(1,Number(combatDataState&&combatDataState.round)||1),turn=Number(combatDataState&&combatDataState.current_turn)||0;
-    var usedSquares=usage&&String(usage.character_id)===String(token.id)&&Number(usage.round)===round&&Number(usage.current_turn)===turn?Math.max(0,Number(usage.moved_squares)||0):0;
-    var speed=p.deslocamento_m,spent=(usedSquares+segmentSquares)*1.5;
+    var sameTurnUsage=usage&&String(usage.character_id)===String(token.id)&&Number(usage.round)===round&&Number(usage.current_turn)===turn;
+    var usedSquares=sameTurnUsage?Math.max(0,Number(usage.moved_squares)||0):0;
+    var usedDiagonalSteps=sameTurnUsage?Math.max(0,Number(usage.diagonal_steps)||0):0;
+    var segmentMovement=custoMovimentoGrade35(endX-startGridX,endY-startGridY,usedDiagonalSteps);
+    var speed=p.deslocamento_m,spent=(usedSquares+segmentMovement.costSquares)*1.5;
     preview.classList.toggle('excede',speed!=null&&spent>speed);
     if(speed==null)preview.textContent='Movimento previsto: '+spent.toLocaleString('pt-BR',{maximumFractionDigits:1})+' m · velocidade racial indisponível; o servidor validará.';
     else preview.textContent='Movimento no turno: '+spent.toLocaleString('pt-BR',{maximumFractionDigits:1})+' / '+speed.toLocaleString('pt-BR',{maximumFractionDigits:1})+' m'+(spent>speed?' · EXCEDE O DESLOCAMENTO!':' · restam '+Math.max(0,speed-spent).toLocaleString('pt-BR',{maximumFractionDigits:1})+' m');
