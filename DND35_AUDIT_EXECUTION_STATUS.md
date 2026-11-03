@@ -26,6 +26,11 @@
 
 - Revisão textual da Fúria do Bárbaro na ficha: esclarecido que o aumento de Constituição eleva os PV em 2 por nível enquanto durar a fúria (não são PV temporários), que a queda dos PV ao término pode incapacitar/matar o personagem e que Fúria Incansável remove a fadiga. Esta correção de regra/descrição não significa que a ativação e os efeitos dinâmicos já estejam implementados.
 
+## Correções adicionais desta continuação
+
+- Correção de regra do Bárbaro: alfabetização custa 2 pontos de perícia uma única vez e abrange os idiomas que o personagem já sabe falar; não é cobrada por idioma. A fadiga após a Fúria permanece até 8 horas de descanso completo, salvo Fúria Incansável — não termina automaticamente com o encontro.
+- Verificação de dados SRD: progressão do Bárbaro contém Fúria 1/2/3/4/5/6 por dia nos níveis 1/4/8/12/16/20, Fúria Maior no 11, Fúria Incansável no 17 e Fúria Poderosa no 20. Os registros estão verificados contra a progressão SRD; os efeitos ativos ainda não estão conectados ao motor.
+
 ## Testes executados
 
 - Sintaxe JavaScript de `ficha.html` e `mesa.html`: sem erros.
