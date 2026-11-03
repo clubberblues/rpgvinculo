@@ -4137,7 +4137,7 @@ async function abrirModalEquipamentos(){
     if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
       Array.from(el.querySelectorAll('.card-pers')).forEach(function(node){var before=priorTop[node.dataset.actorKey];if(before==null)return;var delta=before-node.getBoundingClientRect().top;if(Math.abs(delta)<2)return;node.style.transition='none';node.style.transform='translateY('+delta+'px)';requestAnimationFrame(function(){node.style.transition='transform 420ms cubic-bezier(.2,.75,.25,1)';node.style.transform='';});});
     }
-    var rosterCards=Array.from(el.querySelectorAll(':scope > .card-pers')),pageSize=window.matchMedia('(min-width:901px)').matches?3:1,pageCount=Math.max(1,Math.ceil(rosterCards.length/pageSize));
+    var rosterCards=Array.from(el.querySelectorAll(':scope > .card-pers')),pageSize=Math.max(1,rosterCards.length),pageCount=1;
     cardsPage=Math.max(0,Math.min(cardsPage,pageCount-1));
     rosterCards.forEach(function(card,index){card.hidden=Math.floor(index/pageSize)!==cardsPage;});
     var pager=document.getElementById('cards-strip-pager');
