@@ -1665,7 +1665,26 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   function selecionarAlvoAtaqueMestre(target){
     var selected=ataqueMestreSelecionado;ataqueMestreSelecionado=null;document.getElementById('area-tabuleiro').classList.remove('selecionando-alvo');if(!selected||String(target.id)===String(selected.attacker.id)){alert('Selecione outro token como alvo.');return;}var ac=caToken35(target);if(ac==null){alert('O alvo precisa ter uma CA numérica.');return;}
     abrirDado('Ataque · '+selected.attacker.nome+' contra '+target.nome,async function(d20){var used=await sb.rpc('consumir_acao_token_gm_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(selected.attacker.id),p_acao:'padrao'});if(used.error)throw new Error('Ação do token não consumida: '+used.error.message);combatDataState=used.data.combat_data||combatDataState;renderizarIniciativa(combatDataState);var total=Number(d20)+selected.bonus,hit=Number(d20)===20||(Number(d20)!==1&&total>=ac);await enviarMensagemChat('⚔️ '+selected.attacker.nome+' atacou '+target.nome+': d20 '+d20+' + bônus '+selected.bonus+' = '+total+' contra CA '+ac+' — '+(hit?'ACERTO':'ERRO')+'.','rolagem',{evento:'ataque_token_mestre',token_id:String(selected.attacker.id),alvo_token_id:String(target.id),d20:Number(d20),bonus:selected.bonus,resultado:total,ca:ac,acertou:hit});if(!hit)return;
-      abrirDado('Dano · '+selected.attacker.nome+' → '+target.nome+' · '+selected.formula,async function(rawDamage){var damage=Math.max(1,Math.trunc(Number(rawDamage))),applied;if(target.tipo==='player')applied=await sb.rpc('aplicar_dano_token_gm_personagem_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(selected.attacker.id),p_character_id:String(target.id),p_dano:damage});else applied=await sb.rpc('alterar_pv_token_cba',{p_campaign_id:Number(MESA_ID),p_token_id:String(target.id),p_variacao:-damage,p_pv_max:target.maxHp==null?null:Number(target.maxHp)});if(applied.error)throw new Error(applied.error.message);if(target.tipo==='player'){var targetChar=personagens.find(function(p){return String(p.ch.id)===String(target.id);});if(targetChar)targetChar.sh.pv_atual=applied.data.pv_atual;renderCards();}else{campanha.cba_data=applied.data.cba_data;aplicarCBAnaMesa(applied.data.cba_data,false);}await enviarMensagemChat('💥 '+selected.attacker.nome+' causou '+damage+' de dano em '+target.nome+'. PV restantes: '+(applied.data.pv_atual==null?applied.data.hp:applied.data.pv_atual)+' / '+(applied.data.pv_max==null?applied.data.max_hp:applied.data.pv_max)+'.','rolagem',{evento:'dano_token_mestre_aplicado',token_id:String(selected.attacker.id),alvo_token_id:String(target.id),dano:damage});},true,true,selected.formula);
+      abrirDado('Dano · '+selected.attacker.nome+' → '+target.nome+' · '+selected.formula,async function(rawDamage){
+        var damageValue=Number(rawDamage);
+        if(!Number.isFinite(damageValue)||damageValue<0)throw new Error('O dado não retornou um valor de dano válido. Role novamente antes de aplicar o dano.');
+        var damage=Math.max(0,Math.trunc(damageValue)),applied;
+        if(target.tipo==='player')applied=await sb.rpc('aplicar_dano_token_gm_personagem_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(selected.attacker.id),p_character_id:String(target.id),p_dano:damage});
+        else applied=await sb.rpc('alterar_pv_token_cba',{p_campaign_id:Number(MESA_ID),p_token_id:String(target.id),p_variacao:-damage,p_pv_max:target.maxHp==null?null:Number(target.maxHp)});
+        if(applied.error)throw new Error('Não foi possível aplicar o dano: '+applied.error.message);
+        if(!applied.data)throw new Error('O servidor não retornou os pontos de vida atualizados.');
+        if(target.tipo==='player'){
+          var targetChar=personagens.find(function(p){return String(p.ch.id)===String(target.id);});
+          if(targetChar&&applied.data.pv_atual!=null)targetChar.sh.pv_atual=Number(applied.data.pv_atual);
+          renderCards();
+        }else{
+          if(!applied.data.cba_data)throw new Error('O servidor não retornou o estado atualizado do campo de batalha.');
+          campanha.cba_data=applied.data.cba_data;aplicarCBAnaMesa(applied.data.cba_data,false);
+        }
+        var remaining=applied.data.pv_atual==null?applied.data.hp:applied.data.pv_atual;
+        var maximum=applied.data.pv_max==null?applied.data.max_hp:applied.data.pv_max;
+        await enviarMensagemChat('💥 '+selected.attacker.nome+' causou '+damage+' de dano em '+target.nome+'. PV restantes: '+(remaining==null?'atualizados':remaining)+(maximum==null?'':' / '+maximum)+'.','rolagem',{evento:'dano_token_mestre_aplicado',token_id:String(selected.attacker.id),alvo_token_id:String(target.id),dano:damage});
+      },true,true,selected.formula);
     },true,true);
   }
   async function selecionarAlvoAtaque(tokenKey){
@@ -4308,39 +4327,95 @@ html,body{height:100%;overflow:hidden!important}
  #cards-strip>.card-pers{flex-basis:170px!important;width:170px!important;min-width:170px!important}
 }
 </style>
+<style id="mesa-layout-reference-fix">
+/* Layout fiel às áreas marcadas na referência: chat/dados | mapa | ações; elenco no rodapé. */
+html,body,#root{width:100%;height:100%;min-width:0;min-height:0}
+.mesa{height:100dvh!important;min-height:0!important;grid-template-rows:58px minmax(0,1fr) clamp(132px,18vh,166px)!important;overflow:hidden!important}
+.mesa-corpo{display:grid!important;grid-template-columns:minmax(250px,17.2vw) minmax(0,1fr) minmax(230px,16.2vw)!important;grid-template-rows:minmax(0,1fr)!important;min-height:0!important;height:100%!important;overflow:hidden!important}
+.col-esq{grid-column:1!important;grid-row:1!important;display:flex!important;flex-direction:column!important;gap:0!important;min-width:0!important;min-height:0!important;overflow:hidden!important;border-right:1px solid #75613d!important}
+.col-esq>.painel:first-child{flex:1 1 50%!important;min-height:0!important;max-height:50%!important}
+#acoes-dir{grid-column:3!important;grid-row:1!important;display:flex!important;flex-direction:column!important;min-width:0!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;padding:8px!important;border-left:1px solid #75613d!important}
+#acoes-dir .painel-acoes-grupo{flex:0 0 auto!important}
+#acoes-dir .painel-aventureiros{display:none!important}
+.tabuleiro{grid-column:2!important;grid-row:1!important;min-width:0!important;min-height:0!important;overflow:hidden!important}
+#cba-live-world{position:absolute!important;inset:0!important}
+#dado-iframe-overlay{position:relative!important;inset:auto!important;z-index:4!important;display:none;flex:1 1 50%!important;width:100%!important;min-width:0!important;min-height:0!important;max-height:50%!important;margin:0!important;padding:6px!important;overflow:hidden!important;background:#0d140f!important;backdrop-filter:none!important;align-items:stretch!important;justify-content:stretch!important}
+#dado-iframe-overlay[style*="display: flex"]{display:flex!important}
+#dado-iframe-overlay .dado-card{width:100%!important;height:100%!important;min-height:0!important;max-width:none!important;max-height:none!important;border-radius:7px!important}
+#dado-iframe-overlay .dado-card-header h3{font-size:clamp(10px,1vw,13px)!important;line-height:1.15!important;letter-spacing:.7px!important}
+.mesa-footer{display:block!important;grid-row:3!important;min-width:0!important;width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;overflow:hidden!important;padding:4px 10px max(4px,env(safe-area-inset-bottom))!important;background:#10170f!important;border-top:2px solid #c9a050!important}
+.painel-aventureiros{display:flex!important;flex-direction:column!important;gap:3px!important;width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;overflow:hidden!important;border:0!important;background:transparent!important}
+.painel-aventureiros>.painel-cab{display:block!important;flex:0 0 14px!important;padding:0 4px!important;font-size:9px!important;line-height:14px!important}
+.painel-aventureiros>#painel-iniciativa{position:relative!important;inset:auto!important;transform:none!important;order:0!important;flex:0 0 auto!important;width:100%!important;max-height:36px!important;min-height:0!important;margin:0!important;padding:2px 6px!important;overflow:hidden!important}
+.painel-aventureiros>#painel-iniciativa:not(.ativo){display:none!important}
+.painel-aventureiros>#painel-iniciativa.ativo{display:flex!important;align-items:center!important;gap:7px!important}
+#painel-iniciativa .iniciativa-titulo{flex:0 0 auto!important;margin:0!important;font-size:9px!important}
+#iniciativa-status{flex:0 1 auto!important;margin:0!important;font-size:9px!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+#fila-iniciativa{display:flex!important;flex:1 1 auto!important;min-width:0!important;gap:4px!important;padding:0!important;overflow-x:auto!important;overflow-y:hidden!important;white-space:nowrap!important}
+#fila-iniciativa:empty{display:none!important}
+#fila-iniciativa .iniciativa-item{min-width:86px!important;padding:2px 5px!important;font-size:8px!important}
+.painel-aventureiros>#cards-strip.cards-strip{display:flex!important;flex:1 1 auto!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:stretch!important;gap:8px!important;width:100%!important;min-width:0!important;min-height:0!important;height:auto!important;max-height:none!important;padding:2px 2px 4px!important;overflow-x:auto!important;overflow-y:hidden!important;overscroll-behavior-x:contain!important;scroll-snap-type:x proximity!important}
+#cards-strip>.card-pers{position:relative!important;flex:0 0 clamp(190px,19vw,250px)!important;width:clamp(190px,19vw,250px)!important;min-width:clamp(190px,19vw,250px)!important;max-width:none!important;height:100%!important;min-height:0!important;max-height:100%!important;padding:5px 8px!important;scroll-snap-align:start!important}
+#cards-strip>.card-pers .card-pers-avatar{width:42px!important;height:42px!important;flex:0 0 42px!important}
+#cards-strip>.card-pers .card-pers-info{min-width:0!important}
+#cards-strip>.card-pers .card-pers-pv-txt{font-size:8px!important;line-height:1.15!important}
+#cards-strip-pager{display:none!important}
+#cards-strip .cards-empty{min-width:210px!important}
+@media(max-width:900px){
+ .mesa{grid-template-rows:54px minmax(0,1fr) 142px!important}
+ .mesa-corpo{grid-template-columns:minmax(210px,24vw) minmax(0,1fr) 205px!important}
+ #cards-strip>.card-pers{flex-basis:185px!important;width:185px!important;min-width:185px!important}
+}
+@media(max-width:700px){
+ .mesa{grid-template-rows:52px minmax(0,1fr) 132px!important}
+ .mesa-corpo{grid-template-columns:minmax(0,1fr) 168px!important;grid-template-rows:minmax(0,1fr)!important}
+ .col-esq{display:none!important}
+ .tabuleiro{grid-column:1!important}
+ #acoes-dir{grid-column:2!important}
+ .mesa-footer{height:auto!important;max-height:none!important}
+ #cards-strip>.card-pers{flex-basis:170px!important;width:170px!important;min-width:170px!important}
+}
+@media(max-height:520px){
+ .mesa{grid-template-rows:48px minmax(0,1fr) 108px!important}
+ .painel-aventureiros>.painel-cab{display:none!important}
+ #cards-strip>.card-pers{flex-basis:165px!important;width:165px!important;min-width:165px!important}
+}
+</style>
 <script id="vinculo-map-pan-fix">
 (function(){
-  var area=document.getElementById('area-tabuleiro');
-  var world=document.getElementById('cba-live-world');
-  if(!area||!world)return;
-  var pan={x:0,y:0},drag=null;
-  function apply(){world.style.setProperty('--cba-pan-x',pan.x+'px');world.style.setProperty('--cba-pan-y',pan.y+'px');}
-  area.addEventListener('pointerdown',function(e){
-    if(e.button!==0||e.isPrimary===false)return;
-    if(e.target.closest&&e.target.closest('.token-cba,.token-pv-btn,#token-context-menu'))return;
-    drag={id:e.pointerId,x:e.clientX,y:e.clientY,baseX:pan.x,baseY:pan.y,moved:false};
-    area.setPointerCapture(e.pointerId);
-    area.style.cursor='grabbing';
-    e.preventDefault();
-  },{passive:false});
-  area.addEventListener('pointermove',function(e){
-    if(!drag||drag.id!==e.pointerId)return;
-    var dx=e.clientX-drag.x,dy=e.clientY-drag.y;
-    if(Math.abs(dx)+Math.abs(dy)>2)drag.moved=true;
-    pan.x=drag.baseX+dx;pan.y=drag.baseY+dy;apply();
-  });
-  function finish(e){if(!drag|| (e&&drag.id!==e.pointerId))return;drag=null;area.style.cursor='';}
-  area.addEventListener('pointerup',finish);
-  area.addEventListener('pointercancel',finish);
-  area.addEventListener('lostpointercapture',finish);
-  area.addEventListener('wheel',function(e){
-    if(!e.ctrlKey&&!e.metaKey)return;
-    e.preventDefault();
-    var current=Number(getComputedStyle(world).getPropertyValue('--cba-zoom'))||1;
-    var next=Math.max(.55,Math.min(2.2,current*(e.deltaY<0?1.08:.92)));
-    world.style.setProperty('--cba-zoom',String(next));
-  },{passive:false});
-  apply();
+  var pan={x:0,y:0},drag=null,attached=new WeakSet();
+  function attach(){
+    var area=document.getElementById('area-tabuleiro'),world=document.getElementById('cba-live-world');
+    if(!area||!world||attached.has(area))return;
+    attached.add(area);
+    function apply(){world.style.setProperty('--cba-pan-x',pan.x+'px');world.style.setProperty('--cba-pan-y',pan.y+'px');}
+    area.addEventListener('pointerdown',function(e){
+      if(e.button!==0||e.isPrimary===false)return;
+      if(e.target.closest&&e.target.closest('.token-cba,.token-pv-btn,#token-context-menu,button,input,select,textarea'))return;
+      drag={id:e.pointerId,x:e.clientX,y:e.clientY,baseX:pan.x,baseY:pan.y,moved:false};
+      try{area.setPointerCapture(e.pointerId);}catch(_){}
+      area.style.cursor='grabbing';
+    });
+    area.addEventListener('pointermove',function(e){
+      if(!drag||drag.id!==e.pointerId)return;
+      var dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+      if(Math.abs(dx)+Math.abs(dy)>3)drag.moved=true;
+      pan.x=drag.baseX+dx;pan.y=drag.baseY+dy;apply();
+      if(drag.moved)e.preventDefault();
+    });
+    function finish(e){if(!drag||(e&&drag.id!==e.pointerId))return;drag=null;area.style.cursor='';}
+    area.addEventListener('pointerup',finish);area.addEventListener('pointercancel',finish);area.addEventListener('lostpointercapture',finish);
+    area.addEventListener('wheel',function(e){
+      if(!e.ctrlKey&&!e.metaKey)return;
+      e.preventDefault();
+      var current=Number(getComputedStyle(world).getPropertyValue('--cba-zoom'))||1;
+      var next=Math.max(.55,Math.min(2.2,current*(e.deltaY<0?1.08:.92)));
+      world.style.setProperty('--cba-zoom',String(next));
+    },{passive:false});
+    apply();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',attach);else attach();
+  new MutationObserver(attach).observe(document.getElementById('root')||document.body,{childList:true,subtree:true});
 })();
 </script>
 
