@@ -31,7 +31,7 @@ A migração `srd35_character_starting_equipment_migration.sql` cria os kits sug
 
 ## Grimório e conjuração
 
-Na `ficha.html`, Mago, Feiticeiro, Clérigo e Druida têm um painel com progressão, espaços disponíveis e acesso ao Grimório. O jogador pesquisa as magias presentes em `srd_spells`, registra magias no livro, seleciona conhecidas (Feiticeiro) ou preparadas (Mago/Clérigo/Druida), escolhe o círculo do espaço e pode repor após descanso diário. A seleção é persistida em JSONB. A interface e as RPCs consideram o atributo-chave, espaços-base, espaços bônus, nível da classe, círculo da magia e requisito mínimo de atributo; usos do Feiticeiro e espaços preparados gastos não podem ser restaurados apenas alterando a lista no navegador.
+Na `ficha.html`, Mago, Feiticeiro, Bardo, Clérigo, Druida, Paladino e Patrulheiro têm painel de progressão, espaços disponíveis e acesso ao Grimório, respeitando a progressão própria de cada classe. O jogador pesquisa as magias presentes em `srd_spells`, registra magias no livro, seleciona conhecidas (Feiticeiro) ou preparadas (Mago/Clérigo/Druida), escolhe o círculo do espaço e pode repor após descanso diário. A seleção é persistida em JSONB. A interface e as RPCs consideram o atributo-chave, espaços-base, espaços bônus, nível da classe, círculo da magia e requisito mínimo de atributo; usos do Feiticeiro e espaços preparados gastos não podem ser restaurados apenas alterando a lista no navegador.
 
 Na `mesa.html`, **Conjurar Magia** abre o catálogo conhecido/preparado da ficha própria. O VTT oferece espaços compatíveis, alvo opcional, mensagem pública de chat e uma rolagem de ataque pela regra de mesa solicitada: `1d20 + BBA + modificador de INT/SAB/CAR`. A RPC valida ficha, classe, campanha, magia, espaço e alvo. Magias de cura rolam no servidor, atualizam PV sem passar do máximo e sincronizam a ficha/CBA quando há um token correspondente. Dano/CA e efeitos que dependem de resistência continuam sob confirmação/aplicação do Mestre.
 
@@ -91,7 +91,7 @@ Além disso, ao abrir a mesa como Mestre, a interface busca no catálogo SRD os 
 
 ## Mesa: cards de combate e ordem do turno
 
-A interface da mesa mostra fichas, NPCs e monstros em faixas verticais na coluna de aventureiros. Durante combate, a fila acompanha a iniciativa: o combatente ativo fica no topo e, ao avançar o turno, os demais sobem na ordem circular. O card e o token no tabuleiro usam a mesma entrada de iniciativa (incluindo a distinção entre ficha de jogador e token controlado pelo Mestre), para manter o destaque sincronizado.
+A interface da mesa reúne fichas, NPCs e monstros em uma faixa horizontal no rodapé, com rolagem horizontal e cards lado a lado. O chat e o Dice ficam na coluna esquerda; o mapa ocupa o centro e as ações ficam à direita. Durante combate, a fila acompanha a iniciativa e destaca o combatente ativo. O card e o token no tabuleiro usam a mesma entrada de iniciativa (incluindo a distinção entre ficha de jogador e token controlado pelo Mestre), para manter o destaque sincronizado.
 
 O controle de combate e a economia de ações ficam no painel lateral do turno ativo. Os tokens mostram CA numérica: fichas usam atributos e equipamento; monstros usam o bloco SRD; NPCs sem bloco completo recebem um valor derivado dos atributos, armadura natural e equipamento. Ao abrir a mesa como Mestre, tokens antigos sem CA são reparados e salvos na cena.
 
@@ -105,3 +105,13 @@ A arquitetura e a migração-base do motor estão documentadas em [DND35_RULE_EN
 O estado confirmado contém 220 progressões de classe e 1.400 registros de progressão de espaços de magia, além de 7 trilhas de classe normalizadas para as fichas existentes. Os catálogos têm 7 raças, 11 classes, 49 perícias, 110 talentos, 1.021 equipamentos, 601 magias e 445 monstros. Esses totais não significam que cada entrada e regra tenha sido verificada.
 
 **O motor SRD ainda não está completo.** O ledger conserva as 11 áreas de cobertura como pendentes. Domínios, características por nível, condições, efeitos tipados de magia e estado relacional de grimório/preparação ainda não têm dados completos; cálculos e resoluções dessas regras ainda precisam ser implementados e conferidos. Nenhum livro fechado foi copiado para o catálogo.
+
+## Atualização da interface e fluxo de habilidades (03/11/2026)
+
+A mesa foi ajustada para manter os cards dos combatentes lado a lado no rodapé, com rolagem horizontal; o painel de dados do jogador divide a coluna esquerda com o chat somente enquanto estiver aberto, e o título do Dice foi compactado. A identidade carvão/verde-musgo/dourado foi aplicada aos painéis de ações da mesa e aos componentes D&D 3.5 da ficha.
+
+O menu do aventureiro agora inclui **Habilidades da Classe** em combate e exploração. Ele consulta `srd_class_level_features` para exibir características registradas até o nível da ficha e permite anunciar o uso no chat para confirmação do Mestre. O catálogo atual cobre 11 classes, mas possui 131 características distribuídas de forma desigual; algumas classes ainda têm níveis sem registros suficientes. A interface não inventa habilidades nem consome usos que ainda não estejam estruturados no banco.
+
+A conjuração da mesa agora inclui Bardo no fluxo espontâneo, além de Feiticeiro. Magias sem resolver automático de dano, ataque, resistência ou duração podem ser registradas e encaminhadas para resolução do Mestre, em vez de ficarem bloqueadas antes do uso. Isso não significa que os 607 registros do catálogo tenham efeitos automáticos: os 607 registros atuais de `srd_spell_effects` permanecem classificados como resolução manual. Cura e Míssil Mágico mantêm os resolvers específicos já existentes.
+
+A validação desta atualização inclui parse sintático dos scripts inline de `mesa.html` e `ficha.html` e leitura das tabelas de progressão/efeitos no Supabase. Não foi executado teste visual de navegador com sessões simultâneas de Mestre e jogador. Nenhum dado de campanha foi atualizado nesta etapa.
