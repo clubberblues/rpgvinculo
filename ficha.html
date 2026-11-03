@@ -2133,7 +2133,7 @@ function dnd35WeaponProficient(state,weaponName){
     if(key==='clerigo'){parts.push(dnd35ClericDeityMarkup(state));var avail=dnd35GrimoireAvailability(state,attrs,charLevel||1),spellState=state.grimoireState||dnd35SpellState(state);parts.push(dnd35DomainPanel(state,avail,spellState));}
     if(key==='druida'){parts.push(dnd35DruidNatureBondMarkup(state));if(String((state.identidade||{}).druid_nature_bond||'companion')==='domain'){var druidAvail=dnd35GrimoireAvailability(state,attrs,charLevel||1),druidSpellState=state.grimoireState||dnd35SpellState(state);parts.push(dnd35DomainPanel(state,druidAvail,druidSpellState));}}
     if(key==='ranger')parts.push(dnd35RangerFavoredEnemyMarkup(state));
-    if(key!=='mago'&&key!=='clerigo'&&key!=='druida')parts.push('<p class="dnd35-note">As características automáticas desta classe estão descritas acima. As escolhas específicas adicionais serão exibidas aqui quando aplicáveis.</p>');
+    if(key!=='mago'&&key!=='clerigo'&&key!=='druida'&&key!=='ranger')parts.push('<p class="dnd35-note">As características automáticas desta classe estão descritas acima. As escolhas específicas adicionais serão exibidas aqui quando aplicáveis.</p>');
     parts.push('</section>');return parts.join('');
   }
   function dnd35DomainPanel(state,avail,s) {
