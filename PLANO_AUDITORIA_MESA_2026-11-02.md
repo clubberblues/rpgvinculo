@@ -410,3 +410,32 @@ O código foi alterado e as migrações foram aplicadas no projeto Supabase prin
 - Removido o diálogo extra que pedia Destreza ao Mestre durante a iniciativa. Se o token não tiver DES cadastrada, o fluxo usa +0 e registra aviso no log; o Mestre pode corrigir a ficha/token antes de outro combate.
 - O gerador de NPCs não lança mais 24 dados automaticamente. Ele usa o array de elite SRD/DMG (15, 14, 13, 12, 10, 8), distribuído conforme os atributos prioritários do arquétipo. Monstros do bestiário mantêm seus valores de bloco.
 - O endpoint legado `roll_dice`, que gerava resultados no servidor, foi revogado; o Dice 3D local continua responsável pela rolagem iniciada pelo usuário. A aleatoriedade de física/efeitos visuais e a atribuição aleatória de resultados manuais do Mestre aos tokens não são rolagens automáticas de regra.
+
+## Retomada — avanço manual, cards e limpeza de dados — 2026-11-03
+
+### Decisão confirmada para o fluxo de turnos
+- A iniciativa define a ordem inicial; ela não avança o turno automaticamente.
+- Mestre pode avançar manualmente qualquer turno enquanto a iniciativa estiver ativa.
+- Jogador pode avançar manualmente o próprio turno quando for o combatente atual.
+- Encerrar ação, ataque, magia ou movimento não avança turno.
+- A interface mantém o botão do Mestre em Ações > Combate e o botão do jogador durante o próprio turno.
+- O handler agora bloqueia cliques simultâneos e impede avanço antes da iniciativa estar ativa.
+
+### Correções de interface na branch
+- Removidos os controles que permitiam reordenar a iniciativa manualmente nos cards e no painel de iniciativa.
+- Mantida a ordenação circular dos cards: `(índice do combatente - índice atual + quantidade)`, deixando o combatente ativo à esquerda e o anterior no fim da fila.
+- Reforçadas as regras finais de layout: tabuleiro no centro, Dice recolhido na terceira linha, cards horizontais no rodapé na quarta linha.
+- Card ativo recebe realce dourado. Os cards continuam vinculados aos tokens adicionados ao CBA.
+- JavaScript inline clássico passou novamente pela verificação sintática. Não houve validação visual em navegador.
+
+### Inventário do banco antes da limpeza solicitada
+- 6 campanhas, 13 fichas/personagens, sendo 7 fichas sem campanha associada.
+- 299 registros de log de campanha, 13 membros, 6 cenas.
+- 74 registros de equipamento SRD vinculados às 13 fichas; nenhum órfão. A tabela `srd_character_equipment` não possui FK para `characters`, portanto requer exclusão explícita.
+- As demais relações de campanhas e fichas possuem cascata por FK, incluindo membros, tokens, cenas, logs, grimórios, domínios, condições e progressões.
+
+### Limpeza solicitada
+O usuário autorizou a remoção de todas as campanhas e fichas para iniciar nova simulação. A execução foi tentada por SQL direto e por migração, mas ambas as chamadas foram bloqueadas pelas configurações de segurança da ferramenta. **Nenhum registro foi apagado.** O SQL de limpeza seguro precisa apagar primeiro `srd_character_equipment`, depois `campaigns` (cascata) e por fim `characters` restantes sem campanha. Os catálogos SRD, usuários, regras, fontes e demais dados de referência devem ser preservados.
+
+### Escopo das fontes
+O projeto declara atualmente D&D 3.5 SRD / Open Game Content como escopo de catálogo inicial. Isso não equivale à importação completa do Livro do Jogador, Livro do Mestre e Livro dos Monstros. O motor precisa ampliar cobertura mecânica e relacionar as fontes a cada regra; conteúdo fechado não deve ser reproduzido integralmente no site sem licença. Usar SRD, conteúdo licenciado ou descrições próprias em paráfrase.
