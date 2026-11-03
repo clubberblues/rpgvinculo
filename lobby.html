@@ -1693,7 +1693,7 @@ function uploadCapaMesa(mesaId) {
         var avatar = ch.retrato_url
           ? '<img src="' + escapeHtml(ch.retrato_url) + '" alt="Retrato de ' + escapeHtml(ch.nome || 'herói') + '">'
           : '<div class="avatar-placeholder" aria-hidden="true">👤</div>';
-        return '<div class="card-ficha-admin"><a href="ficha.html?char=' + encodeURIComponent(ch.id) + '" class="card-ficha-user">' + avatar +
+        return '<div class="card-ficha-admin"><a href="ficha.html?ruleset=dnd35&char=' + encodeURIComponent(ch.id) + '" class="card-ficha-user">' + avatar +
           '<div class="nome">' + escapeHtml(ch.nome || 'Sem Nome') + '</div><div class="info">' + escapeHtml(resumo) + '</div></a>' +
           '<button type="button" class="btn-excluir-ficha js-excluir-ficha" data-char-id="' + escapeHtml(ch.id) + '" data-char-name="' + escapeHtml(ch.nome || 'Sem Nome') + '" aria-label="Excluir ficha ' + escapeHtml(ch.nome || 'Sem Nome') + '">Excluir ficha</button></div>';
       }).join('');
