@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.repor_magias_srd(TEXT) FROM PUBLIC,anon,authenticated; NOTIFY pgrst,'reload schema';
