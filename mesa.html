@@ -1010,6 +1010,12 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         <button class="btn-teste" type="button" data-teste="Fortitude contra magia ou efeito similar">Fortitude contra magia</button>
         <button class="btn-teste" type="button" data-teste="Reflexos contra magia ou efeito similar">Reflexos contra magia</button>
         <button class="btn-teste" type="button" data-teste="Vontade contra magia ou efeito similar">Vontade contra magia</button>
+        <button class="btn-teste" type="button" data-teste="Fortitude contra ilusão">Fortitude contra ilusão</button>
+        <button class="btn-teste" type="button" data-teste="Reflexos contra ilusão">Reflexos contra ilusão</button>
+        <button class="btn-teste" type="button" data-teste="Vontade contra ilusão">Vontade contra ilusão</button>
+        <button class="btn-teste" type="button" data-teste="Fortitude contra medo">Fortitude contra medo</button>
+        <button class="btn-teste" type="button" data-teste="Reflexos contra medo">Reflexos contra medo</button>
+        <button class="btn-teste" type="button" data-teste="Vontade contra medo">Vontade contra medo</button>
         <button class="btn-teste" type="button" data-teste="Resistir a encontrão (FOR)">Resistir a encontrão</button>
         <button class="btn-teste" type="button" data-teste="Resistir a imobilização (FOR)">Resistir a imobilização (FOR)</button>
         <button class="btn-teste" type="button" data-teste="Resistir a imobilização (DES)">Resistir a imobilização (DES)</button>
@@ -1740,10 +1746,11 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   function modifier35(score){return Math.floor((Number(score||10)-10)/2);}function modifierTamanho35(tamanho){var n=String(tamanho||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();return n==='pequeno'||n==='small'?1:0;}
   function textoTipoCriatura35(token){var s=token&&token.monsterStats||{};return [token&&token.nome,s.tipo,s.type,s.subtipo,s.subtype,s.subtipos,s.subtypes,s.creature_type].map(function(v){return Array.isArray(v)?v.join(' '):String(v||'');}).join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();}
   function criaturaGigante35(token){var t=textoTipoCriatura35(token);return /giant|gigante|ogre|ogro|troll/.test(t);}
-  function bonusRacialAtaque35(personagem,alvo){
+  function bonusRacialAtaque35(personagem,alvo,arma){
     var race=String(personagem&&personagem.sh&&personagem.sh.raca_id||''),type=textoTipoCriatura35(alvo);
     if(race==='anao'&&/(orc|orcs|goblin|goblinoid|hobgoblin|bugbear)/.test(type))return 1;
     if((race==='gnomo'||race==='gnome')&&/(kobold|goblin|goblinoid|hobgoblin|bugbear)/.test(type))return 1;
+    if((race==='halfling'||race==='pequenino')&&arma){var details=arma.detalhes||{};if(typeof details==='string'){try{details=JSON.parse(details);}catch(e){details={};}}var weaponText=[arma.nome,details.tipo,details.tipo_arma,details.categoria,details.weapon_type,details.range_type,details.propriedades].join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();if(/funda|sling|arremess|thrown/.test(weaponText))return 1;}
     return 0;
   }
   function valorCA35(value){if(value==null||value==='')return null;var direct=Number(value);if(Number.isFinite(direct))return direct;var match=String(value).trim().match(/^(-?\d+)/);return match?Number(match[1]):null;}function equipamentoToken35(token){var merged=Object.create(null),embedded=token&&token.monsterStats&&Array.isArray(token.monsterStats.loadout)?token.monsterStats.loadout:[],stored=equipamentoTokens[String(token&&token.id)]||[];embedded.concat(stored).forEach(function(item){if(!item)return;var id=String(item.equipment_id||item.id||item.nome||Math.random());merged[id]=Object.assign({},merged[id]||{},item);});return Object.keys(merged).map(function(id){return merged[id];});}
@@ -1765,7 +1772,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   function slotEquipamento35(item){var cat=String(item&&item.categoria||'').toLowerCase().trim(),name=String(item&&item.nome||'').toLowerCase();if(cat==='arma'||cat.indexOf('weapon')>=0||cat==='specific_weapons')return 'arma';if(cat==='armadura'||cat==='light armor'||cat==='medium armor'||cat==='heavy armor'||cat==='specific_armors'||cat==='armor_and_shields'&&name.indexOf('shield')<0)return 'armadura';if(cat==='escudo'||cat==='shields'||cat==='specific_shields'||cat==='armor_and_shields'&&name.indexOf('shield')>=0)return 'escudo';if(cat==='acessorio'||['rings','rods','staffs','wands','wondrous_items'].indexOf(cat)>=0)return 'acessorio';return '';}
   function bonusCAEquipamento35(item){var value=Number(item&&item.bonus_ca)||Number(item&&item.ca_bonus)||0;if(value)return value;if(String(item&&(item.categoria_original||item.categoria)||'').toLowerCase()==='armor_and_shields'){var match=String(item.nome||'').match(/\+(\d+)/);if(match)return Number(match[1]);}return 0;}
   function maxDexEquipamento35(item){var value=item&&item.bonus_max_des!=null?item.bonus_max_des:item&&item.max_des;if(value==null||value==='')return null;var n=Number(value);return Number.isFinite(n)?n:null;}
-  function caFichaMesa(p,attacker){if(!p)return null;var attrs=p.sh&&p.sh.atributos||{},dex=modifier35(attrs.DES),sizeBonus=modifierTamanho35(p.tamanho),items=(p.equipamento||[]).filter(function(it){return it.equipado&&['armadura','escudo','acessorio'].indexOf(slotEquipamento35(it))>=0;}),bonus=items.reduce(function(sum,it){return sum+bonusCAEquipamento35(it);},0),maxDex=items.reduce(function(cap,it){var n=slotEquipamento35(it)==='armadura'?maxDexEquipamento35(it):null;return n==null?cap:Math.min(cap,n);},99),racialDodge=String(p.sh&&p.sh.raca_id||'')==='anao'&&criaturaGigante35(attacker)?4:0;return 10+Math.min(dex,maxDex)+bonus+sizeBonus+racialDodge;}
+  function caFichaMesa(p,attacker){if(!p)return null;var attrs=p.sh&&p.sh.atributos||{},dex=modifier35(attrs.DES),sizeBonus=modifierTamanho35(p.tamanho),items=(p.equipamento||[]).filter(function(it){return it.equipado&&['armadura','escudo','acessorio'].indexOf(slotEquipamento35(it))>=0;}),bonus=items.reduce(function(sum,it){return sum+bonusCAEquipamento35(it);},0),maxDex=items.reduce(function(cap,it){var n=slotEquipamento35(it)==='armadura'?maxDexEquipamento35(it):null;return n==null?cap:Math.min(cap,n);},99),racialDodge=(['anao','gnome','gnomo'].indexOf(String(p.sh&&p.sh.raca_id||''))>=0)&&criaturaGigante35(attacker)?4:0;return 10+Math.min(dex,maxDex)+bonus+sizeBonus+racialDodge;}
   function sincronizarDadosFichaNosTokens(){if(!cbaPublishedState)return;(cbaPublishedState.tokens||[]).forEach(function(token){if(token.tipo!=='player')return;var p=personagens.find(function(x){return String(x.ch.id)===String(token.id);});if(!p)return;var max=Math.max(1,pvMax(p.sh,p.cl));token.maxHp=max;token.hp=Math.max(0,Math.min(max,Number(p.sh.pv_atual==null?max:p.sh.pv_atual)));token.ac=caFichaMesa(p);token.sheetCharacterId=String(p.ch.id);});}
   function critico35(value){var text=String(value||'x2'),range=text.match(/(\d{1,2})(?:-(\d{1,2}))?\s*\/\s*x\s*(\d+)/i),mult=text.match(/x\s*(\d+)/i);return {min:range?Number(range[1]):20,max:range&&range[2]?Number(range[2]):20,multiplier:mult?Math.max(2,Number(mult[1])):2};}
   function bab35(cls,level){var prog=String(cls&&(cls.bab_progression||cls.progressao_bba)||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); if(prog==='good'||prog==='bom')return level; if(prog==='average'||prog==='medium'||prog==='medio')return Math.floor(3*level/4); if(prog==='poor'||prog==='ruim')return Math.floor(level/2); return 0;}
@@ -1840,7 +1847,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var focus=Array.isArray(feats)&&feats.find(function(feat){return feat&&feat.id==='foco_em_arma'&&normalizeName(feat.parametro)===normalizeName(weaponName);});
     if(focus)weaponFocus=1;
     if(type==='atk-corpo'&&personagemTemTalento(own.sh,'ataque_poderoso')){var rawPenalty=await window.vttUI.ask({title:'Ataque Poderoso',label:'Penalidade de ataque (0 a '+Math.max(0,bab)+')',defaultValue:'0',inputMode:'numeric'});if(rawPenalty===null)return;powerPenalty=Number(rawPenalty);if(!Number.isInteger(powerPenalty)||powerPenalty<0||powerPenalty>bab){alert('A penalidade deve ser um inteiro entre 0 e '+Math.max(0,bab)+'.');return;}powerDamage=powerPenalty*(weapon&&weapon.detalhes&&weapon.detalhes.duas_maos?2:1);}
-    var sizeModifier=modifierTamanho35(own.tamanho),racialAttackBonus=bonusRacialAtaque35(own,target),bonus=bab+ability+weaponFocus-powerPenalty+sizeModifier+racialAttackBonus;
+    var sizeModifier=modifierTamanho35(own.tamanho),racialAttackBonus=bonusRacialAtaque35(own,target,weapon),bonus=bab+ability+weaponFocus-powerPenalty+sizeModifier+racialAttackBonus;
     if(type==='atk-dist'&&weapon&&weapon.detalhes&&Number(weapon.detalhes.alcance_m)>0){var rangeSquares=Math.max(Math.abs(Number(target.gridX)-Number(ownToken.gridX)),Math.abs(Number(target.gridY)-Number(ownToken.gridY)));if(rangeSquares*1.5>Number(weapon.detalhes.alcance_m)){alert('Alvo fora do alcance da arma ('+weapon.detalhes.alcance_m+' m).');return;}}
     var title=type==='atk-corpo'?'Ataque Corpo a Corpo':'Ataque à Distância', critical=critico35(weapon&&weapon.critico);
     function abrirRolagemDano(isCritical){
@@ -3906,6 +3913,8 @@ async function abrirModalEquipamentos(){
       if(saveKey&&texto.includes('magia'))racialBonus+=2;
       if(texto.includes('encontrao')||texto.includes('imobilizacao'))racialBonus+=4;
     }
+    if((raceId==='gnome'||raceId==='gnomo')&&saveKey&&texto.includes('ilusao'))racialBonus+=2;
+    if((raceId==='halfling'||raceId==='pequenino')&&saveKey&&texto.includes('medo'))racialBonus+=2;
     return {total:baseSave+attributeMod+racialBonus,baseSave:baseSave,attributeMod:attributeMod,racialBonus:racialBonus,attribute:attribute,saveKey:saveKey};
   }
   function personagemTemTalento(sheet,featId){
