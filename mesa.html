@@ -4314,7 +4314,7 @@ async function abrirModalEquipamentos(){
     var attrs=personagem.sh&&personagem.sh.atributos||{},strength=Math.max(1,Math.floor(Number(attrs.FOR)||10));
     var normalize=function(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'');};
     var raceId=String(personagem.sh&&personagem.sh.raca_id||''),isDwarf=raceId==='anao'||normalize(personagem.tamanho)==='anao';
-    var size=normalize(personagem.tamanho),sizeMultiplier=size==='small'||size==='pequeno'?.75:size==='large'||size==='grande'?2:size==='huge'||size==='enorme'?4:size==='gargantuan'||size==='imenso'?8:size==='colossal'?16:size==='tiny'||size==='miudo'?.5:size==='diminutive'||size==='diminuto'?.25:size==='fine'||size==='minusculo'?.125:1;
+    var size=normalize(personagem.tamanho),sizeMultiplier=(size==='small'||size==='pequeno')?.75:(size==='large'||size==='grande')?2:(size==='huge'||size==='enorme')?4:(size==='gargantuan'||size==='imenso')?8:size==='colossal'?16:(size==='tiny'||size==='miudo')?.5:(size==='diminutive'||size==='diminuto')?.25:(size==='fine'||size==='minusculo')?.125:1;
     var heavyTable=[5,10,15,20,25,30,35,40,45,50,57.5,65,75,87.5,100,115,130,150,175,200,230,260,300,350,400,460,520,600,700];
     var decades=strength>=30?Math.floor((strength-20)/10):0,tableStrength=strength>=30?strength-decades*10:strength;
     tableStrength=Math.max(1,Math.min(29,tableStrength));
@@ -4331,7 +4331,7 @@ async function abrirModalEquipamentos(){
     });
     var load=weightKg>mediumMax?'heavy':weightKg>lightMax?'medium':'light';
     var speed=base,classKey=String(personagem.cl&&(personagem.cl.class_key||personagem.cl.id)||'');
-    if(classKey==='barbarian'&&Number(personagem.sh&&personagem.sh.nivel||1)>=1&&!heavyArmor&&load!=='heavy')speed+=3;
+    if((classKey==='barbarian'||classKey==='barbaro')&&Number(personagem.sh&&personagem.sh.nivel||1)>=1&&!heavyArmor&&load!=='heavy')speed+=3;
     if(!isDwarf&&(mediumHeavyArmor||load==='medium'||load==='heavy')){
       if(speed>=12)speed=9;else if(speed>=9)speed=6;else if(speed>=6)speed=4.5;else speed=Math.max(1.5,Math.floor((speed*.75)/1.5)*1.5);
     }
