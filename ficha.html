@@ -2473,7 +2473,7 @@ function dnd35WeaponProficient(state,weaponName){
     }
     var languageState=state.idiomasEscolhidos||{automaticos:['Comum','Anão'],bonus_inteligencia:[],comprados_falar_idioma:[]};
     var bonusLanguages=(languageState.bonus_inteligencia||[]).filter(Boolean),purchasedLanguages=(languageState.comprados_falar_idioma||[]).filter(Boolean);
-    var expectedBonusLanguages=Math.max(0,Math.floor((Number(attrs.INT)||10)-10)/2),speakLanguageRanks=Math.max(0,Math.floor(Number(ranks.srd35_skill_speak_language)||0));
+    var expectedBonusLanguages=Math.max(0,Math.floor(((Number(attrs.INT)||10)-10)/2)),speakLanguageRanks=Math.max(0,Math.floor(Number(ranks.srd35_skill_speak_language)||0));
     if(bonusLanguages.length!==expectedBonusLanguages){mostrarErro('Escolha '+expectedBonusLanguages+' idioma(s) adicional(is) concedido(s) pela Inteligência.','idiomas');return;}
     if(purchasedLanguages.length!==speakLanguageRanks){mostrarErro('Escolha um idioma para cada graduação comprada em Falar Idioma.','idiomas');return;}
     var allLanguageNames=['Comum','Anão'].concat(bonusLanguages,purchasedLanguages);
