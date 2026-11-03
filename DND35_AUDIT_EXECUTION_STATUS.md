@@ -76,3 +76,32 @@
 ## Regra de execução
 
 Não marcar um módulo como concluído apenas porque existe uma descrição ou um botão. A conclusão exige regra do livro identificada, implementação, validação de dados, teste funcional e verificação da interface. Mudanças permanecem na branch de auditoria até revisão final.
+
+
+## Etapa Anão A1 — identidade, idade, corpo e idiomas
+
+**Estado: implementação concluída; validação autenticada de ponta a ponta pendente.**
+
+- O fluxo inicial de criação foi limitado temporariamente à raça Anão, mantendo disponíveis as 11 classes básicas já cadastradas. A classe favorecida Guerreiro não bloqueia nenhuma outra classe.
+- A identidade agora solicita sexo, idade, altura, peso e tendência. Altura e peso podem ser definidos manualmente ou gerados com os dados e as fórmulas da Tabela 6-6 do Livro do Jogador.
+- Idade mínima do Anão passa a considerar a idade adulta (40 anos) e a quantidade de d6 da Tabela 6-4 por classe: 3d6 para Bárbaro/Ladino/Feiticeiro; 5d6 para Bardo/Guerreiro/Paladino/Patrulheiro; 7d6 para Clérigo/Druida/Monge/Mago.
+- O motor aplica os modificadores cumulativos de envelhecimento do Anão: maturidade a partir de 125 anos, velhice a partir de 188 e venerável a partir de 250; os atributos exibidos e os PV iniciais são recalculados com esses ajustes.
+- Tendências disponíveis são filtradas por classe: Bárbaro/Bardo não Leal; Druida neutro; Monge Leal; Paladino Leal e Bom. Clérigo fica pendente da seleção de divindade, que precisa validar a tendência em relação à divindade escolhida.
+- A aba de Treino ganhou uma interface de Idiomas: automáticos Comum/Anão; escolhas adicionais raciais conforme o modificador de Inteligência; idiomas comprados por graduações inteiras de Falar Idioma.
+- O catálogo existente `srd_languages` (19 idiomas públicos e 1 idioma secreto) foi reutilizado. A RPC existente `salvar_idiomas_personagem_srd` é chamada no salvamento e valida idiomas automáticos, opções raciais, Inteligência, graduações compradas e duplicidades.
+- Para persistir escolhas sem espalhar colunas específicas, foi adicionada somente a coluna JSONB `srd_character_sheets.identidade`. A idade também é gravada no campo `characters.idade` já existente.
+- Foi criada uma sobrecarga de `criar_personagem_srd_completo` que recebe `p_identidade`, valida sexo, idade mínima, dimensões corporais e tendência de classe, grava a identidade e aplica os ajustes de envelhecimento. A função anterior de seis argumentos foi preservada para compatibilidade.
+
+**Validações realizadas**
+- Sintaxe do JavaScript inline de `ficha.html`: aprovada.
+- Coluna JSONB `identidade`: confirmada no banco com default vazio e NOT NULL.
+- Sobrecargas RPC de seis e sete argumentos: confirmadas no catálogo do PostgreSQL.
+- Catálogo de idiomas: 19 idiomas públicos e 1 idioma secreto; idioma secreto não é oferecido na escolha.
+- Cobertura de classes existente: 11 classes, 11 pacotes iniciais, 220 linhas de progressão e 11 características de nível 1.
+- Regras de idade e altura/peso conferidas nas páginas 95–96 do Livro do Jogador enviado.
+
+**Limites desta subetapa**
+- Não foi executado teste autenticado real criando personagem no navegador; portanto, o salvamento end-to-end ainda precisa de validação com usuário autenticado.
+- A escolha de divindade do Clérigo e a validação de tendência relativa à divindade ainda não foram implementadas.
+- As escolhas próprias de cada classe (domínios, companheiro animal, grimório, magias conhecidas/preparadas, especializações e características ativáveis) permanecem como próxima etapa; não marcar as 11 classes como criação completa.
+- A implementação permanece na branch de auditoria e não foi mesclada à branch principal.
