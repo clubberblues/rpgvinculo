@@ -1879,7 +1879,7 @@ function dnd35WeaponProficient(state,weaponName){
     var lu=state.levelUp;if(!lu)return false;
     var currentLevel=Math.max(1,Number(state.sheet.nivel)||1),nextLevel=Math.min(20,currentLevel+1),die=Math.max(1,Number(state.classe.dado_vida)||8);
     var specs=dnd35LevelupFeatSpec(state,nextLevel),feats=lu.feats||[];
-    var attrs=dnd35AtributosIniciais(state.raca,dnd35Objeto(state.sheet.atributos)),oldInt=dnd35Modificador(Number(attrs.INT)||10),plannedInt=oldInt;
+    var attrs=dnd35Objeto(state.sheet.atributos),oldInt=dnd35Modificador(Number(attrs.INT)||10),plannedInt=oldInt;
     var featsReady=feats.length===specs.length&&feats.every(function(pick,index){
       if(!pick||!pick.id)return false;
       var feat=(state.feats||[]).find(function(item){return String(item.id)===String(pick.id);});
@@ -1996,7 +1996,7 @@ function dnd35WeaponProficient(state,weaponName){
       var campaignId=Number(URL_PARAMS.get('mesa')||(state.character&&state.character.campaign_id)||0);
       if(!campaignId){state.levelUp.status='Não foi possível identificar a campanha desta ficha. Abra a ficha a partir da mesa.';renderizarFichaSRD35();return;}
       try{
-        var languageData=dnd35LevelupLanguageData(state,dnd35AtributosIniciais(state.raca,dnd35Objeto(state.sheet.atributos)),state.levelUp);
+        var languageData=dnd35LevelupLanguageData(state,dnd35Objeto(state.sheet.atributos),state.levelUp);
         var newLanguageChoices=Array.from({length:languageData.needed},function(_,i){return languageData.picks[i]||'';});
         var languagePayload={automaticos:languageData.automatic,bonus_inteligencia:languageData.bonus,comprados_falar_idioma:languageData.purchased.concat(newLanguageChoices)};
         var result=await sb.rpc('concluir_avanco_nivel_personagem_srd_v2',{
