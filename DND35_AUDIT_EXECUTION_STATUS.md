@@ -227,3 +227,21 @@ Não marcar um módulo como concluído apenas porque existe uma descrição ou u
 
 **Limite**
 - A ficha registra a escolha e apresenta os dados de referência do companheiro; a aplicação de progressão mecânica do companheiro conforme o nível efetivo do Druida (bônus de DV, armadura natural, FOR/DES, truques e habilidades especiais) deverá ser concluída no módulo de progressão/combate, sem inventar esses ajustes na criação de 1º nível.
+
+
+## Etapa Anão A7 — Patrulheiro: inimigo predileto
+
+**Estado: escolha implementada e validações estáticas aprovadas; teste de navegador autenticado pendente.**
+
+- A etapa de classe do Patrulheiro agora exige a escolha de um Inimigo Predileto no 1º nível.
+- A interface apresenta os tipos de criatura e os subtipos de humanoide e extraplanar previstos nas opções da classe.
+- A explicação informa os efeitos iniciais: +2 nas jogadas de dano com armas e +2 em Blefar, Ouvir, Sentir Motivação, Observar e Sobrevivência contra o inimigo escolhido.
+- A escolha é mantida na identidade da ficha e enviada ao RPC de criação.
+- O servidor valida a opção contra uma lista fechada de categorias permitidas. Classes que não são Patrulheiro recebem o campo vazio, evitando que uma escolha indevida fique associada a outra classe.
+- Nenhuma tabela ou coluna foi criada; o campo foi guardado no JSON de identidade já existente.
+
+**Verificações realizadas**
+- Sintaxe JavaScript de `ficha.html`: aprovada.
+- Controles de seleção, validação antes do envio e campo no payload confirmados.
+- RPC de criação atualizado e validado por inspeção da definição.
+- Não houve teste de navegador autenticado nem criação de personagem de teste.
