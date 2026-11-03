@@ -1979,6 +1979,7 @@ function dnd35WeaponProficient(state,weaponName){
     var panel=document.querySelector('.dnd35-levelup');if(!panel)return;
     panel.addEventListener('change',function(event){
       var skill=event.target.closest('[data-lu-skill]');if(skill){state.levelUp.skills[skill.dataset.luSkill]=Number(skill.value)||0;state.levelUp.status='';renderizarFichaSRD35();return;}
+      var language=event.target.closest('[data-lu-language]');if(language){var languageIndex=Number(language.dataset.luLanguageIndex);state.levelUp.idiomasNovos=state.levelUp.idiomasNovos||[];state.levelUp.idiomasNovos[languageIndex]=language.value;state.levelUp.status='';renderizarFichaSRD35();return;}
       var feat=event.target.closest('[data-lu-feat]');if(feat){var i=Number(feat.dataset.luFeat);state.levelUp.feats[i]={id:feat.value,parametro:'',choice_type:feat.dataset.luFeatType};state.levelUp.status='';renderizarFichaSRD35();return;}
       var attribute=event.target.closest('[data-lu-attribute]');if(attribute){state.levelUp.attribute=attribute.value;state.levelUp.status='';renderizarFichaSRD35();}
     });
@@ -1992,9 +1993,12 @@ function dnd35WeaponProficient(state,weaponName){
       var campaignId=Number(URL_PARAMS.get('mesa')||(state.character&&state.character.campaign_id)||0);
       if(!campaignId){state.levelUp.status='Não foi possível identificar a campanha desta ficha. Abra a ficha a partir da mesa.';renderizarFichaSRD35();return;}
       try{
-        var result=await sb.rpc('concluir_avanco_nivel_personagem_srd',{
+        var languageData=dnd35LevelupLanguageData(state,dnd35AtributosIniciais(state.raca,dnd35Objeto(state.sheet.atributos)),state.levelUp);
+        var newLanguageChoices=languageData.picks.slice(0,languageData.needed);
+        var languagePayload={automaticos:languageData.automatic,bonus_inteligencia:languageData.bonus,comprados_falar_idioma:languageData.purchased.concat(newLanguageChoices)};
+        var result=await sb.rpc('concluir_avanco_nivel_personagem_srd_v2',{
           p_campaign_id:campaignId,p_character_id:String(CHAR_ID),p_hit_die_roll:null,
-          p_skill_ranks:skills,p_feats:state.levelUp.feats||[],p_attribute:state.levelUp.attribute||null
+          p_skill_ranks:skills,p_feats:state.levelUp.feats||[],p_attribute:state.levelUp.attribute||null,p_idiomas:languagePayload
         });
         if(result.error)throw result.error;
         var refreshed=await sb.from('srd_character_sheets').select('*').eq('character_id',String(CHAR_ID)).single();
