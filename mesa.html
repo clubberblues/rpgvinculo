@@ -1945,14 +1945,14 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     list.querySelectorAll('[data-token-equip-id]').forEach(function(button){button.addEventListener('click',async function(){button.disabled=true;var q=await sb.rpc('equipar_item_token_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(token.id),p_equipment_id:String(button.dataset.tokenEquipId),p_equipado:button.dataset.equipped==='true'});if(q.error){alert('Não foi possível atualizar o equipamento: '+q.error.message);button.disabled=false;return;}campanha.cba_data=q.data.cba_data;aplicarCBAnaMesa(q.data.cba_data,false);await carregarEquipamentosTokens();abrirInventarioTokenSRD(token);});});
   }
   function bonusRacialPericia35(racaId,skillId){
-    var race=String(racaId||''),skill=String(skillId||'');
-    if(race==='elfo'&&['ouvir','procurar','observar'].indexOf(skill)>=0)return 2;
-    if(race==='meio-elfo'){
-      if(['ouvir','procurar','observar'].indexOf(skill)>=0)return 1;
-      if(['diplomacia','srd35_skill_gather_information'].indexOf(skill)>=0)return 2;
+    var race=String(racaId||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,''),skill=String(skillId||'').toLowerCase().replace(/^srd35_skill_/,'').replace(/[^a-z0-9]+/g,'_');
+    if(race==='elfo'&&['listen','search','spot'].indexOf(skill)>=0)return 2;
+    if(race==='meioelfo'||race==='halfelf'){
+      if(['listen','search','spot'].indexOf(skill)>=0)return 1;
+      if(['diplomacy','gather_information'].indexOf(skill)>=0)return 2;
     }
-    if(race==='gnomo'&&skill==='ouvir')return 2;
-    if(race==='halfling'&&['escalar','srd35_skill_jump','ouvir','mover_silenciosamente'].indexOf(skill)>=0)return 2;
+    if((race==='gnomo'||race==='gnome')&&skill==='listen')return 2;
+    if((race==='halfling'||race==='pequenino')&&['climb','jump','listen','move_silently'].indexOf(skill)>=0)return 2;
     return 0;
   }
   function resumoPericiaPt35(nome,descricao){
@@ -2020,14 +2020,27 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       var total=document.createElement('b');total.textContent=(option.bonus>=0?'+':'')+option.bonus;
       var rule=document.createElement('small');rule.className='skill-roll-rule';rule.textContent=resumoPericiaPt35(option.sk.nome,option.sk.descricao);var detail=document.createElement('small');detail.className='skill-roll-formula';detail.textContent='Teste: 1d20 '+(option.bonus>=0?'+':'')+option.bonus+' · bônus total'+(option.racialBonus?' · bônus racial '+(option.racialBonus>=0?'+':'')+option.racialBonus:'');
       card.append(name,meta,total,rule,detail);
-      card.onclick=function(){
+      card.onclick=async function(){
+        var race=String(p.sh.raca_id||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,''),skillKey=String(option.sk.id||'').toLowerCase().replace(/^srd35_skill_/,'');
+        var contextualBonus=0,contextLabel='';
+        if(race==='anao'&&['appraise','craft'].indexOf(skillKey)>=0){
+          var material=await window.vttUI.ask({title:'Conhecimento de pedra e metal',label:'O objeto avaliado ou o trabalho de Ofício envolve pedra ou metal?',kind:'select',options:[{value:'sim',label:'Sim, envolve pedra ou metal'},{value:'nao',label:'Não'}],defaultValue:'nao'});
+          if(material===null)return;if(material==='sim'){contextualBonus=2;contextLabel='bônus racial anão por pedra/metal +2';}
+        }else if(race==='anao'&&skillKey==='search'){
+          var stone=await window.vttUI.ask({title:'Conhecimento de pedras',label:'A busca é para localizar uma obra de pedra incomum, como passagem secreta, construção ou mecanismo?',kind:'select',options:[{value:'sim',label:'Sim, obra de pedra incomum'},{value:'nao',label:'Busca comum'}],defaultValue:'nao'});
+          if(stone===null)return;if(stone==='sim'){contextualBonus=2;contextLabel='Conhecimento de Pedras +2';}
+        }else if((race==='gnomo'||race==='gnome')&&skillKey==='craft'){
+          var alchemy=await window.vttUI.ask({title:'Ofício · Alquimia',label:'Este teste de Ofício é relacionado à Alquimia?',kind:'select',options:[{value:'sim',label:'Sim, Alquimia'},{value:'nao',label:'Outro Ofício'}],defaultValue:'nao'});
+          if(alchemy===null)return;if(alchemy==='sim'){contextualBonus=2;contextLabel='bônus racial de gnomo em Alquimia +2';}
+        }
         modal.remove();
         abrirDado('Perícia · '+option.sk.nome,function(d20){
-          var totalRoll=Number(d20)+option.bonus;
+          var totalRoll=Number(d20)+option.bonus+contextualBonus;
           var parts=['1d20 '+d20,option.rank+' grad.',option.ability+' '+(option.mod>=0?'+':'')+option.mod];
           if(option.classBonus)parts.push('perícia de classe +3');
           if(option.racialBonus)parts.push('bônus racial '+(option.racialBonus>=0?'+':'')+option.racialBonus);
-          enviarMensagemChat('📚 '+p.ch.nome+' — '+option.sk.nome+': '+parts.join(' + ')+' = **'+totalRoll+'**.','rolagem',{evento:'pericia_dnd35',character_id:String(p.ch.id),skill_id:option.sk.id,total:totalRoll,graduações:option.rank,modificador_atributo:option.mod,bônus_classe:option.classBonus,bonus_racial:option.racialBonus});
+          if(contextualBonus)parts.push(contextLabel);
+          enviarMensagemChat('📚 '+p.ch.nome+' — '+option.sk.nome+': '+parts.join(' + ')+' = **'+totalRoll+'**.','rolagem',{evento:'pericia_dnd35',character_id:String(p.ch.id),skill_id:option.sk.id,total:totalRoll,graduações:option.rank,modificador_atributo:option.mod,bônus_classe:option.classBonus,bonus_racial:option.racialBonus+contextualBonus,bonus_racial_contextual:contextualBonus});
         },true);
       };
       grid.appendChild(card);
