@@ -2987,7 +2987,7 @@ async function abrirModalEquipamentos(){
       var id=novoIdReforco(),name=String(archetype.nome||race.nome+' '+cls.nome).slice(0,120);
       var token={key:'cba-'+id,id:id,nome:name,imagem:'',tipo:'npc',detalhe:'Nv '+stats.level+' · '+race.nome+' '+cls.nome+' · '+archetype.nome,gridX:cell.gridX,gridY:cell.gridY,boardColumns:cell.boardColumns,boardRows:cell.boardRows,hp:stats.hp,maxHp:stats.maxHp,ac:stats.ac,baseAc:10,dexMod:stats.dexMod,attackBonus:stats.attackBonus,damageDice:stats.attacks.match(/\(([^)]+)\)/)?stats.attacks.match(/\(([^)]+)\)/)[1]:'1d6',spellState:stats.spellState,monsterStats:{nd:String(stats.level),ataques:stats.attacks,ca:String(stats.ac),pv:stats.hp,forca:stats.attributes.FOR,destreza:stats.attributes.DES,constituicao:stats.attributes.CON,inteligencia:stats.attributes.INT,sabedoria:stats.attributes.SAB,carisma:stats.attributes.CAR,attributes:stats.attributes,skills:stats.skills,skill_ranks:stats.skillRanks,feats:stats.feats,saves:stats.saves,spellState:stats.spellState,spellcasting_key:stats.spellcastingKey,bab:stats.bab,size_modifier:stats.sizeModifier,size:race.tamanho,loadout:stats.loadout,starting_package:stats.startingPackage,racial_traits:stats.racialTraits,race_briefing:stats.raceBriefing,class_traits:stats.classTraits,class_description:stats.classDescription,archetype:archetype.role_key,race_id:stats.raceId,race_name:stats.raceName,class_id:stats.classId,class_name:stats.className,level:stats.level,variant:stats.variant}};
       scene.tokens.push(token);var saved=await gravarCBAnaCampanha(serializarEstadoCBA(scene));campanha.cba_data=saved;aplicarCBAnaMesa(saved,false);fecharModaisReforcoRapido();await enviarMensagemChat('✨ O Mestre criou '+name+' para a mesa · nível '+stats.level+' · PV '+stats.hp+' · CA '+stats.ac+'.','sistema',{evento:'npc_arquetipo_criado',token_id:id,race_id:stats.raceId,class_id:stats.classId,level:stats.level,variant:stats.variant});
-      if(String(campanha.state||'').toUpperCase()==='COMBATE'){var d20=Math.floor(Math.random()*20)+1,value=d20+Number(stats.dexMod||0);var init=await sb.rpc('adicionar_combatente_iniciativa',{p_campaign_id:Number(MESA_ID),p_combatente_id:id,p_nome:name,p_valor:value,p_tipo:'npc'});if(init.error)alert('NPC criado no mapa, mas não entrou na iniciativa: '+init.error.message);else{combatDataState=init.data||combatDataState;renderizarIniciativa(combatDataState);await enviarMensagemChat('⚡ '+name+' entrou na iniciativa: d20 '+d20+' + DES '+stats.dexMod+' = '+value+'.','rolagem',{evento:'npc_arquetipo_iniciativa',token_id:id,valor:value,d20:d20,modificador_destreza:stats.dexMod});}}
+      if(String(campanha.state||'').toUpperCase()==='COMBATE'){abrirDado('Iniciativa · '+name,function(total,values){if(!Array.isArray(values)||values.length!==1||Number(values[0])!==Number(total))throw new Error('O dado 3D não retornou o resultado individual do NPC.');var d20=Number(values[0]),value=d20+Number(stats.dexMod||0);return sb.rpc('adicionar_combatente_iniciativa',{p_campaign_id:Number(MESA_ID),p_combatente_id:id,p_nome:name,p_valor:value,p_tipo:'npc'}).then(async function(init){if(init.error)throw new Error(init.error.message);combatDataState=init.data||combatDataState;renderizarIniciativa(combatDataState);await enviarMensagemChat('⚡ '+name+' entrou na iniciativa: d20 '+d20+' + DES '+stats.dexMod+' = '+value+'.','rolagem',{evento:'npc_arquetipo_iniciativa',token_id:id,valor:value,d20:d20,modificador_destreza:stats.dexMod});}).catch(function(error){alert('NPC criado no mapa, mas a iniciativa não foi registrada: '+error.message);});},true,true,'1d20');}
     }catch(err){alert('Não foi possível criar o NPC: '+err.message);}finally{reforcoBusy=false;}
   }
 
@@ -3121,7 +3121,7 @@ async function abrirModalEquipamentos(){
               await enviarMensagemChat('⚡ '+token.nome+' entrou na iniciativa: d20 '+values[0]+' + DES '+(modDes>=0?'+':'')+modDes+(token.bonusIniciativa?' + Iniciativa Aprimorada +4':'')+' = '+(Number(values[0])+modDes+token.bonusIniciativa)+'.','rolagem',{evento:'reforco_iniciativa',combatente_id:id,d20:Number(values[0]),bonus:Number(token.bonusIniciativa),valor:Number(values[0])+modDes+token.bonusIniciativa});
             }finally{reforcoBusy=false;}
           })();
-        },true,false,'1d20');
+        },true,true,'1d20');
       }
       if(!esperandoRolagem) reforcoBusy=false;
     }catch(e){
@@ -3868,7 +3868,7 @@ async function abrirModalEquipamentos(){
         abrirDado('Iniciativa do Mestre · '+controlled.length+'d20',function(total,values){
           if(!Array.isArray(values)||values.length!==controlled.length||values.reduce(function(a,n){return a+Number(n);},0)!==Number(total)) throw new Error('A mesa precisa receber os resultados individuais do dado 3D.');
           return iniciar(values.map(Number));
-        },true,false,controlled.length+'d20');
+        },true,true,controlled.length+'d20');
       }else await iniciar([]);
     }catch(e){
       iniciativaBusy=false;
