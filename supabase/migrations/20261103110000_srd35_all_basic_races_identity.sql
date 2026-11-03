@@ -89,7 +89,7 @@ $guard$,'');
   if position('  v_weight numeric;' in v_definition)=0 then
     raise exception 'Migração abortada: declaração de peso não encontrada.';
   end if;
-  v_definition := replace(v_definition,'  v_weight numeric;','  v_weight numeric;\n  v_height_min numeric;\n  v_height_max numeric;\n  v_weight_min numeric;\n  v_weight_max numeric;');
+  v_definition := replace(v_definition,'  v_weight numeric;','  v_weight numeric;'||chr(10)||'  v_height_min numeric;'||chr(10)||'  v_height_max numeric;'||chr(10)||'  v_weight_min numeric;'||chr(10)||'  v_weight_max numeric;');
 
   if position(v_old_age in v_definition)=0 then raise exception 'Bloco de idade inicial mudou; revisar migração.'; end if;
   v_definition := replace(v_definition,v_old_age,v_new_age);
