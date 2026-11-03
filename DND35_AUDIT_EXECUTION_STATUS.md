@@ -391,3 +391,14 @@ Não marcar um módulo como concluído apenas porque existe uma descrição ou u
 - Os arquivos correspondentes com esses nomes/timestamps não foram encontrados em `supabase/migrations` na branch de auditoria. A função de sete parâmetros em produção contém essas validações (incluindo familiar do Mago/Feiticeiro e vínculo natural do Druida), mas o repositório não possui a sequência completa que reproduz esse estado.
 - Isso confirma que não basta copiar somente a última migração de sete raças para um ambiente novo: o histórico de migrations precisa ser reconciliado integralmente com o banco antes de declarar a implantação reproduzível.
 - Não gerei uma migração artificial nem sobrescrevi a função em produção. A definição instalada foi inspecionada; os dados de personagens permaneceram intocados.
+
+
+### Inventário quantitativo do histórico remoto x arquivos versionados — 2026-11-03
+
+- Nova comparação feita diretamente com o histórico remoto do Supabase (527 versões) e com os arquivos SQL tanto da raiz quanto de `supabase/migrations/` na branch `audit/dnd35-rules-alignment` (516 arquivos SQL).
+- A comparação por nome normalizado encontrou correspondência nominal para 464 das 527 migrações remotas. **63 versões remotas não têm arquivo SQL correspondente pelo nome** nessa branch.
+- Essa comparação é apenas nominal: não comprova que os 464 arquivos tenham conteúdo idêntico ao SQL efetivamente aplicado, nem valida a ordem/dependências. Ainda é necessário comparar conteúdo e estado do schema.
+- Entre as 63 ausências estão alterações de regras e segurança de 03/11/2026: restrições de movimentação, rolagens manuais, permissões de RPC, armas/alcance/ataque, idiomas e progressão de nível; também estão ausentes arquivos das validações de criação do Bárbaro, Mago, Clérigo, Druida e Patrulheiro.
+- A comparação de nomes também mostra que o histórico da branch `main` não resolve a lacuna: nela, 439/527 nomes correspondem e 88 não; a branch `codex/dnd35-gameplay-flow-audit` também não contém a sequência completa.
+- Não se deve criar arquivos vazios, registrar migrações como aplicadas, nem reaplicar alterações só para fazer os números coincidirem. Os SQLs originais ausentes precisam ser recuperados de commits/artefatos confiáveis ou substituídos por um plano de reconciliação do estado atual, revisado e testado.
+- Nenhuma alteração foi feita no banco durante esta comparação; nenhuma ficha ou dado de jogador foi tocado.
