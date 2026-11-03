@@ -871,6 +871,16 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
  #cards-strip .deck-card{height:138px!important;min-height:138px!important}
 }
 
+
+.token-image-inline-panel{margin:10px 4px;padding:12px;border:1px solid #a98b50;border-radius:9px;background:linear-gradient(145deg,#202a20,#111810);box-shadow:0 8px 20px #0006;color:#eee3ca}
+.token-image-inline-panel h3{margin:0 0 6px;color:#f0d080;font:700 10px Cinzel,serif;letter-spacing:1px}
+.token-image-inline-panel p{margin:0 0 9px;color:#c6b995;font-size:10px;line-height:1.35}
+.token-image-inline-panel select{width:100%;min-height:36px;padding:7px;border:1px solid #75613d;border-radius:6px;background:#10170f;color:#f5ecd6;font-size:11px}
+.token-image-inline-actions{display:flex;gap:6px;margin-top:9px}
+.token-image-inline-actions button{flex:1;min-width:0;padding:8px 6px;border:1px solid #a98b50;border-radius:6px;background:#b99b5a;color:#18150e;font:700 9px Cinzel,serif;cursor:pointer}
+.token-image-inline-actions button:disabled{opacity:.4;cursor:not-allowed}
+.token-image-inline-actions button:last-child{background:#1b2419;color:#e8d39d}
+
 </style>
 </head>
 <body>
@@ -1529,7 +1539,26 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   }
   var tokenImageKeyPending=null;
   function selecionarImagemToken(item){if(!ehGM||!item)return;tokenImageKeyPending=String(item.key);var input=document.getElementById('token-image-file');if(input){input.value='';input.click();}}
-  function abrirSeletorImagemToken(){if(!ehGM)return;var tokens=cbaPublishedState&&Array.isArray(cbaPublishedState.tokens)?cbaPublishedState.tokens:[];if(!tokens.length){window.vttUI.alert('Ainda não há tokens publicados no tabuleiro.');return;}var options=tokens.map(function(t,i){return (i+1)+'. '+String(t.nome||'Token')+' · '+(t.tipo==='monstro'?'Monstro':t.tipo==='player'?'Personagem':'NPC');});var raw=window.prompt('Escolha o token para alterar a imagem:\n\n'+options.join('\n')+'\n\nDigite o número correspondente:');if(raw==null)return;var index=Number(raw)-1;if(!Number.isInteger(index)||index<0||index>=tokens.length){window.vttUI.alert('Número de token inválido.');return;}selecionarImagemToken(tokens[index]);}
+  function abrirSeletorImagemToken(){
+    if(!ehGM)return;
+    var tokens=cbaPublishedState&&Array.isArray(cbaPublishedState.tokens)?cbaPublishedState.tokens:[];
+    var host=document.getElementById('acoes-dir');if(!host)return;
+    var previous=host.querySelector('#token-image-inline-panel');if(previous){previous.remove();return;}
+    if(!tokens.length){var empty=document.createElement('section');empty.id='token-image-inline-panel';empty.className='token-image-inline-panel';empty.textContent='Adicione um personagem, NPC ou monstro ao tabuleiro antes de trocar sua imagem.';host.appendChild(empty);return;}
+    var panel=document.createElement('section');panel.id='token-image-inline-panel';panel.className='token-image-inline-panel';panel.setAttribute('aria-label','Alterar imagem de token');
+    var title=document.createElement('h3');title.textContent='ALTERAR IMAGEM DO TOKEN';
+    var help=document.createElement('p');help.textContent='Selecione um participante que já esteja no tabuleiro.';
+    var select=document.createElement('select');select.setAttribute('aria-label','Token que receberá a nova imagem');
+    var placeholder=document.createElement('option');placeholder.value='';placeholder.textContent='Escolha o token';select.appendChild(placeholder);
+    tokens.forEach(function(token){var option=document.createElement('option');option.value=String(token.key);option.textContent=String(token.nome||'Token')+' · '+(token.tipo==='monstro'?'Monstro':token.tipo==='player'?'Personagem':'NPC');select.appendChild(option);});
+    var actions=document.createElement('div');actions.className='token-image-inline-actions';
+    var choose=document.createElement('button');choose.type='button';choose.textContent='Escolher imagem do dispositivo';choose.disabled=true;
+    var cancel=document.createElement('button');cancel.type='button';cancel.textContent='Fechar';
+    select.addEventListener('change',function(){var chosen=tokens.find(function(t){return String(t.key)===String(select.value);});tokenImageKeyPending=chosen?String(chosen.key):null;choose.disabled=!chosen;});
+    choose.addEventListener('click',function(){if(!tokenImageKeyPending)return;var input=document.getElementById('token-image-file');if(input){input.value='';input.click();}});
+    cancel.addEventListener('click',function(){tokenImageKeyPending=null;panel.remove();});
+    actions.append(choose,cancel);panel.append(title,help,select,actions);host.appendChild(panel);
+  }
   async function salvarImagemTokenSelecionada(event){
     var file=event.target.files&&event.target.files[0];event.target.value='';var key=tokenImageKeyPending;tokenImageKeyPending=null;if(!file||!key||!ehGM)return;
     if(String(file.type||'').indexOf('image/')!==0){await window.vttUI.alert('Escolha um arquivo de imagem compatível.');return;}
