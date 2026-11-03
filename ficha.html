@@ -2273,10 +2273,10 @@ function dnd35WeaponProficient(state,weaponName){
     if(spent>budget){mostrarErro('Pontos de perícia excedidos: '+spent+' / '+budget+'.','pericias');return;}
     var skillLevel=Math.max(1,Number(state.sheet.nivel)||1);
     for(var skillId of Object.keys(ranks)){
-      var skillRank=Number(ranks[skillId]||0), isClass=!!classMap[String(skillId)], maximum=isClass?skillLevel+3:(skillLevel+3)/2;
+      var skillRank=Number(ranks[skillId]||0), isLanguage=String(skillId)==='srd35_skill_speak_language',isClass=!!classMap[String(skillId)], maximum=isLanguage?budget:(isClass?skillLevel+3:(skillLevel+3)/2);
       if(!Number.isFinite(skillRank)||skillRank<0||skillRank>maximum){mostrarErro('Graduações inválidas ou acima do máximo para '+skillId+'.','pericias');return;}
-      if(isClass&&!Number.isInteger(skillRank)){mostrarErro('Perícias de classe usam graduações inteiras.','pericias');return;}
-      if(!isClass&&Math.abs(skillRank*2-Math.round(skillRank*2))>0.001){mostrarErro('Perícias fora de classe avançam em passos de 0,5.','pericias');return;}
+      if((isClass||isLanguage)&&!Number.isInteger(skillRank)){mostrarErro(isLanguage?'Falar Idioma usa pontos inteiros, um por idioma.':'Perícias de classe usam graduações inteiras.','pericias');return;}
+      if(!isClass&&!isLanguage&&Math.abs(skillRank*2-Math.round(skillRank*2))>0.001){mostrarErro('Perícias fora de classe avançam em passos de 0,5.','pericias');return;}
     }
     var languageRules=dnd35LanguageRules(state,attrs),languagePicks=state.idiomasEscolhas||{bonus:[],comprados:[]};
     var languageBonusChoices=(languagePicks.bonus||[]).slice(0,languageRules.bonusCount);
