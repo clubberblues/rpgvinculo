@@ -739,6 +739,43 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
 @media(max-width:850px){.mesa-corpo{grid-template-columns:minmax(210px,28vw) minmax(0,1fr) 205px}.col-dir{padding:9px 7px}}
 @media(max-width:640px){.mesa-header{padding:8px 10px}.mesa-corpo{grid-template-columns:minmax(0,1fr) 145px}.col-esq{display:none}.col-dir{padding:7px 5px}.cards-strip{min-height:84px;padding:6px}.card-pers{min-width:190px}.titulo-mesa .nome{font-size:14px;letter-spacing:1px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+
+/* Chat e dado empilhados à esquerda; cards em proporção de deck. */
+.col-esq{min-width:0;min-height:0;overflow:hidden}
+.col-esq>.painel:first-child{flex:1 1 50%;min-height:0}
+.col-esq #dado-iframe-overlay{position:relative!important;inset:auto!important;display:none;flex:1 1 50%;width:100%;min-height:220px;height:auto;margin:0;padding:0;background:transparent;backdrop-filter:none;z-index:3;align-items:stretch;justify-content:stretch;pointer-events:auto}
+.col-esq #dado-iframe-overlay[style*="display: flex"]{display:flex!important}
+.col-esq .dado-card{width:100%;height:100%;min-height:220px;max-height:none;border:1px solid #b99b5a;border-radius:8px;box-shadow:0 5px 18px #0008}
+.col-esq .dado-card-body{min-height:0;flex:1}
+.col-esq #dado-iframe{width:100%;height:100%;min-height:0;border:0}
+#acoes-dir #dado-iframe-overlay{display:none!important}
+@media(min-width:901px){.mesa-corpo{grid-template-columns:320px minmax(0,1fr) 240px!important}}
+.mesa-footer{min-height:188px;max-height:198px;padding:6px 10px 8px;gap:5px}
+.mesa-footer-heading{font-size:8px;min-height:12px}
+.cards-strip{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:stretch;gap:9px;min-height:0;max-height:none;flex:1;padding:3px 2px 7px;overflow-x:auto!important;overflow-y:hidden!important}
+.card-pers{position:relative;display:block;flex:0 0 116px;width:116px;min-width:116px;max-width:116px;height:158px;min-height:158px;padding:0;border-radius:9px;overflow:hidden;perspective:900px}
+.card-pers-inner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .48s cubic-bezier(.2,.75,.25,1)}
+.card-pers.is-flipped .card-pers-inner{transform:rotateY(180deg)}
+.card-pers-face{position:absolute;inset:0;display:flex;flex-direction:column;align-items:stretch;gap:5px;padding:8px 7px;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden}
+.card-pers-front{justify-content:flex-start}
+.card-pers-back{transform:rotateY(180deg);background:linear-gradient(145deg,#202a22,#111a14);color:#f1e4c7;justify-content:flex-start}
+.card-pers-avatar{width:58px;height:58px;flex:0 0 58px;margin:0 auto;border-radius:6px;overflow:hidden}
+.card-pers-avatar img{width:100%;height:100%;object-fit:cover;border-radius:0!important}
+.card-pers-info{width:100%;min-width:0;text-align:center}
+.card-pers-nome{font-size:9px;line-height:1.2;white-space:normal;max-height:2.4em;overflow:hidden}
+.card-pers-classe{font-size:8px;line-height:1.15;margin:2px 0}
+.card-pers-initiative{font-size:7px;line-height:1.2;justify-content:center;gap:2px;flex-wrap:wrap;margin:2px 0}
+.card-pers-pv{height:5px;margin:2px 0}
+.card-pers-pv-txt{font-size:7px;line-height:1.2;white-space:normal;overflow-wrap:anywhere;text-align:center}
+.card-pers-face .card-flip-button{display:none!important}
+.card-pers-back strong{font:700 8px Cinzel,serif;color:#f0d080}
+.card-pers-back p,.card-pers-back small{font-size:8px;line-height:1.3;overflow-wrap:anywhere}
+.cards-strip-pager{min-height:22px;padding:2px 7px}
+.token-cba{border-radius:6px!important;overflow:hidden!important;background-size:cover!important}
+.token-cba .token-nome,.token-cba .token-hp,.token-cba .token-ac{display:none!important}
+.token-cba img{display:block;width:100%;height:100%;object-fit:cover;border-radius:0!important}
+@media(max-width:900px){.mesa-footer{min-height:178px;max-height:188px}.card-pers{flex-basis:108px;width:108px;min-width:108px;max-width:108px;height:148px;min-height:148px}.col-esq #dado-iframe-overlay{min-height:190px}.col-esq .dado-card{min-height:190px}}
+
 </style>
 </head>
 <body>
@@ -1182,6 +1219,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       var flipButton=e.target.closest?e.target.closest('[data-card-flip]'):null;
       if(flipButton){e.preventDefault();e.stopPropagation();var flipCard=flipButton.closest('.card-pers');if(flipCard)flipCard.classList.toggle('is-flipped');return;}
       var cardAcao = e.target.closest ? e.target.closest('.card-pers') : null;
+      if(cardAcao && !modoSelecaoTeste){e.preventDefault();cardAcao.classList.toggle('is-flipped');return;}
       if(ehGM && cardAcao && cardAcao.dataset.cbaTokenKey && !modoSelecaoTeste){
         e.preventDefault();var token=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key)===String(cardAcao.dataset.cbaTokenKey);});
         if(token)abrirMenuContextualToken(token,cardAcao);return;
@@ -1221,7 +1259,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         {id:'equipamentos',ic:'🛡️',txt:'Equipamentos'},
         {id:'xp',ic:'⭐',txt:'Dar XP'},
         {id:'dados',ic:'🎲',txt:'Dados'},
-        {id:'config-campanha',ic:'🗑️',txt:'Excluir campanha',destaque:true}
+        {id:'token-image-manager',ic:'🖼️',txt:'Alterar imagem do token'},
+        ...(String(campanha&&campanha.owner_id)===String(eu&&eu.id)?[{id:'config-campanha',ic:'⚙️',txt:'Excluir campanha'}]:[])
       ];
       el.innerHTML = listaGM.map(function(b){
         return '<button class="btn-acao '+(b.destaque?'destaque':'')+'" data-acao="'+b.id+'" title="'+esc(b.txt)+'"><span class="icone">'+b.ic+'</span><span>'+esc(b.txt)+'</span></button>';
@@ -1259,7 +1298,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var actionGroups=ehGM?[
       {title:'Combate',ids:['alternar-combate','iniciativa','avancar-turno']},
       {title:'Campo de batalha',ids:['cba','npc','monstros']},
-      {title:'Mesa e jogadores',ids:['testes','equipamentos','xp','dados','config-campanha']}
+      {title:'Mesa e jogadores',ids:['testes','equipamentos','xp','dados','token-image-manager','config-campanha']}
     ]:estado==='COMBATE'?
       [{title:'Seu turno',ids:['atk-corpo','atk-dist','atk-mag','pericia','inventario','avancar-turno']}]:
       [{title:'Aventureiro',ids:['ficha','dados','pericia','atk-mag','inventario']}];
@@ -1290,7 +1329,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     combatPanel.innerHTML='<h3>CONTROLE DO TURNO</h3><p id="turno-controle-status">Aguardando a iniciativa.</p><div id="iniciativa-acoes-mestre"></div>';
     el.appendChild(combatPanel);
     if(economyPanel)combatPanel.appendChild(economyPanel);
-    if(tokenMenu)el.appendChild(tokenMenu);if(diceOverlay)el.appendChild(diceOverlay);
+    if(tokenMenu)el.appendChild(tokenMenu);var chatColumn=document.querySelector('.col-esq');if(diceOverlay&&chatColumn)chatColumn.appendChild(diceOverlay);
     if(document.getElementById('painel-iniciativa'))renderizarIniciativa(combatDataState);
   }
 
@@ -1399,6 +1438,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   }
   var tokenImageKeyPending=null;
   function selecionarImagemToken(item){if(!ehGM||!item)return;tokenImageKeyPending=String(item.key);var input=document.getElementById('token-image-file');if(input){input.value='';input.click();}}
+  function abrirSeletorImagemToken(){if(!ehGM)return;var tokens=cbaPublishedState&&Array.isArray(cbaPublishedState.tokens)?cbaPublishedState.tokens:[];if(!tokens.length){window.vttUI.alert('Ainda não há tokens publicados no tabuleiro.');return;}var options=tokens.map(function(t,i){return (i+1)+'. '+String(t.nome||'Token')+' · '+(t.tipo==='monstro'?'Monstro':t.tipo==='player'?'Personagem':'NPC');});var raw=window.prompt('Escolha o token para alterar a imagem:\n\n'+options.join('\n')+'\n\nDigite o número correspondente:');if(raw==null)return;var index=Number(raw)-1;if(!Number.isInteger(index)||index<0||index>=tokens.length){window.vttUI.alert('Número de token inválido.');return;}selecionarImagemToken(tokens[index]);}
   async function salvarImagemTokenSelecionada(event){
     var file=event.target.files&&event.target.files[0];event.target.value='';var key=tokenImageKeyPending;tokenImageKeyPending=null;if(!file||!key||!ehGM)return;
     if(String(file.type||'').indexOf('image/')!==0){await window.vttUI.alert('Escolha um arquivo de imagem compatível.');return;}
@@ -1836,7 +1876,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       return;
     }
     if(id === 'ficha'){ abrirMinhaFicha(); return; }
-    if(id === 'config-campanha'){ if(ehGM) abrirModalExcluirCampanha(); return; }
+    if(id === 'config-campanha'){ if(ehGM&&String(campanha&&campanha.owner_id)===String(eu&&eu.id)) abrirModalExcluirCampanha(); return; }
+    if(id === 'token-image-manager'){ if(ehGM) abrirSeletorImagemToken(); return; }
     if(id === 'inventario'){ abrirInventarioSRD(); return; }
     if(id === 'pericia'){ abrirTestePericiaJogador(); return; }
     
