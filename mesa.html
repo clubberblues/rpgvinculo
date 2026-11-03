@@ -1706,8 +1706,9 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       if(result.error) throw new Error(result.error.message);
       campanha.cba_data=result.data.cba_data; cbaPublishedState=normalizarCBAData(result.data.cba_data);
       aplicarCBAnaMesa(result.data.cba_data,false);
-      var remain=Number(result.data.movement_remaining_m);
-      document.getElementById('iniciativa-status').textContent='Movimento restante neste turno: '+remain.toLocaleString('pt-BR')+' m.';
+      var status=document.getElementById('iniciativa-status');
+      if(result.data.movement_remaining_m==null)status.textContent='Movimento livre fora de combate.';
+      else{var remain=Number(result.data.movement_remaining_m);status.textContent='Movimento restante neste turno: '+remain.toLocaleString('pt-BR')+' m.';}
       var combatRefresh=await sb.from('campaigns').select('combat_data').eq('id',MESA_ID).maybeSingle();if(!combatRefresh.error&&combatRefresh.data){combatDataState=combatRefresh.data.combat_data||combatDataState;renderizarIniciativa(combatDataState);}
     }catch(err){
       alert('Movimento não permitido: '+err.message);
@@ -3319,8 +3320,13 @@ async function abrirModalEquipamentos(){
       var item = scene.tokens.find(function(t){ return t.key === token.dataset.cbaTokenKey; });
       if(!item) return;
       if(!ePreview && ehGM && String(campanha.state||'').toUpperCase()==='COMBATE' && combatDataState&&combatDataState.active){var gmTurn=combatDataState.turn_order&&combatDataState.turn_order[Number(combatDataState.current_turn)||0];if(!gmTurn||!gmTurn.is_monster||String(gmTurn.id)!==String(item.id))return;}
-      if(!ePreview && !ehGM && item.tipo!=='player') return;
-      if(!ePreview && !ehGM && (!ehMeuTokenNoTurno(item))) return;
+      if(!ePreview&&!ehGM){
+        if(item.tipo!=='player')return;
+        var ownCharacter=acharPersonagemDoToken(item);
+        if(!ownCharacter||ownCharacter.ch.user_id!==eu.id)return;
+        var activePlayerCombat=String(campanha.state||'').toUpperCase()==='COMBATE'&&combatDataState&&combatDataState.active;
+        if(activePlayerCombat&&!ehMeuTokenNoTurno(item))return;
+      }
       var rect = token.getBoundingClientRect();
       arrasto = {token:token,item:item,scene:scene,pointerId:e.pointerId,cell:tamanhoCelulaLayerCBA(layer,scene),offsetX:(e.clientX-rect.left)/cbaZoom,offsetY:(e.clientY-rect.top)/cbaZoom,startClientX:e.clientX,startClientY:e.clientY,startGridX:Number(item.gridX)||0,startGridY:Number(item.gridY)||0,moved:false};
       if(!ePreview)fecharMenuContextualToken(false);
