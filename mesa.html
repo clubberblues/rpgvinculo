@@ -1119,6 +1119,16 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         <button class="cba-tool-btn" type="button" data-cba-action="open-npcs">👤 Adicionar NPC</button>
         <button class="cba-tool-btn" type="button" data-cba-action="open-monsters">🐉 Adicionar Monstro</button>
       </div>
+      <div class="cba-tool-group cba-tool-divider" id="cba-fog-controls">
+        <label>FOG OF WAR · VISIBILIDADE</label>
+        <button class="cba-tool-btn" type="button" data-cba-action="fog-toggle" id="cba-fog-toggle">Ativar pincel de névoa</button>
+        <label for="cba-fog-action">AÇÃO</label>
+        <select id="cba-fog-action"><option value="hide">Ocultar área</option><option value="reveal">Revelar área</option></select>
+        <label for="cba-fog-scope">APLICAR PARA</label>
+        <select id="cba-fog-scope"><option value="all">Todos os jogadores</option><option value="player">Um jogador específico</option></select>
+        <select id="cba-fog-player" aria-label="Jogador que verá a área ocultada" disabled><option value="">Selecione um jogador</option></select>
+        <small style="font-size:10px;color:#c5b995;text-align:center">Arraste sobre o mapa para ocultar ou revelar quadrados. O Mestre sempre vê o mapa completo.</small>
+      </div>
       <div class="cba-status" id="cba-status" role="status" aria-live="polite"></div>
     </aside>
     <div class="cba-preview-wrap" id="cba-preview-wrap">
@@ -1126,6 +1136,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         <div class="cba-bg-layer" id="cba-bg-layer"></div>
         <div class="cba-preview-empty" id="cba-preview-empty">Carregue um mapa, ajuste o grid e posicione as criaturas.</div>
         <div class="cba-grid-lines" id="cba-grid-lines"></div>
+        <div id="cba-preview-fog" class="cba-fog-layer" aria-label="Camada de névoa de guerra"></div>
         <div class="cba-token-layer" id="cba-preview-tokens"></div>
         <div id="cba-distancia-preview" role="status" aria-live="polite">0,0 m</div>
       </div>
@@ -1226,7 +1237,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   var eu = null, meuPerfil = null, meuPapel = 'PLAYER', ehGM = false;
   var campanha = null, membros = [], personagens = [];
   var ctxTokenAtualKey = null, ctxFocusTokenKey = null, suppressTokenClickUntil = 0;
-  var cbaState = { backgroundUrl:'', backgroundObjectUrl:'', imgScale:1, gridSize:50, gridOpacity:0.3, gridRatio:null, tokens:[] };
+  var cbaState = { backgroundUrl:'', backgroundObjectUrl:'', imgScale:1, gridSize:50, gridOpacity:0.3, gridRatio:null, tokens:[], fogCells:[] };
+  var cbaFogTool = { active:false, action:'hide', scope:'all', userId:'' };
   var cbaPublishedState = null;
   var cbaWriteQueue = Promise.resolve();
   var combatDataState = null;
@@ -1400,6 +1412,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
               '<div class="sub">'+(ehGM ? 'Ferramentas do Mestre disponíveis no painel.' : 'Aguardando o Mestre.')+'</div>'+
             '</div>'+
             '<div id="cba-grid-live" aria-hidden="true"></div>'+
+            '<div id="cba-live-fog" class="cba-fog-layer" aria-hidden="true"></div>'+
             '<div class="cba-token-layer" id="cba-token-layer"></div>'+
             '</div>'+
           '</main>'+
@@ -3345,11 +3358,12 @@ async function abrirModalEquipamentos(){
     var ratio = Number(data.gridRatio);
     var opacity=Number(data.gridOpacity);
     if(!Number.isFinite(opacity)) opacity=0.3;
-    return {backgroundUrl:image,imgScale:Math.max(0.5,Math.min(3,Number(data.imgScale)||1)),gridSize:gridSize,gridRatio:Number.isFinite(ratio)&&ratio>0?ratio:null,gridOpacity:Math.max(0,Math.min(1,opacity)),tokens:tokens};
+    var fogCells=Array.isArray(data.fogCells)?data.fogCells.map(function(cell){return {x:Math.max(0,Math.min(199,Math.floor(Number(cell.x)||0))),y:Math.max(0,Math.min(199,Math.floor(Number(cell.y)||0))),hiddenFor:Array.isArray(cell.hiddenFor)?Array.from(new Set(cell.hiddenFor.map(String))):[],revealedFor:Array.isArray(cell.revealedFor)?Array.from(new Set(cell.revealedFor.map(String))):[]};}):[];
+    return {backgroundUrl:image,imgScale:Math.max(0.5,Math.min(3,Number(data.imgScale)||1)),gridSize:gridSize,gridRatio:Number.isFinite(ratio)&&ratio>0?ratio:null,gridOpacity:Math.max(0,Math.min(1,opacity)),tokens:tokens,fogCells:fogCells};
   }
 
   function serializarEstadoCBA(scene){
-    return {version:1,background:scene.backgroundUrl||'',imgScale:scene.imgScale,gridSize:scene.gridSize,gridRatio:scene.gridRatio,gridOpacity:scene.gridOpacity,tokens:scene.tokens.map(function(t){return {key:String(t.key),id:String(t.id),nome:String(t.nome),imagem:String(t.imagem||''),tipo:t.tipo==='monstro'?'monstro':(t.tipo==='player'?'player':'npc'),detalhe:String(t.detalhe||''),hp:t.hp==null?null:Number(t.hp),maxHp:t.maxHp==null?null:Number(t.maxHp),dexMod:t.dexMod==null?null:Number(t.dexMod),monsterId:t.monsterId==null?null:String(t.monsterId),ac:t.ac==null?null:Number(t.ac),baseAc:t.baseAc==null?null:Number(t.baseAc),sourceCharacterId:t.sourceCharacterId==null?null:String(t.sourceCharacterId),attackBonus:t.attackBonus==null?null:Number(t.attackBonus),damageDice:String(t.damageDice||''),rotation:Number.isFinite(Number(t.rotation))?((Number(t.rotation)%360)+360)%360:0,spellState:t.spellState&&typeof t.spellState==='object'?t.spellState:null,monsterStats:t.monsterStats&&typeof t.monsterStats==='object'?t.monsterStats:null,srdSourceUrl:/^https?:\/\//i.test(String(t.srdSourceUrl||''))?String(t.srdSourceUrl):'',gridX:Number(t.gridX)||0,gridY:Number(t.gridY)||0};})};
+    return {version:1,background:scene.backgroundUrl||'',imgScale:scene.imgScale,gridSize:scene.gridSize,gridRatio:scene.gridRatio,gridOpacity:scene.gridOpacity,fogCells:(scene.fogCells||[]).map(function(cell){return {x:Number(cell.x)||0,y:Number(cell.y)||0,hiddenFor:Array.isArray(cell.hiddenFor)?cell.hiddenFor.map(String):[],revealedFor:Array.isArray(cell.revealedFor)?cell.revealedFor.map(String):[]};}),tokens:scene.tokens.map(function(t){return {key:String(t.key),id:String(t.id),nome:String(t.nome),imagem:String(t.imagem||''),tipo:t.tipo==='monstro'?'monstro':(t.tipo==='player'?'player':'npc'),detalhe:String(t.detalhe||''),hp:t.hp==null?null:Number(t.hp),maxHp:t.maxHp==null?null:Number(t.maxHp),dexMod:t.dexMod==null?null:Number(t.dexMod),monsterId:t.monsterId==null?null:String(t.monsterId),ac:t.ac==null?null:Number(t.ac),baseAc:t.baseAc==null?null:Number(t.baseAc),sourceCharacterId:t.sourceCharacterId==null?null:String(t.sourceCharacterId),attackBonus:t.attackBonus==null?null:Number(t.attackBonus),damageDice:String(t.damageDice||''),rotation:Number.isFinite(Number(t.rotation))?((Number(t.rotation)%360)+360)%360:0,spellState:t.spellState&&typeof t.spellState==='object'?t.spellState:null,monsterStats:t.monsterStats&&typeof t.monsterStats==='object'?t.monsterStats:null,srdSourceUrl:/^https?:\/\//i.test(String(t.srdSourceUrl||''))?String(t.srdSourceUrl):'',gridX:Number(t.gridX)||0,gridY:Number(t.gridY)||0};})};
   }
 
   function gravarCBAnaCampanha(data){
@@ -3394,6 +3408,7 @@ async function abrirModalEquipamentos(){
       cbaState.gridSize=scene.gridSize;
       cbaState.gridRatio=scene.gridRatio;
       cbaState.gridOpacity=scene.gridOpacity;
+      cbaState.fogCells=(scene.fogCells||[]).map(function(cell){return Object.assign({},cell,{hiddenFor:(cell.hiddenFor||[]).slice(),revealedFor:(cell.revealedFor||[]).slice()});});
       cbaState.tokens=scene.tokens.map(function(t){ return Object.assign({},t); });
     }
     aplicarGradeCamadasCBA();
@@ -4519,6 +4534,16 @@ html,body,#root{width:100%;height:100%;min-width:0;min-height:0}
  .painel-aventureiros>.painel-cab{display:none!important}
  #cards-strip>.card-pers{flex-basis:165px!important;width:165px!important;min-width:165px!important}
 }
+</style>
+<style id="cba-fog-of-war">
+.cba-fog-layer{position:absolute;inset:0;z-index:4;pointer-events:none;overflow:hidden}
+.cba-fog-cell{position:absolute;box-sizing:border-box;background:radial-gradient(ellipse at center,rgba(0,0,0,.98) 48%,rgba(0,0,0,.88) 76%,rgba(0,0,0,.18) 100%);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:8px;box-shadow:0 0 12px 4px rgba(0,0,0,.82);pointer-events:none}
+#cba-preview-fog{z-index:4}
+#cba-preview-tokens{z-index:5}
+#cba-live-fog{z-index:4}
+#cba-token-layer{z-index:5}
+#cba-fog-controls select{width:100%;min-height:30px;background:#172019;color:#f1e3c1;border:1px solid #74613d;border-radius:5px;padding:4px 7px}
+#cba-fog-controls [data-cba-action="fog-toggle"].ativo{background:#b28a3d;color:#17150e;border-color:#f3d28b}
 </style>
 <style id="cba-token-rotation">
 #cba-preview-tokens .token-cba{overflow:visible!important}
