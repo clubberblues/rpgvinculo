@@ -2222,7 +2222,8 @@ function dnd35WeaponProficient(state,weaponName){
       sb.from('srd_spells').select('id,nome,nivel,circulo,escola,alcance,alvo,area,duracao,componentes,classes,descricao,dados_tecnicos,srd_source_url'),
       sb.from('srd_spell_progressions').select('class_key,slots_by_level,known_by_level'),
       sb.from('srd_domains').select('domain_id,name,granted_power_summary,mechanics,source_url,verification_status').order('name'),
-      sb.from('srd_domain_spells').select('domain_id,spell_level,spell_id,source_id,verification_status').order('domain_id').order('spell_level')
+      sb.from('srd_domain_spells').select('domain_id,spell_level,spell_id,source_id,verification_status').order('domain_id').order('spell_level'),
+      sb.from('srd_languages').select('id,nome,is_secret').order('nome')
     ]);
     var error=results.slice(0,2).filter(function(r){return r.error;})[0];
     if(error) throw new Error('Migração SRD pendente: não foi possível carregar perícias/talentos. Detalhe: '+error.error.message);
@@ -2234,6 +2235,8 @@ function dnd35WeaponProficient(state,weaponName){
       progressionError:results[3].error?results[3].error.message:'',
       domains:results[4].error?[]:(results[4].data||[]),
       domainSpells:results[5].error?[]:(results[5].data||[]),
+      languages:results[6].error?[]:(results[6].data||[]),
+      languageError:results[6].error?results[6].error.message:'',
       domainError:results[4].error?results[4].error.message:(results[5].error?results[5].error.message:'')
     };
   }
@@ -2242,7 +2245,7 @@ function dnd35WeaponProficient(state,weaponName){
     if(results[0].error)throw new Error('Raça não encontrada: '+results[0].error.message);
     if(results[1].error)throw new Error('Classe não encontrada: '+results[1].error.message);
     var catalogs=results[2];if(results[3].error)throw new Error('Kit inicial indisponível: '+results[3].error.message);var eq=await sb.from('srd_equipment').select('*').order('nome').range(0,1999);if(eq.error)throw new Error('Catálogo de equipamentos indisponível: '+eq.error.message);
-    fichaSRD35={criacao:true,character:{},baseAtributos:{FOR:10,DES:10,CON:10,INT:10,SAB:10,CAR:10},nomeDraft:'',activeStep:'identity',sheet:{nivel:1,xp:0,ouro:0,atributos:{},pericias:{},talentos:[],magias_preparadas:{version:1,conhecidas:[],preparadas:[],dominio_preparadas:[],usos:{}}},raca:results[0].data,classe:results[1].data,startingPackage:results[3].data,equipment:eq.data||[],equipamentoInicial:{metodo:'',resultados:null,itens:{},busca:''},skills:catalogs.skills,feats:catalogs.feats,srdSpells:catalogs.spells,progressions:catalogs.progressions,srdDomains:catalogs.domains,srdDomainSpells:catalogs.domainSpells,domainError:catalogs.domainError,domainChoices:[],spellCatalogError:catalogs.spellError,spellProgressionError:catalogs.progressionError,featPicks:[],classFeatPicks:[],activeTab:'pericias'};
+    fichaSRD35={criacao:true,character:{},baseAtributos:{FOR:10,DES:10,CON:10,INT:10,SAB:10,CAR:10},nomeDraft:'',activeStep:'identity',sheet:{nivel:1,xp:0,ouro:0,atributos:{},pericias:{},talentos:[],magias_preparadas:{version:1,conhecidas:[],preparadas:[],dominio_preparadas:[],usos:{}}},raca:results[0].data,classe:results[1].data,startingPackage:results[3].data,equipment:eq.data||[],equipamentoInicial:{metodo:'',resultados:null,itens:{},busca:''},skills:catalogs.skills,feats:catalogs.feats,languages:catalogs.languages,idiomasEscolhas:{bonus:[],comprados:[]},srdSpells:catalogs.spells,progressions:catalogs.progressions,srdDomains:catalogs.domains,srdDomainSpells:catalogs.domainSpells,domainError:catalogs.domainError,domainChoices:[],spellCatalogError:catalogs.spellError,spellProgressionError:catalogs.progressionError,featPicks:[],classFeatPicks:[],activeTab:'pericias'};
     renderizarFichaSRD35();
   }
   async function carregarFichaSRD35(characterId,sheet) {
@@ -2253,7 +2256,7 @@ function dnd35WeaponProficient(state,weaponName){
     if(results[2].error)throw new Error('Classe SRD: '+results[2].error.message);
     var nextLevel=Math.min(20,Math.max(1,Number(sheet.nivel)||1)+1),featureResult=await sb.from('srd_class_level_features').select('class_id,class_level,name,summary,mechanics,verification_status').eq('class_id',String(sheet.classe_id)).eq('class_level',nextLevel),currentFeatureResult=await sb.from('srd_class_level_features').select('class_id,class_level,name,summary,mechanics,verification_status').eq('class_id',String(sheet.classe_id)).lte('class_level',Math.max(1,Number(sheet.nivel)||1)).order('class_level');var domainChoicesResult=await sb.from('srd_character_domain_choices').select('domain_slot,domain_id').eq('character_id',String(characterId)).order('domain_slot',{ascending:true});
     if(domainChoicesResult.error)throw new Error('Domínios do clérigo: '+domainChoicesResult.error.message);
-    fichaSRD35={criacao:false,character:results[0].data,sheet:sheet,raca:results[1].data,classe:results[2].data,skills:results[3].skills,feats:results[3].feats,srdSpells:results[3].spells,progressions:results[3].progressions,srdDomains:results[3].domains,srdDomainSpells:results[3].domainSpells,domainError:results[3].domainError,domainChoices:domainChoicesResult.data||[],nextLevelFeatures:featureResult.error?[]:(featureResult.data||[]),classFeatures:currentFeatureResult.error?[]:(currentFeatureResult.data||[]),spellCatalogError:results[3].spellError,spellProgressionError:results[3].progressionError,featPicks:[],activeTab:'pericias',grimoireOpen:URL_PARAMS.get('grimoire')==='1'};
+    fichaSRD35={criacao:false,character:results[0].data,sheet:sheet,raca:results[1].data,classe:results[2].data,skills:results[3].skills,feats:results[3].feats,languages:results[3].languages,srdSpells:results[3].spells,progressions:results[3].progressions,srdDomains:results[3].domains,srdDomainSpells:results[3].domainSpells,domainError:results[3].domainError,domainChoices:domainChoicesResult.data||[],nextLevelFeatures:featureResult.error?[]:(featureResult.data||[]),classFeatures:currentFeatureResult.error?[]:(currentFeatureResult.data||[]),spellCatalogError:results[3].spellError,spellProgressionError:results[3].progressionError,featPicks:[],activeTab:'pericias',grimoireOpen:URL_PARAMS.get('grimoire')==='1'};
     renderizarFichaSRD35();
   }
   async function salvarFichaSRD35() {
