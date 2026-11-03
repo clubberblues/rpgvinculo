@@ -10,7 +10,7 @@ Estabilizar a mesa virtual para uma nova rodada de simulação entre Mestre e jo
 
 - Snapshot do banco em 01/11/2026: `campaigns` 3, `characters` 7, `members` 7, `campaign_log` 142, `tokens` 0 e `srd_character_sheets` 7. Não foram apagados dados nesta etapa.
 - O banco tem catálogos distintos para D&D 3.5 (`srd_*`) e Vínculo (`vinculo_*`). Eles não devem ser misturados.
-- Contagens atuais: D&D 3.5 — 1.021 equipamentos, 601 magias, 7 raças, 11 classes, 110 talentos, 49 perícias e 445 monstros; ainda há 7 progressões de magia, 385 arquétipos NPC e 11 pacotes iniciais. Vínculo — 16 classes, 160 habilidades de classe, 95 magias, 191 itens e 72 talentos.
+- Contagens consultadas no Supabase em 03/11/2026: D&D 3.5 — 1.021 equipamentos, 607 magias, 7 raças, 11 classes, 110 talentos, 50 perícias, 445 monstros, 220 progressões de classe, 1.400 linhas de progressão de espaços, 11 pacotes iniciais, 131 características de classe e 607 registros de efeitos mágicos. Contagens não significam auditoria ou automação concluída. As tabelas `vinculo_*` permanecem legadas e não fazem parte do fluxo ativo.
 - A relação `srd_character_equipment` e colunas compatíveis com a aplicação foram criadas em `srd35_schema_reconciliation.sql`, com RLS de leitura por dono/Mestre e RPCs protegidas para entregar, equipar e usar poções de cura. O inventário de personagem tem 20 registros e o inventário de tokens tem 1 registro. O esquema legado foi preservado.
 - A função `mover_token_player_cba` tinha permissão efetiva para `anon`; o acesso foi revogado. A verificação posterior mostrou `anon_can_execute=false` e `authenticated=true`. O advisor deixou de apontar função SECURITY DEFINER acessível a anônimos; ainda há avisos genéricos para funções SECURITY DEFINER acessíveis a usuários autenticados, que exigem revisão de autorização por função.
 - O fluxo de ataque foi atualizado para extrair CA numérica, resolver acerto/erro e abrir dado 3D de dano apenas em acerto; falta simulação ponta a ponta e o dano calculado ainda precisa ser aplicado pelo Mestre aos PV do token.
@@ -32,13 +32,9 @@ Estabilizar a mesa virtual para uma nova rodada de simulação entre Mestre e jo
 - A iniciativa final é ordenada em ordem decrescente e cada criatura mantém sua própria entrada.
 - Para várias criaturas do Mestre, o dado 3D aceita vários dados: a quantidade deve corresponder aos tokens escolhidos; cada resultado é usado uma vez e associado aleatoriamente a um token selecionado. Não se distribuem resultados aleatoriamente aos personagens dos jogadores.
 
-### Progressão e magia de Vínculo
+### Progressão e magia de Vínculo — ARQUIVADO
 
-- As classes devem manter identidades mecânicas próprias, sem habilidades genéricas compartilhadas como substituto da progressão de classe.
-- O trabalho anterior previa validar Escudeiro, Berserk e Mago antes de expandir o catálogo de habilidades por nível. A conversa anterior refere 320 habilidades de classe; a tabela atual do banco contém 160. Essa diferença precisa ser reconciliada com o material fonte.
-- Talentos gerais e habilidades exclusivas de classe são catálogos separados.
-- Magias básicas podem ser universais; magias avançadas dependem de aprendizado, fonte ou condição narrativa.
-- A fórmula de PM discutida para Vínculo era PM máximo = base da classe + INT, com custos e efeitos das magias definidos separadamente. Essa regra deve permanecer no catálogo Vínculo, sem ser misturada às regras SRD de D&D 3.5.
+Este bloco pertence ao projeto antigo Vínculo RPG e não é fonte de regras nem requisito do trabalho ativo. A decisão mais recente do proprietário é usar exclusivamente D&D 3.5 neste VTT. Não implementar PM, classes, talentos, magias ou fórmulas de Vínculo no fluxo ativo. As tabelas `vinculo_*` ficam preservadas como legado, sem serem misturadas ao ruleset `dnd35-srd`.
 
 ## Auditoria da implementação (31/10/2026)
 
