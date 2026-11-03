@@ -418,6 +418,10 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
 .modal-box{background:linear-gradient(150deg,#202a1e,#11180f);border-color:#9a844b}.modal-box h2{color:#e7d39c}.card-ficha-user{background:linear-gradient(145deg,#202a1e,#151c14)!important;border-color:var(--lobby-edge)!important;color:#e8eadc}
 .btn-dourado,.btn-entrar{border-color:#b99b5a!important;background:linear-gradient(180deg,#d5b46a,#8d713d);color:#11150e}.btn-entrar:hover{filter:brightness(1.12)}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+
+.btn-config-mesa{position:absolute;top:10px;right:10px;z-index:11;width:32px;height:32px;border:1px solid #c9a050;border-radius:50%;background:rgba(0,0,0,.78);color:#f0d080;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.btn-config-mesa:hover{background:#c9a050;color:#15110a}
+
 </style>
 </head>
 <body>
@@ -1436,7 +1440,7 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
       var qtdJogadores = Number(m.participantes) || 0;
       var mestreNome = m.mestre || 'Desconhecido';
       var btnCapa = isDono
-        ? '<button class="btn-edit-capa" data-id="' + escapeHtml(m.id) + '" title="Alterar Capa" aria-label="Alterar capa da mesa" style="position:absolute;top:10px;left:10px;background:rgba(0,0,0,.7);border:1px solid #c9a050;color:#c9a050;border-radius:50%;width:30px;height:30px;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>'
+        ? '<button class="btn-edit-capa" data-id="' + escapeHtml(m.id) + '" title="Alterar Capa" aria-label="Alterar capa da mesa" style="position:absolute;top:10px;left:10px;background:rgba(0,0,0,.7);border:1px solid #c9a050;color:#c9a050;border-radius:50%;width:30px;height:30px;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button><button class="btn-config-mesa" data-id="' + escapeHtml(m.id) + '" data-name="' + escapeHtml(m.name||'') + '" data-code="' + escapeHtml(m.codigo_convite||'') + '" title="Configurações da mesa" aria-label="Configurações da mesa">⚙</button>'
         : '';
       return '<article class="card" data-role="' + (isDono ? 'GM' : 'PLAYER') + '">' +
         '<div class="card-capa">' + btnCapa + '<img src="' + escapeHtml(img) + '" alt="Capa da mesa"><div class="card-estado">' + escapeHtml(estado) + '</div></div>' +
@@ -1454,6 +1458,8 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
         uploadCapaMesa(btn.getAttribute('data-id'));
       });
     });
+
+    document.querySelectorAll('.btn-config-mesa').forEach(function(btn){btn.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();abrirConfiguracoesMesa(btn.dataset.id,btn.dataset.name,btn.dataset.code);});});
 
     document.querySelectorAll('.js-entrar-mesa').forEach(function(btn) {
       btn.addEventListener('click', async function() {
@@ -1479,11 +1485,16 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
       location.href = 'mesa.html?mesa=' + encodeURIComponent(mesaId);
       return;
     }
-    var r = await sb.from('members').select('role').eq('campaign_id', mesaId).eq('user_id', eu.id).limit(1).maybeSingle();
-    if (r.error) throw new Error(r.error.message);
-    if (!r.data) throw new Error('Para entrar nesta mesa, informe o código de convite no campo acima e clique em Sentar.');
-    // Jogadores escolhem qual das próprias fichas usar sempre que entram,
-    // inclusive quando já estão cadastrados como membros da mesa.
+    var openJoin=await sb.rpc('entrar_campanha_aberta',{p_campaign_id:Number(mesaId)});
+    if(openJoin.error)throw new Error(openJoin.error.message);
+    if(!openJoin.data||!openJoin.data.ok){
+      var code=window.prompt('Esta mesa exige um código de acesso. Digite os 4 números:');
+      if(code===null)return;
+      code=String(code).trim();if(!/^\\d{4}$/.test(code))throw new Error('O código precisa conter exatamente 4 números.');
+      var joined=await sb.rpc('join_campaign',{p_code:code});
+      if(joined.error)throw new Error(joined.error.message);
+      if(!joined.data||!joined.data.ok||String(joined.data.id)!==String(mesaId))throw new Error((joined.data&&joined.data.erro)||'Código inválido para esta mesa.');
+    }
     await abrirModalEntrarMesa(mesaId);
   }
 
@@ -1537,6 +1548,25 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
       modalEntrarMesa.classList.remove('ativo');
       entradaMesaEmAndamento = false;
     }
+  }
+
+  async function abrirConfiguracoesMesa(mesaId,nomeAtual,codigoAtual){
+    if(!eu)return;
+    var nome=window.prompt('Nome da mesa (2 a 60 caracteres):',nomeAtual||'');
+    if(nome===null)return;
+    nome=nome.trim();if(nome.length<2||nome.length>60)return alert('O nome deve ter entre 2 e 60 caracteres.');
+    var exigeCodigo=window.confirm('Deseja exigir código de acesso para entrar nesta mesa?\n\nOK = exigir código\nCancelar = acesso sem código');
+    var codigo=null;
+    if(exigeCodigo){codigo=window.prompt('Defina o novo código de acesso com 4 números:',codigoAtual||'');if(codigo===null)return;codigo=String(codigo).trim();if(!/^\\d{4}$/.test(codigo))return alert('O código precisa conter exatamente 4 números.');}
+    try{
+      var saved=await sb.rpc('atualizar_configuracoes_campanha',{p_campaign_id:Number(mesaId),p_name:nome,p_require_code:exigeCodigo,p_code:codigo});
+      if(saved.error)throw new Error(saved.error.message);
+      if(!saved.data||!saved.data.ok)throw new Error('O banco não confirmou as alterações.');
+      alert('Configurações da mesa salvas.');
+      if(window.confirm('Deseja alterar a imagem de capa agora?'))uploadCapaMesa(mesaId);
+      else await carregarMesas();
+      if(window.confirm('Deseja excluir esta campanha? Esta ação não pode ser desfeita.')){var confirmacao=window.prompt('Digite EXCLUIR para confirmar a exclusão da campanha:');if(confirmacao==='EXCLUIR'){var deleted=await sb.rpc('excluir_campanha_propria',{p_campaign_id:Number(mesaId)});if(deleted.error)throw new Error(deleted.error.message);alert('Campanha excluída.');await carregarMesas();}}
+    }catch(error){alert('Não foi possível salvar as configurações: '+(error.message||error));}
   }
 
   function uploadCapaMesa(mesaId) {
