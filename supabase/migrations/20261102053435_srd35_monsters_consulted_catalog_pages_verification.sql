@@ -1,0 +1,15 @@
+UPDATE public.srd_monsters
+SET source_status='verified_srd',
+    source_notes='Registro conferido na página SRD indicada; dados técnicos e regras do motor ainda pendentes.',
+    dados_tecnicos=COALESCE(dados_tecnicos,'{}'::jsonb)||jsonb_build_object(
+      'verified_against_srd_page',srd_source_url,
+      'verification_scope','individual_record_on_consulted_catalog_page',
+      'engine_status','needs_implementation'
+    )
+WHERE srd_source_url IN ('https://olimot.github.io/srd-v3.5/monsters/monsters-animals.html','https://olimot.github.io/srd-v3.5/monsters/monsters-e-f.html','https://olimot.github.io/srd-v3.5/monsters/monsters-s.html','https://olimot.github.io/srd-v3.5/monsters/monsters-t-z.html','https://olimot.github.io/srd-v3.5/monsters/monsters-g.html','https://olimot.github.io/srd-v3.5/monsters/monsters-vermin.html','https://olimot.github.io/srd-v3.5/monsters/monsters-m-n.html','https://olimot.github.io/srd-v3.5/monsters/monsters-k-l.html','https://olimot.github.io/srd-v3.5/monsters/monsters-o-r.html','https://olimot.github.io/srd-v3.5/monsters/monsters-d-de.html','https://olimot.github.io/srd-v3.5/monsters/monsters-intro-a.html','https://olimot.github.io/srd-v3.5/monsters/monsters-h-i.html','https://olimot.github.io/srd-v3.5/monsters/monsters-di-do.html','https://olimot.github.io/srd-v3.5/monsters/monsters-b-c.html','https://olimot.github.io/srd-v3.5/monsters/monsters-dr-dw.html','https://www.d20srd.org/srd/monsters/athach.htm','https://www.d20srd.org/srd/monsters/devil.htm');
+
+UPDATE public.srd_catalog_entry_audit a
+SET audit_status='manual_verified',
+    audit_notes='Entrada de monstro conferida individualmente na página SRD catalogada em '||m.srd_source_url||'. Implementação do motor ainda pendente.'
+FROM public.srd_monsters m
+WHERE a.catalog_key='monsters' AND a.entry_id=m.id AND m.srd_source_url IN ('https://olimot.github.io/srd-v3.5/monsters/monsters-animals.html','https://olimot.github.io/srd-v3.5/monsters/monsters-e-f.html','https://olimot.github.io/srd-v3.5/monsters/monsters-s.html','https://olimot.github.io/srd-v3.5/monsters/monsters-t-z.html','https://olimot.github.io/srd-v3.5/monsters/monsters-g.html','https://olimot.github.io/srd-v3.5/monsters/monsters-vermin.html','https://olimot.github.io/srd-v3.5/monsters/monsters-m-n.html','https://olimot.github.io/srd-v3.5/monsters/monsters-k-l.html','https://olimot.github.io/srd-v3.5/monsters/monsters-o-r.html','https://olimot.github.io/srd-v3.5/monsters/monsters-d-de.html','https://olimot.github.io/srd-v3.5/monsters/monsters-intro-a.html','https://olimot.github.io/srd-v3.5/monsters/monsters-h-i.html','https://olimot.github.io/srd-v3.5/monsters/monsters-di-do.html','https://olimot.github.io/srd-v3.5/monsters/monsters-b-c.html','https://olimot.github.io/srd-v3.5/monsters/monsters-dr-dw.html','https://www.d20srd.org/srd/monsters/athach.htm','https://www.d20srd.org/srd/monsters/devil.htm');
