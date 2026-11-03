@@ -1833,7 +1833,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       var formula=diceTotal+'d'+sides+(flat>0?'+'+flat:flat<0?String(flat):''),critLabel=isCritical?' · CRÍTICO x'+multiplier:'';
       async function registrarDano(total,rollDescription){
         var dano=Math.max(1,Math.trunc(Number(total)));
-        var aplicado=await sb.rpc('aplicar_dano_token_ataque_srd',{p_campaign_id:Number(MESA_ID),p_character_id:String(own.ch.id),p_token_id:String(target.id),p_d20:Number(attackRoll),p_bonus_ataque:Number(bonus),p_dano:dano});
+        var aplicado=await sb.rpc('aplicar_dano_token_ataque_srd_v2',{p_campaign_id:Number(MESA_ID),p_character_id:String(own.ch.id),p_token_id:String(target.id),p_d20:Number(attackRoll),p_bonus_ataque:Number(bonus),p_dano:dano,p_weapon_id:weapon?String(weapon.id):null,p_attack_type:type,p_power_penalty:Number(powerPenalty)});
         if(aplicado.error)throw new Error(aplicado.error.message);
         campanha.cba_data=aplicado.data.cba_data;aplicarCBAnaMesa(aplicado.data.cba_data,false);
         var restante=Number(aplicado.data.hp),maximo=Number(aplicado.data.max_hp);
