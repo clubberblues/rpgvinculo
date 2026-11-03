@@ -2213,7 +2213,7 @@ function dnd35WeaponProficient(state,weaponName){
     var wealth=x.metodo==='pacote'?d[0]*2.5*d[1]:(r.length===d[0]?r.reduce(function(a,b){return a+b;},0)*d[1]:0);
     var allItems=(s.equipment||[]).filter(function(i){
       var type=String(i.tipo||'').toLowerCase(),category=String(i.categoria||'');
-      return dnd35StartCost(i)!=null&&type!=='magic_item'&&type!=='pocao'&&type!=='pergaminho'&&!/unarmed attacks/i.test(category)&&!/(rings|rods|staffs|wands|wondrous|potions|specific_|magic)/i.test(category);
+      return dnd35StartCost(i)!=null&&type!=='magic_item'&&type!=='pocao'&&type!=='pergaminho'&&!/unarmed attacks/i.test(category)&&!/(rings|rods|staffs|wands|wondrous|potions|scrolls|specific_|magic)/i.test(category);
     });
     var category=x.categoria||'todos',search=String(x.busca||'').toLowerCase();
     var filtered=allItems.filter(function(i){
@@ -2240,7 +2240,7 @@ function dnd35WeaponProficient(state,weaponName){
         var filters='<div class="dnd35-start-filters">'+categorySelect+'<input id="dnd35-start-search" type="search" placeholder="Buscar por nome ou descrição" value="'+esc(x.busca||'')+'"></div>';
         var cards=items.map(function(i){
           var stats=dnd35StartStats(i);
-          return '<article class="dnd35-start-item"><strong>'+esc(dnd35TranslateCatalogText(i.nome))+'</strong><span>'+esc(dnd35StartCategoryLabel(dnd35StartCategoryKey(i)))+' · '+dnd35StartCost(i)+' po'+(i.peso==null?'':' · '+esc(i.peso)+' kg')+'</span>'+(stats?'<small class="dnd35-start-stats">'+esc(stats)+'</small>':'')+'<small>'+esc(dnd35TranslateCatalogText(i.descricao||i.description||i.detalhes||'Item do catálogo de equipamentos.'))+'</small><button type="button" data-start-add="'+esc(i.id)+'">Adicionar à mochila</button></article>';
+          return '<article class="dnd35-start-item"><strong>'+esc(dnd35TranslateCatalogText(i.nome))+'</strong><span>'+esc(dnd35StartCategoryLabel(dnd35StartCategoryKey(i)))+' · '+dnd35StartCost(i)+' po'+(i.peso==null?'':' · '+esc(i.peso)+' lb')+'</span>'+(stats?'<small class="dnd35-start-stats">'+esc(stats)+'</small>':'')+'<small>'+esc(dnd35TranslateCatalogText(i.descricao||i.description||i.detalhes||'Item do catálogo de equipamentos.'))+'</small><button type="button" data-start-add="'+esc(i.id)+'">Adicionar à mochila</button></article>';
         }).join('');
         var pagination='<div class="dnd35-start-pagination"><button type="button" data-start-page="'+Math.max(0,page-1)+'" '+(page===0?'disabled':'')+'>Anterior</button><span>Página '+(page+1)+' de '+pageCount+' · '+filtered.length+' itens</span><button type="button" data-start-page="'+Math.min(pageCount-1,page+1)+'" '+(page>=pageCount-1?'disabled':'')+'>Próxima</button></div>';
         var selected=Object.keys(x.itens||{}).map(function(id){
