@@ -1879,7 +1879,7 @@ function dnd35WeaponProficient(state,weaponName){
     var lu=state.levelUp;if(!lu)return false;
     var currentLevel=Math.max(1,Number(state.sheet.nivel)||1),nextLevel=Math.min(20,currentLevel+1),die=Math.max(1,Number(state.classe.dado_vida)||8);
     var specs=dnd35LevelupFeatSpec(state,nextLevel),feats=lu.feats||[];
-    var attrs=dnd35Objeto(state.sheet.atributos),oldInt=dnd35Modificador(Number(attrs.INT)||10),plannedInt=oldInt;
+    var attrs=dnd35AtributosIniciais(state.raca,dnd35Objeto(state.sheet.atributos)),oldInt=dnd35Modificador(Number(attrs.INT)||10),plannedInt=oldInt;
     var featsReady=feats.length===specs.length&&feats.every(function(pick,index){
       if(!pick||!pick.id)return false;
       var feat=(state.feats||[]).find(function(item){return String(item.id)===String(pick.id);});
@@ -1895,7 +1895,7 @@ function dnd35WeaponProficient(state,weaponName){
     var tempAttrs=Object.assign({},attrs);if(nextLevel%4===0&&lu.attribute)tempAttrs[lu.attribute]=(Number(tempAttrs[lu.attribute])||10)+1;
     var tempState=Object.assign({},state,{sheet:Object.assign({},state.sheet,{nivel:nextLevel,pericias:tempSkills}),featPicks:feats});
     var prereqsReady=featsReady&&feats.every(function(pick,index){var feat=(state.feats||[]).find(function(item){return String(item.id)===String(pick.id);});return feat&&(specs[index].type==='monk'||dnd35FeatWarnings(feat,tempAttrs,tempState,index,pick.parametro||'').length===0);});
-    var languageData=dnd35LevelupLanguageData(state,dnd35AtributosIniciais(state.raca,attrs),lu),languageChoices=Array.from({length:languageData.needed},function(_,i){return languageData.picks[i]||'';}),knownLanguages=languageData.automatic.concat(languageData.bonus,languageData.purchased).map(dnd35LanguageNormalize),newLanguageNames=languageChoices.map(dnd35LanguageNormalize);
+    var languageData=dnd35LevelupLanguageData(state,attrs,lu),languageChoices=Array.from({length:languageData.needed},function(_,i){return languageData.picks[i]||'';}),knownLanguages=languageData.automatic.concat(languageData.bonus,languageData.purchased).map(dnd35LanguageNormalize),newLanguageNames=languageChoices.map(dnd35LanguageNormalize);
     var languagesReady=languageChoices.length===languageData.needed&&languageChoices.every(function(name){return !!String(name||'').trim()&&languageData.rules.allSelectable.some(function(option){return dnd35LanguageNormalize(option)===dnd35LanguageNormalize(name);});})&&new Set(knownLanguages.concat(newLanguageNames)).size===knownLanguages.length+newLanguageNames.length;
     return lu.rollRequested===true&&prereqsReady&&(nextLevel%4!==0||!!lu.attribute)&&spent<=budget&&languagesReady;
   }
