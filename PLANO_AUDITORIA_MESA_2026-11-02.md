@@ -322,3 +322,35 @@ Nenhuma campanha, personagem, ficha, token ou log real foi modificado nesta cont
 7. Os 607 efeitos de magia, o carregamento infinito da ficha, E2E com múltiplas contas, Realtime e inspeção visual mobile continuam pendentes.
 8. O rodapé inferior foi retirado da grade para abrir espaço; se for necessário manter alguma ação persistente nessa região, será preciso redesenhar essa barra sem voltar a ocupar altura excessiva.
 
+
+
+## Retomada e auditoria consolidada — 2026-11-03
+
+### Escopo confirmado
+- O proprietário confirmou que o projeto ativo é exclusivamente D&D 3.5. As tabelas `vinculo_*` permanecem legadas e não devem alimentar a ficha, a mesa, o motor de regras nem a criação de personagens.
+- `ficha.html` agora usa D&D 3.5 por padrão; o modo antigo só é selecionado explicitamente por `ruleset=vinculo`. Os links ativos do lobby e da mesa foram alinhados para `ruleset=dnd35`.
+
+### Correções versionadas nesta retomada
+- `mesa.html`: fila horizontal no rodapé ordenada circularmente pelo turno atual; o card ativo fica à esquerda e o anterior vai ao fim. Painel textual separado de iniciativa ocultado. Dice movido para dock sob o tabuleiro, aberto somente quando solicitado; espaço antigo permanece livre.
+- `ficha.html`: ouro inicial passa a usar a quantidade de D4 e multiplicador oficiais por classe, inclusive Monge com 5d4 sem multiplicador ×10.
+- Scripts clássicos inline de mesa, ficha e lobby foram compilados sintaticamente após as alterações. A fórmula de ouro foi testada isoladamente para as 11 classes-base.
+
+### Estado consultado no Supabase
+- Catálogos: 11 classes, 7 raças, 50 perícias, 110 talentos, 1.021 equipamentos, 445 monstros, 607 magias, 220 progressões de classe, 1.400 linhas de espaços de magia, 11 pacotes iniciais, 131 características de classe e 607 efeitos mágicos.
+- Progressões numéricas de classe (220) e listas de proficiência/perícias de classe estão marcadas como concluídas no ledger. Raças e classes permanecem em auditoria parcial.
+- O ledger de cobertura ainda marca como pendentes/in progress: 607 magias, 1.021 equipamentos, 110 talentos, 445 monstros, 50 perícias, 38 condições, 22 domínios, 196 magias de domínio, 131 características de classe e 607 efeitos de magia. O contador de perícias do ledger (49) está desatualizado; o banco contém 50.
+- Os 131 registros de características têm `mechanics.engine_status=needs_implementation`. A distribuição é desigual: Clérigo e Feiticeiro têm apenas um registro cada; isso não representa a lista completa de recursos de classe.
+- Os 607 efeitos mágicos estão distribuídos em 12 categorias, mas todos permanecem `needs_review`; cura e Míssil Mágico têm caminhos especializados. Não declarar resolução genérica concluída.
+- 516 das 607 descrições de magia ainda contêm estrutura textual em inglês. Há também descrições de equipamento em inglês; a tradução atual é parcial.
+
+### Divergências que exigem decisão do proprietário
+1. O documento `srd35_spellcasting_sources.md` registra como regra customizada um ataque mágico `1d20 + BBA + atributo conjurador`. Isso não é a regra geral do D&D 3.5: ataques de toque usam os modificadores próprios do ataque corpo a corpo/à distância, enquanto a CD de resistência usa 10 + círculo + atributo conjurador. A instrução mais recente pede fidelidade aos livros; confirmar se removemos a fórmula customizada.
+2. Os 11 kits atuais são identificados no código como sugestões opcionais do Vínculo por classe, não como os pacotes oficiais do Livro do Jogador. Para fidelidade D&D, substituir pelos pacotes oficiais da classe ou manter os atuais como opção caseira separada.
+3. A lista de cards mantém controles de reordenação manual para o Mestre no verso. Eles permitem sobrescrever a ordem obtida pelos dados; confirmar se devem permanecer como exceção administrativa ou ser removidos para a iniciativa ficar estritamente automática.
+
+### Testes ainda não executados
+- Não foi possível realizar E2E autenticado em navegador com Mestre e múltiplos jogadores, Realtime e rolagens simultâneas.
+- Não há branch de teste do Supabase; somente a branch `main` do projeto está disponível. Nenhuma campanha ou personagem real foi usado nesta retomada.
+- Inspeção visual em desktop/mobile e confirmação do deploy público continuam pendentes. A API de Actions não retornou execuções para a branch de trabalho.
+- O erro de carregamento infinito da ficha ainda não foi reproduzido numa sessão autenticada.
+- A persistência do Grimório foi inspecionada no código, mas ainda precisa ser exercitada do início ao fim em sessão real, inclusive domínios do Clérigo e progressão de magias ao subir de nível.
