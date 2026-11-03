@@ -1743,7 +1743,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   function bonusRacialAtaque35(personagem,alvo){
     var race=String(personagem&&personagem.sh&&personagem.sh.raca_id||''),type=textoTipoCriatura35(alvo);
     if(race==='anao'&&/(orc|orcs|goblin|goblinoid|hobgoblin|bugbear)/.test(type))return 1;
-    if(race==='gnomo'&&/(kobold|goblin|goblinoid|hobgoblin|bugbear)/.test(type))return 1;
+    if((race==='gnomo'||race==='gnome')&&/(kobold|goblin|goblinoid|hobgoblin|bugbear)/.test(type))return 1;
     return 0;
   }
   function valorCA35(value){if(value==null||value==='')return null;var direct=Number(value);if(Number.isFinite(direct))return direct;var match=String(value).trim().match(/^(-?\d+)/);return match?Number(match[1]):null;}function equipamentoToken35(token){var merged=Object.create(null),embedded=token&&token.monsterStats&&Array.isArray(token.monsterStats.loadout)?token.monsterStats.loadout:[],stored=equipamentoTokens[String(token&&token.id)]||[];embedded.concat(stored).forEach(function(item){if(!item)return;var id=String(item.equipment_id||item.id||item.nome||Math.random());merged[id]=Object.assign({},merged[id]||{},item);});return Object.keys(merged).map(function(id){return merged[id];});}
@@ -3875,8 +3875,8 @@ async function abrirModalEquipamentos(){
     if(texto.includes('fortitude')){saveKey='fortitude';attribute='CON';}
     else if(texto.includes('reflexos')){saveKey='reflexos';attribute='DES';}
     else if(texto.includes('vontade')){saveKey='vontade';attribute='SAB';}
-    else if(texto.includes('forca')||texto.includes('atletismo'))attribute='FOR';
-    else if(texto.includes('destreza')||texto.includes('iniciativa')||texto.includes('acrobacia')||texto.includes('furtividade')||texto.includes('prestidigitacao'))attribute='DES';
+    else if(texto.includes('(for)')||texto.includes('forca')||texto.includes('atletismo'))attribute='FOR';
+    else if(texto.includes('(des)')||texto.includes('destreza')||texto.includes('iniciativa')||texto.includes('acrobacia')||texto.includes('furtividade')||texto.includes('prestidigitacao'))attribute='DES';
     else if(texto.includes('constituicao')||texto.includes('fisica'))attribute='CON';
     else if(texto.includes('inteligencia')||texto.includes('historia')||texto.includes('investigacao')||texto.includes('natureza')||texto.includes('religiao'))attribute='INT';
     else if(texto.includes('sabedoria')||texto.includes('intuicao')||texto.includes('medicina')||texto.includes('percepcao')||texto.includes('sobrevivencia')||texto.includes('mental'))attribute='SAB';
