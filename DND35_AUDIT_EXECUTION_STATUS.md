@@ -20,6 +20,7 @@
 - Bônus raciais condicionais em salvamentos e perícias: veneno, magia, ilusão, medo, pedra, metal e alquimia.
 - Lista final de talentos separa características automáticas de classe; talentos bônus escolhidos pela classe recebem identificação própria.
 - Metadados de auditoria de características de classe atualizados para indicar implementação parcial, sem marcar como concluídas características ainda pendentes.
+- Tradução em português ampliada para armas, armaduras, equipamentos e talentos comuns, com descrições revisadas para os talentos mais usados.
 
 ## Testes executados
 
@@ -41,13 +42,14 @@
 4. Traços raciais ainda não aplicados em todos os fluxos, incluindo visão no escuro/penumbra e verificações automáticas de Conhecimento de Pedras.
 5. Progressão integral de características de todas as classes, separando o que é automático, escolha do jogador e administração do Mestre.
 7. Perícias: pontos por classe/nível, graduações máximas, perícias exclusivas de classe e requisitos de uso sem treinamento.
-8. Talentos: pré-requisitos, talentos bônus por classe, níveis de aquisição e validação no avanço de nível.
-9. Magias: preparação, espaços, componentes, escolas, CDs, resistência à magia e limites por classe/nível.
-10. Combate: ações padrão/movimento/rodada completa, ataques múltiplos, ataques de oportunidade, agarrar, derrubar, encontrão, cobertura, ocultação e condições.
-11. Ficha: PV, CA, BBA, ataques, dano, salvamentos, carga, equipamento e recursos recalculados após avanço de nível.
-12. Mestre/NPCs: fichas, blocos de estatísticas, habilidades especiais e aplicação das mesmas regras sem exigir interface de jogador.
-13. Livro do Mestre: terminar o cruzamento das regras de campanha, encontros, tesouro, descanso, condições e administração.
-14. Livro dos Monstros: integrar quando for enviado, sem bloquear os itens acima.
+8. Talentos: completar a tradução de todos os nomes e descrições (a cobertura atual é parcial), revisar pré-requisitos, talentos bônus por classe, níveis de aquisição e validação no avanço de nível.
+9. Equipamentos: completar a tradução individual das descrições do catálogo e validar peso/preço/requisitos de cada registro importado.
+10. Magias: preparação, espaços, componentes, escolas, CDs, resistência à magia e limites por classe/nível.
+11. Combate: ações padrão/movimento/rodada completa, ataques múltiplos, ataques de oportunidade, agarrar, derrubar, encontrão, cobertura, ocultação e condições.
+12. Ficha: PV, CA, BBA, ataques, dano, salvamentos, carga, equipamento e recursos recalculados após avanço de nível.
+13. Mestre/NPCs: fichas, blocos de estatísticas, habilidades especiais e aplicação das mesmas regras sem exigir interface de jogador.
+14. Livro do Mestre: terminar o cruzamento das regras de campanha, encontros, tesouro, descanso, condições e administração.
+15. Livro dos Monstros: integrar quando for enviado, sem bloquear os itens acima.
 
 ## Regra de execução
 
