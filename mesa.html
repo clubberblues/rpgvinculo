@@ -4370,9 +4370,10 @@ async function abrirModalEquipamentos(){
     var lightMax=Math.floor((heavyMax/3)*2)/2,mediumMax=Math.floor((heavyMax*2/3)*2)/2;
     var weightKg=(Number(personagem.sh&&personagem.sh.ouro)||0)/100,heavyArmor=false,mediumHeavyArmor=false,anyArmor=false;
     (personagem.equipamento||[]).forEach(function(item){
-      weightKg+=(Number(item.peso)||0)*.5*Math.max(1,Number(item.quantidade)||1);
-      if(!item.equipado)return;
       var raw=item.detalhes||{};if(typeof raw==='string'){try{raw=JSON.parse(raw);}catch(e){raw={};}}
+      var weightIsLb=raw.weight_lb!=null||/\blb\.?/i.test(String(raw.weight||''))||raw.source_dataset==='olimot/srd-v3.5-md';
+      weightKg+=(Number(item.peso)||0)*(weightIsLb?.5:1)*Math.max(1,Number(item.quantidade)||1);
+      if(!item.equipado)return;
       var armor=normalize(raw.category||item.categoria_original||item.categoria);
       if(armor.indexOf('heavyarmor')===0)heavyArmor=true;
       if(armor.indexOf('mediumarmor')===0||armor.indexOf('heavyarmor')===0)mediumHeavyArmor=true;
