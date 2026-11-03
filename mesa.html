@@ -1819,7 +1819,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       var distanceSquares=distanciaTokensQuadrados35(ownToken,target);
       rangeDistanceMeters=distanceSquares*1.5;
       rangeIncrements=Math.max(1,Math.ceil(rangeDistanceMeters/rangeIncrementMeters));
-      if(rangeIncrements>10){alert('Alvo fora do alcance máximo da arma (10 incrementos de '+rangeIncrementMeters+' m).');return;}
+      var maxRangeIncrements=Number(weapon.detalhes.max_range_increments||10);if(rangeIncrements>maxRangeIncrements){alert('Alvo fora do alcance máximo da arma ('+maxRangeIncrements+' incrementos de '+rangeIncrementMeters+' m).');return;}
       rangePenalty=(rangeIncrements-1)*2;
     }
     var sizeModifier=modifierTamanho35(own.tamanho),bonus=bab+ability+weaponFocus-powerPenalty+sizeModifier-rangePenalty-proficiencyPenalty;
