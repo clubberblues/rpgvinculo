@@ -1405,7 +1405,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
           '</main>'+
           '<aside class="col-dir" id="acoes-dir"></aside>'+
         '</div>'+
-        '<footer class="mesa-footer" aria-label="Aventureiros da mesa"></footer>'+
+        '<section class="mesa-dice-dock" id="mesa-dice-dock" aria-label="Mesa de dados"></section><footer class="mesa-footer" aria-label="Aventureiros da mesa"></footer>'+
       '</div>';
 
     var initiativePanel = document.getElementById('painel-iniciativa');
@@ -1536,7 +1536,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     combatPanel.innerHTML='<h3>CONTROLE DO TURNO</h3><p id="turno-controle-status">Aguardando a iniciativa.</p><div id="iniciativa-acoes-mestre"></div>';
     el.appendChild(combatPanel);
     if(economyPanel)combatPanel.appendChild(economyPanel);
-    if(tokenMenu)el.appendChild(tokenMenu);var roster=document.createElement('section');roster.className='painel painel-aventureiros';roster.setAttribute('aria-label','Aventureiros da mesa');roster.innerHTML='<div class="painel-cab">AVENTUREIROS</div><div class="painel-corpo" id="cards-strip" aria-label="Cards de personagens, NPCs e monstros"></div>';var mesaFooter=document.querySelector('.mesa-footer');if(mesaFooter)mesaFooter.appendChild(roster);else el.appendChild(roster);var chatColumn=document.querySelector('.col-esq');if(diceOverlay&&chatColumn)chatColumn.appendChild(diceOverlay);
+    if(tokenMenu)el.appendChild(tokenMenu);var roster=document.createElement('section');roster.className='painel painel-aventureiros';roster.setAttribute('aria-label','Aventureiros da mesa');roster.innerHTML='<div class="painel-cab">AVENTUREIROS</div><div class="painel-corpo" id="cards-strip" aria-label="Cards de personagens, NPCs e monstros"></div>';var mesaFooter=document.querySelector('.mesa-footer');if(mesaFooter)mesaFooter.appendChild(roster);else el.appendChild(roster);var diceDock=document.getElementById('mesa-dice-dock');if(diceOverlay&&diceDock)diceDock.appendChild(diceOverlay);
     if(document.getElementById('painel-iniciativa'))renderizarIniciativa(combatDataState);
   }
 
@@ -4230,7 +4230,7 @@ async function abrirModalEquipamentos(){
       if(!token||token.id==null)return;
       var p=token.tipo==='player'?acharPersonagemDoToken(token):null,gmActor=token.tipo!=='player'||!!(p&&ehGM&&p.ch.user_id===eu.id),actorKey=(gmActor?'g:':'p:')+String(token.id);
       var initIndex=entradaIniciativaToken(token,ordem),entry=initIndex>=0?ordem[initIndex]:null,activeCard=!!(active&&initIndex===turnIndex);
-      var rank=initIndex>=0?initIndex:100000+originalIndex;
+      var rank=initIndex>=0?(active?(initIndex-turnIndex+ordem.length)%ordem.length:initIndex):100000+originalIndex;
       var name=String(token.nome||(p&&p.ch.nome)||'Combatente'),detail=token.tipo==='monstro'?'Monstro · ND '+String((token.monsterStats||{}).nd||'—'):token.tipo==='npc'?'NPC · Nv '+String((token.monsterStats||{}).level||'—'):p?String((p.cl&&p.cl.nome)||p.sh.classe||'Personagem'):'Ficha do Mestre';
       var max=p?pvMax(p.sh,p.cl):(token.maxHp==null?null:Number(token.maxHp)),hp=p?Number(p.sh.pv_atual==null?max:p.sh.pv_atual):(token.hp==null?max:Number(token.hp)),ac=p?caFichaMesa(p):caToken35(token);
       var url=String(token.imagem||(p&&((p.perfil&&p.perfil.avatar_url)||p.ch.retrato_url||p.ch.arte_url))||'').trim(),img=/^https?:\/\/[^\s"'<>]+$/i.test(url);
@@ -4520,5 +4520,27 @@ html,body,#root{width:100%;height:100%;min-width:0;min-height:0}
  new MutationObserver(attach).observe(document.documentElement,{childList:true,subtree:true});
 })();
 </script>
+
+<style id="mesa-combat-queue-and-dice-dock">
+/* Especificação aprovada: cards horizontais no rodapé; o combatente ativo sempre inicia a fila. */
+#painel-iniciativa{display:none!important}
+.mesa{grid-template-rows:58px minmax(0,1fr) 0px clamp(132px,18vh,166px)!important}
+.mesa-dice-dock{grid-row:3;display:none;min-width:0;min-height:0;overflow:hidden;background:linear-gradient(180deg,#101a16,#090f0c);border-top:1px solid #92794b}
+.mesa:has(#mesa-dice-dock #dado-iframe-overlay[style*="display: flex"]){grid-template-rows:58px minmax(0,1fr) clamp(220px,34vh,360px) clamp(132px,18vh,166px)!important}
+.mesa-dice-dock:has(#dado-iframe-overlay[style*="display: flex"]){display:block}
+#mesa-dice-dock #dado-iframe-overlay{position:relative!important;inset:auto!important;z-index:2!important;display:none;width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;max-height:none!important;margin:0!important;padding:7px!important;overflow:hidden!important;background:transparent!important;backdrop-filter:none!important;align-items:stretch!important;justify-content:stretch!important}
+#mesa-dice-dock #dado-iframe-overlay[style*="display: flex"]{display:flex!important}
+#mesa-dice-dock .dado-card{width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;max-width:none!important;max-height:none!important;border-radius:9px!important;box-shadow:0 8px 24px #0008!important}
+#mesa-dice-dock .dado-card-header{min-height:38px!important;padding:6px 12px!important}
+#mesa-dice-dock .dado-card-header h3{font-size:12px!important}
+#mesa-dice-dock .dado-card-body{min-height:0!important;overflow:hidden!important}
+@media(max-width:900px){
+ .mesa:has(#mesa-dice-dock #dado-iframe-overlay[style*="display: flex"]){grid-template-rows:52px minmax(0,1fr) clamp(190px,30dvh,280px) clamp(112px,18vh,146px)!important}
+}
+@media(max-width:700px){
+ .mesa:has(#mesa-dice-dock #dado-iframe-overlay[style*="display: flex"]){grid-template-rows:52px minmax(0,1fr) clamp(180px,28dvh,250px) clamp(112px,18vh,146px)!important}
+}
+</style>
+
 </body>
 </html>
