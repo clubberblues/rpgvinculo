@@ -4230,7 +4230,7 @@ async function abrirModalEquipamentos(){
       if(!token||token.id==null)return;
       var p=token.tipo==='player'?acharPersonagemDoToken(token):null,gmActor=token.tipo!=='player'||!!(p&&ehGM&&p.ch.user_id===eu.id),actorKey=(gmActor?'g:':'p:')+String(token.id);
       var initIndex=entradaIniciativaToken(token,ordem),entry=initIndex>=0?ordem[initIndex]:null,activeCard=!!(active&&initIndex===turnIndex);
-      var rank=initIndex>=0?(active?(initIndex-turnIndex+ordem.length)%ordem.length:initIndex):100000+originalIndex;
+      var rank=initIndex>=0?initIndex:100000+originalIndex;
       var name=String(token.nome||(p&&p.ch.nome)||'Combatente'),detail=token.tipo==='monstro'?'Monstro · ND '+String((token.monsterStats||{}).nd||'—'):token.tipo==='npc'?'NPC · Nv '+String((token.monsterStats||{}).level||'—'):p?String((p.cl&&p.cl.nome)||p.sh.classe||'Personagem'):'Ficha do Mestre';
       var max=p?pvMax(p.sh,p.cl):(token.maxHp==null?null:Number(token.maxHp)),hp=p?Number(p.sh.pv_atual==null?max:p.sh.pv_atual):(token.hp==null?max:Number(token.hp)),ac=p?caFichaMesa(p):caToken35(token);
       var url=String(token.imagem||(p&&((p.perfil&&p.perfil.avatar_url)||p.ch.retrato_url||p.ch.arte_url))||'').trim(),img=/^https?:\/\/[^\s"'<>]+$/i.test(url);
