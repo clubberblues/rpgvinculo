@@ -1701,6 +1701,56 @@ function dnd35TranslateCatalogText(value){
     return rules[n]||'Use esta perícia quando a ação exigir treinamento ou conhecimento específico. O Mestre define a dificuldade (CD) conforme a situação, o tempo disponível e as condições do ambiente.';
   }
   
+  function dnd35LanguageNormalize(value){
+    return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+  }
+  function dnd35LanguageRules(state,attrs){
+    var race=state.raca||{},lines=Array.isArray(race.habilidades_raciais)?race.habilidades_raciais:[];
+    var line=lines.find(function(x){return /idioma.*autom[aá]tico/i.test(String(x));})||'';
+    var autoMatch=String(line).match(/idiomas?\s+autom[aá]ticos?:\s*([^.]*)/i);
+    var autoText=autoMatch?autoMatch[1]:'';
+    var automatic=autoText.replace(/\s+e\s+/gi,',').split(',').map(function(x){return x.trim();}).filter(Boolean);
+    var languages=Array.isArray(state.languages)?state.languages:[];
+    function canonical(name){var found=languages.find(function(l){return dnd35LanguageNormalize(l.nome)===dnd35LanguageNormalize(name);});return found?found.nome:String(name||'').trim();}
+    automatic=automatic.map(canonical);
+    if(String(state.classe&&state.classe.id||'')==='druida'&&!automatic.some(function(x){return dnd35LanguageNormalize(x)==='druidico';}))automatic.push(canonical('Druídico'));
+    var anyBonus=/qualquer idioma|pode escolher idiomas adicionais/i.test(String(line));
+    var bonusMatch=String(line).match(/idiomas adicionais:\s*([^.]*)/i);
+    var bonusNames=bonusMatch?bonusMatch[1].replace(/\s+e\s+/gi,',').split(',').map(function(x){return x.trim();}).filter(Boolean):[];
+    var allSelectable=languages.filter(function(l){return !l.is_secret;}).map(function(l){return l.nome;});
+    var bonusOptions=anyBonus?allSelectable:allSelectable.filter(function(name){return bonusNames.some(function(x){return dnd35LanguageNormalize(x)===dnd35LanguageNormalize(name);});});
+    var intMod=Math.max(0,dnd35Modificador(attrs.INT));
+    return {automatic:Array.from(new Set(automatic)),bonusOptions:bonusOptions,bonusCount:Math.min(intMod,bonusOptions.length),intBonus:intMod,allSelectable:allSelectable,anyBonus:anyBonus};
+  }
+  function dnd35RenderLanguageSection(state,attrs,creating,rank){
+    var rules=dnd35LanguageRules(state,attrs);
+    if(!creating){
+      var stored=state.sheet.idiomas_conhecidos||{},auto=Array.isArray(stored.automaticos)&&stored.automaticos.length?stored.automaticos:rules.automatic;
+      var bonus=Array.isArray(stored.bonus_inteligencia)?stored.bonus_inteligencia:[];
+      var purchased=Array.isArray(stored.comprados_falar_idioma)?stored.comprados_falar_idioma:[];
+      return '<div class="dnd35-language-list"><p><b>Automáticos:</b> '+esc(auto.join(', ')||'—')+'</p><p><b>Bônus por Inteligência:</b> '+esc(bonus.join(', ')||'—')+'</p><p><b>Comprados com Falar Idioma:</b> '+esc(purchased.join(', ')||'—')+'</p></div>';
+    }
+    var picks=state.idiomasEscolhas||(state.idiomasEscolhas={bonus:[],comprados:[]});
+    var bonusPicks=Array.isArray(picks.bonus)?picks.bonus:[];
+    var purchasedPicks=Array.isArray(picks.comprados)?picks.comprados:[];
+    var purchasedCount=Math.max(0,Math.floor(Number(rank)||0));
+    function renderSelect(group,index,options,selected){
+      var used=rules.automatic.slice();
+      bonusPicks.forEach(function(value,i){if(value&&!(group==='bonus'&&i===index))used.push(value);});
+      purchasedPicks.forEach(function(value,i){if(value&&!(group==='comprados'&&i===index))used.push(value);});
+      var html='<select data-language-choice="'+group+'" data-language-index="'+index+'"><option value="">Selecione um idioma…</option>';
+      options.forEach(function(name){if(name===selected||!used.some(function(x){return dnd35LanguageNormalize(x)===dnd35LanguageNormalize(name);}))html+='<option value="'+esc(name)+'"'+(name===selected?' selected':'')+'>'+esc(name)+'</option>';});
+      return html+'</select>';
+    }
+    var html='<div class="dnd35-language-list"><p><b>Idiomas automáticos da raça/classe:</b> '+esc(rules.automatic.join(', ')||'—')+'</p>';
+    html+='<p><b>Idiomas bônus por Inteligência:</b> '+rules.bonusCount+' de '+rules.intBonus+'</p>';
+    for(var i=0;i<rules.bonusCount;i++)html+='<label class="dnd35-language-choice">Bônus '+(i+1)+renderSelect('bonus',i,rules.bonusOptions,bonusPicks[i]||'')+'</label>';
+    if(rules.intBonus>rules.bonusOptions.length)html+='<p class="dnd35-warning">A lista racial oferece '+rules.bonusOptions.length+' opções distintas; não há opções suficientes para usar todo o bônus de Inteligência sem repetir idioma.</p>';
+    html+='<p><b>Idiomas comprados com Falar Idioma:</b> '+purchasedCount+' (1 ponto de perícia por idioma)</p>';
+    for(var j=0;j<purchasedCount;j++)html+='<label class="dnd35-language-choice">Idioma comprado '+(j+1)+renderSelect('comprados',j,rules.allSelectable,purchasedPicks[j]||'')+'</label>';
+    html+='</div>';
+    return html;
+  }
   function dnd35RenderSkills(state, attrs, creating, classMap) {
     var ranks = dnd35Objeto(state.sheet.pericias), budget = dnd35PericiaBudget(state,attrs), spent = dnd35PericiaCostTotal(state,ranks,classMap);
     var level = Math.max(1,Number(state.sheet.nivel)||1), html = '';
@@ -1721,7 +1771,7 @@ function dnd35TranslateCatalogText(value){
       html += '<article class="dnd35-skill"><div class="dnd35-skill-head"><strong>'+esc(skill.nome)+'</strong><span class="dnd35-badge">'+esc(labels.join(' · '))+'</span></div>'+
         (isLanguage ? '<p>Limite de compra: '+max+' idiomas · Custo: 1 ponto de perícia por idioma.</p>' : '<p>Atributo: '+esc(ability)+' · Máximo: '+max+' graduações · Custo: '+(isClass?'1':'2')+' ponto(s) por graduação'+(rank%1?' · incremento de 0,5':'')+'</p>')+
         (creating ? '<div class="dnd35-skill-control"><label for="skill-'+esc(id)+'">'+(isLanguage?'Idiomas adicionais por pontos de perícia':'Graduações')+'</label><select id="skill-'+esc(id)+'" data-skill="'+esc(id)+'">'+options+'</select></div>' : '<p>'+(isLanguage?'Idiomas comprados':'Graduações')+': <b>'+rank+'</b></p>')+
-        (isLanguage?'<div class="dnd35-formula">Falar Idioma não exige teste nem usa limite de graduações: cada ponto compra um idioma adicional. Idiomas automáticos da raça e idiomas bônus por Inteligência não gastam esses pontos; registre todos os idiomas conhecidos nas notas da ficha.</div>':'<div class="dnd35-formula">Teste: 1d20 + graduações + modificador do atributo +3 se for perícia de classe com pelo menos 1 graduação.<br>Bônus agora: '+(computed>=0?'+':'')+computed+' ('+rank+' grad. '+(abilityMod>=0?'+':'')+abilityMod+' mod. '+(classBonus?'+3 classe':'')+')</div>')+trainedWarning+(skill.descricao?'<details class="dnd35-skill-rules"><summary>Regras e usos da perícia</summary><p>'+esc(dnd35SkillUsePt35(skill))+'</p>'+(skill.srd_source_url?'<a href="'+esc(skill.srd_source_url)+'" target="_blank" rel="noopener noreferrer">Fonte SRD ↗</a>':'')+'</details>':'')+'</article>';
+        (isLanguage?dnd35RenderLanguageSection(state,attrs,creating,rank):'<div class="dnd35-formula">Teste: 1d20 + graduações + modificador do atributo +3 se for perícia de classe com pelo menos 1 graduação.<br>Bônus agora: '+(computed>=0?'+':'')+computed+' ('+rank+' grad. '+(abilityMod>=0?'+':'')+abilityMod+' mod. '+(classBonus?'+3 classe':'')+')</div>')+trainedWarning+(skill.descricao?'<details class="dnd35-skill-rules"><summary>Regras e usos da perícia</summary><p>'+esc(dnd35SkillUsePt35(skill))+'</p>'+(skill.srd_source_url?'<a href="'+esc(skill.srd_source_url)+'" target="_blank" rel="noopener noreferrer">Fonte SRD ↗</a>':'')+'</details>':'')+'</article>';
     });
     return {html:html,spent:spent,budget:budget};
   }
@@ -2228,6 +2278,7 @@ function dnd35WeaponProficient(state,weaponName){
     ]);
     var error=results.slice(0,2).filter(function(r){return r.error;})[0];
     if(error) throw new Error('Migração SRD pendente: não foi possível carregar perícias/talentos. Detalhe: '+error.error.message);
+    if(results[6].error) throw new Error('Catálogo de idiomas indisponível. Aplique a migração de idiomas D&D 3.5. Detalhe: '+results[6].error.message);
     return {
       skills:dnd35UniqueById((results[0].data||[]).filter(function(skill){return skill.source_status!=='excluded';})),feats:dnd35UniqueById(results[1].data||[]),
       spells:results[2].error?[]:dnd35UniqueById(results[2].data||[]),
