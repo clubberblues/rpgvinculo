@@ -4320,7 +4320,7 @@ async function abrirModalEquipamentos(){
     tableStrength=Math.max(1,Math.min(29,tableStrength));
     var heavyMax=heavyTable[tableStrength-1]*Math.pow(4,decades)*sizeMultiplier;
     var lightMax=Math.floor((heavyMax/3)*2)/2,mediumMax=Math.floor((heavyMax*2/3)*2)/2;
-    var weightKg=(Number(personagem.sh&&personagem.sh.ouro)||0)/100,heavyArmor=false,mediumHeavyArmor=false;
+    var weightKg=(Number(personagem.sh&&personagem.sh.ouro)||0)/100,heavyArmor=false,mediumHeavyArmor=false,anyArmor=false;
     (personagem.equipamento||[]).forEach(function(item){
       weightKg+=(Number(item.peso)||0)*.5*Math.max(1,Number(item.quantidade)||1);
       if(!item.equipado)return;
@@ -4328,10 +4328,13 @@ async function abrirModalEquipamentos(){
       var armor=normalize(raw.category||item.categoria_original||item.categoria);
       if(armor.indexOf('heavyarmor')===0)heavyArmor=true;
       if(armor.indexOf('mediumarmor')===0||armor.indexOf('heavyarmor')===0)mediumHeavyArmor=true;
+      if(armor.indexOf('lightarmor')===0||armor.indexOf('mediumarmor')===0||armor.indexOf('heavyarmor')===0)anyArmor=true;
     });
     var load=weightKg>mediumMax?'heavy':weightKg>lightMax?'medium':'light';
     var speed=base,classKey=String(personagem.cl&&(personagem.cl.class_key||personagem.cl.id)||'');
-    if((classKey==='barbarian'||classKey==='barbaro')&&Number(personagem.sh&&personagem.sh.nivel||1)>=1&&!heavyArmor&&load!=='heavy')speed+=3;
+    var level=Number(personagem.sh&&personagem.sh.nivel||1);
+    if((classKey==='barbarian'||classKey==='barbaro')&&level>=1&&!heavyArmor&&load!=='heavy')speed+=3;
+    else if((classKey==='monk'||classKey==='monge')&&level>=3&&!anyArmor&&load==='light')speed+=3*Math.floor(level/3);
     if(!isDwarf&&(mediumHeavyArmor||load==='medium'||load==='heavy')){
       if(speed>=12)speed=9;else if(speed>=9)speed=6;else if(speed>=6)speed=4.5;else speed=Math.max(1.5,Math.floor((speed*.75)/1.5)*1.5);
     }
