@@ -1977,7 +1977,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(typeof classList==='string'){try{classList=JSON.parse(classList);}catch(e){classList=classList.split(',');}}
     var norm=function(t){return String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();};
     var normalizedClassSkills=(Array.isArray(classList)?classList:[classList]).map(norm);
-    var options=(result.data||[]).filter(function(sk){return sk.source_status!=='excluded';}).map(function(sk){
+    var options=(result.data||[]).filter(function(sk){return sk.source_status!=='excluded'&&String(sk.id)!=='srd35_skill_speak_language';}).map(function(sk){
       var rank=Math.max(0,Number(trained[String(sk.id)]||0)),ability=String(sk.atributo||'INT').toUpperCase();
       if(rank<=0&&sk.treinada_apenas)return null;
       var mod=modifier35((p.sh.atributos||{})[ability]),skillName=norm(sk.nome);
