@@ -436,6 +436,8 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -15%,#2938
 .dnd35-gold-dice-panel>p{text-align:center;color:#cbbd9b;font-size:11px}
 @media(max-width:600px){.dnd35-gold-dice-panel{height:90vh;padding:9px}}
 
+
+.conhec-card .cc-requisitos{margin-top:6px;padding-top:5px;border-top:1px solid #6b5a39;color:#c7b994;font-size:9px;line-height:1.35}
 </style>
 </head>
 <body>
@@ -1138,7 +1140,7 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -15%,#2938
       htmlCards = talents.map(function(t) {
         var aprendido = meusTalents.some(function(mt){ return mt.talent_id === t.id; });
         var podeComprar = nv >= t.nivel_min && !aprendido;
-        return '<div class="conhec-card '+(aprendido?'aprendida':'')+'"><div class="cc-cab"><span class="cc-nivel">N'+t.nivel_min+'</span><span class="cc-tipo">'+esc(t.trilha)+'</span></div><div class="cc-nome">'+esc(t.nome)+'</div><div class="cc-desc">'+esc(t.efeito)+'</div>'+(!aprendido && !isCreationMode?'<div class="cc-acao"><button data-aprender-tal="'+t.id+'" '+(podeComprar?'':'disabled')+'>'+(podeComprar?'Comprar':'Requer N'+t.nivel_min)+'</button></div>':'')+'</div>';
+        return '<div class="conhec-card '+(aprendido?'aprendida':'')+'"><div class="cc-cab"><span class="cc-nivel">N'+t.nivel_min+'</span><span class="cc-tipo">'+esc(t.trilha)+'</span></div><div class="cc-nome">'+esc(t.nome)+'</div><div class="cc-desc">'+esc(t.descricao||t.efeito||'Descrição não cadastrada.')+'</div>'+(t.requisitos?'<div class="cc-requisitos">Pré-requisitos: '+esc(typeof t.requisitos==='string'?t.requisitos:JSON.stringify(t.requisitos))+'</div>':'')+(!aprendido && !isCreationMode?'<div class="cc-acao"><button data-aprender-tal="'+t.id+'" '+(podeComprar?'':'disabled')+'>'+(podeComprar?'Comprar':'Requer N'+t.nivel_min)+'</button></div>':'')+'</div>';
       }).join('');
     } else if (tipo === 'magias') {
       var circulos = ['todos','0','1','2','3','4','5'];
