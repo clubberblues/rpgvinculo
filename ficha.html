@@ -2149,7 +2149,7 @@ function dnd35WeaponProficient(state,weaponName){
     var n=dnd35Norm(value);
     if(n.indexOf('abjur')===0)return 'abjuration';
     if(n.indexOf('conjur')===0)return 'conjuration';
-    if(n.indexOf('divin')===0)return 'divination';
+    if(n.indexOf('divin')===0||n.indexOf('adivin')===0)return 'divination';
     if(n.indexOf('enchant')===0||n.indexOf('encant')===0)return 'enchantment';
     if(n.indexOf('evoc')===0)return 'evocation';
     if(n.indexOf('illus')===0)return 'illusion';
