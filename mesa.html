@@ -3871,8 +3871,10 @@ async function abrirModalEquipamentos(){
           if(reset.error) throw new Error(reset.error.message);
           combatDataState=reset.data||{turn_order:[],current_turn:0,active:false,round:1,expected_character_ids:ids};
           renderizarIniciativa(combatDataState);
-          var rollSummary=(combatDataState.turn_order||[]).filter(function(entry){return entry.is_monster;}).map(function(entry){return entry.nome+': d20 '+entry.d20+' + DES '+(Number(entry.dex_mod)>=0?'+':'')+entry.dex_mod+(Number(entry.bonus_iniciativa)?' + outros '+entry.bonus_iniciativa:'')+' = '+entry.valor+(entry.dex_mod_assumed?' (DES não cadastrada; usado 0)':'');}).join(' · ');
-          var resumo=controlled.length?'🎲 Iniciativa do Mestre rolada no dado 3D e distribuída entre os tokens: '+rollSummary+'.':'🎲 Iniciativa aberta; aguardando as rolagens dos jogadores.';
+          var rollSummary=(combatDataState.turn_order||[]).filter(function(entry){return entry.is_monster;}).map(function(entry){return entry.nome+': d20 '+entry.d20+' + DES '+(Number(entry.dex_mod)>=0?'+':'')+entry.dex_mod+(Number(entry.bonus_iniciativa)?' + outros '+entry.bonus_iniciativa:'')+' = '+entry.valor;}).join(' · ');
+          var missingDexNames=controlled.filter(function(token){return token.dexModAssumed;}).map(function(token){return token.nome;});
+          var dexWarning=missingDexNames.length?' Atenção: modificador de DES não cadastrado para '+missingDexNames.join(', ')+'; foi usado +0.':'';
+          var resumo=(controlled.length?'🎲 Iniciativa do Mestre rolada no dado 3D e distribuída entre os tokens: '+rollSummary+'.':'🎲 Iniciativa aberta; aguardando as rolagens dos jogadores.')+dexWarning;
           var log=await enviarMensagemChat(resumo,'sistema',{evento:'iniciativa_global',criaturas:controlled.length,personagens:ids.length,d20_resultados:d20Values});
           if(log&&log.error) console.warn('Iniciativa aberta; o resumo não entrou no chat.');
         }catch(err){
