@@ -2148,7 +2148,11 @@ function dnd35WeaponProficient(state,weaponName){
     };
     return table[key]||[0,0];
   }
-  function dnd35StartCost(i){var n=Number(i&&(i.custo_po==null?i.preco:i.custo_po));return Number.isFinite(n)&&n>=0?n:null;}
+  function dnd35StartCost(i){
+    var raw=i&&(i.custo_po==null?i.preco:i.custo_po);
+    if(raw==null||String(raw).trim()==='')return null;
+    var n=Number(raw);return Number.isFinite(n)&&n>=0?n:null;
+  }
   function dnd35StartingState(s){
     if(!s||typeof s!=='object')return {equipamentoInicial:{metodo:'',resultados:[],itens:{},busca:'',categoria:'todos',pagina:0},equipment:[],classe:null};
     if(!s.equipamentoInicial||typeof s.equipamentoInicial!=='object')s.equipamentoInicial={metodo:'',resultados:[],itens:{},busca:'',categoria:'todos',pagina:0};
@@ -2164,7 +2168,8 @@ function dnd35WeaponProficient(state,weaponName){
   function dnd35StartTotal(s){s=dnd35StartingState(s);var x=s.equipamentoInicial,total=0;Object.keys(x.itens).forEach(function(id){var i=(s.equipment||[]).find(function(item){return String(item.id)===id;});if(i){var cost=dnd35StartCost(i);if(cost!=null)total+=cost*Number(x.itens[id]||0);}});return total;}
   function dnd35StartReady(s){s=dnd35StartingState(s);var x=s.equipamentoInicial;if(x.metodo==='pacote')return !!s.startingPackage;if(x.metodo==='ouro'){var d=dnd35StartWealth(s.classe),r=x.resultados;if(!d[0])return false;return r.length===d[0]&&r.every(function(n){return n>=1&&n<=4;})&&dnd35StartTotal(s)<=r.reduce(function(a,b){return a+b;},0)*d[1];}return false;}
   function dnd35StartCategoryKey(item){
-    var type=String(item&&item.tipo||'').toLowerCase();
+    var type=String(item&&item.tipo||'').toLowerCase(),category=String(item&&item.categoria||'').toLowerCase(),name=String(item&&item.nome||'').toLowerCase();
+    if(category==='extras'||/\b(bolts|arrows|bullets|ammunition|rations)\b/.test(name))return 'equipamentos';
     if(type==='arma'||type==='weapon')return 'armas';
     if(type==='armadura'||type==='armor')return 'armaduras';
     if(type==='escudo'||type==='shield')return 'escudos';
@@ -2176,10 +2181,13 @@ function dnd35WeaponProficient(state,weaponName){
   }
   function dnd35StartStats(item){
     if(!item)return '';
-    var parts=[];
-    if(item.dano)parts.push('Dano '+dnd35TranslateCatalogText(item.dano));
-    if(item.critico)parts.push('Crítico '+dnd35TranslateCatalogText(item.critico));
-    if(item.tipo_dano)parts.push('Tipo '+dnd35TranslateCatalogText(item.tipo_dano));
+    var parts=[],damage=String(item.dano||'').trim(),critical=String(item.critico||'').trim(),damageType=String(item.tipo_dano||'').trim();
+    if(damage&&!/^(—|-|n\/a)$/i.test(damage))parts.push('Dano '+dnd35TranslateCatalogText(damage));
+    if(critical&&!/^(—|-|n\/a)$/i.test(critical)){
+      if(/(?:ft\.?|feet|metros?)$/i.test(critical)&&!/[x×]/i.test(critical))parts.push('Alcance '+dnd35TranslateCatalogText(critical));
+      else parts.push('Crítico '+dnd35TranslateCatalogText(critical));
+    }
+    if(damageType)parts.push('Tipo '+dnd35TranslateCatalogText(damageType));
     var ac=Number(item.ca_bonus==null?item.bonus_ca:item.ca_bonus);
     if(Number.isFinite(ac)&&ac!==0)parts.push('CA '+(ac>0?'+':'')+ac);
     var maxDex=item.max_des==null?item.bonus_max_des:item.max_des;
