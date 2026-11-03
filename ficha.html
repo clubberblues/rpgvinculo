@@ -1925,7 +1925,7 @@ function dnd35WeaponProficient(state,weaponName){
       var pick=lu.feats[i]||{id:'',parametro:'',choice_type:spec.type};
       var otherPicks=lu.feats.filter(function(pick,index){return index!==i&&pick&&pick.id;}).map(function(pick){return String(pick.id);});var candidates=(state.feats||[]).filter(function(feat){return dnd35LevelupFeatAllowed(feat,spec.type,nextLevel)&&ownedIds.indexOf(String(feat.id))<0&&otherPicks.indexOf(String(feat.id))<0;}).sort(function(a,b){return String(a.nome).localeCompare(String(b.nome),'pt-BR');});
       var selected=candidates.find(function(f){return String(f.id)===String(pick.id);})||(state.feats||[]).find(function(f){return String(f.id)===String(pick.id);});
-      var options='<option value="">Escolha um talento…</option>'+candidates.map(function(f){return '<option value="'+esc(f.id)+'"'+(String(f.id)===String(pick.id)?' selected':'')+'>'+esc(f.nome)+'</option>';}).join('');
+      var options='<option value="">Escolha um talento…</option>'+candidates.map(function(f){return '<option value="'+esc(f.id)+'"'+(String(f.id)===String(pick.id)?' selected':'')+''+esc(dnd35FeatNamePt(f))+'</option>';}).join('');
       var paramType=selected?dnd35FeatParameterType(selected):'',needsParam=!!(selected&&(selected.exige_parametro||paramType||dnd35FeatIsWeaponFocus(selected)));
       var paramHtml=needsParam?'<div class="dnd35-feat-control"><label for="lu-feat-param-'+i+'">'+esc(dnd35FeatParameterLabel(selected))+'</label><input id="lu-feat-param-'+i+'" data-lu-feat-param="'+i+'" maxlength="240" value="'+esc(pick.parametro||'')+'" placeholder="Informe a escolha"><small>'+esc(dnd35FeatParameterHint(selected,attrs))+'</small></div>':'';
       var warnings=[];
@@ -2392,7 +2392,7 @@ function dnd35WeaponProficient(state,weaponName){
     for(var i=0;i<picks.length;i++){
       var feat=selected[i];if(!feat){mostrarErro('Um dos talentos escolhidos não está no catálogo.','talentos');return;}
       var paramType=dnd35FeatParameterType(feat),requires=!!(feat.exige_parametro||paramType||dnd35FeatIsWeaponFocus(feat)),paramOptional=paramType==='spell_list'&&dnd35Modificador(Number(attrs.INT)||10)<=0;
-      if(requires&&!paramOptional&&!String(picks[i].parametro||'').trim()){mostrarErro('Informe o parâmetro do talento '+feat.nome+'.','talentos');return;}
+      if(requires&&!paramOptional&&!String(picks[i].parametro||'').trim()){mostrarErro('Informe o parâmetro do talento '+dnd35FeatNamePt(feat)+'.','talentos');return;}
     }
     var talentos=picks.map(function(p){return {id:String(p.id),parametro:String(p.parametro||'').trim()||null};});
     var classBonusSpec=dnd35InitialClassBonusSpec(state),classBonusPicks=state.classFeatPicks||[],classBonusTalentos=[];
