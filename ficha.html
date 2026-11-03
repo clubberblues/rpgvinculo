@@ -1729,11 +1729,12 @@ function dnd35TranslateCatalogText(value){
   function dnd35RenderFeats(state, attrs, creating) {
     var count = dnd35IsHuman(state.raca) ? 2 : 1, picks = state.featPicks || [], html = '';
     if (!creating) {
-      var saved = dnd35Objeto(state.sheet.talentos), list = Array.isArray(saved) ? saved : [];
-      if (!list.length) return '<p class="dnd35-readonly">Nenhum talento registrado.</p>';
+      var saved = dnd35Objeto(state.sheet.talentos), list = Array.isArray(saved) ? saved.filter(function(pick){return !(pick&&pick.origem==='class_feature');}) : [];
+      if (!list.length) return '<p class="dnd35-readonly">Nenhum talento escolhido.</p>';
       return '<ul class="dnd35-readonly">'+list.map(function(pick) {
         var feat = state.feats.filter(function(f) { return String(f.id) === String(pick && pick.id); })[0];
-        return '<li><b>'+esc(feat ? feat.nome : ('Talento '+(pick && pick.id || '')))+(pick && pick.parametro ? ' — '+esc(pick.parametro) : '')+'</b>'+(feat && feat.descricao ? ': '+esc(feat.descricao) : '')+'</li>';
+        var sourceLabel=pick&&pick.origem==='class_bonus'?'Talento bônus de classe: ':'';
+        return '<li><b>'+esc(sourceLabel+(feat ? feat.nome : ('Talento '+(pick && pick.id || '')))+(pick && pick.parametro ? ' — '+pick.parametro : ''))+'</b>'+(feat && feat.descricao ? ': '+esc(feat.descricao) : '')+'</li>';
       }).join('')+'</ul>';
     }
     for (var i=0;i<count;i++) {
