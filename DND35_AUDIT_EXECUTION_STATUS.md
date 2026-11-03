@@ -54,7 +54,7 @@
 
 ## Limites confirmados nesta continuação
 
-- Inspeção de integração da Mesa: `mesa.html` ainda não consulta `character_conditions` nem `srd_campaign_conditions`; portanto condições e características ativáveis não estão integradas ao fluxo de combate. Não foi criada uma ativação isolada na ficha que pudesse divergir do estado da Mesa.
+- `mesa.html` agora consulta e administra `srd_campaign_conditions` pela interface do Mestre. A integração ainda é parcial: os modificadores mecânicos de cada condição não foram aplicados de forma transversal aos ataques, CA, salvamentos, perícias, movimento e ações. As características ativáveis de classe também continuam pendentes.
 
 ## Pendências de auditoria e implementação
 
