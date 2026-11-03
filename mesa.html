@@ -3852,11 +3852,10 @@ async function abrirModalEquipamentos(){
         if(token.bonusIniciativa!=null&&Number.isFinite(Number(token.bonusIniciativa))) token.bonusIniciativa=Math.max(-20,Math.min(20,Math.trunc(Number(token.bonusIniciativa))));
         if(token.bonusIniciativa==null&&sheet&&personagemTemTalento({talentos:sheet.talentos},'iniciativa_aprimorada')) token.bonusIniciativa=4;
         if(token.dexMod==null){
-          var resposta=await window.vttUI.ask({title:'Iniciativa de '+token.nome,label:'Modificador de Destreza (use 0 se não souber)',defaultValue:'0',inputMode:'numeric'});
-          if(resposta===null) throw new Error('Rolagem cancelada; nenhuma iniciativa foi iniciada.');
-          var mod=Number(resposta);
-          if(!Number.isFinite(mod)) throw new Error('Informe um modificador de Destreza válido para '+token.nome+'.');
-          token.dexMod=Math.max(-20,Math.min(20,Math.trunc(mod)));
+          // Never open a second initiative dialog. If the token has no DEX data,
+          // use the neutral modifier and expose the missing stat in the result log.
+          token.dexMod=0;
+          token.dexModAssumed=true;
         }
       }
       if(controlled.some(function(t){return t.tipo==='npc'||t.tipo==='monstro';})){
@@ -3871,7 +3870,7 @@ async function abrirModalEquipamentos(){
           if(reset.error) throw new Error(reset.error.message);
           combatDataState=reset.data||{turn_order:[],current_turn:0,active:false,round:1,expected_character_ids:ids};
           renderizarIniciativa(combatDataState);
-          var rollSummary=(combatDataState.turn_order||[]).filter(function(entry){return entry.is_monster;}).map(function(entry){return entry.nome+': d20 '+entry.d20+' + DES '+(Number(entry.dex_mod)>=0?'+':'')+entry.dex_mod+(Number(entry.bonus_iniciativa)?' + outros '+entry.bonus_iniciativa:'')+' = '+entry.valor;}).join(' · ');
+          var rollSummary=(combatDataState.turn_order||[]).filter(function(entry){return entry.is_monster;}).map(function(entry){return entry.nome+': d20 '+entry.d20+' + DES '+(Number(entry.dex_mod)>=0?'+':'')+entry.dex_mod+(Number(entry.bonus_iniciativa)?' + outros '+entry.bonus_iniciativa:'')+' = '+entry.valor+(entry.dex_mod_assumed?' (DES não cadastrada; usado 0)':'');}).join(' · ');
           var resumo=controlled.length?'🎲 Iniciativa do Mestre rolada no dado 3D e distribuída entre os tokens: '+rollSummary+'.':'🎲 Iniciativa aberta; aguardando as rolagens dos jogadores.';
           var log=await enviarMensagemChat(resumo,'sistema',{evento:'iniciativa_global',criaturas:controlled.length,personagens:ids.length,d20_resultados:d20Values});
           if(log&&log.error) console.warn('Iniciativa aberta; o resumo não entrou no chat.');
