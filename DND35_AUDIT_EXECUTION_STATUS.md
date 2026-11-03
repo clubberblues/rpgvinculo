@@ -402,3 +402,12 @@ Não marcar um módulo como concluído apenas porque existe uma descrição ou u
 - A comparação de nomes também mostra que o histórico da branch `main` não resolve a lacuna: nela, 439/527 nomes correspondem e 88 não; a branch `codex/dnd35-gameplay-flow-audit` também não contém a sequência completa.
 - Não se deve criar arquivos vazios, registrar migrações como aplicadas, nem reaplicar alterações só para fazer os números coincidirem. Os SQLs originais ausentes precisam ser recuperados de commits/artefatos confiáveis ou substituídos por um plano de reconciliação do estado atual, revisado e testado.
 - Nenhuma alteração foi feita no banco durante esta comparação; nenhuma ficha ou dado de jogador foi tocado.
+
+
+### Correção da comparação: versão exata exigida pelo Supabase CLI
+
+- A contagem anterior de 464/527 era somente uma correspondência nominal entre nomes de migração e SQLs espalhados pela raiz e pela pasta de migrações; ela **não** representava o estado reconhecido pelo Supabase CLI. Corrijo explicitamente essa interpretação.
+- Comparando os prefixos de versão de 14 dígitos dentro de `supabase/migrations/`, apenas 43 das 527 versões remotas possuem arquivo versionado correspondente na branch. Há 508 versões remotas sem arquivo com o mesmo timestamp; 24 arquivos versionados locais não aparecem no histórico remoto e permanecem migrações pendentes, não aplicadas.
+- Descoberta importante: `supabase_migrations.schema_migrations` guarda as instruções SQL originais em `statements text[]`. Uma consulta somente leitura confirmou que as 508 versões ausentes têm `statements` não nulo e não vazio (aprox. 1.619.030 caracteres no total; maior migração aprox. 130.217 caracteres).
+- Isso permite recuperar os SQLs originais exatos do histórico remoto e reconstruir os arquivos com seus timestamps/nome originais, sem inventar migrações nem reaplicar DDL em produção. A recuperação ainda precisa ser feita e validada em branch isolada; não foi feita nesta etapa.
+- O banco permaneceu sem alterações nesta descoberta.
