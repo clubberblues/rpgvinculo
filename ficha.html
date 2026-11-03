@@ -1593,7 +1593,7 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -15%,#2938
 function dnd35TranslateCatalogText(value){
     var text=String(value==null?'':value);
     var dictionary={
-      "Owl’s wisdom (potion)":"Poção de Sabedoria da Coruja","Owl's wisdom (potion)":"Poção de Sabedoria da Coruja",
+      "Owl’s wisdom":"Sabedoria da Coruja","Owl's wisdom":"Sabedoria da Coruja",
       "Protection from arrows 10/magic (potion)":"Poção de Proteção contra Flechas (10/mágica)",
       "Lamp, common":"Lamparina comum","Lantern, bullseye":"Lanterna com foco",
       "Dagger, punching":"Adaga de soqueira","Gauntlet, spiked":"Manopla com cravos",
@@ -1611,7 +1611,7 @@ function dnd35TranslateCatalogText(value){
       "Armor Check Penalty":"Penalidade de armadura"
     };
     Object.keys(dictionary).sort(function(a,b){return b.length-a.length;}).forEach(function(key){text=text.replace(new RegExp(key,'gi'),dictionary[key]);});
-    text=text.replace(/market price/gi,'preço de mercado').replace(/listed in table/gi,'listado na tabela').replace(/the specific item entry is not individually written out in this SRD table\./gi,'a descrição individual deste item não consta nesta tabela.').replace(/\bweight\b/gi,'peso').replace(/\bprice\b/gi,'preço').replace(/\bdamage\b/gi,'dano').replace(/\bcritical\b/gi,'crítico').replace(/\b([0-9]+(?:\.[0-9]+)?)\s*gp\b/gi,'$1 po').replace(/\b([0-9]+(?:\.[0-9]+)?)\s*lb\.?\b/gi,'$1 kg');
+    text=text.replace(/market price/gi,'preço de mercado').replace(/listed in table/gi,'listado na tabela').replace(/the specific item entry is not individually written out in this SRD table\./gi,'a descrição individual deste item não consta nesta tabela.').replace(/\bweight\b/gi,'peso').replace(/\bprice\b/gi,'preço').replace(/\bdamage\b/gi,'dano').replace(/\bcritical\b/gi,'crítico').replace(/\b([0-9]+(?:\.[0-9]+)?)\s*gp\b/gi,'$1 po');
     return text;
   }
     function dnd35ClassFeatureDescription(name,source){
