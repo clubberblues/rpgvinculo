@@ -2110,7 +2110,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         await enviarMensagemChat(msg,'rolagem',meta);fecharModalMagias();
       }catch(error){btn.disabled=false;alert('Não foi possível conjurar: '+error.message);}
     }
-    if(isAttack){var stats=item.monsterStats||{},key=String(stats.spellcasting_key||''),attr=({wizard:'INT',sorcerer:'CAR',bard:'CAR',cleric:'SAB',druid:'SAB',paladin:'SAB',ranger:'SAB'})[key]||'INT',rules=JSON.stringify(tech.source_field_values||{}),ability=/ranged touch/i.test(rules)?'DES':attr,baseBab=Number(stats.bab),bonus=(Number.isFinite(baseBab)?baseBab:0)+modifier35((stats.attributes||{})[ability])+(Number(stats.size_modifier)||0);abrirDado('Magia · '+String(spell.nome||spell.name||'Magia'),function(d20){return cast({d20:Number(d20),bonus:bonus,total:Number(d20)+bonus});},true);return;}
+    if(isAttack){var stats=item.monsterStats||{},key=String(stats.spellcasting_key||''),attr=({wizard:'INT',sorcerer:'CAR',bard:'CAR',cleric:'SAB',druid:'SAB',paladin:'SAB',ranger:'SAB'})[key]||'INT',rules=JSON.stringify(tech.source_field_values||{}),ability=/ranged touch/i.test(rules)?'DES':attr,baseBab=Number(stats.bab),bonus=(Number.isFinite(baseBab)?baseBab:0)+modifier35((stats.attributes||{})[ability])+(Number(stats.size_modifier)||0);abrirDado('Magia · '+String(spell.nome||spell.name||'Magia'),function(d20){return cast({d20:Number(d20),bonus:bonus,total:Number(d20)+bonus});},true,true,'1d20');return;}
     await cast(null);
   }
   async function confirmarConjuracao(){
