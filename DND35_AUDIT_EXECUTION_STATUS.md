@@ -334,3 +334,14 @@ Não marcar um módulo como concluído apenas porque existe uma descrição ou u
 4. Só então considerar a criação de sete raças liberada.
 
 **Referência consultada:** Livro do Jogador D&D 3.5 enviado pelo usuário, Tabelas 6-4, 6-5 e 6-6 (páginas impressas 91–92).
+
+
+### Revisão da migração A10 — 2026-11-03
+
+- Corrigido o delimitador de dollar-quote do bloco de envelhecimento (v_new_aging), que impedia a migração de ser analisada/executada corretamente.
+- Corrigidos os limites possíveis de altura e peso da Tabela 6-6 para as sete raças, incluindo os pesos fixos de Gnomo e Halfling e as bases de Meio-Elfo/Meio-Orc femininos.
+- Corrigida a mensagem de idade mínima para identificar raça e classe corretamente.
+- A migração completa foi executada em uma transação explícita BEGIN/ROLLBACK contra a definição atualmente instalada no Supabase. O bloco concluiu sem erro e a transação foi revertida; portanto, nenhuma alteração foi persistida em produção.
+- Confirmado que os literais JSONB efetivamente presentes na RPC instalada são válidos; não foi necessária correção desses valores. Um teste anterior usou representações diferentes das armazenadas e não deve ser tratado como defeito da função.
+- A assinatura antiga de seis parâmetros permanece concedida a authenticated: a ficha.html da branch main ainda a utiliza. Não revogar até que a interface que usa a assinatura de sete parâmetros seja implantada e validada.
+- A10 continua não liberada: ainda faltam teste autenticado de ponta a ponta e validação visual de criação/reabertura para as sete raças.
