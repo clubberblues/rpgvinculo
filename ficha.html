@@ -1538,8 +1538,15 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2938
     var literate=!!(state.identidade&&state.identidade.alfabetizado);
     return '<section class="dnd35-class-choice"><h3>Analfabetismo do Bárbaro</h3><p class="dnd35-note">O Bárbaro começa sem saber ler e escrever. Você pode permanecer analfabeto ou gastar 2 pontos de perícia uma única vez para aprender a ler e escrever todos os idiomas que conhece.</p><label class="dnd35-literacy-choice"><input type="checkbox" data-dwarf-literacy '+(literate?'checked':'')+'> Aprender a ler e escrever (custa 2 pontos de perícia)</label></section>';
   }
+  function dnd35DwarfAutomaticLanguages(state){
+    var automatic=['Comum','Anão'];
+    if(String(state&&state.classe&&state.classe.id)==='druida')automatic.push('Druídico');
+    return automatic;
+  }
   function dnd35DwarfLanguagesMarkup(state,attrs){
-    var choices=state.idiomasEscolhidos||{automaticos:['Comum','Anão'],bonus_inteligencia:[],comprados_falar_idioma:[]};
+    var automaticLanguages=dnd35DwarfAutomaticLanguages(state);
+    var choices=state.idiomasEscolhidos||{automaticos:automaticLanguages.slice(),bonus_inteligencia:[],comprados_falar_idioma:[]};
+    choices.automaticos=automaticLanguages.slice();
     var available=['Gigante','Gnômico','Goblin','Orc','Terrano','Subcomum'];
     var catalog=(state.languages||[]).filter(function(l){return !l.is_secret&&available.indexOf(l.nome)>=0;});
     var intBonus=Math.max(0,Math.floor((Number(attrs&&attrs.INT||10)-10)/2));
@@ -1547,7 +1554,7 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2938
     function options(selected){return '<option value="">Selecione</option>'+catalog.map(function(l){return '<option value="'+esc(l.nome)+'"'+(selected===l.nome?' selected':'')+'>'+esc(l.nome)+'</option>';}).join('');}
     var bonusHtml=Array.from({length:intBonus},function(_,i){return '<label>Idioma adicional por Inteligência '+(i+1)+'<select data-dwarf-language="bonus" data-index="'+i+'">'+options(choices.bonus_inteligencia[i]||'')+'</select></label>';}).join('');
     var purchasedHtml=Array.from({length:rankCount},function(_,i){return '<label>Idioma adquirido por Falar Idioma '+(i+1)+'<select data-dwarf-language="purchased" data-index="'+i+'">'+options(choices.comprados_falar_idioma[i]||'')+'</select></label>';}).join('');
-    return '<section class="dnd35-panel dnd35-language-panel"><h2>Idiomas do Anão</h2><p class="dnd35-note"><strong>Automáticos:</strong> Comum e Anão.</p><p class="dnd35-note"><strong>Idiomas adicionais da raça:</strong> Gigante, Gnômico, Goblin, Orc, Terrano e Subcomum. A quantidade gratuita depende do modificador de Inteligência final.</p><div class="dnd35-identity-grid">'+(bonusHtml||'<p class="dnd35-note">Sua Inteligência atual não concede idiomas adicionais gratuitos.</p>')+'</div><div class="dnd35-identity-grid">'+(purchasedHtml||'<p class="dnd35-note">Para adquirir idiomas extras, distribua graduações em Falar Idioma na aba Perícias.</p>')+'</div><p class="dnd35-note">Falar Idioma não usa testes: cada graduação comprada corresponde a um idioma escolhido. Não repita idiomas.</p></section>';
+    return '<section class="dnd35-panel dnd35-language-panel"><h2>Idiomas do Anão</h2><p class="dnd35-note"><strong>Automáticos:</strong> '+automaticLanguages.map(esc).join(' e ')+'.</p><p class="dnd35-note"><strong>Idiomas adicionais da raça:</strong> Gigante, Gnômico, Goblin, Orc, Terrano e Subcomum. A quantidade gratuita depende do modificador de Inteligência final.</p><div class="dnd35-identity-grid">'+(bonusHtml||'<p class="dnd35-note">Sua Inteligência atual não concede idiomas adicionais gratuitos.</p>')+'</div><div class="dnd35-identity-grid">'+(purchasedHtml||'<p class="dnd35-note">Para adquirir idiomas extras, distribua graduações em Falar Idioma na aba Perícias.</p>')+'</div><p class="dnd35-note">Falar Idioma não usa testes: cada graduação comprada corresponde a um idioma escolhido. Não repita idiomas.</p></section>';
   }
   function dnd35DwarfIdentityMarkup(state){
     var x=state.identidade||{},dice=dnd35DwarfAgeDice(state.classe),minAge=dnd35DwarfMinAge(state.classe),alignments=dnd35DwarfAlignmentOptions(state.classe),id=String(state.classe&&state.classe.id||'');
@@ -2669,14 +2676,16 @@ function dnd35WeaponProficient(state,weaponName){
       if(clericDomains.length!==2||clericDomains[0]===clericDomains[1]){mostrarErro('Escolha dois domínios diferentes para o Clérigo.','class');return;}
       if(selectedDeity&&clericDomains.some(function(id){return (selectedDeity.domains||[]).indexOf(id)<0;})){mostrarErro('Os dois domínios devem pertencer à divindade escolhida.','class');return;}
     }
-    var languageState=state.idiomasEscolhidos||{automaticos:['Comum','Anão'],bonus_inteligencia:[],comprados_falar_idioma:[]};
+    var automaticLanguages=dnd35DwarfAutomaticLanguages(state);
+    var languageState=state.idiomasEscolhidos||{automaticos:automaticLanguages.slice(),bonus_inteligencia:[],comprados_falar_idioma:[]};
+    languageState.automaticos=automaticLanguages.slice();
     var bonusLanguages=(languageState.bonus_inteligencia||[]).filter(Boolean),purchasedLanguages=(languageState.comprados_falar_idioma||[]).filter(Boolean);
     var expectedBonusLanguages=Math.max(0,Math.floor(((Number(attrs.INT)||10)-10)/2)),speakLanguageRanks=Math.max(0,Math.floor(Number(ranks.srd35_skill_speak_language)||0));
     if(bonusLanguages.length!==expectedBonusLanguages){mostrarErro('Escolha '+expectedBonusLanguages+' idioma(s) adicional(is) concedido(s) pela Inteligência.','idiomas');return;}
     if(purchasedLanguages.length!==speakLanguageRanks){mostrarErro('Escolha um idioma para cada graduação comprada em Falar Idioma.','idiomas');return;}
-    var allLanguageNames=['Comum','Anão'].concat(bonusLanguages,purchasedLanguages);
+    var allLanguageNames=automaticLanguages.concat(bonusLanguages,purchasedLanguages);
     if(new Set(allLanguageNames.map(function(x){return String(x).toLowerCase();})).size!==allLanguageNames.length){mostrarErro('Não repita idiomas automáticos, bônus ou adquiridos.','idiomas');return;}
-    state.idiomasEscolhidos={automaticos:['Comum','Anão'],bonus_inteligencia:bonusLanguages,comprados_falar_idioma:purchasedLanguages};
+    state.idiomasEscolhidos={automaticos:automaticLanguages.slice(),bonus_inteligencia:bonusLanguages,comprados_falar_idioma:purchasedLanguages};
     if(input)state.nomeDraft=nome;
     button.disabled=true;status.textContent='Gravando personagem…';
     try {
