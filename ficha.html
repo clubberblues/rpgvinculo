@@ -2138,7 +2138,7 @@ function dnd35WeaponProficient(state,weaponName){
     }
     if(key==='wizard'){
       var target=Math.max(0,3+dnd35Modificador(Number(attrs.INT)||10)),chosen=s.conhecidas.filter(function(id){var sp=(state.srdSpells||[]).find(function(x){return String(x.id)===String(id);});return sp&&dnd35SpellLevel(sp,key)===1;}).length;
-      return 'Grimório inicial · todos os truques automaticamente · magias de 1º círculo: '+chosen+'/'+target+' · preparação disponível: '+Object.keys(avail.slots).map(function(k){return 'C'+k+' '+(s.preparadas.filter(function(p){return Number(p.slot_level)===Number(k);}).length)+'/'+(avail.slots[k]||0);}).filter(function(x){return !x.endsWith('/0');}).join(' · ');
+      var spec=String(state.identidade&&state.identidade.wizard_specialization||'universalista'),specName=(DND35_WIZARD_SCHOOLS.find(function(x){return x.id===spec;})||{}).name;return 'Grimório inicial · truques permitidos automaticamente · magias de 1º círculo: '+chosen+'/'+target+(specName?' · +1 espaço por círculo para '+specName:'')+' · preparação disponível: '+Object.keys(avail.slots).map(function(k){return 'C'+k+' '+(s.preparadas.filter(function(p){return Number(p.slot_level)===Number(k);}).length)+'/'+(avail.slots[k]||0);}).filter(function(x){return !x.endsWith('/0');}).join(' · ');
     }
     return 'Espaços de preparação · '+Object.keys(avail.slots).map(function(k){return 'C'+k+' '+(s.preparadas.filter(function(p){return Number(p.slot_level)===Number(k);}).length)+'/'+(avail.slots[k]||0);}).filter(function(x){return !x.endsWith('/0');}).join(' · ');
   }
