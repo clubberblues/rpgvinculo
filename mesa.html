@@ -1308,7 +1308,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
           '</main>'+
           '<aside class="col-dir" id="acoes-dir"></aside>'+
         '</div>'+
-        '<footer class="mesa-footer" aria-hidden="true"></footer>'+
+        '<footer class="mesa-footer" aria-label="Aventureiros da mesa"></footer>'+
       '</div>';
 
     var initiativePanel = document.getElementById('painel-iniciativa');
@@ -1435,7 +1435,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     combatPanel.innerHTML='<h3>CONTROLE DO TURNO</h3><p id="turno-controle-status">Aguardando a iniciativa.</p><div id="iniciativa-acoes-mestre"></div>';
     el.appendChild(combatPanel);
     if(economyPanel)combatPanel.appendChild(economyPanel);
-    if(tokenMenu)el.appendChild(tokenMenu);var roster=document.createElement('section');roster.className='painel painel-aventureiros';roster.setAttribute('aria-label','Aventureiros da mesa');roster.innerHTML='<div class="painel-cab">AVENTUREIROS</div><div class="painel-corpo" id="cards-strip" aria-label="Cards de personagens, NPCs e monstros"></div>';el.appendChild(roster);var chatColumn=document.querySelector('.col-esq');if(diceOverlay&&chatColumn)chatColumn.appendChild(diceOverlay);
+    if(tokenMenu)el.appendChild(tokenMenu);var roster=document.createElement('section');roster.className='painel painel-aventureiros';roster.setAttribute('aria-label','Aventureiros da mesa');roster.innerHTML='<div class="painel-cab">AVENTUREIROS</div><div class="painel-corpo" id="cards-strip" aria-label="Cards de personagens, NPCs e monstros"></div>';var mesaFooter=document.querySelector('.mesa-footer');if(mesaFooter)mesaFooter.appendChild(roster);else el.appendChild(roster);var chatColumn=document.querySelector('.col-esq');if(diceOverlay&&chatColumn)chatColumn.appendChild(diceOverlay);
     if(document.getElementById('painel-iniciativa'))renderizarIniciativa(combatDataState);
   }
 
@@ -4248,5 +4248,101 @@ async function abrirModalEquipamentos(){
 })();
 </script>
 <script src="vinculo-ui.js"></script>
+
+<style id="vinculo-mesa-layout-fix">
+/* Mesa: chat, mapa e comandos no corpo; elenco horizontal no rodapé. */
+html,body{height:100%;overflow:hidden!important}
+.mesa{height:100dvh!important;min-height:0!important;grid-template-rows:auto minmax(0,1fr) auto!important;overflow:hidden!important}
+.mesa-corpo{height:100%!important;min-height:0!important;grid-template-columns:clamp(230px,18vw,320px) minmax(0,1fr) clamp(205px,16vw,280px)!important;grid-template-rows:minmax(0,1fr)!important;overflow:hidden!important}
+.col-esq,.col-dir{min-height:0!important;overflow-y:auto!important}
+.tabuleiro{min-width:0!important;min-height:0!important;overflow:hidden!important;position:relative!important;cursor:grab}
+.tabuleiro:active{cursor:grabbing}
+.mesa-footer{display:block!important;min-height:0!important;max-height:178px!important;height:clamp(124px,18vh,166px)!important;overflow:hidden!important;background:linear-gradient(180deg,#111d2c,#09111d)!important;border-top:1px solid #c9a050!important;padding:5px 10px max(5px,env(safe-area-inset-bottom))!important}
+.painel-aventureiros{display:flex!important;flex-direction:column!important;gap:4px!important;height:100%!important;min-height:0!important;overflow:hidden!important;border:0!important;background:transparent!important}
+.painel-aventureiros>.painel-cab{flex:0 0 auto!important;padding:2px 8px!important;font-size:9px!important;letter-spacing:2px!important}
+.painel-aventureiros>#painel-iniciativa{position:relative!important;inset:auto!important;transform:none!important;order:0!important;flex:0 0 auto!important;width:100%!important;max-height:42px!important;min-height:0!important;margin:0!important;padding:3px 8px!important;overflow:hidden!important;display:none}
+.painel-aventureiros>#painel-iniciativa.ativo{display:flex!important;align-items:center!important;gap:8px!important}
+#painel-iniciativa .iniciativa-titulo{flex:0 0 auto!important;margin:0!important;font-size:9px!important}
+#iniciativa-status{flex:0 0 auto!important;margin:0!important;font-size:10px!important;white-space:nowrap!important}
+#fila-iniciativa{display:flex!important;flex:1 1 auto!important;min-width:0!important;gap:5px!important;padding:0!important;overflow-x:auto!important;overflow-y:hidden!important;white-space:nowrap!important}
+#fila-iniciativa:empty{display:none!important}
+#fila-iniciativa .iniciativa-item{min-width:100px!important;padding:3px 6px!important;font-size:9px!important}
+#fila-iniciativa .iniciativa-controles{display:none!important}
+.painel-aventureiros>#cards-strip.cards-strip{display:flex!important;flex:1 1 auto!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:stretch!important;gap:8px!important;width:100%!important;min-height:0!important;height:auto!important;max-height:none!important;padding:2px 2px 5px!important;overflow-x:auto!important;overflow-y:hidden!important;overscroll-behavior-x:contain!important;scroll-snap-type:x proximity!important}
+#cards-strip>.card-pers{position:relative!important;flex:0 0 208px!important;width:208px!important;min-width:208px!important;max-width:208px!important;height:100%!important;min-height:0!important;max-height:100%!important;padding:5px 8px!important;scroll-snap-align:start!important}
+#cards-strip>.card-pers .card-pers-avatar{width:44px!important;height:44px!important;flex:0 0 44px!important}
+#cards-strip>.card-pers .card-pers-info{min-width:0!important}
+#cards-strip>.card-pers .card-pers-pv-txt{font-size:8px!important;line-height:1.15!important}
+#cards-strip-pager{display:none!important}
+#cards-strip .cards-empty{min-width:220px!important}
+#cba-live-world{transform:translate3d(var(--cba-pan-x,0px),var(--cba-pan-y,0px),0) scale(var(--cba-zoom,1))!important;transform-origin:center center!important;will-change:transform!important;touch-action:none!important}
+#area-tabuleiro{touch-action:none!important;overscroll-behavior:contain!important}
+#cba-bg-live,#cba-grid-live,#cba-token-layer{pointer-events:none}
+#cba-token-layer .token-cba{pointer-events:auto}
+#dado-iframe-overlay .dado-card{width:min(94vw,560px)!important;height:min(78vh,650px)!important;max-width:560px!important;max-height:650px!important;border-radius:10px!important}
+#dado-iframe-overlay .dado-card-header{padding:7px 12px!important;min-height:38px!important}
+#dado-iframe-overlay .dado-card-header h3{font-size:12px!important;line-height:1.2!important;letter-spacing:1px!important;max-width:calc(100% - 42px)!important;overflow-wrap:anywhere!important}
+#dado-iframe-overlay .btn-fechar-dado{width:25px!important;height:25px!important;flex:0 0 25px!important}
+#dado-iframe-overlay .dado-card-body{min-height:0!important}
+@media(max-width:900px){
+ .mesa-corpo{grid-template-columns:minmax(0,1fr) 205px!important;grid-template-rows:minmax(0,1fr)!important}
+ .col-esq{grid-column:1!important;grid-row:1!important}
+ .tabuleiro{grid-column:1!important;grid-row:1!important}
+ .col-dir{grid-column:2!important;grid-row:1!important;display:flex!important;flex-direction:column!important;overflow:auto!important}
+ .mesa-footer{height:clamp(112px,19vh,150px)!important;max-height:150px!important}
+ #cards-strip>.card-pers{flex-basis:190px!important;width:190px!important;min-width:190px!important}
+}
+@media(max-width:760px){
+ .mesa-corpo{grid-template-columns:minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr)!important}
+ .col-esq{display:none!important}
+ .tabuleiro{grid-column:1!important;grid-row:1!important}
+ .col-dir{display:none!important}
+ .mesa-footer{height:clamp(112px,19vh,146px)!important;max-height:146px!important}
+ #cards-strip>.card-pers{flex-basis:178px!important;width:178px!important;min-width:178px!important}
+ #painel-iniciativa .iniciativa-titulo{display:none!important}
+ #iniciativa-status{max-width:40vw;overflow:hidden;text-overflow:ellipsis}
+}
+@media(max-height:520px){
+ .mesa-footer{height:105px!important;max-height:105px!important}
+ .painel-aventureiros>.painel-cab{display:none!important}
+ #cards-strip>.card-pers{flex-basis:170px!important;width:170px!important;min-width:170px!important}
+}
+</style>
+<script id="vinculo-map-pan-fix">
+(function(){
+  var area=document.getElementById('area-tabuleiro');
+  var world=document.getElementById('cba-live-world');
+  if(!area||!world)return;
+  var pan={x:0,y:0},drag=null;
+  function apply(){world.style.setProperty('--cba-pan-x',pan.x+'px');world.style.setProperty('--cba-pan-y',pan.y+'px');}
+  area.addEventListener('pointerdown',function(e){
+    if(e.button!==0||e.isPrimary===false)return;
+    if(e.target.closest&&e.target.closest('.token-cba,.token-pv-btn,#token-context-menu'))return;
+    drag={id:e.pointerId,x:e.clientX,y:e.clientY,baseX:pan.x,baseY:pan.y,moved:false};
+    area.setPointerCapture(e.pointerId);
+    area.style.cursor='grabbing';
+    e.preventDefault();
+  },{passive:false});
+  area.addEventListener('pointermove',function(e){
+    if(!drag||drag.id!==e.pointerId)return;
+    var dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+    if(Math.abs(dx)+Math.abs(dy)>2)drag.moved=true;
+    pan.x=drag.baseX+dx;pan.y=drag.baseY+dy;apply();
+  });
+  function finish(e){if(!drag|| (e&&drag.id!==e.pointerId))return;drag=null;area.style.cursor='';}
+  area.addEventListener('pointerup',finish);
+  area.addEventListener('pointercancel',finish);
+  area.addEventListener('lostpointercapture',finish);
+  area.addEventListener('wheel',function(e){
+    if(!e.ctrlKey&&!e.metaKey)return;
+    e.preventDefault();
+    var current=Number(getComputedStyle(world).getPropertyValue('--cba-zoom'))||1;
+    var next=Math.max(.55,Math.min(2.2,current*(e.deltaY<0?1.08:.92)));
+    world.style.setProperty('--cba-zoom',String(next));
+  },{passive:false});
+  apply();
+})();
+</script>
+
 </body>
 </html>
