@@ -2493,14 +2493,22 @@ async function abrirModalEquipamentos(){
   }
 
   function tamanhoOcupacaoTokenCBA(item){
-    var tamanho=String(item&&item.monsterStats&&item.monsterStats.tamanho||item&&item.tamanho||'');
+    var tamanho=String(item&&item.monsterStats&&(item.monsterStats.tamanho||item.monsterStats.size)||item&&(item.tamanho||item.size)||'');
     if(item){var personagem=personagens.find(function(p){return String(p.ch.id)===String(item.id);});if(personagem&&personagem.tamanho)tamanho=String(personagem.tamanho);}
-    tamanho=tamanho.toLowerCase();
+    tamanho=tamanho.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'');
     if(/^colossal/.test(tamanho))return 5;
-    if(/^gargantuan/.test(tamanho))return 4;
-    if(/^huge/.test(tamanho))return 3;
-    if(/^large/.test(tamanho))return 2;
+    if(/^(gargantuan|imenso)/.test(tamanho))return 4;
+    if(/^(huge|enorme)/.test(tamanho))return 3;
+    if(/^(large|grande)/.test(tamanho))return 2;
     return 1;
+  }
+  function cbaPosicaoTokenLivreCBA(scene,item,gridX,gridY){
+    var size=tamanhoOcupacaoTokenCBA(item);
+    return (scene&&Array.isArray(scene.tokens)?scene.tokens:[]).every(function(other){
+      if(String(other.key)===String(item&&item.key))return true;
+      var otherSize=tamanhoOcupacaoTokenCBA(other),ox=Math.max(0,Number(other.gridX)||0),oy=Math.max(0,Number(other.gridY)||0);
+      return !(gridX<ox+otherSize&&gridX+size>ox&&gridY<oy+otherSize&&gridY+size>oy);
+    });
   }
 
   function renderizarTokensCBA(layer,scene){
@@ -3172,15 +3180,15 @@ async function abrirModalEquipamentos(){
     var columns = Math.max(1,Math.floor(rect.width/cell));
     var rows = Math.max(1,Math.floor(rect.height/cell));
     var total = columns*rows;
-    var occupied = Object.create(null);
-    cbaState.tokens.forEach(function(t){ occupied[t.gridX+':'+t.gridY]=true; });
-    var gridX = 0, gridY = 0;
+    var probe={id:String(id),monsterStats:monster&&monster.monsterStats,tamanho:monster&&monster.tamanho};
+    var footprint=tamanhoOcupacaoTokenCBA(probe),gridX=-1,gridY=-1;
     for(var i=0;i<total;i++){
       var slot = (cbaState.tokens.length+i)%total;
       var candidateX = slot%columns;
       var candidateY = Math.floor(slot/columns);
-      if(!occupied[candidateX+':'+candidateY]){ gridX=candidateX; gridY=candidateY; break; }
+      if(candidateX+footprint<=columns&&candidateY+footprint<=rows&&cbaPosicaoTokenLivreCBA(cbaState,probe,candidateX,candidateY)){gridX=candidateX;gridY=candidateY;break;}
     }
+    if(gridX<0){setStatusCBA('Não há espaço livre suficiente para esse token no tabuleiro.');return;}
     cbaState.tokens.push({
       key:'cba-'+Date.now()+'-'+Math.random().toString(36).slice(2,8),
       id:String(id),nome:String(nome||'Criatura'),imagem:imagem||'',tipo:tipo==='monstro'?'monstro':'npc',
@@ -3259,6 +3267,15 @@ async function abrirModalEquipamentos(){
       var ocupacao=tamanhoOcupacaoTokenCBA(arrasto.item);
       arrasto.item.gridX = Math.max(0,Math.min(Math.max(0,columns-ocupacao),Math.round(left/cell)));
       arrasto.item.gridY = Math.max(0,Math.min(Math.max(0,rows-ocupacao),Math.round(top/cell)));
+      if(!cbaPosicaoTokenLivreCBA(arrasto.scene,arrasto.item,arrasto.item.gridX,arrasto.item.gridY)){
+        arrasto.item.gridX=arrasto.startGridX;arrasto.item.gridY=arrasto.startGridY;
+        arrasto.item.x=arrasto.startGridX*cell;arrasto.item.y=arrasto.startGridY*cell;
+        arrasto.token.style.left=arrasto.item.x+'px';arrasto.token.style.top=arrasto.item.y+'px';arrasto.token.style.zIndex='';
+        if(ePreview)setStatusCBA('Movimento inválido: o espaço está ocupado por outro token.');
+        else{document.getElementById('iniciativa-status').textContent='Movimento inválido: o espaço está ocupado por outro token.';}
+        try{if(arrasto.token.hasPointerCapture(arrasto.pointerId))arrasto.token.releasePointerCapture(arrasto.pointerId);}catch(err){}
+        arrasto=null;return;
+      }
       var didMove=arrasto.moved||arrasto.item.gridX!==arrasto.startGridX||arrasto.item.gridY!==arrasto.startGridY;
       arrasto.item.x = arrasto.item.gridX*cell;
       arrasto.item.y = arrasto.item.gridY*cell;
