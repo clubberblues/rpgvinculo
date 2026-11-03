@@ -299,3 +299,38 @@ Não marcar um módulo como concluído apenas porque existe uma descrição ou u
 - Ofício e Profissão também têm especializações abertas; não devem ser tratados como listas fechadas nem ganhar tabelas duplicadas sem modelagem específica.
 
 **Próximo passo seguro:** executar o fluxo local documentado em uma cópia do repositório com Supabase CLI instalado, reconciliar o drift da RPC do familiar e então implementar as categorias de Atuação em uma migração única, incluindo catálogo, associação de classe, compatibilidade com fichas antigas e validação de Música de Bardo. Em seguida, testar a migração em banco local e a criação/reabertura de personagem autenticado.
+
+
+## Etapa A10 — identidade das sete raças básicas
+
+**Estado: interface e migração preparadas na branch de auditoria; aplicação e teste autenticado pendentes.**
+
+- A seleção inicial da criação SRD deixou de filtrar exclusivamente Anão e passou a disponibilizar as sete raças já cadastradas em `srd_races`: Humano, Anão, Elfo, Gnomo, Meio-Elfo, Meio-Orc e Halfling.
+- A interface calcula idade adulta, dados e grupo de classe conforme a Tabela 6-4 do Livro do Jogador. A rolagem respeita d4/d6; a idade mínima usa o resultado mínimo possível dos dados.
+- O envelhecimento aplica os limiares raciais da Tabela 6-5 e os ajustes cumulativos de atributos físicos e mentais.
+- Altura e peso aleatórios seguem a Tabela 6-6, inclusive o multiplicador do resultado de altura para o peso. Os campos manuais exibem limites possíveis por raça e sexo.
+- Os idiomas automáticos e as listas raciais adicionais são apresentados conforme a descrição racial já cadastrada. Humanos e Meio-Elfos podem escolher qualquer idioma não secreto; Druídico continua automático para Druidas.
+- Nenhuma tabela, coluna ou registro novo foi criado. O fluxo reutiliza `srd_races`, `srd_languages`, a identidade JSONB e a RPC existente de idiomas.
+
+**Migração preparada**
+- Arquivo: `supabase/migrations/20261103110000_srd35_all_basic_races_identity.sql`.
+- A migração reconstrói a assinatura de sete parâmetros de `criar_personagem_srd_completo` a partir da definição instalada, preservando as validações de classe e as propriedades da função.
+- Remove a restrição temporária a Anão, aplica idade mínima e envelhecimento por raça, e valida altura/peso contra os intervalos possíveis da Tabela 6-6 por raça/sexo.
+- A identificação real das classes foi conferida no banco: `ranger` é o ID de Patrulheiro; os grupos de idade usam os IDs existentes.
+- As precondições de substituição foram conferidas por consultas somente leitura contra a definição atual da RPC. A migração **não foi aplicada** ao banco de produção e ainda precisa de validação em banco local antes de ser considerada pronta para implantação.
+
+**Verificações realizadas**
+- Sete raças presentes no catálogo e disponíveis na interface da branch.
+- IDs reais das 11 classes conferidos.
+- Blocos antigos de idade, envelhecimento e limites físicos da RPC correspondem exatamente aos trechos que a migração pretende substituir.
+- Interface conferida estaticamente para idade, envelhecimento, altura/peso e idiomas por raça.
+- Nenhuma ficha de teste foi criada; não houve teste de navegador autenticado.
+- Nenhuma alteração foi aplicada ao banco de produção.
+
+**Pendências antes de liberar**
+1. Validar sintaxe e execução da migração em banco local, sem tocar na produção.
+2. Revisar o overload legado de seis parâmetros de `criar_personagem_srd_completo`, que continua concedido a `authenticated`; não revogar enquanto seus usos não forem auditados.
+3. Testar criação e reabertura autenticadas com as sete raças, incluindo idade mínima, envelhecimento, limites físicos e idiomas.
+4. Só então considerar a criação de sete raças liberada.
+
+**Referência consultada:** Livro do Jogador D&D 3.5 enviado pelo usuário, Tabelas 6-4, 6-5 e 6-6 (páginas impressas 91–92).
