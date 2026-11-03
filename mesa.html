@@ -1420,8 +1420,6 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     ligarEventosReforcos();
     var cardsStrip = document.getElementById('cards-strip');
     cardsStrip.addEventListener('click', function(e){
-      var moveButton=e.target.closest?e.target.closest('[data-initiative-move]'):null;
-      if(moveButton){e.preventDefault();e.stopPropagation();var moveIndex=Number(moveButton.dataset.initiativeMove),moveDirection=Number(moveButton.dataset.direction);if(Number.isInteger(moveIndex)&&Math.abs(moveDirection)===1)moverNaIniciativa(moveIndex,moveDirection);return;}
       var flipButton=e.target.closest?e.target.closest('[data-card-flip]'):null;
       if(flipButton){e.preventDefault();e.stopPropagation();var flipCard=flipButton.closest('.card-pers');if(flipCard)flipCard.classList.toggle('is-flipped');return;}
       var cardAcao = e.target.closest ? e.target.closest('.card-pers') : null;
@@ -3953,22 +3951,6 @@ async function abrirModalEquipamentos(){
       value.className='valor';
       value.textContent='Iniciativa '+String(entry.valor==null?'—':entry.valor)+(entry.d20!=null?' (d20 '+entry.d20+' + DES '+(Number(entry.dex_mod)>=0?'+':'')+entry.dex_mod+')':'');
       item.append(name,value);
-      if(ehGM){
-        var controls=document.createElement('span');
-        controls.className='iniciativa-controles';
-        var left=document.createElement('button');
-        left.type='button'; left.className='iniciativa-mover'; left.textContent='←';
-        left.disabled=index===0; left.setAttribute('aria-label','Mover '+String(entry.nome||'combatente')+' para cima');
-        left.title='Mover para cima';
-        left.addEventListener('click',function(e){ e.stopPropagation(); moverNaIniciativa(index,-1); });
-        var right=document.createElement('button');
-        right.type='button'; right.className='iniciativa-mover'; right.textContent='→';
-        right.disabled=index===ordem.length-1; right.setAttribute('aria-label','Mover '+String(entry.nome||'combatente')+' para baixo');
-        right.title='Mover para baixo';
-        right.addEventListener('click',function(e){ e.stopPropagation(); moverNaIniciativa(index,1); });
-        controls.append(left,right);
-        item.appendChild(controls);
-      }
       fila.appendChild(item);
     });
     document.querySelectorAll('.card-pers').forEach(function(card){
@@ -3998,26 +3980,22 @@ async function abrirModalEquipamentos(){
     processarPedidosTestePendentes();
   }
 
-  async function moverNaIniciativa(indice,direcao){
-    if(!ehGM) return;
-    try{
-      var r=await sb.rpc('mover_combatente_iniciativa',{p_campaign_id:Number(MESA_ID),p_indice:Number(indice),p_direcao:Number(direcao)});
-      if(r.error) throw new Error(r.error.message);
-      combatDataState=r.data||combatDataState;
-      renderizarIniciativa(combatDataState);
-    }catch(e){
-      console.error('Falha ao reordenar iniciativa:',e);
-      alert('Não foi possível alterar a ordem. Confira a migração SQL atualizada. Detalhe: '+e.message);
-    }
-  }
 
   async function avancarTurno(){
+    if(avancarTurno.busy)return;
+    if(!combatDataState||!combatDataState.active||!Array.isArray(combatDataState.turn_order)||!combatDataState.turn_order.length){
+      alert('A iniciativa ainda não está ativa. Solicite as rolagens e aguarde todos os resultados antes de avançar.');
+      return;
+    }
     if(!ehGM){
       var atual=combatDataState && Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
       if(!atual || atual.is_monster || !personagens.some(function(p){return String(p.ch.id)===String(atual.id)&&p.ch.user_id===eu.id;})){ alert('Você só pode encerrar o turno do seu personagem quando a iniciativa estiver ativa.'); return; }
     }
+    avancarTurno.busy=true;
     var btn=document.getElementById('btn-encerrar-turno-player');
+    var gmBtn=document.querySelector('#acoes-dir [data-acao="avancar-turno"]');
     if(btn) btn.disabled=true;
+    if(gmBtn) gmBtn.disabled=true;
     try{
       var r=await sb.rpc('avancar_turno',{p_campaign_id:Number(MESA_ID)});
       if(r.error) throw new Error(r.error.message);
@@ -4031,8 +4009,11 @@ async function abrirModalEquipamentos(){
       console.error('Falha ao avançar turno:',e);
       alert('Não foi possível avançar o turno. Verifique a migração SQL e a ordem de iniciativa. Detalhe: '+e.message);
     }finally{
+      avancarTurno.busy=false;
       var currentBtn=document.getElementById('btn-encerrar-turno-player');
+      var currentGmBtn=document.querySelector('#acoes-dir [data-acao="avancar-turno"]');
       if(currentBtn) currentBtn.disabled=false;
+      if(currentGmBtn) currentGmBtn.disabled=false;
     }
   }
 
@@ -4255,8 +4236,8 @@ async function abrirModalEquipamentos(){
       var portrait=img?'<img class="portrait-only-image" src="'+esc(url)+'" alt="" draggable="false">':'<span class="portrait-placeholder" aria-hidden="true">'+(token.tipo==='monstro'?'🐉':token.tipo==='npc'?'👤':'✦')+'</span>';
       var initiative=entry?'Iniciativa '+String(entry.valor==null?'—':entry.valor):'Aguardando iniciativa',hpText=hp==null?'PV não definido':Math.max(0,hp)+' / '+(max==null?'—':max)+' PV';
       var ms=token.monsterStats||{},attrs=p?(p.sh.atributos||{}):(ms.attributes||{}),attributeText=p?['FOR','DES','CON','INT','SAB','CAR'].map(function(k){return k+' '+Number(attrs[k]||10);}).join(' · '):['Fort '+(ms.fortitude==null?'—':ms.fortitude),'Ref '+(ms.reflexos==null?'—':ms.reflexos),'Von '+(ms.vontade==null?'—':ms.vontade)].join(' · ');
-      var selected=p&&alvosSelecionados.indexOf(String(p.ch.id))!==-1?' selecionado-para-teste':'',controls=ehGM&&initIndex>=0?'<div class="portrait-order-controls"><button type="button" data-initiative-move="'+initIndex+'" data-direction="-1" '+(initIndex===0?'disabled':'')+' aria-label="Mover para a esquerda">←</button><button type="button" data-initiative-move="'+initIndex+'" data-direction="1" '+(initIndex===ordem.length-1?'disabled':'')+' aria-label="Mover para a direita">→</button></div>':'';
-      var back='<div class="portrait-back-content"><strong>'+esc(name)+'</strong><span>'+esc(detail)+'</span><span>'+esc(initiative)+'</span><span>'+esc(hpText)+(ac==null?'':' · CA '+ac)+'</span><small>'+esc(attributeText)+'</small><small>'+esc(String(ms.qualidades_especiais||ms.ataques||ms.descricao||'').replace(/<[^>]*>/g,' ').slice(0,180))+'</small>'+controls+'<button type="button" class="card-flip-button" data-card-flip aria-label="Voltar ao retrato">↻</button></div>';
+      var selected=p&&alvosSelecionados.indexOf(String(p.ch.id))!==-1?' selecionado-para-teste':'';
+      var back='<div class="portrait-back-content"><strong>'+esc(name)+'</strong><span>'+esc(detail)+'</span><span>'+esc(initiative)+'</span><span>'+esc(hpText)+(ac==null?'':' · CA '+ac)+'</span><small>'+esc(attributeText)+'</small><small>'+esc(String(ms.qualidades_especiais||ms.ataques||ms.descricao||'').replace(/<[^>]*>/g,' ').slice(0,180))+'</small><button type="button" class="card-flip-button" data-card-flip aria-label="Voltar ao retrato">↻</button></div>';
       var html='<article class="card-pers deck-card token-card '+(token.tipo==='monstro'?'monstro':token.tipo==='npc'?'npc':'player-token')+(p&&p.ch.user_id===eu.id?' eu':'')+selected+(activeCard?' turno-ativo':'')+'" data-actor-key="'+esc(actorKey)+'" data-cba-token-key="'+esc(token.key||'')+'"'+(p?' data-char="'+esc(p.ch.id)+'"':'')+' tabindex="0" role="button" aria-label="Retrato de '+esc(name)+'"><div class="card-pers-inner"><div class="card-pers-face card-pers-front portrait-only-front">'+portrait+'</div><div class="card-pers-face card-pers-back">'+back+'</div></div></article>';
       cards.push({key:actorKey,rank:rank,html:html});
     });
@@ -4559,6 +4540,20 @@ html,body,#root{width:100%;height:100%;min-width:0;min-height:0}
 @media(max-width:700px){
  .mesa:has(#mesa-dice-dock #dado-iframe-overlay[style*="display: flex"]){grid-template-rows:52px minmax(0,1fr) clamp(180px,28dvh,250px) clamp(112px,18vh,146px)!important}
 }
+
+/* Layout definitivo: Dice recolhido na linha 3; cards sempre no rodapé, em faixa horizontal. */
+.mesa{grid-template-rows:58px minmax(0,1fr) 0px clamp(132px,18vh,166px)!important;min-height:0!important;overflow:hidden!important}
+.mesa-footer{grid-row:4!important;display:flex!important;flex-direction:row!important;align-items:stretch!important;width:100%!important;min-width:0!important;min-height:0!important;height:100%!important;max-height:none!important;overflow:hidden!important;padding:4px 10px max(4px,env(safe-area-inset-bottom))!important}
+.mesa-footer>.painel-aventureiros{display:flex!important;flex:1 1 100%!important;flex-direction:column!important;width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;max-height:none!important;overflow:hidden!important}
+.mesa-footer>.painel-aventureiros>.painel-cab{display:block!important;flex:0 0 14px!important;line-height:14px!important;padding:0 4px!important}
+.mesa-footer #cards-strip{display:flex!important;flex:1 1 auto!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:stretch!important;justify-content:flex-start!important;gap:8px!important;width:100%!important;min-width:0!important;min-height:0!important;height:auto!important;max-height:none!important;padding:2px 2px 4px!important;overflow-x:auto!important;overflow-y:hidden!important;overscroll-behavior-x:contain!important;scroll-snap-type:x proximity!important}
+.mesa-footer #cards-strip>.card-pers{position:relative!important;display:flex!important;flex:0 0 clamp(190px,19vw,250px)!important;width:clamp(190px,19vw,250px)!important;min-width:clamp(190px,19vw,250px)!important;max-width:none!important;height:100%!important;min-height:0!important;max-height:100%!important;scroll-snap-align:start!important}
+.mesa-footer #cards-strip>.card-pers.turno-ativo{border-color:#f7d36e!important;box-shadow:0 0 0 1px #f7d36e,0 0 22px #f7d36e99!important;animation:brilho-turno 1.8s ease-in-out infinite alternate!important}
+#painel-iniciativa{display:none!important}
+#fila-iniciativa .iniciativa-controles,.portrait-order-controls{display:none!important}
+@media(max-width:900px){.mesa{grid-template-rows:54px minmax(0,1fr) 0px 142px!important}.mesa-footer #cards-strip>.card-pers{flex-basis:185px!important;width:185px!important;min-width:185px!important}}
+@media(max-width:700px){.mesa{grid-template-rows:52px minmax(0,1fr) 0px 132px!important}.mesa-footer #cards-strip>.card-pers{flex-basis:170px!important;width:170px!important;min-width:170px!important}}
+@media(max-height:520px){.mesa{grid-template-rows:48px minmax(0,1fr) 0px 108px!important}.mesa-footer>.painel-aventureiros>.painel-cab{display:none!important}.mesa-footer #cards-strip>.card-pers{flex-basis:165px!important;width:165px!important;min-width:165px!important}}
 </style>
 
 </body>
