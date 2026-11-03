@@ -245,3 +245,26 @@ Não marcar um módulo como concluído apenas porque existe uma descrição ou u
 - Controles de seleção, validação antes do envio e campo no payload confirmados.
 - RPC de criação atualizado e validado por inspeção da definição.
 - Não houve teste de navegador autenticado nem criação de personagem de teste.
+
+
+## Etapa Anão A8 — Familiar do Mago e do Feiticeiro
+
+**Estado: interface de escolha e validação de identidade implementadas; teste autenticado de ponta a ponta pendente.**
+
+- A etapa **Classe** agora apresenta o recurso Familiar para Mago e Feiticeiro, sem exibir esse bloco para outras classes.
+- O jogador pode escolher um familiar básico ou registrar que ainda não deseja adquiri-lo. A escolha não é imposta como se o vínculo já tivesse sido realizado.
+- A interface apresenta o benefício concedido ao mestre conforme a tabela de familiares do Livro do Jogador: Víbora pequena (+3 Blefar), Gato (+3 Furtividade), Lagarto (+3 Escalar), Rato (+3 Fortitude), Texugo (+3 Reflexos), Coruja (+3 Observar na penumbra), Corvo (+3 Avaliação), Falcão (+3 Observar sob luz intensa), Morcego (+3 Ouvir) e Sapo (+3 PV). O Corvo também pode falar um idioma escolhido pelo mestre.
+- A escolha é mantida no estado da criação, enviada como `familiar_id` e persistida no JSONB `srd_character_sheets.identidade` já existente.
+- A RPC existente `criar_personagem_srd_completo` foi atualizada para aceitar somente os IDs básicos de familiar para Mago/Feiticeiro e limpar o campo para as demais classes. Não foi criada tabela nem coluna.
+- A seleção respeita a progressão conjunta de níveis de Mago e Feiticeiro para as habilidades do familiar; a interface informa que o bônus do familiar só se aplica dentro do alcance indicado no livro.
+
+**Verificações realizadas**
+- Sintaxe JavaScript de `ficha.html`: aprovada.
+- A interface foi conferida para as classes Mago e Feiticeiro e o campo não é oferecido às demais classes.
+- A RPC de criação contém validação fechada para os dez IDs básicos e persiste a identidade no registro da ficha.
+- Não foi criado personagem de teste nem executado navegador com sessão autenticada.
+
+**Limites**
+- Os blocos estatísticos completos dos familiares, PV próprios, progressão de DV, armadura natural, Inteligência e habilidades por nível ainda não foram conectados ao bestiário. O Livro dos Monstros será necessário para fechar essa parte sem duplicar ou inventar estatísticas.
+- A atualização da RPC foi aplicada diretamente ao projeto Supabase para validação. O arquivo de migração versionado correspondente ainda precisa ser gerado pelo fluxo local do Supabase CLI antes da consolidação/implantação em outro ambiente.
+- Esta etapa registra a escolha inicial; não implementa ainda a convocação, morte, substituição ou efeitos ativos do familiar durante o jogo.
