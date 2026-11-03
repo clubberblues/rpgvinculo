@@ -2494,12 +2494,14 @@ function dnd35WeaponProficient(state,weaponName){
       sb.from('srd_domains').select('domain_id,name,granted_power_summary,mechanics,source_url,verification_status').order('name'),
       sb.from('srd_domain_spells').select('domain_id,spell_level,spell_id,source_id,verification_status').order('domain_id').order('spell_level'),
       sb.from('srd_languages').select('id,nome,is_secret,source_status').eq('source_status','official').order('nome'),
-      sb.from('srd_deities').select('deity_id,name,alignment,domains,favored_weapon,racial_races,verification_status').eq('verification_status','verified_book').order('name')
+      sb.from('srd_deities').select('deity_id,name,alignment,domains,favored_weapon,racial_races,verification_status').eq('verification_status','verified_book').order('name'),
+      sb.from('srd_monsters').select('id,nome,nome_original,tamanho,nd,tipo,source_status').in('id',['badger','camel','dire_rat','dog','dog_riding','eagle','hawk','horse_light','owl','pony','snake_small_viper','snake_medium_viper','wolf']).eq('source_status','verified_srd').order('nome')
     ]);
     var error=results.slice(0,2).filter(function(r){return r.error;})[0];
     if(error) throw new Error('Migração SRD pendente: não foi possível carregar perícias/talentos. Detalhe: '+error.error.message);
     if(results[6].error) throw new Error('Catálogo de idiomas indisponível: '+results[6].error.message);
     if(results[7].error) throw new Error('Catálogo de divindades indisponível: '+results[7].error.message);
+    if(results[8].error) throw new Error('Catálogo de companheiros animais indisponível: '+results[8].error.message);
     return {
       skills:dnd35UniqueById((results[0].data||[]).filter(function(skill){return skill.source_status!=='excluded';})),feats:dnd35UniqueById(results[1].data||[]),
       spells:results[2].error?[]:dnd35UniqueById(results[2].data||[]),
@@ -2510,6 +2512,7 @@ function dnd35WeaponProficient(state,weaponName){
       domainSpells:results[5].error?[]:(results[5].data||[]),
       languages:results[6].error?[]:(results[6].data||[]),
       deities:results[7].error?[]:(results[7].data||[]),
+      animalCompanions:results[8].error?[]:(results[8].data||[]),
       domainError:results[4].error?results[4].error.message:(results[5].error?results[5].error.message:'')
     };
   }
@@ -2528,7 +2531,7 @@ function dnd35WeaponProficient(state,weaponName){
     if(results[0].error)throw new Error('Raça não encontrada: '+results[0].error.message);
     if(results[1].error)throw new Error('Classe não encontrada: '+results[1].error.message);
     var catalogs=results[2];if(results[3].error)throw new Error('Kit inicial indisponível: '+results[3].error.message);if(results[4].error)throw new Error('Progressão de classe indisponível: '+results[4].error.message);if(!Array.isArray(results[4].data)||!results[4].data.length)throw new Error('A classe selecionada não possui características de nível 1 cadastradas.');var eq=await sb.from('srd_equipment').select('*').order('nome').range(0,1999);if(eq.error)throw new Error('Catálogo de equipamentos indisponível: '+eq.error.message);
-    fichaSRD35={criacao:true,character:{},races:races.filter(function(r){return String(r.id)==='anao';}),classes:classes,identidade:{sexo:'',idade:'',altura_cm:'',peso_kg:'',tendencia:'',alfabetizado:false,wizard_specialization:'',wizard_prohibited_schools:[],cleric_source:'deity',cleric_deity_id:'',cleric_cause:''},idiomasEscolhidos:{automaticos:['Comum','Anão'],bonus_inteligencia:[],comprados_falar_idioma:[]},baseAtributos:{FOR:10,DES:10,CON:10,INT:10,SAB:10,CAR:10},nomeDraft:'',activeStep:'identity',sheet:{nivel:1,xp:0,ouro:0,atributos:{},pericias:{},talentos:[],magias_preparadas:{version:1,conhecidas:[],preparadas:[],dominio_preparadas:[],usos:{}}},raca:results[0].data,classe:results[1].data,startingPackage:results[3].data,classFeatures:results[4].data||[],equipment:eq.data||[],equipamentoInicial:{metodo:'',resultados:null,itens:{},busca:''},skills:catalogs.skills,feats:catalogs.feats,languages:catalogs.languages,deities:catalogs.deities,srdSpells:catalogs.spells,progressions:catalogs.progressions,srdDomains:catalogs.domains,srdDomainSpells:catalogs.domainSpells,domainError:catalogs.domainError,domainChoices:[],spellCatalogError:catalogs.spellError,spellProgressionError:catalogs.progressionError,featPicks:[],classFeatPicks:[],activeTab:'pericias'};
+    fichaSRD35={criacao:true,character:{},races:races.filter(function(r){return String(r.id)==='anao';}),classes:classes,identidade:{sexo:'',idade:'',altura_cm:'',peso_kg:'',tendencia:'',alfabetizado:false,wizard_specialization:'',wizard_prohibited_schools:[],cleric_source:'deity',cleric_deity_id:'',cleric_cause:'',druid_nature_bond:'companion',druid_animal_companion_id:''},idiomasEscolhidos:{automaticos:['Comum','Anão'],bonus_inteligencia:[],comprados_falar_idioma:[]},baseAtributos:{FOR:10,DES:10,CON:10,INT:10,SAB:10,CAR:10},nomeDraft:'',activeStep:'identity',sheet:{nivel:1,xp:0,ouro:0,atributos:{},pericias:{},talentos:[],magias_preparadas:{version:1,conhecidas:[],preparadas:[],dominio_preparadas:[],usos:{}}},raca:results[0].data,classe:results[1].data,startingPackage:results[3].data,classFeatures:results[4].data||[],equipment:eq.data||[],equipamentoInicial:{metodo:'',resultados:null,itens:{},busca:''},skills:catalogs.skills,feats:catalogs.feats,languages:catalogs.languages,deities:catalogs.deities,animalCompanions:catalogs.animalCompanions,srdSpells:catalogs.spells,progressions:catalogs.progressions,srdDomains:catalogs.domains,srdDomainSpells:catalogs.domainSpells,domainError:catalogs.domainError,domainChoices:[],spellCatalogError:catalogs.spellError,spellProgressionError:catalogs.progressionError,featPicks:[],classFeatPicks:[],activeTab:'pericias'};
     renderizarFichaSRD35();
   }
   async function carregarFichaSRD35(characterId,sheet) {
