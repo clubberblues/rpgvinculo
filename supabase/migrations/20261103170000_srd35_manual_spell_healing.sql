@@ -175,80 +175,7 @@ BEGIN
       IF substring(v_dice from '([+-][0-9]+)$') IS NOT NULL THEN
         v_roll:=v_roll+substring(v_dice from '([+-][0-9]+)$')::integer;
       END IF;
-    ELSIF v_dice ~ '^[0-9]+
-    ELSE
-      RAISE EXCEPTION 'Expressão de cura inválida na magia';
-    END IF;
-    IF coalesce(v_spell.dados_tecnicos->'cura'->>'por_nivel','0') !~ '^-?[0-9]+$'
-       OR coalesce(v_spell.dados_tecnicos->'cura'->>'max_nivel','0') !~ '^-?[0-9]+$' THEN
-      RAISE EXCEPTION 'Parâmetros por_nivel/max_nivel inválidos na cura';
-    END IF;
-    v_per_level:=coalesce((v_spell.dados_tecnicos->'cura'->>'por_nivel')::integer,0);
-    v_max_level:=coalesce((v_spell.dados_tecnicos->'cura'->>'max_nivel')::integer,0);
-    IF v_per_level<0 OR v_max_level<0 THEN RAISE EXCEPTION 'Parâmetros de cura não podem ser negativos'; END IF;
-    v_level_bonus:=CASE WHEN v_max_level>0 THEN least(v_level,v_max_level) ELSE v_level END;
-    v_healing:=greatest(0,v_roll+v_per_level*v_level_bonus);
-
-    IF v_target_type='player' THEN
-      IF v_target_key IS NULL THEN
-        v_target_hp:=v_sheet.pv_atual; v_target_max_hp:=v_sheet.pv_max;
-        IF v_target_max_hp IS NULL OR v_target_max_hp<0 THEN RAISE EXCEPTION 'PV máximo válido ausente na ficha do conjurador'; END IF;
-        v_target_hp:=least(v_target_max_hp,greatest(0,coalesce(v_target_hp,0)+v_healing));
-        UPDATE public.srd_character_sheets SET pv_atual=v_target_hp WHERE character_id::text=p_character_id;
-      ELSE
-        SELECT sh.pv_atual,sh.pv_max,ch.id::text,coalesce(ch.nome,'Aventureiro')
-          INTO v_target_hp,v_target_max_hp,v_target_character_id,v_target_name
-          FROM public.characters ch JOIN public.srd_character_sheets sh ON sh.character_id::text=ch.id::text
-         WHERE ch.id::text=v_target_character_id AND ch.campaign_id=v_campaign_id
-         FOR UPDATE OF ch,sh;
-        IF NOT FOUND THEN RAISE EXCEPTION 'Ficha SRD do alvo player não encontrada nesta campanha'; END IF;
-        IF v_target_max_hp IS NULL OR v_target_max_hp<0 THEN RAISE EXCEPTION 'PV máximo válido ausente na ficha do alvo'; END IF;
-        v_target_hp:=least(v_target_max_hp,greatest(0,coalesce(v_target_hp,0)+v_healing));
-        UPDATE public.srd_character_sheets SET pv_atual=v_target_hp WHERE character_id::text=v_target_character_id;
-      END IF;
-      IF v_campaign_id IS NOT NULL THEN
-        IF v_tokens IS NULL THEN
-          v_tokens:=CASE WHEN jsonb_typeof(v_cba_data->'tokens')='array' THEN v_cba_data->'tokens' ELSE '[]'::jsonb END;
-        END IF;
-        SELECT count(*)::integer,min(e.ordinality) INTO v_token_count,v_token_index
-          FROM jsonb_array_elements(v_tokens) WITH ORDINALITY e(token,ordinality)
-         WHERE e.token->>'id'=v_target_character_id AND e.token->>'tipo'='player';
-        IF v_target_key IS NOT NULL AND v_token_count<>1 THEN RAISE EXCEPTION 'Token player do alvo ausente ou duplicado na cena'; END IF;
-        IF v_token_count>1 THEN RAISE EXCEPTION 'Há tokens player duplicados para o personagem-alvo'; END IF;
-        IF v_token_count=1 THEN
-          v_token:=v_tokens->(v_token_index::integer-1);
-          v_token:=v_token||jsonb_build_object('hp',v_target_hp,'maxHp',v_target_max_hp);
-          v_tokens:=jsonb_set(v_tokens,ARRAY[(v_token_index-1)::text],v_token,false);
-          v_cba_data:=coalesce(v_cba_data,'{}'::jsonb)||jsonb_build_object('tokens',v_tokens);
-          UPDATE public.campaigns SET cba_data=v_cba_data WHERE id=v_campaign_id;
-        END IF;
-      END IF;
-    ELSE
-      IF coalesce(v_token->>'maxHp','') !~ '^[1-9][0-9]{0,5}$' THEN
-        RAISE EXCEPTION 'O token NPC/monstro precisa de maxHp válido para receber cura';
-      END IF;
-      v_target_max_hp:=(v_token->>'maxHp')::integer;
-      IF v_target_max_hp>100000 THEN RAISE EXCEPTION 'maxHp do token excede o limite aceito'; END IF;
-      v_target_hp:=CASE WHEN coalesce(v_token->>'hp','') ~ '^[0-9]{1,6}$' THEN (v_token->>'hp')::integer ELSE v_target_max_hp END;
-      v_target_hp:=least(v_target_max_hp,greatest(0,v_target_hp+v_healing));
-      v_token:=v_token||jsonb_build_object('hp',v_target_hp,'maxHp',v_target_max_hp);
-      v_tokens:=jsonb_set(v_tokens,ARRAY[(v_token_index-1)::text],v_token,false);
-      v_cba_data:=coalesce(v_cba_data,'{}'::jsonb)||jsonb_build_object('tokens',v_tokens);
-      UPDATE public.campaigns SET cba_data=v_cba_data WHERE id=v_campaign_id;
-    END IF;
-  END IF;
-
-  v_state:=jsonb_build_object('version',1,'conhecidas',v_known,'preparadas',v_prepared,'dominio_preparadas',v_domain_prepared,'usos',v_usos);
-  UPDATE public.srd_character_sheets SET magias_preparadas=v_state WHERE character_id::text=p_character_id;
-  RETURN jsonb_build_object(
-    'estado',v_state,'healing',v_healing,'pv_atual',v_target_hp,'cba_data',v_cba_data,
-    'target_name',v_target_name,'target_token_key',v_target_key,
-    'slot_level',p_slot_level,'slots_remaining',v_slots_remaining,'slots_total',v_slot_total,
-    'domain_slot_used',v_domain_slot_used,'domain_id',CASE WHEN v_domain_slot_used THEN v_domain_id ELSE NULL END
-  );
-END
-$function$
- THEN
+    ELSIF v_dice ~ '^[0-9]+$' THEN
       IF p_roll_results IS NOT NULL AND cardinality(p_roll_results)>0 THEN RAISE EXCEPTION 'Esta cura não exige dados adicionais.'; END IF;
       v_roll:=v_dice::integer;
     ELSE
@@ -322,8 +249,7 @@ $function$
     'domain_slot_used',v_domain_slot_used,'domain_id',CASE WHEN v_domain_slot_used THEN v_domain_id ELSE NULL END
   );
 END
-$function$
-
+$function$;
 
 CREATE OR REPLACE FUNCTION public.conjurar_magia_com_acao_srd_manual(p_character_id text, p_spell_id text, p_slot_level smallint, p_target_token_key text DEFAULT NULL::text, p_roll_results integer[] DEFAULT NULL)
  RETURNS jsonb
@@ -382,8 +308,7 @@ BEGIN
   END IF;
   RETURN COALESCE(v_result, '{}'::JSONB);
 END;
-$function$
-
+$function$;
 
 CREATE OR REPLACE FUNCTION public.conjurar_magia_srd_multialvo_v3(p_character_id text, p_spell_id text, p_slot_level smallint, p_target_token_keys text[], p_roll_results integer[])
  RETURNS jsonb
@@ -531,88 +456,8 @@ BEGIN
         RAISE EXCEPTION 'A cura em massa exige exatamente % resultado(s) manual(is) de d%.',v_die_count,v_die_size;
       END IF;
       SELECT coalesce(sum(value),0) INTO v_roll FROM unnest(p_roll_results) value;
-      IF substring(v_dice from '([+-][0-9]+)
-    v_healing:=greatest(0,v_roll+v_per_level*CASE WHEN v_max_level>0 THEN least(v_level,v_max_level) ELSE v_level END);
-
-    IF v_target_type='player' THEN
-      IF v_is_undead THEN RAISE EXCEPTION 'Personagem jogador não pode ser classificado como morto-vivo'; END IF;
-      SELECT sh.pv_atual,sh.pv_max INTO v_hp,v_max_hp
-      FROM public.characters ch JOIN public.srd_character_sheets sh ON sh.character_id::text=ch.id::text
-      WHERE ch.id::text=v_target_character_id AND ch.campaign_id=v_campaign_id
-      FOR UPDATE OF sh;
-      IF NOT FOUND THEN RAISE EXCEPTION 'Ficha do alvo não encontrada: %',v_key; END IF;
-      v_hp:=least(v_max_hp,greatest(0,coalesce(v_hp,0)+v_healing));
-      UPDATE public.srd_character_sheets SET pv_atual=v_hp WHERE character_id::text=v_target_character_id;
-    ELSE
-      IF coalesce(v_token->>'maxHp','') !~ '^[1-9][0-9]{0,5}$'
-         OR coalesce(v_token->>'hp','') !~ '^[0-9]{1,6}$'
-      THEN RAISE EXCEPTION 'Token sem HP válido: %',v_key; END IF;
-      v_max_hp:=(v_token->>'maxHp')::integer;
-      v_hp:=CASE WHEN v_is_undead
-                 THEN greatest(0,(v_token->>'hp')::integer-v_healing)
-                 ELSE least(v_max_hp,greatest(0,(v_token->>'hp')::integer+v_healing)) END;
-    END IF;
-    v_token:=v_token||jsonb_build_object('hp',v_hp,'maxHp',v_max_hp);
-    v_tokens:=jsonb_set(v_tokens,ARRAY[(v_token_index-1)::text],v_token,false);
-    v_targets:=v_targets||jsonb_build_array(jsonb_build_object(
-      'token_key',btrim(v_key),
-      'healing',CASE WHEN v_is_undead THEN -v_healing ELSE v_healing END,
-      'pv_atual',v_hp,'undead',v_is_undead
-    ));
-  END LOOP;
-
-  v_cba_data:=coalesce(v_cba_data,'{}'::jsonb)||jsonb_build_object('tokens',v_tokens);
-  UPDATE public.campaigns SET cba_data=v_cba_data WHERE id=v_campaign_id;
-  v_state:=jsonb_build_object('version',1,'conhecidas',coalesce(v_state->'conhecidas','[]'::jsonb),
-    'preparadas',v_prepared,'dominio_preparadas',coalesce(v_state->'dominio_preparadas','[]'::jsonb),'usos',coalesce(v_state->'usos','{}'::jsonb));
-  UPDATE public.srd_character_sheets SET magias_preparadas=v_state WHERE character_id::text=btrim(p_character_id);
-  RETURN jsonb_build_object('estado',v_state,'cba_data',v_cba_data,'targets',v_targets,
-    'target_count',cardinality(p_target_token_keys),'multiple_targets',true,
-    'slots_total',v_slot_total,'slots_remaining',v_slots_remaining);
-END;
-$function$
-) IS NOT NULL THEN
-        v_roll:=v_roll+substring(v_dice from '([+-][0-9]+)
-    v_healing:=greatest(0,v_roll+v_per_level*CASE WHEN v_max_level>0 THEN least(v_level,v_max_level) ELSE v_level END);
-
-    IF v_target_type='player' THEN
-      IF v_is_undead THEN RAISE EXCEPTION 'Personagem jogador não pode ser classificado como morto-vivo'; END IF;
-      SELECT sh.pv_atual,sh.pv_max INTO v_hp,v_max_hp
-      FROM public.characters ch JOIN public.srd_character_sheets sh ON sh.character_id::text=ch.id::text
-      WHERE ch.id::text=v_target_character_id AND ch.campaign_id=v_campaign_id
-      FOR UPDATE OF sh;
-      IF NOT FOUND THEN RAISE EXCEPTION 'Ficha do alvo não encontrada: %',v_key; END IF;
-      v_hp:=least(v_max_hp,greatest(0,coalesce(v_hp,0)+v_healing));
-      UPDATE public.srd_character_sheets SET pv_atual=v_hp WHERE character_id::text=v_target_character_id;
-    ELSE
-      IF coalesce(v_token->>'maxHp','') !~ '^[1-9][0-9]{0,5}$'
-         OR coalesce(v_token->>'hp','') !~ '^[0-9]{1,6}$'
-      THEN RAISE EXCEPTION 'Token sem HP válido: %',v_key; END IF;
-      v_max_hp:=(v_token->>'maxHp')::integer;
-      v_hp:=CASE WHEN v_is_undead
-                 THEN greatest(0,(v_token->>'hp')::integer-v_healing)
-                 ELSE least(v_max_hp,greatest(0,(v_token->>'hp')::integer+v_healing)) END;
-    END IF;
-    v_token:=v_token||jsonb_build_object('hp',v_hp,'maxHp',v_max_hp);
-    v_tokens:=jsonb_set(v_tokens,ARRAY[(v_token_index-1)::text],v_token,false);
-    v_targets:=v_targets||jsonb_build_array(jsonb_build_object(
-      'token_key',btrim(v_key),
-      'healing',CASE WHEN v_is_undead THEN -v_healing ELSE v_healing END,
-      'pv_atual',v_hp,'undead',v_is_undead
-    ));
-  END LOOP;
-
-  v_cba_data:=coalesce(v_cba_data,'{}'::jsonb)||jsonb_build_object('tokens',v_tokens);
-  UPDATE public.campaigns SET cba_data=v_cba_data WHERE id=v_campaign_id;
-  v_state:=jsonb_build_object('version',1,'conhecidas',coalesce(v_state->'conhecidas','[]'::jsonb),
-    'preparadas',v_prepared,'dominio_preparadas',coalesce(v_state->'dominio_preparadas','[]'::jsonb),'usos',coalesce(v_state->'usos','{}'::jsonb));
-  UPDATE public.srd_character_sheets SET magias_preparadas=v_state WHERE character_id::text=btrim(p_character_id);
-  RETURN jsonb_build_object('estado',v_state,'cba_data',v_cba_data,'targets',v_targets,
-    'target_count',cardinality(p_target_token_keys),'multiple_targets',true,
-    'slots_total',v_slot_total,'slots_remaining',v_slots_remaining);
-END;
-$function$
-)::integer;
+      IF substring(v_dice from '([+-][0-9]+)$') IS NOT NULL THEN
+        v_roll:=v_roll+substring(v_dice from '([+-][0-9]+)$')::integer;
       END IF;
     ELSE
       IF p_roll_results IS NOT NULL AND cardinality(p_roll_results)>0 THEN RAISE EXCEPTION 'Esta cura não exige dados adicionais.'; END IF;
@@ -656,8 +501,7 @@ $function$
     'target_count',cardinality(p_target_token_keys),'multiple_targets',true,
     'slots_total',v_slot_total,'slots_remaining',v_slots_remaining);
 END;
-$function$
-
+$function$;
 
 CREATE OR REPLACE FUNCTION public.conjurar_magia_com_acao_srd_multialvo_v3(p_character_id text, p_spell_id text, p_slot_level smallint, p_target_token_keys text[], p_roll_results integer[])
  RETURNS jsonb
@@ -682,8 +526,7 @@ BEGIN
   END IF;
   RETURN v_result;
 END;
-$function$
-
+$function$;
 REVOKE EXECUTE ON FUNCTION public.conjurar_magia_srd(text,text,smallint,text) FROM PUBLIC,anon,authenticated;
 REVOKE EXECUTE ON FUNCTION public.conjurar_magia_com_acao_srd(text,text,smallint,text) FROM PUBLIC,anon,authenticated;
 REVOKE EXECUTE ON FUNCTION public.conjurar_magia_srd_multialvo_v2(text,text,smallint,text[]) FROM PUBLIC,anon,authenticated;
