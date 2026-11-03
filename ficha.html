@@ -1604,13 +1604,17 @@ function dnd35TranslateCatalogText(value){
       "Two-Handed Melee Weapons":"Armas corpo a corpo de duas mãos","Ranged Weapons":"Armas à distância",
       "Shields":"Escudos","Potions and Oils":"Poções e óleos","Gear":"Equipamentos gerais",
       "Armor":"Armaduras","Weapons":"Armas","Adventuring Gear":"Equipamento de aventura",
-      "SRD 3.5":"Livro de Regras 3.5","gp":"po","lb.":"kg"
+      "SRD 3.5":"Livro de Regras 3.5","Check:":"Teste:","Action:":"Ação:","Try Again:":"Tentar novamente:",
+      "Special:":"Especial:","Synergy:":"Sinergia:","Untrained:":"Sem treinamento:","Task":"Tarefa","Tasks":"Tarefas",
+      "Move action":"Ação de movimento","full-round action":"ação de rodada completa","standard action":"ação padrão",
+      "free action":"ação livre","swift action":"ação rápida","attacks of opportunity":"ataques de oportunidade",
+      "Armor Check Penalty":"Penalidade de armadura"
     };
-    Object.keys(dictionary).sort(function(a,b){return b.length-a.length;}).forEach(function(key){text=text.replace(new RegExp(key.replace(/[.*+?^${}()|[\]\\]/g,'\\  function dnd35RenderSkills(state, attrs, creating, classMap) {'),'gi'),dictionary[key]);});
-    text=text.replace(/market price/gi,'preço de mercado').replace(/listed in table/gi,'listado na tabela').replace(/the specific item entry is not individually written out in this SRD table\./gi,'a descrição individual deste item não consta nesta tabela.').replace(/\bweight\b/gi,'peso').replace(/\bprice\b/gi,'preço').replace(/\bdamage\b/gi,'dano').replace(/\bcritical\b/gi,'crítico');
+    Object.keys(dictionary).sort(function(a,b){return b.length-a.length;}).forEach(function(key){text=text.replace(new RegExp(key,'gi'),dictionary[key]);});
+    text=text.replace(/market price/gi,'preço de mercado').replace(/listed in table/gi,'listado na tabela').replace(/the specific item entry is not individually written out in this SRD table\./gi,'a descrição individual deste item não consta nesta tabela.').replace(/\bweight\b/gi,'peso').replace(/\bprice\b/gi,'preço').replace(/\bdamage\b/gi,'dano').replace(/\bcritical\b/gi,'crítico').replace(/\b([0-9]+(?:\.[0-9]+)?)\s*gp\b/gi,'$1 po').replace(/\b([0-9]+(?:\.[0-9]+)?)\s*lb\.?\b/gi,'$1 kg');
     return text;
   }
-  function dnd35ClassFeatureDescription(name,source){
+    function dnd35ClassFeatureDescription(name,source){
     var key=String(name||'').toLowerCase();
     if(key.indexOf('deslocamento rápido')>=0)return 'Seu deslocamento terrestre aumenta em 3 m (10 pés) enquanto você não usa armadura pesada e não carrega carga pesada.';
     if(key.indexOf('analfabetismo')>=0)return 'O bárbaro não sabe ler nem escrever. Pode aprender a ler e escrever qualquer idioma que saiba falar gastando 2 pontos de perícia.';
@@ -1628,7 +1632,7 @@ function dnd35TranslateCatalogText(value){
   function dnd35ClassFeaturesMarkup(state){
     var list=Array.isArray(state.classFeatures)?state.classFeatures:[];
     if(!list.length)return '';
-    return '<section class="dnd35-panel dnd35-class-features"><h2>Habilidades da classe · '+esc(state.classe.nome||'')+'</h2><p class="dnd35-note">Estas habilidades são concedidas pela classe; talentos são escolhas separadas.</p><div class="dnd35-feature-grid">'+list.map(function(feature){return '<article class="dnd35-feature-card"><strong>'+esc(feature.name)+'</strong><p>'+esc(dnd35ClassFeatureDescription(feature.name,feature.summary))+'</p><small>Nível '+Number(feature.class_level)+' · progressão SRD</small></article>';}).join('')+'</div></section>';
+    return '<section class="dnd35-panel dnd35-class-features"><h2>Habilidades da classe · '+esc(state.classe.nome||'')+'</h2><p class="dnd35-note">Estas habilidades são concedidas pela classe; talentos são escolhas separadas.</p><div class="dnd35-feature-grid">'+list.map(function(feature){return String(feature.name||'').split(/[·•]/).map(function(part){var name=part.trim();if(!name)return '';return '<article class="dnd35-feature-card"><strong>'+esc(name)+'</strong><p>'+esc(dnd35ClassFeatureDescription(name,feature.summary))+'</p><small>Nível '+Number(feature.class_level)+' · progressão SRD</small></article>';}).join('');}).join('')+'</div></section>';
   }
   
     function dnd35RenderSkills(state, attrs, creating, classMap) {
@@ -1651,7 +1655,7 @@ function dnd35TranslateCatalogText(value){
       html += '<article class="dnd35-skill"><div class="dnd35-skill-head"><strong>'+esc(skill.nome)+'</strong><span class="dnd35-badge">'+esc(labels.join(' · '))+'</span></div>'+
         '<p>Atributo: '+esc(ability)+' · Máximo: '+max+' graduações · Custo: '+((isClass||isLanguage)?'1':'2')+' ponto(s) por graduação'+(rank%1?' · incremento de 0,5':'')+'</p>'+
         (creating ? '<div class="dnd35-skill-control"><label for="skill-'+esc(id)+'">Graduações</label><select id="skill-'+esc(id)+'" data-skill="'+esc(id)+'">'+options+'</select></div>' : '<p>Graduações: <b>'+rank+'</b></p>')+
-        (isLanguage?'<div class="dnd35-formula">Sem rolagem: cada graduação compra conhecimento de um idioma. Informe os idiomas na área de notas da ficha.</div>':'<div class="dnd35-formula">Teste: 1d20 + graduações + modificador do atributo +3 se for perícia de classe com pelo menos 1 graduação.<br>Bônus agora: '+(computed>=0?'+':'')+computed+' ('+rank+' grad. '+(abilityMod>=0?'+':'')+abilityMod+' mod. '+(classBonus?'+3 classe':'')+')</div>')+trainedWarning+(skill.descricao?'<details class="dnd35-skill-rules"><summary>Regras e usos da perícia</summary><p>'+esc(String(skill.descricao).replace(/<\/tr>/gi,'\n').replace(/<\/t[dh]>/gi,' · ').replace(/<[^>]+>/g,'').replace(/&nbsp;/gi,' ').replace(/&amp;/gi,'&').replace(/&mdash;/gi,'—').replace(/&lt;/gi,'<').replace(/&gt;/gi,'>'))+'</p>'+(skill.srd_source_url?'<a href="'+esc(skill.srd_source_url)+'" target="_blank" rel="noopener noreferrer">Fonte SRD ↗</a>':'')+'</details>':'')+'</article>';
+        (isLanguage?'<div class="dnd35-formula">Sem rolagem: cada graduação compra conhecimento de um idioma. Informe os idiomas na área de notas da ficha.</div>':'<div class="dnd35-formula">Teste: 1d20 + graduações + modificador do atributo +3 se for perícia de classe com pelo menos 1 graduação.<br>Bônus agora: '+(computed>=0?'+':'')+computed+' ('+rank+' grad. '+(abilityMod>=0?'+':'')+abilityMod+' mod. '+(classBonus?'+3 classe':'')+')</div>')+trainedWarning+(skill.descricao?'<details class="dnd35-skill-rules"><summary>Regras e usos da perícia</summary><p>'+esc(dnd35TranslateCatalogText(String(skill.descricao).replace(/<\/tr>/gi,'\n').replace(/<\/t[dh]>/gi,' · ').replace(/<[^>]+>/g,'').replace(/&nbsp;/gi,' ').replace(/&amp;/gi,'&').replace(/&mdash;/gi,'—').replace(/&lt;/gi,'<').replace(/&gt;/gi,'>')))+'</p>'+(skill.srd_source_url?'<a href="'+esc(skill.srd_source_url)+'" target="_blank" rel="noopener noreferrer">Fonte SRD ↗</a>':'')+'</details>':'')+'</article>';
     });
     return {html:html,spent:spent,budget:budget};
   }
