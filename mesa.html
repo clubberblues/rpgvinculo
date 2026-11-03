@@ -788,6 +788,24 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
 .monster-card-facts p{margin:0 0 5px}
 .monster-card-facts b{color:#e4c77e}
 
+
+.skill-roll-overlay{position:fixed;inset:0;z-index:9800;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(5,8,6,.86);backdrop-filter:blur(6px)}
+.skill-roll-panel{width:min(760px,96vw);max-height:min(82vh,760px);display:flex;flex-direction:column;gap:12px;padding:18px;border:1px solid #a88c55;border-radius:12px;background:linear-gradient(145deg,#20271e,#101610);box-shadow:0 22px 70px #000b;color:#efe5cd}
+.skill-roll-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.skill-roll-head h2{font:700 18px Cinzel,serif;color:#f0d080}
+.skill-roll-head p{margin-top:4px;color:#c6b994;font-size:12px}
+.skill-roll-close{border:1px solid #92794b;border-radius:7px;background:#171d15;color:#f0d080;padding:7px 11px;cursor:pointer}
+.skill-roll-search{width:100%;padding:10px 12px;border:1px solid #76613b;border-radius:7px;background:#0e140f;color:#f6ecd7;outline:none}
+.skill-roll-hint{font-size:11px;color:#b9ad91}
+.skill-roll-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(185px,1fr));gap:9px;overflow:auto;padding:2px}
+.skill-roll-card{display:flex;flex-direction:column;gap:6px;min-height:112px;padding:12px;border:1px solid #6f603f;border-radius:8px;background:linear-gradient(145deg,#293124,#151d15);color:#e9dfc6;text-align:left;cursor:pointer;transition:transform .16s,border-color .16s}
+.skill-roll-card:hover,.skill-roll-card:focus-visible{border-color:#e3c77f;transform:translateY(-2px);outline:none}
+.skill-roll-card strong{font:700 12px Cinzel,serif;color:#f2d78e}
+.skill-roll-card span{font-size:10px;color:#c0b393}
+.skill-roll-card b{font:900 21px Cinzel,serif;color:#9dd3a6}
+.skill-roll-card small{font-size:10px;line-height:1.35;color:#d7ccb1}
+@media(max-width:600px){.skill-roll-panel{padding:13px;max-height:88vh}.skill-roll-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.skill-roll-card{min-height:105px;padding:9px}}
+
 </style>
 </head>
 <body>
@@ -1694,18 +1712,55 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     return 0;
   }
   async function abrirTestePericiaJogador(){
-    var p=personagemDoTurnoDoJogador()||personagens.find(function(x){return x.ch.user_id===eu.id;});if(!p){alert('Nenhuma ficha própria disponível.');return;}
-    var result=await sb.from('srd_skills').select('id,nome,atributo,source_status');if(result.error){alert('Catálogo de perícias indisponível: '+result.error.message);return;}
-    var trained=p.sh.pericias||{}, skills=(result.data||[]).filter(function(sk){return sk.source_status!=='excluded';});var options=skills.map(function(sk){var rank=Number(trained[String(sk.id)]||0);return {sk:sk,rank:rank};}).filter(function(x){return x.rank>0;});
-    if(!options.length){alert('Esta ficha não tem graduações de perícia registradas.');return;}
-    var pick=await window.vttUI.ask({title:'Escolher perícia',label:'Selecione uma perícia treinada',kind:'select',defaultValue:'1',options:options.map(function(x,i){return {value:String(i+1),label:x.sk.nome+' · '+x.rank+' grad.'};})});var idx=Number(pick)-1;if(!Number.isInteger(idx)||!options[idx])return;
-    var chosen=options[idx],ability=String(chosen.sk.atributo||'INT').toUpperCase(),mod=modifier35((p.sh.atributos||{})[ability]);
-    var classList=p.cl.pericias_classe||[];if(typeof classList==='string'){try{classList=JSON.parse(classList);}catch(e){classList=classList.split(',');}}
-    var norm=function(t){return String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();};
-    var normalizedClassSkills=(Array.isArray(classList)?classList:[classList]).map(norm), skillName=norm(chosen.sk.nome);
-    var classSkill=normalizedClassSkills.indexOf(skillName)>=0||normalizedClassSkills.indexOf('conhecimento qualquer')>=0&&skillName.indexOf('conhecimento ')===0;
-    var classBonus=classSkill&&chosen.rank>=1?3:0,racialBonus=bonusRacialPericia35(p.sh.raca_id,chosen.sk.id),bonus=chosen.rank+mod+classBonus+racialBonus;
-    abrirDado('Perícia · '+chosen.sk.nome,function(d20){var total=Number(d20)+bonus;enviarMensagemChat('📚 Teste de '+chosen.sk.nome+': 1d20 '+d20+' + '+chosen.rank+' grad. + '+ability+' '+mod+(classBonus?' + bônus de perícia de classe +3':'')+(racialBonus?' + bônus racial +'+racialBonus:'')+' = **'+total+'**.','rolagem',{evento:'pericia_dnd35',character_id:String(p.ch.id),skill_id:chosen.sk.id,total:total,graduações:chosen.rank,modificador_atributo:mod,bônus_classe:classBonus,bonus_racial:racialBonus});},true);
+    var p=personagemDoTurnoDoJogador()||personagens.find(function(x){return x.ch.user_id===eu.id;});
+    if(!p){alert('Nenhuma ficha própria disponível.');return;}
+    var result=await sb.from('srd_skills').select('id,nome,atributo,source_status,treinada_apenas,descricao');
+    if(result.error){alert('Catálogo de perícias indisponível: '+result.error.message);return;}
+    var trained=p.sh.pericias||{},classList=p.cl.pericias_classe||[];
+    if(typeof classList==='string'){try{classList=JSON.parse(classList);}catch(e){classList=classList.split(',');}}
+    var norm=function(t){return String(t||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();};
+    var normalizedClassSkills=(Array.isArray(classList)?classList:[classList]).map(norm);
+    var options=(result.data||[]).filter(function(sk){return sk.source_status!=='excluded';}).map(function(sk){
+      var rank=Math.max(0,Number(trained[String(sk.id)]||0)),ability=String(sk.atributo||'INT').toUpperCase();
+      if(rank<=0&&sk.treinada_apenas)return null;
+      var mod=modifier35((p.sh.atributos||{})[ability]),skillName=norm(sk.nome);
+      var classSkill=normalizedClassSkills.indexOf(skillName)>=0||normalizedClassSkills.indexOf('conhecimento qualquer')>=0&&skillName.indexOf('conhecimento ')===0;
+      var classBonus=classSkill&&rank>0?3:0,racialBonus=bonusRacialPericia35(p.sh.raca_id,sk.id),bonus=rank+mod+classBonus+racialBonus;
+      return {sk:sk,rank:rank,ability:ability,mod:mod,classBonus:classBonus,racialBonus:racialBonus,bonus:bonus};
+    }).filter(Boolean).sort(function(a,b){return a.sk.nome.localeCompare(b.sk.nome,'pt-BR');});
+    if(!options.length){alert('Não há perícias disponíveis para esta ficha.');return;}
+    var modal=document.getElementById('modal-pericia-jogador');
+    if(modal)modal.remove();
+    modal=document.createElement('div');modal.id='modal-pericia-jogador';modal.className='skill-roll-overlay';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-label','Escolher perícia para rolagem');
+    var panel=document.createElement('section');panel.className='skill-roll-panel';
+    var head=document.createElement('header');head.className='skill-roll-head';
+    var heading=document.createElement('div');var title=document.createElement('h2');title.textContent='Teste de perícia';var subtitle=document.createElement('p');subtitle.textContent='Escolha uma perícia de '+String(p.ch.nome||'seu personagem')+'. O bônus é calculado automaticamente.';heading.append(title,subtitle);
+    var close=document.createElement('button');close.type='button';close.className='skill-roll-close';close.textContent='✕';close.setAttribute('aria-label','Fechar seleção de perícia');close.onclick=function(){modal.remove();};head.append(heading,close);
+    var search=document.createElement('input');search.type='search';search.className='skill-roll-search';search.placeholder='Buscar perícia…';search.setAttribute('aria-label','Buscar perícia');
+    var summary=document.createElement('p');summary.className='skill-roll-hint';summary.textContent='Selecione um card para abrir o dado D20. Perícias não treinadas aparecem quando as regras permitem.';
+    var grid=document.createElement('div');grid.className='skill-roll-grid';
+    options.forEach(function(option){
+      var card=document.createElement('button');card.type='button';card.className='skill-roll-card';card.dataset.search=norm(option.sk.nome);
+      var name=document.createElement('strong');name.textContent=option.sk.nome;
+      var meta=document.createElement('span');meta.textContent=option.ability+' · '+(option.rank?option.rank+' graduações':'sem graduação')+(option.classBonus?' · perícia de classe': '');
+      var total=document.createElement('b');total.textContent=(option.bonus>=0?'+':'')+option.bonus;
+      var detail=document.createElement('small');detail.textContent='1d20 '+(option.bonus>=0?'+':'')+option.bonus+' = resultado final'+(option.racialBonus?' · bônus racial '+(option.racialBonus>=0?'+':'')+option.racialBonus:'');
+      card.append(name,meta,total,detail);
+      card.onclick=function(){
+        modal.remove();
+        abrirDado('Perícia · '+option.sk.nome,function(d20){
+          var totalRoll=Number(d20)+option.bonus;
+          var parts=['1d20 '+d20,option.rank+' grad.',option.ability+' '+(option.mod>=0?'+':'')+option.mod];
+          if(option.classBonus)parts.push('perícia de classe +3');
+          if(option.racialBonus)parts.push('bônus racial '+(option.racialBonus>=0?'+':'')+option.racialBonus);
+          enviarMensagemChat('📚 '+p.ch.nome+' — '+option.sk.nome+': '+parts.join(' + ')+' = **'+totalRoll+'**.','rolagem',{evento:'pericia_dnd35',character_id:String(p.ch.id),skill_id:option.sk.id,total:totalRoll,graduações:option.rank,modificador_atributo:option.mod,bônus_classe:option.classBonus,bonus_racial:option.racialBonus});
+        },true);
+      };
+      grid.appendChild(card);
+    });
+    search.addEventListener('input',function(){var q=norm(search.value);grid.querySelectorAll('.skill-roll-card').forEach(function(card){card.hidden=!!q&&!card.dataset.search.includes(q);});});
+    modal.addEventListener('click',function(e){if(e.target===modal)modal.remove();});
+    panel.append(head,search,summary,grid);modal.appendChild(panel);document.body.appendChild(modal);search.focus();
   }
   var magiaPersonagemAtiva=null, magiaSelecionada=null, focoAnteriorMagia=null, magiaTokenMestreAtiva=null;
   function parseJsonSeguro35(value,fallback){if(value&&typeof value==='object')return value;try{return JSON.parse(value||'');}catch(e){return fallback;}}
