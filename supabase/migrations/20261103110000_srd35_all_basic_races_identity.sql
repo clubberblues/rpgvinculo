@@ -49,20 +49,20 @@ $old$;
   if v_weight is null or v_weight < 25 or v_weight > 250 then raise exception 'Peso fora do intervalo permitido (25 a 250 kg).'; end if;
 $old$;
   v_new_height_weight text := $new$
-  if p_raca_id='humano' and v_sex='masculino' then v_height_min:=165;v_height_max:=210;v_weight_min:=62;v_weight_max:=300;
-  elsif p_raca_id='humano' then v_height_min:=150;v_height_max:=195;v_weight_min:=43;v_weight_max:=102;
+  if p_raca_id='humano' and v_sex='masculino' then v_height_min:=165;v_height_max:=210;v_weight_min:=62;v_weight_max:=140;
+  elsif p_raca_id='humano' then v_height_min:=150;v_height_max:=195;v_weight_min:=44;v_weight_max:=122;
   elsif p_raca_id='anao' and v_sex='masculino' then v_height_min:=130;v_height_max:=145;v_weight_min:=67;v_weight_max:=113;
   elsif p_raca_id='anao' then v_height_min:=125;v_height_max:=140;v_weight_min:=52;v_weight_max:=98;
   elsif p_raca_id='elfo' and v_sex='masculino' then v_height_min:=150;v_height_max:=175;v_weight_min:=43;v_weight_max:=78;
-  elsif p_raca_id='elfo' then v_height_min:=145;v_height_max:=170;v_weight_min:=41;v_weight_max:=76;
-  elsif p_raca_id='gnomo' and v_sex='masculino' then v_height_min:=95;v_height_max:=110;v_weight_min:=21;v_weight_max:=24;
-  elsif p_raca_id='gnomo' then v_height_min:=90;v_height_max:=105;v_weight_min:=18;v_weight_max:=21;
-  elsif p_raca_id='meio-elfo' and v_sex='masculino' then v_height_min:=155;v_height_max:=190;v_weight_min:=52;v_weight_max:=114;
+  elsif p_raca_id='elfo' then v_height_min:=150;v_height_max:=175;v_weight_min:=41;v_weight_max:=76;
+  elsif p_raca_id='gnomo' and v_sex='masculino' then v_height_min:=95;v_height_max:=110;v_weight_min:=20.5;v_weight_max:=20.5;
+  elsif p_raca_id='gnomo' then v_height_min:=90;v_height_max:=105;v_weight_min:=17.5;v_weight_max:=17.5;
+  elsif p_raca_id='meio-elfo' and v_sex='masculino' then v_height_min:=160;v_height_max:=195;v_weight_min:=52;v_weight_max:=114;
   elsif p_raca_id='meio-elfo' then v_height_min:=150;v_height_max:=185;v_weight_min:=42;v_weight_max:=104;
   elsif p_raca_id='meio-orc' and v_sex='masculino' then v_height_min:=170;v_height_max:=215;v_weight_min:=67;v_weight_max:=145;
-  elsif p_raca_id='meio-orc' then v_height_min:=155;v_height_max:=200;v_weight_min:=47;v_weight_max:=125;
-  elsif p_raca_id='halfling' and v_sex='masculino' then v_height_min:=85;v_height_max:=100;v_weight_min:=16;v_weight_max:=19;
-  elsif p_raca_id='halfling' then v_height_min:=80;v_height_max:=95;v_weight_min:=13;v_weight_max:=16;
+  elsif p_raca_id='meio-orc' then v_height_min:=150;v_height_max:=195;v_weight_min:=47;v_weight_max:=125;
+  elsif p_raca_id='halfling' and v_sex='masculino' then v_height_min:=85;v_height_max:=100;v_weight_min:=15.5;v_weight_max:=15.5;
+  elsif p_raca_id='halfling' then v_height_min:=80;v_height_max:=95;v_weight_min:=12.5;v_weight_max:=12.5;
   else raise exception 'Não há tabela física para esta combinação de raça e sexo.'; end if;
   if v_height is null or v_height < v_height_min or v_height > v_height_max then
     raise exception 'Altura fora do intervalo da tabela racial (% a % cm).',v_height_min,v_height_max;
@@ -91,12 +91,257 @@ $guard$,'');
   end if;
   v_definition := replace(v_definition,'  v_weight numeric;','  v_weight numeric;'||chr(10)||'  v_height_min numeric;'||chr(10)||'  v_height_max numeric;'||chr(10)||'  v_weight_min numeric;'||chr(10)||'  v_weight_max numeric;');
 
-  if position(v_old_age in v_definition)=0 then raise exception 'Bloco de idade inicial mudou; revisar migração.'; end if;
+  -- Corrige literais JSONB malformados herdados da função instalada.
+  v_definition := replace(v_definition,$bad
   v_definition := replace(v_definition,v_old_age,v_new_age);
-  if position('A idade mínima para Anão % é % anos (40 + %d6, resultado mínimo).' in v_definition)=0 then
+  if position($oldmsg$    raise exception 'A idade mínima para Anão % é % anos (40 + %d6, resultado mínimo).',v_class.nome,v_min_age,v_age_dice;$oldmsg$ in v_definition)=0 then
     raise exception 'Mensagem de idade mínima mudou; revisar migração.';
   end if;
-  v_definition := replace(v_definition,'A idade mínima para Anão % é % anos (40 + %d6, resultado mínimo).','A idade mínima para % é % anos (idade adulta + % dados, resultado mínimo).');
+  v_definition := replace(
+    v_definition,
+    $oldmsg$    raise exception 'A idade mínima para Anão % é % anos (40 + %d6, resultado mínimo).',v_class.nome,v_min_age,v_age_dice;$oldmsg$,
+    $newmsg$    raise exception 'A idade mínima para a raça % e classe % é % anos (idade adulta + %d6, resultado mínimo).',p_raca_id,v_class.nome,v_min_age,v_age_dice;$newmsg$
+  );
+
+  if position(v_old_aging in v_definition)=0 then raise exception 'Bloco de envelhecimento mudou; revisar migração.'; end if;
+  v_definition := replace(v_definition,v_old_aging,v_new_aging);
+  if position(v_old_height_weight in v_definition)=0 then raise exception 'Validação física mudou; revisar migração.'; end if;
+  v_definition := replace(v_definition,v_old_height_weight,v_new_height_weight);
+
+  execute v_definition;
+end
+$migration$;
+""""'::jsonb$bad$,$good
+  v_definition := replace(v_definition,v_old_age,v_new_age);
+  if position($oldmsg$    raise exception 'A idade mínima para Anão % é % anos (40 + %d6, resultado mínimo).',v_class.nome,v_min_age,v_age_dice;$oldmsg$ in v_definition)=0 then
+    raise exception 'Mensagem de idade mínima mudou; revisar migração.';
+  end if;
+  v_definition := replace(
+    v_definition,
+    $oldmsg$    raise exception 'A idade mínima para Anão % é % anos (40 + %d6, resultado mínimo).',v_class.nome,v_min_age,v_age_dice;$oldmsg$,
+    $newmsg$    raise exception 'A idade mínima para a raça % e classe % é % anos (idade adulta + %d6, resultado mínimo).',p_raca_id,v_class.nome,v_min_age,v_age_dice;$newmsg$
+  );
+
+  if position(v_old_aging in v_definition)=0 then raise exception 'Bloco de envelhecimento mudou; revisar migração.'; end if;
+  v_definition := replace(v_definition,v_old_aging,v_new_aging);
+  if position(v_old_height_weight in v_definition)=0 then raise exception 'Validação física mudou; revisar migração.'; end if;
+  v_definition := replace(v_definition,v_old_height_weight,v_new_height_weight);
+
+  execute v_definition;
+end
+$migration$;
+""'::jsonb$good$);
+  v_definition := replace(v_definition,$bad
+  v_definition := replace(v_definition,v_old_age,v_new_age);
+  if position($oldmsg$    raise exception 'A idade mínima para Anão % é % anos (40 + %d6, resultado mínimo).',v_class.nome,v_min_age,v_age_dice;$oldmsg$ in v_definition)=0 then
+    raise exception 'Mensagem de idade mínima mudou; revisar migração.';
+  end if;
+  v_definition := replace(
+    v_definition,
+    $oldmsg$    raise exception 'A idade mínima para Anão % é % anos (40 + %d6, resultado mínimo).',v_class.nome,v_min_age,v_age_dice;$oldmsg$,
+    $newmsg$    raise exception 'A idade mínima para a raça % e classe % é % anos (idade adulta + %d6, resultado mínimo).',p_raca_id,v_class.nome,v_min_age,v_age_dice;$newmsg$
+  );
+
+  if position(v_old_aging in v_definition)=0 then raise exception 'Bloco de envelhecimento mudou; revisar migração.'; end if;
+  v_definition := replace(v_definition,v_old_aging,v_new_aging);
+  if position(v_old_height_weight in v_definition)=0 then raise exception 'Validação física mudou; revisar migração.'; end if;
+  v_definition := replace(v_definition,v_old_height_weight,v_new_height_weight);
+
+  execute v_definition;
+end
+$migration$;
+""companion""'::jsonb$bad$,$good
+  v_definition := replace(v_definition,v_old_age,v_new_age);
+  if position($oldmsg$    raise exception 'A idade mínima para Anão % é % anos (40 + %d6, resultado mínimo).',v_class.nome,v_min_age,v_age_dice;$oldmsg$ in v_definition)=0 then
+    raise exception 'Mensagem de idade mínima mudou; revisar migração.';
+  end if;
+  v_definition := replace(
+    v_definition,
+    $oldmsg$    raise exception 'A idade mínima para Anão % é % anos (40 + %d6, resultado mínimo).',v_class.nome,v_min_age,v_age_dice;$oldmsg$,
+    $newmsg$    raise exception 'A idade mínima para a raça % e classe % é % anos (idade adulta + %d6, resultado mínimo).',p_raca_id,v_class.nome,v_min_age,v_age_dice;$newmsg$
+  );
+
+  if position(v_old_aging in v_definition)=0 then raise exception 'Bloco de envelhecimento mudou; revisar migração.'; end if;
+  v_definition := replace(v_definition,v_old_aging,v_new_aging);
+  if position(v_old_height_weight in v_definition)=0 then raise exception 'Validação física mudou; revisar migração.'; end if;
+  v_definition := replace(v_definition,v_old_height_weight,v_new_height_weight);
+
+  execute v_definition;
+end
+$migration$;
+"companion"'::jsonb$good$);
+  v_definition := replace(v_definition,$bad
+  v_definition := replace(v_definition,v_old_age,v_new_age);
+  if position($oldmsg$    raise exception 'A idade mínima para Anão % é % anos (40 + %d6, resultado mínimo).',v_class.nome,v_min_age,v_age_dice;$oldmsg$ in v_definition)=0 then
+    raise exception 'Mensagem de idade mínima mudou; revisar migração.';
+  end if;
+  v_definition := replace(
+    v_definition,
+    $oldmsg$    raise exception 'A idade mínima para Anão % é % anos (40 + %d6, resultado mínimo).',v_class.nome,v_min_age,v_age_dice;$oldmsg$,
+    $newmsg$    raise exception 'A idade mínima para a raça % e classe % é % anos (idade adulta + %d6, resultado mínimo).',p_raca_id,v_class.nome,v_min_age,v_age_dice;$newmsg$
+  );
+
+  if position(v_old_aging in v_definition)=0 then raise exception 'Bloco de envelhecimento mudou; revisar migração.'; end if;
+  v_definition := replace(v_definition,v_old_aging,v_new_aging);
+  if position(v_old_height_weight in v_definition)=0 then raise exception 'Validação física mudou; revisar migração.'; end if;
+  v_definition := replace(v_definition,v_old_height_weight,v_new_height_weight);
+
+  execute v_definition;
+end
+$migration$;
+""domain""'::jsonb$bad$,$good
+  v_definition := replace(v_definition,v_old_age,v_new_age);
+  if position($oldmsg$    raise exception 'A idade mínima para Anão % é % anos (40 + %d6, resultado mínimo).',v_class.nome,v_min_age,v_age_dice;$oldmsg$ in v_definition)=0 then
+    raise exception 'Mensagem de idade mínima mudou; revisar migração.';
+  end if;
+  v_definition := replace(
+    v_definition,
+    $oldmsg$    raise exception 'A idade mínima para Anão % é % anos (40 + %d6, resultado mínimo).',v_class.nome,v_min_age,v_age_dice;$oldmsg$,
+    $newmsg$    raise exception 'A idade mínima para a raça % e classe % é % anos (idade adulta + %d6, resultado mínimo).',p_raca_id,v_class.nome,v_min_age,v_age_dice;$newmsg$
+  );
+
+  if position(v_old_aging in v_definition)=0 then raise exception 'Bloco de envelhecimento mudou; revisar migração.'; end if;
+  v_definition := replace(v_definition,v_old_aging,v_new_aging);
+  if position(v_old_height_weight in v_definition)=0 then raise exception 'Validação física mudou; revisar migração.'; end if;
+  v_definition := replace(v_definition,v_old_height_weight,v_new_height_weight);
+
+  execute v_definition;
+end
+$migration$;
+"domain"'::jsonb$good$);
+  v_definition := replace(v_definition,$bad
+  v_definition := replace(v_definition,v_old_age,v_new_age);
+  if position($oldmsg$    raise exception 'A idade mínima para Anão % é % anos (40 + %d6, resultado mínimo).',v_class.nome,v_min_age,v_age_dice;$oldmsg$ in v_definition)=0 then
+    raise exception 'Mensagem de idade mínima mudou; revisar migração.';
+  end if;
+  v_definition := replace(
+    v_definition,
+    $oldmsg$    raise exception 'A idade mínima para Anão % é % anos (40 + %d6, resultado mínimo).',v_class.nome,v_min_age,v_age_dice;$oldmsg$,
+    $newmsg$    raise exception 'A idade mínima para a raça % e classe % é % anos (idade adulta + %d6, resultado mínimo).',p_raca_id,v_class.nome,v_min_age,v_age_dice;$newmsg$
+  );
+
+  if position(v_old_aging in v_definition)=0 then raise exception 'Bloco de envelhecimento mudou; revisar migração.'; end if;
+  v_definition := replace(v_definition,v_old_aging,v_new_aging);
+  if position(v_old_height_weight in v_definition)=0 then raise exception 'Validação física mudou; revisar migração.'; end if;
+  v_definition := replace(v_definition,v_old_height_weight,v_new_height_weight);
+
+  execute v_definition;
+end
+$migration$;
+""none""'::jsonb$bad$,$good
+  v_definition := replace(v_definition,v_old_age,v_new_age);
+  if position($oldmsg$    raise exception 'A idade mínima para Anão % é % anos (40 + %d6, resultado mínimo).',v_class.nome,v_min_age,v_age_dice;$oldmsg$ in v_definition)=0 then
+    raise exception 'Mensagem de idade mínima mudou; revisar migração.';
+  end if;
+  v_definition := replace(
+    v_definition,
+    $oldmsg$    raise exception 'A idade mínima para Anão % é % anos (40 + %d6, resultado mínimo).',v_class.nome,v_min_age,v_age_dice;$oldmsg$,
+    $newmsg$    raise exception 'A idade mínima para a raça % e classe % é % anos (idade adulta + %d6, resultado mínimo).',p_raca_id,v_class.nome,v_min_age,v_age_dice;$newmsg$
+  );
+
+  if position(v_old_aging in v_definition)=0 then raise exception 'Bloco de envelhecimento mudou; revisar migração.'; end if;
+  v_definition := replace(v_definition,v_old_aging,v_new_aging);
+  if position(v_old_height_weight in v_definition)=0 then raise exception 'Validação física mudou; revisar migração.'; end if;
+  v_definition := replace(v_definition,v_old_height_weight,v_new_height_weight);
+
+  execute v_definition;
+end
+$migration$;
+"none"'::jsonb$good$);
+
+  if position($bad
+  v_definition := replace(v_definition,v_old_age,v_new_age);
+  if position($oldmsg$    raise exception 'A idade mínima para Anão % é % anos (40 + %d6, resultado mínimo).',v_class.nome,v_min_age,v_age_dice;$oldmsg$ in v_definition)=0 then
+    raise exception 'Mensagem de idade mínima mudou; revisar migração.';
+  end if;
+  v_definition := replace(
+    v_definition,
+    $oldmsg$    raise exception 'A idade mínima para Anão % é % anos (40 + %d6, resultado mínimo).',v_class.nome,v_min_age,v_age_dice;$oldmsg$,
+    $newmsg$    raise exception 'A idade mínima para a raça % e classe % é % anos (idade adulta + %d6, resultado mínimo).',p_raca_id,v_class.nome,v_min_age,v_age_dice;$newmsg$
+  );
+
+  if position(v_old_aging in v_definition)=0 then raise exception 'Bloco de envelhecimento mudou; revisar migração.'; end if;
+  v_definition := replace(v_definition,v_old_aging,v_new_aging);
+  if position(v_old_height_weight in v_definition)=0 then raise exception 'Validação física mudou; revisar migração.'; end if;
+  v_definition := replace(v_definition,v_old_height_weight,v_new_height_weight);
+
+  execute v_definition;
+end
+$migration$;
+""""'::jsonb$bad$ in v_definition)>0
+     or position($bad
+  v_definition := replace(v_definition,v_old_age,v_new_age);
+  if position($oldmsg$    raise exception 'A idade mínima para Anão % é % anos (40 + %d6, resultado mínimo).',v_class.nome,v_min_age,v_age_dice;$oldmsg$ in v_definition)=0 then
+    raise exception 'Mensagem de idade mínima mudou; revisar migração.';
+  end if;
+  v_definition := replace(
+    v_definition,
+    $oldmsg$    raise exception 'A idade mínima para Anão % é % anos (40 + %d6, resultado mínimo).',v_class.nome,v_min_age,v_age_dice;$oldmsg$,
+    $newmsg$    raise exception 'A idade mínima para a raça % e classe % é % anos (idade adulta + %d6, resultado mínimo).',p_raca_id,v_class.nome,v_min_age,v_age_dice;$newmsg$
+  );
+
+  if position(v_old_aging in v_definition)=0 then raise exception 'Bloco de envelhecimento mudou; revisar migração.'; end if;
+  v_definition := replace(v_definition,v_old_aging,v_new_aging);
+  if position(v_old_height_weight in v_definition)=0 then raise exception 'Validação física mudou; revisar migração.'; end if;
+  v_definition := replace(v_definition,v_old_height_weight,v_new_height_weight);
+
+  execute v_definition;
+end
+$migration$;
+""companion""'::jsonb$bad$ in v_definition)>0
+     or position($bad
+  v_definition := replace(v_definition,v_old_age,v_new_age);
+  if position($oldmsg$    raise exception 'A idade mínima para Anão % é % anos (40 + %d6, resultado mínimo).',v_class.nome,v_min_age,v_age_dice;$oldmsg$ in v_definition)=0 then
+    raise exception 'Mensagem de idade mínima mudou; revisar migração.';
+  end if;
+  v_definition := replace(
+    v_definition,
+    $oldmsg$    raise exception 'A idade mínima para Anão % é % anos (40 + %d6, resultado mínimo).',v_class.nome,v_min_age,v_age_dice;$oldmsg$,
+    $newmsg$    raise exception 'A idade mínima para a raça % e classe % é % anos (idade adulta + %d6, resultado mínimo).',p_raca_id,v_class.nome,v_min_age,v_age_dice;$newmsg$
+  );
+
+  if position(v_old_aging in v_definition)=0 then raise exception 'Bloco de envelhecimento mudou; revisar migração.'; end if;
+  v_definition := replace(v_definition,v_old_aging,v_new_aging);
+  if position(v_old_height_weight in v_definition)=0 then raise exception 'Validação física mudou; revisar migração.'; end if;
+  v_definition := replace(v_definition,v_old_height_weight,v_new_height_weight);
+
+  execute v_definition;
+end
+$migration$;
+""domain""'::jsonb$bad$ in v_definition)>0
+     or position($bad
+  v_definition := replace(v_definition,v_old_age,v_new_age);
+  if position($oldmsg$    raise exception 'A idade mínima para Anão % é % anos (40 + %d6, resultado mínimo).',v_class.nome,v_min_age,v_age_dice;$oldmsg$ in v_definition)=0 then
+    raise exception 'Mensagem de idade mínima mudou; revisar migração.';
+  end if;
+  v_definition := replace(
+    v_definition,
+    $oldmsg$    raise exception 'A idade mínima para Anão % é % anos (40 + %d6, resultado mínimo).',v_class.nome,v_min_age,v_age_dice;$oldmsg$,
+    $newmsg$    raise exception 'A idade mínima para a raça % e classe % é % anos (idade adulta + %d6, resultado mínimo).',p_raca_id,v_class.nome,v_min_age,v_age_dice;$newmsg$
+  );
+
+  if position(v_old_aging in v_definition)=0 then raise exception 'Bloco de envelhecimento mudou; revisar migração.'; end if;
+  v_definition := replace(v_definition,v_old_aging,v_new_aging);
+  if position(v_old_height_weight in v_definition)=0 then raise exception 'Validação física mudou; revisar migração.'; end if;
+  v_definition := replace(v_definition,v_old_height_weight,v_new_height_weight);
+
+  execute v_definition;
+end
+$migration$;
+""none""'::jsonb$bad$ in v_definition)>0 then
+    raise exception 'Migração abortada: ainda existem literais JSONB malformados.';
+  end if;
+
+  if position(v_old_age in v_definition)=0 then raise exception 'Bloco de idade inicial mudou; revisar migração.'; end if;
+  v_definition := replace(v_definition,v_old_age,v_new_age);
+  if position($oldmsg$    raise exception 'A idade mínima para Anão % é % anos (40 + %d6, resultado mínimo).',v_class.nome,v_min_age,v_age_dice;$oldmsg$ in v_definition)=0 then
+    raise exception 'Mensagem de idade mínima mudou; revisar migração.';
+  end if;
+  v_definition := replace(
+    v_definition,
+    $oldmsg$    raise exception 'A idade mínima para Anão % é % anos (40 + %d6, resultado mínimo).',v_class.nome,v_min_age,v_age_dice;$oldmsg$,
+    $newmsg$    raise exception 'A idade mínima para a raça % e classe % é % anos (idade adulta + %d6, resultado mínimo).',p_raca_id,v_class.nome,v_min_age,v_age_dice;$newmsg$
+  );
 
   if position(v_old_aging in v_definition)=0 then raise exception 'Bloco de envelhecimento mudou; revisar migração.'; end if;
   v_definition := replace(v_definition,v_old_aging,v_new_aging);
