@@ -5146,30 +5146,25 @@ if (throwButtonForLabel) throwButtonForLabel.setAttribute('aria-label', 'Rolar d
     if (!event.data || (event.data.action !== 'roll' && event.data.action !== 'prepareRoll') || rollPending) return;
     var aguardarClique = event.data.action === 'prepareRoll';
     var expression = String(event.data.expression || '1d20').replace(/\s+/g, '');
-    var parsed = expression.match(/^(\d{1,2})d(4|6|8|10|12|20|100)([+-]\d+)?$/i);
-    if (!parsed) {
-      console.warn('Expressão de rolagem da mesa inválida ou não suportada:', expression);
-      return;
+    var terms=expression.match(/[+-]?(?:\\d{1,2}d(?:4|6|8|10|12|20|100)|\\d+)/gi),diceCounts={'4':0,'6':0,'8':0,'10':0,'12':0,'20':0,'100':0},desiredModifier=0,desiredTotal=0;
+    if(!terms||terms.join('')!==expression){console.warn('Expressão de rolagem da mesa inválida ou não suportada:',expression);return;}
+    for(var ti=0;ti<terms.length;ti++){
+      var dieTerm=terms[ti].match(/^([+-]?)(\\d{1,2})d(4|6|8|10|12|20|100)$/i);
+      if(dieTerm){if(dieTerm[1]==='-'){console.warn('Dados negativos não são suportados:',expression);return;}var count=Number(dieTerm[2]),sides=dieTerm[3];if(count<1){console.warn('Quantidade de dados inválida:',expression);return;}diceCounts[sides]+=count;desiredTotal+=count;}
+      else desiredModifier+=Number(terms[ti]);
     }
-    var desiredCount = Number(parsed[1]);
-    var desiredDie = parsed[2];
-    var desiredModifier = Number(parsed[3] || 0);
-    if (desiredCount < 1 || desiredCount > 20) {
-      console.warn('Quantidade de dados fora do limite suportado:', desiredCount);
-      return;
-    }
+    if(desiredTotal<1||desiredTotal>20||Object.keys(diceCounts).some(function(side){return diceCounts[side]>20;})){console.warn('Quantidade total de dados fora do limite suportado:',desiredTotal);return;}
 
     var diceColumn = document.getElementById('dice-column');
     var modifierStrip = document.getElementById('modifier-strip');
-    var desiredRow = document.querySelector('.die-pick-row[data-die="' + desiredDie + '"]');
-    if (!throwButton || !desiredRow || (diceColumn && diceColumn.classList.contains('locked'))) return;
+    if (!throwButton || !diceColumn || diceColumn.classList.contains('locked')) return;
 
     document.querySelectorAll('.die-pick-row').forEach(function (row) {
       var countEl = row.querySelector('.count');
       var down = row.querySelector('.step-down');
       var up = row.querySelector('.step-up');
       var count = countEl ? (parseInt(countEl.textContent, 10) || 0) : 0;
-      var wanted = row.dataset.die === desiredDie ? desiredCount : 0;
+      var wanted = Number(diceCounts[row.dataset.die]||0);
       row.classList.toggle('auto-active', wanted > 0);
       var guard = 0;
       while (count > wanted && down && !down.disabled && guard++ < 30) { down.click(); count--; }
@@ -5189,9 +5184,9 @@ if (throwButtonForLabel) throwButtonForLabel.setAttribute('aria-label', 'Rolar d
       while (modifier < desiredModifier && modUp && !modUp.disabled && guard++ < 300) { modUp.click(); modifier++; }
     }
 
-    var actualCount = parseInt(desiredRow.querySelector('.count')?.textContent || '0', 10) || 0;
+    var countsMatch=Array.from(document.querySelectorAll('.die-pick-row')).every(function(row){return (parseInt(row.querySelector('.count')?.textContent||'0',10)||0)===Number(diceCounts[row.dataset.die]||0);});
     var actualModifier = parseInt(modifierStepper?.querySelector('.count')?.textContent || '0', 10) || 0;
-    if (actualCount !== desiredCount || actualModifier !== desiredModifier) {
+    if (!countsMatch || actualModifier !== desiredModifier) {
       console.warn('O dado 3D não conseguiu preparar a expressão completa:', expression);
       return;
     }
