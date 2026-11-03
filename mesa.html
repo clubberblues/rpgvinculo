@@ -836,6 +836,41 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
 .card-catalogo .detalhe{color:#c7bb9d!important}
 .cba-submodal,.cba-modal-card,.sub-modal-card{background:#151d14!important;border-color:#75613d!important;color:#eee3ca!important}
 
+
+/* Elenco persistente em formato de cartas de deck na lateral. */
+.mesa{grid-template-rows:58px minmax(0,1fr) 0!important}
+.mesa-footer{display:none!important}
+.col-esq{display:flex!important;flex-direction:column!important;gap:8px!important;min-height:0!important;overflow:hidden!important}
+.col-esq>.painel:first-child{flex:1 1 56%!important;min-height:180px!important}
+.painel-aventureiros{flex:1 1 44%!important;min-height:0!important;display:flex!important;flex-direction:column!important}
+.painel-aventureiros>.painel-cab{flex:0 0 auto}
+#cards-strip.cards-strip{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-auto-rows:154px!important;gap:7px!important;align-content:start!important;justify-items:center!important;min-height:0!important;max-height:none!important;overflow:auto!important;padding:7px!important;border:0!important;background:transparent!important}
+#cards-strip .deck-card{width:100%!important;max-width:112px!important;min-width:0!important;height:150px!important;min-height:150px!important;max-height:150px!important;padding:0!important;display:block!important;border-radius:8px!important;overflow:hidden!important;box-shadow:0 4px 12px #0008!important}
+#cards-strip .deck-card .card-pers-inner{height:100%!important;min-height:100%!important}
+#cards-strip .deck-card .card-pers-face{padding:6px!important;gap:3px!important}
+#cards-strip .deck-card .card-pers-avatar{width:48px!important;height:48px!important;flex:0 0 48px!important;margin:0 auto 2px!important}
+#cards-strip .deck-card .card-pers-info{display:flex!important;flex-direction:column!important;align-items:center!important;gap:3px!important;text-align:center!important}
+#cards-strip .deck-card .card-pers-nome{font:700 10px Cinzel,serif!important;line-height:1.15!important;white-space:normal!important;max-height:2.3em!important;overflow:hidden!important}
+#cards-strip .deck-card .card-pers-classe{font-size:8px!important;margin:0!important;line-height:1.1!important}
+#cards-strip .deck-card .card-pers-initiative{display:none!important}
+#cards-strip .deck-card .card-pers-pv{width:100%!important;height:4px!important;margin:1px 0!important}
+#cards-strip .deck-card .card-pers-pv-txt{font:700 7px Cinzel,serif!important;line-height:1.15!important;text-align:center!important;white-space:normal!important}
+#cards-strip .deck-card .card-flip-button{display:none!important}
+#cards-strip .deck-card .card-pers-back{justify-content:flex-start!important;padding:7px!important}
+#cards-strip .deck-card .card-pers-back strong{font-size:8px!important}
+#cards-strip .deck-card .card-pers-back p,#cards-strip .deck-card .card-pers-back small{font-size:8px!important;line-height:1.25!important}
+#painel-iniciativa{position:relative!important;inset:auto!important;left:auto!important;top:auto!important;transform:none!important;width:100%!important;max-height:86px!important;overflow:auto!important;margin:0!important;padding:5px!important}
+#painel-iniciativa:not(.ativo){display:none!important}
+@media(max-width:760px){
+ .mesa{grid-template-rows:58px minmax(0,1fr) 0!important}
+ .mesa-corpo{grid-template-columns:minmax(0,1fr) 210px!important;grid-template-rows:minmax(0,1fr) 0!important}
+ .col-esq{grid-column:1!important;grid-row:1!important}
+ .col-esq>.painel:first-child{flex:1 1 48%!important;min-height:100px!important}
+ .painel-aventureiros{flex:1 1 52%!important}
+ #cards-strip.cards-strip{grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-auto-rows:142px!important}
+ #cards-strip .deck-card{height:138px!important;min-height:138px!important}
+}
+
 </style>
 </head>
 <body>
@@ -1242,6 +1277,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
                 '<button id="chat-enviar">➤</button>'+
               '</div>'+
             '</section>'+
+            '<section class="painel painel-aventureiros" aria-label="Aventureiros da mesa"><div class="painel-cab">AVENTUREIROS</div><div class="painel-corpo" id="cards-strip" aria-label="Cards de personagens, NPCs e monstros"></div></section>'+
           '</aside>'+
           '<main class="tabuleiro" id="area-tabuleiro">'+
             '<div id="cba-live-movement-preview" class="cba-live-movement-preview" role="status" aria-live="polite" hidden></div>'+
@@ -1258,15 +1294,12 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
           '</main>'+
           '<aside class="col-dir" id="acoes-dir"></aside>'+
         '</div>'+
-        '<footer class="mesa-footer">'+
-          '<div class="mesa-footer-heading"><span>COMBATENTES</span><span>ORDEM DE TURNO</span></div>'+
-          '<div class="cards-strip" id="cards-strip" aria-label="Cards de combate em ordem de iniciativa"></div>'+
-        '</footer>'+
+        '<footer class="mesa-footer" aria-hidden="true"></footer>'+
       '</div>';
 
     var initiativePanel = document.getElementById('painel-iniciativa');
-    var mesaFooter = document.querySelector('.mesa-footer');
-    if (initiativePanel && mesaFooter) mesaFooter.insertBefore(initiativePanel, mesaFooter.querySelector('.cards-strip'));
+    var cardsPanel = document.getElementById('cards-strip');
+    if (initiativePanel && cardsPanel) cardsPanel.parentNode.insertBefore(initiativePanel,cardsPanel);
     renderBotoesAcao();
     ligarChatUI();
     ligarEventosTestes();
@@ -4002,12 +4035,12 @@ async function abrirModalEquipamentos(){
       var ca=caFichaMesa(p),bab=bab35(p.cl,nivel),attackMod=modifier35((p.sh.atributos||{}).FOR);
       var weapon=(p.equipamento||[]).find(function(it){return it.equipado&&it.categoria==='arma';}),damage=weapon&&weapon.dano||'1d3';
       var activeCard=!!(active&&String(active.id)===String(p.ch.id)&&!!active.is_monster===isGMActor);
-      var initText=entry?'Iniciativa #'+(initIndex+1)+' · '+String(entry.valor):'Aguardando iniciativa';
+      var initText=entry?'Iniciativa '+String(entry.valor):'Participante da mesa';
       var token=playerTokenById[String(p.ch.id)],tokenAttr=token?' data-cba-token-key="'+esc(token.key)+'"':'';
       var avatarUrl=String((p.perfil&&p.perfil.avatar_url)||'').trim(),avatar=/^https?:\/\/[^\s"'<>]+$/i.test(avatarUrl)?'<div class="card-pers-avatar" style="background-image:url(&quot;'+esc(avatarUrl)+'&quot;)"></div>':'<div class="card-pers-avatar">'+iniciais((p.perfil&&p.perfil.username)||p.ch.nome)+'</div>';
       var selected=alvosSelecionados.indexOf(String(p.ch.id))!==-1?' selecionado-para-teste':'';
       var attrBack=['FOR','DES','CON','INT','SAB','CAR'].map(function(k){return k+' '+Number((p.sh.atributos||{})[k]||10);}).join(' · '),skillCount=Object.keys(p.sh.pericias||{}).length,featCount=Array.isArray(p.sh.talentos)?p.sh.talentos.length:0;
-       var html='<a class="card-pers'+(p.ch.user_id===eu.id?' eu':'')+selected+(activeCard?' turno-ativo':'')+'" data-actor-key="'+esc(actorKey)+'" data-char="'+esc(p.ch.id)+'"'+tokenAttr+' href="ficha.html?char='+encodeURIComponent(p.ch.id)+'&mesa='+encodeURIComponent(MESA_ID)+(ehGM?'&role=gm':'')+'"><div class="card-pers-inner"><div class="card-pers-face card-pers-front">'+avatar+'<div class="card-pers-info"><div class="card-pers-nome">'+esc(p.ch.nome)+'</div><div class="card-pers-classe">'+esc((p.cl&&p.cl.nome)||p.sh.classe||p.sh.classe_id||'—')+' · N'+nivel+'</div><div class="card-pers-initiative'+(activeCard?' ativo':'')+'"><span>'+esc(initText)+'</span><span>'+esc(p.perfil.username?'@'+p.perfil.username:'Jogador')+'</span></div><div class="card-pers-pv"><div class="card-pers-pv-bar'+hpClass+'" style="width:'+pct+'%"></div></div><div class="card-pers-pv-txt">'+pvAtual+' / '+maxPV+' PV · CA '+ca+' · Ataque '+(bab+attackMod>=0?'+':'')+(bab+attackMod)+' · Dano '+esc(damage)+'</div></div><button type="button" class="card-flip-button" data-card-flip aria-label="Virar card de '+esc(p.ch.nome)+'">↻</button></div><div class="card-pers-face card-pers-back"><strong>FICHA · RESUMO</strong><p>'+esc(attrBack)+'</p><p>'+skillCount+' perícias · '+featCount+' talentos registrados</p><small>Toque no ícone para voltar. Abrir o card continua levando à ficha.</small><button type="button" class="card-flip-button" data-card-flip aria-label="Voltar frente do card">↻</button></div></div></a>';
+       var html='<a class="card-pers deck-card'+(p.ch.user_id===eu.id?' eu':'')+selected+(activeCard?' turno-ativo':'')+'" data-actor-key="'+esc(actorKey)+'" data-char="'+esc(p.ch.id)+'"'+tokenAttr+' href="ficha.html?char='+encodeURIComponent(p.ch.id)+'&mesa='+encodeURIComponent(MESA_ID)+(ehGM?'&role=gm':'')+'"><div class="card-pers-inner"><div class="card-pers-face card-pers-front">'+avatar+'<div class="card-pers-info"><div class="card-pers-nome">'+esc(p.ch.nome)+'</div><div class="card-pers-classe">'+esc((p.cl&&p.cl.nome)||p.sh.classe||p.sh.classe_id||'—')+' · N'+nivel+'</div><div class="card-pers-initiative'+(activeCard?' ativo':'')+'"><span>'+esc(initText)+'</span><span>'+esc(p.perfil.username?'@'+p.perfil.username:'Jogador')+'</span></div><div class="card-pers-pv"><div class="card-pers-pv-bar'+hpClass+'" style="width:'+pct+'%"></div></div><div class="card-pers-pv-txt">'+pvAtual+' / '+maxPV+' PV · CA '+ca+' · Ataque '+(bab+attackMod>=0?'+':'')+(bab+attackMod)+' · Dano '+esc(damage)+'</div></div><button type="button" class="card-flip-button" data-card-flip aria-label="Virar card de '+esc(p.ch.nome)+'">↻</button></div><div class="card-pers-face card-pers-back"><strong>FICHA · RESUMO</strong><p>'+esc(attrBack)+'</p><p>'+skillCount+' perícias · '+featCount+' talentos registrados</p><small>Toque no card para voltar à frente.</small><button type="button" class="card-flip-button" data-card-flip aria-label="Voltar frente do card">↻</button></div></div></a>';
       cards.push({key:actorKey,rank:initIndex>=0?(combatDataState&&combatDataState.active?(initIndex-turnIndex+ordem.length)%ordem.length:initIndex):100000,html:html});
     });
 
@@ -4029,11 +4062,11 @@ async function abrirModalEquipamentos(){
       var avatar=token.imagem&&/^https?:\/\/[^\s"'<>]+$/i.test(token.imagem)?'<img src="'+esc(token.imagem)+'" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">':(token.tipo==='monstro'?'🐉':token.tipo==='player'?'🎭':'👤');
       var hpText=hp==null?'PV não definido':Math.max(0,hp)+' / '+max+' PV';
       var ms=token.monsterStats||{},backText=String(ms.qualidades_especiais||ms.ataques||ms.descricao||'Sem detalhes adicionais no cadastro.').replace(/<[^>]*>/g,' ').slice(0,220),savesText=['Fort '+(ms.fortitude==null?'—':ms.fortitude),'Ref '+(ms.reflexos==null?'—':ms.reflexos),'Von '+(ms.vontade==null?'—':ms.vontade)].join(' · ');
-       var html='<article class="card-pers token-card '+(token.tipo==='monstro'?'monstro':'npc')+(activeCard?' turno-ativo':'')+'" data-actor-key="'+esc(actorKey)+'" data-cba-token-key="'+esc(token.key)+'" tabindex="0" role="button" aria-label="'+esc(token.nome)+' · '+esc(detail)+'"><div class="card-pers-inner"><div class="card-pers-face card-pers-front"><div class="card-pers-avatar">'+avatar+'</div><div class="card-pers-info"><div class="card-pers-nome">'+esc(token.nome)+'</div><div class="card-pers-classe">'+esc(detail)+'</div><div class="card-pers-initiative'+(activeCard?' ativo':'')+'"><span>'+esc(initText)+'</span><span>CA '+ca+'</span></div><div class="card-pers-pv"><div class="card-pers-pv-bar'+(pct<20?' critico':pct<50?' baixo':'')+'" style="width:'+pct+'%"></div></div><div class="card-pers-pv-txt">'+hpText+' · CA '+ca+(bonus==null?'':' · Ataque '+(Number(bonus)>=0?'+':'')+bonus)+' · Dano '+esc(damage)+'</div></div><button type="button" class="card-flip-button" data-card-flip aria-label="Virar card de '+esc(token.nome)+'">↻</button></div><div class="card-pers-face card-pers-back"><strong>'+esc(token.nome)+' · DETALHES</strong><p>'+esc(savesText)+'</p><small>'+esc(backText)+'</small><button type="button" class="card-flip-button" data-card-flip aria-label="Voltar frente do card">↻</button></div></div></article>';
+       var html='<article class="card-pers deck-card token-card '+(token.tipo==='monstro'?'monstro':'npc')+(activeCard?' turno-ativo':'')+'" data-actor-key="'+esc(actorKey)+'" data-cba-token-key="'+esc(token.key)+'" tabindex="0" role="button" aria-label="'+esc(token.nome)+' · '+esc(detail)+'"><div class="card-pers-inner"><div class="card-pers-face card-pers-front"><div class="card-pers-avatar">'+avatar+'</div><div class="card-pers-info"><div class="card-pers-nome">'+esc(token.nome)+'</div><div class="card-pers-classe">'+esc(detail)+'</div><div class="card-pers-initiative'+(activeCard?' ativo':'')+'"><span>'+esc(initText)+'</span><span>CA '+ca+'</span></div><div class="card-pers-pv"><div class="card-pers-pv-bar'+(pct<20?' critico':pct<50?' baixo':'')+'" style="width:'+pct+'%"></div></div><div class="card-pers-pv-txt">'+hpText+' · CA '+ca+(bonus==null?'':' · Ataque '+(Number(bonus)>=0?'+':'')+bonus)+' · Dano '+esc(damage)+'</div></div><button type="button" class="card-flip-button" data-card-flip aria-label="Virar card de '+esc(token.nome)+'">↻</button></div><div class="card-pers-face card-pers-back"><strong>'+esc(token.nome)+' · DETALHES</strong><p>'+esc(savesText)+'</p><small>'+esc(backText)+'</small><button type="button" class="card-flip-button" data-card-flip aria-label="Voltar frente do card">↻</button></div></div></article>';
       cards.push({key:actorKey,rank:initIndex>=0?(combatDataState&&combatDataState.active?(initIndex-turnIndex+ordem.length)%ordem.length:initIndex):100000,html:html});
     });
 
-    cards.sort(function(a,b){return a.rank-b.rank||a.key.localeCompare(b.key);});
+    /* Ordem fixa de elenco: iniciativa apenas destaca o turno ativo, nunca oculta ou reordena participantes. */
     el.replaceChildren();
     if(panel&&panel.parentNode!==el.parentNode)el.parentNode.insertBefore(panel,el);
     if(!cards.length){var empty=document.createElement('div');empty.className='cards-empty';empty.textContent='Aguardando fichas e tokens da mesa.';el.appendChild(empty);}
