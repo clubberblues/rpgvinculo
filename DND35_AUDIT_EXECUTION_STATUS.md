@@ -203,3 +203,27 @@ Não marcar um módulo como concluído apenas porque existe uma descrição ou u
 **Pendência específica**
 - A escolha de causa/ideal não pode ser validada semanticamente pelo banco; o Mestre precisa poder revisar se os dois domínios são coerentes com a causa escolhida.
 - Ainda falta validar visualmente o fluxo completo no navegador com usuário autenticado, inclusive o salvamento e a reabertura da ficha.
+
+
+## Etapa Anão A6 — Druida: vínculo com a natureza
+
+**Estado: fluxo de escolha implementado e verificações estáticas aprovadas; teste de navegador autenticado pendente.**
+
+- A etapa de classe do Druida agora oferece as duas opções de Vínculo com a Natureza do 1º nível: companheiro animal ou domínio.
+- A opção de companheiro apresenta a lista básica de 13 animais do 1º nível, reutilizando registros verificados já existentes em `srd_monsters`: texugo, camelo, rato atroz, cão, cão de montaria, águia, falcão, cavalo leve, coruja, pônei, víbora pequena, víbora média e lobo.
+- Ao escolher o animal, a interface mostra tamanho e ND do registro existente. A ficha registra o identificador do companheiro na identidade do personagem; não foi criada tabela nem duplicado o bloco de estatísticas do monstro.
+- A opção de domínio permite exatamente um entre Ar, Animal, Terra, Fogo, Plantas e Água. A interface apresenta o poder concedido e as magias do domínio, reutilizando `srd_domains` e `srd_domain_spells`.
+- A escolha de domínio concede a preparação separada da magia de domínio por círculo disponível. A preparação é validada e salva junto ao grimório.
+- O servidor valida que o companheiro pertence à lista básica e existe como animal verificado no catálogo. Se o jogador escolher domínio, valida exatamente um domínio permitido e impede que a ficha também registre companheiro animal.
+- O RPC existente de domínios foi ampliado para aceitar dois domínios de Clérigo ou um domínio de Druida, mantendo validação por classe, catálogo e identidade. Não foi criada tabela nova.
+
+**Verificações realizadas**
+- Sintaxe JavaScript de `ficha.html`: aprovada.
+- Os 13 IDs de companheiro selecionáveis existem no bestiário atual com `tipo='Animal'` e `source_status='verified_srd'`.
+- Todos os seis domínios druídicos possuem uma magia de 1º círculo cadastrada.
+- RPC de criação validada por inspeção: exige escolha válida e rejeita combinações incompatíveis.
+- RPC de salvamento de domínio validada por inspeção: aceita um domínio apenas para Druida com vínculo por domínio e dois apenas para Clérigo.
+- Não houve criação de personagem de teste nem teste de navegador autenticado.
+
+**Limite**
+- A ficha registra a escolha e apresenta os dados de referência do companheiro; a aplicação de progressão mecânica do companheiro conforme o nível efetivo do Druida (bônus de DV, armadura natural, FOR/DES, truques e habilidades especiais) deverá ser concluída no módulo de progressão/combate, sem inventar esses ajustes na criação de 1º nível.
