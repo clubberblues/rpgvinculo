@@ -1797,8 +1797,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var targetAC=caToken35(target);
     if(targetAC==null){alert('Este alvo está sem CA cadastrada. Peça ao Mestre para atualizar os dados da criatura antes de atacar.');return;}
     if(type==='atk-corpo'){
-      var squares=Math.max(Math.abs(Number(target.gridX)-Number(ownToken.gridX)),Math.abs(Number(target.gridY)-Number(ownToken.gridY)));
-      if(squares>1){alert('Alvo fora de alcance: ataque corpo a corpo exige adjacência (até 1,5 m).');return;}
+      var squares=distanciaTokensQuadrados35(ownToken,target),reachSquares=Math.max(1,tamanhoOcupacaoTokenCBA(ownToken));
+      if(squares>reachSquares){alert('Alvo fora de alcance: distância entre as áreas ocupadas excede o alcance corporal da criatura.');return;}
     }
     var level=Math.max(1,Number(own.sh.nivel)||1), attrs=own.sh.atributos||{}, bab=bab35(own.cl,level);
     var weapons=(own.equipamento||[]).filter(function(it){return it.equipado&&it.categoria==='arma';});
@@ -1816,8 +1816,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(type==='atk-dist'){
       rangeIncrementMeters=Number(weapon.detalhes&&weapon.detalhes.range_increment_m);
       if(!Number.isFinite(rangeIncrementMeters)||rangeIncrementMeters<=0){alert('O catálogo ainda não possui o incremento de distância desta arma.');return;}
-      var dx=Math.abs(Number(target.gridX)-Number(ownToken.gridX)),dy=Math.abs(Number(target.gridY)-Number(ownToken.gridY));
-      var diagonalSteps=Math.min(dx,dy),distanceSquares=Math.max(dx,dy)+Math.floor(diagonalSteps/2);
+      var distanceSquares=distanciaTokensQuadrados35(ownToken,target);
       rangeDistanceMeters=distanceSquares*1.5;
       rangeIncrements=Math.max(1,Math.ceil(rangeDistanceMeters/rangeIncrementMeters));
       if(rangeIncrements>10){alert('Alvo fora do alcance máximo da arma (10 incrementos de '+rangeIncrementMeters+' m).');return;}
@@ -2505,6 +2504,14 @@ async function abrirModalEquipamentos(){
     return Math.max(1,tamanho);
   }
 
+  function distanciaTokensQuadrados35(a,b){
+    var ax=Number(a&&a.gridX),ay=Number(a&&a.gridY),bx=Number(b&&b.gridX),by=Number(b&&b.gridY);
+    if(![ax,ay,bx,by].every(Number.isFinite))return Infinity;
+    var aSize=tamanhoOcupacaoTokenCBA(a),bSize=tamanhoOcupacaoTokenCBA(b);
+    var dx=Math.max(0,bx-(ax+aSize-1),ax-(bx+bSize-1));
+    var dy=Math.max(0,by-(ay+aSize-1),ay-(by+bSize-1));
+    return Math.max(dx,dy)+Math.floor(Math.min(dx,dy)/2);
+  }
   function tamanhoOcupacaoTokenCBA(item){
     var tamanho=String(item&&item.monsterStats&&item.monsterStats.tamanho||item&&item.tamanho||'');
     if(item){var personagem=personagens.find(function(p){return String(p.ch.id)===String(item.id);});if(personagem&&personagem.tamanho)tamanho=String(personagem.tamanho);}
