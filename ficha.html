@@ -2122,6 +2122,42 @@ function dnd35WeaponProficient(state,weaponName){
     }else panel+='<p class="dnd35-note">Escolha dois domínios diferentes para ver e preparar as magias de domínio.</p>';
     panel+='</section>';return panel;
   }
+  function dnd35GrimoireCreationError(state,attrs){
+    var key=dnd35SpellClassKey(state.classe&&state.classe.nome)||dnd35SpellClassKey(state.classe&&state.classe.class_key)||dnd35SpellClassKey(state.classe&&state.classe.id);
+    if(!key)return null;
+    var avail=dnd35GrimoireAvailability(state,attrs,1),spellState=state.grimoireState||dnd35SpellState(state),catalog=state.srdSpells||[];
+    if(!avail.progression){
+      if(['bard','cleric','druid','sorcerer','wizard'].indexOf(key)>=0)return 'A progressão de magias desta classe não foi carregada; não é seguro criar a ficha sem validar suas escolhas.';
+      return null;
+    }
+    function findSpell(id){return catalog.find(function(sp){return String(sp.id)===String(id)&&dnd35SpellMatchesClass(sp,key);});}
+    function spellLevel(id){var sp=findSpell(id);return sp?dnd35SpellLevel(sp,key):-1;}
+    if(key==='bard'||key==='sorcerer'){
+      for(var circle=0;circle<=avail.catalogMax;circle++){
+        var expected=dnd35SpellProgressionCount(state,'known_by_level',1,circle);
+        if(expected==null||expected<0||circle>avail.max)expected=0;
+        var actual=spellState.conhecidas.filter(function(id){return spellLevel(id)===circle;}).length;
+        if(actual!==expected)return (key==='bard'?'Bardo':'Feiticeiro')+': escolha exatamente '+expected+' magia(s) conhecida(s) de círculo '+circle+'; atualmente '+actual+'.';
+      }
+      if(spellState.conhecidas.some(function(id){return !findSpell(id)||spellLevel(id)>avail.max;}))return 'Há uma magia conhecida que não pertence à lista ou ao círculo disponível da classe.';
+      return null;
+    }
+    if(key==='wizard'){
+      var intMod=dnd35Modificador(Number(attrs.INT)||10),expectedBook=Math.max(0,3+intMod);
+      var firstLevelKnown=spellState.conhecidas.filter(function(id){return spellLevel(id)===1;}).length;
+      if(firstLevelKnown!==expectedBook)return 'Mago: escolha '+expectedBook+' magia(s) de 1º círculo para o grimório (3 + modificador de INT); atualmente '+firstLevelKnown+'.';
+      if(spellState.conhecidas.some(function(id){return !findSpell(id)||spellLevel(id)>1;}))return 'O grimório inicial só pode conter truques e magias de 1º círculo.';
+      if(spellState.preparadas.some(function(p){return spellState.conhecidas.indexOf(String(p.spell_id))<0;}))return 'O Mago só pode preparar magias que estejam em seu grimório.';
+    }
+    var preparedBySlot={};
+    for(var i=0;i<spellState.preparadas.length;i++){
+      var p=spellState.preparadas[i],lvl=spellLevel(p.spell_id),slot=Number(p.slot_level);
+      if(lvl<0||slot<lvl||slot>avail.max||Number(avail.slots[slot]||0)<=0)return 'Há uma magia preparada em um círculo ou espaço que a classe não pode usar.';
+      preparedBySlot[slot]=(preparedBySlot[slot]||0)+1;
+      if(preparedBySlot[slot]>Number(avail.slots[slot]||0))return 'Os espaços preparados do círculo '+slot+' excedem o limite diário ('+avail.slots[slot]+').';
+    }
+    return null;
+  }
   function dnd35GrimoireRender(state,attrs,charLevel,creating) {
     var avail=dnd35GrimoireAvailability(state,attrs,charLevel),s=dnd35SpellState(state),spells=(state.srdSpells||[]).filter(function(sp){var lvl=dnd35SpellLevel(sp,avail.key);return dnd35SpellMatchesClass(sp,avail.key)&&lvl>=0&&lvl<=avail.catalogMax;});
     if(creating&&avail.key==='wizard'){var cantrips=spells.filter(function(sp){return dnd35SpellLevel(sp,avail.key)===0;}).map(function(sp){return String(sp.id);});s.conhecidas=Array.from(new Set(s.conhecidas.concat(cantrips)));}
@@ -2432,6 +2468,8 @@ function dnd35WeaponProficient(state,weaponName){
     var state=fichaSRD35,input=document.getElementById('dnd35-nome'),button=document.getElementById('dnd35-save'),status=document.getElementById('dnd35-status');
     var nome=String(input&&input.value||state.nomeDraft||'').trim(),attrs=dnd35AtributosIniciais(state.raca,state.baseAtributos,state.identidade),classMap=dnd35SkillMap(state),ranks=dnd35Objeto(state.sheet.pericias);
     var creatingMagicKey=dnd35SpellClassKey(state.classe.nome)||dnd35SpellClassKey(state.classe.class_key)||dnd35SpellClassKey(state.classe.id);
+    var spellCreationIssue=dnd35GrimoireCreationError(state,attrs);
+    if(spellCreationIssue){state.activeStep='magic';state.grimoireOpen=true;renderizarFichaSRD35();var spellIssueStatus=document.querySelector('[data-grimoire-status]');if(spellIssueStatus)spellIssueStatus.textContent=spellCreationIssue;return;}
     if(creatingMagicKey==='cleric'){var creatingDomains=(state.domainChoices||[]).map(function(x){return String(x.domain_id||'');}).filter(Boolean);if(creatingDomains.length!==2||creatingDomains[0]===creatingDomains[1]){state.activeStep='training';state.grimoireOpen=true;renderizarFichaSRD35();var domainStatus=document.querySelector('[data-grimoire-status]');if(domainStatus)domainStatus.textContent='Escolha dois domínios diferentes antes de criar a ficha.';return;}}
     function mostrarErro(message,tab){state.activeStep='training';if(tab)state.activeTab=tab;renderizarFichaSRD35();var msg=document.getElementById('dnd35-status');if(msg)msg.textContent=message;}
     if(!dnd35StartReady(state)){state.activeStep='equipment';renderizarFichaSRD35();var es=document.getElementById('dnd35-status');if(es)es.textContent='Escolha o kit recomendado ou conclua as compras com o ouro inicial.';return;}
