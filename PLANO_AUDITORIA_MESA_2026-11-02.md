@@ -288,3 +288,37 @@ Nenhuma campanha, personagem, ficha, token ou log real foi modificado nesta cont
 
 - Segurança adicional do acesso protegido: a migration 20261103010205_campaign_join_code_rate_limit reaproveita o bloqueio progressivo de tentativas da RPC de entrada tradicional; tentativas inválidas ou código incorreto incrementam o bloqueio por usuário.
 - O catálogo de monstros formata valores JSON estruturados como texto legível nos cards de ficha tática, em vez de exibir [object Object].
+
+
+## Nova rodada de interface e regras — 2026-11-03
+
+### Alterações aplicadas no código
+
+- Dados 3D: o tipo e a quantidade de dados passam a ser definidos pela expressão enviada pelo teste. Os seletores manuais de dados ficam ocultos na interface da mesa; apenas o dado ou conjunto de dados necessário fica visível. O parser agora aceita expressões mistas como `2d4+1d6+3`, soma os modificadores e seleciona automaticamente cada tipo de dado envolvido.
+- Dados 3D responsivos: botão de rolagem reduzido, espaçamento compacto, previews menores em telas estreitas e paleta verde/carvão/dourado. O botão não ocupa mais uma grande área da janela.
+- Cards permanentes: cards de personagens e tokens foram retirados da faixa inferior e movidos para o painel lateral de aventureiros. A lista não é mais ordenada nem condicionada pela iniciativa; a iniciativa apenas destaca o participante ativo. Personagens de jogadores e do Mestre vêm das fichas carregadas; NPCs e monstros vêm dos tokens publicados no tabuleiro.
+- Cards de deck: dimensões CSS de aproximadamente 112 × 150 px, proporção vertical semelhante a cartas de deck; cards compactos, com frente/resumo e verso, sem botão de flip. O clique em qualquer ponto do card vira a carta.
+- Faixa inferior: rodapé de combatentes foi removido da grade principal para liberar espaço ao tabuleiro; os cards passaram a ocupar a lateral.
+- Imagem de token: o antigo `prompt()` foi substituído por um painel integrado em Mesa e Jogadores. O Mestre seleciona o token numa lista e, em seguida, escolhe a imagem do dispositivo.
+- Bárbaro: a ficha normal agora consulta `srd_class_level_features` até o nível atual e apresenta as características em cards separados. Para Bárbaro nível 1, os registros são divididos em Deslocamento Rápido, Analfabetismo e Fúria 1/dia, com descrições em português. A ficha explica que o Bárbaro não recebe talento bônus de classe no nível 1; um humano recebe o talento adicional racial além do talento geral.
+- Perícias: cards da ficha agora usam uma grade mais compacta. Os detalhes visíveis de uso foram substituídos por resumos de regras SRD 3.5 em português para as perícias catalogadas; o fluxo do jogador também apresenta orientações de uso em cards e o cálculo de bônus.
+- Equipamentos: adicionado vocabulário de tradução para nomes e categorias comuns (armas, armaduras, equipamento de aventura, rações, poções, etc.). O kit inicial é explicitamente rotulado como sugestão opcional do Vínculo por classe; a raça não altera a lista básica de equipamento do SRD 3.5.
+
+### Verificações desta rodada
+
+- Compilação sintática: scripts inline de `mesa.html`, `ficha.html` e `lobby.html` aprovados; script de integração não modular de `dice.html` aprovado. O módulo Three/Cannon do dado usa importação ES module e não foi compilado pelo validador simples de scripts clássicos.
+- Expressões testadas no parser: `1d20+4`, `3d4`, `2d4+1d6+3`, `1d8-2` e `5d6+1d4`.
+- Catálogo de progressão consultado no banco: classe `barbaro`, nível 1, contém uma linha verificada no SRD com deslocamento rápido, analfabetismo e fúria 1/dia.
+- Nenhuma ficha, token, campanha ou registro real foi alterado por estas verificações.
+
+### Pendências que permanecem
+
+1. O catálogo completo de descrições de itens ainda contém entradas em inglês não cobertas pelo dicionário de tradução. A tradução foi ampliada, mas não é integral para todos os itens do catálogo.
+2. Os resumos de uso de perícias estão em português, porém não equivalem à tradução integral de todos os textos extensos dos livros. Algumas perícias menos comuns ainda usam orientação genérica.
+3. Os kits de início cadastrados são sugestões derivadas do Vínculo por classe, não listas oficiais obrigatórias dos livros; a tabela de pacotes não tem campo de raça. No SRD 3.5 a lista básica de equipamento inicial é orientada pela classe, não por uma tabela de kits raciais.
+4. O dado 3D foi validado por sintaxe e testes isolados do parser; ainda falta teste visual e funcional em navegador real, incluindo a experiência mobile.
+5. O painel de cards, o fluxo inline de imagem de token e a ficha com características de classe ainda precisam de teste de interface em sessão autenticada com Mestre e jogadores.
+6. As 131 características de classe ainda não têm resolvers de mecânica completos; a rodada atual melhora a apresentação e explica características do Bárbaro, sem declarar implementadas todas as regras de classe.
+7. Os 607 efeitos de magia, o carregamento infinito da ficha, E2E com múltiplas contas, Realtime e inspeção visual mobile continuam pendentes.
+8. O rodapé inferior foi retirado da grade para abrir espaço; se for necessário manter alguma ação persistente nessa região, será preciso redesenhar essa barra sem voltar a ocupar altura excessiva.
+
