@@ -2166,7 +2166,7 @@ function dnd35WeaponProficient(state,weaponName){
   }
   function dnd35PesoKg35(item){
     var details=item&&item.detalhes||{};if(typeof details==='string'){try{details=JSON.parse(details);}catch(e){details={};}}
-    var weightText=String(details.weight||''),imperial=details.weight_lb!=null||/\blb\.?/i.test(weightText)||details.source_dataset==='olimot/srd-v3.5-md';
+    var weightText=String(details.weight||''),imperial=/\blb\.?/i.test(weightText)||details.source_dataset==='olimot/srd-v3.5-md';
     return ((Number(item&&item.peso)||0)*(imperial?0.5:1)).toLocaleString('pt-BR',{maximumFractionDigits:1});
   }
   function dnd35StartMarkup(s){
