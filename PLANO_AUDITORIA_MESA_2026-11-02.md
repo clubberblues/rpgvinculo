@@ -285,3 +285,6 @@ Nenhum personagem, ficha, campanha, token ou log real foi editado durante os tes
 7. Os commits mais recentes ainda aguardam o workflow de GitHub Pages; o último deploy confirmado antes desta sequência era o commit 3e45bd936eb1bb9f8e6e80c6cc8e405591f80d20.
 
 Nenhuma campanha, personagem, ficha, token ou log real foi modificado nesta continuação. As RPCs de configuração e entrada foram aplicadas; não foram chamadas para atualizar campanhas reais.
+
+- Segurança adicional do acesso protegido: a migration 20261103010205_campaign_join_code_rate_limit reaproveita o bloqueio progressivo de tentativas da RPC de entrada tradicional; tentativas inválidas ou código incorreto incrementam o bloqueio por usuário.
+- O catálogo de monstros formata valores JSON estruturados como texto legível nos cards de ficha tática, em vez de exibir [object Object].
