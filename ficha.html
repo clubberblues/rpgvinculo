@@ -1945,7 +1945,7 @@ function dnd35WeaponProficient(state,weaponName){
       maxAdd=Math.floor((maxAdd+0.00001)/step)*step;
       var options='<option value="0">Manter ('+rank+')</option>';
       for(var value=step;value<=maxAdd+0.00001;value+=step)options+='<option value="'+value+'"'+(Math.abs(selected-value)<0.001?' selected':'')+'>'+value+' nova(s) · total '+(rank+value)+'</option>';
-      return '<article class="dnd35-skill"><div class="dnd35-skill-head"><strong>'+esc(skill.nome)+'</strong><span class="dnd35-badge">'+(isClass?'Classe':'Fora de classe')+' · '+skillCost(id)+' pt/grad.</span></div><p>Atual: '+rank+' · Máximo no nível '+nextLevel+': '+(language?'sem limite fixo':maxRank)+' · limite de compra: '+maxAdd+'</p><div class="dnd35-skill-control"><label for="lu-skill-'+esc(id)+'">Adicionar graduações</label><select id="lu-skill-'+esc(id)+'" data-lu-skill="'+esc(id)+'">'+options+'</select></div></article>';
+      return '<article class="dnd35-skill"><div class="dnd35-skill-head"><strong>'+esc(skill.nome)+'</strong><span class="dnd35-badge">'+(language?'Idioma':(isClass?'Classe':'Fora de classe'))+' · '+(language?'1 pt/idioma':skillCost(id)+' pt/grad.')+'</span></div><p>Atual: '+rank+' · Máximo no nível '+nextLevel+': '+(language?'sem limite fixo':maxRank)+' · limite de compra: '+maxAdd+'</p><div class="dnd35-skill-control"><label for="lu-skill-'+esc(id)+'">'+(language?'Adicionar idiomas':'Adicionar graduações')+'</label><select id="lu-skill-'+esc(id)+'" data-lu-skill="'+esc(id)+'">'+options+'</select></div></article>';
     }).join('');
     var featSpec=dnd35LevelupFeatSpec(state,nextLevel),owned=dnd35Objeto(state.sheet.talentos);
     var ownedIds=Array.isArray(owned)?owned.map(function(x){return String(x&&x.id||x);}):[];
