@@ -965,7 +965,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
 #cards-strip .portrait-order-controls button{width:24px!important;height:20px!important;border:1px solid #a58a53!important;border-radius:4px!important;background:#202a1e!important;color:#f0d48e!important;cursor:pointer!important}
 #cards-strip .portrait-order-controls button:disabled{opacity:.3!important}
 #cards-strip .card-flip-button{align-self:center!important;width:20px!important;height:18px!important;min-height:18px!important;padding:0!important;border:1px solid #806b42!important;border-radius:4px!important;background:#172015!important;color:#e8ce91!important;font-size:12px!important}
-#painel-iniciativa,#fila-iniciativa,#cards-strip-pager{display:none!important}
+#painel-iniciativa,#painel-iniciativa.ativo,#fila-iniciativa,#cards-strip-pager{display:none!important}
 #cards-strip .cards-empty{min-width:230px!important;color:#bcae8e!important;font:italic 12px 'EB Garamond',serif!important}
 @media(max-width:700px){.mesa-footer{height:112px!important;min-height:112px!important;max-height:112px!important}#cards-strip>.card-pers{flex-basis:82px!important;width:82px!important;min-width:82px!important}}
 </style>
@@ -1801,7 +1801,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(type==='atk-dist'&&weapon&&weapon.detalhes&&Number(weapon.detalhes.alcance_m)>0){var rangeSquares=Math.max(Math.abs(Number(target.gridX)-Number(ownToken.gridX)),Math.abs(Number(target.gridY)-Number(ownToken.gridY)));if(rangeSquares*1.5>Number(weapon.detalhes.alcance_m)){alert('Alvo fora do alcance da arma ('+weapon.detalhes.alcance_m+' m).');return;}}
     var title=type==='atk-corpo'?'Ataque Corpo a Corpo':'Ataque à Distância', critical=critico35(weapon&&weapon.critico);
     function abrirRolagemDano(isCritical){
-      var rawDamage=String(damage||'1d3').split('/')[0].trim(), parsed=rawDamage.match(/^(\d+)d(3|4|6|8|10|12|20|100)(?:([+-]\d+))?$/i);
+      var rawDamage=String(damage||'1d3').split('/')[0].trim(), parsed=rawDamage.match(/^(\d+)d(2|3|4|6|8|10|12|20|100)(?:([+-]\d+))?$/i);
       if(!parsed){alert('O ataque acertou, mas a expressão de dano da arma não pôde ser interpretada: '+rawDamage+'. O Mestre pode aplicar o dano manualmente.');return;}
       var diceCount=Math.max(1,Math.min(20,Number(parsed[1]))),sides=Number(parsed[2]),baseFlat=Number(parsed[3]||0),multiplier=isCritical?critical.multiplier:1;
       var strengthDamage=type==='atk-corpo'?ability:0,flat=(baseFlat+strengthDamage+powerDamage)*multiplier,diceTotal=diceCount*multiplier;
@@ -1814,14 +1814,14 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         var restante=Number(aplicado.data.hp),maximo=Number(aplicado.data.max_hp);
         await enviarMensagemChat('💥 '+weaponName+' atingiu '+target.nome+': '+rollDescription+' = **'+dano+'** de dano. PV: '+restante+' / '+maximo+'.','rolagem',{evento:'dano_ataque_dnd35_aplicado',atacante:String(own.ch.id),alvo:String(target.id),arma:weaponName,dano_base:rawDamage,dano_total:dano,critico:isCritical,ca_alvo:targetAC,pv_atual:restante,pv_max:maximo});
       }
-      if(sides===3){
-        var accumulated=0,index=0;
-        function rollMappedD3(){
-          if(index>=diceTotal){registrarDano(Math.max(1,accumulated+flat),'1d3'+(diceTotal>1?' × '+diceTotal:'')+(flat>0?' + '+flat:flat<0?' − '+Math.abs(flat):''));return;}
+      if(sides===2||sides===3){
+        var accumulated=0,index=0,mappedSides=sides===2?4:6;
+        function rollMappedSmallDie(){
+          if(index>=diceTotal){registrarDano(Math.max(1,accumulated+flat),diceTotal+'d'+sides+' (dados 3D equivalentes)'+(flat>0?' + '+flat:flat<0?' − '+Math.abs(flat):''));return;}
           index++;
-          abrirDado('Dano '+weaponName+' · d3 '+index+'/'+diceTotal+' (use o dado 3D)',async function(raw){accumulated+=Math.ceil(Number(raw)/2);rollMappedD3();},true,true,'1d6');
+          abrirDado('Dano '+weaponName+' · d'+sides+' '+index+'/'+diceTotal+' (use o dado 3D)',async function(raw){var value=Number(raw);if(!Number.isFinite(value)||value<1||value>mappedSides)throw new Error('O dado retornou um valor inválido.');accumulated+=Math.ceil(value/(mappedSides/sides));rollMappedSmallDie();},true,true,'1d'+mappedSides);
         }
-        rollMappedD3();
+        rollMappedSmallDie();
         return;
       }
       abrirDado('Dano '+weaponName+' · '+formula+critLabel,async function(result){registrarDano(Math.max(1,Number(result)),'Rolagem 3D '+formula);},true,true,formula);
