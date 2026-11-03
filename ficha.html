@@ -2202,7 +2202,7 @@ function dnd35WeaponProficient(state,weaponName){
     var wealth=x.metodo==='pacote'?d[0]*2.5*d[1]:(r.length===d[0]?r.reduce(function(a,b){return a+b;},0)*d[1]:0);
     var allItems=(s.equipment||[]).filter(function(i){
       var type=String(i.tipo||'').toLowerCase(),category=String(i.categoria||'');
-      return dnd35StartCost(i)!=null&&type!=='magic_item'&&type!=='pocao'&&type!=='pergaminho'&&!/(rings|rods|staffs|wands|wondrous|potions|specific_|magic|armor_and_shields)/i.test(category);
+      return dnd35StartCost(i)!=null&&type!=='magic_item'&&type!=='pocao'&&type!=='pergaminho'&&!/unarmed attacks/i.test(category)&&!/(rings|rods|staffs|wands|wondrous|potions|specific_|magic|armor_and_shields)/i.test(category);
     });
     var category=x.categoria||'todos',search=String(x.busca||'').toLowerCase();
     var filtered=allItems.filter(function(i){
