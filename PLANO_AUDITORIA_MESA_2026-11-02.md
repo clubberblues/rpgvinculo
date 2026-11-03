@@ -374,3 +374,33 @@ Nenhuma campanha, personagem, ficha, token ou log real foi modificado nesta cont
 - Persistência do rascunho do Grimório foi testada isoladamente, incluindo magias conhecidas, preparadas, domínio e usos.
 - RPCs novas de cura foram verificadas no banco: recebem arrays de resultados e não contêm `random()`; permissões antigas de execução foram revogadas.
 - Ainda não foi possível executar um teste E2E real com navegador autenticado, dois jogadores, Mestre, Realtime e rolagens simultâneas. Não declarar botões ou fluxo completo como aprovados até esse teste.
+
+## Auditoria de cobertura, permissões e decisões — 2026-11-03
+
+### Cobertura SRD confirmada no banco
+- Progressões numéricas: 220/220 verificadas; proficiências: 11/11; perícias de classe: 11/11.
+- Raças: 7/7 entradas verificadas, mas integração de todos os traços ainda incompleta.
+- Catálogo: 607 magias, 1.021 equipamentos, 110 talentos, 445 monstros, 50 perícias, 38 condições, 22 domínios, 196 magias de domínio, 131 características de classe e 607 registros de efeitos mágicos.
+- O ledger de cobertura foi corrigido de 49 para 50 perícias.
+- Características de classe: 131 registros, 0 verificados/implementados. Distribuição por classe: Bárbaro 20, Bardo 10, Clérigo 1, Druida 18, Feiticeiro 1, Guerreiro 11, Ladino 18, Mago 5, Monge 20, Paladino 12, Patrulheiro 15. Não representa progressão completa de todas as características do Livro do Jogador.
+- Efeitos de magia: 607 registros, 0 verificados/implementados. As 607 linhas não equivalem a 607 magias automatizadas.
+- Descrições: 516/607 ainda apresentam texto em inglês. Equipamentos, talentos, perícias e condições também precisam de revisão e tradução uniforme.
+
+### Segurança e desempenho
+- As novas RPCs manuais foram restringidas: execução anônima revogada e acesso autenticado explícito. A consulta confirmou `anon=false` e `authenticated=true` para os cinco endpoints novos.
+- Os endpoints antigos com rolagem automática foram revogados para usuários autenticados.
+- O advisor não acusa mais funções SECURITY DEFINER executáveis por `anon` neste conjunto. Ainda há 84 funções SECURITY DEFINER acessíveis a usuários autenticados; precisam de auditoria de autorização individual, sem revogar indiscriminadamente funções necessárias ao jogo.
+- O advisor também aponta proteção contra senhas vazadas desativada e 74 índices não utilizados. São pendências de segurança/desempenho; não foram alteradas automaticamente.
+- As migrações do repositório estão alinhadas por nome com o histórico do Supabase. A migration antiga `srd35_level_up_assistant` foi convertida em marcador no-op porque a implementação atual já é instalada por migrações posteriores.
+
+### Fonte de regras
+- A documentação de conjuração foi corrigida para remover a fórmula customizada `1d20 + BBA + atributo conjurador`.
+- A busca na Biblioteca não encontrou um arquivo do Livro do Jogador/Guia do Mestre anexado. A referência efetivamente consultada até agora é o D&D 3.5 SRD público. Se o proprietário tiver uma edição digital específica, ela precisa ser enviada para conferência de conteúdo que não esteja no SRD.
+
+### Decisões ainda aguardando o proprietário
+1. **Kits iniciais:** os 11 pacotes do banco são recomendações da campanha e ainda não foram comprovados como transcrição dos pacotes do Livro do Jogador. Decidir se serão substituídos pelos pacotes oficiais ou mantidos como kits caseiros claramente identificados.
+2. **Reordenação manual da iniciativa:** os controles administrativos de mover combatentes ainda existem no verso dos cards. Eles podem sobrescrever a ordem automática calculada pelos dados. Decidir se o Mestre mantém essa exceção ou se a ordem fica totalmente bloqueada após a iniciativa.
+3. **Mago especialista:** o grimório inicial do Mago generalista já está validado; especialização e escolha de escolas proibidas ainda não estão na criação. Definir se o fluxo inicial deve oferecer especialização já no nível 1 ou manter apenas Mago generalista até a implementação completa.
+
+### Limite desta entrega
+O código foi alterado e as migrações foram aplicadas no projeto Supabase principal. Nenhum registro de personagem ou campanha foi alterado diretamente durante a auditoria; houve mudanças de funções, permissões, catálogo e estrutura. O GitHub `main` não foi modificado. A branch de trabalho continua separada. Não houve teste E2E em navegador autenticado, nem inspeção visual real de desktop/mobile; esses testes permanecem obrigatórios antes de mesclar a branch.
