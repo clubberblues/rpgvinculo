@@ -43,7 +43,7 @@ $old$;
   elsif v_age >= (case p_raca_id when 'humano' then 35 when 'anao' then 125 when 'elfo' then 175 when 'gnomo' then 100 when 'meio-elfo' then 62 when 'meio-orc' then 30 when 'halfling' then 50 end) then
     v_age_physical := -1; v_age_mental := 1;
   end if;
-$old$;
+$new$;
   v_old_height_weight text := $old$
   if v_height is null or v_height < 100 or v_height > 220 then raise exception 'Altura fora do intervalo permitido (100 a 220 cm).'; end if;
   if v_weight is null or v_weight < 25 or v_weight > 250 then raise exception 'Peso fora do intervalo permitido (25 a 250 kg).'; end if;
