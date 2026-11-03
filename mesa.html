@@ -1806,10 +1806,10 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(type==='atk-dist'&&!weapon){alert('Equipe uma arma à distância antes de atacar.');return;}
     var finesseWeapon=type==='atk-corpo'&&personagemTemTalento(own.sh,'srd35_feat_weapon_finesse')&&(!weapon||!!(weapon.detalhes&&weapon.detalhes.weapon_finesse_eligible===true));
     var attackAttribute=type==='atk-dist'||finesseWeapon?'DES':'FOR',ability=modifier35(attrs[attackAttribute]),strengthModifier=modifier35(attrs.FOR);
-    var weaponName=weapon?weapon.nome:'Ataque desarmado',damage=weapon&&weapon.dano||'1d3',weaponFocus=0,powerPenalty=0,powerDamage=0,proficiencyPenalty=personagemProficienteArma35(own,weapon)?0:4;
+    var weaponName=weapon?weapon.nome:'Ataque desarmado',weaponFocusName=weapon&&weapon.detalhes&&weapon.detalhes.weapon_focus_name||weaponName,damage=weapon&&weapon.dano||'1d3',weaponFocus=0,powerPenalty=0,powerDamage=0,proficiencyPenalty=personagemProficienteArma35(own,weapon)?0:4;
     var feats=own.sh.talentos||[];if(typeof feats==='string'){try{feats=JSON.parse(feats);}catch(e){feats=[];}}
     var normalizeName=function(value){return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();};
-    var focus=Array.isArray(feats)&&feats.find(function(feat){return feat&&feat.id==='foco_em_arma'&&normalizeName(feat.parametro)===normalizeName(weaponName);});
+    var focus=Array.isArray(feats)&&feats.find(function(feat){return feat&&feat.id==='foco_em_arma'&&normalizeName(feat.parametro)===normalizeName(weaponFocusName);});
     if(focus)weaponFocus=1;
     if(type==='atk-corpo'&&personagemTemTalento(own.sh,'ataque_poderoso')){var rawPenalty=await window.vttUI.ask({title:'Ataque Poderoso',label:'Penalidade de ataque (0 a '+Math.max(0,bab)+')',defaultValue:'0',inputMode:'numeric'});if(rawPenalty===null)return;powerPenalty=Number(rawPenalty);if(!Number.isInteger(powerPenalty)||powerPenalty<0||powerPenalty>bab){alert('A penalidade deve ser um inteiro entre 0 e '+Math.max(0,bab)+'.');return;}powerDamage=powerPenalty*(weapon&&weapon.detalhes&&weapon.detalhes.duas_maos?2:1);}
     var rangePenalty=0,rangeDistanceMeters=0,rangeIncrementMeters=0,rangeIncrements=0;
@@ -3727,7 +3727,7 @@ async function abrirModalEquipamentos(){
     if(typeof raw==='string'){try{raw=JSON.parse(raw);}catch(e){raw=[];}}
     var normalize=function(value){return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();};
     var profs=Array.isArray(raw)?raw.map(normalize):[];
-    var nome=normalize(weapon.nome),allSimple=profs.includes('armas simples'),allSimpleMartial=profs.includes('todas as armas simples e marciais');
+    var nome=normalize(detalhes.weapon_proficiency_name||weapon.nome),allSimple=profs.includes('armas simples'),allSimpleMartial=profs.includes('todas as armas simples e marciais');
     var exact=profs.includes(nome),feats=personagem&&personagem.sh&&personagem.sh.talentos||[];
     if(typeof feats==='string'){try{feats=JSON.parse(feats);}catch(e){feats=[];}}
     var hasFeat=function(id){return Array.isArray(feats)&&feats.some(function(f){return String(f&&f.id||f)===id;});};
