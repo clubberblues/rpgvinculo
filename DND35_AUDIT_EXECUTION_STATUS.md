@@ -411,3 +411,16 @@ Não marcar um módulo como concluído apenas porque existe uma descrição ou u
 - Descoberta importante: `supabase_migrations.schema_migrations` guarda as instruções SQL originais em `statements text[]`. Uma consulta somente leitura confirmou que as 508 versões ausentes têm `statements` não nulo e não vazio (aprox. 1.619.030 caracteres no total; maior migração aprox. 130.217 caracteres).
 - Isso permite recuperar os SQLs originais exatos do histórico remoto e reconstruir os arquivos com seus timestamps/nome originais, sem inventar migrações nem reaplicar DDL em produção. A recuperação ainda precisa ser feita e validada em branch isolada; não foi feita nesta etapa.
 - O banco permaneceu sem alterações nesta descoberta.
+
+
+### Reconciliação do histórico remoto — recuperação concluída em branch isolada (2026-11-03)
+
+- Recuperadas diretamente de `supabase_migrations.schema_migrations.statements` as instruções SQL originais das 508 versões que não tinham arquivo versionado na pasta `supabase/migrations/`.
+- Criados 508 arquivos com o timestamp e o nome exatos registrados pelo Supabase, em `supabase/migrations/<version>_<name>.sql`. Os conteúdos foram gravados a partir do array `statements` do próprio histórico remoto; nenhuma SQL foi inventada ou reaplicada no banco.
+- Branch isolada: `audit/reconcile-supabase-migration-history`.
+- Commit final da recuperação: `c74f7d7cdc1d6826296df0e73237e619e33b619c`.
+- Verificação posterior: 527/527 versões do histórico remoto têm agora um arquivo local com timestamp e nome exatamente correspondentes. Não há versão remota ausente ou com nome divergente.
+- Permanecem 24 arquivos versionados no repositório que não constam no histórico remoto. Eles foram preservados como migrações pendentes; não foram aplicados nem marcados como aplicados.
+- A recuperação não altera o banco de produção, dados de personagens, permissões ou funções. Ela apenas restaura no Git os SQLs já registrados no histórico remoto.
+- **Ainda pendente:** validar sintaxe/ordem e dependências da sequência completa em banco local limpo, revisar os 24 arquivos pendentes e comparar o estado final do schema. Não executar `db push` em produção nem `migration repair` para forçar alinhamento.
+- O branch permanece isolado e não foi mesclado em `main`, publicado ou implantado. A PR #1 continua em rascunho e não deve receber merge automático.
