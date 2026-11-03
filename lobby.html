@@ -1494,9 +1494,9 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
       var code=window.prompt('Esta mesa exige um código de acesso. Digite os 4 números:');
       if(code===null)return;
       code=String(code).trim();if(!/^\\d{4}$/.test(code))throw new Error('O código precisa conter exatamente 4 números.');
-      var joined=await sb.rpc('join_campaign',{p_code:code});
+      var joined=await sb.rpc('entrar_campanha_com_codigo',{p_campaign_id:Number(mesaId),p_code:code});
       if(joined.error)throw new Error(joined.error.message);
-      if(!joined.data||!joined.data.ok||String(joined.data.id)!==String(mesaId))throw new Error((joined.data&&joined.data.erro)||'Código inválido para esta mesa.');
+      if(!joined.data||!joined.data.ok)throw new Error((joined.data&&joined.data.erro)||'Código inválido para esta mesa.');
     }
     await abrirModalEntrarMesa(mesaId);
   }
