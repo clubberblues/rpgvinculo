@@ -1485,6 +1485,9 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
       location.href = 'mesa.html?mesa=' + encodeURIComponent(mesaId);
       return;
     }
+    var existing=await sb.from('members').select('role').eq('campaign_id',mesaId).eq('user_id',eu.id).maybeSingle();
+    if(existing.error)throw new Error(existing.error.message);
+    if(existing.data){await abrirModalEntrarMesa(mesaId);return;}
     var openJoin=await sb.rpc('entrar_campanha_aberta',{p_campaign_id:Number(mesaId)});
     if(openJoin.error)throw new Error(openJoin.error.message);
     if(!openJoin.data||!openJoin.data.ok){
@@ -1555,9 +1558,11 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
     var nome=window.prompt('Nome da mesa (2 a 60 caracteres):',nomeAtual||'');
     if(nome===null)return;
     nome=nome.trim();if(nome.length<2||nome.length>60)return alert('O nome deve ter entre 2 e 60 caracteres.');
-    var exigeCodigo=window.confirm('Deseja exigir código de acesso para entrar nesta mesa?\n\nOK = exigir código\nCancelar = acesso sem código');
+    var modoCodigo=window.prompt('Proteção por código:\n1 = ativar ou trocar código\n2 = desativar código\n3 = manter configuração atual','3');
+    if(modoCodigo===null)return;modoCodigo=String(modoCodigo).trim();if(['1','2','3'].indexOf(modoCodigo)===-1)return alert('Escolha 1, 2 ou 3.');
+    var exigeCodigo=modoCodigo==='1'?true:modoCodigo==='2'?false:!!codigoAtual;
     var codigo=null;
-    if(exigeCodigo){codigo=window.prompt('Defina o novo código de acesso com 4 números:',codigoAtual||'');if(codigo===null)return;codigo=String(codigo).trim();if(!/^\\d{4}$/.test(codigo))return alert('O código precisa conter exatamente 4 números.');}
+    if(exigeCodigo){codigo=window.prompt('Defina o código de acesso com 4 números:',codigoAtual||'');if(codigo===null)return;codigo=String(codigo).trim();if(!/^\\d{4}$/.test(codigo))return alert('O código precisa conter exatamente 4 números.');}
     try{
       var saved=await sb.rpc('atualizar_configuracoes_campanha',{p_campaign_id:Number(mesaId),p_name:nome,p_require_code:exigeCodigo,p_code:codigo});
       if(saved.error)throw new Error(saved.error.message);
