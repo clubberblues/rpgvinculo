@@ -1635,7 +1635,42 @@ function dnd35TranslateCatalogText(value){
     return '<section class="dnd35-panel dnd35-class-features"><h2>Habilidades da classe · '+esc(state.classe.nome||'')+'</h2><p class="dnd35-note">Estas habilidades são concedidas pela classe; talentos são escolhas separadas.</p><div class="dnd35-feature-grid">'+list.map(function(feature){return String(feature.name||'').split(/[·•]/).map(function(part){var name=part.trim();if(!name)return '';return '<article class="dnd35-feature-card"><strong>'+esc(name)+'</strong><p>'+esc(dnd35ClassFeatureDescription(name,feature.summary))+'</p><small>Nível '+Number(feature.class_level)+' · progressão SRD</small></article>';}).join('');}).join('')+'</div></section>';
   }
   
-    function dnd35RenderSkills(state, attrs, creating, classMap) {
+    function dnd35SkillUsePt35(skill){
+    var n=String(skill&&skill.nome||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+    var rules={
+      'abrir fechaduras':'Você pode abrir fechaduras com ferramentas de ladrão. A CD varia de 20 (fechadura muito simples) a 40 (fechadura extraordinária). Sem ferramentas adequadas, sofre –2 no teste. Abrir uma fechadura exige uma ação de rodada completa.',
+      'acrobacia':'Você pode amortecer uma queda: com CD 15, trate a queda como 3 m (10 pés) menor para calcular o dano. Também pode atravessar o espaço de inimigos sem provocar ataques de oportunidade: CD 15 em deslocamento pela metade ou CD 25 ao atravessar o espaço ocupado. Superfícies escorregadias e obstáculos aumentam a CD.',
+      'adestrar animais':'Use para comandar um animal treinado (CD 10), forçá-lo a executar uma tarefa que não conhece (CD 25), ensinar um truque (CD 15 ou 20) ou treiná-lo para uma função. Um animal ferido torna o teste 2 pontos mais difícil.',
+      'arte da fuga':'Use para escapar de cordas, algemas, redes, espaços estreitos ou agarrões. Escapar de cordas é resistido por Usar Cordas; algemas comuns têm CD 30 e algemas obra-prima CD 35. Escapar de um agarrão é uma ação padrão.',
+      'atletismo':'Use para superar obstáculos físicos e escalar. A CD depende da inclinação, dos apoios e das condições da superfície; uma falha pode interromper a subida ou provocar uma queda.',
+      'atuacao':'Use para entreter uma plateia. A CD 10 permite uma apresentação rotineira; CDs 15, 20, 25 e 30 representam apresentações cada vez mais impressionantes. Instrumentos obra-prima concedem +2 quando utilizados.',
+      'concentracao':'Use para manter a concentração ao sofrer dano, enfrentar condições adversas ou conjurar uma magia sob distração. A CD depende da fonte e da intensidade da distração.',
+      'conhecimento':'Use para recordar informações sobre uma área de estudo. CD 10: informação básica; CD 15: informação comum; CD 20: informação incomum; CD 25 ou mais: conhecimento raro ou obscuro. Cada área de Conhecimento é uma perícia separada.',
+      'decifrar escrita':'Use para compreender textos antigos, códigos, mensagens incompletas ou escritas desconhecidas. A CD normalmente varia de 20 a 30; decifrar um texto exige 1 minuto por página.',
+      'diplomacia':'Use para mudar a atitude de uma criatura ou negociar. O teste normalmente exige pelo menos 1 minuto de conversa; em situações urgentes, o Mestre pode aplicar penalidades ou impedir a tentativa.',
+      'disfarces':'Use para alterar a aparência. O teste é resistido pela perícia Observar de quem examina o disfarce; diferenças de raça, idade, sexo ou tamanho podem modificar a dificuldade.',
+      'equilibrio':'Use para caminhar por superfícies estreitas ou instáveis. A CD aumenta conforme a largura, inclinação e instabilidade do apoio; em uma superfície difícil, mover-se pode exigir metade do deslocamento.',
+      'escalar':'Use para subir paredes, cordas, árvores e superfícies inclinadas. A CD depende da superfície: apoios abundantes são mais fáceis; paredes lisas e saliências escassas são mais difíceis. Uma falha pode impedir o avanço ou causar queda.',
+      'esconder se':'Use para ocultar-se. O teste é normalmente resistido por Observar; cobertura, camuflagem, iluminação e tamanho influenciam o resultado. Em geral, é necessário algum tipo de cobertura ou ocultação.',
+      'furtividade':'Use para mover-se sem produzir ruído. O teste é resistido por Ouvir; armadura, superfície e velocidade podem impor penalidades.',
+      'identificar magia':'Use para identificar uma magia enquanto é conjurada ou reconhecer um efeito mágico. A CD costuma ser 15 + nível da magia; identificar uma magia em um pergaminho pode exigir CD 20 + nível da magia.',
+      'intimidar':'Use para conseguir cooperação por meio de ameaças. A CD é 10 + Dados de Vida do alvo + modificador de Sabedoria; o tamanho relativo e a situação podem modificar o teste.',
+      'natacao':'Use para nadar ou manter-se à tona. Águas calmas têm CD 10, águas agitadas CD 15 e águas tempestuosas CD 20. Um teste bem-sucedido permite avançar; falhar pode causar afogamento ou impedir o deslocamento.',
+      'observar':'Use para notar criaturas, detalhes, armadilhas ou objetos. O teste é frequentemente resistido por Esconder-se ou Disfarces; distância, iluminação e distrações podem impor modificadores.',
+      'ouvir':'Use para perceber sons e detectar criaturas que se aproximam. O teste é resistido por Furtividade; portas, distância e ruído ambiente podem aumentar a CD.',
+      'prestidigitacao':'Use para esconder objetos, furtar pequenos itens ou executar truques manuais. Tarefas simples normalmente têm CD 10; esconder um objeto pequeno de alguém que observa exige CD 20 ou um teste resistido de Observar.',
+      'profissao':'Use para exercer um ofício especializado. O teste representa uma semana de trabalho e normalmente gera ganhos equivalentes à metade do resultado do teste em peças de ouro.',
+      'procurar':'Use para encontrar portas secretas, armadilhas, pistas e objetos escondidos. Examinar uma área pequena normalmente exige uma ação de rodada completa; armadilhas complexas podem exigir CDs elevadas.',
+      'saltar':'Use para saltos em distância ou altura. O salto em distância exige CD igual à distância em metros multiplicada por 3, e um salto em altura exige CD igual a 12 vezes a altura em metros. Uma corrida de 6 m (20 pés) reduz a dificuldade pela metade.',
+      'sentir motivacao':'Use para perceber blefes, avaliar confiabilidade ou notar influência mágica. Para identificar um blefe, o teste é resistido por Blefar; uma avaliação intuitiva costuma ter CD 20.',
+      'sobrevivencia':'Use para encontrar alimento e água, orientar-se, evitar perigos naturais e prever o clima. CD 10 permite obter sustento na natureza; CD 15 ajuda a evitar perigos ou prever o tempo para as próximas 24 horas.',
+      'usar cordas':'Use para dar nós, fixar um gancho ou amarrar uma criatura. Um nó firme tem CD 10; nós especiais e amarrar-se com uma mão têm CD 15. Amarrar alguém concede +10 ao teste resistido contra Arte da Fuga.',
+      'usar instrumento magico':'Use para ativar itens mágicos que normalmente exigiriam outra classe, raça ou tendência. CD 20 para varinha ou característica de classe; CD 20 + nível de conjurador para pergaminho; CD 25 para ativar às cegas ou emular raça; CD 30 para emular tendência.'
+    };
+    return rules[n]||'Use esta perícia quando a ação exigir treinamento ou conhecimento específico. O Mestre define a dificuldade (CD) conforme a situação, o tempo disponível e as condições do ambiente.';
+  }
+  
+  function dnd35RenderSkills(state, attrs, creating, classMap) {
     var ranks = dnd35Objeto(state.sheet.pericias), budget = dnd35PericiaBudget(state,attrs), spent = dnd35PericiaCostTotal(state,ranks,classMap);
     var level = Math.max(1,Number(state.sheet.nivel)||1), html = '';
     var sorted = state.skills.slice().sort(function(a,b) { var ac=!!classMap[String(a.id)], bc=!!classMap[String(b.id)]; return ac===bc ? String(a.nome).localeCompare(String(b.nome),'pt-BR') : (ac?-1:1); });
@@ -1655,7 +1690,7 @@ function dnd35TranslateCatalogText(value){
       html += '<article class="dnd35-skill"><div class="dnd35-skill-head"><strong>'+esc(skill.nome)+'</strong><span class="dnd35-badge">'+esc(labels.join(' · '))+'</span></div>'+
         '<p>Atributo: '+esc(ability)+' · Máximo: '+max+' graduações · Custo: '+((isClass||isLanguage)?'1':'2')+' ponto(s) por graduação'+(rank%1?' · incremento de 0,5':'')+'</p>'+
         (creating ? '<div class="dnd35-skill-control"><label for="skill-'+esc(id)+'">Graduações</label><select id="skill-'+esc(id)+'" data-skill="'+esc(id)+'">'+options+'</select></div>' : '<p>Graduações: <b>'+rank+'</b></p>')+
-        (isLanguage?'<div class="dnd35-formula">Sem rolagem: cada graduação compra conhecimento de um idioma. Informe os idiomas na área de notas da ficha.</div>':'<div class="dnd35-formula">Teste: 1d20 + graduações + modificador do atributo +3 se for perícia de classe com pelo menos 1 graduação.<br>Bônus agora: '+(computed>=0?'+':'')+computed+' ('+rank+' grad. '+(abilityMod>=0?'+':'')+abilityMod+' mod. '+(classBonus?'+3 classe':'')+')</div>')+trainedWarning+(skill.descricao?'<details class="dnd35-skill-rules"><summary>Regras e usos da perícia</summary><p>'+esc(dnd35TranslateCatalogText(String(skill.descricao).replace(/<\/tr>/gi,'\n').replace(/<\/t[dh]>/gi,' · ').replace(/<[^>]+>/g,'').replace(/&nbsp;/gi,' ').replace(/&amp;/gi,'&').replace(/&mdash;/gi,'—').replace(/&lt;/gi,'<').replace(/&gt;/gi,'>')))+'</p>'+(skill.srd_source_url?'<a href="'+esc(skill.srd_source_url)+'" target="_blank" rel="noopener noreferrer">Fonte SRD ↗</a>':'')+'</details>':'')+'</article>';
+        (isLanguage?'<div class="dnd35-formula">Sem rolagem: cada graduação compra conhecimento de um idioma. Informe os idiomas na área de notas da ficha.</div>':'<div class="dnd35-formula">Teste: 1d20 + graduações + modificador do atributo +3 se for perícia de classe com pelo menos 1 graduação.<br>Bônus agora: '+(computed>=0?'+':'')+computed+' ('+rank+' grad. '+(abilityMod>=0?'+':'')+abilityMod+' mod. '+(classBonus?'+3 classe':'')+')</div>')+trainedWarning+(skill.descricao?'<details class="dnd35-skill-rules"><summary>Regras e usos da perícia</summary><p>'+esc(dnd35SkillUsePt35(skill))+'</p>'+(skill.srd_source_url?'<a href="'+esc(skill.srd_source_url)+'" target="_blank" rel="noopener noreferrer">Fonte SRD ↗</a>':'')+'</details>':'')+'</article>';
     });
     return {html:html,spent:spent,budget:budget};
   }
