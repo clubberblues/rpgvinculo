@@ -4941,8 +4941,8 @@ document.body.style.backgroundColor = 'transparent';
 var integrationStyle = document.createElement('style');
 integrationStyle.textContent = `
   html, body {
-    background: rgb(1, 0, 20) !important;
-    background-color: rgb(1, 0, 20) !important;
+    background: rgb(15, 22, 15) !important;
+    background-color: rgb(15, 22, 15) !important;
     overflow: hidden !important;
   }
   #stage { background: transparent !important; }
@@ -4986,7 +4986,7 @@ integrationStyle.textContent = `
     padding: 13px 36px;
     border: 2px solid #c9a050;
     border-radius: 8px;
-    background: #141d33;
+    background: #1b2419;
     color: #c9a050;
     box-shadow: 0 0 20px rgba(201, 160, 80, 0.45);
     font-family: 'Cinzel', serif;
@@ -5028,6 +5028,12 @@ integrationStyle.textContent = `
     }
   }
 
+
+`;
+integrationStyle.textContent += `
+  #vinculo-roll-button{position:fixed;left:50%;bottom:8px;transform:translateX(-50%);min-width:0;width:auto;max-width:calc(100% - 20px);padding:7px 16px;border-width:1px;border-radius:6px;font-size:12px;letter-spacing:1px;box-shadow:0 2px 8px rgba(0,0,0,.45)}
+  @media(max-width:700px){#vinculo-roll-button{bottom:5px;padding:6px 12px;font-size:10px}}
+  @media(max-height:520px){#vinculo-roll-button{bottom:3px;padding:4px 10px}}
 `;
 document.head.appendChild(integrationStyle);
 
