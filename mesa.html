@@ -4059,7 +4059,8 @@ async function abrirModalEquipamentos(){
     var d = m.data || {};
     if(m.type === 'test_request'){
       receberPedidoTeste(d, m.id);
-      return '<div class="chat-msg sistema">📜 O Mestre solicitou: <b>'+esc(d.tipo||'Teste de habilidade')+'</b>.</div>';
+      var initiativeRequest=String(d.tipo||'').toLocaleLowerCase('pt-BR').includes('iniciativa');
+      return '<div class="chat-msg sistema">📜 O Mestre solicitou: <b>'+esc(d.tipo||'Teste de habilidade')+'</b>.'+(initiativeRequest?' Todos os jogadores podem rolar simultaneamente; não há ordem de chamada.':'')+'</div>';
     }
     if(m.type === 'sistema' || m.type === 'xp' || m.type === 'nivel'){ return '<div class="chat-msg sistema">'+esc(d.texto||'')+'</div>'; }
     if(m.type === 'rolagem'){
