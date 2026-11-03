@@ -1289,8 +1289,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         {id:'equipamentos',ic:'🛡️',txt:'Equipamentos'},
         {id:'xp',ic:'⭐',txt:'Dar XP'},
         {id:'dados',ic:'🎲',txt:'Dados'},
-        {id:'token-image-manager',ic:'🖼️',txt:'Alterar imagem do token'},
-        ...(String(campanha&&campanha.owner_id)===String(eu&&eu.id)?[{id:'config-campanha',ic:'⚙️',txt:'Excluir campanha'}]:[])
+        {id:'token-image-manager',ic:'🖼️',txt:'Alterar imagem do token'}
       ];
       el.innerHTML = listaGM.map(function(b){
         return '<button class="btn-acao '+(b.destaque?'destaque':'')+'" data-acao="'+b.id+'" title="'+esc(b.txt)+'"><span class="icone">'+b.ic+'</span><span>'+esc(b.txt)+'</span></button>';
@@ -1328,7 +1327,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var actionGroups=ehGM?[
       {title:'Combate',ids:['alternar-combate','iniciativa','avancar-turno']},
       {title:'Campo de batalha',ids:['cba','npc','monstros']},
-      {title:'Mesa e jogadores',ids:['testes','equipamentos','xp','dados','token-image-manager','config-campanha']}
+      {title:'Mesa e jogadores',ids:['testes','equipamentos','xp','dados','token-image-manager']}
     ]:estado==='COMBATE'?
       [{title:'Seu turno',ids:['atk-corpo','atk-dist','atk-mag','pericia','inventario','avancar-turno']}]:
       [{title:'Aventureiro',ids:['ficha','dados','pericia','atk-mag','inventario']}];
