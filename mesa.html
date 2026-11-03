@@ -1435,7 +1435,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       var listaCombate = [
         {id:'atk-corpo',ic:'⚔️',txt:'Ataque Corpo a Corpo'},
         {id:'atk-dist',ic:'🏹',txt:'Ataque à Distância'},
-        {id:'atk-mag',ic:'✨',txt:'Conjurar Magia'},\n        {id:'habilidades',ic:'⚔️',txt:'Habilidades da Classe'}, 
+        {id:'atk-mag',ic:'✨',txt:'Conjurar Magia'},
+        {id:'habilidades',ic:'⚔️',txt:'Habilidades da Classe'}, 
         {id:'pericia',ic:'📚',txt:'Usar Perícia'},
         {id:'inventario',ic:'🎒',txt:'Mochila'},
         {id:'avancar-turno',ic:'⏭️',txt:'Encerrar Turno'}
@@ -1464,8 +1465,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       {title:'Campo de batalha',ids:['cba','npc','monstros']},
       {title:'Mesa e jogadores',ids:['testes','equipamentos','xp','dados','token-image-manager']}
     ]:estado==='COMBATE'?
-      [{title:'Seu turno',ids:['atk-corpo','atk-dist','atk-mag','pericia','inventario','avancar-turno']}]:
-      [{title:'Aventureiro',ids:['ficha','dados','pericia','atk-mag','inventario']}];
+      [{title:'Seu turno',ids:['atk-corpo','atk-dist','atk-mag','habilidades','pericia','inventario','avancar-turno']}]:
+      [{title:'Aventureiro',ids:['ficha','dados','pericia','atk-mag','habilidades','inventario']}];
     var economyPanel=document.getElementById('painel-economia');if(economyPanel&&economyPanel.parentNode)economyPanel.parentNode.removeChild(economyPanel);
     var previousGroup=el.dataset.activeGroup||'';
     el.replaceChildren();
@@ -1565,7 +1566,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         adicionarBotaoContextual(menu,'pv-token','❤️ Ajustar PV da criatura');if(item.tipo==='monstro')adicionarBotaoContextual(menu,'monster-info','📜 Ver ficha no chat');
       }
     }else{
-      adicionarBotaoContextual(menu,'pv-personagem','❤️ Ajustar meus PV');adicionarBotaoContextual(menu,'atk-corpo','⚔️ Ataque corpo a corpo');adicionarBotaoContextual(menu,'atk-dist','🏹 Ataque à distância');adicionarBotaoContextual(menu,'atk-mag','✨ Conjurar magia');adicionarBotaoContextual(menu,'inventario','🎒 Inventário');
+      adicionarBotaoContextual(menu,'pv-personagem','❤️ Ajustar meus PV');adicionarBotaoContextual(menu,'atk-corpo','⚔️ Ataque corpo a corpo');adicionarBotaoContextual(menu,'atk-dist','🏹 Ataque à distância');adicionarBotaoContextual(menu,'atk-mag','✨ Conjurar magia');adicionarBotaoContextual(menu,'habilidades','⚔️ Habilidades da classe');adicionarBotaoContextual(menu,'inventario','🎒 Inventário');
     }
     var close=adicionarBotaoContextual(menu,'fechar','✕ Fechar',true);
     menu.classList.add('ativo');menu.setAttribute('aria-hidden','false');tokenEl.setAttribute('aria-expanded','true');
@@ -2089,7 +2090,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       var meta={evento:'magia_conjurada',character_id:String(p.ch.id),spell_id:String(spell.id),spell_name:String(spell.nome||spell.name||'Magia'),slot_level:slot,target_token_key:targetKey,target_name:targetName||null};
       if(isHeal){if(isMass){msg+=' O servidor aplicou a cura em '+String(data.target_count||targetKeys.length)+' alvo(s): '+targetName+'.';meta.targets=data.targets||[];meta.target_count=Number(data.target_count||targetKeys.length);}else if(healing!==null&&healing>0)msg+=' O servidor aplicou '+healing+' PV de cura'+(targetName?' em '+targetName:'')+'.';else msg+=' O servidor não aplicou cura.';if(pv!=null)msg+=' PV atual: '+pv+'.';meta.healing=healing;meta.pv_atual=pv;}
       else if(isMagicMissile){msg+=' '+data.missiles+' míssil(is), acerto automático; dano '+data.damage+'. PV do alvo: '+data.pv_atual+' / '+data.pv_max+'. Resistência à magia ainda não automatizada.';meta.damage=data.damage;meta.missiles=data.missiles;meta.pv_atual=data.pv_atual;meta.pv_max=data.pv_max;meta.spell_resistance_pending=true;}
-      else if(isAttack){msg+=' Ataque mágico não resolvido; dados da magia ainda aguardam implementação.';meta.gm_confirms_damage=true;}
+      else if(requiresGMResolution){msg+=' Conjuração registrada. Efeito, resistência, duração e/ou dano aguardam resolução do Mestre; nenhum efeito automático foi presumido.';meta.gm_resolution_required=true;meta.effect_kind=effect||'manual';}
       else msg+=' Efeito utilitário registrado pelo servidor.';
       var log=await enviarMensagemChat(msg,'rolagem',meta);if(log&&log.error)console.warn('Magia consumida; mensagem não entrou no chat:',log.error.message);fecharModalMagias();await carregarPersonagens();
     }catch(err){btn.disabled=false;alert('Não foi possível conjurar: '+err.message);}}
