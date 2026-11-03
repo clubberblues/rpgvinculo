@@ -4952,6 +4952,30 @@ integrationStyle.textContent = `
     display: none !important;
   }
 
+
+  /* Mesa Vínculo: o tipo de dado vem do teste; o jogador não escolhe manualmente. */
+  #dice-column{top:8px!important;right:8px!important;left:auto!important;gap:5px!important;transform:none!important;transform-origin:top right!important;max-height:calc(100% - 54px);overflow:visible}
+  .die-pick-row{display:none!important;grid-template-columns:34px 1fr!important;align-items:center!important;gap:4px!important;padding:3px 6px!important;min-width:0!important;border:1px solid rgba(201,160,80,.42)!important;border-radius:7px!important;background:rgba(15,22,15,.88)!important}
+  .die-pick-row.auto-active{display:grid!important}
+  .die-pick-row .die-preview{width:34px!important;height:34px!important;grid-row:1 / span 2}
+  .die-pick-row .die-label{font:700 10px Cinzel,serif!important;color:#f0d080!important;line-height:1.1!important}
+  .die-pick-row .pad-stepper{display:flex!important;align-items:center!important;gap:3px!important}
+  .die-pick-row .pad-stepper .step-down,.die-pick-row .pad-stepper .step-up{display:none!important}
+  .die-pick-row .pad-stepper .count{font:700 10px Cinzel,serif!important;color:#f5ecd6!important}
+  #vinculo-roll-button{left:50%!important;bottom:8px!important;min-width:0!important;width:auto!important;max-width:calc(100% - 20px)!important;padding:7px 16px!important;border-width:1px!important;border-radius:6px!important;font-size:12px!important;letter-spacing:1px!important;box-shadow:0 2px 8px rgba(0,0,0,.45)!important}
+  @media(max-width:700px){
+    #dice-column{top:5px!important;right:5px!important;gap:3px!important;max-height:calc(100% - 42px)}
+    .die-pick-row{grid-template-columns:27px 1fr!important;padding:2px 4px!important;gap:2px!important}
+    .die-pick-row .die-preview{width:27px!important;height:27px!important}
+    .die-pick-row .die-label,.die-pick-row .pad-stepper .count{font-size:8px!important}
+    #vinculo-roll-button{bottom:5px!important;padding:6px 12px!important;font-size:10px!important}
+  }
+  @media(max-height:520px){
+    #dice-column{gap:2px!important}
+    .die-pick-row .die-preview{width:24px!important;height:24px!important}
+    #vinculo-roll-button{bottom:3px!important;padding:4px 10px!important}
+  }
+
   #vinculo-roll-button {
     position: fixed;
     left: 50%;
@@ -5146,6 +5170,7 @@ if (throwButtonForLabel) throwButtonForLabel.setAttribute('aria-label', 'Rolar d
       var up = row.querySelector('.step-up');
       var count = countEl ? (parseInt(countEl.textContent, 10) || 0) : 0;
       var wanted = row.dataset.die === desiredDie ? desiredCount : 0;
+      row.classList.toggle('auto-active', wanted > 0);
       var guard = 0;
       while (count > wanted && down && !down.disabled && guard++ < 30) { down.click(); count--; }
       guard = 0;
