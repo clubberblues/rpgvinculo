@@ -1407,6 +1407,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     ligarEventosReforcos();
     var cardsStrip = document.getElementById('cards-strip');
     cardsStrip.addEventListener('click', function(e){
+      var moveButton=e.target.closest?e.target.closest('[data-initiative-move]'):null;
+      if(moveButton){e.preventDefault();e.stopPropagation();var moveIndex=Number(moveButton.dataset.initiativeMove),moveDirection=Number(moveButton.dataset.direction);if(Number.isInteger(moveIndex)&&Math.abs(moveDirection)===1)moverNaIniciativa(moveIndex,moveDirection);return;}
       var flipButton=e.target.closest?e.target.closest('[data-card-flip]'):null;
       if(flipButton){e.preventDefault();e.stopPropagation();var flipCard=flipButton.closest('.card-pers');if(flipCard)flipCard.classList.toggle('is-flipped');return;}
       var cardAcao = e.target.closest ? e.target.closest('.card-pers') : null;
