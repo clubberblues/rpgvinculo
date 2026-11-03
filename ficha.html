@@ -322,6 +322,10 @@ body{background:#0d0b07;font-family:'EB Garamond',Georgia,serif;color:#2b1f0f;
 .dnd35-skill-control select,.dnd35-feat-control select,.dnd35-feat-control input{max-width:100%;min-width:0;padding:7px;background:#1b2419;color:#f5ecd6;border:1px solid #8a6a3a;border-radius:3px}
 .dnd35-feat-control select{flex:1;min-width:180px}
 .dnd35-formula{color:#e0b860;font-size:11px;line-height:1.5;margin-top:8px}
+.dnd35-language-list{display:grid;gap:6px;margin-top:8px;padding:9px;background:rgba(224,184,96,.06);border:1px solid #75613d;border-radius:4px}
+.dnd35-language-list p{margin:2px 0;color:#aeb9ca;font-size:11px;line-height:1.4}
+.dnd35-language-choice{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px;color:#c9a050;font-size:11px}
+.dnd35-language-choice select{flex:1;min-width:140px;max-width:100%;padding:7px;background:#1b2419;color:#f5ecd6;border:1px solid #8a6a3a;border-radius:3px}
 .dnd35-warning{color:#fca5a5;font-size:11px;margin-top:6px;line-height:1.45}
 .dnd35-readonly{color:#d1d5db;font-size:13px;line-height:1.6}
 .dnd35-readonly li{margin:4px 0}
@@ -1744,7 +1748,7 @@ function dnd35TranslateCatalogText(value){
     }
     var html='<div class="dnd35-language-list"><p><b>Idiomas automáticos da raça/classe:</b> '+esc(rules.automatic.join(', ')||'—')+'</p>';
     html+='<p><b>Idiomas bônus por Inteligência:</b> '+rules.bonusCount+' de '+rules.intBonus+'</p>';
-    for(var i=0;i<rules.bonusCount;i++)html+='<label class="dnd35-language-choice">Bônus '+(i+1)+renderSelect('bonus',i,rules.bonusOptions,bonusPicks[i]||'')+'</label>';
+    for(var i=0;i<rules.bonusCount;i++)html+='<label class="dnd35-language-choice dnd35-skill-control">Bônus '+(i+1)+renderSelect('bonus',i,rules.bonusOptions,bonusPicks[i]||'')+'</label>';
     if(rules.intBonus>rules.bonusOptions.length)html+='<p class="dnd35-warning">A lista racial oferece '+rules.bonusOptions.length+' opções distintas; não há opções suficientes para usar todo o bônus de Inteligência sem repetir idioma.</p>';
     html+='<p><b>Idiomas comprados com Falar Idioma:</b> '+purchasedCount+' (1 ponto de perícia por idioma)</p>';
     for(var j=0;j<purchasedCount;j++)html+='<label class="dnd35-language-choice">Idioma comprado '+(j+1)+renderSelect('comprados',j,rules.allSelectable,purchasedPicks[j]||'')+'</label>';
