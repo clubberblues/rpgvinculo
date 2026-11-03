@@ -8,7 +8,7 @@ CREATE OR REPLACE FUNCTION public.concluir_avanco_nivel_personagem_srd_v2(
   p_idiomas JSONB DEFAULT NULL::JSONB
 ) RETURNS JSONB
 LANGUAGE plpgsql
-SECURITY DEFINER
+SECURITY INVOKER
 SET search_path TO 'pg_catalog','public'
 AS $function$
 DECLARE
