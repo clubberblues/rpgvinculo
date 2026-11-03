@@ -149,3 +149,26 @@ Não marcar um módulo como concluído apenas porque existe uma descrição ou u
 - A escolha da divindade do Clérigo ainda precisa ser ligada aos domínios e à tendência.
 - Familiars, companheiro animal e outras escolhas de classe ainda estão pendentes.
 - Não houve teste de navegador com sessão autenticada; a etapa permanece na branch de auditoria.
+
+
+## Etapa Anão A4 — Mago: especialização e escolas proibidas
+
+**Estado: implementação concluída; teste funcional autenticado pendente.**
+
+- O Mago agora precisa escolher explicitamente entre Universalista ou uma das oito escolas de especialização.
+- Se especialista, escolhe duas escolas proibidas; se especialista em Adivinhação, escolhe uma. A interface impede repetir a escola de especialização e as escolas proibidas entre si.
+- O catálogo de magias identifica as escolas em português e inglês. Magias proibidas são sinalizadas; se já estavam selecionadas antes da mudança de especialização, o jogador pode removê-las sem perder silenciosamente outras escolhas.
+- Truques permitidos são adicionados automaticamente ao grimório inicial. Truques de escolas proibidas não são adicionados; abaixo de Inteligência 10, a ficha não permite aprender truques.
+- O espaço adicional por círculo do Mago especialista é exibido e considerado na capacidade de preparação. Se o jogador usar esse espaço adicional, ao menos uma magia preparada naquele círculo precisa pertencer à escola especializada.
+- A validação da identidade do Mago ocorre no RPC de criação. A RPC `salvar_grimorio_srd` também valida escolas proibidas, truques iniciais permitidos, quantidade de magias de 1º círculo, magias preparadas e o espaço adicional de especialização.
+- Foi adicionada a função auxiliar `_srd35_school_key` para normalizar escolas de magia em português/inglês. Não foi criada tabela ou coluna nova.
+
+**Validações realizadas**
+- Sintaxe JavaScript de `ficha.html`: aprovada.
+- RPC de criação confirma a seleção de especialização e a quantidade correta de escolas proibidas.
+- RPC do Grimório confirma bloqueio de escolas proibidas e capacidade do espaço adicional.
+- Mapeamento SQL testado para Adivinhação, Conjuração e Encantamento em português.
+- Não houve teste de navegador com sessão autenticada; a etapa permanece na branch de auditoria.
+
+**Limite**
+- O descanso diário e o uso de espaços de magia na Mesa ainda precisam ser alinhados ao espaço extra de especialista quando o trabalho chegar ao módulo de jogo. Nesta fase, a criação e o salvamento inicial do grimório já consideram a especialização.
