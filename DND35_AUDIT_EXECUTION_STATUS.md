@@ -43,10 +43,14 @@
 - Proficiência: Bárbaro com espada longa sem penalidade; Mago com adaga sem penalidade; Mago com espada longa recebe -4; familiaridade anã com machado de guerra trata a arma como marcial.
 - Ocupação de grid: tamanhos e colisão de tokens conferidos.
 
+## Limites confirmados nesta continuação
+
+- Inspeção de integração da Mesa: `mesa.html` ainda não consulta `character_conditions` nem `srd_campaign_conditions`; portanto condições e características ativáveis não estão integradas ao fluxo de combate. Não foi criada uma ativação isolada na ficha que pudesse divergir do estado da Mesa.
+
 ## Pendências de auditoria e implementação
 
-1. Fúria do Bárbaro: ativação, usos diários, duração por rodada, bônus de FOR/CON, bônus de Vontade, penalidade de CA, PV temporários e fadiga após o término.
-2. Analfabetismo do Bárbaro e exceções de leitura/aprendizado.
+1. Fúria do Bárbaro: ativação, usos diários, duração por rodada, bônus de FOR/CON, bônus de Vontade, penalidade de CA, ajuste de PV decorrente da CON temporária, estados de inconsciência/morte ao encerrar e fadiga por 8 horas.
+2. Analfabetismo do Bárbaro: texto corrigido; falta implementar a escolha de alfabetização por 2 pontos de perícia e persistir essa escolha.
 3. Proficiências de armas/armaduras/escudos, penalidade por não proficiência e familiaridade racial anã.
 4. Traços raciais ainda não aplicados em todos os fluxos, incluindo visão no escuro/penumbra e verificações automáticas de Conhecimento de Pedras.
 5. Progressão integral de características de todas as classes, separando o que é automático, escolha do jogador e administração do Mestre.
