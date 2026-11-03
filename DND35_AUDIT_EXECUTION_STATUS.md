@@ -356,3 +356,25 @@ Não marcar um módulo como concluído apenas porque existe uma descrição ou u
 - A interface de auditoria envia `p_identidade` à assinatura de sete parâmetros. A interface antiga em `main` continua usando a assinatura de seis parâmetros; essa assinatura foi preservada para evitar quebra da versão principal.
 - **Ainda não foi possível concluir o teste autenticado de ponta a ponta no navegador**: as ferramentas disponíveis não fornecem uma sessão JWT de jogador nem um navegador autenticado para a aplicação. Não foi criado usuário de teste nem personagem fictício em produção.
 - A10 está aplicada no banco e corrigida na branch de auditoria, mas ainda não deve ser considerada integralmente liberada aos jogadores até a branch ser publicada e o teste autenticado de criação/reabertura ser executado.
+
+### Fechamento da verificação A10 — 2026-11-03
+
+**Conferência posterior da branch e do banco**
+- A branch `audit/dnd35-rules-alignment` contém `ficha.html` atualizado e a migração versionada `20261103232842_srd35_all_basic_races_identity.sql`; o arquivo anterior com timestamp `20261103110000` não existe mais.
+- O seletor inicial usa todas as raças do catálogo, sem filtro exclusivo de Anão. O helper de idiomas automáticos considera raça e acrescenta Druídico para Druida. A ocorrência de `['Comum','Anão']` no código é a lista racial correta do Anão, não um fallback global.
+- A chamada da interface usa a RPC de sete parâmetros e inclui `p_identidade`.
+- O histórico de migrações do Supabase contém `20261103232842 / srd35_all_basic_races_identity`.
+- Consulta direta ao catálogo de funções confirmou os overloads de seis e sete parâmetros. Ambos negam EXECUTE a `anon`; ambos mantêm EXECUTE para `authenticated`. O overload antigo foi preservado porque a versão em `main` ainda depende dele.
+- Inspeção da definição instalada da RPC de sete parâmetros confirmou: guarda exclusiva de Anão ausente; validações raciais de altura e peso presentes; mensagem de idade mínima presente.
+- Não foram criados usuários, fichas ou registros de teste em produção.
+
+**Auditoria automática adicional**
+- Advisors de segurança retornaram 88 avisos de funções SECURITY DEFINER executáveis por authenticated e 1 aviso de proteção contra senhas vazadas desativada. São achados gerais do projeto, não introduzidos nem corrigidos pela migração A10; precisam de auditoria individual antes de qualquer revogação ou troca para SECURITY INVOKER.
+- Advisors de performance retornaram 56 índices não utilizados (nível INFO). Não remover índices sem análise de carga e dependências.
+
+**Estado final honesto**
+- Banco: migração aplicada e verificações estruturais aprovadas.
+- Repositório: código e migração reconciliados na branch de auditoria.
+- Interface: ainda não publicada em `main` nem implantada no site.
+- Teste de jogador: ainda pendente. As ferramentas desta sessão não disponibilizam sessão autenticada real nem navegador conectado à aplicação; portanto, criação e reabertura de ficha não foram simuladas nem declaradas aprovadas.
+- A10 não deve ser marcada como liberada aos jogadores até que a branch revisada seja implantada e o teste autenticado de criação/reabertura seja concluído. A divergência entre `main` e a branch de auditoria impede um merge automático seguro.
