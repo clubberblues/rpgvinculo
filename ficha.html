@@ -1526,7 +1526,7 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2938
   function dnd35RaceAgingThresholds(raca){var d={humano:[35,53,70],anao:[125,188,250],elfo:[175,263,350],gnomo:[100,150,200],'meio-elfo':[62,93,125],'meio-orc':[30,45,60],halfling:[50,75,100]};return d[String(raca&&raca.id||'')]||null;}
   function dnd35RaceBodyProfile(raca,sexo){
     var race=String(raca&&raca.id||''),female=sexo==='feminino';
-    var d={humano:{m:[160,2,10,60,2,4,.5],f:[145,2,10,42,1,6,.5]},anao:{m:[125,2,4,65,2,6,.5],f:[120,2,4,50,2,6,.5]},elfo:{m:[145,2,6,42,1,6,.5],f:[140,2,6,40,1,6,.5]},gnomo:{m:[90,2,4,20,0,0,.5],f:[85,2,4,17,0,0,.5]},'meio-elfo':{m:[150,2,8,50,2,4,.5],f:[145,2,8,40,2,4,.5]},'meio-orc':{m:[165,2,10,65,2,4,.5],f:[150,2,10,45,2,4,.5]},halfling:{m:[80,2,4,15,0,0,.5],f:[75,2,4,12,0,0,.5]}};
+    var d={humano:{m:[160,2,10,60,2,4,.5],f:[145,2,10,42,1,6,.5]},anao:{m:[125,2,4,65,2,6,.5],f:[120,2,4,50,2,6,.5]},elfo:{m:[145,2,6,42,1,6,.5,true],f:[145,2,6,40,1,6,.5,true]},gnomo:{m:[90,2,4,20,0,0,.5],f:[85,2,4,17,0,0,.5]},'meio-elfo':{m:[150,2,8,50,2,4,.5],f:[145,2,8,40,2,4,.5]},'meio-orc':{m:[165,2,10,65,2,4,.5],f:[150,2,10,45,2,4,.5]},halfling:{m:[80,2,4,15,0,0,.5],f:[75,2,4,12,0,0,.5]}};
     var row=d[race];return row?row[female?'f':'m']:null;
   }
   function dnd35DwarfAlignmentOptions(classe){
