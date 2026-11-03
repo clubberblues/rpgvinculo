@@ -2068,8 +2068,8 @@ function dnd35WeaponProficient(state,weaponName){
   }
   function dnd35SpellBonusSlots(mod,circle) { return circle>0&&mod>=circle?Math.floor((mod-circle)/4)+1:0; }
   function dnd35SpellState(state) {
-    var raw=dnd35SpellParse(state.sheet.magias_preparadas),saved=raw&&typeof raw==='object'?raw:{};
-    var known=Array.isArray(saved.conhecidas)?saved.conhecidas.map(String):[],prepared=Array.isArray(saved.preparadas)?saved.preparadas:[],domainPrepared=Array.isArray(saved.dominio_preparadas)?saved.dominio_preparadas:[],uses=saved.usos&&typeof saved.usos==='object'?saved.usos:{};
+    var raw=state.criacao&&state.grimoireState?state.grimoireState:dnd35SpellParse(state.sheet.magias_preparadas),saved=raw&&typeof raw==='object'?raw:{};
+    var known=Array.isArray(saved.conhecidas)?saved.conhecidas.map(String):[],prepared=Array.isArray(saved.preparadas)?saved.preparadas:[],domainPrepared=Array.isArray(saved.dominioPreparadas)?saved.dominioPreparadas:(Array.isArray(saved.dominio_preparadas)?saved.dominio_preparadas:[]),uses=saved.usos&&typeof saved.usos==='object'?saved.usos:{};
     return {version:1,conhecidas:Array.from(new Set(known)),preparadas:prepared.filter(function(x){return x&&x.spell_id!=null;}).map(function(x){return {spell_id:String(x.spell_id),slot_level:Math.max(0,Number(x.slot_level)||0),expended:!!x.expended};}),dominioPreparadas:domainPrepared.filter(function(x){return x&&x.domain_id&&x.spell_id!=null;}).map(function(x){return {domain_id:String(x.domain_id),spell_id:String(x.spell_id),slot_level:Math.max(1,Number(x.slot_level)||1),expended:!!x.expended};}),usos:uses};
   }
   function dnd35SpellClassLabels(key) { return {wizard:['wizard','mago'],bard:['bard','bardo'],cleric:['cleric','clérigo','clerigo'],druid:['druid','druida'],paladin:['paladin','paladino'],ranger:['ranger','patrulheiro'],sorcerer:['sorcerer','feiticeiro']}[key]||[]; }
@@ -2082,10 +2082,11 @@ function dnd35WeaponProficient(state,weaponName){
     if(!candidates.length&&state.classe.class_key)candidates=progressions.filter(function(p){return String(p.class_key).toLowerCase()===String(state.classe.class_key).toLowerCase();});
     var progression=candidates[0]||state.progression||null;
     if(state.progressionClassKey!==key){state.progression=progression;state.progressionClassKey=key;}
-    var ability=key==='wizard'?'INT':(key==='sorcerer'||key==='bard'?'CAR':'SAB'),score=Number(attrs[ability]||10),mod=dnd35Modificador(score),base={},slots={},max=0;
-    for(var c=0;c<=9;c++){var n=dnd35SpellProgressionCount(state,'slots_by_level',charLevel,c);base[c]=n==null?-1:n;if(base[c]>=0&&score<10+c)base[c]=-1;if(c>0&&base[c]>=0)max=c;}
-    for(var i=0;i<=max;i++)slots[i]=base[i]>=0?(base[i]+dnd35SpellBonusSlots(mod,i)):0;
-    return {key:key,ability:ability,mod:mod,base:base,slots:slots,max:max,progression:progression};
+    var ability=key==='wizard'?'INT':(key==='sorcerer'||key==='bard'?'CAR':'SAB'),score=Number(attrs[ability]||10),mod=dnd35Modificador(score),base={},slots={},max=0,catalogMax=0;
+    for(var c=0;c<=9;c++){var n=dnd35SpellProgressionCount(state,'slots_by_level',charLevel,c);base[c]=n==null?-1:n;if(base[c]>=0)catalogMax=c;if(base[c]>=0&&score<10+c)base[c]=-1;if(c>0&&base[c]>=0)max=c;}
+    for(var i=0;i<=catalogMax;i++)slots[i]=base[i]>=0?(base[i]+dnd35SpellBonusSlots(mod,i)):0;
+    if(key!=='wizard')catalogMax=max;
+    return {key:key,ability:ability,mod:mod,base:base,slots:slots,max:max,catalogMax:catalogMax,progression:progression};
   }
   function dnd35SpellMatchesClass(spell,key) {
     var classes=spell.classes;if(typeof classes==='string')classes=classes.split(/[,;|]/);if(!Array.isArray(classes))return false;
@@ -2122,7 +2123,8 @@ function dnd35WeaponProficient(state,weaponName){
     panel+='</section>';return panel;
   }
   function dnd35GrimoireRender(state,attrs,charLevel,creating) {
-    var avail=dnd35GrimoireAvailability(state,attrs,charLevel),s=dnd35SpellState(state),spells=(state.srdSpells||[]).filter(function(sp){var lvl=dnd35SpellLevel(sp,avail.key);return dnd35SpellMatchesClass(sp,avail.key)&&lvl>=0&&lvl<=avail.max;});
+    var avail=dnd35GrimoireAvailability(state,attrs,charLevel),s=dnd35SpellState(state),spells=(state.srdSpells||[]).filter(function(sp){var lvl=dnd35SpellLevel(sp,avail.key);return dnd35SpellMatchesClass(sp,avail.key)&&lvl>=0&&lvl<=avail.catalogMax;});
+    if(creating&&avail.key==='wizard'){var cantrips=spells.filter(function(sp){return dnd35SpellLevel(sp,avail.key)===0;}).map(function(sp){return String(sp.id);});s.conhecidas=Array.from(new Set(s.conhecidas.concat(cantrips)));}
     state.grimoireState=s;
     var classNames={wizard:'Mago',bard:'Bardo',cleric:'Clérigo',druid:'Druida',paladin:'Paladino',ranger:'Patrulheiro',sorcerer:'Feiticeiro'},isSpontaneous=avail.key==='sorcerer'||avail.key==='bard',preparedCount=s.preparadas.length,knownCount=s.conhecidas.length,bookTitle=avail.key==='wizard'?'Grimório':(isSpontaneous?'Magias Conhecidas':'Preparação de Magias');
     var message='';
@@ -2155,14 +2157,10 @@ function dnd35WeaponProficient(state,weaponName){
       var meta=['Círculo '+lvl,sp.escola?'Escola: '+sp.escola:'',sp.alcance?'Alcance: '+sp.alcance:'',sp.alvo?'Alvo/efeito: '+sp.alvo:'',sp.area?'Área: '+sp.area:'',sp.duracao?'Duração: '+sp.duracao:'',sp.componentes?'Componentes: '+sp.componentes:''].filter(Boolean).join(' · ');
       var controls='';
       if(avail.key){
-        if(avail.key==='wizard')controls='<label><input type="checkbox" data-spell-known="'+esc(id)+'" '+(known?'checked':'')+'> No grimório</label><label><input type="checkbox" data-spell-prepared="'+esc(id)+'" '+(prepared?'checked':'')+'> Preparar</label>';
-        else if(avail.key==='cleric'||avail.key==='druid'||avail.key==='paladin'||avail.key==='ranger')controls='<label><input type="checkbox" data-spell-prepared="'+esc(id)+'" '+(prepared?'checked':'')+'> Preparar</label>';
+        if(avail.key==='wizard'){var autoCantrip=lvl===0,slotOptions='';for(var wizardSlot=lvl;wizardSlot<=avail.max;wizardSlot++)if(Number(avail.slots[wizardSlot]||0)>0)slotOptions+='<option value="'+wizardSlot+'"'+(prepared&&Number(prepared.slot_level)===wizardSlot?' selected':'')+'>'+wizardSlot+'</option>';controls='<label><input type="checkbox" data-spell-known="'+esc(id)+'" '+(known?'checked':'')+(autoCantrip?' disabled':'')+'>'+ (autoCantrip?'No grimório · automático':'No grimório')+'</label>'+(slotOptions?'<label><input type="checkbox" data-spell-prepared="'+esc(id)+'" '+(prepared?'checked':'')+'> Preparar</label><label>Usar espaço de círculo <select data-spell-level="'+esc(id)+'">'+slotOptions+'</select></label>':'<span class="dnd35-note">Sem espaço disponível para preparar este círculo.</span>');}
+        else if(avail.key==='cleric'||avail.key==='druid'||avail.key==='paladin'||avail.key==='ranger'){var preparedOptions='';for(var prepSlot=lvl;prepSlot<=avail.max;prepSlot++)if(Number(avail.slots[prepSlot]||0)>0)preparedOptions+='<option value="'+prepSlot+'"'+(prepared&&Number(prepared.slot_level)===prepSlot?' selected':'')+'>'+prepSlot+'</option>';controls=preparedOptions?'<label><input type="checkbox" data-spell-prepared="'+esc(id)+'" '+(prepared?'checked':'')+'> Preparar</label><label>Usar espaço de círculo <select data-spell-level="'+esc(id)+'">'+preparedOptions+'</select></label>':'<span class="dnd35-note">Sem espaço disponível para este círculo.</span>';}
         else if(avail.key==='sorcerer'||avail.key==='bard')controls='<label><input type="checkbox" data-spell-known="'+esc(id)+'" '+(known?'checked':'')+'> Conhecida</label>';
-        if(!isSpontaneous){
-          var selectedSlot=prepared?Number(prepared.slot_level):lvl,opts='';
-          for(var slot=lvl;slot<=avail.max;slot++)opts+='<option value="'+slot+'"'+(slot===selectedSlot?' selected':'')+'>'+slot+'</option>';
-          controls+='<label>Usar espaço de círculo <select data-spell-level="'+esc(id)+'">'+opts+'</select></label>';
-        }
+
       }
       return '<article class="dnd35-spell-card" data-spell-card><h3>'+esc(sp.nome||'Magia sem nome')+'</h3><div class="dnd35-spell-meta">'+esc(meta)+'</div>'+(sp.descricao?'<div class="dnd35-spell-description">'+esc(sp.descricao)+'</div>':'')+(sp.srd_source_url?'<a class="dnd35-spell-meta" href="'+esc(sp.srd_source_url)+'" target="_blank" rel="noopener noreferrer">Consultar descrição SRD (OGL) ↗</a>':'')+(controls?'<div class="dnd35-spell-controls">'+controls+'</div>':'')+'</article>';
     }).join('')+'</div>';
