@@ -91,7 +91,7 @@ Além disso, ao abrir a mesa como Mestre, a interface busca no catálogo SRD os 
 
 ## Mesa: cards de combate e ordem do turno
 
-A interface da mesa reúne fichas, NPCs e monstros em uma faixa horizontal no rodapé, com rolagem horizontal e cards lado a lado. O chat e o Dice ficam na coluna esquerda; o mapa ocupa o centro e as ações ficam à direita. Durante combate, a fila acompanha a iniciativa e destaca o combatente ativo. O card e o token no tabuleiro usam a mesma entrada de iniciativa (incluindo a distinção entre ficha de jogador e token controlado pelo Mestre), para manter o destaque sincronizado.
+A interface da mesa reúne fichas, NPCs e monstros em uma faixa horizontal no rodapé, com rolagem horizontal e cards lado a lado. O chat permanece na coluna esquerda; o Dice abre sob o tabuleiro somente quando solicitado, deixando livre o espaço lateral anterior para um elemento visual futuro. Durante combate, a fila gira com a iniciativa: o combatente ativo fica sempre no primeiro card à esquerda e o anterior vai para o final. O brilho do card e do token deriva da mesma entrada do servidor. O painel textual separado de iniciativa não é exibido.
 
 O controle de combate e a economia de ações ficam no painel lateral do turno ativo. Os tokens mostram CA numérica: fichas usam atributos e equipamento; monstros usam o bloco SRD; NPCs sem bloco completo recebem um valor derivado dos atributos, armadura natural e equipamento. Ao abrir a mesa como Mestre, tokens antigos sem CA são reparados e salvos na cena.
 
