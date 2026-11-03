@@ -1714,14 +1714,14 @@ function dnd35TranslateCatalogText(value){
       }
       var abilityMod = dnd35Modificador(attrs[ability]), classBonus = isClass && rank >= 1 ? 3 : 0, computed = rank + abilityMod + classBonus;
       var labels = [];
-      labels.push(isClass ? 'Perícia de classe' : 'Fora de classe');
-      if (skill.treinada_apenas) labels.push('Somente treinada');
-      if (skill.penalidade_armadura) labels.push('Penalidade de armadura');
-      var trainedWarning = skill.treinada_apenas && rank < 1 ? '<div class="dnd35-warning">Esta perícia exige treinamento; sem graduações, não pode ser usada.</div>' : '';
+      labels.push(isLanguage ? 'Idioma · 1 ponto por idioma' : (isClass ? 'Perícia de classe' : 'Fora de classe'));
+      if (!isLanguage && skill.treinada_apenas) labels.push('Somente treinada');
+      if (!isLanguage && skill.penalidade_armadura) labels.push('Penalidade de armadura');
+      var trainedWarning = !isLanguage && skill.treinada_apenas && rank < 1 ? '<div class="dnd35-warning">Esta perícia exige treinamento; sem graduações, não pode ser usada.</div>' : '';
       html += '<article class="dnd35-skill"><div class="dnd35-skill-head"><strong>'+esc(skill.nome)+'</strong><span class="dnd35-badge">'+esc(labels.join(' · '))+'</span></div>'+
-        '<p>Atributo: '+esc(ability)+' · Máximo: '+max+' graduações · Custo: '+((isClass||isLanguage)?'1':'2')+' ponto(s) por graduação'+(rank%1?' · incremento de 0,5':'')+'</p>'+
-        (creating ? '<div class="dnd35-skill-control"><label for="skill-'+esc(id)+'">Graduações</label><select id="skill-'+esc(id)+'" data-skill="'+esc(id)+'">'+options+'</select></div>' : '<p>Graduações: <b>'+rank+'</b></p>')+
-        (isLanguage?'<div class="dnd35-formula">Sem rolagem: cada graduação compra conhecimento de um idioma. Informe os idiomas na área de notas da ficha.</div>':'<div class="dnd35-formula">Teste: 1d20 + graduações + modificador do atributo +3 se for perícia de classe com pelo menos 1 graduação.<br>Bônus agora: '+(computed>=0?'+':'')+computed+' ('+rank+' grad. '+(abilityMod>=0?'+':'')+abilityMod+' mod. '+(classBonus?'+3 classe':'')+')</div>')+trainedWarning+(skill.descricao?'<details class="dnd35-skill-rules"><summary>Regras e usos da perícia</summary><p>'+esc(dnd35SkillUsePt35(skill))+'</p>'+(skill.srd_source_url?'<a href="'+esc(skill.srd_source_url)+'" target="_blank" rel="noopener noreferrer">Fonte SRD ↗</a>':'')+'</details>':'')+'</article>';
+        (isLanguage ? '<p>Limite de compra: '+max+' idiomas · Custo: 1 ponto de perícia por idioma.</p>' : '<p>Atributo: '+esc(ability)+' · Máximo: '+max+' graduações · Custo: '+(isClass?'1':'2')+' ponto(s) por graduação'+(rank%1?' · incremento de 0,5':'')+'</p>')+
+        (creating ? '<div class="dnd35-skill-control"><label for="skill-'+esc(id)+'">'+(isLanguage?'Idiomas adicionais por pontos de perícia':'Graduações')+'</label><select id="skill-'+esc(id)+'" data-skill="'+esc(id)+'">'+options+'</select></div>' : '<p>'+(isLanguage?'Idiomas comprados':'Graduações')+': <b>'+rank+'</b></p>')+
+        (isLanguage?'<div class="dnd35-formula">Falar Idioma não exige teste nem usa limite de graduações: cada ponto compra um idioma adicional. Idiomas automáticos da raça e idiomas bônus por Inteligência não gastam esses pontos; registre todos os idiomas conhecidos nas notas da ficha.</div>':'<div class="dnd35-formula">Teste: 1d20 + graduações + modificador do atributo +3 se for perícia de classe com pelo menos 1 graduação.<br>Bônus agora: '+(computed>=0?'+':'')+computed+' ('+rank+' grad. '+(abilityMod>=0?'+':'')+abilityMod+' mod. '+(classBonus?'+3 classe':'')+')</div>')+trainedWarning+(skill.descricao?'<details class="dnd35-skill-rules"><summary>Regras e usos da perícia</summary><p>'+esc(dnd35SkillUsePt35(skill))+'</p>'+(skill.srd_source_url?'<a href="'+esc(skill.srd_source_url)+'" target="_blank" rel="noopener noreferrer">Fonte SRD ↗</a>':'')+'</details>':'')+'</article>';
     });
     return {html:html,spent:spent,budget:budget};
   }
