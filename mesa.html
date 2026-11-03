@@ -969,6 +969,19 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
 #cards-strip .cards-empty{min-width:230px!important;color:#bcae8e!important;font:italic 12px 'EB Garamond',serif!important}
 @media(max-width:700px){.mesa-footer{height:112px!important;min-height:112px!important;max-height:112px!important}#cards-strip>.card-pers{flex-basis:82px!important;width:82px!important;min-width:82px!important}}
 </style>
+<style id="vinculo-mobile-drawer-controls">
+.mobile-panel-toggle{display:none!important;align-items:center;justify-content:center;gap:5px;padding:6px 9px;border:1px solid #806b42;border-radius:5px;background:linear-gradient(145deg,#263322,#11170f);color:#e8ce91;font:700 9px Cinzel,serif;white-space:nowrap;cursor:pointer}
+.mobile-panel-toggle[aria-expanded="true"]{background:#40523a;border-color:#d6b96e}
+@media(max-width:760px){
+ .mesa-header{gap:5px!important;padding:6px 7px!important}
+ .mobile-panel-toggle{display:inline-flex!important}
+ .mesa-header .titulo-mesa{min-width:0!important}
+ .mesa-header .titulo-mesa .nome{font-size:12px!important;letter-spacing:1px!important}
+ .mesa.mobile-chat-open .col-esq{display:flex!important;position:fixed!important;left:0!important;top:52px!important;bottom:112px!important;width:min(86vw,320px)!important;z-index:10020!important;box-shadow:12px 0 32px #000b!important;border:1px solid #806b42!important}
+ .mesa.mobile-actions-open #acoes-dir{display:flex!important;position:fixed!important;right:0!important;top:52px!important;bottom:112px!important;width:min(86vw,320px)!important;z-index:10020!important;box-shadow:-12px 0 32px #000b!important;border:1px solid #806b42!important}
+ .mesa.mobile-chat-open:after,.mesa.mobile-actions-open:after{content:'';position:fixed;inset:52px 0 112px;background:#0008;z-index:10010;pointer-events:none}
+}
+</style>
 </head>
 <body>
 
@@ -4488,5 +4501,24 @@ html,body,#root{width:100%;height:100%;min-width:0;min-height:0}
 })();
 </script>
 
+<script id="vinculo-mobile-drawers">
+(function(){
+ function attach(){
+  var mesa=document.querySelector('.mesa'),header=mesa&&mesa.querySelector('.mesa-header');
+  if(!mesa||!header||header.dataset.mobileDrawers==='1')return;
+  header.dataset.mobileDrawers='1';
+  function make(id,label,icon,cls){
+   var b=document.createElement('button');b.type='button';b.id=id;b.className='mobile-panel-toggle';b.innerHTML='<span aria-hidden="true">'+icon+'</span><span>'+label+'</span>';b.setAttribute('aria-expanded','false');
+   b.addEventListener('click',function(){var open=mesa.classList.toggle(cls);b.setAttribute('aria-expanded',String(open));var other=cls==='mobile-chat-open'?'mobile-actions-open':'mobile-chat-open';mesa.classList.remove(other);var otherButton=document.getElementById(other==='mobile-chat-open'?'vinculo-mobile-chat':'vinculo-mobile-actions');if(otherButton)otherButton.setAttribute('aria-expanded','false');});
+   return b;
+  }
+  var chat=make('vinculo-mobile-chat','Chat / Dados','☰','mobile-chat-open');
+  var actions=make('vinculo-mobile-actions','Ações','⚔','mobile-actions-open');
+  header.insertBefore(chat,header.firstChild);header.appendChild(actions);
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',attach);else attach();
+ new MutationObserver(attach).observe(document.documentElement,{childList:true,subtree:true});
+})();
+</script>
 </body>
 </html>
