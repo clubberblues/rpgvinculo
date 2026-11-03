@@ -2187,7 +2187,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     }
 
     // Ataques reais: o jogador seleciona um token no CBA e a mesa verifica o alcance.
-    if(id==='atk-mag'){ abrirListaMagias(); return; }\n    if(id==='habilidades'){ abrirHabilidadesClasse(); return; }
+    if(id==='atk-mag'){ abrirListaMagias(); return; }
+    if(id==='habilidades'){ abrirHabilidadesClasse(); return; }
     if (id === 'atk-corpo' || id === 'atk-dist') {
       iniciarSelecaoAtaque(id); return;
     }
