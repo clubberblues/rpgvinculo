@@ -841,9 +841,10 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
 .mesa{grid-template-rows:58px minmax(0,1fr) 0!important}
 .mesa-footer{display:none!important}
 .col-esq{display:flex!important;flex-direction:column!important;gap:8px!important;min-height:0!important;overflow:hidden!important}
-.col-esq>.painel:first-child{flex:1 1 56%!important;min-height:180px!important}
-.painel-aventureiros{flex:1 1 44%!important;min-height:0!important;display:flex!important;flex-direction:column!important}
-.painel-aventureiros>.painel-cab{flex:0 0 auto}
+.col-esq>.painel:first-child{flex:1 1 50%!important;min-height:0!important}
+#acoes-dir{display:flex!important;flex-direction:column!important;min-height:0!important;overflow-y:auto!important;overscroll-behavior:contain}
+#acoes-dir .painel-aventureiros{flex:1 1 auto!important;min-height:180px!important;display:flex!important;flex-direction:column!important;overflow:hidden!important}
+#acoes-dir .painel-aventureiros>.painel-cab{flex:0 0 auto}
 #cards-strip.cards-strip{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-auto-rows:154px!important;gap:7px!important;align-content:start!important;justify-items:center!important;min-height:0!important;max-height:none!important;overflow:auto!important;padding:7px!important;border:0!important;background:transparent!important}
 #cards-strip .deck-card{width:100%!important;max-width:112px!important;min-width:0!important;height:150px!important;min-height:150px!important;max-height:150px!important;padding:0!important;display:block!important;border-radius:8px!important;overflow:hidden!important;box-shadow:0 4px 12px #0008!important}
 #cards-strip .deck-card .card-pers-inner{height:100%!important;min-height:100%!important}
@@ -865,9 +866,9 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
  .mesa{grid-template-rows:58px minmax(0,1fr) 0!important}
  .mesa-corpo{grid-template-columns:minmax(0,1fr) 210px!important;grid-template-rows:minmax(0,1fr) 0!important}
  .col-esq{grid-column:1!important;grid-row:1!important}
- .col-esq>.painel:first-child{flex:1 1 48%!important;min-height:100px!important}
- .painel-aventureiros{flex:1 1 52%!important}
- #cards-strip.cards-strip{grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-auto-rows:142px!important}
+ .col-esq>.painel:first-child{flex:1 1 50%!important;min-height:100px!important}
+ #acoes-dir .painel-aventureiros{grid-column:1/-1!important;min-height:130px!important}
+ #cards-strip.cards-strip{grid-template-columns:repeat(auto-fill,minmax(96px,1fr))!important;grid-auto-rows:142px!important}
  #cards-strip .deck-card{height:138px!important;min-height:138px!important}
 }
 
@@ -1287,7 +1288,6 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
                 '<button id="chat-enviar">➤</button>'+
               '</div>'+
             '</section>'+
-            '<section class="painel painel-aventureiros" aria-label="Aventureiros da mesa"><div class="painel-cab">AVENTUREIROS</div><div class="painel-corpo" id="cards-strip" aria-label="Cards de personagens, NPCs e monstros"></div></section>'+
           '</aside>'+
           '<main class="tabuleiro" id="area-tabuleiro">'+
             '<div id="cba-live-movement-preview" class="cba-live-movement-preview" role="status" aria-live="polite" hidden></div>'+
@@ -1431,7 +1431,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     combatPanel.innerHTML='<h3>CONTROLE DO TURNO</h3><p id="turno-controle-status">Aguardando a iniciativa.</p><div id="iniciativa-acoes-mestre"></div>';
     el.appendChild(combatPanel);
     if(economyPanel)combatPanel.appendChild(economyPanel);
-    if(tokenMenu)el.appendChild(tokenMenu);var chatColumn=document.querySelector('.col-esq');if(diceOverlay&&chatColumn)chatColumn.appendChild(diceOverlay);
+    if(tokenMenu)el.appendChild(tokenMenu);var roster=document.createElement('section');roster.className='painel painel-aventureiros';roster.setAttribute('aria-label','Aventureiros da mesa');roster.innerHTML='<div class="painel-cab">AVENTUREIROS</div><div class="painel-corpo" id="cards-strip" aria-label="Cards de personagens, NPCs e monstros"></div>';el.appendChild(roster);var chatColumn=document.querySelector('.col-esq');if(diceOverlay&&chatColumn)chatColumn.appendChild(diceOverlay);
     if(document.getElementById('painel-iniciativa'))renderizarIniciativa(combatDataState);
   }
 
