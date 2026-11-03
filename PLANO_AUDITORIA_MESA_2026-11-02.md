@@ -354,3 +354,23 @@ Nenhuma campanha, personagem, ficha, token ou log real foi modificado nesta cont
 - Inspeção visual em desktop/mobile e confirmação do deploy público continuam pendentes. A API de Actions não retornou execuções para a branch de trabalho.
 - O erro de carregamento infinito da ficha ainda não foi reproduzido numa sessão autenticada.
 - A persistência do Grimório foi inspecionada no código, mas ainda precisa ser exercitada do início ao fim em sessão real, inclusive domínios do Clérigo e progressão de magias ao subir de nível.
+
+## Segunda retomada — rolagens manuais, grimório e equipamento — 2026-11-03
+
+### Correções adicionais aplicadas
+- A progressão de nível agora exige o resultado manual do dado de vida. A RPC valida o valor recebido; o servidor não gera o dado.
+- Poções de cura usam o Dice manual (1d8+1, 2d8+3 ou 3d8+5), validam cada face e consomem uma ação padrão quando usadas em combate. O endpoint antigo com rolagem aleatória foi revogado.
+- Magias de cura de alvo único e múltiplos alvos agora recebem os resultados manuais do Dice; o servidor calcula bônus por nível, cura, PV e consumo de espaços. Os endpoints antigos que rolavam cura aleatoriamente foram revogados.
+- Endpoints legados de iniciativa, ataque e salvamento contra morte que geravam d20 no servidor foram revogados. A iniciativa ativa continua usando resultados manuais dos jogadores e do Mestre; a atribuição aleatória de resultados do Mestre aos tokens permanece intencional.
+- Equipamento inicial entra na mochila sem ser equipado automaticamente; o jogador decide o que vestir/empunhar depois.
+- A loja inicial agora pagina resultados, filtra por categoria, busca por nome/descrição, mostra estatísticas de arma/armadura, exclui itens mágicos, poções e pergaminhos, e exibe pesos em libras (unidade do D&D 3.5).
+- O Grimório do Mago de 1º nível inclui automaticamente os truques disponíveis e exige 3 + bônus de INT magias de 1º círculo. A regra é validada no cliente e no RPC do servidor.
+- A regra customizada `1d20 + BBA + atributo conjurador` foi removida da documentação. Ataques de toque usam o bônus de ataque corpo a corpo/à distância adequado; CD de magia e teste contra RM são cálculos diferentes.
+
+### Estado dos testes
+- Scripts inline de `mesa.html`, `ficha.html`, `lobby.html` e `lobby_atualizado.html` passaram pela compilação sintática. `dice.html` contém um módulo ES6 com import externo; não foi executado em navegador.
+- CSS dos arquivos principais teve balanceamento de chaves verificado.
+- Fórmulas de ouro foram testadas isoladamente para as 11 classes-base.
+- Persistência do rascunho do Grimório foi testada isoladamente, incluindo magias conhecidas, preparadas, domínio e usos.
+- RPCs novas de cura foram verificadas no banco: recebem arrays de resultados e não contêm `random()`; permissões antigas de execução foram revogadas.
+- Ainda não foi possível executar um teste E2E real com navegador autenticado, dois jogadores, Mestre, Realtime e rolagens simultâneas. Não declarar botões ou fluxo completo como aprovados até esse teste.
