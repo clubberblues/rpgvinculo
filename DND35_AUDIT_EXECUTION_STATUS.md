@@ -385,3 +385,9 @@ Não marcar um módulo como concluído apenas porque existe uma descrição ou u
 - O GitHub reporta 125 commits exclusivos na origem, 64 exclusivos na base, 14 arquivos alterados, 3.043 inserções e 147 remoções. O PR está `draft`, não mesclado, e o GitHub não o considera mergeable neste momento.
 - O PR foi aberto para expor o diff e registrar os critérios de liberação; não representa aprovação, publicação ou implantação.
 - A próxima ação segura depende da identificação do provedor de hospedagem atualmente usado pelo site. O README apenas instrui publicação manual dos quatro HTMLs na raiz e não identifica Vercel, Netlify ou outro provedor.
+
+### Reconciliação adicional do histórico remoto — 2026-11-03
+- A listagem do histórico Supabase confirma migrações de identidade já aplicadas, entre elas `dwarf_character_identity_creation_flow`, `validate_barbarian_literacy_choice`, `validate_wizard_specialization_choices`, validações de divindade/domínios do Clérigo, vínculo natural do Druida e inimigo predileto do Patrulheiro.
+- Os arquivos correspondentes com esses nomes/timestamps não foram encontrados em `supabase/migrations` na branch de auditoria. A função de sete parâmetros em produção contém essas validações (incluindo familiar do Mago/Feiticeiro e vínculo natural do Druida), mas o repositório não possui a sequência completa que reproduz esse estado.
+- Isso confirma que não basta copiar somente a última migração de sete raças para um ambiente novo: o histórico de migrations precisa ser reconciliado integralmente com o banco antes de declarar a implantação reproduzível.
+- Não gerei uma migração artificial nem sobrescrevi a função em produção. A definição instalada foi inspecionada; os dados de personagens permaneceram intocados.
