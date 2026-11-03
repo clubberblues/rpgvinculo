@@ -1557,7 +1557,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       if(badge){ badge.className='estado '+proximo; badge.textContent=proximo; }
       renderizarIniciativa(combatDataState);
       renderBotoesAcao();
-      var mensagem=proximo==='COMBATE'?'⚔️ O Mestre declarou COMBATE! Criaturas do CBA rolarão iniciativa automaticamente; jogadores receberão um pedido para rolar.':'🏕️ O Mestre encerrou o combate. Modo Exploração.';
+      var mensagem=proximo==='COMBATE'?'⚔️ O Mestre declarou COMBATE! O Mestre fará as rolagens dos NPCs e monstros no dado 3D; os jogadores receberão um pedido para rolar a iniciativa de seus personagens.':'🏕️ O Mestre encerrou o combate. Modo Exploração.';
       try{
         var log=await enviarMensagemChat(mensagem,'sistema',{evento:'estado_campanha',state:proximo});
         if(log && log.error) alert('O estado foi alterado, mas o aviso não entrou no chat.');
