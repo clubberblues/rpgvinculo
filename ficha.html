@@ -1895,7 +1895,7 @@ function dnd35WeaponProficient(state,weaponName){
     var tempAttrs=Object.assign({},attrs);if(nextLevel%4===0&&lu.attribute)tempAttrs[lu.attribute]=(Number(tempAttrs[lu.attribute])||10)+1;
     var tempState=Object.assign({},state,{sheet:Object.assign({},state.sheet,{nivel:nextLevel,pericias:tempSkills}),featPicks:feats});
     var prereqsReady=featsReady&&feats.every(function(pick,index){var feat=(state.feats||[]).find(function(item){return String(item.id)===String(pick.id);});return feat&&(specs[index].type==='monk'||dnd35FeatWarnings(feat,tempAttrs,tempState,index,pick.parametro||'').length===0);});
-    var languageData=dnd35LevelupLanguageData(state,dnd35AtributosIniciais(state.raca,attrs),lu),languageChoices=languageData.picks.slice(0,languageData.needed),knownLanguages=languageData.automatic.concat(languageData.bonus,languageData.purchased).map(dnd35LanguageNormalize),newLanguageNames=languageChoices.map(dnd35LanguageNormalize);
+    var languageData=dnd35LevelupLanguageData(state,dnd35AtributosIniciais(state.raca,attrs),lu),languageChoices=Array.from({length:languageData.needed},function(_,i){return languageData.picks[i]||'';}),knownLanguages=languageData.automatic.concat(languageData.bonus,languageData.purchased).map(dnd35LanguageNormalize),newLanguageNames=languageChoices.map(dnd35LanguageNormalize);
     var languagesReady=languageChoices.length===languageData.needed&&languageChoices.every(function(name){return !!String(name||'').trim()&&languageData.rules.allSelectable.some(function(option){return dnd35LanguageNormalize(option)===dnd35LanguageNormalize(name);});})&&new Set(knownLanguages.concat(newLanguageNames)).size===knownLanguages.length+newLanguageNames.length;
     return lu.rollRequested===true&&prereqsReady&&(nextLevel%4!==0||!!lu.attribute)&&spent<=budget&&languagesReady;
   }
@@ -1996,7 +1996,7 @@ function dnd35WeaponProficient(state,weaponName){
       if(!campaignId){state.levelUp.status='Não foi possível identificar a campanha desta ficha. Abra a ficha a partir da mesa.';renderizarFichaSRD35();return;}
       try{
         var languageData=dnd35LevelupLanguageData(state,dnd35AtributosIniciais(state.raca,dnd35Objeto(state.sheet.atributos)),state.levelUp);
-        var newLanguageChoices=languageData.picks.slice(0,languageData.needed);
+        var newLanguageChoices=Array.from({length:languageData.needed},function(_,i){return languageData.picks[i]||'';});
         var languagePayload={automaticos:languageData.automatic,bonus_inteligencia:languageData.bonus,comprados_falar_idioma:languageData.purchased.concat(newLanguageChoices)};
         var result=await sb.rpc('concluir_avanco_nivel_personagem_srd_v2',{
           p_campaign_id:campaignId,p_character_id:String(CHAR_ID),p_hit_die_roll:null,
@@ -2368,9 +2368,9 @@ function dnd35WeaponProficient(state,weaponName){
       if(!isClass&&!isLanguage&&Math.abs(skillRank*2-Math.round(skillRank*2))>0.001){mostrarErro('Perícias fora de classe avançam em passos de 0,5.','pericias');return;}
     }
     var languageRules=dnd35LanguageRules(state,attrs),languagePicks=state.idiomasEscolhas||{bonus:[],comprados:[]};
-    var languageBonusChoices=(languagePicks.bonus||[]).slice(0,languageRules.bonusCount);
+    var languageBonusChoices=Array.from({length:languageRules.bonusCount},function(_,i){return (languagePicks.bonus||[])[i]||'';});
     var languagePurchaseCount=Math.max(0,Number(ranks['srd35_skill_speak_language']||0));
-    var languagePurchasedChoices=(languagePicks.comprados||[]).slice(0,languagePurchaseCount);
+    var languagePurchasedChoices=Array.from({length:languagePurchaseCount},function(_,i){return (languagePicks.comprados||[])[i]||'';});
     if(languageBonusChoices.length!==languageRules.bonusCount||languageBonusChoices.some(function(x){return !String(x||'').trim();})){
       mostrarErro('Escolha todos os idiomas bônus concedidos pela Inteligência.','pericias');return;
     }
