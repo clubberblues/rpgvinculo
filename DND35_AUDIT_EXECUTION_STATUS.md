@@ -287,3 +287,15 @@ Não marcar um módulo como concluído apenas porque existe uma descrição ou u
 
 **Referência consultada**
 - Livro do Jogador D&D 3.5, seção da perícia Atuação e descrição de Música de Bardo (página impressa 25 na edição enviada).
+
+
+## Continuidade — migrações locais e pendências de infraestrutura (2026-11-03)
+
+- Foi conferido o diretório `supabase/migrations/` na branch de auditoria e o histórico remoto do projeto. O arquivo `supabase/config.toml` não existe no repositório.
+- O terminal desta sessão não possui Supabase CLI nem checkout local do repositório; também não consegue resolver hosts externos para instalar o CLI/clonar o GitHub. Portanto, não foi possível executar honestamente `supabase init` ou `supabase migration new` nesta sessão.
+- Foi adicionado `SUPABASE_LOCAL_WORKFLOW.md` com os comandos oficiais para inicializar o projeto local, vincular o projeto, comparar histórico e capturar o drift remoto com o CLI. O documento alerta explicitamente para não executar `db reset --remote` e para revisar qualquer diff antes de publicar.
+- A função `criar_personagem_srd_completo(..., p_identidade jsonb)` no banco já contém validação de `familiar_id`; a migração correspondente ainda não foi reconciliada no repositório. Não foi criada uma migração manual com timestamp inventado.
+- A auditoria da RPC `salvar_pericias_srd(text,jsonb)` confirmou que o motor calcula custo, limite e classe/cross-class por ID individual em `srd_skills`. A9 continua pendente: as nove categorias de Atuação precisam de IDs separados, com compatibilidade de leitura para o ID legado `srd35_skill_perform`. Não foram inseridos registros nem alterada a RPC nesta etapa, para não deixar catálogo e motor divergentes.
+- Ofício e Profissão também têm especializações abertas; não devem ser tratados como listas fechadas nem ganhar tabelas duplicadas sem modelagem específica.
+
+**Próximo passo seguro:** executar o fluxo local documentado em uma cópia do repositório com Supabase CLI instalado, reconciliar o drift da RPC do familiar e então implementar as categorias de Atuação em uma migração única, incluindo catálogo, associação de classe, compatibilidade com fichas antigas e validação de Música de Bardo. Em seguida, testar a migração em banco local e a criação/reabertura de personagem autenticado.
