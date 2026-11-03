@@ -1002,9 +1002,17 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         <button class="btn-teste" type="button" data-teste="Teste de Sabedoria (SAB)">Sabedoria (SAB)</button>
         <button class="btn-teste" type="button" data-teste="Teste de Carisma (CAR)">Carisma (CAR)</button>
 
-        <div class="testes-divisor"><span>DEFESAS</span></div>
-        <button class="btn-teste" type="button" data-teste="Resistência Física">Resistência Física</button>
-        <button class="btn-teste" type="button" data-teste="Resistência Mental">Resistência Mental</button>
+        <div class="testes-divisor"><span>TESTES DE RESISTÊNCIA · D&D 3.5</span></div>
+        <button class="btn-teste" type="button" data-teste="Fortitude (CON)">Fortitude (CON)</button>
+        <button class="btn-teste" type="button" data-teste="Reflexos (DES)">Reflexos (DES)</button>
+        <button class="btn-teste" type="button" data-teste="Vontade (SAB)">Vontade (SAB)</button>
+        <button class="btn-teste" type="button" data-teste="Fortitude contra veneno">Fortitude contra veneno</button>
+        <button class="btn-teste" type="button" data-teste="Fortitude contra magia ou efeito similar">Fortitude contra magia</button>
+        <button class="btn-teste" type="button" data-teste="Reflexos contra magia ou efeito similar">Reflexos contra magia</button>
+        <button class="btn-teste" type="button" data-teste="Vontade contra magia ou efeito similar">Vontade contra magia</button>
+        <button class="btn-teste" type="button" data-teste="Resistir a encontrão (FOR)">Resistir a encontrão</button>
+        <button class="btn-teste" type="button" data-teste="Resistir a imobilização (FOR)">Resistir a imobilização (FOR)</button>
+        <button class="btn-teste" type="button" data-teste="Resistir a imobilização (DES)">Resistir a imobilização (DES)</button>
 
         <div class="testes-divisor"><span>PERÍCIAS</span></div>
         <button class="btn-teste" type="button" data-teste="Acrobacia">Acrobacia (DES)</button>
@@ -3851,23 +3859,33 @@ async function abrirModalEquipamentos(){
     }finally{iniciativaRecuperacaoBusy=false;}
   }
 
-  function bonusDoTeste(tipoTeste, atributos){
-    var texto = String(tipoTeste || '').toLocaleLowerCase('pt-BR')
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    var atributoDoTeste = null;
-    if(texto.includes('forca') || texto.includes('atletismo')) atributoDoTeste = 'FOR';
-    else if(texto.includes('destreza') || texto.includes('iniciativa') || texto.includes('acrobacia') || texto.includes('furtividade') || texto.includes('prestidigitacao')) atributoDoTeste = 'DES';
-    else if(texto.includes('constituicao') || texto.includes('fisica')) atributoDoTeste = 'CON';
-    else if(texto.includes('inteligencia') || texto.includes('historia') || texto.includes('investigacao') || texto.includes('natureza') || texto.includes('religiao')) atributoDoTeste = 'INT';
-    else if(texto.includes('sabedoria') || texto.includes('intuicao') || texto.includes('medicina') || texto.includes('percepcao') || texto.includes('sobrevivencia') || texto.includes('mental')) atributoDoTeste = 'SAB';
-    else if(texto.includes('carisma') || texto.includes('adestramento') || texto.includes('atuacao') || texto.includes('enganacao') || texto.includes('intimidacao') || texto.includes('persuasao')) atributoDoTeste = 'CAR';
-    if(!atributoDoTeste || !atributos) return 0;
-    if(typeof atributos === 'string'){
-      try { atributos = JSON.parse(atributos); } catch(e) { return 0; }
+  function bonusDoTeste(tipoTeste, ficha){
+    var texto=String(tipoTeste||'').toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    var atributos=ficha&&ficha.sh&&ficha.sh.atributos||{};
+    if(typeof atributos==='string'){try{atributos=JSON.parse(atributos);}catch(e){atributos={};}}
+    var level=Math.max(1,Number(ficha&&ficha.sh&&ficha.sh.nivel)||1),classData=ficha&&ficha.cl||{},raceId=String(ficha&&ficha.sh&&ficha.sh.raca_id||''),saveKey=null,attribute=null;
+    if(texto.includes('fortitude')){saveKey='fortitude';attribute='CON';}
+    else if(texto.includes('reflexos')){saveKey='reflexos';attribute='DES';}
+    else if(texto.includes('vontade')){saveKey='vontade';attribute='SAB';}
+    else if(texto.includes('forca')||texto.includes('atletismo'))attribute='FOR';
+    else if(texto.includes('destreza')||texto.includes('iniciativa')||texto.includes('acrobacia')||texto.includes('furtividade')||texto.includes('prestidigitacao'))attribute='DES';
+    else if(texto.includes('constituicao')||texto.includes('fisica'))attribute='CON';
+    else if(texto.includes('inteligencia')||texto.includes('historia')||texto.includes('investigacao')||texto.includes('natureza')||texto.includes('religiao'))attribute='INT';
+    else if(texto.includes('sabedoria')||texto.includes('intuicao')||texto.includes('medicina')||texto.includes('percepcao')||texto.includes('sobrevivencia')||texto.includes('mental'))attribute='SAB';
+    else if(texto.includes('carisma')||texto.includes('adestramento')||texto.includes('atuacao')||texto.includes('enganacao')||texto.includes('intimidacao')||texto.includes('persuasao'))attribute='CAR';
+    if(!attribute)return {total:0,baseSave:0,attributeMod:0,racialBonus:0,attribute:null};
+    var score=Number(atributos[attribute]),attributeMod=Number.isFinite(score)?modifier35(score):0,baseSave=0;
+    if(saveKey){
+      var good=saveKey==='fortitude'?!!classData.fort_bom:saveKey==='reflexos'?!!classData.ref_bom:!!classData.von_bom;
+      baseSave=good?Math.floor(level/2)+2:Math.floor(level/3);
     }
-    var valor = Number(atributos[atributoDoTeste]);
-    if(!Number.isFinite(valor)) return 0;
-    return valor >= 4 ? Math.floor((valor-10)/2) : valor;
+    var racialBonus=0;
+    if(raceId==='anao'){
+      if(saveKey==='fortitude'&&texto.includes('veneno'))racialBonus+=2;
+      if(saveKey&&texto.includes('magia'))racialBonus+=2;
+      if(texto.includes('encontrao')||texto.includes('imobilizacao'))racialBonus+=4;
+    }
+    return {total:baseSave+attributeMod+racialBonus,baseSave:baseSave,attributeMod:attributeMod,racialBonus:racialBonus,attribute:attribute,saveKey:saveKey};
   }
   function personagemTemTalento(sheet,featId){
     var feats=sheet&&sheet.talentos||[];if(typeof feats==='string'){try{feats=JSON.parse(feats);}catch(e){return false;}}
@@ -3926,11 +3944,11 @@ async function abrirModalEquipamentos(){
         try{
           var ficha=personajesById(personagemId);
           if(!ficha){btn.disabled=false;alert('Não foi possível localizar sua ficha para calcular o bônus.');return;}
-          var bonus=bonusDoTeste(tipoTeste,ficha.sh?ficha.sh.atributos:null);
+          var bonusData=bonusDoTeste(tipoTeste,ficha),bonus=bonusData.total;
           var isInitiative=String(tipoTeste).toLocaleLowerCase('pt-BR').includes('iniciativa');
           var featBonus=isInitiative&&personagemTemTalento(ficha.sh,'iniciativa_aprimorada')?4:0;
           var total=resultado+bonus+featBonus;
-          var texto=tipoTeste+' — D20: '+resultado+' + bônus: '+bonus+' = '+total;
+          var detailParts=['D20 '+resultado];if(bonusData.baseSave)detailParts.push('base '+bonusData.baseSave);if(bonusData.attributeMod)detailParts.push(bonusData.attribute+' '+(bonusData.attributeMod>0?'+':'')+bonusData.attributeMod);if(bonusData.racialBonus)detailParts.push('bônus racial +'+bonusData.racialBonus);var texto=tipoTeste+' — '+detailParts.join(' + ')+' = '+total;
           if(isInitiative){
             var salvo=await salvarIniciativa(personagemId,ficha.ch.nome,total);
             if(!salvo.ok){btn.disabled=false;alert('Sua rolagem foi '+total+', mas a ordem não pôde ser salva. Verifique a migração SQL e tente novamente. Detalhe: '+salvo.error);return;}
@@ -3939,7 +3957,7 @@ async function abrirModalEquipamentos(){
           pedidosTesteRespondidos[responseKey]=true;
           removerBotaoRolagemTeste(requestKey,personagemId);
           if(isInitiative) removerPedidosIniciativaDaFicha(personagemId);
-          var extras={teste:tipoTeste,d20:resultado,bonus:bonus,bonus_talento:featBonus,total:total,request_id:requestKey,character_id:personagemId};
+          var extras={teste:tipoTeste,d20:resultado,bonus:bonus,bonus_base:bonusData.baseSave,bonus_atributo:bonusData.attributeMod,bonus_racial:bonusData.racialBonus,bonus_talento:featBonus,total:total,request_id:requestKey,character_id:personagemId};
           if(isInitiative) extras.iniciativa=true;
           try{
             var log=await enviarMensagemChat(texto,'rolagem',extras);
