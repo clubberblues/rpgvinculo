@@ -2345,9 +2345,9 @@ function dnd35WeaponProficient(state,weaponName){
       if(avail.key==='sorcerer'||avail.key==='bard'){
       for(var ul=0;ul<=avail.max;ul++)if(Number(s.usos[String(ul)]||0)>(avail.slots[ul]||0)){if(status)status.textContent='Espaços diários de círculo '+ul+' esgotados.';return;}
     }
-    if(avail.key==='cleric'){
-      var domainIds=(state.domainChoices||[]).map(function(x){return String(x.domain_id||'');}).filter(Boolean);
-      if(domainIds.length!==2||domainIds[0]===domainIds[1]){if(status)status.textContent='Escolha dois domínios diferentes antes de salvar.';return;}
+    if(avail.key==='cleric'||(avail.key==='druid'&&String((state.identidade||{}).druid_nature_bond)==='domain')){
+      var domainIds=(state.domainChoices||[]).map(function(x){return String(x.domain_id||'');}).filter(Boolean),expectedDomains=avail.key==='cleric'?2:1;
+      if(domainIds.length!==expectedDomains||(expectedDomains===2&&domainIds[0]===domainIds[1])){if(status)status.textContent=avail.key==='cleric'?'Escolha dois domínios diferentes antes de salvar.':'Escolha um domínio druídico antes de salvar.';return;}
       var validDomainRows=state.srdDomainSpells||[];
       s.dominioPreparadas=(s.dominioPreparadas||[]).filter(function(p){return domainIds.indexOf(String(p.domain_id))>=0&&validDomainRows.some(function(r){return String(r.domain_id)===String(p.domain_id)&&String(r.spell_id)===String(p.spell_id)&&Number(r.spell_level)===Number(p.slot_level);});});
       var domainLevels=s.dominioPreparadas.map(function(p){return Number(p.slot_level);});
@@ -2356,7 +2356,7 @@ function dnd35WeaponProficient(state,weaponName){
     }
     var payload=dnd35GrimoireSaveState({sheet:{magias_preparadas:s}});
     if(status)status.textContent='Salvando Grimório…';
-    try{if(avail.key==='cleric'){var domainSave=await sb.rpc('salvar_dominios_personagem_srd',{p_character_id:String(CHAR_ID),p_domain_ids:(state.domainChoices||[]).map(function(x){return String(x.domain_id);})});if(domainSave.error)throw domainSave.error;}var result=await sb.rpc('salvar_grimorio_srd',{p_character_id:String(CHAR_ID),p_estado:payload});if(result.error)throw result.error;var saved=result.data||payload;state.sheet.magias_preparadas=saved;state.grimoireState=dnd35SpellState({sheet:saved});state.grimoireOpen=false;renderizarFichaSRD35();var newStatus=document.querySelector('[data-grimoire-status]');if(newStatus)newStatus.textContent='Grimório salvo.';}catch(e){if(status)status.textContent='Não foi possível salvar o Grimório: '+(e.message||e);}
+    try{if(avail.key==='cleric'||(avail.key==='druid'&&String((state.identidade||{}).druid_nature_bond)==='domain')){var domainSave=await sb.rpc('salvar_dominios_personagem_srd',{p_character_id:String(CHAR_ID),p_domain_ids:(state.domainChoices||[]).map(function(x){return String(x.domain_id);})});if(domainSave.error)throw domainSave.error;}var result=await sb.rpc('salvar_grimorio_srd',{p_character_id:String(CHAR_ID),p_estado:payload});if(result.error)throw result.error;var saved=result.data||payload;state.sheet.magias_preparadas=saved;state.grimoireState=dnd35SpellState({sheet:saved});state.grimoireOpen=false;renderizarFichaSRD35();var newStatus=document.querySelector('[data-grimoire-status]');if(newStatus)newStatus.textContent='Grimório salvo.';}catch(e){if(status)status.textContent='Não foi possível salvar o Grimório: '+(e.message||e);}
   }
   // Riqueza inicial oficial do Livro do Jogador 3.5, Tabela 7-1.
   // O segundo valor é o multiplicador em peças de ouro; o Monge não multiplica por 10.
