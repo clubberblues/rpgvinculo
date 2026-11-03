@@ -2149,13 +2149,90 @@ function dnd35WeaponProficient(state,weaponName){
     return table[key]||[0,0];
   }
   function dnd35StartCost(i){var n=Number(i&&(i.custo_po==null?i.preco:i.custo_po));return Number.isFinite(n)&&n>=0?n:null;}
-  function dnd35StartingState(s){if(!s||typeof s!=='object')return {equipamentoInicial:{metodo:'',resultados:[],itens:{},busca:''},equipment:[],classe:null};if(!s.equipamentoInicial||typeof s.equipamentoInicial!=='object')s.equipamentoInicial={metodo:'',resultados:[],itens:{},busca:''};var x=s.equipamentoInicial;if(!Array.isArray(x.resultados))x.resultados=[];if(!x.itens||typeof x.itens!=='object')x.itens={};if(typeof x.busca!=='string')x.busca='';if(!Array.isArray(s.equipment))s.equipment=[];return s;}
+  function dnd35StartingState(s){
+    if(!s||typeof s!=='object')return {equipamentoInicial:{metodo:'',resultados:[],itens:{},busca:'',categoria:'todos',pagina:0},equipment:[],classe:null};
+    if(!s.equipamentoInicial||typeof s.equipamentoInicial!=='object')s.equipamentoInicial={metodo:'',resultados:[],itens:{},busca:'',categoria:'todos',pagina:0};
+    var x=s.equipamentoInicial;
+    if(!Array.isArray(x.resultados))x.resultados=[];
+    if(!x.itens||typeof x.itens!=='object')x.itens={};
+    if(typeof x.busca!=='string')x.busca='';
+    if(typeof x.categoria!=='string')x.categoria='todos';
+    if(!Number.isInteger(Number(x.pagina))||Number(x.pagina)<0)x.pagina=0;
+    if(!Array.isArray(s.equipment))s.equipment=[];
+    return s;
+  }
   function dnd35StartTotal(s){s=dnd35StartingState(s);var x=s.equipamentoInicial,total=0;Object.keys(x.itens).forEach(function(id){var i=(s.equipment||[]).find(function(item){return String(item.id)===id;});if(i){var cost=dnd35StartCost(i);if(cost!=null)total+=cost*Number(x.itens[id]||0);}});return total;}
   function dnd35StartReady(s){s=dnd35StartingState(s);var x=s.equipamentoInicial;if(x.metodo==='pacote')return !!s.startingPackage;if(x.metodo==='ouro'){var d=dnd35StartWealth(s.classe),r=x.resultados;if(!d[0])return false;return r.length===d[0]&&r.every(function(n){return n>=1&&n<=4;})&&dnd35StartTotal(s)<=r.reduce(function(a,b){return a+b;},0)*d[1];}return false;}
-  function dnd35StartMarkup(s){s=dnd35StartingState(s);var x=s.equipamentoInicial,d=dnd35StartWealth(s.classe),r=x.resultados,wealth=x.metodo==='pacote'?d[0]*2.5*d[1]:(r.length===d[0]?r.reduce(function(a,b){return a+b;},0)*d[1]:0),items=(s.equipment||[]).filter(function(i){return dnd35StartCost(i)!=null&&!/(rings|rods|staffs|wands|wondrous|potions|specific_|magic)/i.test(String(i.categoria||''))&&(!x.busca||String(i.nome+' '+i.categoria).toLowerCase().includes(x.busca.toLowerCase()));}).slice(0,80),body='';
-    if(x.metodo==='pacote'){var kit=s.startingPackage;body='<h3>'+esc(kit&&kit.nome||'Kit sugerido')+'</h3><p class="dnd35-note">Sugestão opcional do Vínculo para esta classe. A raça não altera a lista básica de equipamento no SRD 3.5. Custo: '+dnd35StartTotal(s)+' po · saldo: '+(wealth-dnd35StartTotal(s))+' po.</p><div class="dnd35-start-items">'+((kit&&kit.items)||[]).map(function(p){var i=(s.equipment||[]).find(function(z){return String(z.id)===String(p.id);});return '<article class="dnd35-start-item"><strong>'+esc(dnd35TranslateCatalogText(i&&i.nome||p.id))+'</strong><span>'+esc(dnd35TranslateCatalogText(i&&(i.categoria||i.tipo)||'Equipamento'))+' · Quantidade '+Number(p.quantidade||1)+'</span><small>'+esc(dnd35TranslateCatalogText(i&&(i.descricao||i.description||i.detalhes)||'Item do pacote inicial da classe.'))+'</small></article>';}).join('')+'</div>';}
-    if(x.metodo==='ouro')body=r.length?'<div class="dnd35-start-roll"><strong>OURO INICIAL · '+d[0]+'d4 × '+d[1]+' po</strong><div class="dnd35-start-dice">'+r.map(function(v,i){return '<span class="dnd35-start-die" aria-label="Dado '+(i+1)+': '+v+'">d4<strong>'+v+'</strong></span>';}).join('')+'</div><p class="dnd35-note">Resultado: '+r.join(' + ')+' = '+wealth+' po · Compra: '+dnd35StartTotal(s)+' po · Saldo: '+(wealth-dnd35StartTotal(s))+' po</p></div><input id="dnd35-start-search" type="search" placeholder="Buscar equipamento" value="'+esc(x.busca||'')+'"><div class="dnd35-start-items">'+items.map(function(i){return '<article class="dnd35-start-item"><strong>'+esc(dnd35TranslateCatalogText(i.nome))+'</strong><span>'+esc(dnd35TranslateCatalogText(i.categoria||'Equipamento'))+' · '+dnd35StartCost(i)+' po'+(i.peso==null?'':' · '+esc(i.peso)+' kg')+'</span><small>'+esc(dnd35TranslateCatalogText(i.descricao||i.description||i.detalhes||'Item do catálogo de equipamentos.'))+'</small><button type="button" data-start-add="'+esc(i.id)+'">Adicionar ao kit</button></article>';}).join('')+'</div><div class="dnd35-start-selected">'+Object.keys(x.itens||{}).map(function(id){var i=(s.equipment||[]).find(function(z){return String(z.id)===id;});return i?'<div class="dnd35-start-selected-item"><span>'+esc(i.nome)+' × '+x.itens[id]+'</span><button type="button" data-start-remove="'+esc(id)+'">Remover</button></div>':'';}).join('')+'</div>':'<div class="dnd35-start-roll"><strong>OURO INICIAL · '+d[0]+'d4 × '+d[1]+' po</strong><p class="dnd35-note">Role '+d[0]+' dado(s) de quatro faces. O total será multiplicado por '+d[1]+'.</p><button type="button" data-start-roll>Preparar '+d[0]+'d4 para rolagem manual</button></div>';
-    return '<section class="dnd35-panel"><h2>Equipamento inicial</h2><p class="dnd35-note">Escolha o kit recomendado ou role o ouro e compre itens do catálogo. Itens mágicos não entram na compra inicial.</p><div class="dnd35-actions"><button type="button" data-start-method="pacote">Kit recomendado</button><button type="button" data-start-method="ouro">Ouro inicial</button></div>'+body+'</section>';}
+  function dnd35StartCategoryKey(item){
+    var type=String(item&&item.tipo||'').toLowerCase();
+    if(type==='arma'||type==='weapon')return 'armas';
+    if(type==='armadura'||type==='armor')return 'armaduras';
+    if(type==='escudo'||type==='shield')return 'escudos';
+    if(type==='montaria')return 'montarias';
+    return 'equipamentos';
+  }
+  function dnd35StartCategoryLabel(key){
+    return ({armas:'Armas',armaduras:'Armaduras',escudos:'Escudos',equipamentos:'Equipamentos',montarias:'Montarias'})[key]||'Todos os tipos';
+  }
+  function dnd35StartStats(item){
+    if(!item)return '';
+    var parts=[];
+    if(item.dano)parts.push('Dano '+dnd35TranslateCatalogText(item.dano));
+    if(item.critico)parts.push('Crítico '+dnd35TranslateCatalogText(item.critico));
+    if(item.tipo_dano)parts.push('Tipo '+dnd35TranslateCatalogText(item.tipo_dano));
+    var ac=Number(item.ca_bonus==null?item.bonus_ca:item.ca_bonus);
+    if(Number.isFinite(ac)&&ac!==0)parts.push('CA '+(ac>0?'+':'')+ac);
+    var maxDex=item.max_des==null?item.bonus_max_des:item.max_des;
+    if(maxDex!=null&&maxDex!=='')parts.push('DES máx. '+maxDex);
+    var armorPenalty=Number(item.penalidade_armadura);
+    if(Number.isFinite(armorPenalty)&&armorPenalty!==0)parts.push('Penalidade '+armorPenalty);
+    return parts.join(' · ');
+  }
+  function dnd35StartMarkup(s){
+    s=dnd35StartingState(s);
+    var x=s.equipamentoInicial,d=dnd35StartWealth(s.classe),r=x.resultados;
+    var wealth=x.metodo==='pacote'?d[0]*2.5*d[1]:(r.length===d[0]?r.reduce(function(a,b){return a+b;},0)*d[1]:0);
+    var allItems=(s.equipment||[]).filter(function(i){
+      var type=String(i.tipo||'').toLowerCase(),category=String(i.categoria||'');
+      return dnd35StartCost(i)!=null&&type!=='magic_item'&&type!=='pocao'&&type!=='pergaminho'&&!/(rings|rods|staffs|wands|wondrous|potions|specific_|magic|armor_and_shields)/i.test(category);
+    });
+    var category=x.categoria||'todos',search=String(x.busca||'').toLowerCase();
+    var filtered=allItems.filter(function(i){
+      var matchesCategory=category==='todos'||dnd35StartCategoryKey(i)===category;
+      var haystack=String(i.nome||'')+' '+String(i.categoria||'')+' '+String(i.tipo||'')+' '+String(i.descricao||'');
+      return matchesCategory&&(!search||haystack.toLowerCase().indexOf(search)>=0);
+    });
+    var pageSize=24,pageCount=Math.max(1,Math.ceil(filtered.length/pageSize));
+    var page=Math.max(0,Math.min(pageCount-1,Number(x.pagina)||0));x.pagina=page;
+    var items=filtered.slice(page*pageSize,(page+1)*pageSize),body='';
+    if(x.metodo==='pacote'){
+      var kit=s.startingPackage;
+      body='<h3>'+esc(kit&&kit.nome||'Kit sugerido')+'</h3><p class="dnd35-note">Kit sugerido da campanha, com itens revisáveis. Custo: '+dnd35StartTotal(s)+' po · saldo de referência: '+(wealth-dnd35StartTotal(s))+' po.</p><div class="dnd35-start-items">'+((kit&&kit.items)||[]).map(function(p){
+        var i=(s.equipment||[]).find(function(z){return String(z.id)===String(p.id);});
+        return '<article class="dnd35-start-item"><strong>'+esc(dnd35TranslateCatalogText(i&&i.nome||p.id))+'</strong><span>'+esc(dnd35StartCategoryLabel(dnd35StartCategoryKey(i)))+' · Quantidade '+Number(p.quantidade||1)+(i?' · '+dnd35StartCost(i)+' po':'')+'</span>'+(dnd35StartStats(i)?'<small class="dnd35-start-stats">'+esc(dnd35StartStats(i))+'</small>':'')+'<small>'+esc(dnd35TranslateCatalogText(i&&(i.descricao||i.description||i.detalhes)||'Item do pacote inicial da classe.'))+'</small></article>';
+      }).join('')+'</div>';
+    }
+    if(x.metodo==='ouro'){
+      if(!r.length){
+        body='<div class="dnd35-start-roll"><strong>OURO INICIAL · '+d[0]+'d4 × '+d[1]+' po</strong><p class="dnd35-note">Role '+d[0]+' dado(s) de quatro faces. O total será multiplicado por '+d[1]+'.</p><button type="button" data-start-roll>Preparar '+d[0]+'d4 para rolagem manual</button></div>';
+      }else{
+        var categoryOptions=[['todos','Todos os tipos'],['armas','Armas'],['armaduras','Armaduras'],['escudos','Escudos'],['equipamentos','Equipamentos'],['montarias','Montarias']];
+        var categorySelect='<select data-start-category aria-label="Filtrar equipamento por tipo">'+categoryOptions.map(function(o){return '<option value="'+o[0]+'"'+(category===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>';
+        var filters='<div class="dnd35-start-filters">'+categorySelect+'<input id="dnd35-start-search" type="search" placeholder="Buscar por nome ou descrição" value="'+esc(x.busca||'')+'"></div>';
+        var cards=items.map(function(i){
+          var stats=dnd35StartStats(i);
+          return '<article class="dnd35-start-item"><strong>'+esc(dnd35TranslateCatalogText(i.nome))+'</strong><span>'+esc(dnd35StartCategoryLabel(dnd35StartCategoryKey(i)))+' · '+dnd35StartCost(i)+' po'+(i.peso==null?'':' · '+esc(i.peso)+' kg')+'</span>'+(stats?'<small class="dnd35-start-stats">'+esc(stats)+'</small>':'')+'<small>'+esc(dnd35TranslateCatalogText(i.descricao||i.description||i.detalhes||'Item do catálogo de equipamentos.'))+'</small><button type="button" data-start-add="'+esc(i.id)+'">Adicionar à mochila</button></article>';
+        }).join('');
+        var pagination='<div class="dnd35-start-pagination"><button type="button" data-start-page="'+Math.max(0,page-1)+'" '+(page===0?'disabled':'')+'>Anterior</button><span>Página '+(page+1)+' de '+pageCount+' · '+filtered.length+' itens</span><button type="button" data-start-page="'+Math.min(pageCount-1,page+1)+'" '+(page>=pageCount-1?'disabled':'')+'>Próxima</button></div>';
+        var selected=Object.keys(x.itens||{}).map(function(id){
+          var i=(s.equipment||[]).find(function(z){return String(z.id)===id;});
+          return i?'<div class="dnd35-start-selected-item"><span>'+esc(dnd35TranslateCatalogText(i.nome))+' × '+x.itens[id]+' · '+(dnd35StartCost(i)*Number(x.itens[id]||0))+' po</span><button type="button" data-start-remove="'+esc(id)+'">Remover</button></div>':'';
+        }).join('');
+        body='<div class="dnd35-start-roll"><strong>OURO INICIAL · '+d[0]+'d4 × '+d[1]+' po</strong><div class="dnd35-start-dice">'+r.map(function(v,i){return '<span class="dnd35-start-die" aria-label="Dado '+(i+1)+': '+v+'">d4<strong>'+v+'</strong></span>';}).join('')+'</div><p class="dnd35-note">Resultado: '+r.join(' + ')+' = '+wealth+' po · Compra: '+dnd35StartTotal(s)+' po · Saldo: '+(wealth-dnd35StartTotal(s))+' po</p></div>'+filters+'<div class="dnd35-start-items">'+(cards||'<p class="dnd35-note">Nenhum item encontrado nesta categoria. Ajuste o filtro ou a busca.</p>')+'</div>'+pagination+'<div class="dnd35-start-selected">'+selected+'</div>';
+      }
+    }
+    return '<section class="dnd35-panel"><h2>Equipamento inicial</h2><p class="dnd35-note">Escolha o kit recomendado da campanha ou role o ouro e compre equipamentos mundanos. Itens mágicos ficam fora da compra inicial pelas regras de D&D 3.5.</p><div class="dnd35-actions"><button type="button" data-start-method="pacote">Kit recomendado</button><button type="button" data-start-method="ouro">Ouro inicial</button></div>'+body+'</section>';
+  }
   var dnd35GoldRollState=null,dnd35GoldRollFrame=null;
   function fecharDadosOuroInicial(){var modal=document.getElementById('dnd35-gold-dice-modal');if(modal)modal.remove();dnd35GoldRollFrame=null;}
   function abrirDadosOuroInicial(s){
@@ -2176,7 +2253,35 @@ function dnd35WeaponProficient(state,weaponName){
     var expected=dnd35StartWealth(state.classe)[0];if(!expected||values.length!==expected||values.some(function(n){return !Number.isInteger(n)||n<1||n>4;}))return;
     state.equipamentoInicial.resultados=values;dnd35GoldRollState=null;fecharDadosOuroInicial();renderizarFichaSRD35();
   });}
-  function dnd35StartBind(s){var el=document.querySelector('[data-creation-step="equipment"]');if(!el)return;el.addEventListener('click',function(e){var m=e.target.closest('[data-start-method]');if(m){s.equipamentoInicial.metodo=m.dataset.startMethod;s.equipamentoInicial.resultados=null;s.equipamentoInicial.itens={};if(m.dataset.startMethod==='pacote'&&s.startingPackage)(s.startingPackage.items||[]).forEach(function(i){s.equipamentoInicial.itens[String(i.id)]=Number(i.quantidade)||1;});renderizarFichaSRD35();if(m.dataset.startMethod==='ouro')abrirDadosOuroInicial(s);return;}if(e.target.closest('[data-start-roll]')){abrirDadosOuroInicial(s);return;}var a=e.target.closest('[data-start-add]');if(a){var id=String(a.dataset.startAdd),q=Number(s.equipamentoInicial.itens[id]||0);s.equipamentoInicial.itens[id]=q+1;if(!dnd35StartReady(s)){s.equipamentoInicial.itens[id]=q;alert('O item ultrapassa o ouro disponível.');return;}renderizarFichaSRD35();return;}var b=e.target.closest('[data-start-remove]');if(b){var id2=String(b.dataset.startRemove),q2=Number(s.equipamentoInicial.itens[id2]||0);if(q2<=1)delete s.equipamentoInicial.itens[id2];else s.equipamentoInicial.itens[id2]=q2-1;renderizarFichaSRD35();}});var search=el.querySelector('#dnd35-start-search');if(search)search.addEventListener('input',function(){s.equipamentoInicial.busca=search.value;var panel=el.querySelector('.dnd35-panel');if(panel){panel.outerHTML=dnd35StartMarkup(s);var next=el.querySelector('#dnd35-start-search');if(next){next.focus();next.setSelectionRange(next.value.length,next.value.length);}}});}
+  function dnd35StartBind(s){
+    var el=document.querySelector('[data-creation-step="equipment"]');if(!el)return;
+    el.addEventListener('click',function(e){
+      var m=e.target.closest('[data-start-method]');
+      if(m){
+        s.equipamentoInicial.metodo=m.dataset.startMethod;s.equipamentoInicial.resultados=null;s.equipamentoInicial.itens={};s.equipamentoInicial.pagina=0;s.equipamentoInicial.categoria='todos';
+        if(m.dataset.startMethod==='pacote'&&s.startingPackage)(s.startingPackage.items||[]).forEach(function(i){s.equipamentoInicial.itens[String(i.id)]=Number(i.quantidade)||1;});
+        renderizarFichaSRD35();if(m.dataset.startMethod==='ouro')abrirDadosOuroInicial(s);return;
+      }
+      if(e.target.closest('[data-start-roll]')){abrirDadosOuroInicial(s);return;}
+      var page=e.target.closest('[data-start-page]');
+      if(page){s.equipamentoInicial.pagina=Math.max(0,Number(page.dataset.startPage)||0);renderizarFichaSRD35();return;}
+      var a=e.target.closest('[data-start-add]');
+      if(a){
+        var id=String(a.dataset.startAdd),q=Number(s.equipamentoInicial.itens[id]||0);s.equipamentoInicial.itens[id]=q+1;
+        if(!dnd35StartReady(s)){s.equipamentoInicial.itens[id]=q;alert('O item ultrapassa o ouro disponível.');return;}
+        renderizarFichaSRD35();return;
+      }
+      var b=e.target.closest('[data-start-remove]');
+      if(b){var id2=String(b.dataset.startRemove),q2=Number(s.equipamentoInicial.itens[id2]||0);if(q2<=1)delete s.equipamentoInicial.itens[id2];else s.equipamentoInicial.itens[id2]=q2-1;renderizarFichaSRD35();}
+    });
+    var search=el.querySelector('#dnd35-start-search');
+    if(search)search.addEventListener('input',function(){
+      var cursor=search.selectionStart;s.equipamentoInicial.busca=search.value;s.equipamentoInicial.pagina=0;renderizarFichaSRD35();
+      var next=document.getElementById('dnd35-start-search');if(next){next.focus();next.setSelectionRange(cursor,cursor);}
+    });
+    var category=el.querySelector('[data-start-category]');
+    if(category)category.addEventListener('change',function(){s.equipamentoInicial.categoria=category.value;s.equipamentoInicial.pagina=0;renderizarFichaSRD35();});
+  }
   function renderizarFichaSRD35() {
     var state = fichaSRD35, creating = !!state.criacao;
     var attrs = dnd35Objeto(state.sheet.atributos), baseAttrs = state.baseAtributos || {FOR:10,DES:10,CON:10,INT:10,SAB:10,CAR:10};
@@ -2375,5 +2480,14 @@ function dnd35WeaponProficient(state,weaponName){
 })();
 </script>
 <script src="vinculo-ui.js"></script>
+<style id="dnd35-start-shop-ui">
+.dnd35-start-filters{display:grid;grid-template-columns:minmax(150px,.8fr) minmax(180px,1.2fr);gap:8px;margin:12px 0}
+.dnd35-start-filters select,.dnd35-start-filters input{width:100%;min-width:0;padding:9px 10px;border:1px solid #8e7546;border-radius:7px;background:#11180f;color:#f2ead5}
+.dnd35-start-stats{display:block;padding:6px 8px;border:1px solid #6b6043;border-radius:5px;background:#11180f;color:#e6d39c!important;font-weight:700}
+.dnd35-start-pagination{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:10px 0;color:#d8cba9;font-size:11px}
+.dnd35-start-pagination button{border:1px solid #9a844b;border-radius:6px;padding:7px 11px;background:#243322;color:#f0d895;font-weight:700}
+.dnd35-start-pagination button:disabled{opacity:.35;cursor:not-allowed}
+@media(max-width:560px){.dnd35-start-filters{grid-template-columns:1fr}.dnd35-start-pagination{flex-wrap:wrap}.dnd35-start-pagination span{order:-1;width:100%;text-align:center}}
+</style>
 </body>
 </html>
