@@ -91,17 +91,6 @@ $guard$,'');
   end if;
   v_definition := replace(v_definition,'  v_weight numeric;','  v_weight numeric;'||chr(10)||'  v_height_min numeric;'||chr(10)||'  v_height_max numeric;'||chr(10)||'  v_weight_min numeric;'||chr(10)||'  v_weight_max numeric;');
 
-  -- Corrige literais JSONB malformados herdados da função instalada.
-  v_definition := replace(v_definition, chr(39)||repeat(chr(34),4)||chr(39)||'::jsonb', chr(39)||repeat(chr(34),2)||chr(39)||'::jsonb');
-  v_definition := replace(v_definition, chr(39)||repeat(chr(34),2)||'companion'||repeat(chr(34),2)||chr(39)||'::jsonb', chr(39)||chr(34)||'companion'||chr(34)||chr(39)||'::jsonb');
-  v_definition := replace(v_definition, chr(39)||repeat(chr(34),2)||'domain'||repeat(chr(34),2)||chr(39)||'::jsonb', chr(39)||chr(34)||'domain'||chr(34)||chr(39)||'::jsonb');
-  v_definition := replace(v_definition, chr(39)||repeat(chr(34),2)||'none'||repeat(chr(34),2)||chr(39)||'::jsonb', chr(39)||chr(34)||'none'||chr(34)||chr(39)||'::jsonb');
-  if position(chr(39)||repeat(chr(34),4)||chr(39)||'::jsonb' in v_definition)>0
-     or position(chr(39)||repeat(chr(34),2)||'companion'||repeat(chr(34),2)||chr(39)||'::jsonb' in v_definition)>0
-     or position(chr(39)||repeat(chr(34),2)||'domain'||repeat(chr(34),2)||chr(39)||'::jsonb' in v_definition)>0
-     or position(chr(39)||repeat(chr(34),2)||'none'||repeat(chr(34),2)||chr(39)||'::jsonb' in v_definition)>0 then
-    raise exception 'Migração abortada: ainda existem literais JSONB malformados.';
-  end if;
   if position(v_old_age in v_definition)=0 then raise exception 'Bloco de idade inicial mudou; revisar migração.'; end if;
   v_definition := replace(v_definition,v_old_age,v_new_age);
   if position($oldmsg$    raise exception 'A idade mínima para Anão % é % anos (40 + %d6, resultado mínimo).',v_class.nome,v_min_age,v_age_dice;$oldmsg$ in v_definition)=0 then
