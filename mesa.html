@@ -1806,7 +1806,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     return 0;
   }
   function resumoPericiaPt35(nome,descricao){
-    var n=String(nome||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();
+    var n=String(nome||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
     var summaries={
       'acrobacia':'Permite amortecer quedas, atravessar o espaço de inimigos e realizar movimentos acrobáticos sem provocar ataques de oportunidade.',
       'adestrar animais':'Comandar um animal, ensinar truques, treiná-lo para uma função ou controlar uma montaria.',
