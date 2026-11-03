@@ -39,8 +39,7 @@
 2. Analfabetismo do Bárbaro e exceções de leitura/aprendizado.
 3. Proficiências de armas/armaduras/escudos, penalidade por não proficiência e familiaridade racial anã.
 4. Traços raciais ainda não aplicados em todos os fluxos, incluindo visão no escuro/penumbra e verificações automáticas de Conhecimento de Pedras.
-5. Fúria do Bárbaro e demais características ativáveis: ainda não há ativação, contador de duração/uso e aplicação completa dos modificadores em combate.
-6. Progressão integral de características de todas as classes, separando o que é automático, escolha do jogador e administração do Mestre.
+5. Progressão integral de características de todas as classes, separando o que é automático, escolha do jogador e administração do Mestre.
 7. Perícias: pontos por classe/nível, graduações máximas, perícias exclusivas de classe e requisitos de uso sem treinamento.
 8. Talentos: pré-requisitos, talentos bônus por classe, níveis de aquisição e validação no avanço de nível.
 9. Magias: preparação, espaços, componentes, escolas, CDs, resistência à magia e limites por classe/nível.
