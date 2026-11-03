@@ -378,3 +378,10 @@ Não marcar um módulo como concluído apenas porque existe uma descrição ou u
 - Interface: ainda não publicada em `main` nem implantada no site.
 - Teste de jogador: ainda pendente. As ferramentas desta sessão não disponibilizam sessão autenticada real nem navegador conectado à aplicação; portanto, criação e reabertura de ficha não foram simuladas nem declaradas aprovadas.
 - A10 não deve ser marcada como liberada aos jogadores até que a branch revisada seja implantada e o teste autenticado de criação/reabertura seja concluído. A divergência entre `main` e a branch de auditoria impede um merge automático seguro.
+
+### Encaminhamento para revisão — PR #1
+- Aberto PR em rascunho: https://github.com/clubberblues/rpgvinculo/pull/1
+- Base: `main`; origem: `audit/dnd35-rules-alignment`.
+- O GitHub reporta 125 commits exclusivos na origem, 64 exclusivos na base, 14 arquivos alterados, 3.043 inserções e 147 remoções. O PR está `draft`, não mesclado, e o GitHub não o considera mergeable neste momento.
+- O PR foi aberto para expor o diff e registrar os critérios de liberação; não representa aprovação, publicação ou implantação.
+- A próxima ação segura depende da identificação do provedor de hospedagem atualmente usado pelo site. O README apenas instrui publicação manual dos quatro HTMLs na raiz e não identifica Vercel, Netlify ou outro provedor.
