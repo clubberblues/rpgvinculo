@@ -422,6 +422,30 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
 .btn-config-mesa{position:absolute;top:10px;right:10px;z-index:11;width:32px;height:32px;border:1px solid #c9a050;border-radius:50%;background:rgba(0,0,0,.78);color:#f0d080;font-size:17px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .btn-config-mesa:hover{background:#c9a050;color:#15110a}
 
+
+.campaign-settings-overlay{position:fixed;inset:0;z-index:9500;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(5,7,5,.84);backdrop-filter:blur(7px)}
+.campaign-settings-panel{width:min(560px,96vw);padding:22px;border:1px solid #a88c55;border-radius:13px;background:linear-gradient(145deg,#252a20,#111710);box-shadow:0 22px 70px #000b;color:#eee3c9}
+.campaign-settings-panel>header{display:flex;justify-content:space-between;gap:15px;margin-bottom:20px}
+.campaign-settings-kicker{font:700 9px Cinzel,serif;letter-spacing:2px;color:#b99b5a}
+.campaign-settings-panel h2{margin-top:5px;font:700 20px Cinzel,serif;color:#f0d080}
+.campaign-settings-panel header p{margin-top:5px;font-size:12px;color:#bfb394}
+.campaign-settings-panel header button{align-self:flex-start;border:1px solid #806b43;border-radius:7px;background:#151b14;color:#e7cc8d;padding:7px 11px;cursor:pointer}
+.campaign-settings-field{display:flex;flex-direction:column;gap:6px;margin:12px 0;color:#e7d7b4;font:700 11px Cinzel,serif}
+.campaign-settings-field input{width:100%;padding:10px 12px;border:1px solid #71613f;border-radius:7px;background:#0e140f;color:#f5ecd6;font:14px 'EB Garamond',serif}
+.campaign-settings-toggle{display:flex;gap:10px;align-items:flex-start;margin:16px 0;padding:12px;border:1px solid #5f543a;border-radius:8px;background:#161e15;cursor:pointer}
+.campaign-settings-toggle input{margin-top:3px;accent-color:#c9a050}
+.campaign-settings-toggle b,.campaign-settings-toggle small{display:block}
+.campaign-settings-toggle b{font:700 11px Cinzel,serif;color:#f0d080}
+.campaign-settings-toggle small{margin-top:4px;font-size:11px;color:#c1b596;line-height:1.4}
+.campaign-settings-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:20px}
+.campaign-settings-actions span{flex:1}
+.campaign-settings-actions button{padding:9px 12px;border:1px solid #806b43;border-radius:6px;background:#1b241a;color:#e6d4ad;font:700 9px Cinzel,serif;cursor:pointer}
+.campaign-settings-actions button.primary{background:#c9a050;border-color:#e0bf77;color:#17130a}
+.campaign-settings-actions button.danger{border-color:#8c4c3d;color:#f0b5a7}
+.campaign-settings-actions button:disabled{opacity:.55;cursor:wait}
+#campaign-settings-status{min-height:17px;margin-top:10px;color:#a8d6a8;font-size:11px}
+@media(max-width:600px){.campaign-settings-panel{padding:16px}.campaign-settings-actions span{display:none}.campaign-settings-actions{display:grid;grid-template-columns:1fr 1fr}.campaign-settings-actions button{min-height:40px}}
+
 </style>
 </head>
 <body>
@@ -1555,26 +1579,36 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
 
   async function abrirConfiguracoesMesa(mesaId,nomeAtual,codigoAtual){
     if(!eu)return;
-    var nome=window.prompt('Nome da mesa (2 a 60 caracteres):',nomeAtual||'');
-    if(nome===null)return;
-    nome=nome.trim();if(nome.length<2||nome.length>60)return alert('O nome deve ter entre 2 e 60 caracteres.');
-    var modoCodigo=window.prompt('Proteção por código:\n1 = ativar ou trocar código\n2 = desativar código\n3 = manter configuração atual','3');
-    if(modoCodigo===null)return;modoCodigo=String(modoCodigo).trim();if(['1','2','3'].indexOf(modoCodigo)===-1)return alert('Escolha 1, 2 ou 3.');
-    var exigeCodigo=modoCodigo==='1'?true:modoCodigo==='2'?false:!!codigoAtual;
-    var codigo=null;
-    if(exigeCodigo){codigo=window.prompt('Defina o código de acesso com 4 números:',codigoAtual||'');if(codigo===null)return;codigo=String(codigo).trim();if(!/^\\d{4}$/.test(codigo))return alert('O código precisa conter exatamente 4 números.');}
-    try{
-      var saved=await sb.rpc('atualizar_configuracoes_campanha',{p_campaign_id:Number(mesaId),p_name:nome,p_require_code:exigeCodigo,p_code:codigo});
-      if(saved.error)throw new Error(saved.error.message);
-      if(!saved.data||!saved.data.ok)throw new Error('O banco não confirmou as alterações.');
-      alert('Configurações da mesa salvas.');
-      if(window.confirm('Deseja alterar a imagem de capa agora?'))uploadCapaMesa(mesaId);
-      else await carregarMesas();
-      if(window.confirm('Deseja excluir esta campanha? Esta ação não pode ser desfeita.')){var confirmacao=window.prompt('Digite EXCLUIR para confirmar a exclusão da campanha:');if(confirmacao==='EXCLUIR'){var deleted=await sb.rpc('excluir_campanha_propria',{p_campaign_id:Number(mesaId)});if(deleted.error)throw new Error(deleted.error.message);alert('Campanha excluída.');await carregarMesas();}}
-    }catch(error){alert('Não foi possível salvar as configurações: '+(error.message||error));}
+    var old=document.getElementById('modal-config-mesa');if(old)old.remove();
+    var overlay=document.createElement('div');overlay.id='modal-config-mesa';overlay.className='campaign-settings-overlay';overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-labelledby','campaign-settings-title');
+    overlay.innerHTML='<section class="campaign-settings-panel"><header><div><span class="campaign-settings-kicker">PAINEL DO CRIADOR</span><h2 id="campaign-settings-title">Configurações da mesa</h2><p>Personalize o lobby e controle quem pode entrar.</p></div><button type="button" data-settings-close aria-label="Fechar">✕</button></header><label class="campaign-settings-field">Nome da mesa<input id="campaign-settings-name" type="text" maxlength="60" minlength="2"></label><label class="campaign-settings-toggle"><input id="campaign-settings-require-code" type="checkbox"><span><b>Exigir código para entrar</b><small>Quando desligado, jogadores podem entrar diretamente e escolher uma ficha.</small></span></label><label class="campaign-settings-field" id="campaign-settings-code-wrap">Código de acesso<input id="campaign-settings-code" type="text" inputmode="numeric" maxlength="4" placeholder="4 números"></label><div class="campaign-settings-actions"><button type="button" data-settings-cover>Alterar capa</button><button type="button" data-settings-delete class="danger">Excluir campanha</button><span></span><button type="button" data-settings-cancel>Cancelar</button><button type="button" data-settings-save class="primary">Salvar alterações</button></div><p id="campaign-settings-status" role="status" aria-live="polite"></p></section>';
+    document.body.appendChild(overlay);
+    var nameInput=overlay.querySelector('#campaign-settings-name'),requireInput=overlay.querySelector('#campaign-settings-require-code'),codeInput=overlay.querySelector('#campaign-settings-code'),codeWrap=overlay.querySelector('#campaign-settings-code-wrap'),status=overlay.querySelector('#campaign-settings-status');
+    nameInput.value=nomeAtual||'';requireInput.checked=!!codigoAtual;codeInput.value=codigoAtual||'';codeWrap.hidden=!requireInput.checked;
+    requireInput.addEventListener('change',function(){codeWrap.hidden=!requireInput.checked;});
+    function close(){overlay.remove();}
+    overlay.querySelectorAll('[data-settings-close],[data-settings-cancel]').forEach(function(btn){btn.addEventListener('click',close);});
+    overlay.addEventListener('click',function(e){if(e.target===overlay)close();});
+    overlay.querySelector('[data-settings-cover]').addEventListener('click',function(){close();uploadCapaMesa(mesaId);});
+    overlay.querySelector('[data-settings-delete]').addEventListener('click',async function(){
+      if(!window.confirm('Excluir esta campanha? A ação não pode ser desfeita.'))return;
+      var confirmation=window.prompt('Digite EXCLUIR para confirmar:');if(confirmation!=='EXCLUIR')return;
+      var button=this;button.disabled=true;status.textContent='Excluindo campanha…';
+      try{var deleted=await sb.rpc('excluir_campanha_propria',{p_campaign_id:Number(mesaId)});if(deleted.error)throw deleted.error;if(!deleted.data||deleted.data.ok===false)throw new Error(deleted.data&&deleted.data.erro||'O banco não confirmou a exclusão.');close();await carregarMesas();}
+      catch(error){button.disabled=false;status.textContent='Não foi possível excluir: '+(error.message||error);}
+    });
+    overlay.querySelector('[data-settings-save]').addEventListener('click',async function(){
+      var button=this,nome=nameInput.value.trim(),exigeCodigo=requireInput.checked,codigo=codeInput.value.trim();
+      if(nome.length<2||nome.length>60){status.textContent='O nome deve ter entre 2 e 60 caracteres.';nameInput.focus();return;}
+      if(exigeCodigo&&!/^\\d{4}$/.test(codigo)){status.textContent='O código deve conter exatamente 4 números.';codeInput.focus();return;}
+      button.disabled=true;status.textContent='Salvando configurações…';
+      try{var saved=await sb.rpc('atualizar_configuracoes_campanha',{p_campaign_id:Number(mesaId),p_name:nome,p_require_code:exigeCodigo,p_code:exigeCodigo?codigo:null});if(saved.error)throw saved.error;if(!saved.data||!saved.data.ok)throw new Error('O banco não confirmou as alterações.');status.textContent='Configurações salvas.';await carregarMesas();window.setTimeout(close,350);}
+      catch(error){button.disabled=false;status.textContent='Não foi possível salvar: '+(error.message||error);}
+    });
+    nameInput.focus();
   }
 
-  function uploadCapaMesa(mesaId) {
+function uploadCapaMesa(mesaId) {
     var input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
