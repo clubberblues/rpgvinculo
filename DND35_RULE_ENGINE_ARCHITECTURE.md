@@ -52,7 +52,7 @@ Cada trilha conjuradora conserva classe, atributo-chave, nível de conjurador, p
 
 O servidor é a autoridade para permissões, turno, ação usada, movimento e alteração de PV. Cada ataque segue validação de alcance/arma, rolagem, bônus, CA, acerto/erro, crítico, dano, RD/resistências e PV quando os dados necessários existirem. Ataque que erra não abre rolagem de dano. Ataque múltiplo, toque, agarrar, manobras, cobertura, ocultação e condições têm regra própria e não são simplificados para um único teste.
 
-No tabuleiro, uma lista vertical de cards de todos os combatentes substitui a lista redundante de membros. O card contém posição na iniciativa e estado do turno. O card e token ativos derivam da mesma entrada do servidor. Controles e economia de ações ficam em coluna lateral; nenhum HUD permanente ou rolagem cobre a área central do campo.
+No tabuleiro, os cards de todos os combatentes ficam em uma faixa horizontal no rodapé. Durante o combate, a ordem visual gira a cada turno: o combatente ativo é sempre o primeiro card à esquerda e o anterior vai para o final da fila. O brilho do card e do token ativo deriva da mesma entrada de iniciativa do servidor; não se abre uma interface separada de iniciativa. O Dice abre sob o tabuleiro, somente quando solicitado, e o espaço lateral anterior permanece reservado. Controles e economia de ações ficam em coluna lateral; nenhum HUD permanente ou rolagem cobre a área central do campo.
 
 ## Cobertura e publicação dos dados
 
