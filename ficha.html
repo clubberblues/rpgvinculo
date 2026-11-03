@@ -2380,6 +2380,7 @@ function dnd35WeaponProficient(state,weaponName){
     ]);
     var error=results.slice(0,2).filter(function(r){return r.error;})[0];
     if(error) throw new Error('Migração SRD pendente: não foi possível carregar perícias/talentos. Detalhe: '+error.error.message);
+    if(results[6].error) throw new Error('Catálogo de idiomas indisponível: '+results[6].error.message);
     return {
       skills:dnd35UniqueById((results[0].data||[]).filter(function(skill){return skill.source_status!=='excluded';})),feats:dnd35UniqueById(results[1].data||[]),
       spells:results[2].error?[]:dnd35UniqueById(results[2].data||[]),
@@ -2470,6 +2471,14 @@ function dnd35WeaponProficient(state,weaponName){
       }
       classBonusTalentos=[{id:String(classPick.id),parametro:classParam||null}];
     }
+    var languageState=state.idiomasEscolhidos||{automaticos:['Comum','Anão'],bonus_inteligencia:[],comprados_falar_idioma:[]};
+    var bonusLanguages=(languageState.bonus_inteligencia||[]).filter(Boolean),purchasedLanguages=(languageState.comprados_falar_idioma||[]).filter(Boolean);
+    var expectedBonusLanguages=Math.max(0,Math.floor((Number(attrs.INT)||10)-10)/2),speakLanguageRanks=Math.max(0,Math.floor(Number(ranks.srd35_skill_speak_language)||0));
+    if(bonusLanguages.length!==expectedBonusLanguages){mostrarErro('Escolha '+expectedBonusLanguages+' idioma(s) adicional(is) concedido(s) pela Inteligência.','idiomas');return;}
+    if(purchasedLanguages.length!==speakLanguageRanks){mostrarErro('Escolha um idioma para cada graduação comprada em Falar Idioma.','idiomas');return;}
+    var allLanguageNames=['Comum','Anão'].concat(bonusLanguages,purchasedLanguages);
+    if(new Set(allLanguageNames.map(function(x){return String(x).toLowerCase();})).size!==allLanguageNames.length){mostrarErro('Não repita idiomas automáticos, bônus ou adquiridos.','idiomas');return;}
+    state.idiomasEscolhidos={automaticos:['Comum','Anão'],bonus_inteligencia:bonusLanguages,comprados_falar_idioma:purchasedLanguages};
     if(input)state.nomeDraft=nome;
     button.disabled=true;status.textContent='Gravando personagem…';
     try {
