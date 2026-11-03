@@ -345,3 +345,14 @@ Não marcar um módulo como concluído apenas porque existe uma descrição ou u
 - Confirmado que os literais JSONB efetivamente presentes na RPC instalada são válidos; não foi necessária correção desses valores. Um teste anterior usou representações diferentes das armazenadas e não deve ser tratado como defeito da função.
 - A assinatura antiga de seis parâmetros permanece concedida a authenticated: a ficha.html da branch main ainda a utiliza. Não revogar até que a interface que usa a assinatura de sete parâmetros seja implantada e validada.
 - A10 continua não liberada: ainda faltam teste autenticado de ponta a ponta e validação visual de criação/reabertura para as sete raças.
+
+
+### Execução da A10 em produção e correção final da interface — 2026-11-03
+
+- Aplicada no Supabase de produção a migração `srd35_all_basic_races_identity`; o histórico remoto registrou a versão `20261103232842`. A migração foi alinhada no repositório para o arquivo `supabase/migrations/20261103232842_srd35_all_basic_races_identity.sql`; o arquivo com timestamp divergente foi removido.
+- Verificação pós-aplicação: a assinatura de sete parâmetros não contém mais a restrição exclusiva ao Anão; a validação racial de altura/peso e a mensagem de idade por raça estão instaladas. `anon` continua sem EXECUTE e `authenticated` mantém EXECUTE.
+- Catálogo de produção confirmado com as sete raças. O parser de idiomas da RPC foi testado contra as sete descrições raciais: os idiomas automáticos foram extraídos corretamente, inclusive o singular do Humano; Druídico é acrescentado para Druida. Todos os idiomas automáticos/adicionais utilizados pela interface existem no catálogo; idiomas secretos permanecem indisponíveis para escolhas bônus/compradas.
+- Corrigido o seletor inicial de `ficha.html` na branch de auditoria: antes ainda filtrava exclusivamente Anão, apesar das etapas seguintes aceitarem sete raças. Agora lista todas as raças do catálogo. Também foram corrigidos textos que diziam que a etapa estava focada no Anão e os valores iniciais/fallbacks de idiomas agora são dinâmicos por raça e classe.
+- A interface de auditoria envia `p_identidade` à assinatura de sete parâmetros. A interface antiga em `main` continua usando a assinatura de seis parâmetros; essa assinatura foi preservada para evitar quebra da versão principal.
+- **Ainda não foi possível concluir o teste autenticado de ponta a ponta no navegador**: as ferramentas disponíveis não fornecem uma sessão JWT de jogador nem um navegador autenticado para a aplicação. Não foi criado usuário de teste nem personagem fictício em produção.
+- A10 está aplicada no banco e corrigida na branch de auditoria, mas ainda não deve ser considerada integralmente liberada aos jogadores até a branch ser publicada e o teste autenticado de criação/reabertura ser executado.
