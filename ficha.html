@@ -2597,6 +2597,13 @@ function dnd35WeaponProficient(state,weaponName){
       }
       classBonusTalentos=[{id:String(classPick.id),parametro:classParam||null}];
     }
+    if(String(state.classe&&state.classe.id)==='clerigo'){
+      var clericIdentity=state.identidade||{},clericDomains=(state.domainChoices||[]).map(function(x){return String(x.domain_id||'');}).filter(Boolean),selectedDeity=(state.deities||[]).find(function(d){return String(d.deity_id)===String(clericIdentity.cleric_deity_id||'');});
+      if(clericIdentity.cleric_source==='deity'&&!selectedDeity){mostrarErro('Escolha uma divindade para o Clérigo.','class');return;}
+      if(clericIdentity.cleric_source==='cause'&&!String(clericIdentity.cleric_cause||'').trim()){mostrarErro('Descreva a causa ou ideal do Clérigo.','class');return;}
+      if(clericDomains.length!==2||clericDomains[0]===clericDomains[1]){mostrarErro('Escolha dois domínios diferentes para o Clérigo.','class');return;}
+      if(selectedDeity&&clericDomains.some(function(id){return (selectedDeity.domains||[]).indexOf(id)<0;})){mostrarErro('Os dois domínios devem pertencer à divindade escolhida.','class');return;}
+    }
     var languageState=state.idiomasEscolhidos||{automaticos:['Comum','Anão'],bonus_inteligencia:[],comprados_falar_idioma:[]};
     var bonusLanguages=(languageState.bonus_inteligencia||[]).filter(Boolean),purchasedLanguages=(languageState.comprados_falar_idioma||[]).filter(Boolean);
     var expectedBonusLanguages=Math.max(0,Math.floor(((Number(attrs.INT)||10)-10)/2)),speakLanguageRanks=Math.max(0,Math.floor(Number(ranks.srd35_skill_speak_language)||0));
