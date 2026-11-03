@@ -172,3 +172,34 @@ Não marcar um módulo como concluído apenas porque existe uma descrição ou u
 
 **Limite**
 - O descanso diário e o uso de espaços de magia na Mesa ainda precisam ser alinhados ao espaço extra de especialista quando o trabalho chegar ao módulo de jogo. Nesta fase, a criação e o salvamento inicial do grimório já consideram a especialização.
+
+
+## Etapa Anão A5 — Clérigo: divindade, tendência e domínios
+
+**Estado: fluxo de criação implementado e verificações estáticas aprovadas; teste de navegador autenticado pendente.**
+
+- Foi criada uma etapa própria **Classe** no fluxo de criação, posicionada depois dos atributos e antes de perícias/talentos. As escolhas do Mago foram movidas para essa etapa; a visualização de fichas já existentes não exibe o formulário de criação.
+- Para o Clérigo, a interface oferece fonte divina por divindade ou por causa/ideal. A lista de divindades é filtrada pelas restrições raciais cadastradas. Para Anão, Moradin está disponível; as divindades gerais permanecem disponíveis.
+- Ao escolher uma divindade, a interface mostra tendência, domínios e arma predileta. A arma predileta é informativa: não concede proficiência automaticamente; o domínio Guerra é que concede proficiência e Foco na arma predileta.
+- Os dois domínios são selecionados na etapa de classe. Com divindade, só aparecem domínios daquela divindade; com causa/ideal, o jogador escolhe dois domínios e a coerência narrativa fica sujeita à avaliação do Mestre.
+- O catálogo existente de domínios e magias de domínio foi reutilizado. Moradin oferece Terra, Bem, Ordem e Proteção; os quatro possuem magias cadastradas do 1º ao 9º círculo no catálogo atual.
+- A identidade do Clérigo é validada no servidor: divindade obrigatória quando essa fonte é escolhida, restrição racial, tendência igual ou a um passo da divindade e regra específica de St. Cuthbert. A causa/ideal precisa ser informada.
+- A criação exige dois domínios diferentes antes de inserir o personagem. O RPC de criação valida que ambos existem e, quando há divindade, pertencem a ela. O RPC de persistência dos domínios repete a validação no salvamento.
+- A seleção de domínios é enviada junto à identidade no RPC de criação e persistida na tabela existente `srd_character_domain_choices`; a gravação posterior do grimório também salva os domínios e magias de domínio.
+
+**Dados e alterações no banco**
+- A auditoria não encontrou catálogo de divindades preexistente. Foi criada a tabela de referência `srd_deities` com 19 divindades do Livro do Jogador; não foram criadas tabelas de domínios, magias ou escolhas de personagem duplicadas.
+- A tabela de divindades é somente leitura para usuários autenticados por RLS.
+- RPCs existentes foram atualizados; não foi criada uma nova estrutura de armazenamento para domínios.
+
+**Verificações realizadas**
+- Sintaxe JavaScript de `ficha.html`: aprovada após as alterações.
+- Confirmada a presença da etapa Classe, dos controles de divindade/causa e da escolha dos domínios.
+- RPC de criação validada por inspeção da definição: exige dois domínios válidos, restringe-os aos domínios da divindade e verifica acesso racial.
+- RPC de salvamento dos domínios validada por inspeção da definição.
+- Integridade do catálogo: os domínios das divindades existem em `srd_domains`; Terra, Bem, Ordem e Proteção possuem nove níveis de magias cada.
+- Não foi criado personagem de teste nem executado fluxo de navegador com sessão autenticada. Essa validação ainda é necessária antes de marcar a etapa como integralmente testada.
+
+**Pendência específica**
+- A escolha de causa/ideal não pode ser validada semanticamente pelo banco; o Mestre precisa poder revisar se os dois domínios são coerentes com a causa escolhida.
+- Ainda falta validar visualmente o fluxo completo no navegador com usuário autenticado, inclusive o salvamento e a reabertura da ficha.
