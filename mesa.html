@@ -2684,7 +2684,7 @@ async function abrirModalEquipamentos(){
     if(active&&layer.dataset.bound!=='1'){
       layer.dataset.bound='1';
       var painting=null,lastCell='';
-      function point(e){var bounds=layer.getBoundingClientRect(),x=Math.floor((e.clientX-bounds.left)/cellSize),y=Math.floor((e.clientY-bounds.top)/cellSize);return {x:x,y:y};}
+      function point(e){var bounds=layer.getBoundingClientRect(),currentCell=tokenLayer?tamanhoCelulaLayerCBA(tokenLayer,cbaState):cellSize,x=Math.floor((e.clientX-bounds.left)/currentCell),y=Math.floor((e.clientY-bounds.top)/currentCell);return {x:x,y:y};}
       function paint(e){if(!painting||e.pointerId!==painting.id)return;var p=point(e);if(p.x<0||p.y<0||p.x>199||p.y>199)return;var key=p.x+':'+p.y;if(key===lastCell)return;lastCell=key;if(alterarCelulaFogCBA(p.x,p.y))painting.changed=true;}
       layer.addEventListener('pointerdown',function(e){if(!cbaFogTool.active||!ehGM)return;var p=point(e);if(p.x<0||p.y<0||p.x>199||p.y>199)return;painting={id:e.pointerId,changed:false};lastCell='';try{layer.setPointerCapture(e.pointerId);}catch(err){}paint(e);e.preventDefault();});
       layer.addEventListener('pointermove',paint);
@@ -3573,6 +3573,7 @@ async function abrirModalEquipamentos(){
       }
       campanha.cba_data=cbaData;
       aplicarCBAnaMesa(cbaData,true);
+      cbaFogTool.active=false;atualizarControlesFogCBA();
       fecharSubModaisCBA();
       document.getElementById('modal-cba').classList.remove('ativo');
       try{
@@ -3595,7 +3596,7 @@ async function abrirModalEquipamentos(){
       var botao = e.target.closest ? e.target.closest('[data-cba-action]') : null;
       if(!botao) return;
       var action = botao.dataset.cbaAction;
-      if(action === 'close'){ fecharSubModaisCBA(); modal.classList.remove('ativo'); }
+      if(action === 'close'){ cbaFogTool.active=false;atualizarControlesFogCBA();renderizarFogCBA(document.getElementById('cba-preview-area'),cbaState,true);fecharSubModaisCBA();modal.classList.remove('ativo'); }
       else if(action === 'close-sub') fecharSubModaisCBA();
       else if(action === 'choose-background') document.getElementById('cba-bg-input').click();
       else if(action === 'publish') publicarCBA();
@@ -3640,7 +3641,7 @@ async function abrirModalEquipamentos(){
       if(e.key !== 'Escape' || !modal.classList.contains('ativo')) return;
       var aberto = document.querySelector('#modal-cba .sub-modal.ativo');
       if(aberto) fecharSubModaisCBA();
-      else modal.classList.remove('ativo');
+      else {cbaFogTool.active=false;atualizarControlesFogCBA();modal.classList.remove('ativo');}
     });
   }
 
