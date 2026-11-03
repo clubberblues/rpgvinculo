@@ -806,6 +806,13 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
 .skill-roll-card small{font-size:10px;line-height:1.35;color:#d7ccb1}
 @media(max-width:600px){.skill-roll-panel{padding:13px;max-height:88vh}.skill-roll-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.skill-roll-card{min-height:105px;padding:9px}}
 
+
+#modal-magias .magia-opcao{display:flex;flex-direction:column;align-items:flex-start;gap:5px;padding:11px 12px;border:1px solid #75613d;border-radius:8px;background:linear-gradient(145deg,#273023,#141b14);color:#eee3ca;text-align:left}
+#modal-magias .magia-opcao strong{font:700 11px Cinzel,serif;color:#f0d080}
+#modal-magias .magia-opcao .magia-meta{font-size:9px;color:#c6b58e}
+#modal-magias .magia-opcao .magia-descricao{font-size:10px;line-height:1.35;color:#ded3b9;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+#modal-magias .magia-opcao[aria-pressed="true"]{border-color:#e5c77b;box-shadow:0 0 0 1px #b99b5a;background:linear-gradient(145deg,#3b3523,#1b2116)}
+
 </style>
 </head>
 <body>
@@ -1810,7 +1817,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   var magiaCatalogoAtual=[];
   async function abrirListaMagias(characterId){
     var p=personagemParaMagia(characterId);if(!p){alert(String(campanha&&campanha.state||'').toUpperCase()==='COMBATE'?'Apenas o personagem do jogador no turno atual pode conjurar.':'Nenhuma ficha própria disponível.');return;}
-    magiaPersonagemAtiva=p;focoAnteriorMagia=document.activeElement;var modal=document.getElementById('modal-magias'),list=document.getElementById('modal-magias-lista'),status=document.getElementById('magia-alerta');modal.hidden=false;modal.classList.add('ativo');document.getElementById('magia-personagem').textContent='Conjurador: '+p.ch.nome;list.replaceChildren();status.textContent='Carregando magias conhecidas e preparadas…';document.getElementById('confirmar-conjuracao').disabled=true;
+    magiaPersonagemAtiva=p;focoAnteriorMagia=document.activeElement;var modal=document.getElementById('modal-magias'),list=document.getElementById('modal-magias-lista'),status=document.getElementById('magia-alerta');modal.hidden=false;modal.classList.add('ativo');document.getElementById('magia-personagem').textContent='Conjurador: '+p.ch.nome+' · '+String(p.cl.nome||p.sh.classe_id||'Classe não identificada');list.replaceChildren();status.textContent='Carregando magias conhecidas e preparadas…';document.getElementById('confirmar-conjuracao').disabled=true;
     var record=parseJsonSeguro35(p.sh.magias_preparadas,null);if(!record||Number(record.version)!==1){status.textContent='Ficha sem configuração válida de magias_preparadas (version: 1).';return;}
     var ids=Array.from(new Set([].concat(record.conhecidas||[],(record.preparadas||[]).map(function(x){return x.spell_id;}),(record.dominio_preparadas||[]).map(function(x){return x.spell_id;})).map(String).filter(function(x){return x&&x!=='undefined'&&x!=='null';})));
     if(!ids.length){status.textContent='Nenhuma magia conhecida ou preparada nesta ficha.';return;}
@@ -1818,8 +1825,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     magiaCatalogoAtual=r.data||[];if(!magiaCatalogoAtual.length){status.textContent='Nenhuma das magias configuradas foi encontrada no catálogo SRD.';return;}
     var prog=await sb.from('srd_spell_progressions').select('*');if(prog.error){status.textContent='Progressões de magia indisponíveis: '+prog.error.message;return;}
     var key=chaveProgressaoMagia(p),attr=atributoConjuracaoClasse(p),score=Number((p.sh.atributos||{})[attr]||10),mod=attrModifier35(p.sh.atributos,attr);magiaCatalogSlots=slotsProgressao(prog.data||[],key,mod,p.sh.nivel,score);
-    list.replaceChildren();magiaCatalogoAtual.forEach(function(sp){var b=document.createElement('button');b.type='button';b.className='magia-opcao';b.dataset.spellId=String(sp.id);b.setAttribute('role','option');b.setAttribute('aria-pressed','false');var name=document.createElement('strong');name.textContent=String(sp.nome||sp.name||'Magia');var meta=document.createElement('span');meta.className='magia-meta';meta.textContent='Nível '+nivelMagia(sp)+' · '+String(sp.escola||sp.school||'SRD');b.append(name,meta);b.addEventListener('click',function(){selecionarMagiaModal(sp.id);});list.appendChild(b);});
-    status.textContent='Progressão '+(key||'não identificada')+' · modificador de '+attr+' '+(mod>=0?'+':'')+mod+'. Selecione magia e espaço; para cura, alvo vazio significa Self.'+(key==='cleric'?' Bônus de domínio não incluído: a ficha não possui seleção de domínio.':'');
+    list.replaceChildren();magiaCatalogoAtual.forEach(function(sp){var b=document.createElement('button');b.type='button';b.className='magia-opcao';b.dataset.spellId=String(sp.id);b.setAttribute('role','option');b.setAttribute('aria-pressed','false');var name=document.createElement('strong');name.textContent=String(sp.nome||sp.name||'Magia');var meta=document.createElement('span');meta.className='magia-meta';meta.textContent='Nível '+nivelMagia(sp)+' · '+String(sp.escola||sp.school||'SRD');var description=document.createElement('small');description.className='magia-descricao';description.textContent=String(sp.descricao||'Descrição não cadastrada.').slice(0,190);b.append(name,meta,description);b.addEventListener('click',function(){selecionarMagiaModal(sp.id);});list.appendChild(b);});
+    var castingMode=key==='wizard'?'Grimório e magias preparadas':(key==='sorcerer'||key==='bard'?'Magias conhecidas e conjuração espontânea':'Magias preparadas e espaços por classe');status.textContent=castingMode+' · Progressão '+(key||'não identificada')+' · atributo '+attr+' '+(mod>=0?'+':'')+mod+'. Selecione uma magia e um espaço disponível; para cura, alvo vazio significa Self.'+(key==='cleric'?' A seleção de domínio ainda precisa ser vinculada a esta interface.':'');
     var first=list.querySelector('[data-spell-id]');if(first)first.focus();
   }
   function tokenSpellState35(item){return parseJsonSeguro35(item&&item.spellState,null)||{};}
