@@ -1746,6 +1746,24 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   function modifier35(score){return Math.floor((Number(score||10)-10)/2);}function modifierTamanho35(tamanho){var n=String(tamanho||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();return n==='pequeno'||n==='small'?1:0;}
   function textoTipoCriatura35(token){var s=token&&token.monsterStats||{};return [token&&token.nome,s.tipo,s.type,s.subtipo,s.subtype,s.subtipos,s.subtypes,s.creature_type].map(function(v){return Array.isArray(v)?v.join(' '):String(v||'');}).join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();}
   function criaturaGigante35(token){var t=textoTipoCriatura35(token);return /giant|gigante|ogre|ogro|troll/.test(t);}
+  function penalidadeNaoProficiencia35(personagem,arma){
+    if(!personagem||!arma)return 0;
+    var technical=personagem.cl&&personagem.cl.dados_tecnicos||{},proficiencies=technical.proficiencias||{},weapons=Array.isArray(proficiencies.armas)?proficiencies.armas:[];
+    var details=arma.detalhes||{};if(typeof details==='string'){try{details=JSON.parse(details);}catch(e){details={};}}
+    var norm=function(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'');};
+    var weaponName=norm(arma.nome),weaponType=String(details.weapon_proficiency||'').toLowerCase();
+    var dwarf=String(personagem.sh&&personagem.sh.raca_id||'')==='anao';
+    var dwarvenWeapon=dwarf&&/(dwarvenwaraxe|dwarvenurgrosh|machadodeguerraanao|urgroshanao)/.test(weaponName);
+    if(dwarvenWeapon&&weaponType==='exotic')weaponType='martial';
+    var prof=weapons.map(norm),all=prof.some(function(x){return x.includes('todasasarmassimplesemarciais');});
+    var simple=all||prof.some(function(x){return x==='armassimples'||x.includes('armassimples');});
+    var martial=all||prof.some(function(x){return x==='armasmarciais'||x.includes('armasmarciais');});
+    var exact=prof.indexOf(weaponName)>=0;
+    if(exact)return 0;
+    if(weaponType==='simple'&&simple)return 0;
+    if(weaponType==='martial'&&martial)return 0;
+    return weaponType==='simple'||weaponType==='martial'||weaponType==='exotic'?-4:0;
+  }
   function bonusRacialAtaque35(personagem,alvo,arma){
     var race=String(personagem&&personagem.sh&&personagem.sh.raca_id||''),type=textoTipoCriatura35(alvo);
     if(race==='anao'&&/(orc|orcs|goblin|goblinoid|hobgoblin|bugbear)/.test(type))return 1;
@@ -1847,7 +1865,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var focus=Array.isArray(feats)&&feats.find(function(feat){return feat&&feat.id==='foco_em_arma'&&normalizeName(feat.parametro)===normalizeName(weaponName);});
     if(focus)weaponFocus=1;
     if(type==='atk-corpo'&&personagemTemTalento(own.sh,'ataque_poderoso')){var rawPenalty=await window.vttUI.ask({title:'Ataque Poderoso',label:'Penalidade de ataque (0 a '+Math.max(0,bab)+')',defaultValue:'0',inputMode:'numeric'});if(rawPenalty===null)return;powerPenalty=Number(rawPenalty);if(!Number.isInteger(powerPenalty)||powerPenalty<0||powerPenalty>bab){alert('A penalidade deve ser um inteiro entre 0 e '+Math.max(0,bab)+'.');return;}powerDamage=powerPenalty*(weapon&&weapon.detalhes&&weapon.detalhes.duas_maos?2:1);}
-    var sizeModifier=modifierTamanho35(own.tamanho),racialAttackBonus=bonusRacialAtaque35(own,target,weapon),bonus=bab+ability+weaponFocus-powerPenalty+sizeModifier+racialAttackBonus;
+    var sizeModifier=modifierTamanho35(own.tamanho),racialAttackBonus=bonusRacialAtaque35(own,target,weapon),proficiencyPenalty=penalidadeNaoProficiencia35(own,weapon),bonus=bab+ability+weaponFocus-powerPenalty+sizeModifier+racialAttackBonus+proficiencyPenalty;
     if(type==='atk-dist'&&weapon&&weapon.detalhes&&Number(weapon.detalhes.alcance_m)>0){var rangeSquares=Math.max(Math.abs(Number(target.gridX)-Number(ownToken.gridX)),Math.abs(Number(target.gridY)-Number(ownToken.gridY)));if(rangeSquares*1.5>Number(weapon.detalhes.alcance_m)){alert('Alvo fora do alcance da arma ('+weapon.detalhes.alcance_m+' m).');return;}}
     var title=type==='atk-corpo'?'Ataque Corpo a Corpo':'Ataque à Distância', critical=critico35(weapon&&weapon.critico);
     function abrirRolagemDano(isCritical){
@@ -1878,9 +1896,9 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     }
     function registrarResultadoAtaque(d20,isCritical){
       var total=Number(d20)+bonus,automaticMiss=Number(d20)===1,automaticHit=Number(d20)===20,hit=!automaticMiss&&(automaticHit||total>=targetAC);
-      var breakdown='1d20 '+d20+' + BBA '+bab+' + '+(type==='atk-dist'?'DES':'FOR')+' '+ability+(sizeModifier?' + tamanho '+(sizeModifier>0?'+':'')+sizeModifier:'')+(racialAttackBonus?' + bônus racial +'+racialAttackBonus:'')+(weaponFocus?' + Foco em Arma +1':'')+(powerPenalty?' − Ataque Poderoso '+powerPenalty:'');
+      var breakdown='1d20 '+d20+' + BBA '+bab+' + '+(type==='atk-dist'?'DES':'FOR')+' '+ability+(sizeModifier?' + tamanho '+(sizeModifier>0?'+':'')+sizeModifier:'')+(racialAttackBonus?' + bônus racial +'+racialAttackBonus:'')+(proficiencyPenalty?' − não proficiente '+proficiencyPenalty:'')+(weaponFocus?' + Foco em Arma +1':'')+(powerPenalty?' − Ataque Poderoso '+powerPenalty:'');
       if(!hit){
-        enviarMensagemChat('⚔️ '+title+' com '+weaponName+' contra '+target.nome+': '+breakdown+' = **'+total+'** contra CA '+targetAC+' — ERRO. O dano não será rolado.','rolagem',{evento:'ataque_dnd35',atacante:String(own.ch.id),alvo:target.id,resultado:total,d20:Number(d20),ca_alvo:targetAC,acerto:false,bab:bab,modificador:ability,bonus_foco:weaponFocus,bonus_tamanho:sizeModifier,bonus_racial:racialAttackBonus,penalidade_ataque_poderoso:powerPenalty,arma:weaponName,dano:damage});
+        enviarMensagemChat('⚔️ '+title+' com '+weaponName+' contra '+target.nome+': '+breakdown+' = **'+total+'** contra CA '+targetAC+' — ERRO. O dano não será rolado.','rolagem',{evento:'ataque_dnd35',atacante:String(own.ch.id),alvo:target.id,resultado:total,d20:Number(d20),ca_alvo:targetAC,acerto:false,bab:bab,modificador:ability,bonus_foco:weaponFocus,bonus_tamanho:sizeModifier,bonus_racial:racialAttackBonus,penalidade_nao_proficiencia:proficiencyPenalty,penalidade_ataque_poderoso:powerPenalty,arma:weaponName,dano:damage});
         return;
       }
       var criticalLabel=isCritical?' · ACERTO CRÍTICO x'+critical.multiplier:'';
