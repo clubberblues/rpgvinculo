@@ -1729,7 +1729,8 @@ function dnd35TranslateCatalogText(value){
   function dnd35RenderLanguageSection(state,attrs,creating,rank){
     var rules=dnd35LanguageRules(state,attrs);
     if(!creating){
-      var stored=state.sheet.idiomas_conhecidos||{},auto=Array.isArray(stored.automaticos)&&stored.automaticos.length?stored.automaticos:rules.automatic;
+      var stored=state.sheet.idiomas_conhecidos||{},auto=Array.isArray(stored.automaticos)?stored.automaticos.slice():[];
+      rules.automatic.forEach(function(name){if(!auto.some(function(x){return dnd35LanguageNormalize(x)===dnd35LanguageNormalize(name);}))auto.push(name);});
       var bonus=Array.isArray(stored.bonus_inteligencia)?stored.bonus_inteligencia:[];
       var purchased=Array.isArray(stored.comprados_falar_idioma)?stored.comprados_falar_idioma:[];
       return '<div class="dnd35-language-list"><p><b>Automáticos:</b> '+esc(auto.join(', ')||'—')+'</p><p><b>Bônus por Inteligência:</b> '+esc(bonus.join(', ')||'—')+'</p><p><b>Comprados com Falar Idioma:</b> '+esc(purchased.join(', ')||'—')+'</p></div>';
@@ -1900,7 +1901,8 @@ function dnd35WeaponProficient(state,weaponName){
   }
   function dnd35LevelupLanguageData(state,attrs,lu){
     var stored=state.sheet.idiomas_conhecidos||{},rules=dnd35LanguageRules(state,attrs);
-    var automatic=Array.isArray(stored.automaticos)&&stored.automaticos.length?stored.automaticos:rules.automatic;
+    var automatic=Array.isArray(stored.automaticos)?stored.automaticos.slice():[];
+    rules.automatic.forEach(function(name){if(!automatic.some(function(x){return dnd35LanguageNormalize(x)===dnd35LanguageNormalize(name);}))automatic.push(name);});
     var bonus=Array.isArray(stored.bonus_inteligencia)?stored.bonus_inteligencia:[];
     var purchased=Array.isArray(stored.comprados_falar_idioma)?stored.comprados_falar_idioma:[];
     var currentRanks=Number(dnd35Objeto(state.sheet.pericias).srd35_skill_speak_language||0);
