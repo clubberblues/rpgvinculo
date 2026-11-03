@@ -261,3 +261,27 @@ Nenhum personagem, ficha, campanha, token ou log de jogo real foi alterado. Toda
 8. Confirmar deploy dos commits mais recentes e testar os fluxos de senha, acesso aberto, alteração de capa/nome e exclusão com contas de criador/jogador separadas.
 
 Nenhum personagem, ficha, campanha, token ou log real foi editado durante os testes desta continuação. As RPCs de configuração e entrada foram aplicadas, mas não foram usadas para alterar campanhas reais.
+
+
+## Atualização adicional — interfaces de perícias, magias, bestiário e rolagem de ouro (2026-11-03)
+
+- Perícias do jogador: o seletor antigo baseado em diálogo genérico foi substituído por uma janela de cards pesquisáveis. Exibe atributo, graduações, bônus de classe e racial, permite perícias não treinadas quando as regras permitem e abre o dado D20 ao selecionar um card.
+- Ouro inicial: a escolha agora abre o próprio dice.html em iframe e envia a expressão 3d4 automaticamente. O resultado só é aceito quando o iframe devolve três valores D4 válidos; o total é multiplicado por 10 po. O jogador pode continuar sem comprar itens.
+- Magias: a janela informa classe/conjurador, diferencia orientação de grimório, magias conhecidas e preparadas conforme a classe e mostra trecho de descrição nos cards. Seleção de domínio clerical ainda precisa ser conectada a esse fluxo de jogador.
+- Bestiário do CBA: cards passam a virar ao clicar, mostram bloco tático com ND, tipo/tamanho, tendência, DV, PV, iniciativa, deslocamento, CA, ataques, resistências, atributos, perícias, talentos e qualidades especiais. A lista é ordenada por ND (incluindo frações) e depois tipo/nome; rótulos de filtro e termos comuns de tipo/tamanho/tendência/ataques recebem tradução pt-BR.
+- Iniciativa: o backend já cria um único pedido para todos os personagens esperados e cada sessão de jogador recebe seu próprio botão; o chat agora explicita que todos podem rolar simultaneamente, sem ordem de chamada. A validação com múltiplas sessões reais ainda está pendente.
+- Imagem de token: a ação foi removida do menu contextual individual e fica centralizada em Mesa e Jogadores, como solicitado.
+- Paleta: foram aplicadas substituições de superfícies azuis mais evidentes da mesa para a paleta carvão/verde profundo e ouro. A revisão visual de todas as páginas ainda exige navegador e viewport real.
+- Segurança de código: a RPC de entrada por código foi atualizada para usar o mesmo bloqueio de tentativas da entrada tradicional. A versão registrada no Supabase e o arquivo de migration no GitHub foram alinhados.
+- Validação estática após estes ajustes: os scripts inline de mesa.html, ficha.html e lobby.html passaram em compilação sintática JavaScript.
+
+### Pendências não concluídas nesta rodada
+1. Kits iniciais ainda vêm do catálogo indexado por classe; não há matriz racial validada para todas as combinações. Não inventei pacotes específicos por raça sem dados de fonte.
+2. O bestiário ainda pode conter valores de descrição/ataque herdados em inglês no próprio catálogo; a tradução aplicada cobre tipos, tamanhos, tendências, rótulos e termos comuns, não uma revisão editorial de cada um dos 607+ blocos de criatura.
+3. A experiência de conjuração ainda usa uma janela compartilhada com dados/progressões por classe; faltam especializações completas por classe, principalmente a seleção de domínio do Clérigo e a validação de repertório/slots em cada classe.
+4. Os 607 efeitos de magia e as 131 características de classe continuam sem resolver genericamente; cura e Míssil Mágico têm fluxos específicos.
+5. O erro de carregamento infinito da ficha não foi reproduzido em navegador autenticado; a correção ainda não pode ser declarada concluída.
+6. E2E com Mestre e múltiplas contas, Realtime, testes mobile e inspeção visual completa continuam pendentes.
+7. Os commits mais recentes ainda aguardam o workflow de GitHub Pages; o último deploy confirmado antes desta sequência era o commit 3e45bd936eb1bb9f8e6e80c6cc8e405591f80d20.
+
+Nenhuma campanha, personagem, ficha, token ou log real foi modificado nesta continuação. As RPCs de configuração e entrada foram aplicadas; não foram chamadas para atualizar campanhas reais.
