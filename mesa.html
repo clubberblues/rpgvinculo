@@ -4021,7 +4021,7 @@ async function abrirModalEquipamentos(){
   function abrirMinhaFicha(){
     var meus = personagens.filter(function(p){ return p.ch.user_id === eu.id; });
     if(meus.length === 0){ alert('Voce ainda nao tem ficha nesta mesa.'); return; }
-    location.href = 'ficha.html?char='+meus[0].ch.id+'&mesa='+encodeURIComponent(MESA_ID)+(ehGM?'&role=gm':'');
+    location.href = 'ficha.html?ruleset=dnd35&char='+meus[0].ch.id+'&mesa='+encodeURIComponent(MESA_ID)+(ehGM?'&role=gm':'');
   }
 
   // ============ LÓGICA DO DADO (IFRAME) ============
