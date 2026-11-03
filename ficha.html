@@ -2181,12 +2181,10 @@ function dnd35WeaponProficient(state,weaponName){
   }
   function dnd35StartStats(item){
     if(!item)return '';
-    var parts=[],damage=String(item.dano||'').trim(),critical=String(item.critico||'').trim(),damageType=String(item.tipo_dano||'').trim();
+    var parts=[],damage=String(item.dano||'').trim(),critical=String(item.critico||'').trim(),damageType=String(item.tipo_dano||'').trim(),range=String(item.alcance_incremento||(item.detalhes&&item.detalhes.range_increment)||'').trim();
     if(damage&&!/^(—|-|n\/a)$/i.test(damage))parts.push('Dano '+dnd35TranslateCatalogText(damage));
-    if(critical&&!/^(—|-|n\/a)$/i.test(critical)){
-      if(/(?:ft\.?|feet|metros?)$/i.test(critical)&&!/[x×]/i.test(critical))parts.push('Alcance '+dnd35TranslateCatalogText(critical));
-      else parts.push('Crítico '+dnd35TranslateCatalogText(critical));
-    }
+    if(range&&!/^(—|-|n\/a)$/i.test(range))parts.push('Alcance '+dnd35TranslateCatalogText(range));
+    if(critical&&!/^(—|-|n\/a)$/i.test(critical))parts.push('Crítico '+dnd35TranslateCatalogText(critical));
     if(damageType)parts.push('Tipo '+dnd35TranslateCatalogText(damageType));
     var ac=Number(item.ca_bonus==null?item.bonus_ca:item.ca_bonus);
     if(Number.isFinite(ac)&&ac!==0)parts.push('CA '+(ac>0?'+':'')+ac);
