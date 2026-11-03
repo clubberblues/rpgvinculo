@@ -1600,7 +1600,7 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
     overlay.querySelector('[data-settings-save]').addEventListener('click',async function(){
       var button=this,nome=nameInput.value.trim(),exigeCodigo=requireInput.checked,codigo=codeInput.value.trim();
       if(nome.length<2||nome.length>60){status.textContent='O nome deve ter entre 2 e 60 caracteres.';nameInput.focus();return;}
-      if(exigeCodigo&&!/^\\d{4}$/.test(codigo)){status.textContent='O código deve conter exatamente 4 números.';codeInput.focus();return;}
+      if(exigeCodigo&&!/^\d{4}$/.test(codigo)){status.textContent='O código deve conter exatamente 4 números.';codeInput.focus();return;}
       button.disabled=true;status.textContent='Salvando configurações…';
       try{var saved=await sb.rpc('atualizar_configuracoes_campanha',{p_campaign_id:Number(mesaId),p_name:nome,p_require_code:exigeCodigo,p_code:exigeCodigo?codigo:null});if(saved.error)throw saved.error;if(!saved.data||!saved.data.ok)throw new Error('O banco não confirmou as alterações.');status.textContent='Configurações salvas.';await carregarMesas();window.setTimeout(close,350);}
       catch(error){button.disabled=false;status.textContent='Não foi possível salvar: '+(error.message||error);}
