@@ -2278,6 +2278,27 @@ function dnd35WeaponProficient(state,weaponName){
       if(isClass&&!Number.isInteger(skillRank)){mostrarErro('Perícias de classe usam graduações inteiras.','pericias');return;}
       if(!isClass&&Math.abs(skillRank*2-Math.round(skillRank*2))>0.001){mostrarErro('Perícias fora de classe avançam em passos de 0,5.','pericias');return;}
     }
+    var languageRules=dnd35LanguageRules(state,attrs),languagePicks=state.idiomasEscolhas||{bonus:[],comprados:[]};
+    var languageBonusChoices=(languagePicks.bonus||[]).slice(0,languageRules.bonusCount);
+    var languagePurchaseCount=Math.max(0,Number(ranks['srd35_skill_speak_language']||0));
+    var languagePurchasedChoices=(languagePicks.comprados||[]).slice(0,languagePurchaseCount);
+    if(languageBonusChoices.length!==languageRules.bonusCount||languageBonusChoices.some(function(x){return !String(x||'').trim();})){
+      mostrarErro('Escolha todos os idiomas bônus concedidos pela Inteligência.','pericias');return;
+    }
+    if(languagePurchasedChoices.length!==languagePurchaseCount||languagePurchasedChoices.some(function(x){return !String(x||'').trim();})){
+      mostrarErro('Escolha um idioma para cada ponto investido em Falar Idioma.','pericias');return;
+    }
+    if(languageBonusChoices.some(function(x){return !languageRules.bonusOptions.some(function(opt){return dnd35LanguageNormalize(opt)===dnd35LanguageNormalize(x);});})){
+      mostrarErro('Um idioma bônus não é permitido pela lista da raça.','pericias');return;
+    }
+    if(languagePurchasedChoices.some(function(x){return !languageRules.allSelectable.some(function(opt){return dnd35LanguageNormalize(opt)===dnd35LanguageNormalize(x);});})){
+      mostrarErro('Um idioma comprado não está disponível no catálogo.','pericias');return;
+    }
+    var allLanguageChoices=languageRules.automatic.concat(languageBonusChoices,languagePurchasedChoices).map(dnd35LanguageNormalize);
+    if(new Set(allLanguageChoices).size!==allLanguageChoices.length){
+      mostrarErro('Não é permitido selecionar o mesmo idioma mais de uma vez.','pericias');return;
+    }
+    var languagePayload={automaticos:languageRules.automatic,bonus_inteligencia:languageBonusChoices,comprados_falar_idioma:languagePurchasedChoices};
     var needed=dnd35IsHuman(state.raca)?2:1,picks=state.featPicks||[];
     if(picks.length!==needed||picks.some(function(p){return !p||!p.id;})){mostrarErro('Escolha exatamente '+needed+' talento(s).','talentos');return;}
     var ids=picks.map(function(p){return String(p.id);});
@@ -2314,6 +2335,7 @@ function dnd35WeaponProficient(state,weaponName){
         id=result.data;if(Array.isArray(id))id=id[0];if(id&&typeof id==='object')id=id.character_id||id.id;
         if(!id)throw new Error('A ficha foi criada, mas o banco não retornou o identificador do personagem.');state.createdCharacterId=String(id);
       }
+      var languageResult=await sb.rpc('salvar_idiomas_personagem_srd',{p_character_id:String(id),p_idiomas:languagePayload});if(languageResult.error)throw new Error('Personagem criado; os idiomas não foram salvos. '+languageResult.error.message);
       var classBonusResult=await sb.rpc('salvar_talentos_bonus_classe_inicial_srd',{p_character_id:String(id),p_talentos:classBonusTalentos});if(classBonusResult.error)throw new Error('Não foi possível registrar os talentos bônus da classe. '+classBonusResult.error.message);
        var magicKey=dnd35SpellClassKey(state.classe.nome)||dnd35SpellClassKey(state.classe.class_key)||dnd35SpellClassKey(state.classe.id),spellState=state.grimoireState||dnd35SpellState(state);
       if(magicKey==='cleric'){var savedDomains=await sb.rpc('salvar_dominios_personagem_srd',{p_character_id:String(id),p_domain_ids:(state.domainChoices||[]).map(function(x){return String(x.domain_id);})});if(savedDomains.error)throw new Error('Personagem criado, mas os domínios não foram salvos. '+savedDomains.error.message);}
