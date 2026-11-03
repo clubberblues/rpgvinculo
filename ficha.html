@@ -2116,20 +2116,21 @@ function dnd35WeaponProficient(state,weaponName){
     parts.push('</section>');return parts.join('');
   }
   function dnd35DomainPanel(state,avail,s) {
-    if(avail.key!=='cleric')return '';
-    var domains=state.srdDomains||[],rows=state.srdDomainSpells||[],choices=Array.isArray(state.domainChoices)?state.domainChoices:[],selected=choices.map(function(x){return String(x.domain_id||'');}),identity=state.identidade||{},deity=identity.cleric_source==='deity'?(state.deities||[]).find(function(d){return String(d.deity_id)===String(identity.cleric_deity_id||'');}):null;
-    if(identity.cleric_source==='deity'){
-      if(!deity)return '<section class="dnd35-spell-card"><h3>Domínios do clérigo</h3><p class="dnd35-note">Escolha uma divindade para liberar os domínios correspondentes.</p></section>';
+    if(avail.key!=='cleric'&&avail.key!=='druid')return '';
+    var isDruid=avail.key==='druid',slotCount=isDruid?1:2,domains=state.srdDomains||[],rows=state.srdDomainSpells||[],choices=Array.isArray(state.domainChoices)?state.domainChoices:[],selected=choices.map(function(x){return String(x.domain_id||'');}),identity=state.identidade||{},deity=!isDruid&&identity.cleric_source==='deity'?(state.deities||[]).find(function(d){return String(d.deity_id)===String(identity.cleric_deity_id||'');}):null;
+    if(isDruid)domains=domains.filter(function(d){return ['air','animal','earth','fire','plant','water'].indexOf(String(d.domain_id))>=0;});
+    else if(identity.cleric_source==='deity'){
+      if(!deity)return '<section class="dnd35-spell-card"><h3>Domínios do Clérigo</h3><p class="dnd35-note">Escolha uma divindade para liberar os domínios correspondentes.</p></section>';
       domains=domains.filter(function(d){return (deity.domains||[]).indexOf(String(d.domain_id))>=0;});
     }
-    var locked=choices.filter(function(x){return x&&x.domain_id;}).length===2,panel='<section class="dnd35-spell-card" style="margin:10px 0"><h3>Domínios do clérigo</h3><p class="dnd35-spell-meta">Escolha dois domínios. Cada círculo que seu clérigo pode conjurar recebe um espaço extra para preparar uma magia de um desses domínios; esse espaço é gasto separadamente.</p>';
+    var locked=choices.filter(function(x){return x&&x.domain_id;}).length===slotCount,panel='<section class="dnd35-spell-card" style="margin:10px 0"><h3>'+ (isDruid?'Domínio do Druida':'Domínios do Clérigo')+'</h3><p class="dnd35-spell-meta">'+(isDruid?'Como vínculo com a natureza, você escolheu receber um domínio. O domínio concede seu poder e um espaço adicional por círculo para preparar uma magia desse domínio.':'Escolha dois domínios. Cada círculo que seu clérigo pode conjurar recebe um espaço extra para preparar uma magia de um desses domínios; esse espaço é gasto separadamente.')+'</p>';
     if(state.domainError||!domains.length||!rows.length)return panel+'<p class="dnd35-warning">'+esc(state.domainError||'Catálogo de domínios indisponível.')+'</p></section>';
-    for(var slot=1;slot<=2;slot++){
+    for(var slot=1;slot<=slotCount;slot++){
       var chosen=selected[slot-1]||'',domain=domains.find(function(d){return String(d.domain_id)===chosen;});
-      panel+='<label class="dnd35-spell-controls">Domínio '+slot+' <select data-domain-choice="'+slot+'" '+(locked&&!state.criacao?'disabled':'')+'><option value="">Escolha um domínio</option>'+domains.map(function(d){var id=String(d.domain_id);return '<option value="'+esc(id)+'"'+(id===chosen?' selected':'')+'>'+esc(d.name)+'</option>';}).join('')+'</select></label>';
+      panel+='<label class="dnd35-spell-controls">'+(isDruid?'Domínio':'Domínio '+slot)+' <select data-domain-choice="'+slot+'" '+(locked&&!state.criacao?'disabled':'')+'><option value="">Escolha '+(isDruid?'um domínio':'um domínio')+'</option>'+domains.map(function(d){var id=String(d.domain_id);return '<option value="'+esc(id)+'"'+(id===chosen?' selected':'')+'>'+esc(d.name)+'</option>';}).join('')+'</select></label>';
       if(domain&&domain.granted_power_summary)panel+='<p class="dnd35-spell-meta"><b>'+esc(domain.name)+' · Poder concedido:</b> '+esc(domain.granted_power_summary)+'</p>';
     }
-    if(selected.filter(Boolean).length===2&&selected[0]!==selected[1]){
+    if(selected.filter(Boolean).length===slotCount&&(isDruid||selected[0]!==selected[1])){
       var prep=Array.isArray(s.dominioPreparadas)?s.dominioPreparadas:[];
       panel+='<div class="dnd35-grimoire-guide"><b>Preparação dos espaços de domínio</b><br>Selecione uma magia de domínio para cada círculo disponível. Uma magia já gasta continua consumida até o descanso diário.</div>';
       for(var circle=1;circle<=avail.max;circle++){
@@ -2146,7 +2147,7 @@ function dnd35WeaponProficient(state,weaponName){
         panel+='<label class="dnd35-spell-controls">Espaço de domínio · círculo '+circle+' <select data-domain-prepared-level="'+circle+'"><option value="">Não preparar</option>'+options+'</select></label>';
         if(existing&&current)panel=panel.replace('data-domain-prepared-level="'+circle+'">','data-domain-prepared-level="'+circle+'" data-selected-domain-spell="'+esc(current)+'">');
       }
-    }else panel+='<p class="dnd35-note">Escolha dois domínios diferentes para ver e preparar as magias de domínio.</p>';
+    }else panel+='<p class="dnd35-note">Escolha '+(isDruid?'um domínio':'dois domínios diferentes')+' para ver e preparar as magias de domínio.</p>';
     panel+='</section>';return panel;
   }
   function dnd35GrimoireQuotaSummary(state,attrs){
