@@ -220,3 +220,44 @@ Nenhum registro de campanha, personagem, token, log ou combate foi alterado. As 
 7. Não foi possível confirmar neste ambiente o deploy público do GitHub Pages nem comportamento após atualização de cache.
 
 Nenhum personagem, ficha, campanha, token ou log de jogo real foi alterado. Todas as fichas de teste foram revertidas.
+
+## Continuação de interface e acesso à mesa — 2026-11-03
+
+### Mesa e jogadores
+- O painel do dado foi movido para a coluna esquerda, abaixo do chat; a largura da coluna lateral foi mantida. CSS ajusta chat e dado como painéis empilhados.
+- Cards de fichas/tokens foram redimensionados para proporção vertical de carta de deck, com frente/verso e flip ao clicar em qualquer área do card. O botão de flip foi ocultado.
+- A barra inferior foi compactada para acompanhar a altura das cartas.
+- Foi adicionado o fluxo “Alterar imagem do token” em Mesa e Jogadores: lista os tokens publicados, permite escolher um e abrir o seletor de arquivo local. A imagem é gravada no Storage e atualizada no CBA.
+- HUD sobre o token no tabuleiro (nome, CA/PV e barra) foi ocultado por CSS para deixar a imagem como elemento principal; informações de combate continuam nos cards.
+- A exclusão da campanha foi removida do agrupamento genérico de ações e só aparece ao proprietário da campanha, identificado por campaigns.owner_id.
+
+### Ficha e equipamento inicial
+- A escolha de Ouro inicial agora rola automaticamente 3d4, multiplica o total por 10 e mostra cada resultado em dados separados.
+- Catálogo e kit inicial passaram a usar cards/faixas com categoria, preço, peso/quantidade e descrição disponível.
+- Cards de talentos passam a priorizar a descrição longa do catálogo SRD quando disponível e exibem pré-requisitos quando presentes.
+
+### Lobby e acesso
+- Adicionado botão de engrenagem nos cards de campanha, exclusivo do criador.
+- O fluxo de configurações permite renomear a mesa, manter/ativar/desativar código de acesso, trocar a capa e iniciar exclusão da campanha.
+- O jogador que clica em uma mesa sem proteção é incluído diretamente e segue para a seleção de ficha; mesas protegidas pedem o código antes da seleção.
+- RPCs atualizar_configuracoes_campanha, entrar_campanha_aberta e entrar_campanha_com_codigo foram aplicadas com SECURITY DEFINER, search_path fixo e execução concedida somente a authenticated. A entrada por código está vinculada ao ID da mesa clicada, evitando entrar acidentalmente em outra campanha.
+- Migrations versionadas: 20261103005352_campaign_access_settings_and_open_join e 20261103005530_campaign_join_code_scoped.
+- Verificação de privilégios: anon não executa as novas RPCs; authenticated executa.
+
+### Validação e limites desta entrega
+- Scripts inline de mesa.html, ficha.html e lobby.html passaram em validação sintática JavaScript após as alterações.
+- O deploy de Pages do commit 3e45bd936eb1bb9f8e6e80c6cc8e405591f80d20 concluiu com sucesso. Os commits posteriores de layout, lobby e acesso ainda estavam em fila/execução no momento da auditoria.
+- A alteração de 3d4 foi feita conforme a regra solicitada; não substitui a validação de kits de equipamento por raça/classe com referências completas do livro.
+- A interface de dados foi reposicionada, mas precisa de inspeção visual em navegador real para confirmar proporções em diferentes resoluções.
+
+### Pendências que permanecem abertas
+1. Reproduzir e corrigir o carregamento infinito da ficha em sessão autenticada; sintaxe estática não comprova o fluxo de runtime.
+2. Redesenhar e testar o fluxo de perícias do jogador e o fluxo de conjuração com interfaces específicas por classe.
+3. Classificar cards de monstros por ND/tipo, completar tradução pt-BR e apresentar resumo tático de flip antes de adicionar ao CBA.
+4. Completar kits recomendados segundo raça e classe com fontes SRD e verificar cada combinação; hoje o catálogo de pacotes é indexado por classe.
+5. Fazer teste E2E com Mestre e múltiplos jogadores, Realtime e rolagens simultâneas em sessão real. O backend atual da iniciativa envia um único pedido para todos os personagens esperados, mas a experiência de várias contas ainda precisa ser validada.
+6. Implementar o resolver genérico para os 607 efeitos de magia e mecânicas das 131 características de classe.
+7. Validar mobile/desktop visualmente e corrigir componentes que ainda usam variações azuis fora da paleta padrão.
+8. Confirmar deploy dos commits mais recentes e testar os fluxos de senha, acesso aberto, alteração de capa/nome e exclusão com contas de criador/jogador separadas.
+
+Nenhum personagem, ficha, campanha, token ou log real foi editado durante os testes desta continuação. As RPCs de configuração e entrada foram aplicadas, mas não foram usadas para alterar campanhas reais.
