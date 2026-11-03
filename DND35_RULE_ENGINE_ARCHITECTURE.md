@@ -118,3 +118,21 @@ Pendências remanescentes de produto, não de auditoria de fonte: executar a mat
 A validação ponta a ponta em transação isolada encontrou e corrigiu referências legadas ao antigo modelo de tokens. As RPCs `attack`, `start_combat`, `add_monster_to_scene`, `apply_damage`, `apply_heal`, `combat_set_turn`, `set_turn`, `end_combat` e `move_token` agora usam `tokens.col/row`, `srd_character_sheets`, `monster_instances` e `srd_monsters`. A FK de `monster_instances.monster_id` também aponta para `srd_monsters`.
 
 Teste transacional executado com autenticação GM simulada: inclusão temporária de dois monstros SRD, início de combate, iniciativa, ataque, dano, cura e encerramento; todos os registros foram revertidos com ROLLBACK. O teste retornou ataque válido, defesa numérica, atualização de PV/HP e encerramento OK. Quando a fonte não fornece uma expressão de dano segura, o resultado informa dano pendente em vez de inventá-lo.
+
+## Política obrigatória de dados e rolagens
+
+Toda rolagem de jogo é feita manualmente no Dice pelo jogador ou pelo Mestre. O backend recebe os resultados, valida quantidade e faces permitidas e calcula consequências. É proibido gerar automaticamente d20, dano, cura ou dado de vida para substituir a rolagem física. A única aleatoriedade interna permitida nesta etapa é a atribuição aleatória dos resultados manuais do Mestre aos tokens NPC/monstro, conforme a regra de iniciativa aprovada.
+
+Já foram migrados para esse modelo: iniciativa de jogadores e Mestre, ouro inicial, dado de vida ao subir de nível, Míssil Mágico, curas de magias de alvo único/múltiplos alvos e poções de cura. Endpoints antigos que rolavam automaticamente foram revogados para usuários autenticados.
+
+## Criação de personagem e equipamento
+
+- A escolha entre kit recomendado e compra com ouro é exclusiva.
+- A loja inicial é paginada e filtrável por categoria; itens mágicos, poções e pergaminhos ficam fora da compra inicial padrão.
+- Equipamentos recebidos entram na mochila sem autoequipamento. O jogador decide o que equipar.
+- Peso do catálogo SRD é expresso em libras (lb), não quilogramas.
+- A implementação de capacidade de carga, penalidades por carga e todos os modificadores de equipamento ainda precisa ser concluída e testada.
+
+## Grimório inicial do Mago
+
+O Mago generalista começa com todos os truques disponíveis no catálogo e 3 + bônus de Inteligência magias de 1º círculo. A validação existe no cliente e no RPC de salvamento. Especialização, escolas proibidas, cópia/transcrição de pergaminhos e progressão completa de aprendizado ainda estão pendentes.
