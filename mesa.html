@@ -882,6 +882,10 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
 .token-image-inline-actions button:disabled{opacity:.4;cursor:not-allowed}
 .token-image-inline-actions button:last-child{background:#1b2419;color:#e8d39d}
 
+
+.skill-roll-card .skill-roll-rule{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;color:#d6c9aa;font-size:10px;line-height:1.35;text-align:left}
+.skill-roll-card .skill-roll-formula{color:#e8c977;font-size:9px;line-height:1.25;text-align:left}
+
 </style>
 </head>
 <body>
@@ -1801,6 +1805,36 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(race==='halfling'&&['escalar','srd35_skill_jump','ouvir','mover_silenciosamente'].indexOf(skill)>=0)return 2;
     return 0;
   }
+  function resumoPericiaPt35(nome,descricao){
+    var n=String(nome||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();
+    var summaries={
+      'acrobacia':'Permite amortecer quedas, atravessar o espaço de inimigos e realizar movimentos acrobáticos sem provocar ataques de oportunidade.',
+      'adestrar animais':'Comandar um animal, ensinar truques, treiná-lo para uma função ou controlar uma montaria.',
+      'arte da fuga':'Escapar de cordas, algemas, redes, espaços apertados e agarrões.',
+      'atletismo':'Escalar superfícies, muros, cordas e outras estruturas. A dificuldade depende da inclinação e das condições da superfície.',
+      'blefar':'Mentir, disfarçar a verdade, criar disfarces verbais e fintar durante o combate.',
+      'concentracao':'Manter a concentração ao sofrer dano, enfrentar distrações ou conjurar sob pressão.',
+      'diplomacia':'Influenciar atitudes, negociar, obter informações e resolver conflitos por conversa.',
+      'disfarces':'Alterar a aparência para se passar por outra pessoa ou ocultar a própria identidade.',
+      'equilibrio':'Mover-se por superfícies estreitas ou instáveis sem cair.',
+      'esconder se':'Ocultar-se usando cobertura, sombras e camuflagem.',
+      'furtividade':'Mover-se silenciosamente para não ser percebido.',
+      'identificar magia':'Identificar magias durante a conjuração ou reconhecer efeitos mágicos já ativos.',
+      'intimidar':'Influenciar alguém por meio de ameaças, pressão ou demonstração de força.',
+      'natação':'Nadar, manter-se à tona e avançar em águas calmas ou perigosas.',
+      'observar':'Perceber criaturas, objetos, detalhes e ameaças à distância ou escondidos.',
+      'ouvir':'Detectar sons, conversas, passos e criaturas que tentam se aproximar sem serem notadas.',
+      'prestidigitacao':'Executar truques manuais, esconder objetos e realizar ações discretas com as mãos.',
+      'procurar':'Examinar uma área para encontrar portas secretas, armadilhas, pistas e objetos escondidos.',
+      'saltar':'Vencer distâncias, obstáculos e alturas com um salto. A corrida inicial pode reduzir a dificuldade.',
+      'sentir motivacao':'Perceber blefes, avaliar intenções e notar quando alguém está sendo influenciado magicamente.',
+      'sobrevivencia':'Orientar-se na natureza, encontrar alimento e água, prever o clima e seguir rastros quando permitido.',
+      'usar cordas':'Dar nós, fixar ganchos, amarrar criaturas e avaliar a segurança de uma corda.',
+      'usar instrumento magico':'Ativar pergaminhos, varinhas e outros itens mágicos mesmo sem possuir normalmente a magia ou habilidade exigida.'
+    };
+    var summary=summaries[n]||'Use esta perícia quando a ação exigir treinamento ou conhecimento específico. O Mestre define a dificuldade (CD) conforme a situação e as condições do ambiente.';
+    return summary;
+  }
   async function abrirTestePericiaJogador(){
     var p=personagemDoTurnoDoJogador()||personagens.find(function(x){return x.ch.user_id===eu.id;});
     if(!p){alert('Nenhuma ficha própria disponível.');return;}
@@ -1834,8 +1868,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       var name=document.createElement('strong');name.textContent=option.sk.nome;
       var meta=document.createElement('span');meta.textContent=option.ability+' · '+(option.rank?option.rank+' graduações':'sem graduação')+(option.classBonus?' · perícia de classe': '');
       var total=document.createElement('b');total.textContent=(option.bonus>=0?'+':'')+option.bonus;
-      var detail=document.createElement('small');detail.textContent='1d20 '+(option.bonus>=0?'+':'')+option.bonus+' = resultado final'+(option.racialBonus?' · bônus racial '+(option.racialBonus>=0?'+':'')+option.racialBonus:'');
-      card.append(name,meta,total,detail);
+      var rule=document.createElement('small');rule.className='skill-roll-rule';rule.textContent=resumoPericiaPt35(option.sk.nome,option.sk.descricao);var detail=document.createElement('small');detail.className='skill-roll-formula';detail.textContent='Teste: 1d20 '+(option.bonus>=0?'+':'')+option.bonus+' · bônus total'+(option.racialBonus?' · bônus racial '+(option.racialBonus>=0?'+':'')+option.racialBonus:'');
+      card.append(name,meta,total,rule,detail);
       card.onclick=function(){
         modal.remove();
         abrirDado('Perícia · '+option.sk.nome,function(d20){
