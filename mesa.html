@@ -3895,7 +3895,7 @@ async function abrirModalEquipamentos(){
         if (sessaoAtual !== rollSessionId || rollResultReceived) return;
         try {
           var targetOrigin = new URL(iframe.src, window.location.href).origin;
-          var payload={action:aguardarClique?'prepareRoll':'roll'};if(diceExpression)payload.expression=String(diceExpression);iframe.contentWindow.postMessage(payload,targetOrigin);
+          var payload={action:aguardarClique?'prepareRoll':'roll'};if(diceExpression)payload.expression=String(diceExpression);iframe.contentWindow.postMessage(payload,targetOrigin);if(!aguardarClique){[180,520].forEach(function(delay){window.setTimeout(function(){if(sessaoAtual===rollSessionId&&!rollResultReceived&&document.getElementById('dado-iframe-overlay').style.display==='flex')iframe.contentWindow.postMessage(payload,targetOrigin);},delay);});}
         } catch (err) {
           console.error('Não foi possível iniciar o dado incorporado:', err);
           fecharDado();
