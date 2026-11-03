@@ -31,9 +31,18 @@
 - Correção de regra do Bárbaro: alfabetização custa 2 pontos de perícia uma única vez e abrange os idiomas que o personagem já sabe falar; não é cobrada por idioma. A fadiga após a Fúria permanece até 8 horas de descanso completo, salvo Fúria Incansável — não termina automaticamente com o encontro.
 - Verificação de dados SRD: progressão do Bárbaro contém Fúria 1/2/3/4/5/6 por dia nos níveis 1/4/8/12/16/20, Fúria Maior no 11, Fúria Incansável no 17 e Fúria Poderosa no 20. Os registros estão verificados contra a progressão SRD; os efeitos ativos ainda não estão conectados ao motor.
 
+## Integração inicial de condições na Mesa
+
+- Criadas funções seguras no Supabase para o Mestre aplicar e remover condições D&D 3.5 por campanha, com validação de autenticação, papel de Mestre, alvo pertencente à campanha e condição existente no catálogo SRD.
+- A aplicação registra rodada inicial, duração em rodadas (ou duração indefinida) e metadados de origem; reaplicar a mesma condição ao mesmo alvo substitui a instância ativa anterior para evitar duplicação acidental.
+- O menu contextual de cada token agora oferece **Administrar condições D&D 3.5** para o Mestre, tanto em personagens jogadores quanto em NPCs/monstros. A interface consulta o catálogo SRD, permite aplicar ou remover condições e publica o evento no chat/log.
+- O catálogo e os registros são os já existentes em `srd_conditions` e `srd_campaign_conditions`; não foi criado um estado paralelo na ficha.
+
+**Limite desta entrega:** esta etapa permite administrar e persistir condições, mas ainda não aplica automaticamente todos os modificadores nas jogadas de ataque, CA, salvamentos, perícias, deslocamento, ações e ataques de oportunidade. A expiração automática por rodada também precisa ser conectada ao avanço de turno. Portanto, condições continuam sendo um módulo parcialmente implementado.
+
 ## Testes executados
 
-- Sintaxe JavaScript de `ficha.html` e `mesa.html`: sem erros.
+- Sintaxe JavaScript de `ficha.html` e `mesa.html`: sem erros.\n- Sintaxe do script atualizado de `mesa.html`: validada após a inclusão do gerenciador de condições.\n- Funções RPC de aplicar/remover condições: criação confirmada no Supabase; teste funcional autenticado ainda pendente.
 - Riqueza inicial: 11/11 classes conferidas.
 - Movimento: 8 cenários de Bárbaro (anão/humano, sem armadura, armadura média/pesada e carga pesada) aprovados.
 - Movimento do Monge: progressão de nível 3 e 6 conferida.
