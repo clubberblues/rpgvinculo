@@ -2305,7 +2305,7 @@ function dnd35WeaponProficient(state,weaponName){
     renderizarFichaSRD35();
   }
   async function carregarFichaSRD35(characterId,sheet) {
-    if(!Object.prototype.hasOwnProperty.call(sheet,'pericias')||!Object.prototype.hasOwnProperty.call(sheet,'talentos')) throw new Error('Migração SRD pendente: faltam as colunas srd_character_sheets.pericias e/ou talentos. Aplique a migração SRD antes de abrir esta ficha.');
+    if(!Object.prototype.hasOwnProperty.call(sheet,'pericias')||!Object.prototype.hasOwnProperty.call(sheet,'talentos')||!Object.prototype.hasOwnProperty.call(sheet,'idiomas_conhecidos')) throw new Error('Migração SRD pendente: faltam colunas de perícias, talentos ou idiomas_conhecidos. Aplique as migrações SRD antes de abrir esta ficha.');
     var results=await Promise.all([sb.from('characters').select('*').eq('id',characterId).single(),sb.from('srd_races').select('*').eq('id',String(sheet.raca_id)).single(),sb.from('srd_classes').select('*').eq('id',String(sheet.classe_id)).single(),carregarCatalogosSRD35()]);
     if(results[0].error)throw new Error('Personagem: '+results[0].error.message);
     if(results[1].error)throw new Error('Raça SRD: '+results[1].error.message);
