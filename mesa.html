@@ -1830,7 +1830,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       if(!parsed){alert('O ataque acertou, mas a expressão de dano da arma não pôde ser interpretada: '+rawDamage+'. O Mestre pode aplicar o dano manualmente.');return;}
       var diceCount=Math.max(1,Math.min(20,Number(parsed[1]))),sides=Number(parsed[2]),baseFlat=Number(parsed[3]||0),multiplier=isCritical?critical.multiplier:1;
       var rangedStrengthDamage=type==='atk-dist'&&weapon&&weapon.detalhes&&weapon.detalhes.ranged_damage_uses_strength===true;
-      var strengthDamage=(type==='atk-corpo'||rangedStrengthDamage)?strengthModifier:0,flat=(baseFlat+strengthDamage+powerDamage+weaponSpecializationDamage)*multiplier,diceTotal=diceCount*multiplier;
+      var strengthDamage=type==='atk-corpo'?(weapon&&weapon.detalhes&&weapon.detalhes.weapon_two_handed===true?Math.floor(strengthModifier*1.5):strengthModifier):(rangedStrengthDamage?strengthModifier:0),flat=(baseFlat+strengthDamage+powerDamage+weaponSpecializationDamage)*multiplier,diceTotal=diceCount*multiplier;
       var formula=diceTotal+'d'+sides+(flat>0?'+'+flat:flat<0?String(flat):''),critLabel=isCritical?' · CRÍTICO x'+multiplier:'';
       async function registrarDano(total,rollDescription){
         var dano=Math.max(1,Math.trunc(Number(total)));
