@@ -1127,6 +1127,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         <div class="cba-preview-empty" id="cba-preview-empty">Carregue um mapa, ajuste o grid e posicione as criaturas.</div>
         <div class="cba-grid-lines" id="cba-grid-lines"></div>
         <div class="cba-token-layer" id="cba-preview-tokens"></div>
+        <aside class="cba-rotation-tool" id="cba-rotation-tool" hidden aria-label="Orientação do token"><div class="cba-rotation-head"><strong>Orientação</strong><span id="cba-token-rotation-label">0°</span></div><input id="cba-token-rotation" type="range" min="0" max="359" step="1" value="0" aria-label="Girar token de 0 a 359 graus"><button type="button" id="cba-token-rotation-reset">Zerar direção</button><small>Selecione um token e ajuste o ângulo. A direção será salva ao publicar o campo de batalha.</small></aside>
         <div id="cba-distancia-preview" role="status" aria-live="polite">0,0 m</div>
       </div>
     </div>
@@ -1249,6 +1250,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   var personagemPVSelecionado = null;
   var cbaZoom = 1;
   var cbaPinchInProgress = false;
+  var cbaRotationTokenKey = null;
   var inventarioPersonagemAtivo = null;
   var cbaMonsterCatalog = [];
   var cbaMonsterCatalogLoaded = false;
@@ -1534,7 +1536,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     combatPanel.innerHTML='<h3>CONTROLE DO TURNO</h3><p id="turno-controle-status">Aguardando a iniciativa.</p><div id="iniciativa-acoes-mestre"></div>';
     el.appendChild(combatPanel);
     if(economyPanel)combatPanel.appendChild(economyPanel);
-    if(tokenMenu)el.appendChild(tokenMenu);var roster=document.createElement('section');roster.className='painel painel-aventureiros';roster.setAttribute('aria-label','Aventureiros da mesa');roster.innerHTML='<div class="painel-cab">AVENTUREIROS</div><div class="painel-corpo" id="cards-strip" aria-label="Cards de personagens, NPCs e monstros"></div>';var mesaFooter=document.querySelector('.mesa-footer');if(mesaFooter)mesaFooter.appendChild(roster);else el.appendChild(roster);var diceDock=document.getElementById('mesa-dice-dock');if(diceOverlay&&diceDock)diceDock.appendChild(diceOverlay);
+    if(tokenMenu)el.appendChild(tokenMenu);var roster=document.createElement('section');roster.className='painel painel-aventureiros';roster.setAttribute('aria-label','Aventureiros da mesa');roster.innerHTML='<div class="painel-cab">AVENTUREIROS</div><div id="cards-strip" class="cards-strip" aria-label="Cards de personagens, NPCs e monstros"></div>';var mesaFooter=document.querySelector('.mesa-footer');if(mesaFooter)mesaFooter.appendChild(roster);else el.appendChild(roster);var diceDock=document.getElementById('mesa-dice-dock');if(diceOverlay&&diceDock)diceDock.appendChild(diceOverlay);
     if(document.getElementById('painel-iniciativa'))renderizarIniciativa(combatDataState);
   }
 
@@ -2553,6 +2555,7 @@ async function abrirModalEquipamentos(){
             var img = document.createElement('img');
             img.src = urlImagem.href;
             img.alt = '';
+            img.style.transform='rotate('+(((Number(item.rotation)||0)%360+360)%360)+'deg)';
             token.appendChild(img);
             imagemValida = true;
             img.onerror = function(){
@@ -3190,7 +3193,7 @@ async function abrirModalEquipamentos(){
     cbaState.tokens.push({
       key:'cba-'+Date.now()+'-'+Math.random().toString(36).slice(2,8),
       id:String(id),nome:String(nome||'Criatura'),imagem:imagem||'',tipo:tipo==='monstro'?'monstro':'npc',
-      detalhe:detalhe||'',gridX:gridX,gridY:gridY,x:gridX*cell,y:gridY*cell
+      detalhe:detalhe||'',rotation:0,gridX:gridX,gridY:gridY,x:gridX*cell,y:gridY*cell
     });
     var added=cbaState.tokens[cbaState.tokens.length-1];if(tipo==='monstro'&&monster){added.monsterId=String(monster.id);added.hp=monster.hp;added.maxHp=monster.maxHp;added.dexMod=monster.dexMod;added.ac=monster.ac;added.monsterStats=monster.monsterStats;added.srdSourceUrl=monster.srdSourceUrl;}
     fecharSubModaisCBA();
@@ -3311,7 +3314,7 @@ async function abrirModalEquipamentos(){
     var tokens = Array.isArray(data.tokens) ? data.tokens.map(function(t,index){
       var gx = Number.isFinite(Number(t.gridX)) ? Math.max(0,Math.floor(Number(t.gridX))) : Math.max(0,Math.round((Number(t.x)||0)/gridSize));
       var gy = Number.isFinite(Number(t.gridY)) ? Math.max(0,Math.floor(Number(t.gridY))) : Math.max(0,Math.round((Number(t.y)||0)/gridSize));
-      return {key:String(t.key||('cba-sync-'+String(t.id||index)+'-'+index)),id:String(t.id==null?index:t.id),nome:String(t.nome||'Criatura'),imagem:String(t.imagem||''),tipo:t.tipo==='monstro'?'monstro':(t.tipo==='player'?'player':'npc'),detalhe:String(t.detalhe||''),hp:t.hp==null||t.hp===''?null:(Number.isFinite(Number(t.hp))?Number(t.hp):null),maxHp:t.maxHp==null||t.maxHp===''?null:(Number.isFinite(Number(t.maxHp))?Number(t.maxHp):null),dexMod:t.dexMod==null?null:(Number.isFinite(Number(t.dexMod))?Math.max(-20,Math.min(20,Math.trunc(Number(t.dexMod)))):null),monsterId:t.monsterId==null?null:String(t.monsterId),ac:valorCA35(t.ac!=null?t.ac:(t.monsterStats&&t.monsterStats.ca)),baseAc:valorCA35(t.baseAc!=null?t.baseAc:(t.monsterStats&&t.monsterStats.ca)),sourceCharacterId:t.sourceCharacterId==null?null:String(t.sourceCharacterId),attackBonus:t.attackBonus==null?null:Number(t.attackBonus),damageDice:String(t.damageDice||''),spellState:t.spellState&&typeof t.spellState==='object'?t.spellState:null,monsterStats:t.monsterStats&&typeof t.monsterStats==='object'?t.monsterStats:null,srdSourceUrl:/^https?:\/\//i.test(String(t.srdSourceUrl||''))?String(t.srdSourceUrl):'',gridX:gx,gridY:gy,x:gx*gridSize,y:gy*gridSize};
+      return {key:String(t.key||('cba-sync-'+String(t.id||index)+'-'+index)),id:String(t.id==null?index:t.id),nome:String(t.nome||'Criatura'),imagem:String(t.imagem||''),tipo:t.tipo==='monstro'?'monstro':(t.tipo==='player'?'player':'npc'),detalhe:String(t.detalhe||''),hp:t.hp==null||t.hp===''?null:(Number.isFinite(Number(t.hp))?Number(t.hp):null),maxHp:t.maxHp==null||t.maxHp===''?null:(Number.isFinite(Number(t.maxHp))?Number(t.maxHp):null),dexMod:t.dexMod==null?null:(Number.isFinite(Number(t.dexMod))?Math.max(-20,Math.min(20,Math.trunc(Number(t.dexMod)))):null),monsterId:t.monsterId==null?null:String(t.monsterId),ac:valorCA35(t.ac!=null?t.ac:(t.monsterStats&&t.monsterStats.ca)),baseAc:valorCA35(t.baseAc!=null?t.baseAc:(t.monsterStats&&t.monsterStats.ca)),sourceCharacterId:t.sourceCharacterId==null?null:String(t.sourceCharacterId),attackBonus:t.attackBonus==null?null:Number(t.attackBonus),damageDice:String(t.damageDice||''),rotation:((Number(t.rotation)||0)%360+360)%360,spellState:t.spellState&&typeof t.spellState==='object'?t.spellState:null,monsterStats:t.monsterStats&&typeof t.monsterStats==='object'?t.monsterStats:null,srdSourceUrl:/^https?:\/\//i.test(String(t.srdSourceUrl||''))?String(t.srdSourceUrl):'',gridX:gx,gridY:gy,x:gx*gridSize,y:gy*gridSize};
     }) : [];
     var image = typeof data.background === 'string' && /^https?:\/\//i.test(data.background) ? data.background : '';
     var ratio = Number(data.gridRatio);
@@ -3321,7 +3324,7 @@ async function abrirModalEquipamentos(){
   }
 
   function serializarEstadoCBA(scene){
-    return {version:1,background:scene.backgroundUrl||'',imgScale:scene.imgScale,gridSize:scene.gridSize,gridRatio:scene.gridRatio,gridOpacity:scene.gridOpacity,tokens:scene.tokens.map(function(t){return {key:String(t.key),id:String(t.id),nome:String(t.nome),imagem:String(t.imagem||''),tipo:t.tipo==='monstro'?'monstro':(t.tipo==='player'?'player':'npc'),detalhe:String(t.detalhe||''),hp:t.hp==null?null:Number(t.hp),maxHp:t.maxHp==null?null:Number(t.maxHp),dexMod:t.dexMod==null?null:Number(t.dexMod),monsterId:t.monsterId==null?null:String(t.monsterId),ac:t.ac==null?null:Number(t.ac),baseAc:t.baseAc==null?null:Number(t.baseAc),sourceCharacterId:t.sourceCharacterId==null?null:String(t.sourceCharacterId),attackBonus:t.attackBonus==null?null:Number(t.attackBonus),damageDice:String(t.damageDice||''),spellState:t.spellState&&typeof t.spellState==='object'?t.spellState:null,monsterStats:t.monsterStats&&typeof t.monsterStats==='object'?t.monsterStats:null,srdSourceUrl:/^https?:\/\//i.test(String(t.srdSourceUrl||''))?String(t.srdSourceUrl):'',gridX:Number(t.gridX)||0,gridY:Number(t.gridY)||0};})};
+    return {version:1,background:scene.backgroundUrl||'',imgScale:scene.imgScale,gridSize:scene.gridSize,gridRatio:scene.gridRatio,gridOpacity:scene.gridOpacity,tokens:scene.tokens.map(function(t){return {key:String(t.key),id:String(t.id),nome:String(t.nome),imagem:String(t.imagem||''),tipo:t.tipo==='monstro'?'monstro':(t.tipo==='player'?'player':'npc'),detalhe:String(t.detalhe||''),hp:t.hp==null?null:Number(t.hp),maxHp:t.maxHp==null?null:Number(t.maxHp),dexMod:t.dexMod==null?null:Number(t.dexMod),monsterId:t.monsterId==null?null:String(t.monsterId),ac:t.ac==null?null:Number(t.ac),baseAc:t.baseAc==null?null:Number(t.baseAc),sourceCharacterId:t.sourceCharacterId==null?null:String(t.sourceCharacterId),attackBonus:t.attackBonus==null?null:Number(t.attackBonus),damageDice:String(t.damageDice||''),rotation:((Number(t.rotation)||0)%360+360)%360,spellState:t.spellState&&typeof t.spellState==='object'?t.spellState:null,monsterStats:t.monsterStats&&typeof t.monsterStats==='object'?t.monsterStats:null,srdSourceUrl:/^https?:\/\//i.test(String(t.srdSourceUrl||''))?String(t.srdSourceUrl):'',gridX:Number(t.gridX)||0,gridY:Number(t.gridY)||0};})};
   }
 
   function gravarCBAnaCampanha(data){
@@ -3446,6 +3449,8 @@ async function abrirModalEquipamentos(){
     }
   }
 
+  function selecionarRotacaoCBA(item){if(!ehGM||!item)return;cbaRotationTokenKey=String(item.key);var panel=document.getElementById('cba-rotation-tool'),input=document.getElementById('cba-token-rotation'),label=document.getElementById('cba-token-rotation-label');if(!panel||!input||!label)return;var angle=((Number(item.rotation)||0)%360+360)%360;panel.hidden=false;input.value=String(angle);label.textContent=angle+'°';}
+
   function ligarEventosCBA(){
     var modal = document.getElementById('modal-cba');
     modal.addEventListener('click',function(e){
@@ -3475,6 +3480,10 @@ async function abrirModalEquipamentos(){
     document.getElementById('cba-monstro-regiao').addEventListener('change',renderizarMonstrosCBA);
     fazerArrastavelCBA(document.getElementById('cba-preview-tokens'));
     fazerArrastavelCBA(document.getElementById('cba-token-layer'));
+    var previewLayer=document.getElementById('cba-preview-tokens'),rotationInput=document.getElementById('cba-token-rotation'),rotationReset=document.getElementById('cba-token-rotation-reset');
+    previewLayer.addEventListener('click',function(e){if(Date.now()<suppressTokenClickUntil)return;var el=e.target.closest&&e.target.closest('.token-cba');if(!el)return;var item=cbaState.tokens.find(function(t){return String(t.key)===String(el.dataset.cbaTokenKey);});if(item)selecionarRotacaoCBA(item);});
+    rotationInput.addEventListener('input',function(){var item=cbaState.tokens.find(function(t){return String(t.key)===String(cbaRotationTokenKey);});if(!item)return;item.rotation=((Number(rotationInput.value)||0)%360+360)%360;document.getElementById('cba-token-rotation-label').textContent=item.rotation+'°';renderizarTokensCBA(previewLayer,cbaState);});
+    rotationReset.addEventListener('click',function(){rotationInput.value='0';rotationInput.dispatchEvent(new Event('input',{bubbles:true}));});
     var previewWrap = document.getElementById('cba-preview-wrap');
     var palco = document.getElementById('area-tabuleiro');
     if(window.ResizeObserver){
@@ -4224,7 +4233,9 @@ async function abrirModalEquipamentos(){
     var el=document.getElementById('cards-strip');if(!el)return;
     var ordem=combatDataState&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order:[];
     var active=!!(combatDataState&&combatDataState.active&&ordem.length),turnIndex=Math.max(0,Math.min(Math.max(0,ordem.length-1),Number(combatDataState&&combatDataState.current_turn)||0));
-    var tokens=cbaPublishedState&&Array.isArray(cbaPublishedState.tokens)?cbaPublishedState.tokens:[],cards=[];
+    var tokens=cbaPublishedState&&Array.isArray(cbaPublishedState.tokens)?cbaPublishedState.tokens.slice():[],cards=[],playersOnBoard=Object.create(null);
+    tokens.forEach(function(token){if(token&&token.tipo==='player')playersOnBoard[String(token.id)]=true;});
+    personagens.forEach(function(p){var id=String(p&&p.ch&&p.ch.id||'');if(!id||playersOnBoard[id])return;tokens.push({key:'virtual-player-'+id,id:id,nome:String(p.ch.nome||'Personagem'),imagem:String(p.ch.retrato_url||p.perfil&&p.perfil.avatar_url||''),tipo:'player',_virtual:true});});
     tokens.forEach(function(token,originalIndex){
       if(!token||token.id==null)return;
       var p=token.tipo==='player'?acharPersonagemDoToken(token):null,gmActor=token.tipo!=='player'||!!(p&&ehGM&&p.ch.user_id===eu.id),actorKey=(gmActor?'g:':'p:')+String(token.id);
@@ -4238,7 +4249,7 @@ async function abrirModalEquipamentos(){
       var ms=token.monsterStats||{},attrs=p?(p.sh.atributos||{}):(ms.attributes||{}),attributeText=p?['FOR','DES','CON','INT','SAB','CAR'].map(function(k){return k+' '+Number(attrs[k]||10);}).join(' · '):['Fort '+(ms.fortitude==null?'—':ms.fortitude),'Ref '+(ms.reflexos==null?'—':ms.reflexos),'Von '+(ms.vontade==null?'—':ms.vontade)].join(' · ');
       var selected=p&&alvosSelecionados.indexOf(String(p.ch.id))!==-1?' selecionado-para-teste':'';
       var back='<div class="portrait-back-content"><strong>'+esc(name)+'</strong><span>'+esc(detail)+'</span><span>'+esc(initiative)+'</span><span>'+esc(hpText)+(ac==null?'':' · CA '+ac)+'</span><small>'+esc(attributeText)+'</small><small>'+esc(String(ms.qualidades_especiais||ms.ataques||ms.descricao||'').replace(/<[^>]*>/g,' ').slice(0,180))+'</small><button type="button" class="card-flip-button" data-card-flip aria-label="Voltar ao retrato">↻</button></div>';
-      var html='<article class="card-pers deck-card token-card '+(token.tipo==='monstro'?'monstro':token.tipo==='npc'?'npc':'player-token')+(p&&p.ch.user_id===eu.id?' eu':'')+selected+(activeCard?' turno-ativo':'')+'" data-actor-key="'+esc(actorKey)+'" data-cba-token-key="'+esc(token.key||'')+'"'+(p?' data-char="'+esc(p.ch.id)+'"':'')+' tabindex="0" role="button" aria-label="Retrato de '+esc(name)+'"><div class="card-pers-inner"><div class="card-pers-face card-pers-front portrait-only-front">'+portrait+'</div><div class="card-pers-face card-pers-back">'+back+'</div></div></article>';
+      var html='<article class="card-pers deck-card token-card '+(token.tipo==='monstro'?'monstro':token.tipo==='npc'?'npc':'player-token')+(p&&p.ch.user_id===eu.id?' eu':'')+selected+(activeCard?' turno-ativo':'')+'" data-actor-key="'+esc(actorKey)+'"'+(!token._virtual?' data-cba-token-key="'+esc(token.key||'')+'"':'')+(p?' data-char="'+esc(p.ch.id)+'"':'')+' tabindex="0" role="button" aria-label="Retrato de '+esc(name)+'"><div class="card-pers-inner"><div class="card-pers-face card-pers-front portrait-only-front">'+portrait+'</div><div class="card-pers-face card-pers-back">'+back+'</div></div></article>';
       cards.push({key:actorKey,rank:rank,html:html});
     });
     cards.sort(function(a,b){return a.rank-b.rank;});el.replaceChildren();
@@ -4556,5 +4567,16 @@ html,body,#root{width:100%;height:100%;min-width:0;min-height:0}
 @media(max-height:520px){.mesa{grid-template-rows:48px minmax(0,1fr) 0px 108px!important}.mesa-footer>.painel-aventureiros>.painel-cab{display:none!important}.mesa-footer #cards-strip>.card-pers{flex-basis:165px!important;width:165px!important;min-width:165px!important}}
 </style>
 
+
+<style id="mesa-cards-horizontal-token-rotation">
+.mesa-footer{display:flex!important;flex-direction:column!important;min-width:0!important;min-height:136px!important;height:clamp(136px,19vh,176px)!important;max-height:176px!important;overflow:hidden!important;flex:0 0 clamp(136px,19vh,176px)!important}
+.mesa-footer>.painel-aventureiros{display:flex!important;flex:1 1 auto!important;flex-direction:column!important;min-width:0!important;min-height:0!important;overflow:hidden!important}
+.mesa-footer>.painel-aventureiros>#cards-strip.cards-strip{display:flex!important;flex:1 1 auto!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:stretch!important;justify-content:flex-start!important;gap:9px!important;width:100%!important;min-width:0!important;min-height:0!important;max-height:none!important;overflow-x:auto!important;overflow-y:hidden!important;padding:6px 9px!important}
+#cards-strip>.card-pers{display:block!important;position:relative!important;flex:0 0 clamp(190px,23vw,260px)!important;width:clamp(190px,23vw,260px)!important;min-width:clamp(190px,23vw,260px)!important;max-width:260px!important;height:118px!important;min-height:118px!important;max-height:118px!important}
+#cards-strip>.cards-empty{min-width:220px;align-self:center;color:#c5b995;padding:12px}
+.cba-rotation-tool{position:absolute;right:12px;bottom:12px;z-index:20;width:min(270px,calc(100% - 24px));padding:10px 12px;border:1px solid rgba(201,160,80,.72);border-radius:8px;background:rgba(10,15,20,.92);box-shadow:0 8px 22px #0009;color:#f5ecd6;backdrop-filter:blur(8px)}
+.cba-rotation-tool[hidden]{display:none!important}.cba-rotation-head{display:flex;justify-content:space-between;align-items:center;color:#e8d19a;font:700 12px Cinzel,serif}.cba-rotation-tool input{display:block;width:100%;margin:8px 0;accent-color:#c9a050}.cba-rotation-tool button{border:1px solid #806b42;border-radius:5px;background:#202a20;color:#f5ecd6;padding:5px 8px;font:11px Cinzel,serif}.cba-rotation-tool small{display:block;margin-top:7px;color:#b8b0a0;font:11px 'EB Garamond',serif;line-height:1.25}
+@media(max-width:700px){.mesa-footer{height:132px!important;min-height:132px!important;max-height:132px!important;flex-basis:132px!important}#cards-strip>.card-pers{flex-basis:180px!important;width:180px!important;min-width:180px!important;height:112px!important;min-height:112px!important;max-height:112px!important}}
+</style>
 </body>
 </html>
