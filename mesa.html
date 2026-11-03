@@ -2609,16 +2609,100 @@ async function abrirModalEquipamentos(){
     aplicarImagemCBA(document.getElementById('cba-bg-layer'));
   }
 
+  function fogOcultoParaUsuario(cell,userId){
+    var hidden=Array.isArray(cell&&cell.hiddenFor)?cell.hiddenFor.map(String):[];
+    var revealed=Array.isArray(cell&&cell.revealedFor)?cell.revealedFor.map(String):[];
+    if(hidden.indexOf('all')>=0)return revealed.indexOf(String(userId||''))<0;
+    return hidden.indexOf(String(userId||''))>=0;
+  }
+  function atualizarControlesFogCBA(){
+    var action=document.getElementById('cba-fog-action'),scope=document.getElementById('cba-fog-scope'),player=document.getElementById('cba-fog-player'),toggle=document.getElementById('cba-fog-toggle');
+    if(action)action.value=cbaFogTool.action;
+    if(scope)scope.value=cbaFogTool.scope;
+    if(player){
+      var selected=cbaFogTool.userId,users=Object.create(null);
+      (personagens||[]).forEach(function(p){var uid=String(p&&p.ch&&p.ch.user_id||'');if(!uid)return;var profile=p.perfil||{};users[uid]=String(profile.apelido||profile.nome||p.ch.nome||('Jogador '+uid.slice(0,6)));});
+      player.replaceChildren();
+      Object.keys(users).sort(function(a,b){return users[a].localeCompare(users[b],'pt-BR');}).forEach(function(uid){var option=document.createElement('option');option.value=uid;option.textContent=users[uid];player.appendChild(option);});
+      if(selected&&users[selected])player.value=selected;else if(player.options.length){player.selectedIndex=0;cbaFogTool.userId=player.value;}else cbaFogTool.userId='';
+      player.disabled=cbaFogTool.scope!=='player'||!player.options.length;
+    }
+    if(toggle){toggle.classList.toggle('ativo',!!cbaFogTool.active);toggle.textContent=cbaFogTool.active?'Desativar pincel de névoa':'Ativar pincel de névoa';}
+    var preview=document.getElementById('cba-preview-fog');if(preview)preview.style.pointerEvents=cbaFogTool.active&&(cbaFogTool.scope!=='player'||!!cbaFogTool.userId)?'auto':'none';
+  }
+  function alterarCelulaFogCBA(x,y){
+    if(!ehGM||!cbaState)return false;
+    if(cbaFogTool.scope==='player'&&!cbaFogTool.userId){setStatusCBA('Selecione um jogador para editar a visibilidade.');return false;}
+    if(!Array.isArray(cbaState.fogCells))cbaState.fogCells=[];
+    var index=cbaState.fogCells.findIndex(function(cell){return Number(cell.x)===x&&Number(cell.y)===y;}),cell=index>=0?cbaState.fogCells[index]:{x:x,y:y,hiddenFor:[],revealedFor:[]};
+    if(cbaFogTool.action==='hide'){
+      if(cbaFogTool.scope==='all'){cell.hiddenFor=['all'];cell.revealedFor=[];}
+      else if(cell.hiddenFor.indexOf('all')>=0){cell.revealedFor=cell.revealedFor.filter(function(uid){return uid!==cbaFogTool.userId;});}
+      else if(cell.hiddenFor.indexOf(cbaFogTool.userId)<0)cell.hiddenFor.push(cbaFogTool.userId);
+    }else{
+      if(cbaFogTool.scope==='all'){if(index>=0)cbaState.fogCells.splice(index,1);renderizarFogCBA(document.getElementById('cba-preview-area'),cbaState,true);return true;}
+      if(cell.hiddenFor.indexOf('all')>=0){if(cell.revealedFor.indexOf(cbaFogTool.userId)<0)cell.revealedFor.push(cbaFogTool.userId);}
+      else cell.hiddenFor=cell.hiddenFor.filter(function(uid){return uid!==cbaFogTool.userId;});
+    }
+    if(!cell.hiddenFor.length){if(index>=0)cbaState.fogCells.splice(index,1);}
+    else if(index>=0)cbaState.fogCells[index]=cell;else cbaState.fogCells.push(cell);
+    renderizarFogCBA(document.getElementById('cba-preview-area'),cbaState,true);
+    return true;
+  }
+  async function salvarFogCBA(){
+    if(!ehGM||!cbaState)return;
+    try{
+      var preview=document.getElementById('cba-preview-area').getBoundingClientRect(),url=await urlPublicaFundoCBA();
+      var ratio=preview.width>0?cbaState.gridSize/preview.width:(cbaState.gridRatio||null);
+      var publishScene=Object.assign({},cbaState,{backgroundUrl:url||cbaState.backgroundUrl,gridRatio:ratio});
+      var saved=await gravarCBAnaCampanha(serializarEstadoCBA(publishScene));
+      cbaState.backgroundUrl=publishScene.backgroundUrl;cbaState.gridRatio=ratio;
+      if(url&&cbaState.backgroundObjectUrl){URL.revokeObjectURL(cbaState.backgroundObjectUrl);cbaState.backgroundObjectUrl='';cbaState.publishedBackgroundObjectUrl='';}
+      campanha.cba_data=saved;cbaPublishedState=normalizarCBAData(saved);aplicarCBAnaMesa(saved,false);
+      setStatusCBA('Névoa de guerra salva e sincronizada com a mesa.');
+    }catch(error){console.error('Falha ao salvar névoa de guerra:',error);setStatusCBA('Não foi possível salvar a névoa: '+(error.message||error));}
+  }
+  function renderizarFogCBA(container,scene,isPreview){
+    if(!container)return;
+    var id=isPreview?'cba-preview-fog':'cba-live-fog',layer=document.getElementById(id),tokenLayer=document.getElementById(isPreview?'cba-preview-tokens':'cba-token-layer');
+    if(!layer){layer=document.createElement('div');layer.id=id;layer.className='cba-fog-layer';layer.setAttribute('aria-label','Névoa de guerra');var parent=tokenLayer&&tokenLayer.parentNode?tokenLayer.parentNode:container;parent.insertBefore(layer,tokenLayer||null);}
+    layer.replaceChildren();
+    var active=!!(isPreview&&ehGM&&cbaFogTool.active&&document.getElementById('modal-cba').classList.contains('ativo'));
+    layer.style.pointerEvents=active&&(cbaFogTool.scope!=='player'||!!cbaFogTool.userId)?'auto':'none';
+    if(scene&&Array.isArray(scene.fogCells)&&scene.fogCells.length){
+      var cellSize=tokenLayer?tamanhoCelulaLayerCBA(tokenLayer,scene):Number(scene.gridSize)||50,uid=String(eu&&eu.id||'');
+      scene.fogCells.forEach(function(cell){
+        var hidden=isPreview?!!(cell.hiddenFor&&cell.hiddenFor.length):(!ehGM&&fogOcultoParaUsuario(cell,uid));
+        if(!hidden)return;
+        var tile=document.createElement('div');tile.className='cba-fog-cell';
+        tile.style.left=(Number(cell.x)||0)*cellSize-2+'px';tile.style.top=(Number(cell.y)||0)*cellSize-2+'px';
+        tile.style.width=cellSize+4+'px';tile.style.height=cellSize+4+'px';
+        tile.title=isPreview?'Área oculta para jogadores':'';
+        layer.appendChild(tile);
+      });
+    }
+    if(active&&layer.dataset.bound!=='1'){
+      layer.dataset.bound='1';
+      var painting=null,lastCell='';
+      function point(e){var bounds=layer.getBoundingClientRect(),x=Math.floor((e.clientX-bounds.left)/cellSize),y=Math.floor((e.clientY-bounds.top)/cellSize);return {x:x,y:y};}
+      function paint(e){if(!painting||e.pointerId!==painting.id)return;var p=point(e);if(p.x<0||p.y<0||p.x>199||p.y>199)return;var key=p.x+':'+p.y;if(key===lastCell)return;lastCell=key;if(alterarCelulaFogCBA(p.x,p.y))painting.changed=true;}
+      layer.addEventListener('pointerdown',function(e){if(!cbaFogTool.active||!ehGM)return;var p=point(e);if(p.x<0||p.y<0||p.x>199||p.y>199)return;painting={id:e.pointerId,changed:false};lastCell='';try{layer.setPointerCapture(e.pointerId);}catch(err){}paint(e);e.preventDefault();});
+      layer.addEventListener('pointermove',paint);
+      function finish(e){if(!painting||(e&&e.pointerId!==painting.id))return;var changed=painting.changed;painting=null;lastCell='';if(changed)salvarFogCBA();}
+      layer.addEventListener('pointerup',finish);layer.addEventListener('pointercancel',finish);
+    }
+  }
   function aplicarGradeCamadasCBA(){
     var preview = document.getElementById('cba-preview-area').getBoundingClientRect();
     var palco = document.getElementById('area-tabuleiro').getBoundingClientRect();
     var escalaLive = preview.width > 0 && palco.width > 0 ? palco.width/preview.width : 1;
     aplicarGradeCBA(document.getElementById('cba-grid-lines'),cbaState.gridSize,cbaState.gridOpacity);
-    if(preview.width > 0) renderizarTokensCBA(document.getElementById('cba-preview-tokens'));
+    if(preview.width > 0){renderizarTokensCBA(document.getElementById('cba-preview-tokens'));renderizarFogCBA(document.getElementById('cba-preview-area'),cbaState,true);}
     if(cbaPublishedState && document.getElementById('area-tabuleiro').classList.contains('cba-publicado')){
       var tamanhoLive = Number.isFinite(Number(cbaPublishedState.gridRatio)) && Number(cbaPublishedState.gridRatio) > 0 && palco.width > 0 ? palco.width*Number(cbaPublishedState.gridRatio) : cbaPublishedState.gridSize*escalaLive;
       aplicarGradeCBA(document.getElementById('cba-grid-live'),tamanhoLive,cbaPublishedState.gridOpacity);
       renderizarTokensCBA(document.getElementById('cba-token-layer'),cbaPublishedState);
+      renderizarFogCBA(document.getElementById('cba-live-world'),cbaPublishedState,false);
     }
   }
 
@@ -3390,6 +3474,7 @@ async function abrirModalEquipamentos(){
       grid.classList.remove('ativo');
       bgLayer.style.backgroundImage='none';
       document.getElementById('cba-token-layer').replaceChildren();
+      renderizarFogCBA(document.getElementById('cba-live-world'),null,false);
       var vazio=document.getElementById('tabuleiro-vazio');
       if(vazio) vazio.style.display='';
       return;
@@ -3514,6 +3599,7 @@ async function abrirModalEquipamentos(){
       else if(action === 'close-sub') fecharSubModaisCBA();
       else if(action === 'choose-background') document.getElementById('cba-bg-input').click();
       else if(action === 'publish') publicarCBA();
+      else if(action === 'fog-toggle'){cbaFogTool.active=!cbaFogTool.active;atualizarControlesFogCBA();renderizarFogCBA(document.getElementById('cba-preview-area'),cbaState,true);setStatusCBA(cbaFogTool.active?'Pincel ativo: arraste no mapa para ocultar ou revelar áreas.':'Pincel de névoa desativado.');}
       else if(action === 'open-npcs') abrirSubModal('npc');
       else if(action === 'open-monsters') abrirSubModal('monstro');
       else if(action === 'add-npc'){
@@ -3528,6 +3614,10 @@ async function abrirModalEquipamentos(){
     document.getElementById('img-scale').addEventListener('input',atualizarImagemCBA);
     document.getElementById('grid-size').addEventListener('input',atualizarGrid);
     document.getElementById('grid-opacity').addEventListener('input',atualizarGrid);
+    document.getElementById('cba-fog-action').addEventListener('change',function(e){cbaFogTool.action=e.target.value==='reveal'?'reveal':'hide';});
+    document.getElementById('cba-fog-scope').addEventListener('change',function(e){cbaFogTool.scope=e.target.value==='player'?'player':'all';atualizarControlesFogCBA();renderizarFogCBA(document.getElementById('cba-preview-area'),cbaState,true);});
+    document.getElementById('cba-fog-player').addEventListener('change',function(e){cbaFogTool.userId=String(e.target.value||'');atualizarControlesFogCBA();});
+    atualizarControlesFogCBA();
     document.getElementById('cba-monstro-busca').addEventListener('input',renderizarMonstrosCBA);
     document.getElementById('cba-monstro-regiao').addEventListener('change',renderizarMonstrosCBA);
     fazerArrastavelCBA(document.getElementById('cba-preview-tokens'));
