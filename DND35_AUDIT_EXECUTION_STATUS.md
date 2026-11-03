@@ -126,3 +126,26 @@ Não marcar um módulo como concluído apenas porque existe uma descrição ou u
 
 **Limite**
 - A regra foi validada estaticamente e pela definição SQL, mas ainda não foi testada com sessão autenticada criando um Bárbaro Anão real. A etapa não está mesclada à branch principal.
+
+
+## Etapa Anão A3 — fluxo de escolhas de magias e limites por classe
+
+**Estado: implementação concluída; teste funcional autenticado pendente.**
+
+- Corrigida a perda de escolhas do Grimório durante re-renderizações: o rascunho de magias agora permanece no estado da criação enquanto o jogador alterna etapas, fecha/abre o catálogo e ajusta outras escolhas.
+- Bardo e Feiticeiro passam a ter seus limites de magias conhecidas verificados por círculo com base em `known_by_level` já existente. No nível 1, a progressão cadastrada indica Bardo: 4 truques conhecidos; Feiticeiro: 4 truques e 2 magias de 1º círculo, desde que o atributo permita conjurá-las.
+- Clérigo e Druida têm a quantidade de magias preparadas limitada aos espaços disponíveis por círculo, incluindo espaços adicionais por atributo. Magias de círculo inferior podem ocupar espaços superiores, sem exceder a quantidade disponível.
+- Mago passa a exibir também magias de 1º círculo no grimório mesmo quando o atributo ainda não permite conjurá-las; a preparação continua limitada aos espaços efetivamente disponíveis. Todos os truques de Mago são incluídos automaticamente no grimório inicial.
+- A interface apresenta os limites de escolhas e espaços; a validação final impede salvar quantidades acima da progressão da classe, magias fora da lista/círculo permitido e preparação de magias que não constem no grimório do Mago.
+- Catálogo e progressões existentes foram reutilizados: não houve alteração de tabelas nem criação de novos registros no Supabase.
+
+**Validações realizadas**
+- Sintaxe JavaScript de `ficha.html`: aprovada.
+- Progressões de nível 1 conferidas no banco: Bardo (4 conhecidas de círculo 0), Feiticeiro (4 de círculo 0 e 2 de círculo 1), Clérigo/Druida (3 espaços de círculo 0 e 1 de círculo 1), Mago (3 espaços de círculo 0 e 1 de círculo 1).
+- A interface preserva as escolhas de magias durante re-renderizações e impede a conclusão quando os limites cadastrados não são respeitados.
+
+**Limites desta etapa**
+- A especialização de escola do Mago e as escolas proibidas ainda não estão no fluxo.
+- A escolha da divindade do Clérigo ainda precisa ser ligada aos domínios e à tendência.
+- Familiars, companheiro animal e outras escolhas de classe ainda estão pendentes.
+- Não houve teste de navegador com sessão autenticada; a etapa permanece na branch de auditoria.
