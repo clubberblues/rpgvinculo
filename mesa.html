@@ -3867,7 +3867,16 @@ async function abrirModalEquipamentos(){
       if(controlled.length){
         abrirDado('Iniciativa do Mestre · '+controlled.length+'d20',function(total,values){
           if(!Array.isArray(values)||values.length!==controlled.length||values.reduce(function(a,n){return a+Number(n);},0)!==Number(total)) throw new Error('A mesa precisa receber os resultados individuais do dado 3D.');
-          return iniciar(values.map(Number));
+          // O Mestre rola um conjunto de d20; a atribuição dos resultados aos
+          // tokens deve ser aleatória, sem alterar nem repetir os valores físicos.
+          var resultadosDistribuidos=values.map(Number);
+          for(var i=resultadosDistribuidos.length-1;i>0;i--){
+            var j=Math.floor(Math.random()*(i+1));
+            var temp=resultadosDistribuidos[i];
+            resultadosDistribuidos[i]=resultadosDistribuidos[j];
+            resultadosDistribuidos[j]=temp;
+          }
+          return iniciar(resultadosDistribuidos);
         },true,false,controlled.length+'d20');
       }else await iniciar([]);
     }catch(e){
