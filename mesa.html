@@ -3881,7 +3881,7 @@ async function abrirModalEquipamentos(){
           token.dexMod=Math.max(-20,Math.min(20,Math.trunc(mod)));
         }
       }
-      if(controlled.some(function(t){return t.tipo==='npc'||t.tipo==='monstro';})){
+      if(controlled.length){
         var savedScene=await gravarCBAnaCampanha(serializarEstadoCBA(scene));
         cbaPublishedState=normalizarCBAData(savedScene); campanha.cba_data=savedScene;
       }
