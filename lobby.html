@@ -1464,7 +1464,7 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
       var qtdJogadores = Number(m.participantes) || 0;
       var mestreNome = m.mestre || 'Desconhecido';
       var btnCapa = isDono
-        ? '<button class="btn-edit-capa" data-id="' + escapeHtml(m.id) + '" title="Alterar Capa" aria-label="Alterar capa da mesa" style="position:absolute;top:10px;left:10px;background:rgba(0,0,0,.7);border:1px solid #c9a050;color:#c9a050;border-radius:50%;width:30px;height:30px;cursor:pointer;z-index:10;display:flex;align-items:center;justify-content:center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button><button class="btn-config-mesa" data-id="' + escapeHtml(m.id) + '" data-name="' + escapeHtml(m.name||'') + '" data-code="' + escapeHtml(m.codigo_convite||'') + '" title="Configurações da mesa" aria-label="Configurações da mesa">⚙</button>'
+        ? '<button class="btn-config-mesa" data-id="' + escapeHtml(m.id) + '" data-name="' + escapeHtml(m.name||'') + '" data-code="' + escapeHtml(m.codigo_convite||'') + '" title="Configurações da mesa" aria-label="Configurações da mesa">⚙</button>'
         : '';
       return '<article class="card" data-role="' + (isDono ? 'GM' : 'PLAYER') + '">' +
         '<div class="card-capa">' + btnCapa + '<img src="' + escapeHtml(img) + '" alt="Capa da mesa"><div class="card-estado">' + escapeHtml(estado) + '</div></div>' +
