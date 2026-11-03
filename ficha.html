@@ -946,7 +946,7 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -15%,#2938
     } else if (talAprend.length) {
       H += '<div class="grid-rpg">';
       talAprend.forEach(function(t){
-        var sourceFeat=(state.feats||[]).find(function(feat){return String(feat.id)===String(t.id);});
+        var sourceFeat=(fichaSRD35&&fichaSRD35.feats||[]).find(function(feat){return String(feat.id)===String(t.id);});
         var fullDescription=sourceFeat&&sourceFeat.descricao||t.descricao||t.efeito||'Descrição ainda não cadastrada.';
         var requirements=sourceFeat&&sourceFeat.requisitos?JSON.stringify(sourceFeat.requisitos):'';
         H += '<article class="card-rpg talent-detail-card"><div class="card-header-rpg"><span class="card-titulo-rpg">'+esc(t.nome)+'</span><span class="card-tag-rpg">'+esc(t.trilha||'Talento')+'</span></div><div class="card-body-rpg">'+esc(fullDescription)+'</div>'+(requirements?'<div class="talent-requirements"><b>Pré-requisitos:</b> '+esc(requirements)+'</div>':'')+'<div class="card-footer-rpg"><span>Custo: '+(t.custo_pt||2)+' PT</span><span>N'+t.nivel_min+'</span></div></article>';
