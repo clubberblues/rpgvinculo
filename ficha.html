@@ -1539,11 +1539,17 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2938
     }, 0);
   }
 
-  function dnd35AtributosIniciais(raca, valoresBase) {
+  function dnd35AtributosIniciais(raca, valoresBase, identidade) {
     var ajustes = dnd35Objeto(raca && raca.ajustes_atributos);
     var base = valoresBase || {FOR:10,DES:10,CON:10,INT:10,SAB:10,CAR:10};
+    var idade=Number(identidade&&identidade.idade)||0, fisico=0, mental=0;
+    if(String(raca&&raca.id)==='anao'){
+      if(idade>=250){fisico=-6;mental=3;}
+      else if(idade>=188){fisico=-3;mental=2;}
+      else if(idade>=125){fisico=-1;mental=1;}
+    }
     var finais = {};
-    ATR.forEach(function(sigla) { finais[sigla] = Number(base[sigla] == null ? 10 : base[sigla]) + (Number(ajustes[sigla]) || 0); });
+    ATR.forEach(function(sigla) { var aging=['FOR','DES','CON'].indexOf(sigla)>=0?fisico:mental; finais[sigla] = Math.max(1,Number(base[sigla] == null ? 10 : base[sigla]) + (Number(ajustes[sigla]) || 0) + aging); });
     return finais;
   }
 
@@ -2298,7 +2304,7 @@ function dnd35WeaponProficient(state,weaponName){
   function renderizarFichaSRD35() {
     var state = fichaSRD35, creating = !!state.criacao;
     var attrs = dnd35Objeto(state.sheet.atributos), baseAttrs = state.baseAtributos || {FOR:10,DES:10,CON:10,INT:10,SAB:10,CAR:10};
-    if (creating) attrs = dnd35AtributosIniciais(state.raca,baseAttrs);
+    if (creating) attrs = dnd35AtributosIniciais(state.raca,baseAttrs,state.identidade);
     if (!Object.keys(attrs).length) attrs = dnd35AtributosIniciais(state.raca);
     var points = dnd35PontosCompra(baseAttrs), level = Math.max(1,Number(state.sheet.nivel)||1), conMod = dnd35Modificador(attrs.CON);
     var dadoVida = Math.max(1,Number(state.classe.dado_vida)||8), hpCalc = Math.max(1,dadoVida+conMod), hpMax = Math.max(1,Number(state.sheet.pv_max)||hpCalc);
@@ -2396,12 +2402,12 @@ function dnd35WeaponProficient(state,weaponName){
     if(results[2].error)throw new Error('Classe SRD: '+results[2].error.message);
     var nextLevel=Math.min(20,Math.max(1,Number(sheet.nivel)||1)+1),featureResult=await sb.from('srd_class_level_features').select('class_id,class_level,name,summary,mechanics,verification_status').eq('class_id',String(sheet.classe_id)).eq('class_level',nextLevel),currentFeatureResult=await sb.from('srd_class_level_features').select('class_id,class_level,name,summary,mechanics,verification_status').eq('class_id',String(sheet.classe_id)).lte('class_level',Math.max(1,Number(sheet.nivel)||1)).order('class_level');var domainChoicesResult=await sb.from('srd_character_domain_choices').select('domain_slot,domain_id').eq('character_id',String(characterId)).order('domain_slot',{ascending:true});
     if(domainChoicesResult.error)throw new Error('Domínios do clérigo: '+domainChoicesResult.error.message);
-    fichaSRD35={criacao:false,character:results[0].data,sheet:sheet,raca:results[1].data,classe:results[2].data,skills:results[3].skills,feats:results[3].feats,srdSpells:results[3].spells,progressions:results[3].progressions,srdDomains:results[3].domains,srdDomainSpells:results[3].domainSpells,domainError:results[3].domainError,domainChoices:domainChoicesResult.data||[],nextLevelFeatures:featureResult.error?[]:(featureResult.data||[]),classFeatures:currentFeatureResult.error?[]:(currentFeatureResult.data||[]),spellCatalogError:results[3].spellError,spellProgressionError:results[3].progressionError,featPicks:[],activeTab:'pericias',grimoireOpen:URL_PARAMS.get('grimoire')==='1'};
+    fichaSRD35={criacao:false,character:results[0].data,sheet:sheet,identidade:sheet.identidade||{},raca:results[1].data,classe:results[2].data,skills:results[3].skills,feats:results[3].feats,srdSpells:results[3].spells,progressions:results[3].progressions,srdDomains:results[3].domains,srdDomainSpells:results[3].domainSpells,domainError:results[3].domainError,domainChoices:domainChoicesResult.data||[],nextLevelFeatures:featureResult.error?[]:(featureResult.data||[]),classFeatures:currentFeatureResult.error?[]:(currentFeatureResult.data||[]),spellCatalogError:results[3].spellError,spellProgressionError:results[3].progressionError,featPicks:[],activeTab:'pericias',grimoireOpen:URL_PARAMS.get('grimoire')==='1'};
     renderizarFichaSRD35();
   }
   async function salvarFichaSRD35() {
     var state=fichaSRD35,input=document.getElementById('dnd35-nome'),button=document.getElementById('dnd35-save'),status=document.getElementById('dnd35-status');
-    var nome=String(input&&input.value||state.nomeDraft||'').trim(),attrs=dnd35AtributosIniciais(state.raca,state.baseAtributos),classMap=dnd35SkillMap(state),ranks=dnd35Objeto(state.sheet.pericias);
+    var nome=String(input&&input.value||state.nomeDraft||'').trim(),attrs=dnd35AtributosIniciais(state.raca,state.baseAtributos,state.identidade),classMap=dnd35SkillMap(state),ranks=dnd35Objeto(state.sheet.pericias);
     var creatingMagicKey=dnd35SpellClassKey(state.classe.nome)||dnd35SpellClassKey(state.classe.class_key)||dnd35SpellClassKey(state.classe.id);
     if(creatingMagicKey==='cleric'){var creatingDomains=(state.domainChoices||[]).map(function(x){return String(x.domain_id||'');}).filter(Boolean);if(creatingDomains.length!==2||creatingDomains[0]===creatingDomains[1]){state.activeStep='training';state.grimoireOpen=true;renderizarFichaSRD35();var domainStatus=document.querySelector('[data-grimoire-status]');if(domainStatus)domainStatus.textContent='Escolha dois domínios diferentes antes de criar a ficha.';return;}}
     function mostrarErro(message,tab){state.activeStep='training';if(tab)state.activeTab=tab;renderizarFichaSRD35();var msg=document.getElementById('dnd35-status');if(msg)msg.textContent=message;}
