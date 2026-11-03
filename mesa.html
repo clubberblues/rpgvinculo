@@ -2911,7 +2911,6 @@ async function abrirModalEquipamentos(){
   }
 
   function popularSelectNPC35(id,rows){var select=document.getElementById(id);var selected=select.value;select.replaceChildren();(rows||[]).forEach(function(row){var option=document.createElement('option');option.value=String(row.id);option.textContent=String(row.nome||row.id);select.appendChild(option);});if(selected&&rows.some(function(row){return String(row.id)===selected;}))select.value=selected;}
-  function rolarAtributoNPC35(){var dice=[Math.floor(Math.random()*6)+1,Math.floor(Math.random()*6)+1,Math.floor(Math.random()*6)+1,Math.floor(Math.random()*6)+1].sort(function(a,b){return b-a;});return dice[0]+dice[1]+dice[2];}
   function npcClasseMagia35(cls){return normalizarChaveClasseMagia(cls&&cls.id)||normalizarChaveClasseMagia(cls&&cls.nome)||'';}
   function npcSkillClassMatch35(skill,classSkills){var n=normalizarTextoCBA(skill.nome).replace(/\\s*\\([^)]*\\)/g,'').trim();return classSkills.some(function(name){var c=normalizarTextoCBA(name).replace(/\\s*\\([^)]*\\)/g,'').trim();return c===n||c.indexOf('conhecimento qualquer')===0&&n.indexOf('conhecimento')===0;});}
   function npcGenerateSkills35(cls,attrs,level){
@@ -2966,9 +2965,11 @@ async function abrirModalEquipamentos(){
     return state;
   }
   function gerarFichaNPC35(race,cls,archetype,level){
-    var attrs={FOR:rolarAtributoNPC35(),DES:rolarAtributoNPC35(),CON:rolarAtributoNPC35(),INT:rolarAtributoNPC35(),SAB:rolarAtributoNPC35(),CAR:rolarAtributoNPC35()};
     var priority=Array.isArray(archetype.foco_atributos)?archetype.foco_atributos:jsonValueSRD(archetype.foco_atributos,[]);
-    if(priority.length>1){var high=priority[0],low=priority[priority.length-1];if(attrs[high]<attrs[low]){var swap=attrs[high];attrs[high]=attrs[low];attrs[low]=swap;}}
+    var attrOrder=(priority||[]).concat(['FOR','DES','CON','INT','SAB','CAR']).filter(function(key,index,list){return ['FOR','DES','CON','INT','SAB','CAR'].includes(key)&&list.indexOf(key)===index;});
+    var eliteArray=[15,14,13,12,10,8],attrs={};
+    ['FOR','DES','CON','INT','SAB','CAR'].forEach(function(key){attrs[key]=10;});
+    attrOrder.forEach(function(key,index){if(index<eliteArray.length)attrs[key]=eliteArray[index];});
     var racial=jsonValueSRD(race.ajustes_atributos,{});Object.keys(racial||{}).forEach(function(key){if(attrs[key]!=null)attrs[key]+=Number(racial[key])||0;});
     for(var abilityLevel=4;abilityLevel<=level;abilityLevel+=4){var primary=priority[0]||'FOR';attrs[primary]++;}
     var sizeKey=normalizarTextoCBA(race.tamanho||''),sizeMod=/tiny|miudo|miúdo/.test(sizeKey)?2:/small|pequeno/.test(sizeKey)?1:/large|grande/.test(sizeKey)?-1:/huge|enorme/.test(sizeKey)?-2:0;
