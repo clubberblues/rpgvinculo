@@ -1646,7 +1646,61 @@ function dnd35TranslateCatalogText(value){
     text=text.replace(/market price/gi,'preço de mercado').replace(/listed in table/gi,'listado na tabela').replace(/the specific item entry is not individually written out in this SRD table\./gi,'a descrição individual deste item não consta nesta tabela.').replace(/\bweight\b/gi,'peso').replace(/\bprice\b/gi,'preço').replace(/\bdamage\b/gi,'dano').replace(/\bcritical\b/gi,'crítico').replace(/\b([0-9]+(?:\.[0-9]+)?)\s*gp\b/gi,'$1 po');
     return text;
   }
-    function dnd35ClassFeatureDescription(name,source){
+    function dnd35FeatNamePt(feat){
+    var names={
+      srd35_feat_acrobatic:'Acrobático',srd35_feat_agile:'Ágil',srd35_feat_alertness:'Prontidão',srd35_feat_animal_affinity:'Afinidade com Animais',
+      srd35_feat_athletic:'Atlético',srd35_feat_armor_proficiency_light:'Usar Armadura (Leve)',srd35_feat_armor_proficiency_medium:'Usar Armadura (Média)',srd35_feat_armor_proficiency_heavy:'Usar Armadura (Pesada)',
+      srd35_feat_blind_fight:'Lutar às Cegas',srd35_feat_combat_casting:'Magias em Combate',srd35_feat_combat_expertise:'Especialização em Combate',srd35_feat_combat_reflexes:'Reflexos em Combate',
+      srd35_feat_dodge:'Esquiva',srd35_feat_endurance:'Tolerância',srd35_feat_great_fortitude:'Fortitude Maior',srd35_feat_improved_initiative:'Iniciativa Aprimorada',
+      srd35_feat_iron_will:'Vontade de Ferro',srd35_feat_lightning_reflexes:'Reflexos Rápidos',srd35_feat_mobility:'Mobilidade',srd35_feat_mounted_combat:'Combate Montado',
+      srd35_feat_point_blank_shot:'Tiro Certeiro',srd35_feat_power_attack:'Ataque Poderoso',ataque_poderoso:'Ataque Poderoso',srd35_feat_precise_shot:'Tiro Preciso',
+      srd35_feat_rapid_shot:'Tiro Rápido',srd35_feat_run:'Corrida',srd35_feat_skill_focus:'Foco em Perícia',srd35_feat_spell_focus:'Foco em Magia',
+      srd35_feat_spell_mastery:'Maestria em Magia',srd35_feat_toughness:'Vitalidade',srd35_feat_two_weapon_fighting:'Combater com Duas Armas',
+      srd35_feat_weapon_finesse:'Acuidade com Arma',srd35_feat_weapon_focus:'Foco em Arma',srd35_feat_improved_grapple:'Agarrar Aprimorado',
+      srd35_feat_stunning_fist:'Ataque Atordoante',srd35_feat_improved_unarmed_strike:'Ataque Desarmado Aprimorado',srd35_feat_scribe_scroll:'Escrever Pergaminho',
+      srd35_feat_track:'Rastrear',srd35_feat_improved_trip:'Derrubar Aprimorado',srd35_feat_improved_disarm:'Desarmar Aprimorado',
+      srd35_feat_deflect_arrows:'Desviar Flechas',srd35_feat_snatch_arrows:'Apanhar Flechas',srd35_feat_whirlwind_attack:'Ataque Giratório',
+      srd35_feat_spring_attack:'Ataque em Movimento',srd35_feat_shot_on_the_run:'Tiro em Movimento',srd35_feat_far_shot:'Tiro Longo',
+      srd35_feat_improved_critical:'Sucesso Decisivo Aprimorado',srd35_feat_leadership:'Liderança'
+    };
+    return names[String(feat&&feat.id||'')]||dnd35TranslateCatalogText(feat&&feat.nome||'Talento');
+  }
+  function dnd35FeatDescriptionPt(feat){
+    var descriptions={
+      srd35_feat_acrobatic:'Você recebe +2 de bônus nos testes de Saltar e Acrobacia.',
+      srd35_feat_agile:'Você recebe +2 de bônus nos testes de Equilíbrio e Escapar.',
+      srd35_feat_alertness:'Você recebe +2 de bônus nos testes de Ouvir e Observar.',
+      srd35_feat_animal_affinity:'Você recebe +2 de bônus nos testes de Adestrar Animais e Cavalgar.',
+      srd35_feat_athletic:'Você recebe +2 de bônus nos testes de Escalar e Natação.',
+      srd35_feat_improved_initiative:'Você recebe +4 de bônus nos testes de Iniciativa.',
+      srd35_feat_great_fortitude:'Você recebe +2 de bônus em todos os testes de Fortitude.',
+      srd35_feat_iron_will:'Você recebe +2 de bônus em todos os testes de Vontade.',
+      srd35_feat_lightning_reflexes:'Você recebe +2 de bônus em todos os testes de Reflexos.',
+      srd35_feat_dodge:'Escolha um oponente. Você recebe +1 de bônus de esquiva na CA contra os ataques desse oponente. Pode escolher outro oponente a cada rodada.',
+      srd35_feat_mobility:'Você recebe +4 de bônus de esquiva na CA contra ataques de oportunidade provocados por sair ou atravessar uma área ameaçada.',
+      srd35_feat_combat_reflexes:'Você pode realizar ataques de oportunidade adicionais por rodada conforme seu modificador de Destreza e pode realizá-los mesmo surpreso.',
+      srd35_feat_power_attack:'Antes dos ataques corpo a corpo da rodada, você pode subtrair um valor dos ataques e adicionar o mesmo valor ao dano. A penalidade não pode exceder seu BBA; com arma de duas mãos, o dano adicional é dobrado.',
+      ataque_poderoso:'Antes dos ataques corpo a corpo da rodada, você pode subtrair um valor dos ataques e adicionar o mesmo valor ao dano. A penalidade não pode exceder seu BBA; com arma de duas mãos, o dano adicional é dobrado.',
+      srd35_feat_improved_unarmed_strike:'Você é considerado armado mesmo desarmado e pode causar dano letal ou não letal com ataques desarmados.',
+      srd35_feat_improved_grapple:'Você não provoca ataque de oportunidade ao iniciar uma manobra de agarrar e recebe +4 de bônus nos testes para agarrar.',
+      srd35_feat_stunning_fist:'Uma vez por dia por nível de personagem, antes de atacar, você pode tentar atordoar um oponente atingido; o alvo faz um teste de resistência de Fortitude (CD 10 + metade do nível + modificador de Sabedoria) ou fica atordoado por 1 rodada.',
+      srd35_feat_scribe_scroll:'Você pode criar pergaminhos mágicos de magias que conhece, respeitando os requisitos e custos de criação.',
+      srd35_feat_toughness:'Você recebe +3 pontos de vida.',
+      srd35_feat_two_weapon_fighting:'As penalidades por lutar com duas armas são reduzidas conforme a regra do talento.',
+      srd35_feat_weapon_finesse:'Você pode usar seu modificador de Destreza em vez de Força nas jogadas de ataque com armas leves elegíveis.',
+      srd35_feat_weapon_focus:'Escolha uma arma. Você recebe +1 de bônus nas jogadas de ataque com ela.',
+      srd35_feat_point_blank_shot:'Você recebe +1 nas jogadas de ataque e dano com armas à distância contra alvos a até 9 metros.',
+      srd35_feat_precise_shot:'Você pode realizar ataques à distância contra oponentes engajados em combate corpo a corpo sem a penalidade normal de –4.',
+      srd35_feat_rapid_shot:'Você pode realizar um ataque à distância adicional por rodada, com –2 em todas as jogadas de ataque dessa rodada.',
+      srd35_feat_endurance:'Você recebe +4 de bônus em testes e salvamentos relacionados a esforço físico prolongado e sono em armadura.',
+      srd35_feat_run:'Você corre mais rápido e recebe os benefícios indicados pelo talento em corridas e saltos.',
+      srd35_feat_track:'Você pode seguir rastros usando Sobrevivência, respeitando a CD e as condições do terreno.'
+    };
+    var id=String(feat&&feat.id||'');if(descriptions[id])return descriptions[id];
+    var raw=String(feat&&feat.descricao||'');
+    return dnd35TranslateCatalogText(raw).replace(/\bBenefit:/gi,'Benefício:').replace(/\bPrerequisites?:/gi,'Pré-requisitos:').replace(/\bNormal:/gi,'Normal:').replace(/\bSpecial:/gi,'Especial:');
+  }
+  function dnd35ClassFeatureDescription(name,source){
     var key=String(name||'').toLowerCase();
     if(key.indexOf('deslocamento rápido')>=0)return 'Seu deslocamento terrestre aumenta em 3 m (10 pés) enquanto você não usa armadura pesada e não carrega carga pesada.';
     if(key.indexOf('analfabetismo')>=0)return 'O bárbaro não sabe ler nem escrever. Pode aprender a ler e escrever qualquer idioma que saiba falar gastando 2 pontos de perícia.';
@@ -1735,12 +1789,12 @@ function dnd35TranslateCatalogText(value){
       return '<ul class="dnd35-readonly">'+list.map(function(pick) {
         var feat = state.feats.filter(function(f) { return String(f.id) === String(pick && pick.id); })[0];
         var sourceLabel=pick&&pick.origem==='class_bonus'?'Talento bônus de classe: ':'';
-        return '<li><b>'+esc(sourceLabel+(feat ? feat.nome : ('Talento '+(pick && pick.id || '')))+(pick && pick.parametro ? ' — '+pick.parametro : ''))+'</b>'+(feat && feat.descricao ? ': '+esc(feat.descricao) : '')+'</li>';
+        return '<li><b>'+esc(sourceLabel+(feat ? dnd35FeatNamePt(feat) : ('Talento '+(pick && pick.id || '')))+(pick && pick.parametro ? ' — '+pick.parametro : ''))+'</b>'+(feat && feat.descricao ? ': '+esc(dnd35FeatDescriptionPt(feat)) : '')+'</li>';
       }).join('')+'</ul>';
     }
     for (var i=0;i<count;i++) {
       var pick = picks[i] || {id:'',parametro:''}, feat = state.feats.filter(function(f) { return String(f.id) === String(pick.id); })[0];
-      var classRuleKey=dnd35ClassRuleKey(state.classe&&((state.classe.class_key||state.classe.nome||state.classe.id))),optionFeats=state.feats.filter(function(f){var category=String(dnd35Objeto(f.requisitos).type||'General');return category==='General'&&!(classRuleKey==='monk'&&String(f.id)==='srd35_feat_improved_unarmed_strike')&&!(classRuleKey==='wizard'&&String(f.id)==='srd35_feat_scribe_scroll');});var optionHtml = '<option value="">Escolha um talento…</option>'+optionFeats.map(function(f) { return '<option value="'+esc(String(f.id))+'"'+(String(f.id)===String(pick.id)?' selected':'')+'>'+esc(f.nome)+'</option>'; }).join('');
+      var classRuleKey=dnd35ClassRuleKey(state.classe&&((state.classe.class_key||state.classe.nome||state.classe.id))),optionFeats=state.feats.filter(function(f){var category=String(dnd35Objeto(f.requisitos).type||'General');return category==='General'&&!(classRuleKey==='monk'&&String(f.id)==='srd35_feat_improved_unarmed_strike')&&!(classRuleKey==='wizard'&&String(f.id)==='srd35_feat_scribe_scroll');});var optionHtml = '<option value="">Escolha um talento…</option>'+optionFeats.map(function(f) { return '<option value="'+esc(String(f.id))+'"'+(String(f.id)===String(pick.id)?' selected':'')+'>'+esc(dnd35FeatNamePt(f))+'</option>'; }).join('');
       var paramType=feat?dnd35FeatParameterType(feat):'',needsParam = !!(feat && (feat.exige_parametro || paramType || dnd35FeatIsWeaponFocus(feat)));
       var reqData=feat?dnd35Objeto(feat.requisitos):{},reqText=feat?(typeof reqData==='string'?reqData:String(reqData.raw||'')):'';
       var paramRequired=!!(feat&&feat.exige_parametro)&&!(paramType==='spell_list'&&dnd35Modificador(Number(attrs.INT)||10)<=0);
@@ -1749,7 +1803,7 @@ function dnd35TranslateCatalogText(value){
       if (feat && paramRequired && !String(pick.parametro||'').trim()) warnings.push('Informe o parâmetro exigido.');
       if(feat&&dnd35FeatIsWeaponFocus(feat)){if(!String(pick.parametro||'').trim())warnings.push('Informe a arma escolhida.');else if(!dnd35WeaponProficient(state,pick.parametro))warnings.push('A classe não é proficiente com a arma escolhida.');}
       html += '<article class="dnd35-feat"><div class="dnd35-feat-head"><strong>Talento '+(i+1)+(dnd35IsHuman(state.raca)&&i===1?' · bônus humano':'')+'</strong></div><div class="dnd35-feat-control"><label for="feat-'+i+'">Escolha</label><select id="feat-'+i+'" data-feat="'+i+'">'+optionHtml+'</select></div>'+
-        (feat ? '<p>'+esc(feat.descricao||'Sem descrição.')+'</p>'+(reqText?'<p>Pré-requisitos: '+esc(reqText)+'</p>':'<p>Pré-requisitos: nenhum.</p>')+(reqData.dynamic_prerequisites?'<p class="dnd35-note">'+esc(String(reqData.dynamic_prerequisites))+'</p>':'')+(feat.srd_source_url?'<p><a href="'+esc(feat.srd_source_url)+'" target="_blank" rel="noopener noreferrer">Consultar fonte SRD ↗</a></p>':'') : '')+paramHtml+(warnings.length?'<div class="dnd35-warning">'+warnings.map(esc).join(' ')+'</div>':'')+'</article>';
+        (feat ? '<p>'+esc(dnd35FeatDescriptionPt(feat)||'Sem descrição.')+'</p>'+(reqText?'<p>Pré-requisitos: '+esc(reqText)+'</p>':'<p>Pré-requisitos: nenhum.</p>')+(reqData.dynamic_prerequisites?'<p class="dnd35-note">'+esc(String(reqData.dynamic_prerequisites))+'</p>':'')+(feat.srd_source_url?'<p><a href="'+esc(feat.srd_source_url)+'" target="_blank" rel="noopener noreferrer">Consultar fonte SRD ↗</a></p>':'') : '')+paramHtml+(warnings.length?'<div class="dnd35-warning">'+warnings.map(esc).join(' ')+'</div>':'')+'</article>';
     }
     return html;
   }
@@ -1780,7 +1834,7 @@ function dnd35WeaponProficient(state,weaponName){
       return dnd35FeatWarnings(feat,attrs,tempState,(tempState.featPicks||[]).length,'').length===0;
     }).sort(function(a,b){return String(a.nome).localeCompare(String(b.nome),'pt-BR');});
     var selected=candidates.find(function(feat){return String(feat.id)===String(pick.id);})||(state.feats||[]).find(function(feat){return String(feat.id)===String(pick.id);});
-    var options='<option value="">Escolha um talento bônus…</option>'+candidates.map(function(feat){return '<option value="'+esc(feat.id)+'"'+(String(feat.id)===String(pick.id)?' selected':'')+'>'+esc(feat.nome)+'</option>';}).join('');
+    var options='<option value="">Escolha um talento bônus…</option>'+candidates.map(function(feat){return '<option value="'+esc(feat.id)+'"'+(String(feat.id)===String(pick.id)?' selected':'')+'>'+esc(dnd35FeatNamePt(feat))+'</option>';}).join('');
     var needsParam=!!(selected&&(selected.exige_parametro||dnd35FeatParameterType(selected)||dnd35FeatIsWeaponFocus(selected)));
     var parameterHtml=needsParam?'<div class="dnd35-feat-control"><label for="class-feat-param">'+esc(dnd35FeatParameterLabel(selected))+'</label><input id="class-feat-param" data-class-feat-param maxlength="240" value="'+esc(pick.parametro||'')+'" placeholder="Informe a escolha"><small>'+esc(dnd35FeatParameterHint(selected,attrs))+'</small></div>':'';
     var warnings=[];
