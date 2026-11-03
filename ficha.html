@@ -527,7 +527,7 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2938
   var CLASS_ID = URL_PARAMS.get('classe');
   var RACE_ID = URL_PARAMS.get('raca');
   var RULESET = URL_PARAMS.get('ruleset');
-  var IS_SRD_MODE = RULESET === 'dnd35';
+  var IS_SRD_MODE = RULESET !== 'vinculo';
   var isCreationMode = (MODE === 'criar');
   // A query parameter never grants Mestre privileges on a character sheet.
   var ehGM = false;
