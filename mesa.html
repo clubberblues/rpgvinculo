@@ -2530,6 +2530,7 @@ async function abrirModalEquipamentos(){
       token.dataset.ocupacao = String(ocupacao);
       token.style.left = item.x+'px';
       token.style.top = item.y+'px';
+      token.style.rotate = (Number(item.rotation)||0)+'deg';
       token.title = item.detalhe ? item.nome+' · '+item.detalhe : item.nome;
       var imagemValida = false;
       if(item.imagem){
@@ -2563,6 +2564,7 @@ async function abrirModalEquipamentos(){
       if(hpPct==null){hp.classList.add('unknown');hpFill.style.width='100%';token.title=item.nome+' · PV não configurado (duplo clique do Mestre para definir)';}
       else{hpFill.style.width=hpPct+'%';if(hpPct<20)hpFill.className='critical';else if(hpPct<50)hpFill.className='warn';token.title=item.nome+' · '+hpValue+'/'+maxHpValue+' PV';}
       hp.appendChild(hpFill);token.appendChild(hp);
+      if(layer.id==='cba-preview-tokens'&&ehGM){var rotateHandle=document.createElement('button');rotateHandle.type='button';rotateHandle.className='token-rotate-handle';rotateHandle.title='Girar token';rotateHandle.setAttribute('aria-label','Arraste para girar '+String(item.nome||'token'));rotateHandle.textContent='↻';token.appendChild(rotateHandle);}
       var caValue=caToken35(item);
       var caLabel=document.createElement('span');caLabel.className='token-ac';caLabel.textContent='CA '+(caValue==null?'—':caValue);token.appendChild(caLabel);
       token.title=item.nome+' · '+(caValue==null?'CA não definida':'CA '+caValue)+(hpValue==null?' · PV não definido':' · '+hpValue+'/'+maxHpValue+' PV');
@@ -3191,11 +3193,20 @@ async function abrirModalEquipamentos(){
   }
 
   function fazerArrastavelCBA(layer){
-    var arrasto = null;
+    var arrasto = null,rotacao = null;
     var ePreview = layer.id === 'cba-preview-tokens';
     layer.addEventListener('pointerdown',function(e){
       if(e.target.closest&&e.target.closest('.token-pv-btn')) return;
       if(e.isPrimary === false || cbaPinchInProgress) return;
+      var rotateHandle=e.target.closest&&e.target.closest('.token-rotate-handle');
+      if(rotateHandle&&ePreview&&ehGM){
+        var rotateToken=rotateHandle.closest('.token-cba'),rotateItem=rotateToken&&cbaState.tokens.find(function(t){return String(t.key)===String(rotateToken.dataset.cbaTokenKey);});
+        if(!rotateToken||!rotateItem)return;
+        var rotateRect=rotateToken.getBoundingClientRect(),centerX=rotateRect.left+rotateRect.width/2,centerY=rotateRect.top+rotateRect.height/2;
+        rotacao={token:rotateToken,item:rotateItem,pointerId:e.pointerId,centerX:centerX,centerY:centerY,startAngle:Math.atan2(e.clientY-centerY,e.clientX-centerX),startRotation:Number(rotateItem.rotation)||0};
+        try{rotateToken.setPointerCapture(e.pointerId);}catch(err){}
+        e.preventDefault();e.stopPropagation();return;
+      }
       var token = e.target.closest ? e.target.closest('.token-cba') : null;
       if(!token || !layer.contains(token)) return;
       var scene = ePreview ? cbaState : cbaPublishedState;
@@ -3213,6 +3224,7 @@ async function abrirModalEquipamentos(){
       e.preventDefault();
     });
     layer.addEventListener('pointermove',function(e){
+      if(rotacao&&e.pointerId===rotacao.pointerId){var angle=Math.atan2(e.clientY-rotacao.centerY,e.clientX-rotacao.centerX),delta=(angle-rotacao.startAngle)*180/Math.PI;rotacao.item.rotation=((rotacao.startRotation+delta)%360+360)%360;rotacao.token.style.rotate=rotacao.item.rotation+'deg';e.preventDefault();return;}
       if(cbaPinchInProgress || !arrasto || e.pointerId !== arrasto.pointerId) return;
       if(!arrasto.moved&&Math.hypot(e.clientX-arrasto.startClientX,e.clientY-arrasto.startClientY)>6){arrasto.moved=true;suppressTokenClickUntil=Date.now()+450;fecharMenuContextualToken(false);}
       var rect = layer.getBoundingClientRect();
@@ -3231,6 +3243,11 @@ async function abrirModalEquipamentos(){
       else if(arrasto.item.tipo==='player'&&ehMeuTokenNoTurno(arrasto.item))atualizarPreviewMovimento(arrasto.item,left,top,cell,arrasto.startGridX,arrasto.startGridY,e.clientX,e.clientY);
     });
     function encerrar(e){
+      if(rotacao&&(!e||e.pointerId===rotacao.pointerId)){
+        var rotatedItem=rotacao.item,rotatedToken=rotacao.token;
+        try{if(rotatedToken.hasPointerCapture(rotacao.pointerId))rotatedToken.releasePointerCapture(rotacao.pointerId);}catch(err){}
+        rotacao=null;renderizarTokensCBA(layer,cbaState);salvarRotacaoTokenCBA(rotatedItem);return;
+      }
       if(!arrasto || (e && e.pointerId !== arrasto.pointerId)) return;
       if(cbaPinchInProgress){try{if(arrasto.token.hasPointerCapture(arrasto.pointerId))arrasto.token.releasePointerCapture(arrasto.pointerId);}catch(err){}arrasto=null;return;}
       var rect = layer.getBoundingClientRect();
@@ -3305,7 +3322,7 @@ async function abrirModalEquipamentos(){
     var tokens = Array.isArray(data.tokens) ? data.tokens.map(function(t,index){
       var gx = Number.isFinite(Number(t.gridX)) ? Math.max(0,Math.floor(Number(t.gridX))) : Math.max(0,Math.round((Number(t.x)||0)/gridSize));
       var gy = Number.isFinite(Number(t.gridY)) ? Math.max(0,Math.floor(Number(t.gridY))) : Math.max(0,Math.round((Number(t.y)||0)/gridSize));
-      return {key:String(t.key||('cba-sync-'+String(t.id||index)+'-'+index)),id:String(t.id==null?index:t.id),nome:String(t.nome||'Criatura'),imagem:String(t.imagem||''),tipo:t.tipo==='monstro'?'monstro':(t.tipo==='player'?'player':'npc'),detalhe:String(t.detalhe||''),hp:t.hp==null||t.hp===''?null:(Number.isFinite(Number(t.hp))?Number(t.hp):null),maxHp:t.maxHp==null||t.maxHp===''?null:(Number.isFinite(Number(t.maxHp))?Number(t.maxHp):null),dexMod:t.dexMod==null?null:(Number.isFinite(Number(t.dexMod))?Math.max(-20,Math.min(20,Math.trunc(Number(t.dexMod)))):null),monsterId:t.monsterId==null?null:String(t.monsterId),ac:valorCA35(t.ac!=null?t.ac:(t.monsterStats&&t.monsterStats.ca)),baseAc:valorCA35(t.baseAc!=null?t.baseAc:(t.monsterStats&&t.monsterStats.ca)),sourceCharacterId:t.sourceCharacterId==null?null:String(t.sourceCharacterId),attackBonus:t.attackBonus==null?null:Number(t.attackBonus),damageDice:String(t.damageDice||''),spellState:t.spellState&&typeof t.spellState==='object'?t.spellState:null,monsterStats:t.monsterStats&&typeof t.monsterStats==='object'?t.monsterStats:null,srdSourceUrl:/^https?:\/\//i.test(String(t.srdSourceUrl||''))?String(t.srdSourceUrl):'',gridX:gx,gridY:gy,x:gx*gridSize,y:gy*gridSize};
+      return {key:String(t.key||('cba-sync-'+String(t.id||index)+'-'+index)),id:String(t.id==null?index:t.id),nome:String(t.nome||'Criatura'),imagem:String(t.imagem||''),tipo:t.tipo==='monstro'?'monstro':(t.tipo==='player'?'player':'npc'),detalhe:String(t.detalhe||''),hp:t.hp==null||t.hp===''?null:(Number.isFinite(Number(t.hp))?Number(t.hp):null),maxHp:t.maxHp==null||t.maxHp===''?null:(Number.isFinite(Number(t.maxHp))?Number(t.maxHp):null),dexMod:t.dexMod==null?null:(Number.isFinite(Number(t.dexMod))?Math.max(-20,Math.min(20,Math.trunc(Number(t.dexMod)))):null),monsterId:t.monsterId==null?null:String(t.monsterId),ac:valorCA35(t.ac!=null?t.ac:(t.monsterStats&&t.monsterStats.ca)),baseAc:valorCA35(t.baseAc!=null?t.baseAc:(t.monsterStats&&t.monsterStats.ca)),sourceCharacterId:t.sourceCharacterId==null?null:String(t.sourceCharacterId),attackBonus:t.attackBonus==null?null:Number(t.attackBonus),damageDice:String(t.damageDice||''),rotation:Number.isFinite(Number(t.rotation))?((Number(t.rotation)%360)+360)%360:0,spellState:t.spellState&&typeof t.spellState==='object'?t.spellState:null,monsterStats:t.monsterStats&&typeof t.monsterStats==='object'?t.monsterStats:null,srdSourceUrl:/^https?:\/\//i.test(String(t.srdSourceUrl||''))?String(t.srdSourceUrl):'',gridX:gx,gridY:gy,x:gx*gridSize,y:gy*gridSize};
     }) : [];
     var image = typeof data.background === 'string' && /^https?:\/\//i.test(data.background) ? data.background : '';
     var ratio = Number(data.gridRatio);
@@ -3368,6 +3385,20 @@ async function abrirModalEquipamentos(){
     if(scaleInput && (!ehGM || !document.getElementById('modal-cba').classList.contains('ativo'))){
       scaleInput.value=String(scene.imgScale);
       document.getElementById('lbl-img-scale').textContent=scene.imgScale.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1});
+    }
+  }
+
+  async function salvarRotacaoTokenCBA(item){
+    if(!ehGM||!item||!cbaState)return;
+    var draft=cbaState.tokens.find(function(t){return String(t.key)===String(item.key);});
+    if(draft)draft.rotation=((Number(item.rotation)||0)%360+360)%360;
+    try{
+      var saved=await gravarCBAnaCampanha(serializarEstadoCBA(cbaState));
+      campanha.cba_data=saved;cbaPublishedState=normalizarCBAData(saved);aplicarCBAnaMesa(saved,false);
+      setStatusCBA('Rotação de '+item.nome+' salva e sincronizada.');
+    }catch(error){
+      console.error('Falha ao salvar rotação do token:',error);
+      setStatusCBA('Não foi possível salvar a rotação: '+(error.message||error));
     }
   }
 
@@ -4471,6 +4502,12 @@ html,body,#root{width:100%;height:100%;min-width:0;min-height:0}
  .painel-aventureiros>.painel-cab{display:none!important}
  #cards-strip>.card-pers{flex-basis:165px!important;width:165px!important;min-width:165px!important}
 }
+</style>
+<style id="cba-token-rotation">
+#cba-preview-tokens .token-cba{overflow:visible!important}
+#cba-preview-tokens .token-cba img{border-radius:inherit}
+.token-rotate-handle{position:absolute!important;left:50%!important;top:-12px!important;transform:translateX(-50%)!important;z-index:20!important;width:22px!important;height:22px!important;min-width:22px!important;min-height:22px!important;padding:0!important;border:1px solid #f2d28b!important;border-radius:50%!important;background:#1b2419!important;color:#f7d98e!important;font-size:15px!important;line-height:20px!important;cursor:grab!important;touch-action:none!important;opacity:.92!important;box-shadow:0 2px 6px #000b!important}
+.token-rotate-handle:active{cursor:grabbing!important}
 </style>
 <script id="vinculo-map-pan-fix">
 (function(){
