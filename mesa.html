@@ -4155,6 +4155,9 @@ async function abrirModalEquipamentos(){
       var r=await sb.rpc('registrar_iniciativa',{p_campaign_id:Number(MESA_ID),p_personagem_id:String(charId),p_nome:String(nome||'Aventureiro'),p_valor:Number(valor)});
       if(r.error) return {ok:false,error:r.error.message};
       combatDataState=r.data||combatDataState;
+      var expiredConditions=await sb.rpc('srd_expire_campaign_conditions',{p_campaign_id:Number(MESA_ID)});
+      if(expiredConditions.error)console.warn('Não foi possível atualizar expirações de condições:',expiredConditions.error.message);
+      else if(Number(expiredConditions.data)>0)await enviarMensagemChat('⏳ '+Number(expiredConditions.data)+' condição(ões) expirou(aram) ao avançar a rodada.','sistema',{evento:'condicoes_srd_expiradas',quantidade:Number(expiredConditions.data),round:combatDataState.round||1});
       renderizarIniciativa(combatDataState);
       if(!iniciativaEstavaAtiva&&combatDataState&&combatDataState.active){var atual=combatDataState.turn_order[Number(combatDataState.current_turn)||0],p=atual&&!atual.is_monster?personagens.find(function(x){return String(x.ch.id)===String(atual.id);}):null;var nomeTurno=p&&p.perfil&&p.perfil.username?'@'+p.perfil.username:(atual&&atual.nome||'Mestre');try{await enviarMensagemChat(atual&&!atual.is_monster?'⚔️ Vez do jogador '+nomeTurno+'.':'🐉 Vez do Mestre · '+nomeTurno+'.','sistema',{evento:'iniciativa_ativada',turno_id:atual&&String(atual.id)});}catch(logError){console.warn('Iniciativa ativada, mas o anúncio não entrou no chat.',logError);}}
       return {ok:true,data:r.data};
