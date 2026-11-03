@@ -268,3 +268,22 @@ Não marcar um módulo como concluído apenas porque existe uma descrição ou u
 - Os blocos estatísticos completos dos familiares, PV próprios, progressão de DV, armadura natural, Inteligência e habilidades por nível ainda não foram conectados ao bestiário. O Livro dos Monstros será necessário para fechar essa parte sem duplicar ou inventar estatísticas.
 - A atualização da RPC foi aplicada diretamente ao projeto Supabase para validação. O arquivo de migração versionado correspondente ainda precisa ser gerado pelo fluxo local do Supabase CLI antes da consolidação/implantação em outro ambiente.
 - Esta etapa registra a escolha inicial; não implementa ainda a convocação, morte, substituição ou efeitos ativos do familiar durante o jogo.
+
+
+## Etapa A9 — auditoria de especializações de perícias (pré-requisito do Bardo)
+
+**Estado: auditoria concluída; implementação bloqueada até corrigir o modelo de perícias sem criar um fluxo incorreto.**
+
+- O Livro do Jogador define Atuação como várias perícias independentes: Atuar, Comédia, Dança, Instrumentos de Teclado, Oratória, Instrumentos de Percussão, Instrumentos de Corda, Instrumentos de Sopro e Canto.
+- A regra do Bardo exige pelo menos 3 graduações em uma perícia Atuação para usar Música de Bardo, Contracanto, Fascinar e Inspirar Coragem no 1º nível.
+- O catálogo atual contém apenas um registro genérico `srd35_skill_perform` para Atuação. Diferentemente de Conhecimento, que já possui especializações separadas, as nove especialidades de Atuação ainda não estão representadas.
+- A RPC `salvar_pericias_srd` só aceita IDs existentes em `srd_skills` e calcula custo/limites por registro. A interface também calcula orçamento por ID. Portanto, apenas acrescentar um seletor visual de instrumento/categoria não seria suficiente: o sistema continuaria somando graduações de especialidades diferentes como se fossem uma única perícia.
+- Ofício e Profissão também aparecem como registros genéricos, embora sejam perícias com especializações independentes. A solução precisa considerar esse padrão de forma reutilizável, preservando fichas antigas.
+
+**Decisão técnica para evitar redundância e perda de regras**
+- Não foi criado um seletor isolado para o Bardo nem foram inseridas especializações duplicadas nesta auditoria.
+- A próxima implementação deve tratar especializações de perícia como unidades independentes de compra, respeitando orçamento, custo de classe/cross-class, graduação máxima, persistência e leitura de fichas antigas.
+- Depois dessa correção, o fluxo do Bardo poderá validar corretamente as 3 graduações exigidas e apresentar as opções de Música de Bardo que o personagem realmente pode usar.
+
+**Referência consultada**
+- Livro do Jogador D&D 3.5, seção da perícia Atuação e descrição de Música de Bardo (página impressa 25 na edição enviada).
