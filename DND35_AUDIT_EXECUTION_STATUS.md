@@ -105,3 +105,24 @@ Não marcar um módulo como concluído apenas porque existe uma descrição ou u
 - A escolha de divindade do Clérigo e a validação de tendência relativa à divindade ainda não foram implementadas.
 - As escolhas próprias de cada classe (domínios, companheiro animal, grimório, magias conhecidas/preparadas, especializações e características ativáveis) permanecem como próxima etapa; não marcar as 11 classes como criação completa.
 - A implementação permanece na branch de auditoria e não foi mesclada à branch principal.
+
+
+## Etapa Anão A2 — escolha de alfabetização do Bárbaro
+
+**Estado: implementação concluída; teste autenticado de ponta a ponta pendente.**
+
+- O Bárbaro Anão agora recebe uma escolha explícita na etapa de Treino: permanecer analfabeto ou gastar 2 pontos de perícia para aprender a ler e escrever todos os idiomas que conhece.
+- A escolha é apresentada como recurso de classe, não como talento ou idioma adicional.
+- Quando o jogador escolhe alfabetização, o orçamento de perícias disponível é reduzido em 2 pontos; a validação de gasto continua ativa.
+- A decisão é enviada em `p_identidade.alfabetizado` e persistida na coluna JSONB `srd_character_sheets.identidade`.
+- A RPC de criação valida que a escolha foi informada para Bárbaro e verifica no registro de progressão de classe se o gasto de perícias mais os 2 pontos de alfabetização cabe no orçamento do personagem.
+- Para as demais classes, a ficha registra alfabetização automática, conforme a regra geral do Livro do Jogador.
+
+**Validações realizadas**
+- Sintaxe JavaScript de `ficha.html`: aprovada.
+- RPC de sete argumentos continua registrada como SECURITY DEFINER; a versão antiga de seis argumentos foi preservada.
+- A regra de 2 pontos foi conferida na descrição de Analfabetismo do Bárbaro no Livro do Jogador, página 25.
+- Não foi criado novo campo ou tabela no banco para esta escolha; reutiliza-se `identidade`.
+
+**Limite**
+- A regra foi validada estaticamente e pela definição SQL, mas ainda não foi testada com sessão autenticada criando um Bárbaro Anão real. A etapa não está mesclada à branch principal.
