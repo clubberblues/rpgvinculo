@@ -404,3 +404,9 @@ Nenhuma campanha, personagem, ficha, token ou log real foi modificado nesta cont
 
 ### Limite desta entrega
 O código foi alterado e as migrações foram aplicadas no projeto Supabase principal. Nenhum registro de personagem ou campanha foi alterado diretamente durante a auditoria; houve mudanças de funções, permissões, catálogo e estrutura. O GitHub `main` não foi modificado. A branch de trabalho continua separada. Não houve teste E2E em navegador autenticado, nem inspeção visual real de desktop/mobile; esses testes permanecem obrigatórios antes de mesclar a branch.
+
+### Últimos ajustes de rolagem e layout — 2026-11-03
+- Corrigido o grid da mesa: o dock do Dice ocupa a terceira linha e o rodapé dos cards a quarta, sem sobreposição.
+- Removido o diálogo extra que pedia Destreza ao Mestre durante a iniciativa. Se o token não tiver DES cadastrada, o fluxo usa +0 e registra aviso no log; o Mestre pode corrigir a ficha/token antes de outro combate.
+- O gerador de NPCs não lança mais 24 dados automaticamente. Ele usa o array de elite SRD/DMG (15, 14, 13, 12, 10, 8), distribuído conforme os atributos prioritários do arquétipo. Monstros do bestiário mantêm seus valores de bloco.
+- O endpoint legado `roll_dice`, que gerava resultados no servidor, foi revogado; o Dice 3D local continua responsável pela rolagem iniciada pelo usuário. A aleatoriedade de física/efeitos visuais e a atribuição aleatória de resultados manuais do Mestre aos tokens não são rolagens automáticas de regra.
