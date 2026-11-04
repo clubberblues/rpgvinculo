@@ -874,7 +874,10 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2938
     inp.onchange = async function(){
       var f = inp.files[0]; if (!f) return;
       var ext = (f.name.split('.').pop() || 'png').toLowerCase();
-      var path = isCreationMode ? 'retratos/temp-'+Date.now()+'.'+ext : 'retratos/'+CHAR_ID+'-foto-'+Date.now()+'.'+ext;
+      var authResult = await sb.auth.getUser();
+      var uploadUserId = authResult.data && authResult.data.user ? authResult.data.user.id : null;
+      if (authResult.error || !uploadUserId) { alert('Sua sessão expirou. Entre novamente para enviar imagens.'); return; }
+      var path = isCreationMode ? 'retratos/temp-'+uploadUserId+'-'+Date.now()+'.'+ext : 'retratos/'+CHAR_ID+'-foto-'+Date.now()+'.'+ext;
       var up = await sb.storage.from('midia').upload(path, f, { upsert: true, contentType: f.type });
       if (up.error){ alert('Erro: '+up.error.message); return; }
       var url = sb.storage.from('midia').getPublicUrl(path).data.publicUrl;
@@ -1432,7 +1435,10 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2938
     var inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
     inp.onchange = async function(){
       var f = inp.files[0]; if (!f) return; var blob = await abrirCrop(f); if (!blob) return;
-      var path = isCreationMode ? 'headers/temp-bg-'+Date.now()+'.png' : 'headers/'+CHAR_ID+'-bg-'+Date.now()+'.png';
+      var authResult = await sb.auth.getUser();
+      var uploadUserId = authResult.data && authResult.data.user ? authResult.data.user.id : null;
+      if (authResult.error || !uploadUserId) { alert('Sua sessão expirou. Entre novamente para enviar imagens.'); return; }
+      var path = isCreationMode ? 'headers/temp-bg-'+uploadUserId+'-'+Date.now()+'.png' : 'headers/'+CHAR_ID+'-bg-'+Date.now()+'.png';
       var up = await sb.storage.from('midia').upload(path, blob, { upsert: true, contentType: 'image/png' });
       if (up.error){ alert('Erro: '+up.error.message); return; }
       var url = sb.storage.from('midia').getPublicUrl(path).data.publicUrl;
