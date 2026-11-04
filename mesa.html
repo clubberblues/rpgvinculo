@@ -1872,6 +1872,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var racialRace=String(own.sh&&own.sh.raca_id||'');
     if(racialRace==='anao'&&/(^|[^a-z])(orc|goblinoid(e|s)?|goblin|hobgoblin|bugbear)([^a-z]|$)/.test(targetTraits))racialFavoredEnemyBonus=1;
     if(racialRace==='gnomo'&&/(^|[^a-z])(kobold|goblinoid(e|s)?|goblin|hobgoblin|bugbear)([^a-z]|$)/.test(targetTraits))racialFavoredEnemyBonus=1;
+    if(racialRace==='halfling'&&type==='atk-dist'&&weapon&&(String(weapon.detalhes&&weapon.detalhes.weapon_ranged_type||'')==='thrown'||normalizeName(weapon.nome)==='funda'))racialFavoredEnemyBonus=1;
     bonus+=racialFavoredEnemyBonus;
     var sneakAttackDice=0,sneakAttackEligible=false;
     var activeTargetConditions=efeitosCampanhaMesa.conditions.filter(function(c){return c.target_kind==='token'&&(String(c.target_id)===String(target.key)||String(c.target_id)===String(target.id));}).map(function(c){return String(c.condition_id);});
@@ -1929,7 +1930,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     }
     function registrarResultadoAtaque(d20,isCritical){
       var total=Number(d20)+bonus,automaticMiss=Number(d20)===1,automaticHit=Number(d20)===20,hit=!automaticMiss&&(automaticHit||total>=targetAC);
-      var breakdown='1d20 '+d20+' + BBA '+bab+' + '+attackAttribute+' '+ability+(sizeModifier?' + tamanho '+(sizeModifier>0?'+':'')+sizeModifier:'')+(weaponFocus?' + Foco em Arma +'+weaponFocus:'')+(racialFavoredEnemyBonus?' + bônus racial contra inimigos tradicionais +1':'')+(powerPenalty?' − Ataque Poderoso '+powerPenalty:'')+(rangePenalty?' − distância '+rangePenalty:'')+(proficiencyPenalty?' − arma sem proficiência '+proficiencyPenalty:'')+(armorNonproficiencyPenalty?' − armadura/escudo sem proficiência '+Math.abs(armorNonproficiencyPenalty):'');
+      var breakdown='1d20 '+d20+' + BBA '+bab+' + '+attackAttribute+' '+ability+(sizeModifier?' + tamanho '+(sizeModifier>0?'+':'')+sizeModifier:'')+(weaponFocus?' + Foco em Arma +'+weaponFocus:'')+(racialFavoredEnemyBonus?' + bônus racial de ataque +1':'')+(powerPenalty?' − Ataque Poderoso '+powerPenalty:'')+(rangePenalty?' − distância '+rangePenalty:'')+(proficiencyPenalty?' − arma sem proficiência '+proficiencyPenalty:'')+(armorNonproficiencyPenalty?' − armadura/escudo sem proficiência '+Math.abs(armorNonproficiencyPenalty):'');
       if(!hit){
         enviarMensagemChat('⚔️ '+title+' com '+weaponName+' contra '+target.nome+': '+breakdown+' = **'+total+'** contra CA '+targetAC+' — ERRO. O dano não será rolado.','rolagem',{evento:'ataque_dnd35',atacante:String(own.ch.id),alvo:target.id,resultado:total,d20:Number(d20),ca_alvo:targetAC,acerto:false,bab:bab,modificador:ability,bonus_foco:weaponFocus,bonus_tamanho:sizeModifier,bonus_racial:racialFavoredEnemyBonus,penalidade_ataque_poderoso:powerPenalty,penalidade_arma_sem_proficiencia:proficiencyPenalty,penalidade_armadura_sem_proficiencia:armorNonproficiencyPenalty,arma:weaponName,dano:damage});
         return;
