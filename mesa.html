@@ -3879,12 +3879,13 @@ async function abrirModalEquipamentos(){
 
   function specResistenciaDnd35(nomeTeste){
     var texto=String(nomeTeste||'').toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-    if(texto.includes('fortitude'))return {save_type:'fortitude',context:''};
+    var context=texto.includes('veneno')?'poison':(texto.includes('magia')||texto.includes('magico')||texto.includes('efeito similar')||texto.includes('efeito similar a magia')?'spell':'');
+    if(texto.includes('fortitude'))return {save_type:'fortitude',context:context};
     if(texto.includes('reflexos contra armadilhas'))return {save_type:'reflex',context:'trap'};
-    if(texto.includes('reflexos'))return {save_type:'reflex',context:''};
-    if(texto.includes('vontade contra encantamento'))return {save_type:'will',context:'enchantment'};
-    if(texto.includes('vontade contra medo'))return {save_type:'will',context:'fear'};
-    if(texto.includes('vontade'))return {save_type:'will',context:''};
+    if(texto.includes('reflexos'))return {save_type:'reflex',context:context};
+    if(texto.includes('vontade contra encantamento'))return {save_type:'will',context:context||'enchantment'};
+    if(texto.includes('vontade contra medo'))return {save_type:'will',context:context||'fear'};
+    if(texto.includes('vontade'))return {save_type:'will',context:context};
     return null;
   }
 
