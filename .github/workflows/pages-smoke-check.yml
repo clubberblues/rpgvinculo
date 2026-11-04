@@ -1,0 +1,35 @@
+name: Public pages smoke test
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "index.html"
+      - "ficha.html"
+      - "lobby.html"
+      - "mesa.html"
+      - "dice.html"
+      - "scripts/pages-smoke-check.mjs"
+      - ".github/workflows/pages-smoke-check.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install pinned Playwright
+        run: npm install --no-save --no-package-lock playwright@1.55.0
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Check published pages
+        env:
+          PAGES_BASE_URL: https://clubberblues.github.io/rpgvinculo/
+        run: node scripts/pages-smoke-check.mjs
