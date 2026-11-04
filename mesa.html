@@ -1870,8 +1870,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var racialFavoredEnemyBonus=0;
     var targetTraits=String([target.nome,target.detalhe,target.monsterStats&&target.monsterStats.tipo,target.monsterStats&&target.monsterStats.subtipo,target.monsterStats&&target.monsterStats.subtype,target.monsterStats&&target.monsterStats.subtypes,target.monsterStats&&target.monsterStats.type,target.monsterStats&&target.monsterStats.creature_type,target.monsterStats&&target.monsterStats.race_id].filter(Boolean).join(' ')).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
     var racialRace=String(own.sh&&own.sh.raca_id||'');
-    if(racialRace==='anao'&&/(^|[^a-z])(orc|goblinoid|goblin|hobgoblin|bugbear)([^a-z]|$)/.test(targetTraits))racialFavoredEnemyBonus=1;
-    if(racialRace==='gnomo'&&/(^|[^a-z])(kobold|goblinoid|goblin|hobgoblin|bugbear)([^a-z]|$)/.test(targetTraits))racialFavoredEnemyBonus=1;
+    if(racialRace==='anao'&&/(^|[^a-z])(orc|goblinoid(e|s)?|goblin|hobgoblin|bugbear)([^a-z]|$)/.test(targetTraits))racialFavoredEnemyBonus=1;
+    if(racialRace==='gnomo'&&/(^|[^a-z])(kobold|goblinoid(e|s)?|goblin|hobgoblin|bugbear)([^a-z]|$)/.test(targetTraits))racialFavoredEnemyBonus=1;
     bonus+=racialFavoredEnemyBonus;
     var sneakAttackDice=0,sneakAttackEligible=false;
     var activeTargetConditions=efeitosCampanhaMesa.conditions.filter(function(c){return c.target_kind==='token'&&(String(c.target_id)===String(target.key)||String(c.target_id)===String(target.id));}).map(function(c){return String(c.condition_id);});
