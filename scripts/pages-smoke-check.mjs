@@ -4,9 +4,9 @@ const baseUrl = process.env.PAGES_BASE_URL || "https://clubberblues.github.io/rp
 const pages = [
   { path: "index.html", title: "Vínculo · Entrar" },
   { path: "ficha.html", title: "Vinculo - Ficha" },
-  { path: "lobby.html", title: "Vínculo · Salão de Mesas" },
+  { path: "lobby.html", title: "Vínculo · Entrar" },
   { path: "mesa.html", title: "Vínculo · Mesa" },
-  { path: "dice.html", title: "Project-Swords RPG Dice Roller" },
+  { path: "dice.html", title: "Project-Swords RPG Dice Roller — 3D Physics Dice for D&D and Tabletop RPGs", language: "en" },
 ];
 
 const browser = await chromium.launch({ headless: true });
@@ -46,7 +46,8 @@ try {
     }));
 
     if (actual.title !== item.title) failures.push(`${item.path}: unexpected title "${actual.title}"`);
-    if (actual.language !== "pt-BR") failures.push(`${item.path}: expected lang pt-BR, received "${actual.language}"`);
+    const expectedLanguage = item.language || "pt-BR";
+    if (actual.language !== expectedLanguage) failures.push(`${item.path}: expected lang ${expectedLanguage}, received "${actual.language}"`);
     if (!actual.viewport) failures.push(`${item.path}: viewport meta tag missing`);
     if (actual.bodyTextLength < 10) failures.push(`${item.path}: page body appears empty`);
 
