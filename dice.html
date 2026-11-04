@@ -3762,6 +3762,18 @@ window.addEventListener('libs-ready', function() {
     rollPair(power);
   }
 
+  // Bridge explícita entre o módulo ES (motor físico) e o script clássico
+  // (integração da mesa). Variáveis e funções do módulo não são globais.
+  window.vinculoDiceThrow = function () {
+    if (!throwButton || throwButton.disabled) return false;
+    if (state !== 'idle' && state !== 'settled') return false;
+    startCharging();
+    window.setTimeout(function () {
+      if (chargingActive) releaseCharge();
+    }, 120);
+    return true;
+  };
+
   // ============================================================
   // ROLL — power-scaled throw.
   //
@@ -5108,18 +5120,24 @@ if (throwButtonForLabel) throwButtonForLabel.setAttribute('aria-label', 'Rolar d
       vinculoRollButton.title = 'Selecione pelo menos um dado na barra lateral.';
       return false;
     }
-    if (state !== 'idle' && state !== 'settled') return false;
-
-    // Aciona o mesmo mecanismo físico do botão nativo, sem sintetizar
-    // eventos de mouse. Isso evita perder o clique no iframe/modal da mesa.
+    // O motor físico vive em um ES module. A integração clássica só o aciona
+    // pela ponte pública, sem acessar bindings privados do módulo.
+    if (typeof window.vinculoDiceThrow !== 'function') {
+      console.error('Motor físico do Dice ainda não disponibilizou a ponte de rolagem.');
+      vinculoRollButton.title = 'O motor 3D ainda está carregando. Tente novamente.';
+      return false;
+    }
     beginTrackingRoll();
     vinculoRollButton.disabled = true;
     vinculoRollButton.textContent = 'ROLANDO…';
     try {
-      startCharging();
-      window.setTimeout(function () {
-        if (rollPending && chargingActive) releaseCharge();
-      }, 120);
+      if (!window.vinculoDiceThrow()) {
+        rollPending = false;
+        vinculoRollButton.disabled = false;
+        vinculoRollButton.textContent = 'ROLAR';
+        return false;
+      }
+      return true;
     } catch (err) {
       rollPending = false;
       vinculoRollButton.disabled = false;
@@ -5127,7 +5145,6 @@ if (throwButtonForLabel) throwButtonForLabel.setAttribute('aria-label', 'Rolar d
       console.error('Não foi possível iniciar a rolagem física:', err);
       return false;
     }
-    return true;
   }
 
   vinculoRollButton.addEventListener('click', triggerNativeThrow);
