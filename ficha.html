@@ -1625,7 +1625,7 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2938
     var wildcardKnowledge = !!names['conhecimento qualquer'];
     state.skills.forEach(function(skill) {
       var normalized = dnd35Norm(skill.nome), id = String(skill.id);
-      if (names[normalized] || (wildcardKnowledge && normalized.indexOf('conhecimento ') === 0) || (names.fuga && id === 'fuga')) ids[id] = true;
+      if (names[normalized] || (wildcardKnowledge && (normalized === 'conhecimento' || normalized.indexOf('conhecimento ') === 0)) || (names.fuga && id === 'fuga')) ids[id] = true;
     });
     return ids;
   }
@@ -1825,11 +1825,11 @@ function dnd35TranslateCatalogText(value){
   
   function dnd35RenderSkills(state, attrs, creating, classMap) {
     var ranks = dnd35Objeto(state.sheet.pericias), budget = dnd35PericiaBudget(state,attrs), spent = dnd35PericiaCostTotal(state,ranks,classMap);
-    var level = Math.max(1,Number(state.sheet.nivel)||1), html = creating ? '<p class="dnd35-note">Atuação possui nove especialidades independentes. Cada uma recebe suas próprias graduações e pontos de perícia.</p>' : '';
+    var level = Math.max(1,Number(state.sheet.nivel)||1), html = creating ? '<p class="dnd35-note">Atuação possui nove especialidades independentes. Conhecimento também é dividido por área de estudo. Cada especialidade recebe suas próprias graduações e pontos de perícia.</p>' : '';
     var sorted = state.skills.slice().sort(function(a,b) { var ac=!!classMap[String(a.id)], bc=!!classMap[String(b.id)]; return ac===bc ? String(a.nome).localeCompare(String(b.nome),'pt-BR') : (ac?-1:1); });
     sorted.forEach(function(skill) {
       var id = String(skill.id), isClass = !!classMap[id], rank = Number(ranks[id] || 0), ability = String(skill.atributo || 'INT').toUpperCase();
-      if (id === 'srd35_skill_perform' && (creating || rank <= 0)) return; // Mantém visível apenas em fichas legadas que já possuíam graduações genéricas.
+      if ((id === 'srd35_skill_perform' || id === 'srd35_skill_knowledge') && (creating || rank <= 0)) return; // Oculta perícias-umbrela na criação e preserva graduações legadas.
       var isLanguage=String(skill.id)==='srd35_skill_speak_language',max=isLanguage?budget:(isClass?level+3:(level+3)/2),options='';
       if (creating) {
         var step=isLanguage?1:(isClass?1:0.5);
