@@ -1785,7 +1785,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         if(!Number.isFinite(ac))throw new Error('O servidor não retornou uma CA válida para o personagem.');
         var targetCharacter=personagens.find(function(p){return String(p.ch.id)===String(target.id);});
         var attackerStats=selected.attacker&&selected.attacker.monsterStats||{};
-        var attackerType=String([attackerStats.tipo,attackerStats.subtipo,attackerStats.subtype,attackerStats.subtypes,attackerStats.type,selected.attacker&&selected.attacker.detalhe].filter(Boolean).join(' ')).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+        // O bônus é contra criaturas do tipo Gigante, não contra qualquer criatura com "gigante" no nome.
+        var attackerType=String([attackerStats.tipo,attackerStats.subtipo,attackerStats.subtype,attackerStats.subtypes,attackerStats.type].filter(Boolean).join(' ')).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
         var attackerIsGiant=/(^|[^a-z])(giant|gigante)([^a-z]|$)/.test(attackerType);
         if(targetCharacter&&String(targetCharacter.sh&&targetCharacter.sh.raca_id)==='anao'&&attackerIsGiant&&!acDetails.dexterity_lost){
           ac+=4;acDetails.racial_dwarf_giant_dodge_bonus=4;acDetails.final_ac=ac;
