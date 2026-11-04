@@ -2118,7 +2118,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       var mod=modifier35((p.sh.atributos||{})[ability]),skillName=norm(sk.nome);
       var classSkill=normalizedClassSkills.indexOf(skillName)>=0||skillName==='atletismo'&&normalizedClassSkills.indexOf('saltar')>=0||normalizedClassSkills.indexOf('conhecimento qualquer')>=0&&skillName.indexOf('conhecimento ')===0;
       var classBonus=classSkill&&rank>0?3:0,racialBonus=bonusRacialPericia35(p.sh.raca_id,sk.id);
-      var armorCheckPenalty=sk.penalidade_armadura?penalidadeArmaduraHabilidade35(p):0;
+      var armorCheckPenalty=sk.penalidade_armadura?penalidadeArmaduraHabilidade35(p)*(['natacao','natação'].indexOf(String(sk.id))>=0?2:1):0;
       var armorNonproficiencyPenalty=(ability==='FOR'||ability==='DES')?penalidadeArmaduraNaoProficiente35(p):0;
       var bonus=rank+mod+classBonus+racialBonus+armorCheckPenalty+armorNonproficiencyPenalty;
       return {sk:sk,rank:rank,ability:ability,mod:mod,classBonus:classBonus,racialBonus:racialBonus,armorCheckPenalty:armorCheckPenalty,armorNonproficiencyPenalty:armorNonproficiencyPenalty,bonus:bonus};
