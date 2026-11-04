@@ -3723,12 +3723,19 @@ async function abrirModalEquipamentos(){
   }
 
   function receberPedidoTeste(data, logId){
-    if(ehGM || !data || !Array.isArray(data.alvos)) return;
-    var key = String(logId || data.request_id || (data.tipo+'|'+data.alvos.join(',')));
-    if(pedidosTesteVistos[key]) return;
-    pedidosTesteVistos[key] = true;
-    if(!personagensCarregados){ pedidosTestePendentes.push({data:data,key:key}); return; }
-    ativarPedidoTeste(data, key);
+    if(!data)return;
+    var key=String(logId||data.request_id||(data.tipo+'|'+(Array.isArray(data.alvos)?data.alvos.join(','):'')+'|'+(Array.isArray(data.npc_alvos)?data.npc_alvos.join(','):'')));
+    if(pedidosTesteVistos[key])return;
+    pedidosTesteVistos[key]=true;
+    if(ehGM){
+      if(data.resolution_type==='spell_save'&&Array.isArray(data.npc_alvos)&&data.npc_alvos.length){
+        ativarPedidoTeste(data,key);
+      }
+      return;
+    }
+    if(!Array.isArray(data.alvos))return;
+    if(!personagensCarregados){pedidosTestePendentes.push({data:data,key:key});return;}
+    ativarPedidoTeste(data,key);
   }
 
   function processarPedidosTestePendentes(){
@@ -3739,10 +3746,19 @@ async function abrirModalEquipamentos(){
   }
 
   function ativarPedidoTeste(data, requestKey){
-    if(ehGM || !data || !Array.isArray(data.alvos)) return;
-    var alvos = data.alvos.map(String);
+    if(!data) return;
+    if(ehGM){
+      if(data.resolution_type==='spell_save'&&Array.isArray(data.npc_alvos)){
+        data.npc_alvos.forEach(function(tokenId){
+          criarBotaoRolagemNpcTeste(String(data.tipo||'Resistência'),String(tokenId),requestKey,data);
+        });
+      }
+      return;
+    }
+    if(!Array.isArray(data.alvos)) return;
+    var alvos=data.alvos.map(String);
     personagens.forEach(function(personagemAlvo){
-      if(personagemAlvo.ch.user_id !== eu.id || alvos.indexOf(String(personagemAlvo.ch.id)) === -1) return;
+      if(personagemAlvo.ch.user_id!==eu.id||alvos.indexOf(String(personagemAlvo.ch.id))===-1)return;
       var isInitiative=String(data.tipo||'').toLocaleLowerCase('pt-BR').includes('iniciativa');
       if(isInitiative){
         var expected=combatDataState&&Array.isArray(combatDataState.expected_character_ids)?combatDataState.expected_character_ids.map(String):[];
@@ -3750,8 +3766,8 @@ async function abrirModalEquipamentos(){
         if(Array.isArray(combatDataState.turn_order)&&combatDataState.turn_order.some(function(entry){return !entry.is_monster&&String(entry.id)===String(personagemAlvo.ch.id);})){removerPedidosIniciativaDaFicha(personagemAlvo.ch.id);return;}
       }
       var responseKey=String(requestKey)+'|'+String(personagemAlvo.ch.id);
-      if(pedidosTesteRespondidos[responseKey]) return;
-      criarBotaoRolagemTeste(String(data.tipo||'Teste de habilidade'), personagemAlvo.ch.id, requestKey);
+      if(pedidosTesteRespondidos[responseKey])return;
+      criarBotaoRolagemTeste(String(data.tipo||'Teste de habilidade'),personagemAlvo.ch.id,requestKey,data);
     });
   }
 
@@ -3860,36 +3876,32 @@ async function abrirModalEquipamentos(){
     if(!container.querySelector('.btn-rolar-teste')) container.remove();
   }
 
-  function criarBotaoRolagemTeste(tipoTeste, personagemId, requestKey){
+  function criarBotaoRolagemTeste(tipoTeste,personagemId,requestKey,requestData){
     var personagem=personajesById(personagemId);
     var responseKey=String(requestKey)+'|'+String(personagemId);
-    if(pedidosTesteRespondidos[responseKey]) return;
+    if(pedidosTesteRespondidos[responseKey])return;
     var tipoNormalizado=String(tipoTeste||'').toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');
     var isDyingSave=tipoNormalizado.includes('estabilizacao')&&tipoNormalizado.includes('d100');
+    var isSpellSave=requestData&&requestData.resolution_type==='spell_save';
+    var isSpellResistance=requestData&&requestData.resolution_type==='spell_resistance';
     var container=document.getElementById('botoes-rolagem-pendente');
     if(!container){
-      container=document.createElement('div');
-      container.id='botoes-rolagem-pendente';
-      container.setAttribute('role','region');
-      container.setAttribute('aria-label','Rolagens pendentes');
+      container=document.createElement('div');container.id='botoes-rolagem-pendente';
+      container.setAttribute('role','region');container.setAttribute('aria-label','Rolagens pendentes');
       var roster=document.querySelector('.painel-aventureiros');if(roster)roster.insertBefore(container,roster.querySelector('#cards-strip'));else document.getElementById('acoes-dir').appendChild(container);
     }
-    if(Array.from(container.querySelectorAll('.btn-rolar-teste')).some(function(btn){return btn.dataset.responseKey===responseKey;})) return;
-    var btn=document.createElement('button');
-    btn.className='btn-rolar-teste';
-    btn.type='button';
-    btn.dataset.responseKey=responseKey;
-    btn.dataset.requestKey=String(requestKey);
-    btn.dataset.characterId=String(personagemId);
+    if(Array.from(container.querySelectorAll('.btn-rolar-teste')).some(function(btn){return btn.dataset.responseKey===responseKey;}))return;
+    var btn=document.createElement('button');btn.className='btn-rolar-teste';btn.type='button';
+    btn.dataset.responseKey=responseKey;btn.dataset.requestKey=String(requestKey);btn.dataset.characterId=String(personagemId);
     btn.dataset.isInitiative=String(String(tipoTeste).toLocaleLowerCase('pt-BR').includes('iniciativa'));
-    btn.dataset.isDyingSave=String(isDyingSave);
-    if(btn.dataset.isInitiative==='true') Array.from(container.querySelectorAll('.btn-rolar-teste')).forEach(function(existing){if(existing.dataset.isInitiative==='true'&&existing.dataset.characterId===String(personagemId))existing.remove();});
+    btn.dataset.isDyingSave=String(isDyingSave);btn.dataset.isSpellSave=String(!!isSpellSave);btn.dataset.isSpellResistance=String(!!isSpellResistance);
+    if(btn.dataset.isInitiative==='true')Array.from(container.querySelectorAll('.btn-rolar-teste')).forEach(function(existing){if(existing.dataset.isInitiative==='true'&&existing.dataset.characterId===String(personagemId))existing.remove();});
     var nomePersonagem=personagem&&personagem.ch?String(personagem.ch.nome||'Personagem'):'Personagem';
-    btn.textContent=isDyingSave?'🩸 Rolar estabilização · '+nomePersonagem:'⚡ Rolar '+tipoTeste+' · '+nomePersonagem;
-    btn.setAttribute('aria-label',isDyingSave?'Rolar d100 de estabilização para '+nomePersonagem:'Rolar '+tipoTeste+' para '+nomePersonagem+' com o dado de vinte faces');
+    btn.textContent=isDyingSave?'🩸 Rolar estabilização · '+nomePersonagem:(isSpellSave?'🛡️ Rolar resistência · '+nomePersonagem:(isSpellResistance?'✨ Rolar penetração · '+nomePersonagem:'⚡ Rolar '+tipoTeste+' · '+nomePersonagem));
+    btn.setAttribute('aria-label',isDyingSave?'Rolar d100 de estabilização para '+nomePersonagem:'Rolar '+tipoTeste+' para '+nomePersonagem+' com o dado manual');
     btn.onclick=function(){
-      if(btn.disabled) return;
-      if(pedidoTesteAtivo){ alert('Conclua ou feche a rolagem atual antes de iniciar outra.'); return; }
+      if(btn.disabled)return;
+      if(pedidoTesteAtivo){alert('Conclua ou feche a rolagem atual antes de iniciar outra.');return;}
       btn.disabled=true;
       pedidoTesteAtivo={tipo:tipoTeste,personagemId:String(personagemId),requestKey:String(requestKey),responseKey:responseKey,button:btn};
       abrirDado(isDyingSave?'Estabilização · '+nomePersonagem+' · D100':tipoTeste+' · '+nomePersonagem+' · D20',async function(resultado){
@@ -3899,14 +3911,29 @@ async function abrirModalEquipamentos(){
           var texto='',extras={request_id:requestKey,character_id:personagemId,teste:tipoTeste};
           if(isDyingSave){
             var d100=Number(resultado);
-            if(!Number.isInteger(d100)||d100<1||d100>100)throw new Error('O resultado do dado precisa ser um d100 entre 1 e 100.');
+            if(!Number.isInteger(d100)||d100<1||d100>100)throw new Error('O resultado precisa ser um d100 entre 1 e 100.');
             var resolved=await sb.rpc('srd_resolve_dying_round',{p_campaign_id:Number(MESA_ID),p_character_id:String(personagemId),p_d100:d100});
             if(resolved.error)throw new Error(resolved.error.message);
-            var outcome=resolved.data||{};
-            extras.d100=d100;extras.estabilizacao=true;extras.pv_atual=outcome.pv_atual;extras.condition=outcome.condition;
+            var outcome=resolved.data||{};extras.d100=d100;extras.estabilizacao=true;extras.pv_atual=outcome.pv_atual;extras.condition=outcome.condition;
             if(outcome.stabilized)texto='🩸 '+ficha.ch.nome+' estabilizou com o resultado '+d100+'/100. PV: '+outcome.pv_atual+'.';
             else if(outcome.dead)texto='☠️ '+ficha.ch.nome+' morreu ao atingir -10 PV (d100: '+d100+').';
             else texto='🩸 '+ficha.ch.nome+' não estabilizou (d100: '+d100+') e perdeu 1 PV. PV atual: '+outcome.pv_atual+'.';
+          }else if(isSpellSave||isSpellResistance){
+            var d20=Number(resultado);
+            if(!Number.isInteger(d20)||d20<1||d20>20)throw new Error('O resultado precisa ser um d20 entre 1 e 20.');
+            var rpcName=isSpellSave?'srd_resolve_pending_spell_save':'srd_resolve_pending_spell_resistance';
+            var resolvedSpell=await sb.rpc(rpcName,{p_pending_id:String(requestData.pending_id),p_d20:d20});
+            if(resolvedSpell.error)throw new Error(resolvedSpell.error.message);
+            var spellOutcome=resolvedSpell.data||{};extras.d20=d20;extras.pending_id=requestData.pending_id;extras.spell_id=requestData.spell_id;
+            extras.total=spellOutcome.total;extras.bonus=spellOutcome.bonus;extras.dc=spellOutcome.dc;extras.status=spellOutcome.status;
+            if(isSpellSave){
+              if(spellOutcome.saved)texto='🛡️ '+ficha.ch.nome+' resistiu à magia ('+d20+' + '+spellOutcome.bonus+' = '+spellOutcome.total;'+ ' contra CD '+spellOutcome.dc+').';
+              else if(spellOutcome.requires_spell_resistance)texto='✨ '+ficha.ch.nome+' falhou na resistência. O conjurador precisa superar a resistência à magia '+spellOutcome.spell_resistance+'.';
+              else texto='🌀 A resistência falhou; o efeito da magia foi aplicado a '+ficha.ch.nome+'.';
+            }else{
+              if(spellOutcome.status==='resisted')texto='🛡️ A resistência à magia bloqueou o efeito ('+d20+' + '+requestData.caster_level+' = '+spellOutcome.total+' contra RM '+spellOutcome.spell_resistance+').';
+              else texto='✨ A magia penetrou a resistência e seu efeito foi aplicado.';
+            }
           }else{
             var bonus=bonusDoTeste(tipoTeste,ficha.sh?ficha.sh.atributos:null);
             var isInitiative=String(tipoTeste).toLocaleLowerCase('pt-BR').includes('iniciativa');
@@ -3922,23 +3949,53 @@ async function abrirModalEquipamentos(){
           }
           pedidosTesteRespondidos[responseKey]=true;
           removerBotaoRolagemTeste(requestKey,personagemId);
-          if(extras.iniciativa) removerPedidosIniciativaDaFicha(personagemId);
+          if(extras.iniciativa)removerPedidosIniciativaDaFicha(personagemId);
           try{
             var log=await enviarMensagemChat(texto,'rolagem',extras);
-            if(log&&log.error) alert('A rolagem foi processada, mas não entrou no chat.');
-          }catch(logError){
-            console.error('A rolagem foi processada, mas não pôde ser registrada no chat:',logError);
-            alert('A rolagem foi processada, mas não pôde ser registrada no chat.');
-          }
-          if(isDyingSave)await carregarPersonagens();
+            if(log&&log.error)alert('A rolagem foi processada, mas não entrou no chat.');
+          }catch(logError){console.error('Rolagem processada, mas sem registro no chat:',logError);alert('A rolagem foi processada, mas não pôde ser registrada no chat.');}
+          if(isDyingSave||isSpellSave||isSpellResistance)await carregarPersonagens();
         }catch(err){
           console.error('Falha ao processar o resultado do dado:',err);
           if(!pedidosTesteRespondidos[responseKey])btn.disabled=false;
           alert('Não foi possível concluir a rolagem: '+(err.message||err));
-        }finally{
-          if(pedidoTesteAtivo&&pedidoTesteAtivo.responseKey===responseKey)pedidoTesteAtivo=null;
-        }
-      },true,true,isDyingSave?'1d100':null);
+        }finally{if(pedidoTesteAtivo&&pedidoTesteAtivo.responseKey===responseKey)pedidoTesteAtivo=null;}
+      },true,true,isDyingSave?'1d100':'1d20');
+    };
+    container.appendChild(btn);
+  }
+
+  function criarBotaoRolagemNpcTeste(tipoTeste,tokenId,requestKey,requestData){
+    var responseKey=String(requestKey)+'|npc|'+String(tokenId);
+    if(pedidosTesteRespondidos[responseKey])return;
+    var container=document.getElementById('botoes-rolagem-pendente');
+    if(!container){
+      container=document.createElement('div');container.id='botoes-rolagem-pendente';
+      container.setAttribute('role','region');container.setAttribute('aria-label','Rolagens pendentes');
+      var roster=document.querySelector('.painel-aventureiros');if(roster)roster.insertBefore(container,roster.querySelector('#cards-strip'));else document.getElementById('acoes-dir').appendChild(container);
+    }
+    if(Array.from(container.querySelectorAll('.btn-rolar-teste')).some(function(btn){return btn.dataset.responseKey===responseKey;}))return;
+    var token=(cbaState&&Array.isArray(cbaState.tokens)?cbaState.tokens:[]).find(function(t){return String(t.key||t.id)===String(tokenId);});
+    var nome=token?String(token.nome||token.name||'Alvo NPC'):'Alvo NPC';
+    var btn=document.createElement('button');btn.className='btn-rolar-teste';btn.type='button';btn.dataset.responseKey=responseKey;
+    btn.textContent='🎲 Rolar resistência do NPC · '+nome;
+    btn.onclick=function(){
+      if(btn.disabled)return;
+      if(pedidoTesteAtivo){alert('Conclua ou feche a rolagem atual antes de iniciar outra.');return;}
+      btn.disabled=true;pedidoTesteAtivo={tipo:tipoTeste,personagemId:String(tokenId),requestKey:String(requestKey),responseKey:responseKey,button:btn};
+      abrirDado(tipoTeste+' · '+nome+' · D20',async function(resultado){
+        try{
+          var d20=Number(resultado);
+          if(!Number.isInteger(d20)||d20<1||d20>20)throw new Error('O resultado precisa ser um d20 entre 1 e 20.');
+          var resolved=await sb.rpc('srd_resolve_pending_spell_save',{p_pending_id:String(requestData.pending_id),p_d20:d20});
+          if(resolved.error)throw new Error(resolved.error.message);
+          var outcome=resolved.data||{};pedidosTesteRespondidos[responseKey]=true;
+          removerBotaoRolagemTeste(requestKey,tokenId);
+          var texto=outcome.saved?'🛡️ '+nome+' resistiu à magia ('+d20+' + '+outcome.bonus+' = '+outcome.total+' contra CD '+outcome.dc+').':(outcome.requires_spell_resistance?'🌀 '+nome+' falhou na resistência; o conjurador agora deve superar RM '+outcome.spell_resistance+'.':'🌀 A resistência falhou; o efeito foi aplicado a '+nome+'.');
+          await enviarMensagemChat(texto,'rolagem',{request_id:requestKey,pending_id:requestData.pending_id,token_id:tokenId,d20:d20,total:outcome.total,status:outcome.status});
+        }catch(err){btn.disabled=false;alert('Não foi possível concluir a resistência: '+(err.message||err));}
+        finally{if(pedidoTesteAtivo&&pedidoTesteAtivo.responseKey===responseKey)pedidoTesteAtivo=null;}
+      },true,true,'1d20');
     };
     container.appendChild(btn);
   }
