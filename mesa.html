@@ -2141,6 +2141,18 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         if(card.disabled)return;
         card.disabled=true;
         try{
+          var conditionalRacialBonus=0;
+          if(String(p.sh&&p.sh.raca_id)==='anao'&&['procurar','avaliacao','oficio'].indexOf(String(option.sk.id))>=0){
+            var condition=await window.vttUI.ask({
+              title:'Característica racial do Anão',
+              label:option.sk.id==='procurar'?'Você está procurando especificamente por construção incomum de pedra ou armadilha de pedra?':'O teste envolve avaliar ou trabalhar especificamente com pedra ou metal?',
+              kind:'select',
+              options:[{value:'yes',label:'Sim, esta condição se aplica'},{value:'no',label:'Não'}],
+              defaultValue:'no'
+            });
+            if(condition===null){card.disabled=false;return;}
+            if(condition==='yes')conditionalRacialBonus=2;
+          }
           var gate=await sb.rpc('srd_validar_uso_pericia_srd',{p_character_id:String(p.ch.id),p_skill_id:String(option.sk.id)});
           if(gate.error)throw new Error(gate.error.message);
           if(!gate.data||gate.data.allowed!==true){alert(gate.data&&gate.data.reason||'Esta perícia não pode ser usada agora.');card.disabled=false;return;}
@@ -2149,13 +2161,14 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
             var finalGate=await sb.rpc('srd_validar_uso_pericia_srd',{p_character_id:String(p.ch.id),p_skill_id:String(option.sk.id)});
             if(finalGate.error)throw new Error(finalGate.error.message);
             if(!finalGate.data||finalGate.data.allowed!==true)throw new Error(finalGate.data&&finalGate.data.reason||'A perícia deixou de estar disponível antes de concluir a rolagem.');
-            var totalRoll=Number(d20)+option.bonus,trapfinding=!!finalGate.data.trapfinding,trapfindingNote='';
+            var totalRoll=Number(d20)+option.bonus+conditionalRacialBonus,trapfinding=!!finalGate.data.trapfinding,trapfindingNote='';
             var parts=['1d20 '+d20,option.rank+' grad.',option.ability+' '+(option.mod>=0?'+':'')+option.mod];
             if(option.classBonus)parts.push('perícia de classe +3');
             if(option.racialBonus)parts.push('bônus racial '+(option.racialBonus>=0?'+':'')+option.racialBonus);
+            if(conditionalRacialBonus)parts.push('característica racial anã +'+conditionalRacialBonus);
             if(trapfinding&&option.sk.id==='procurar')trapfindingNote='Trapfinding: pode localizar armadilhas com CD acima de 20, inclusive armadilhas mágicas (CD 25 + nível da magia).';
             if(trapfinding&&option.sk.id==='srd35_skill_disable_device')trapfindingNote='Trapfinding: pode tentar desarmar armadilhas mágicas com Operar Mecanismo.';
-            await enviarMensagemChat('📚 '+p.ch.nome+' — '+option.sk.nome+': '+parts.join(' + ')+' = **'+totalRoll+'**.'+(trapfindingNote?'\n🪤 '+trapfindingNote:''),'rolagem',{evento:'pericia_dnd35',character_id:String(p.ch.id),skill_id:option.sk.id,total:totalRoll,graduações:option.rank,modificador_atributo:option.mod,bônus_classe:option.classBonus,bonus_racial:option.racialBonus,trapfinding:trapfinding,trapfinding_note:trapfindingNote});
+            await enviarMensagemChat('📚 '+p.ch.nome+' — '+option.sk.nome+': '+parts.join(' + ')+' = **'+totalRoll+'**.'+(trapfindingNote?'\n🪤 '+trapfindingNote:''),'rolagem',{evento:'pericia_dnd35',character_id:String(p.ch.id),skill_id:option.sk.id,total:totalRoll,graduações:option.rank,modificador_atributo:option.mod,bônus_classe:option.classBonus,bonus_racial:option.racialBonus,bonus_racial_condicional:conditionalRacialBonus,trapfinding:trapfinding,trapfinding_note:trapfindingNote});
           },true);
         }catch(error){alert('Não foi possível usar esta perícia: '+(error&&error.message||error));card.disabled=false;}
       };
