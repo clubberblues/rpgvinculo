@@ -4704,6 +4704,17 @@ async function abrirModalEquipamentos(){
       var s = shs[String(c.id)] || {};
       return { ch:c, sh:s, cl: cls[String(s.classe_id)] || {}, perfil:perfisMap[c.user_id]||{}, equipamento:equipmentByChar[String(c.id)]||[], tamanho:raceSizeById[String(s.raca_id)]||'Medium', deslocamento_m:raceSpeedById[String(s.raca_id)]==null?null:raceSpeedById[String(s.raca_id)] };
     });
+    // Preview uses the same authoritative server calculation as movement validation:
+    // race speed + class bonuses + carried load + equipped armor.
+    await Promise.all(personagens.map(async function(personagem){
+      if(personagem.deslocamento_m==null)return;
+      var result=await sb.rpc('srd35_deslocamento_personagem',{
+        p_character_id:String(personagem.ch.id),
+        p_base_speed_m:Number(personagem.deslocamento_m)
+      });
+      if(!result.error&&Number.isFinite(Number(result.data)))personagem.deslocamento_m=Number(result.data);
+      else if(String(personagem.cl&&personagem.cl.class_key)==='barbarian')personagem.deslocamento_m=null;
+    }));
     sincronizarDadosFichaNosTokens();
     personagensCarregados=true;
     renderCards();
