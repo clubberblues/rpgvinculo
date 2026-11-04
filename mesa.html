@@ -2098,15 +2098,25 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       var total=document.createElement('b');total.textContent=(option.bonus>=0?'+':'')+option.bonus;
       var rule=document.createElement('small');rule.className='skill-roll-rule';rule.textContent=resumoPericiaPt35(option.sk.nome,option.sk.descricao);var detail=document.createElement('small');detail.className='skill-roll-formula';detail.textContent='Teste: 1d20 '+(option.bonus>=0?'+':'')+option.bonus+' · bônus total'+(option.racialBonus?' · bônus racial '+(option.racialBonus>=0?'+':'')+option.racialBonus:'');
       card.append(name,meta,total,rule,detail);
-      card.onclick=function(){
-        modal.remove();
-        abrirDado('Perícia · '+option.sk.nome,function(d20){
-          var totalRoll=Number(d20)+option.bonus;
-          var parts=['1d20 '+d20,option.rank+' grad.',option.ability+' '+(option.mod>=0?'+':'')+option.mod];
-          if(option.classBonus)parts.push('perícia de classe +3');
-          if(option.racialBonus)parts.push('bônus racial '+(option.racialBonus>=0?'+':'')+option.racialBonus);
-          enviarMensagemChat('📚 '+p.ch.nome+' — '+option.sk.nome+': '+parts.join(' + ')+' = **'+totalRoll+'**.','rolagem',{evento:'pericia_dnd35',character_id:String(p.ch.id),skill_id:option.sk.id,total:totalRoll,graduações:option.rank,modificador_atributo:option.mod,bônus_classe:option.classBonus,bonus_racial:option.racialBonus});
-        },true);
+      card.onclick=async function(){
+        if(card.disabled)return;
+        card.disabled=true;
+        try{
+          var gate=await sb.rpc('srd_validar_uso_pericia_srd',{p_character_id:String(p.ch.id),p_skill_id:String(option.sk.id)});
+          if(gate.error)throw new Error(gate.error.message);
+          if(!gate.data||gate.data.allowed!==true){alert(gate.data&&gate.data.reason||'Esta perícia não pode ser usada agora.');card.disabled=false;return;}
+          modal.remove();
+          abrirDado('Perícia · '+option.sk.nome,async function(d20){
+            var finalGate=await sb.rpc('srd_validar_uso_pericia_srd',{p_character_id:String(p.ch.id),p_skill_id:String(option.sk.id)});
+            if(finalGate.error)throw new Error(finalGate.error.message);
+            if(!finalGate.data||finalGate.data.allowed!==true)throw new Error(finalGate.data&&finalGate.data.reason||'A perícia deixou de estar disponível antes de concluir a rolagem.');
+            var totalRoll=Number(d20)+option.bonus;
+            var parts=['1d20 '+d20,option.rank+' grad.',option.ability+' '+(option.mod>=0?'+':'')+option.mod];
+            if(option.classBonus)parts.push('perícia de classe +3');
+            if(option.racialBonus)parts.push('bônus racial '+(option.racialBonus>=0?'+':'')+option.racialBonus);
+            await enviarMensagemChat('📚 '+p.ch.nome+' — '+option.sk.nome+': '+parts.join(' + ')+' = **'+totalRoll+'**.','rolagem',{evento:'pericia_dnd35',character_id:String(p.ch.id),skill_id:option.sk.id,total:totalRoll,graduações:option.rank,modificador_atributo:option.mod,bônus_classe:option.classBonus,bonus_racial:option.racialBonus});
+          },true);
+        }catch(error){alert('Não foi possível usar esta perícia: '+(error&&error.message||error));card.disabled=false;}
       };
       grid.appendChild(card);
     });
