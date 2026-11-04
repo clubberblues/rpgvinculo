@@ -3864,6 +3864,8 @@ async function abrirModalEquipamentos(){
     var personagem=personajesById(personagemId);
     var responseKey=String(requestKey)+'|'+String(personagemId);
     if(pedidosTesteRespondidos[responseKey]) return;
+    var tipoNormalizado=String(tipoTeste||'').toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');
+    var isDyingSave=tipoNormalizado.includes('estabilizacao')&&tipoNormalizado.includes('d100');
     var container=document.getElementById('botoes-rolagem-pendente');
     if(!container){
       container=document.createElement('div');
@@ -3880,49 +3882,63 @@ async function abrirModalEquipamentos(){
     btn.dataset.requestKey=String(requestKey);
     btn.dataset.characterId=String(personagemId);
     btn.dataset.isInitiative=String(String(tipoTeste).toLocaleLowerCase('pt-BR').includes('iniciativa'));
+    btn.dataset.isDyingSave=String(isDyingSave);
     if(btn.dataset.isInitiative==='true') Array.from(container.querySelectorAll('.btn-rolar-teste')).forEach(function(existing){if(existing.dataset.isInitiative==='true'&&existing.dataset.characterId===String(personagemId))existing.remove();});
     var nomePersonagem=personagem&&personagem.ch?String(personagem.ch.nome||'Personagem'):'Personagem';
-    btn.textContent='⚡ Rolar '+tipoTeste+' · '+nomePersonagem;
-    btn.setAttribute('aria-label','Rolar '+tipoTeste+' para '+nomePersonagem+' com o dado de vinte faces');
+    btn.textContent=isDyingSave?'🩸 Rolar estabilização · '+nomePersonagem:'⚡ Rolar '+tipoTeste+' · '+nomePersonagem;
+    btn.setAttribute('aria-label',isDyingSave?'Rolar d100 de estabilização para '+nomePersonagem:'Rolar '+tipoTeste+' para '+nomePersonagem+' com o dado de vinte faces');
     btn.onclick=function(){
       if(btn.disabled) return;
       if(pedidoTesteAtivo){ alert('Conclua ou feche a rolagem atual antes de iniciar outra.'); return; }
       btn.disabled=true;
       pedidoTesteAtivo={tipo:tipoTeste,personagemId:String(personagemId),requestKey:String(requestKey),responseKey:responseKey,button:btn};
-      abrirDado(tipoTeste+' · '+nomePersonagem+' · D20',async function(resultado){
+      abrirDado(isDyingSave?'Estabilização · '+nomePersonagem+' · D100':tipoTeste+' · '+nomePersonagem+' · D20',async function(resultado){
         try{
           var ficha=personajesById(personagemId);
-          if(!ficha){btn.disabled=false;alert('Não foi possível localizar sua ficha para calcular o bônus.');return;}
-          var bonus=bonusDoTeste(tipoTeste,ficha.sh?ficha.sh.atributos:null);
-          var isInitiative=String(tipoTeste).toLocaleLowerCase('pt-BR').includes('iniciativa');
-          var featBonus=isInitiative&&personagemTemTalento(ficha.sh,'iniciativa_aprimorada')?4:0;
-          var total=resultado+bonus+featBonus;
-          var texto=tipoTeste+' — D20: '+resultado+' + bônus: '+bonus+' = '+total;
-          if(isInitiative){
-            var salvo=await salvarIniciativa(personagemId,ficha.ch.nome,total);
-            if(!salvo.ok){btn.disabled=false;alert('Sua rolagem foi '+total+', mas a ordem não pôde ser salva. Verifique a migração SQL e tente novamente. Detalhe: '+salvo.error);return;}
-            texto='⚡ Iniciativa de '+esc(ficha.ch.nome)+': '+total+' (D20 '+resultado+' + DES '+bonus+(featBonus?' + Iniciativa Aprimorada +4':'')+')';
+          if(!ficha){btn.disabled=false;throw new Error('Não foi possível localizar sua ficha para concluir a rolagem.');}
+          var texto='',extras={request_id:requestKey,character_id:personagemId,teste:tipoTeste};
+          if(isDyingSave){
+            var d100=Number(resultado);
+            if(!Number.isInteger(d100)||d100<1||d100>100)throw new Error('O resultado do dado precisa ser um d100 entre 1 e 100.');
+            var resolved=await sb.rpc('srd_resolve_dying_round',{p_campaign_id:Number(MESA_ID),p_character_id:String(personagemId),p_d100:d100});
+            if(resolved.error)throw new Error(resolved.error.message);
+            var outcome=resolved.data||{};
+            extras.d100=d100;extras.estabilizacao=true;extras.pv_atual=outcome.pv_atual;extras.condition=outcome.condition;
+            if(outcome.stabilized)texto='🩸 '+ficha.ch.nome+' estabilizou com o resultado '+d100+'/100. PV: '+outcome.pv_atual+'.';
+            else if(outcome.dead)texto='☠️ '+ficha.ch.nome+' morreu ao atingir -10 PV (d100: '+d100+').';
+            else texto='🩸 '+ficha.ch.nome+' não estabilizou (d100: '+d100+') e perdeu 1 PV. PV atual: '+outcome.pv_atual+'.';
+          }else{
+            var bonus=bonusDoTeste(tipoTeste,ficha.sh?ficha.sh.atributos:null);
+            var isInitiative=String(tipoTeste).toLocaleLowerCase('pt-BR').includes('iniciativa');
+            var featBonus=isInitiative&&personagemTemTalento(ficha.sh,'iniciativa_aprimorada')?4:0;
+            var total=Number(resultado)+bonus+featBonus;
+            texto=tipoTeste+' — D20: '+resultado+' + bônus: '+bonus+' = '+total;
+            if(isInitiative){
+              var salvo=await salvarIniciativa(personagemId,ficha.ch.nome,total);
+              if(!salvo.ok){btn.disabled=false;throw new Error('Sua rolagem foi '+total+', mas a ordem não pôde ser salva. '+salvo.error);}
+              texto='⚡ Iniciativa de '+esc(ficha.ch.nome)+': '+total+' (D20 '+resultado+' + DES '+bonus+(featBonus?' + Iniciativa Aprimorada +4':'')+')';
+              extras.iniciativa=true;extras.bonus=bonus;extras.bonus_talento=featBonus;extras.total=total;
+            }else{extras.d20=Number(resultado);extras.bonus=bonus;extras.total=total;}
           }
           pedidosTesteRespondidos[responseKey]=true;
           removerBotaoRolagemTeste(requestKey,personagemId);
-          if(isInitiative) removerPedidosIniciativaDaFicha(personagemId);
-          var extras={teste:tipoTeste,d20:resultado,bonus:bonus,bonus_talento:featBonus,total:total,request_id:requestKey,character_id:personagemId};
-          if(isInitiative) extras.iniciativa=true;
+          if(extras.iniciativa) removerPedidosIniciativaDaFicha(personagemId);
           try{
             var log=await enviarMensagemChat(texto,'rolagem',extras);
-            if(log&&log.error) alert(isInitiative?'A iniciativa foi salva, mas a rolagem não foi registrada no chat.':'O resultado foi calculado, mas não entrou no chat.');
+            if(log&&log.error) alert('A rolagem foi processada, mas não entrou no chat.');
           }catch(logError){
             console.error('A rolagem foi processada, mas não pôde ser registrada no chat:',logError);
-            alert(isInitiative?'A iniciativa foi salva, mas a rolagem não foi registrada no chat.':'O resultado foi calculado, mas não entrou no chat.');
+            alert('A rolagem foi processada, mas não pôde ser registrada no chat.');
           }
+          if(isDyingSave)await carregarPersonagens();
         }catch(err){
           console.error('Falha ao processar o resultado do dado:',err);
-          if(!pedidosTesteRespondidos[responseKey]) btn.disabled=false;
+          if(!pedidosTesteRespondidos[responseKey])btn.disabled=false;
           alert('Não foi possível concluir a rolagem: '+(err.message||err));
         }finally{
-          if(pedidoTesteAtivo&&pedidoTesteAtivo.responseKey===responseKey) pedidoTesteAtivo=null;
+          if(pedidoTesteAtivo&&pedidoTesteAtivo.responseKey===responseKey)pedidoTesteAtivo=null;
         }
-      },true,true);
+      },true,true,isDyingSave?'1d100':null);
     };
     container.appendChild(btn);
   }
@@ -4435,7 +4451,8 @@ async function abrirModalEquipamentos(){
     if(m.type === 'test_request'){
       receberPedidoTeste(d, m.id);
       var initiativeRequest=String(d.tipo||'').toLocaleLowerCase('pt-BR').includes('iniciativa');
-      return '<div class="chat-msg sistema">📜 O Mestre solicitou: <b>'+esc(d.tipo||'Teste de habilidade')+'</b>.'+(initiativeRequest?' Todos os jogadores podem rolar simultaneamente; não há ordem de chamada.':'')+'</div>';
+      var solicitante=String(d.mestre||'')==='Sistema'?'O sistema solicitou:':'O Mestre solicitou:';
+      return '<div class="chat-msg sistema">📜 '+solicitante+' <b>'+esc(d.tipo||'Teste de habilidade')+'</b>.'+(initiativeRequest?' Todos os jogadores podem rolar simultaneamente; não há ordem de chamada.':'')+'</div>';
     }
     if(m.type === 'sistema' || m.type === 'xp' || m.type === 'nivel'){ return '<div class="chat-msg sistema">'+esc(d.texto||'')+'</div>'; }
     if(m.type === 'rolagem'){
