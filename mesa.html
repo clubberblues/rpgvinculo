@@ -1463,7 +1463,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   }
 
   function renderBotoesAcao(){
-    var el = document.getElementById('acoes-dir');var tokenMenu=document.getElementById('token-context-menu'),diceOverlay=document.getElementById('dado-iframe-overlay');if(tokenMenu&&tokenMenu.parentNode)tokenMenu.parentNode.removeChild(tokenMenu);if(diceOverlay&&diceOverlay.parentNode)diceOverlay.parentNode.removeChild(diceOverlay);
+    var el = document.getElementById('acoes-dir');var tokenMenu=document.getElementById('token-context-menu'),diceOverlay=document.getElementById('dado-iframe-overlay');if(tokenMenu&&tokenMenu.parentNode)tokenMenu.parentNode.removeChild(tokenMenu);
     var estado = campanha ? (campanha.state || 'EXPLORACAO') : 'EXPLORACAO';
     
     if (ehGM) {
@@ -1551,7 +1551,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     combatPanel.innerHTML='<h3>CONTROLE DO TURNO</h3><p id="turno-controle-status">Aguardando a iniciativa.</p><div id="iniciativa-acoes-mestre"></div>';
     el.appendChild(combatPanel);
     if(economyPanel)combatPanel.appendChild(economyPanel);
-    if(tokenMenu)el.appendChild(tokenMenu);var roster=document.createElement('section');roster.className='painel painel-aventureiros';roster.setAttribute('aria-label','Aventureiros da mesa');roster.innerHTML='<div class="painel-cab">AVENTUREIROS</div><div class="painel-corpo" id="cards-strip" aria-label="Cards de personagens, NPCs e monstros"></div>';var mesaFooter=document.querySelector('.mesa-footer');if(mesaFooter)mesaFooter.appendChild(roster);else el.appendChild(roster);var chatColumn=document.querySelector('.col-esq');if(diceOverlay&&chatColumn)chatColumn.appendChild(diceOverlay);
+    if(tokenMenu)el.appendChild(tokenMenu);var roster=document.createElement('section');roster.className='painel painel-aventureiros';roster.setAttribute('aria-label','Aventureiros da mesa');roster.innerHTML='<div class="painel-cab">AVENTUREIROS</div><div class="painel-corpo" id="cards-strip" aria-label="Cards de personagens, NPCs e monstros"></div>';var mesaFooter=document.querySelector('.mesa-footer');if(mesaFooter)mesaFooter.appendChild(roster);else el.appendChild(roster);/* O Dice é modal global: nenhuma renderização dos painéis pode recolocá-lo em uma coluna. */if(diceOverlay&&diceOverlay.parentElement!==document.body)document.body.appendChild(diceOverlay);
     if(document.getElementById('painel-iniciativa'))renderizarIniciativa(combatDataState);
   }
 
