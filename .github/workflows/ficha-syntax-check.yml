@@ -11,6 +11,7 @@ on:
     paths:
       - "ficha.html"
       - "lobby.html"
+      - ".github/workflows/ficha-syntax-check.yml"
 
 jobs:
   syntax:
