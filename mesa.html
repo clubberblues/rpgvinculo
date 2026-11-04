@@ -2186,15 +2186,24 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
             var finalGate=await sb.rpc('srd_validar_uso_pericia_srd',{p_character_id:String(p.ch.id),p_skill_id:String(option.sk.id)});
             if(finalGate.error)throw new Error(finalGate.error.message);
             if(!finalGate.data||finalGate.data.allowed!==true)throw new Error(finalGate.data&&finalGate.data.reason||'A perícia deixou de estar disponível antes de concluir a rolagem.');
-            var totalRoll=Number(d20)+option.bonus,trapfinding=!!finalGate.data.trapfinding,trapfindingNote='';
-            var parts=['1d20 '+d20,option.rank+' grad.',option.ability+' '+(option.mod>=0?'+':'')+option.mod];
+            var trapfinding=!!finalGate.data.trapfinding,trapfindingNote='',conditionalRacialBonus=0,conditionalRacialLabel='';
+            var parts=['D20 físico: '+d20,'graduações '+option.rank,'atributo '+option.ability+' '+(option.mod>=0?'+':'')+option.mod];
             if(option.classBonus)parts.push('perícia de classe +3');
-            if(option.racialBonus)parts.push('bônus racial '+(option.racialBonus>=0?'+':'')+option.racialBonus);
+            if(option.racialBonus)parts.push('bônus racial aplicável '+(option.racialBonus>=0?'+':'')+option.racialBonus);
             if(option.armorCheckPenalty)parts.push('penalidade de armadura '+option.armorCheckPenalty);
             if(option.armorNonproficiencyPenalty)parts.push('armadura sem proficiência '+option.armorNonproficiencyPenalty);
+            if(String(p.sh&&p.sh.raca_id)==='anao'){
+              if(String(option.sk.id)==='procurar'){conditionalRacialBonus=2;conditionalRacialLabel='Astúcia com pedras: +2 em Procurar para construções incomuns de pedra (aplicação decidida pelo Mestre).';}
+              else if(String(option.sk.id)==='avaliacao'){conditionalRacialBonus=2;conditionalRacialLabel='Traço anão: +2 em Avaliação de itens de pedra ou metal (aplicação decidida pelo Mestre).';}
+              else if(String(option.sk.id)==='oficio'){conditionalRacialBonus=2;conditionalRacialLabel='Traço anão: +2 em Ofício relacionado a pedra ou metal (aplicação decidida pelo Mestre).';}
+            }
+            if(conditionalRacialBonus)parts.push('bônus racial condicional disponível +'+conditionalRacialBonus);
             if(trapfinding&&option.sk.id==='procurar')trapfindingNote='Trapfinding: pode localizar armadilhas com CD acima de 20, inclusive armadilhas mágicas (CD 25 + nível da magia).';
             if(trapfinding&&option.sk.id==='srd35_skill_disable_device')trapfindingNote='Trapfinding: pode tentar desarmar armadilhas mágicas com Operar Mecanismo.';
-            await enviarMensagemChat('📚 '+p.ch.nome+' — '+option.displayName+': '+parts.join(' + ')+' = **'+totalRoll+'**.'+(trapfindingNote?'\n🪤 '+trapfindingNote:''),'rolagem',{evento:'pericia_dnd35',character_id:String(p.ch.id),skill_id:option.sk.id,skill_key:option.skillKey,especializacao:option.specializationName||null,total:totalRoll,graduações:option.rank,modificador_atributo:option.mod,bônus_classe:option.classBonus,bonus_racial:option.racialBonus,penalidade_armadura:option.armorCheckPenalty,penalidade_armadura_sem_proficiencia:option.armorNonproficiencyPenalty,trapfinding:trapfinding,trapfinding_note:trapfindingNote});
+            var breakdown='📚 '+p.ch.nome+' — '+option.displayName+': '+parts.join(' · ')+'. O Mestre aplica os bônus pertinentes e compara com a CD.';
+            if(conditionalRacialLabel)breakdown+='\n🪨 '+conditionalRacialLabel;
+            if(trapfindingNote)breakdown+='\n🪤 '+trapfindingNote;
+            await enviarMensagemChat(breakdown,'rolagem',{evento:'pericia_dnd35',character_id:String(p.ch.id),skill_id:option.sk.id,skill_key:option.skillKey,especializacao:option.specializationName||null,d20:Number(d20),graduações:option.rank,modificador_atributo:option.mod,bônus_classe:option.classBonus,bonus_racial:option.racialBonus,bonus_racial_condicional:conditionalRacialBonus,bonus_racial_condicional_descricao:conditionalRacialLabel,penalidade_armadura:option.armorCheckPenalty,penalidade_armadura_sem_proficiencia:option.armorNonproficiencyPenalty,trapfinding:trapfinding,trapfinding_note:trapfindingNote});
           },true);
         }catch(error){alert('Não foi possível usar esta perícia: '+(error&&error.message||error));card.disabled=false;}
       };
