@@ -2116,7 +2116,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       var rank=Math.max(0,Number(trained[String(sk.id)]||0)),ability=String(sk.atributo||'INT').toUpperCase();
       if(rank<=0&&sk.treinada_apenas)return null;
       var mod=modifier35((p.sh.atributos||{})[ability]),skillName=norm(sk.nome);
-      var classSkill=normalizedClassSkills.indexOf(skillName)>=0||normalizedClassSkills.indexOf('conhecimento qualquer')>=0&&skillName.indexOf('conhecimento ')===0;
+      var classSkill=normalizedClassSkills.indexOf(skillName)>=0||skillName==='atletismo'&&normalizedClassSkills.indexOf('saltar')>=0||normalizedClassSkills.indexOf('conhecimento qualquer')>=0&&skillName.indexOf('conhecimento ')===0;
       var classBonus=classSkill&&rank>0?3:0,racialBonus=bonusRacialPericia35(p.sh.raca_id,sk.id);
       var armorCheckPenalty=sk.penalidade_armadura?penalidadeArmaduraHabilidade35(p):0;
       var armorNonproficiencyPenalty=(ability==='FOR'||ability==='DES')?penalidadeArmaduraNaoProficiente35(p):0;
