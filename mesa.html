@@ -1551,7 +1551,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     combatPanel.innerHTML='<h3>CONTROLE DO TURNO</h3><p id="turno-controle-status">Aguardando a iniciativa.</p><div id="iniciativa-acoes-mestre"></div>';
     el.appendChild(combatPanel);
     if(economyPanel)combatPanel.appendChild(economyPanel);
-    if(tokenMenu)el.appendChild(tokenMenu);var roster=document.createElement('section');roster.className='painel painel-aventureiros';roster.setAttribute('aria-label','Aventureiros da mesa');roster.innerHTML='<div class="painel-cab">AVENTUREIROS</div><div class="painel-corpo" id="cards-strip" aria-label="Cards de personagens, NPCs e monstros"></div>';var mesaFooter=document.querySelector('.mesa-footer');if(mesaFooter)mesaFooter.appendChild(roster);else el.appendChild(roster);/* O Dice é modal global: nenhuma renderização dos painéis pode recolocá-lo em uma coluna. */if(diceOverlay&&diceOverlay.parentElement!==document.body)document.body.appendChild(diceOverlay);
+    if(tokenMenu)el.appendChild(tokenMenu);var roster=document.createElement('section');roster.className='painel painel-aventureiros';roster.setAttribute('aria-label','Aventureiros da mesa');roster.innerHTML='<div class="painel-cab">AVENTUREIROS</div><div class="painel-corpo" id="cards-strip" aria-label="Cards de personagens, NPCs e monstros"></div>';var mesaFooter=document.querySelector('.mesa-footer');if(mesaFooter)mesaFooter.appendChild(roster);else el.appendChild(roster);/* O Dice é modal global: nenhuma renderização dos painéis pode recolocá-lo em uma coluna. */if(diceOverlay){if(diceOverlay.parentElement!==document.body)document.body.appendChild(diceOverlay);diceOverlay.classList.add('dado-modal-global');}
     if(document.getElementById('painel-iniciativa'))renderizarIniciativa(combatDataState);
   }
 
@@ -4618,6 +4618,7 @@ async function abrirModalEquipamentos(){
     // O markup legado fica dentro de .col-esq, cujas regras !important prendem o Dice ao sidebar.
     // Reparenta para body antes de exibir: assim ele vira um modal real, fora do grid da mesa.
     if (dadoOverlay.parentElement !== document.body) document.body.appendChild(dadoOverlay);
+    dadoOverlay.classList.add('dado-modal-global');
     dadoOverlay.classList.toggle('dado-rolagem-obrigatoria', !!aguardarClique);
     document.getElementById('dado-titulo').textContent = (aguardarClique ? 'ROLAGEM SOLICITADA · ' : '') + titulo;
     dadoOverlay.style.display = 'flex';
@@ -5231,6 +5232,50 @@ html,body,#root{width:100%;height:100%;min-width:0;min-height:0}
   #dado-iframe-overlay{padding:6px!important}
   #dado-iframe-overlay .dado-card{height:94dvh!important;max-height:94dvh!important}
   #dado-iframe-overlay .dado-card-header{min-height:32px!important;padding:5px 9px!important}
+}
+
+/* Dice global padronizado: mesmo modal para Mestre e Jogador, independente da coluna original. */
+body > #dado-iframe-overlay.dado-modal-global,
+#dado-iframe-overlay.dado-modal-global {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2147483000 !important;
+  display: none;
+  width: 100vw !important;
+  height: 100dvh !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: clamp(10px, 3vh, 28px) !important;
+  box-sizing: border-box !important;
+  background: rgba(0,0,0,.86) !important;
+  backdrop-filter: blur(6px) !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+#dado-iframe-overlay.dado-modal-global[style*="display: flex"] { display: flex !important; }
+#dado-iframe-overlay.dado-modal-global > .dado-card {
+  width: min(95vw, 1200px) !important;
+  height: min(90dvh, 900px) !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: 1200px !important;
+  max-height: 900px !important;
+  flex: 0 1 auto !important;
+  border: 2px solid #c9a050 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 20px 50px rgba(0,0,0,.9) !important;
+}
+#dado-iframe-overlay.dado-modal-global .dado-card-body,
+#dado-iframe-overlay.dado-modal-global #dado-iframe {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  flex: 1 1 auto !important;
+}
+@media(max-width:600px) {
+  #dado-iframe-overlay.dado-modal-global { padding: 8px !important; }
+  #dado-iframe-overlay.dado-modal-global > .dado-card { width: 96vw !important; height: 88dvh !important; }
 }
 </style>
 </body>
