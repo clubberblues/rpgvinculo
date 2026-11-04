@@ -1854,7 +1854,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       }
     }
     var feats=own.sh.talentos||[];if(typeof feats==='string'){try{feats=JSON.parse(feats);}catch(e){feats=[];}}
-    var normalizeName=function(value){var n=String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();return ({'dwarven waraxe':'machado de guerra anao','waraxe dwarven':'machado de guerra anao','dwarven urgrosh':'urgrosh anao','urgrosh dwarven':'urgrosh anao'})[n]||n;};
+    var normalizeName=function(value){var n=String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();return ({'dwarven waraxe':'machado de guerra anao','waraxe dwarven':'machado de guerra anao','dwarven urgrosh':'urgrosh anao','urgrosh dwarven':'urgrosh anao'})[n]||n;};
     var hasWeaponFeat=function(id){return Array.isArray(feats)&&feats.some(function(feat){return feat&&String(feat.id)===id&&normalizeName(feat.parametro)===normalizeName(weaponFocusName);});};
     weaponFocus=(hasWeaponFeat('foco_em_arma')?1:0)+(hasWeaponFeat('srd35_feat_greater_weapon_focus')?1:0);
     weaponSpecializationDamage=(hasWeaponFeat('srd35_feat_weapon_specialization')?2:0)+(hasWeaponFeat('srd35_feat_greater_weapon_specialization')?2:0);
@@ -4126,7 +4126,7 @@ async function abrirModalEquipamentos(){
     var detalhes=weapon.detalhes||{},tipo=String(detalhes.weapon_proficiency||'').toLowerCase();
     var raw=personagem&&personagem.cl&&personagem.cl.dados_tecnicos&&personagem.cl.dados_tecnicos.proficiencias&&personagem.cl.dados_tecnicos.proficiencias.armas;
     if(typeof raw==='string'){try{raw=JSON.parse(raw);}catch(e){raw=[];}}
-    var normalize=function(value){var n=String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();return ({'dwarven waraxe':'machado de guerra anao','waraxe dwarven':'machado de guerra anao','dwarven urgrosh':'urgrosh anao','urgrosh dwarven':'urgrosh anao','urgrosh':'urgrosh anao'})[n]||n;};
+    var normalize=function(value){var n=String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();return ({'dwarven waraxe':'machado de guerra anao','waraxe dwarven':'machado de guerra anao','dwarven urgrosh':'urgrosh anao','urgrosh dwarven':'urgrosh anao','urgrosh':'urgrosh anao'})[n]||n;};
     var group=normalize(detalhes.weapon_group||weapon.categoria),profs=Array.isArray(raw)?raw.map(normalize):[];
     if(!tipo)tipo=group.indexOf('exotic')>=0?'exotic':group.indexOf('martial')>=0?'martial':group.indexOf('simple')>=0?'simple':'';
     var nome=normalize(detalhes.weapon_proficiency_name||weapon.nome),allSimple=profs.includes('armas simples'),allSimpleMartial=profs.includes('todas as armas simples e marciais');
