@@ -260,6 +260,7 @@ button,input,textarea{font-family:inherit}
 .token-cba .token-hp{position:absolute;top:calc(100% + 17px);left:50%;transform:translateX(-50%);width:44px;height:5px;border:1px solid rgba(0,0,0,.8);border-radius:4px;background:#273245;overflow:hidden;pointer-events:none}
 .token-cba .token-hp span{display:block;height:100%;background:#49c879;transition:width .2s,background .2s}
 .token-cba .token-hp span.warn{background:#f0bf4a}.token-cba .token-hp span.critical{background:#e14b4b}.token-cba .token-hp.unknown span{background:#7a8599}
+.token-cba .token-condition-badge{position:absolute;left:50%;top:-10px;transform:translateX(-50%);z-index:7;padding:2px 5px;border:1px solid #a65b58;border-radius:8px;background:rgba(38,10,14,.96);color:#ffd5cf;font:700 8px 'Cinzel',serif;white-space:nowrap;pointer-events:none;max-width:150px;overflow:hidden;text-overflow:ellipsis}
 .token-cba .token-ac{position:absolute;top:calc(100% + 24px);left:50%;transform:translateX(-50%);padding:1px 5px;border:1px solid #75613b;border-radius:8px;background:rgba(10,15,30,.94);color:#f0d080;font:700 8px 'Cinzel',serif;white-space:nowrap;pointer-events:none}
 .token-pv-btn{position:absolute;inset:0;z-index:5;width:100%;height:100%;padding:0;border:1px solid #f5c451;border-radius:50%;background:rgba(20,29,51,.52);color:#f5c451;font-size:11px;font-weight:900;line-height:1;cursor:pointer;touch-action:manipulation}
 .modal-final{position:fixed;inset:0;z-index:10020;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(0,0,0,.78);backdrop-filter:blur(4px)}
@@ -2690,6 +2691,13 @@ async function abrirModalEquipamentos(){
       hp.appendChild(hpFill);token.appendChild(hp);
       var caValue=caToken35(item);
       var caLabel=document.createElement('span');caLabel.className='token-ac';caLabel.textContent='CA '+(caValue==null?'—':caValue);token.appendChild(caLabel);
+      var statusToken=statusAtivoDoAlvo(item.tipo==='player'?'character':'token',item.tipo==='player'?[item.id]:[item.key,item.id]);
+      if(statusToken.conditions.length||statusToken.effects.length){
+        var badge=document.createElement('span');badge.className='token-condition-badge';
+        badge.textContent=statusToken.conditions.length?statusToken.conditions.join(', '):statusToken.effects.join(', ');
+        badge.title=(statusToken.conditions.length?'Condições: '+statusToken.conditions.join(', '):'')+(statusToken.effects.length?' · Efeitos: '+statusToken.effects.join(', '):'');
+        token.appendChild(badge);
+      }
       token.title=item.nome+' · '+(caValue==null?'CA não definida':'CA '+caValue)+(hpValue==null?' · PV não definido':' · '+hpValue+'/'+maxHpValue+' PV');
       // O ajuste de PV do Mestre fica no menu contextual para não bloquear toque/clique no token. 
       layer.appendChild(token);
@@ -4383,6 +4391,7 @@ async function abrirModalEquipamentos(){
   }
 
   async function carregarPersonagens(){
+    await carregarEfeitosCampanha();
     var r = await sb.from('characters').select('id,user_id,nome,xp,retrato_url').eq('campaign_id', MESA_ID);
     if(r.error){ personagens=[]; personagensCarregados=true; renderCards(); processarPedidosTestePendentes(); return; }
     var chs = r.data || [];
@@ -4464,6 +4473,46 @@ async function abrirModalEquipamentos(){
     var gmOwned=!!(ehGM&&personagem.ch.user_id===eu.id);
     return ordem.findIndex(function(entry){return String(entry.id)===String(personagem.ch.id)&&!!entry.is_monster===gmOwned;});
   }
+  var efeitosCampanhaMesa={conditions:[],effects:[]};
+  var nomesCondicoesMesa={
+    paralyzed:'Paralisado',blinded:'Cego',deafened:'Surdo',stunned:'Atordoado',dazed:'Pasmo',
+    frightened:'Assustado',panicked:'Em pânico',shaken:'Abalado',sickened:'Enjoado',
+    nauseated:'Nauseado',slowed:'Lento',entangled:'Enredado',prone:'Caído',
+    fatigued:'Fatigado',exhausted:'Exausto',invisible:'Invisível',unconscious:'Inconsciente',
+    dying:'Morrendo',stable:'Estabilizado',dead:'Morto',grappling:'Agarrado',pinned:'Imobilizado',
+    cowering:'Encolhido',cowering:'Encolhido',petrified:'Petrificado',helpless:'Indefeso',
+    fascinated:'Fascinado',confused:'Confuso',disabled:'Debilitado',staggered:'Cambaleante'
+  };
+  var nomesMagiasEfeitoMesa={
+    srd35_spell_bull_s_strength:'Força do Touro',srd35_spell_cat_s_grace:'Agilidade do Gato',
+    srd35_spell_eagle_s_splendor:'Esplendor da Águia',srd35_spell_fox_s_cunning:'Astúcia da Raposa',
+    srd35_spell_owl_s_wisdom:'Sabedoria da Coruja',srd35_spell_barkskin:'Pele de Árvore',
+    srd35_spell_shield_of_faith:'Escudo da Fé',srd35_spell_protection_from_evil:'Proteção contra o Mal',
+    srd35_bless:'Bênção',srd35_spell_bane:'Perdição',srd35_spell_haste:'Aceleração',srd35_spell_slow:'Lentidão'
+  };
+  async function carregarEfeitosCampanha(){
+    var campaignId=Number(MESA_ID);
+    if(!Number.isFinite(campaignId)||campaignId<1){efeitosCampanhaMesa={conditions:[],effects:[]};return;}
+    var results=await Promise.all([
+      sb.from('srd_campaign_conditions').select('target_kind,target_id,condition_id,expires_round,notes').eq('campaign_id',campaignId).eq('active',true),
+      sb.from('srd_campaign_effects').select('target_kind,target_id,effect_kind,source_spell_id,effect_data,expires_round').eq('campaign_id',campaignId).eq('active',true)
+    ]);
+    efeitosCampanhaMesa={
+      conditions:results[0].error?[]:(results[0].data||[]),
+      effects:results[1].error?[]:(results[1].data||[])
+    };
+    if(results[0].error)console.warn('Não foi possível carregar condições ativas:',results[0].error.message);
+    if(results[1].error)console.warn('Não foi possível carregar efeitos ativos:',results[1].error.message);
+  }
+  function statusAtivoDoAlvo(kind,ids){
+    ids=(Array.isArray(ids)?ids:[ids]).filter(function(id){return id!=null;}).map(String);
+    var conditions=efeitosCampanhaMesa.conditions.filter(function(x){return x.target_kind===kind&&ids.includes(String(x.target_id));});
+    var effects=efeitosCampanhaMesa.effects.filter(function(x){return x.target_kind===kind&&ids.includes(String(x.target_id));});
+    return {
+      conditions:conditions.map(function(x){return nomesCondicoesMesa[x.condition_id]||String(x.condition_id).replace(/_/g,' ');}),
+      effects:effects.map(function(x){return nomesMagiasEfeitoMesa[x.source_spell_id]||'Efeito ativo';})
+    };
+  }
   function renderCards(){
     var el=document.getElementById('cards-strip');if(!el)return;
     var ordem=combatDataState&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order:[];
@@ -4481,7 +4530,9 @@ async function abrirModalEquipamentos(){
       var initiative=entry?'Iniciativa '+String(entry.valor==null?'—':entry.valor):'Aguardando iniciativa',hpText=hp==null?'PV não definido':Math.max(0,hp)+' / '+(max==null?'—':max)+' PV';
       var ms=token.monsterStats||{},attrs=p?(p.sh.atributos||{}):(ms.attributes||{}),attributeText=p?['FOR','DES','CON','INT','SAB','CAR'].map(function(k){return k+' '+Number(attrs[k]||10);}).join(' · '):['Fort '+(ms.fortitude==null?'—':ms.fortitude),'Ref '+(ms.reflexos==null?'—':ms.reflexos),'Von '+(ms.vontade==null?'—':ms.vontade)].join(' · ');
       var selected=p&&alvosSelecionados.indexOf(String(p.ch.id))!==-1?' selecionado-para-teste':'',controls=ehGM&&initIndex>=0?'<div class="portrait-order-controls"><button type="button" data-initiative-move="'+initIndex+'" data-direction="-1" '+(initIndex===0?'disabled':'')+' aria-label="Mover para a esquerda">←</button><button type="button" data-initiative-move="'+initIndex+'" data-direction="1" '+(initIndex===ordem.length-1?'disabled':'')+' aria-label="Mover para a direita">→</button></div>':'';
-      var back='<div class="portrait-back-content"><strong>'+esc(name)+'</strong><span>'+esc(detail)+'</span><span>'+esc(initiative)+'</span><span>'+esc(hpText)+(ac==null?'':' · CA '+ac)+'</span><small>'+esc(attributeText)+'</small><small>'+esc(String(ms.qualidades_especiais||ms.ataques||ms.descricao||'').replace(/<[^>]*>/g,' ').slice(0,180))+'</small>'+controls+'<button type="button" class="card-flip-button" data-card-flip aria-label="Voltar ao retrato">↻</button></div>';
+      var statusActor=statusAtivoDoAlvo(token.tipo==='player'?'character':'token',token.tipo==='player'?[token.id]:(token.key||token.id));
+      var statusText=(statusActor.conditions.length?'Condições: '+statusActor.conditions.join(', '):'')+(statusActor.effects.length?(statusActor.conditions.length?' · ':'')+'Efeitos: '+statusActor.effects.join(', '):'');
+      var back='<div class="portrait-back-content"><strong>'+esc(name)+'</strong><span>'+esc(detail)+'</span><span>'+esc(initiative)+'</span><span>'+esc(hpText)+(ac==null?'':' · CA '+ac)+'</span>'+(statusText?'<small class="card-status-effects">'+esc(statusText)+'</small>':'')+'<small>'+esc(attributeText)+'</small><small>'+esc(String(ms.qualidades_especiais||ms.ataques||ms.descricao||'').replace(/<[^>]*>/g,' ').slice(0,180))+'</small>'+controls+'<button type="button" class="card-flip-button" data-card-flip aria-label="Voltar ao retrato">↻</button></div>';
       var html='<article class="card-pers deck-card token-card '+(token.tipo==='monstro'?'monstro':token.tipo==='npc'?'npc':'player-token')+(p&&p.ch.user_id===eu.id?' eu':'')+selected+(activeCard?' turno-ativo':'')+'" data-actor-key="'+esc(actorKey)+'" data-cba-token-key="'+esc(token.key||'')+'"'+(p?' data-char="'+esc(p.ch.id)+'"':'')+' tabindex="0" role="button" aria-label="Retrato de '+esc(name)+'"><div class="card-pers-inner"><div class="card-pers-face card-pers-front portrait-only-front">'+portrait+'</div><div class="card-pers-face card-pers-back">'+back+'</div></div></article>';
       cards.push({key:actorKey,rank:rank,html:html});
     });
