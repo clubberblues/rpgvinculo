@@ -1912,7 +1912,9 @@ function dnd35WeaponProficient(state,weaponName){
     var normalized=dnd35FeatParamNorm(weaponName),weapon=(state.equipment||[]).find(function(item){return String(item.categoria||item.tipo||'').toLowerCase()==='arma'&&dnd35FeatParamNorm(item.nome)===normalized;});
     if(!weapon)return false;
     var details=dnd35Objeto(weapon.detalhes),category=String(details.weapon_proficiency||''),proficiencies=dnd35Objeto(state.classe&&state.classe.dados_tecnicos).proficiencias||{},weapons=Array.isArray(proficiencies.armas)?proficiencies.armas:[proficiencies.armas].filter(Boolean);
-    return weapons.some(function(entry){var p=dnd35Norm(entry).replace(/\s+/g,'');return dnd35FeatParamNorm(entry)===normalized||(p==='armassimples'&&category==='simple')||(p==='todasasarmassimplesemarciais'&&['simple','martial'].indexOf(category)>=0);});
+    var isDwarf=String(state.raca&&state.raca.id)==='anao';
+    var dwarfFamiliarity=isDwarf&&['machado de guerra anao','urgrosh anao'].indexOf(normalized)>=0;
+    return weapons.some(function(entry){var p=dnd35Norm(entry).replace(/\s+/g,'');return dnd35FeatParamNorm(entry)===normalized||(p==='armassimples'&&category==='simple')||((p==='todasasarmassimplesemarciais'||dwarfFamiliarity)&&['simple','martial','exotic'].indexOf(category)>=0);});
   }
   function dnd35InitialClassBonusSpec(state){
     var key=dnd35ClassRuleKey(state.classe&&((state.classe.class_key||state.classe.nome||state.classe.id)));
