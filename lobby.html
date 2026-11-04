@@ -1577,6 +1577,55 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
     }
   }
 
+  async function listarArquivosStorageRecursivo(bucket,path,depth){
+    depth=depth||0;
+    if(depth>8)throw new Error('A estrutura de pastas da campanha excedeu o limite de segurança.');
+    var encontrados=[],offset=0,limit=1000;
+    while(true){
+      var page=await sb.storage.from(bucket).list(path,{limit:limit,offset:offset,sortBy:{column:'name',order:'asc'}});
+      if(page.error)throw new Error('Não foi possível listar os arquivos da campanha: '+page.error.message);
+      var itens=page.data||[];
+      for(var i=0;i<itens.length;i++){
+        var item=itens[i],full=path+'/'+item.name;
+        if(item.id!==null&&item.id!==undefined){encontrados.push(full);}
+        else{
+          var nested=await listarArquivosStorageRecursivo(bucket,full,depth+1);
+          encontrados=encontrados.concat(nested);
+        }
+      }
+      if(itens.length<limit)break;
+      offset+=limit;
+    }
+    return encontrados;
+  }
+
+  async function coletarArquivosDaCampanha(mesaId){
+    var id=String(mesaId),arquivos=await listarArquivosStorageRecursivo('midia','campaigns/'+id,0);
+    var offset=0,limit=1000;
+    while(true){
+      var page=await sb.storage.from('midia').list('capas_mesas',{limit:limit,offset:offset,sortBy:{column:'name',order:'asc'}});
+      if(page.error)throw new Error('Não foi possível localizar a capa da campanha: '+page.error.message);
+      var itens=page.data||[];
+      itens.forEach(function(item){
+        if(item.id!==null&&item.id!==undefined&&item.name.indexOf('mesa-'+id+'-')===0){
+          arquivos.push('capas_mesas/'+item.name);
+        }
+      });
+      if(itens.length<limit)break;
+      offset+=limit;
+    }
+    return Array.from(new Set(arquivos));
+  }
+
+  async function removerArquivosDaCampanha(caminhos){
+    for(var i=0;i<caminhos.length;i+=1000){
+      var lote=caminhos.slice(i,i+1000);
+      if(!lote.length)continue;
+      var removidos=await sb.storage.from('midia').remove(lote);
+      if(removidos.error)throw new Error('Não foi possível remover arquivos da campanha: '+removidos.error.message);
+    }
+  }
+
   async function abrirConfiguracoesMesa(mesaId,nomeAtual,codigoAtual){
     if(!eu)return;
     var old=document.getElementById('modal-config-mesa');if(old)old.remove();
@@ -1594,8 +1643,24 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
       if(!window.confirm('Excluir esta campanha? A ação não pode ser desfeita.'))return;
       var confirmation=window.prompt('Digite EXCLUIR para confirmar:');if(confirmation!=='EXCLUIR')return;
       var button=this;button.disabled=true;status.textContent='Excluindo campanha…';
-      try{var deleted=await sb.rpc('excluir_campanha_propria',{p_campaign_id:Number(mesaId)});if(deleted.error)throw deleted.error;if(!deleted.data||deleted.data.ok===false)throw new Error(deleted.data&&deleted.data.erro||'O banco não confirmou a exclusão.');close();await carregarMesas();}
-      catch(error){button.disabled=false;status.textContent='Não foi possível excluir: '+(error.message||error);}
+      try{
+        var campaignId=Number(mesaId);
+        if(!Number.isSafeInteger(campaignId)||campaignId<=0)throw new Error('Identificador da campanha inválido.');
+        var prepared=await sb.rpc('preparar_exclusao_campanha_propria',{p_campaign_id:campaignId});
+        if(prepared.error)throw prepared.error;
+        if(!prepared.data||prepared.data.ok!==true)throw new Error(prepared.data&&prepared.data.erro||'O banco não autorizou a exclusão.');
+        status.textContent='Localizando mapas, capas e imagens…';
+        var mediaPaths=await coletarArquivosDaCampanha(campaignId);
+        if(mediaPaths.length){
+          status.textContent='Removendo '+mediaPaths.length+' arquivo(s) da campanha…';
+          await removerArquivosDaCampanha(mediaPaths);
+        }
+        status.textContent='Finalizando exclusão da campanha…';
+        var deleted=await sb.rpc('finalizar_exclusao_campanha_propria',{p_campaign_id:campaignId});
+        if(deleted.error)throw deleted.error;
+        if(!deleted.data||deleted.data.ok!==true)throw new Error(deleted.data&&deleted.data.erro||'O banco não confirmou a exclusão.');
+        close();await carregarMesas();
+      }catch(error){button.disabled=false;status.textContent='Não foi possível concluir a exclusão. Você pode tentar novamente; os arquivos já removidos não serão listados de novo. '+(error.message||error);}
     });
     overlay.querySelector('[data-settings-save]').addEventListener('click',async function(){
       var button=this,nome=nameInput.value.trim(),exigeCodigo=requireInput.checked,codigo=codeInput.value.trim();
