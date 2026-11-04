@@ -1833,6 +1833,21 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var finesseWeapon=type==='atk-corpo'&&personagemTemTalento(own.sh,'srd35_feat_weapon_finesse')&&(!weapon||!!(weapon.detalhes&&weapon.detalhes.weapon_finesse_eligible===true));
     var attackAttribute=type==='atk-dist'||finesseWeapon?'DES':'FOR',ability=modifier35(attrs[attackAttribute]),strengthModifier=modifier35(attrs.FOR);
     var weaponName=weapon?weapon.nome:'Ataque desarmado',weaponFocusName=weapon&&weapon.detalhes&&weapon.detalhes.weapon_focus_name||weaponName,damage=weapon&&weapon.dano||'1d3',weaponFocus=0,weaponSpecializationDamage=0,powerPenalty=0,powerDamage=0,proficiencyPenalty=personagemProficienteArma35(own,weapon)?0:4;
+    if(weapon&&String(damage).includes('/')){
+      var damageOptions=String(damage).split('/').map(function(value){return value.trim();}).filter(Boolean);
+      if(damageOptions.length===2){
+        var isUrgrosh=String(weaponName).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().includes('urgrosh');
+        var selectedDamage=await window.vttUI.ask({
+          title:'Escolha a lâmina · '+weaponName,
+          label:isUrgrosh?'O urgrosh possui uma lâmina de machado e uma ponta de lança. Escolha qual será usada neste ataque.':'Escolha qual das opções de dano desta arma será usada.',
+          kind:'select',
+          options:damageOptions.map(function(value,index){return {value:value,label:isUrgrosh?(index===0?'Machado · cortante · '+value:'Lança · perfurante · '+value):'Opção '+(index+1)+' · '+value};})
+        });
+        if(selectedDamage===null)return;
+        if(damageOptions.indexOf(String(selectedDamage))<0)throw new Error('Escolha de dano inválida para esta arma.');
+        damage=String(selectedDamage);
+      }
+    }
     var feats=own.sh.talentos||[];if(typeof feats==='string'){try{feats=JSON.parse(feats);}catch(e){feats=[];}}
     var normalizeName=function(value){var n=String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();return ({'dwarven waraxe':'machado de guerra anao','waraxe dwarven':'machado de guerra anao','dwarven urgrosh':'urgrosh anao','urgrosh dwarven':'urgrosh anao'})[n]||n;};
     var hasWeaponFeat=function(id){return Array.isArray(feats)&&feats.some(function(feat){return feat&&String(feat.id)===id&&normalizeName(feat.parametro)===normalizeName(weaponFocusName);});};
