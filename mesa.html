@@ -1892,6 +1892,50 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var max=token.maxHp==null?Number(await window.vttUI.ask({title:'Definir pontos de vida',label:'PV máximo de '+token.nome,defaultValue:'10',inputMode:'numeric'})):Number(token.maxHp);if(!Number.isInteger(max)||max<1||max>100000)return;
     var current=token.hp==null?max:Number(token.hp);personagemPVSelecionado={tipo:'token',registro:Object.assign({},token,{maxHp:max,hp:current})};document.getElementById('pv-personagem-nome').textContent=token.nome+' · '+current+' / '+max+' PV';document.getElementById('pv-variacao').value='-1';document.getElementById('modal-pv-personagem').classList.add('ativo');
   }
+  async function listarArquivosStorageRecursivo(bucket,path,depth){
+    depth=depth||0;
+    if(depth>8)throw new Error('A estrutura de pastas da campanha excedeu o limite de segurança.');
+    var encontrados=[],offset=0,limit=1000;
+    while(true){
+      var page=await sb.storage.from(bucket).list(path,{limit:limit,offset:offset,sortBy:{column:'name',order:'asc'}});
+      if(page.error)throw new Error('Não foi possível listar os arquivos da campanha: '+page.error.message);
+      var itens=page.data||[];
+      for(var i=0;i<itens.length;i++){
+        var item=itens[i],full=path+'/'+item.name;
+        if(item.id!==null&&item.id!==undefined)encontrados.push(full);
+        else encontrados=encontrados.concat(await listarArquivosStorageRecursivo(bucket,full,depth+1));
+      }
+      if(itens.length<limit)break;
+      offset+=limit;
+    }
+    return encontrados;
+  }
+
+  async function coletarArquivosDaCampanha(mesaId){
+    var id=String(mesaId),arquivos=await listarArquivosStorageRecursivo('midia','campaigns/'+id,0);
+    var offset=0,limit=1000;
+    while(true){
+      var page=await sb.storage.from('midia').list('capas_mesas',{limit:limit,offset:offset,sortBy:{column:'name',order:'asc'}});
+      if(page.error)throw new Error('Não foi possível localizar a capa da campanha: '+page.error.message);
+      var itens=page.data||[];
+      itens.forEach(function(item){
+        if(item.id!==null&&item.id!==undefined&&item.name.indexOf('mesa-'+id+'-')===0)arquivos.push('capas_mesas/'+item.name);
+      });
+      if(itens.length<limit)break;
+      offset+=limit;
+    }
+    return Array.from(new Set(arquivos));
+  }
+
+  async function removerArquivosDaCampanha(caminhos){
+    for(var i=0;i<caminhos.length;i+=1000){
+      var lote=caminhos.slice(i,i+1000);
+      if(!lote.length)continue;
+      var removidos=await sb.storage.from('midia').remove(lote);
+      if(removidos.error)throw new Error('Não foi possível remover arquivos da campanha: '+removidos.error.message);
+    }
+  }
+
   function abrirModalExcluirCampanha(){
     if(!ehGM)return; var input=document.getElementById('confirmar-nome-campanha'),button=document.getElementById('confirmar-excluir-campanha'); input.value='';button.disabled=true;document.getElementById('modal-excluir-campanha').classList.add('ativo');input.focus();
   }
@@ -1899,7 +1943,23 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var camp=document.getElementById('modal-excluir-campanha'), name=document.getElementById('confirmar-nome-campanha'), del=document.getElementById('confirmar-excluir-campanha');
     name.addEventListener('input',function(){del.disabled=name.value!==String(campanha.name||'');});
     camp.addEventListener('click',function(e){if(e.target===camp||e.target.closest('[data-campaign-delete-close]'))camp.classList.remove('ativo');});
-    del.addEventListener('click',async function(){if(del.disabled)return; ;del.disabled=true;try{var r=await sb.rpc('excluir_campanha_propria',{p_campaign_id:Number(MESA_ID),p_confirmation_name:name.value});if(r.error)throw new Error(r.error.message);location.replace('lobby.html');}catch(err){alert('Não foi possível excluir a campanha: '+err.message);del.disabled=false;}});
+    del.addEventListener('click',async function(){
+      if(del.disabled||name.value!==String(campanha.name||''))return;
+      del.disabled=true;
+      try{
+        var campaignId=Number(MESA_ID);
+        if(!Number.isSafeInteger(campaignId)||campaignId<=0)throw new Error('Identificador da campanha inválido.');
+        var prepared=await sb.rpc('preparar_exclusao_campanha_propria',{p_campaign_id:campaignId});
+        if(prepared.error)throw prepared.error;
+        if(!prepared.data||prepared.data.ok!==true)throw new Error(prepared.data&&prepared.data.erro||'O banco não autorizou a exclusão.');
+        var mediaPaths=await coletarArquivosDaCampanha(campaignId);
+        if(mediaPaths.length)await removerArquivosDaCampanha(mediaPaths);
+        var deleted=await sb.rpc('finalizar_exclusao_campanha_propria',{p_campaign_id:campaignId});
+        if(deleted.error)throw deleted.error;
+        if(!deleted.data||deleted.data.ok!==true)throw new Error(deleted.data&&deleted.data.erro||'O banco não confirmou a exclusão.');
+        location.replace('lobby.html');
+      }catch(err){alert('Não foi possível excluir a campanha: '+(err.message||err));del.disabled=false;}
+    });
     var pv=document.getElementById('modal-pv-personagem'); pv.addEventListener('click',function(e){if(e.target===pv||e.target.closest('[data-pv-close]'))pv.classList.remove('ativo');});
     document.getElementById('confirmar-ajuste-pv').addEventListener('click',async function(){if(!personagemPVSelecionado)return;if(personagemPVSelecionado.tipo==='token'&&!ehGM)return;var ownedSheet=personagemPVSelecionado.tipo==='personagem'&&personagemPVSelecionado.registro;if(personagemPVSelecionado.tipo==='personagem'&&(!ownedSheet||ownedSheet.ch.user_id!==eu.id))return;var delta=Number(document.getElementById('pv-variacao').value);if(!Number.isInteger(delta)||delta===0){alert('Informe uma quantidade inteira diferente de zero.');return;}try{if(personagemPVSelecionado.tipo==='token'){var token=personagemPVSelecionado.registro;var r=await sb.rpc('alterar_pv_token_cba',{p_campaign_id:Number(MESA_ID),p_token_id:String(token.id),p_variacao:delta,p_pv_max:Number(token.maxHp)});if(r.error)throw new Error(r.error.message);campanha.cba_data=r.data.cba_data;pv.classList.remove('ativo');aplicarCBAnaMesa(r.data.cba_data,false);return;}var p=personagemPVSelecionado.registro;var r=await sb.rpc('alterar_pv_personagem',{p_campaign_id:Number(MESA_ID),p_character_id:String(p.ch.id),p_variacao:delta});if(r.error)throw new Error(r.error.message);p.sh.pv_atual=r.data.pv_atual;pv.classList.remove('ativo');renderCards();aplicarCBAnaMesa(campanha.cba_data,false);}catch(err){alert('Falha ao atualizar PV: '+err.message);}});
     var inv=document.getElementById('modal-inventario-srd');inv.addEventListener('click',function(e){if(e.target===inv||e.target.closest('[data-inventory-close]'))inv.classList.remove('ativo');});
@@ -1916,7 +1976,19 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var rows=r.data||[]; if(!rows.length){status.textContent='A mochila está vazia. Peça ao Mestre para entregar equipamento pela mesa.';return;}
     status.textContent='Atributos calculados com o equipamento atualmente equipado.';
     list.innerHTML=rows.map(function(row){var it=row.equipment||{},usable=it.categoria==='consumivel',equipable=!!slotEquipamento35(it);return '<article style="padding:10px;margin:8px 0;border:1px solid #75613d;border-radius:6px"><strong>'+esc(it.nome||row.equipment_id)+'</strong><div style="color:#9eabc0;font-size:13px">'+esc(nomeCategoriaEquipamento35(it.categoria||'item'))+' · x'+row.quantidade+(it.dano?' · dano '+esc(it.dano):'')+(bonusCAEquipamento35(it)?' · CA +'+bonusCAEquipamento35(it):'')+(row.equipado?' · Equipado':'')+'</div>'+(usable||equipable?'<button type="button" class="btn-acao" data-equip-id="'+esc(row.equipment_id)+'" data-equip-action="'+(usable?'consume':'equip')+'" data-equipped="'+(!row.equipado)+'" style="margin-top:8px">'+(usable?'Usar':(row.equipado?'Desequipar':'Equipar'))+'</button>':'')+'</article>';}).join('');
-    list.querySelectorAll('[data-equip-id]').forEach(function(button){button.addEventListener('click',async function(){button.disabled=true;if(button.dataset.equipAction==='consume'){var used=await sb.rpc('usar_pocao_cura_srd',{p_character_id:String(p.ch.id),p_equipment_id:button.dataset.equipId});if(used.error){alert('Não foi possível usar o item: '+used.error.message);button.disabled=false;return;}p.sh.pv_atual=used.data.pv_atual;await enviarMensagemChat('🧪 '+p.ch.nome+' usou '+(button.closest('article').querySelector('strong').textContent)+' e recuperou '+used.data.healing_rolled+' PV.','sistema',{evento:'pocao_usada',character_id:String(p.ch.id),cura:used.data.healing_rolled});await carregarPersonagens();abrirInventarioSRD(p.ch.id);return;}var q=await sb.rpc('equipar_item_srd',{p_character_id:String(p.ch.id),p_equipment_id:button.dataset.equipId,p_equipado:button.dataset.equipped==='true'});if(q.error){alert('Não foi possível atualizar o equipamento: '+q.error.message);button.disabled=false;return;}await carregarPersonagens();abrirInventarioSRD(p.ch.id);});});
+    list.querySelectorAll('[data-equip-id]').forEach(function(button){button.addEventListener('click',async function(){button.disabled=true;if(button.dataset.equipAction==='consume'){
+        var potionDice={pocao_cura_lig:1,pocao_cura_mod:2,pocao_cura_grav:3},diceCount=potionDice[button.dataset.equipId];
+        if(!diceCount){button.disabled=false;alert('Esta poção não possui uma rolagem manual configurada.');return;}
+        abrirDado('Poção de Cura · '+diceCount+'d8',async function(total,values){
+          if(!Array.isArray(values)||values.length!==diceCount){button.disabled=false;alert('A rolagem não retornou todos os resultados individuais. Role novamente.');return;}
+          var used=await sb.rpc('usar_pocao_cura_srd_manual',{p_character_id:String(p.ch.id),p_equipment_id:button.dataset.equipId,p_roll_results:values});
+          if(used.error){button.disabled=false;alert('Não foi possível usar o item: '+used.error.message);return;}
+          p.sh.pv_atual=used.data.pv_atual;
+          await enviarMensagemChat('🧪 '+p.ch.nome+' usou '+(button.closest('article').querySelector('strong').textContent)+' e recuperou '+used.data.healing_rolled+' PV.','sistema',{evento:'pocao_usada',character_id:String(p.ch.id),cura:used.data.healing_rolled,roll_results:values});
+          await carregarPersonagens();abrirInventarioSRD(p.ch.id);
+        },true,true,diceCount+'d8');
+        return;
+      }var q=await sb.rpc('equipar_item_srd',{p_character_id:String(p.ch.id),p_equipment_id:button.dataset.equipId,p_equipado:button.dataset.equipped==='true'});if(q.error){alert('Não foi possível atualizar o equipamento: '+q.error.message);button.disabled=false;return;}await carregarPersonagens();abrirInventarioSRD(p.ch.id);});});
   }
   async function abrirInventarioTokenSRD(token){
     if(!ehGM||!token||token.tipo==='player')return;var modal=document.getElementById('modal-inventario-srd'),list=document.getElementById('inventario-srd-lista'),status=document.getElementById('inventario-srd-status');
