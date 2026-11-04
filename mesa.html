@@ -2206,7 +2206,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
             if(conditionalRacialLabel)breakdown+='\n🪨 '+conditionalRacialLabel;
             if(trapfindingNote)breakdown+='\n🪤 '+trapfindingNote;
             await enviarMensagemChat(breakdown,'rolagem',{evento:'pericia_dnd35',character_id:String(p.ch.id),skill_id:option.sk.id,skill_key:option.skillKey,especializacao:option.specializationName||null,d20:Number(d20),graduações:option.rank,modificador_atributo:option.mod,bônus_classe:option.classBonus,bonus_racial:option.racialBonus,bonus_racial_condicional:conditionalRacialBonus,bonus_racial_condicional_descricao:conditionalRacialLabel,penalidade_armadura:option.armorCheckPenalty,penalidade_armadura_sem_proficiencia:option.armorNonproficiencyPenalty,trapfinding:trapfinding,trapfinding_note:trapfindingNote});
-          },true);
+          },true,true,'1d20');
         }catch(error){alert('Não foi possível usar esta perícia: '+(error&&error.message||error));card.disabled=false;}
       };
       grid.appendChild(card);
@@ -2343,7 +2343,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         await enviarMensagemChat(msg,'rolagem',meta);fecharModalMagias();
       }catch(error){btn.disabled=false;alert('Não foi possível conjurar: '+error.message);}
     }
-    if(isAttack){var stats=item.monsterStats||{},key=String(stats.spellcasting_key||''),attr=({wizard:'INT',sorcerer:'CAR',bard:'CAR',cleric:'SAB',druid:'SAB',paladin:'SAB',ranger:'SAB'})[key]||'INT',rules=JSON.stringify(tech.source_field_values||{}),ability=/ranged touch/i.test(rules)?'DES':attr,baseBab=Number(stats.bab),bonus=(Number.isFinite(baseBab)?baseBab:0)+modifier35((stats.attributes||{})[ability])+(Number(stats.size_modifier)||0);abrirDado('Magia · '+String(spell.nome||spell.name||'Magia'),function(d20){return cast({d20:Number(d20),bonus:bonus,total:Number(d20)+bonus});},true);return;}
+    if(isAttack){var stats=item.monsterStats||{},key=String(stats.spellcasting_key||''),attr=({wizard:'INT',sorcerer:'CAR',bard:'CAR',cleric:'SAB',druid:'SAB',paladin:'SAB',ranger:'SAB'})[key]||'INT',rules=JSON.stringify(tech.source_field_values||{}),ability=/ranged touch/i.test(rules)?'DES':attr,baseBab=Number(stats.bab),bonus=(Number.isFinite(baseBab)?baseBab:0)+modifier35((stats.attributes||{})[ability])+(Number(stats.size_modifier)||0);abrirDado('Magia · '+String(spell.nome||spell.name||'Magia'),function(d20){return cast({d20:Number(d20),bonus:bonus,total:Number(d20)+bonus});},true,true,'1d20');return;}
     await cast(null);
   }
   async function confirmarConjuracao(){
@@ -4614,8 +4614,10 @@ async function abrirModalEquipamentos(){
       ? window.crypto.randomUUID()
       : (Date.now().toString(36) + '-' + Math.random().toString(36).slice(2));
     rollSessionToken = tokenSessao;
-    document.getElementById('dado-titulo').textContent = titulo;
-    document.getElementById('dado-iframe-overlay').style.display = 'flex';
+    var dadoOverlay = document.getElementById('dado-iframe-overlay');
+    dadoOverlay.classList.toggle('dado-rolagem-obrigatoria', !!aguardarClique);
+    document.getElementById('dado-titulo').textContent = (aguardarClique ? 'ROLAGEM SOLICITADA · ' : '') + titulo;
+    dadoOverlay.style.display = 'flex';
     rolagemCallback = callback;
     rollResultReceived = false;
 
@@ -4653,6 +4655,7 @@ async function abrirModalEquipamentos(){
     rollSessionId++;
     if (rollResultTimer) { clearTimeout(rollResultTimer); rollResultTimer = null; }
     document.getElementById('dado-iframe-overlay').style.display = 'none';
+    document.getElementById('dado-iframe-overlay').classList.remove('dado-rolagem-obrigatoria');
     rolagemCallback = null;
     rollResultReceived = true;
     rollSessionToken = null;
@@ -5177,5 +5180,55 @@ html,body,#root{width:100%;height:100%;min-width:0;min-height:0}
  new MutationObserver(attach).observe(document.documentElement,{childList:true,subtree:true});
 })();
 </script>
+
+<style id="vinculo-dice-modal-final">
+/* Dice em janela própria, independente das colunas da mesa. */
+#dado-iframe-overlay{
+  position:fixed!important;inset:0!important;z-index:99999!important;
+  display:none;align-items:center!important;justify-content:center!important;
+  width:100vw!important;height:100dvh!important;max-height:none!important;
+  min-width:0!important;min-height:0!important;margin:0!important;
+  padding:clamp(12px,2.5vh,26px)!important;overflow:hidden!important;
+  background:rgba(5,9,7,.78)!important;backdrop-filter:blur(7px)!important;
+}
+#dado-iframe-overlay[style*="display: flex"]{display:flex!important}
+#dado-iframe-overlay .dado-card{
+  display:flex!important;flex-direction:column!important;
+  width:min(92vw,1040px)!important;height:min(82dvh,780px)!important;
+  max-width:1040px!important;max-height:780px!important;
+  min-width:0!important;min-height:0!important;overflow:hidden!important;
+  border:1px solid #b99b5a!important;border-radius:12px!important;
+  background:linear-gradient(155deg,#172117,#0d140f 72%)!important;
+  box-shadow:0 24px 70px rgba(0,0,0,.72),0 0 0 1px rgba(201,160,80,.12)!important;
+}
+#dado-iframe-overlay .dado-card-header{
+  flex:0 0 auto!important;min-height:44px!important;padding:9px 16px!important;
+  background:linear-gradient(100deg,#202b1d,#111a12)!important;
+  border-bottom:1px solid #806b43!important;
+}
+#dado-iframe-overlay .dado-card-header h3{
+  min-width:0!important;max-width:calc(100% - 12px)!important;
+  color:#e8d39d!important;font:700 12px Cinzel,serif!important;
+  letter-spacing:1px!important;line-height:1.3!important;
+  overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;
+}
+#dado-iframe-overlay .dado-card-body{
+  display:flex!important;flex:1 1 auto!important;min-width:0!important;min-height:0!important;
+  width:100%!important;height:auto!important;overflow:hidden!important;background:#0f160f!important;
+}
+#dado-iframe-overlay #dado-iframe{display:block!important;flex:1 1 auto!important;width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;border:0!important;background:#0f160f!important}
+#dado-iframe-overlay.dado-rolagem-obrigatoria .btn-fechar-dado{display:none!important}
+@media(max-width:700px){
+  #dado-iframe-overlay{padding:8px!important}
+  #dado-iframe-overlay .dado-card{width:96vw!important;height:86dvh!important;max-height:86dvh!important;border-radius:9px!important}
+  #dado-iframe-overlay .dado-card-header{min-height:38px!important;padding:7px 10px!important}
+  #dado-iframe-overlay .dado-card-header h3{font-size:10px!important;letter-spacing:.5px!important}
+}
+@media(max-height:520px){
+  #dado-iframe-overlay{padding:6px!important}
+  #dado-iframe-overlay .dado-card{height:94dvh!important;max-height:94dvh!important}
+  #dado-iframe-overlay .dado-card-header{min-height:32px!important;padding:5px 9px!important}
+}
+</style>
 </body>
 </html>

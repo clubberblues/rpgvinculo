@@ -4936,11 +4936,21 @@ window.addEventListener('libs-ready', function() {
   }
   requestAnimationFrame(animate);
 
-  window.addEventListener('resize', () => {
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    camera.aspect = window.innerWidth / window.innerHeight;
+  function resizeDiceRenderer() {
+    const width = Math.max(1, canvas.clientWidth || window.innerWidth || 1);
+    const height = Math.max(1, canvas.clientHeight || window.innerHeight || 1);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(width, height, false);
+    camera.aspect = width / height;
     camera.updateProjectionMatrix();
-  });
+  }
+  window.addEventListener('resize', resizeDiceRenderer, { passive: true });
+  if (window.ResizeObserver) {
+    const diceResizeObserver = new ResizeObserver(resizeDiceRenderer);
+    diceResizeObserver.observe(document.documentElement);
+    diceResizeObserver.observe(document.body);
+  }
+  resizeDiceRenderer();
 });
 // ==========================================
 // PONTE DE COMUNICAÇÃO COM A MESA (VÍNCULO)
@@ -5162,6 +5172,7 @@ if (throwButtonForLabel) throwButtonForLabel.setAttribute('aria-label', 'Rolar d
     try { values = JSON.parse(resultTotal.dataset.individualValues || '[]'); } catch (err) { values = []; }
     vinculoRollButton.disabled = false;
     vinculoRollButton.textContent = 'ROLAR';
+    vinculoRollButton.setAttribute('aria-label', 'Rolar os dados selecionados');
     window.parent.postMessage({ action: 'rollResult', requestId: activeRequestId, value: value, values: values }, getTargetOrigin());
   }
 
@@ -5237,7 +5248,13 @@ if (throwButtonForLabel) throwButtonForLabel.setAttribute('aria-label', 'Rolar d
     if (diceColumn) diceColumn.classList.toggle('preset-locked', aguardarClique);
     if (modifierStrip) modifierStrip.classList.toggle('preset-locked', aguardarClique);
     if (throwButton.disabled) return;
-    if (!aguardarClique) triggerNativeThrow();
+    if (!aguardarClique) {
+      triggerNativeThrow();
+    } else {
+      vinculoRollButton.textContent = 'ROLAR AGORA';
+      vinculoRollButton.setAttribute('aria-label', 'Rolar agora para concluir o teste solicitado');
+      window.requestAnimationFrame(function(){ vinculoRollButton.focus(); });
+    }
   });})();
 </script>
 <script src="vinculo-ui.js"></script>
