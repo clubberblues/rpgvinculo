@@ -5073,7 +5073,9 @@ if (throwButtonForLabel) throwButtonForLabel.setAttribute('aria-label', 'Rolar d
     if (resetPendingTimer) window.clearTimeout(resetPendingTimer);
     resetPendingTimer = window.setTimeout(function () {
       rollPending = false;
-    }, 45000);
+      vinculoRollButton.disabled = false;
+      vinculoRollButton.textContent = 'ROLAR';
+    }, 90000);
   }
 
   // Manual mouse/touch throws from the embedded picker also return their result.
@@ -5105,16 +5107,25 @@ if (throwButtonForLabel) throwButtonForLabel.setAttribute('aria-label', 'Rolar d
       vinculoRollButton.title = 'Selecione pelo menos um dado na barra lateral.';
       return false;
     }
+    if (state !== 'idle' && state !== 'settled') return false;
+
+    // Aciona o mesmo mecanismo físico do botão nativo, sem sintetizar
+    // eventos de mouse. Isso evita perder o clique no iframe/modal da mesa.
     beginTrackingRoll();
-    window.setTimeout(function () {
-      if (!rollPending || throwButton.disabled) return;
-      throwButton.dispatchEvent(new MouseEvent('mousedown', {
-        button: 0, bubbles: true, cancelable: true, view: window
-      }));
-      window.dispatchEvent(new MouseEvent('mouseup', {
-        button: 0, bubbles: true, cancelable: true, view: window
-      }));
-    }, 50);
+    vinculoRollButton.disabled = true;
+    vinculoRollButton.textContent = 'ROLANDO…';
+    try {
+      startCharging();
+      window.setTimeout(function () {
+        if (rollPending && chargingActive) releaseCharge();
+      }, 120);
+    } catch (err) {
+      rollPending = false;
+      vinculoRollButton.disabled = false;
+      vinculoRollButton.textContent = 'ROLAR';
+      console.error('Não foi possível iniciar a rolagem física:', err);
+      return false;
+    }
     return true;
   }
 
@@ -5131,6 +5142,8 @@ if (throwButtonForLabel) throwButtonForLabel.setAttribute('aria-label', 'Rolar d
     if (resetPendingTimer) window.clearTimeout(resetPendingTimer);
     var values = [];
     try { values = JSON.parse(resultTotal.dataset.individualValues || '[]'); } catch (err) { values = []; }
+    vinculoRollButton.disabled = false;
+    vinculoRollButton.textContent = 'ROLAR';
     window.parent.postMessage({ action: 'rollResult', value: value, values: values }, getTargetOrigin());
   }
 
