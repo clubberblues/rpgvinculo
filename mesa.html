@@ -1473,7 +1473,6 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         {id:'npc',ic:'👤',txt:'+ NPC'},
         {id:'monstros',ic:'🐉',txt:'+ Monstros'},
         {id:'testes',ic:'📜',txt:'Testes'},
-        {id:'iniciativa',ic:'⚡',txt:'Iniciativa'},
         {id:'avancar-turno',ic:'⏭️',txt:'Avançar Turno'},
         {id:'equipamentos',ic:'🛡️',txt:'Equipamentos'},
         {id:'xp',ic:'⭐',txt:'Dar XP'},
@@ -1575,6 +1574,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         var log=await enviarMensagemChat(mensagem,'sistema',{evento:'estado_campanha',state:proximo});
         if(log && log.error) alert('O estado foi alterado, mas o aviso não entrou no chat.');
       }catch(logError){ console.warn('Estado atualizado; mensagem de chat não enviada.',logError); alert('O estado foi alterado, mas não foi possível enviar o aviso ao chat.'); }
+      if(proximo==='COMBATE') await pedirIniciativaGlobal();
     }catch(e){
       console.error('Falha ao alternar o estado da mesa:',e);
       alert('Não foi possível alterar o estado da mesa: '+e.message);
