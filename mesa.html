@@ -1270,6 +1270,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   var rolagemCallback = null; // Armazena a função que vai processar o resultado do dado
   var rollResultTimer = null;
   var rollSessionId = 0;
+  var rollSessionToken = null;
   var rollResultReceived = false;
   var modoSelecaoTeste = false;
   var testeAtual = '';
@@ -4609,29 +4610,42 @@ async function abrirModalEquipamentos(){
   function abrirDado(titulo, callback, rolarD20Automaticamente, aguardarClique, diceExpression) {
     if (rollResultTimer) { clearTimeout(rollResultTimer); rollResultTimer = null; }
     var sessaoAtual = ++rollSessionId;
+    var tokenSessao = (window.crypto && typeof window.crypto.randomUUID === 'function')
+      ? window.crypto.randomUUID()
+      : (Date.now().toString(36) + '-' + Math.random().toString(36).slice(2));
+    rollSessionToken = tokenSessao;
     document.getElementById('dado-titulo').textContent = titulo;
     document.getElementById('dado-iframe-overlay').style.display = 'flex';
-
-    // Guarda o callback e prepara a recepção de um único resultado desta abertura.
     rolagemCallback = callback;
     rollResultReceived = false;
 
-    // Recarrega o iframe para iniciar uma rolagem limpa.
     var iframe = document.getElementById('dado-iframe');
-    if (rolarD20Automaticamente) {
-      iframe.addEventListener('load', function() {
-        if (sessaoAtual !== rollSessionId || rollResultReceived) return;
-        try {
-          var targetOrigin = new URL(iframe.src, window.location.href).origin;
-          var payload={action:aguardarClique?'prepareRoll':'roll'};if(diceExpression)payload.expression=String(diceExpression);iframe.contentWindow.postMessage(payload,targetOrigin);if(!aguardarClique){[180,520].forEach(function(delay){window.setTimeout(function(){if(sessaoAtual===rollSessionId&&!rollResultReceived&&document.getElementById('dado-iframe-overlay').style.display==='flex')iframe.contentWindow.postMessage(payload,targetOrigin);},delay);});}
-        } catch (err) {
-          console.error('Não foi possível iniciar o dado incorporado:', err);
-          fecharDado();
-          alert('Não foi possível iniciar o dado. Recarregue a mesa e tente novamente.');
+    iframe.addEventListener('load', function() {
+      if (sessaoAtual !== rollSessionId || rollResultReceived) return;
+      try {
+        var targetOrigin = new URL(iframe.src, window.location.href).origin;
+        iframe.contentWindow.postMessage({action:'bindSession', requestId:tokenSessao}, targetOrigin);
+        if (rolarD20Automaticamente) {
+          var payload = {action:aguardarClique?'prepareRoll':'roll', requestId:tokenSessao};
+          if (diceExpression) payload.expression = String(diceExpression);
+          iframe.contentWindow.postMessage(payload, targetOrigin);
+          if (!aguardarClique) [180,520].forEach(function(delay) {
+            window.setTimeout(function() {
+              if (sessaoAtual===rollSessionId && !rollResultReceived &&
+                  document.getElementById('dado-iframe-overlay').style.display==='flex') {
+                iframe.contentWindow.postMessage(payload,targetOrigin);
+              }
+            },delay);
+          });
         }
-      }, { once: true });
-    }
-    iframe.src = iframe.src;
+      } catch(err) {
+        console.error('Não foi possível conectar o dado à mesa:',err);
+        fecharDado();
+        alert('Não foi possível conectar o dado à mesa. Recarregue e tente novamente.');
+      }
+    },{once:true});
+    // URL exclusiva evita reutilizar documento Dice antigo em cache.
+    iframe.src = new URL('dice.html?mesa_roll_session='+encodeURIComponent(tokenSessao),window.location.href).href;
   }
 
   function fecharDado() {
@@ -4641,6 +4655,7 @@ async function abrirModalEquipamentos(){
     document.getElementById('dado-iframe-overlay').style.display = 'none';
     rolagemCallback = null;
     rollResultReceived = true;
+    rollSessionToken = null;
     if(pedidoTesteAtivo&&pedidoTesteAtivo.button) pedidoTesteAtivo.button.disabled=false;
     pedidoTesteAtivo=null;
     if(cancelada){if(iniciativaBusy) iniciativaBusy=false;if(reforcoBusy) reforcoBusy=false;}
@@ -4658,6 +4673,7 @@ async function abrirModalEquipamentos(){
 
     var resultado = Number(event.data.value);
     if (!Number.isFinite(resultado)) return;
+    if (!rollSessionToken || event.data.requestId !== rollSessionToken) return;
     rollResultReceived = true;
     var sessaoResultado = rollSessionId;
     var callback = rolagemCallback;
