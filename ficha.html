@@ -322,10 +322,6 @@ body{background:#0d0b07;font-family:'EB Garamond',Georgia,serif;color:#2b1f0f;
 .dnd35-skill-control select,.dnd35-feat-control select,.dnd35-feat-control input{max-width:100%;min-width:0;padding:7px;background:#1b2419;color:#f5ecd6;border:1px solid #8a6a3a;border-radius:3px}
 .dnd35-feat-control select{flex:1;min-width:180px}
 .dnd35-formula{color:#e0b860;font-size:11px;line-height:1.5;margin-top:8px}
-.dnd35-language-list{display:grid;gap:6px;margin-top:8px;padding:9px;background:rgba(224,184,96,.06);border:1px solid #75613d;border-radius:4px}
-.dnd35-language-list p{margin:2px 0;color:#aeb9ca;font-size:11px;line-height:1.4}
-.dnd35-language-choice{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px;color:#c9a050;font-size:11px}
-.dnd35-language-choice select{flex:1;min-width:140px;max-width:100%;padding:7px;background:#1b2419;color:#f5ecd6;border:1px solid #8a6a3a;border-radius:3px}
 .dnd35-warning{color:#fca5a5;font-size:11px;margin-top:6px;line-height:1.45}
 .dnd35-readonly{color:#d1d5db;font-size:13px;line-height:1.6}
 .dnd35-readonly li{margin:4px 0}
@@ -490,6 +486,16 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2938
 .dnd35-badge,.dnd35-point-budget,.dnd35-budget{background:#332b1c!important;border-color:#8a7448!important;color:#f0d080!important}
 .dnd35-skill strong,.dnd35-feat strong,.dnd35-panel h2,.dnd35-build-panel h2{color:#e7d39c!important}
 .dnd35-skill p,.dnd35-feat p,.dnd35-note{color:#c5b995!important}
+
+.dnd35-identity-panel{grid-column:1/-1}.dnd35-identity-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}.dnd35-identity-grid label{display:flex;flex-direction:column;gap:6px;font-weight:700;color:#d8c59b}.dnd35-identity-grid input,.dnd35-identity-grid select{width:100%;min-height:40px;padding:9px 10px;border:1px solid #78613d;border-radius:5px;background:#161d18;color:#f5e8c9;font:inherit}.dnd35-identity-grid small{font-weight:400;color:#b9aa8c;line-height:1.4}.dnd35-identity-wide{grid-column:1/-1}.dnd35-identity-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.dnd35-identity-actions button{padding:9px 12px;border:1px solid #a9874b;border-radius:5px;background:#283328;color:#f2d99c;font-weight:700;cursor:pointer}.dnd35-identity-actions button:disabled{opacity:.45;cursor:not-allowed}@media(max-width:620px){.dnd35-identity-grid{grid-template-columns:1fr}.dnd35-identity-wide{grid-column:auto}.dnd35-identity-actions button{width:100%}}
+
+.dnd35-language-panel{margin-top:12px}.dnd35-language-panel .dnd35-identity-grid{margin:12px 0}.dnd35-language-panel label{display:flex;flex-direction:column;gap:6px;color:#d8c59b;font-weight:700}.dnd35-language-panel select{min-height:38px;padding:8px;border:1px solid #78613d;border-radius:5px;background:#161d18;color:#f5e8c9}
+
+.dnd35-class-choice{padding:12px;margin:12px 0;border:1px solid #80683f;border-radius:6px;background:rgba(28,37,29,.55)}.dnd35-literacy-choice{display:flex;align-items:center;gap:8px;color:#e9d7ad;font-weight:700}.dnd35-literacy-choice input{width:18px;height:18px;accent-color:#b89050}
+
+.dnd35-wizard-school{margin:12px 0;padding:12px;border:1px solid #80683f;border-radius:6px;background:rgba(28,37,29,.55)}.dnd35-wizard-school h3{margin-top:0}
+
+.dnd35-class-resource-panel{margin:12px 0}.dnd35-cleric-deity-detail{display:grid;gap:4px;padding:10px;margin:10px 0;border-left:3px solid #b89050;background:rgba(184,144,80,.12);color:#e8d8b7}.dnd35-cleric-deity-detail span{font-size:12px}
 </style>
 </head>
 <body>
@@ -538,11 +544,6 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2938
 
   if (!isCreationMode && !CHAR_ID) {
     document.getElementById('root').innerHTML = '<div class="erro" style="height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;"><h2>Ficha não encontrada</h2><p>Selecione um personagem na galeria.</p><br><a href="lobby.html" style="color:#8a6a3a;font-weight:bold;text-decoration:none;border:1px solid #8a6a3a;padding:10px 20px;border-radius:4px;">Voltar para Mesas</a></div>';
-    return;
-  }
-
-  if (isCreationMode && IS_SRD_MODE && (!CLASS_ID || !RACE_ID)) {
-    document.getElementById('root').innerHTML = '<div class="erro" style="height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:20px;text-align:center;"><h2>Raça ou classe não especificada</h2><p>Volte ao lobby e escolha raça e classe no Grimório.</p><br><a href="lobby.html" style="color:#8a6a3a;font-weight:bold;text-decoration:none;border:1px solid #8a6a3a;padding:10px 20px;border-radius:4px;">Voltar para o Lobby</a></div>';
     return;
   }
 
@@ -1515,6 +1516,59 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2938
 
   var DND35_CUSTO_COMPRA = {8:0,9:1,10:2,11:3,12:4,13:5,14:6,15:8,16:10,17:13,18:16};
 
+  function dnd35RaceAgeProfile(raca,classe){
+    var race=String(raca&&raca.id||''),classId=String(classe&&classe.id||''),group=['barbaro','ladino','feiticeiro'].indexOf(classId)>=0?0:(['bardo','guerreiro','paladino','ranger'].indexOf(classId)>=0?1:2);
+    var data={humano:{adult:15,dice:[[1,4],[1,6],[2,6]]},anao:{adult:40,dice:[[3,6],[5,6],[7,6]]},elfo:{adult:110,dice:[[4,6],[6,6],[10,6]]},gnomo:{adult:40,dice:[[4,6],[6,6],[9,6]]},'meio-elfo':{adult:20,dice:[[1,6],[2,6],[3,6]]},'meio-orc':{adult:14,dice:[[1,4],[1,6],[2,6]]},halfling:{adult:20,dice:[[2,4],[3,6],[4,6]]}};
+    var p=data[race];return p?{adult:p.adult,count:p.dice[group][0],sides:p.dice[group][1]}:null;
+  }
+  function dnd35DwarfAgeDice(classe,raca){var p=dnd35RaceAgeProfile(raca||{id:'anao'},classe);return p?p.count:0;}
+  function dnd35DwarfMinAge(classe,raca){var p=dnd35RaceAgeProfile(raca||{id:'anao'},classe);return p?p.adult+p.count:0;}
+  function dnd35RaceAgingThresholds(raca){var d={humano:[35,53,70],anao:[125,188,250],elfo:[175,263,350],gnomo:[100,150,200],'meio-elfo':[62,93,125],'meio-orc':[30,45,60],halfling:[50,75,100]};return d[String(raca&&raca.id||'')]||null;}
+  function dnd35RaceBodyProfile(raca,sexo){
+    var race=String(raca&&raca.id||''),female=sexo==='feminino';
+    var d={humano:{m:[160,2,10,60,2,4,.5,true],f:[145,2,10,42,2,4,.5,true]},anao:{m:[125,2,4,65,2,6,.5,true],f:[120,2,4,50,2,6,.5,true]},elfo:{m:[145,2,6,42,1,6,.5,true],f:[145,2,6,40,1,6,.5,true]},gnomo:{m:[90,2,4,20,0,0,.5,false],f:[85,2,4,17,0,0,.5,false]},'meio-elfo':{m:[155,2,8,50,2,4,.5,true],f:[145,2,8,40,2,4,.5,true]},'meio-orc':{m:[165,2,10,65,2,4,.5,true],f:[145,2,10,45,2,4,.5,true]},halfling:{m:[80,2,4,15,0,0,.5,false],f:[75,2,4,12,0,0,.5,false]}};
+    var row=d[race];return row?row[female?'f':'m']:null;
+  }
+  function dnd35DwarfAlignmentOptions(classe){
+    var id=String(classe&&classe.id||''),all=['Leal e Bom','Neutro e Bom','Caótico e Bom','Leal e Neutro','Neutro','Caótico e Neutro','Leal e Mau','Neutro e Mau','Caótico e Mau'];
+    if(id==='barbaro'||id==='bardo')return all.filter(function(x){return x.indexOf('Leal')!==0;});
+    if(id==='druida')return ['Neutro e Bom','Leal e Neutro','Neutro','Caótico e Neutro','Neutro e Mau'];
+    if(id==='monge')return all.filter(function(x){return x.indexOf('Leal')===0;});
+    if(id==='paladino')return ['Leal e Bom'];
+    return all;
+  }
+  function dnd35RollDie(sides){return 1+Math.floor(Math.random()*sides);}
+  function dnd35RollDice(count,sides){var total=0;for(var i=0;i<count;i++)total+=dnd35RollDie(sides);return total;}
+  function dnd35BarbarianLiteracyMarkup(state){
+    if(String(state.classe&&state.classe.id)!=='barbaro')return '';
+    var literate=!!(state.identidade&&state.identidade.alfabetizado);
+    return '<section class="dnd35-class-choice"><h3>Analfabetismo do Bárbaro</h3><p class="dnd35-note">O Bárbaro começa sem saber ler e escrever. Você pode permanecer analfabeto ou gastar 2 pontos de perícia uma única vez para aprender a ler e escrever todos os idiomas que conhece.</p><label class="dnd35-literacy-choice"><input type="checkbox" data-dwarf-literacy '+(literate?'checked':'')+'> Aprender a ler e escrever (custa 2 pontos de perícia)</label></section>';
+  }
+  function dnd35RaceLanguages(raca){
+    var d={humano:{automatic:['Comum'],bonus:null},anao:{automatic:['Comum','Anão'],bonus:['Gigante','Gnômico','Goblin','Orc','Terrano','Subcomum']},elfo:{automatic:['Comum','Élfico'],bonus:['Dracônico','Gnoll','Gnômico','Goblin','Orc','Silvestre']},gnomo:{automatic:['Comum','Gnômico'],bonus:['Dracônico','Anão','Élfico','Gigante','Goblin','Orc']},'meio-elfo':{automatic:['Comum','Élfico'],bonus:null},'meio-orc':{automatic:['Comum','Orc'],bonus:['Dracônico','Gigante','Gnoll','Goblin','Abissal']},halfling:{automatic:['Comum','Halfling'],bonus:['Anão','Élfico','Gnômico','Goblin','Orc']}};
+    return d[String(raca&&raca.id||'')]||{automatic:[],bonus:[]};
+  }
+  function dnd35AutomaticLanguages(raca,classe){var names=dnd35RaceLanguages(raca).automatic.slice();if(String(classe&&classe.id)==='druida')names.push('Druídico');return names;}
+  function dnd35DwarfLanguagesMarkup(state,attrs){
+    var raceLanguages=dnd35RaceLanguages(state.raca),automaticLanguages=dnd35AutomaticLanguages(state.raca,state.classe);
+    var choices=state.idiomasEscolhidos||{automaticos:automaticLanguages.slice(),bonus_inteligencia:[],comprados_falar_idioma:[]};
+    choices.automaticos=automaticLanguages.slice();
+    var available=raceLanguages.bonus;
+    var catalog=(state.languages||[]).filter(function(l){return !l.is_secret&&(available===null||available.indexOf(l.nome)>=0);});
+    var intBonus=Math.max(0,Math.floor((Number(attrs&&attrs.INT||10)-10)/2));
+    var skillId='srd35_skill_speak_language',rankCount=Math.max(0,Math.floor(Number((state.sheet.pericias||{})[skillId])||0));
+    function options(selected){return '<option value="">Selecione</option>'+catalog.map(function(l){return '<option value="'+esc(l.nome)+'"'+(selected===l.nome?' selected':'')+'>'+esc(l.nome)+'</option>';}).join('');}
+    var bonusHtml=Array.from({length:intBonus},function(_,i){return '<label>Idioma adicional por Inteligência '+(i+1)+'<select data-dwarf-language="bonus" data-index="'+i+'">'+options(choices.bonus_inteligencia[i]||'')+'</select></label>';}).join('');
+    var purchasedHtml=Array.from({length:rankCount},function(_,i){return '<label>Idioma adquirido por Falar Idioma '+(i+1)+'<select data-dwarf-language="purchased" data-index="'+i+'">'+options(choices.comprados_falar_idioma[i]||'')+'</select></label>';}).join('');
+    return '<section class="dnd35-panel dnd35-language-panel"><h2>Idiomas da Raça</h2><p class="dnd35-note"><strong>Automáticos:</strong> '+automaticLanguages.map(esc).join(' e ')+'.</p><p class="dnd35-note"><strong>Idiomas adicionais da raça:</strong> '+(available===null?'qualquer idioma não secreto':(available.length?available.join(', '):'nenhum idioma racial adicional específico'))+'. A quantidade gratuita depende do modificador de Inteligência final.</p><div class="dnd35-identity-grid">'+(bonusHtml||'<p class="dnd35-note">Sua Inteligência atual não concede idiomas adicionais gratuitos.</p>')+'</div><div class="dnd35-identity-grid">'+(purchasedHtml||'<p class="dnd35-note">Para adquirir idiomas extras, distribua graduações em Falar Idioma na aba Perícias.</p>')+'</div><p class="dnd35-note">Falar Idioma não usa testes: cada graduação comprada corresponde a um idioma escolhido. Não repita idiomas.</p></section>';
+  }
+  function dnd35DwarfIdentityMarkup(state){
+    var x=state.identidade||{},ageProfile=dnd35RaceAgeProfile(state.raca,state.classe),dice=ageProfile?ageProfile.count:0,ageSides=ageProfile?ageProfile.sides:6,minAge=dnd35DwarfMinAge(state.classe,state.raca),alignments=dnd35DwarfAlignmentOptions(state.classe),id=String(state.classe&&state.classe.id||''),bodyProfile=dnd35RaceBodyProfile(state.raca,x.sexo),ageStages=dnd35RaceAgingThresholds(state.raca)||[];
+    var alignNote=id==='clerigo'?'A tendência do Clérigo deve ficar a até um passo da tendência da divindade; a escolha da divindade será apresentada na etapa específica da classe.':id==='druida'?'O Druida deve ser Neutro, Neutro e Bom, Neutro e Mau, Leal e Neutro ou Caótico e Neutro.':id==='monge'?'O Monge precisa ser Leal.':id==='paladino'?'O Paladino precisa ser Leal e Bom.':(id==='barbaro'||id==='bardo')?'Esta classe não pode ser Leal.':'Esta classe aceita qualquer tendência.';
+    return '<section class="dnd35-panel dnd35-identity-panel"><h2>Identidade do Personagem</h2><p class="dnd35-note">O Livro do Jogador permite escolher sexo, idade, altura e peso. Você pode definir os valores ou usar a geração aleatória das tabelas raciais.</p><div class="dnd35-identity-grid"><label>Sexo<select data-dwarf-identity="sexo"><option value="">Selecione</option><option value="masculino"'+(x.sexo==='masculino'?' selected':'')+'>Masculino</option><option value="feminino"'+(x.sexo==='feminino'?' selected':'')+'>Feminino</option></select></label><label>Idade (anos)<input type="number" min="'+minAge+'" max="999" step="1" data-dwarf-identity="idade" value="'+(x.idade==null?'':esc(x.idade))+'" placeholder="Mínimo '+minAge+'"></label><label>Altura (cm)<input type="number" min="'+(bodyProfile?bodyProfile[0]+bodyProfile[1]*2.5:1)+'" max="'+(bodyProfile?bodyProfile[0]+bodyProfile[1]*bodyProfile[2]*2.5:500)+'" step="0.5" data-dwarf-identity="altura_cm" value="'+(x.altura_cm==null?'':esc(x.altura_cm))+'" placeholder="Defina sua altura"></label><label>Peso (kg)<input type="number" min="'+(bodyProfile?bodyProfile[3]+(bodyProfile[7]?bodyProfile[1]*bodyProfile[4]*bodyProfile[6]:bodyProfile[4]?bodyProfile[4]*bodyProfile[6]:bodyProfile[6]):0.5)+'" max="'+(bodyProfile?bodyProfile[3]+(bodyProfile[7]?bodyProfile[1]*bodyProfile[2]*bodyProfile[4]*bodyProfile[5]*bodyProfile[6]:bodyProfile[4]?bodyProfile[4]*bodyProfile[5]*bodyProfile[6]:bodyProfile[6]):500)+'" step="0.5" data-dwarf-identity="peso_kg" value="'+(x.peso_kg==null?'':esc(x.peso_kg))+'" placeholder="Defina seu peso"></label><label class="dnd35-identity-wide">Tendência<select data-dwarf-identity="tendencia"><option value="">Selecione</option>'+alignments.map(function(a){return '<option value="'+esc(a)+'"'+(x.tendencia===a?' selected':'')+'>'+esc(a)+'</option>';}).join('')+'</select><small>'+esc(alignNote)+'</small></label></div><div class="dnd35-identity-actions"><button type="button" data-dwarf-roll="age">Gerar idade aleatória ('+(ageProfile?ageProfile.adult:0)+' + '+dice+'d'+ageSides+')</button><button type="button" data-dwarf-roll="body" '+(!x.sexo?'disabled':'')+'>Gerar altura e peso</button></div><p class="dnd35-note">'+esc(state.raca.nome)+': idade adulta '+(ageProfile?ageProfile.adult:'—')+' anos; maturidade '+(ageStages[0]||'—')+', velho '+(ageStages[1]||'—')+', venerável '+(ageStages[2]||'—')+'. Idade mínima para esta classe: '+minAge+' anos. A geração de altura e peso usa a tabela 6-6 do Livro do Jogador.</p></section>';
+  }
+
+
   function dnd35PontosCompra(base) {
     return ATR.reduce(function(total,sigla) {
       var custo = DND35_CUSTO_COMPRA[Number(base && base[sigla])];
@@ -1522,11 +1576,14 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2938
     }, 0);
   }
 
-  function dnd35AtributosIniciais(raca, valoresBase) {
+  function dnd35AtributosIniciais(raca, valoresBase, identidade) {
     var ajustes = dnd35Objeto(raca && raca.ajustes_atributos);
     var base = valoresBase || {FOR:10,DES:10,CON:10,INT:10,SAB:10,CAR:10};
+    var idade=Number(identidade&&identidade.idade)||0, fisico=0, mental=0;
+    var aging=dnd35RaceAgingThresholds(raca);
+    if(aging){if(idade>=aging[2]){fisico=-6;mental=3;}else if(idade>=aging[1]){fisico=-3;mental=2;}else if(idade>=aging[0]){fisico=-1;mental=1;}}
     var finais = {};
-    ATR.forEach(function(sigla) { finais[sigla] = Number(base[sigla] == null ? 10 : base[sigla]) + (Number(ajustes[sigla]) || 0); });
+    ATR.forEach(function(sigla) { var aging=['FOR','DES','CON'].indexOf(sigla)>=0?fisico:mental; finais[sigla] = Math.max(1,Number(base[sigla] == null ? 10 : base[sigla]) + (Number(ajustes[sigla]) || 0) + aging); });
     return finais;
   }
 
@@ -1567,7 +1624,7 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2938
     return ids;
   }
   function dnd35PericiaBudget(state, attrs) {
-    return Math.max(1, Number(state.classe.pericias_por_nivel || 0) + dnd35Modificador(attrs.INT)) * 4 + (dnd35IsHuman(state.raca) ? 4 : 0);
+    return Math.max(1, Number(state.classe.pericias_por_nivel || 0) + dnd35Modificador(attrs.INT)) * 4 + (dnd35IsHuman(state.raca) ? 4 : 0) - (String(state.classe&&state.classe.id)==='barbaro'&&state.identidade&&state.identidade.alfabetizado?2:0);
   }
   function dnd35PericiaCost(state, skillId, ranks, classMap) { return Number(ranks || 0) * (String(skillId)==='srd35_skill_speak_language'?1:(classMap[String(skillId)]?1:2)); }
   function dnd35PericiaCostTotal(state, ranks, classMap) {
@@ -1628,6 +1685,7 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2938
 function dnd35TranslateCatalogText(value){
     var text=String(value==null?'':value);
     var dictionary={
+      "Battleaxe":"Machado de batalha","Warhammer":"Martelo de guerra","Longspear":"Lança longa","Spear":"Lança","Javelin":"Azagaia","Dart":"Dardo","Throwing axe":"Machado de arremesso","Handaxe":"Machadinha","Light pick":"Picareta leve","Heavy pick":"Picareta pesada","Rapier":"Rapieira","Scimitar":"Cimitarra","Falchion":"Falchion","Glaive":"Glaive","Halberd":"Alabarda","Trident":"Tridente","Longbow":"Arco longo","Shortbow":"Arco curto","Composite longbow":"Arco longo composto","Composite shortbow":"Arco curto composto","Crossbow, light":"Besta leve","Crossbow, heavy":"Besta pesada","Hand crossbow":"Besta de mão","Sling":"Funda","Whip":"Chicote","Spiked chain":"Corrente com cravos","Flail, light":"Mangual leve","Flail, heavy":"Mangual pesado","Studded leather armor":"Armadura de couro batido","Padded armor":"Armadura acolchoada","Splint mail":"Armadura de talas","Banded mail":"Armadura de talas","Half-plate":"Meia-armadura","Tower shield":"Escudo de corpo","Buckler":"Broquel","Shield, light wooden":"Escudo leve de madeira","Shield, light steel":"Escudo leve de aço","Shield, heavy wooden":"Escudo pesado de madeira","Shield, heavy steel":"Escudo pesado de aço","Rope, hempen":"Corda de cânhamo","Rope, silk":"Corda de seda","Thieves' tools":"Ferramentas de ladrão","Thieves’ tools":"Ferramentas de ladrão","Spell component pouch":"Bolsa de componentes de magia","Spellbook":"Grimório","Bedroll":"Saco de dormir","Manacles":"Algemas","Sunrod":"Bastão solar","Oil flask":"Frasco de óleo","Portable ram":"Aríete portátil","Mirror, small steel":"Espelho pequeno de aço","Chalk":"Giz","Chain":"Corrente","Lock":"Fechadura","Alchemist's fire":"Fogo alquímico","Acid":"Ácido","Antitoxin":"Antitoxina","Smokestick":"Bastão de fumaça","Thunderstone":"Pedra trovejante","Tanglefoot bag":"Bolsa de cola","Signal whistle":"Apito de sinalização","Lantern, hooded":"Lanterna coberta","Oil":"Óleo","Flask":"Frasco","Vial":"Frasco pequeno","Traveler's outfit":"Traje de viajante","Climber's kit":"Kit de escalada","Disguise kit":"Kit de disfarce","Forgery kit":"Kit de falsificação","Healer's kit":"Kit de curandeiro","Artisan's tools":"Ferramentas de artesão","Musical instrument":"Instrumento musical",
       "Owl’s wisdom":"Sabedoria da Coruja","Owl's wisdom":"Sabedoria da Coruja",
       "Protection from arrows 10/magic":"Proteção contra Flechas 10/mágica","potions_and_oils":"Poções e óleos","potions":"poções","potion":"poção",
       "Lamp, common":"Lamparina comum","Lantern, bullseye":"Lanterna com foco",
@@ -1649,11 +1707,65 @@ function dnd35TranslateCatalogText(value){
     text=text.replace(/market price/gi,'preço de mercado').replace(/listed in table/gi,'listado na tabela').replace(/the specific item entry is not individually written out in this SRD table\./gi,'a descrição individual deste item não consta nesta tabela.').replace(/\bweight\b/gi,'peso').replace(/\bprice\b/gi,'preço').replace(/\bdamage\b/gi,'dano').replace(/\bcritical\b/gi,'crítico').replace(/\b([0-9]+(?:\.[0-9]+)?)\s*gp\b/gi,'$1 po');
     return text;
   }
-    function dnd35ClassFeatureDescription(name,source){
+    function dnd35FeatNamePt(feat){
+    var names={
+      srd35_feat_acrobatic:'Acrobático',srd35_feat_agile:'Ágil',srd35_feat_alertness:'Prontidão',srd35_feat_animal_affinity:'Afinidade com Animais',
+      srd35_feat_athletic:'Atlético',srd35_feat_armor_proficiency_light:'Usar Armadura (Leve)',srd35_feat_armor_proficiency_medium:'Usar Armadura (Média)',srd35_feat_armor_proficiency_heavy:'Usar Armadura (Pesada)',
+      srd35_feat_blind_fight:'Lutar às Cegas',srd35_feat_combat_casting:'Magias em Combate',srd35_feat_combat_expertise:'Especialização em Combate',srd35_feat_combat_reflexes:'Reflexos em Combate',
+      srd35_feat_dodge:'Esquiva',srd35_feat_endurance:'Tolerância',srd35_feat_great_fortitude:'Fortitude Maior',srd35_feat_improved_initiative:'Iniciativa Aprimorada',
+      srd35_feat_iron_will:'Vontade de Ferro',srd35_feat_lightning_reflexes:'Reflexos Rápidos',srd35_feat_mobility:'Mobilidade',srd35_feat_mounted_combat:'Combate Montado',
+      srd35_feat_point_blank_shot:'Tiro Certeiro',srd35_feat_power_attack:'Ataque Poderoso',ataque_poderoso:'Ataque Poderoso',srd35_feat_precise_shot:'Tiro Preciso',
+      srd35_feat_rapid_shot:'Tiro Rápido',srd35_feat_run:'Corrida',srd35_feat_skill_focus:'Foco em Perícia',srd35_feat_spell_focus:'Foco em Magia',
+      srd35_feat_spell_mastery:'Maestria em Magia',srd35_feat_toughness:'Vitalidade',srd35_feat_two_weapon_fighting:'Combater com Duas Armas',
+      srd35_feat_weapon_finesse:'Acuidade com Arma',srd35_feat_weapon_focus:'Foco em Arma',srd35_feat_improved_grapple:'Agarrar Aprimorado',
+      srd35_feat_stunning_fist:'Ataque Atordoante',srd35_feat_improved_unarmed_strike:'Ataque Desarmado Aprimorado',srd35_feat_scribe_scroll:'Escrever Pergaminho',
+      srd35_feat_track:'Rastrear',srd35_feat_improved_trip:'Derrubar Aprimorado',srd35_feat_improved_disarm:'Desarmar Aprimorado',
+      srd35_feat_deflect_arrows:'Desviar Flechas',srd35_feat_snatch_arrows:'Apanhar Flechas',srd35_feat_whirlwind_attack:'Ataque Giratório',
+      srd35_feat_spring_attack:'Ataque em Movimento',srd35_feat_shot_on_the_run:'Tiro em Movimento',srd35_feat_far_shot:'Tiro Longo',
+      srd35_feat_improved_critical:'Sucesso Decisivo Aprimorado',srd35_feat_leadership:'Liderança'
+    };
+    return names[String(feat&&feat.id||'')]||dnd35TranslateCatalogText(feat&&feat.nome||'Talento');
+  }
+  function dnd35FeatDescriptionPt(feat){
+    var descriptions={
+      srd35_feat_acrobatic:'Você recebe +2 de bônus nos testes de Saltar e Acrobacia.',
+      srd35_feat_agile:'Você recebe +2 de bônus nos testes de Equilíbrio e Escapar.',
+      srd35_feat_alertness:'Você recebe +2 de bônus nos testes de Ouvir e Observar.',
+      srd35_feat_animal_affinity:'Você recebe +2 de bônus nos testes de Adestrar Animais e Cavalgar.',
+      srd35_feat_athletic:'Você recebe +2 de bônus nos testes de Escalar e Natação.',
+      srd35_feat_improved_initiative:'Você recebe +4 de bônus nos testes de Iniciativa.',
+      srd35_feat_great_fortitude:'Você recebe +2 de bônus em todos os testes de Fortitude.',
+      srd35_feat_iron_will:'Você recebe +2 de bônus em todos os testes de Vontade.',
+      srd35_feat_lightning_reflexes:'Você recebe +2 de bônus em todos os testes de Reflexos.',
+      srd35_feat_dodge:'Escolha um oponente. Você recebe +1 de bônus de esquiva na CA contra os ataques desse oponente. Pode escolher outro oponente a cada rodada.',
+      srd35_feat_mobility:'Você recebe +4 de bônus de esquiva na CA contra ataques de oportunidade provocados por sair ou atravessar uma área ameaçada.',
+      srd35_feat_combat_reflexes:'Você pode realizar ataques de oportunidade adicionais por rodada conforme seu modificador de Destreza e pode realizá-los mesmo surpreso.',
+      srd35_feat_power_attack:'Antes dos ataques corpo a corpo da rodada, você pode subtrair um valor dos ataques e adicionar o mesmo valor ao dano. A penalidade não pode exceder seu BBA; com arma de duas mãos, o dano adicional é dobrado.',
+      ataque_poderoso:'Antes dos ataques corpo a corpo da rodada, você pode subtrair um valor dos ataques e adicionar o mesmo valor ao dano. A penalidade não pode exceder seu BBA; com arma de duas mãos, o dano adicional é dobrado.',
+      srd35_feat_improved_unarmed_strike:'Você é considerado armado mesmo desarmado e pode causar dano letal ou não letal com ataques desarmados.',
+      srd35_feat_improved_grapple:'Você não provoca ataque de oportunidade ao iniciar uma manobra de agarrar e recebe +4 de bônus nos testes para agarrar.',
+      srd35_feat_stunning_fist:'Uma vez por dia por nível de personagem, antes de atacar, você pode tentar atordoar um oponente atingido; o alvo faz um teste de resistência de Fortitude (CD 10 + metade do nível + modificador de Sabedoria) ou fica atordoado por 1 rodada.',
+      srd35_feat_scribe_scroll:'Você pode criar pergaminhos mágicos de magias que conhece, respeitando os requisitos e custos de criação.',
+      srd35_feat_toughness:'Você recebe +3 pontos de vida.',
+      srd35_feat_two_weapon_fighting:'As penalidades por lutar com duas armas são reduzidas conforme a regra do talento.',
+      srd35_feat_weapon_finesse:'Você pode usar seu modificador de Destreza em vez de Força nas jogadas de ataque com armas leves elegíveis.',
+      srd35_feat_weapon_focus:'Escolha uma arma. Você recebe +1 de bônus nas jogadas de ataque com ela.',
+      srd35_feat_point_blank_shot:'Você recebe +1 nas jogadas de ataque e dano com armas à distância contra alvos a até 9 metros.',
+      srd35_feat_precise_shot:'Você pode realizar ataques à distância contra oponentes engajados em combate corpo a corpo sem a penalidade normal de –4.',
+      srd35_feat_rapid_shot:'Você pode realizar um ataque à distância adicional por rodada, com –2 em todas as jogadas de ataque dessa rodada.',
+      srd35_feat_endurance:'Você recebe +4 de bônus em testes e salvamentos relacionados a esforço físico prolongado e sono em armadura.',
+      srd35_feat_run:'Você corre mais rápido e recebe os benefícios indicados pelo talento em corridas e saltos.',
+      srd35_feat_track:'Você pode seguir rastros usando Sobrevivência, respeitando a CD e as condições do terreno.'
+    };
+    var id=String(feat&&feat.id||'');if(descriptions[id])return descriptions[id];
+    var raw=String(feat&&feat.descricao||'');
+    return dnd35TranslateCatalogText(raw).replace(/\bBenefit:/gi,'Benefício:').replace(/\bPrerequisites?:/gi,'Pré-requisitos:').replace(/\bNormal:/gi,'Normal:').replace(/\bSpecial:/gi,'Especial:');
+  }
+  function dnd35ClassFeatureDescription(name,source){
     var key=String(name||'').toLowerCase();
     if(key.indexOf('deslocamento rápido')>=0)return 'Seu deslocamento terrestre aumenta em 3 m (10 pés) enquanto você não usa armadura pesada e não carrega carga pesada.';
-    if(key.indexOf('analfabetismo')>=0)return 'O bárbaro não sabe ler nem escrever. Pode aprender a ler e escrever qualquer idioma que saiba falar gastando 2 pontos de perícia.';
-    if(key.indexOf('fúria')>=0&&key.indexOf('poderosa')<0&&key.indexOf('maior')<0&&key.indexOf('incansável')<0)return 'Uma vez por dia, entra em fúria por 3 + modificador de Constituição (após o aumento) rodadas: +4 Força, +4 Constituição, +2 nos testes de Vontade e –2 na Classe de Armadura. Ao terminar, fica fatigado pelo restante do encontro.';
+    if(key.indexOf('analfabetismo')>=0)return 'O bárbaro não sabe ler nem escrever. Pode tornar-se alfabetizado gastando 2 pontos de perícia; essa escolha permite ler e escrever todos os idiomas que já sabe falar, não 2 pontos por idioma.';
+    if(key.indexOf('fúria')>=0&&key.indexOf('poderosa')<0&&key.indexOf('maior')<0&&key.indexOf('incansável')<0)return 'Uma vez por dia no 1º nível (usos adicionais conforme a progressão da classe), entra em fúria por 3 + modificador de Constituição rodadas, calculado já com o aumento de Constituição: +4 Força, +4 Constituição, +2 de bônus moral nos testes de Vontade e –2 na Classe de Armadura. O aumento de Constituição também eleva os pontos de vida em 2 por nível enquanto durar a fúria; esses pontos não são PV temporários e desaparecem quando a Constituição volta ao valor normal, podendo deixar o bárbaro inconsciente ou morto se os PV atuais caírem a 0 ou menos. Durante a fúria, não pode usar perícias baseadas em Carisma, Destreza ou Inteligência (exceto Equilíbrio, Escapar, Intimidar e Cavalgar), nem habilidades que exijam concentração ou paciência, conjurar magias ou ativar itens mágicos que exijam palavras de comando, gatilho de magia ou complemento de magia. Ao terminar, fica fatigado. A fadiga permanece até completar 8 horas de descanso; a característica Fúria Incansável elimina a fadiga causada pelo término da fúria.';
     if(key.indexOf('esquiva sobrenatural aprimorada')>=0)return 'Não pode mais ser flanqueado; ladinos não podem aplicar ataque furtivo por flanqueamento, salvo se tiverem pelo menos 4 níveis de ladino a mais.';
     if(key.indexOf('esquiva sobrenatural')>=0)return 'Mantém seu bônus de Destreza na CA mesmo quando surpreendido ou atacado por um inimigo invisível. Ainda perde esse bônus se estiver imobilizado.';
     if(key.indexOf('sentido para armadilhas')>=0)return 'Recebe o bônus indicado nos testes de Reflexos para evitar armadilhas e na CA contra ataques feitos por armadilhas.';
@@ -1705,57 +1817,6 @@ function dnd35TranslateCatalogText(value){
     return rules[n]||'Use esta perícia quando a ação exigir treinamento ou conhecimento específico. O Mestre define a dificuldade (CD) conforme a situação, o tempo disponível e as condições do ambiente.';
   }
   
-  function dnd35LanguageNormalize(value){
-    return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
-  }
-  function dnd35LanguageRules(state,attrs){
-    var race=state.raca||{},lines=Array.isArray(race.habilidades_raciais)?race.habilidades_raciais:[];
-    var line=lines.find(function(x){return /idioma.*autom[aá]tico/i.test(String(x));})||'';
-    var autoMatch=String(line).match(/idiomas?\s+autom[aá]ticos?:\s*([^.]*)/i);
-    var autoText=autoMatch?autoMatch[1]:'';
-    var automatic=autoText.replace(/\s+e\s+/gi,',').split(',').map(function(x){return x.trim();}).filter(Boolean);
-    var languages=Array.isArray(state.languages)?state.languages:[];
-    function canonical(name){var found=languages.find(function(l){return dnd35LanguageNormalize(l.nome)===dnd35LanguageNormalize(name);});return found?found.nome:String(name||'').trim();}
-    automatic=automatic.map(canonical);
-    if(String(state.classe&&state.classe.id||'')==='druida'&&!automatic.some(function(x){return dnd35LanguageNormalize(x)==='druidico';}))automatic.push(canonical('Druídico'));
-    var anyBonus=/qualquer idioma|pode escolher idiomas adicionais/i.test(String(line));
-    var bonusMatch=String(line).match(/idiomas adicionais:\s*([^.]*)/i);
-    var bonusNames=bonusMatch?bonusMatch[1].replace(/\s+e\s+/gi,',').split(',').map(function(x){return x.trim();}).filter(Boolean):[];
-    var allSelectable=languages.filter(function(l){return !l.is_secret;}).map(function(l){return l.nome;});
-    var bonusOptions=anyBonus?allSelectable:allSelectable.filter(function(name){return bonusNames.some(function(x){return dnd35LanguageNormalize(x)===dnd35LanguageNormalize(name);});});
-    var intMod=Math.max(0,dnd35Modificador(attrs.INT));
-    return {automatic:Array.from(new Set(automatic)),bonusOptions:bonusOptions,bonusCount:Math.min(intMod,bonusOptions.length),intBonus:intMod,allSelectable:allSelectable,anyBonus:anyBonus};
-  }
-  function dnd35RenderLanguageSection(state,attrs,creating,rank){
-    var rules=dnd35LanguageRules(state,attrs);
-    if(!creating){
-      var stored=state.sheet.idiomas_conhecidos||{},auto=Array.isArray(stored.automaticos)?stored.automaticos.slice():[];
-      rules.automatic.forEach(function(name){if(!auto.some(function(x){return dnd35LanguageNormalize(x)===dnd35LanguageNormalize(name);}))auto.push(name);});
-      var bonus=Array.isArray(stored.bonus_inteligencia)?stored.bonus_inteligencia:[];
-      var purchased=Array.isArray(stored.comprados_falar_idioma)?stored.comprados_falar_idioma:[];
-      return '<div class="dnd35-language-list"><p><b>Automáticos:</b> '+esc(auto.join(', ')||'—')+'</p><p><b>Bônus por Inteligência:</b> '+esc(bonus.join(', ')||'—')+'</p><p><b>Comprados com Falar Idioma:</b> '+esc(purchased.join(', ')||'—')+'</p></div>';
-    }
-    var picks=state.idiomasEscolhas||(state.idiomasEscolhas={bonus:[],comprados:[]});
-    var bonusPicks=Array.isArray(picks.bonus)?picks.bonus:[];
-    var purchasedPicks=Array.isArray(picks.comprados)?picks.comprados:[];
-    var purchasedCount=Math.max(0,Math.floor(Number(rank)||0));
-    function renderSelect(group,index,options,selected){
-      var used=rules.automatic.slice();
-      bonusPicks.forEach(function(value,i){if(value&&!(group==='bonus'&&i===index))used.push(value);});
-      purchasedPicks.forEach(function(value,i){if(value&&!(group==='comprados'&&i===index))used.push(value);});
-      var html='<select data-language-choice="'+group+'" data-language-index="'+index+'"><option value="">Selecione um idioma…</option>';
-      options.forEach(function(name){if(name===selected||!used.some(function(x){return dnd35LanguageNormalize(x)===dnd35LanguageNormalize(name);}))html+='<option value="'+esc(name)+'"'+(name===selected?' selected':'')+'>'+esc(name)+'</option>';});
-      return html+'</select>';
-    }
-    var html='<div class="dnd35-language-list"><p><b>Idiomas automáticos da raça/classe:</b> '+esc(rules.automatic.join(', ')||'—')+'</p>';
-    html+='<p><b>Idiomas bônus por Inteligência:</b> '+rules.bonusCount+' de '+rules.intBonus+'</p>';
-    for(var i=0;i<rules.bonusCount;i++)html+='<label class="dnd35-language-choice dnd35-skill-control">Bônus '+(i+1)+renderSelect('bonus',i,rules.bonusOptions,bonusPicks[i]||'')+'</label>';
-    if(rules.intBonus>rules.bonusOptions.length)html+='<p class="dnd35-warning">A lista racial oferece '+rules.bonusOptions.length+' opções distintas; não há opções suficientes para usar todo o bônus de Inteligência sem repetir idioma.</p>';
-    html+='<p><b>Idiomas comprados com Falar Idioma:</b> '+purchasedCount+' (1 ponto de perícia por idioma)</p>';
-    for(var j=0;j<purchasedCount;j++)html+='<label class="dnd35-language-choice">Idioma comprado '+(j+1)+renderSelect('comprados',j,rules.allSelectable,purchasedPicks[j]||'')+'</label>';
-    html+='</div>';
-    return html;
-  }
   function dnd35RenderSkills(state, attrs, creating, classMap) {
     var ranks = dnd35Objeto(state.sheet.pericias), budget = dnd35PericiaBudget(state,attrs), spent = dnd35PericiaCostTotal(state,ranks,classMap);
     var level = Math.max(1,Number(state.sheet.nivel)||1), html = '';
@@ -1769,14 +1830,14 @@ function dnd35TranslateCatalogText(value){
       }
       var abilityMod = dnd35Modificador(attrs[ability]), classBonus = isClass && rank >= 1 ? 3 : 0, computed = rank + abilityMod + classBonus;
       var labels = [];
-      labels.push(isLanguage ? 'Idioma · 1 ponto por idioma' : (isClass ? 'Perícia de classe' : 'Fora de classe'));
-      if (!isLanguage && skill.treinada_apenas) labels.push('Somente treinada');
-      if (!isLanguage && skill.penalidade_armadura) labels.push('Penalidade de armadura');
-      var trainedWarning = !isLanguage && skill.treinada_apenas && rank < 1 ? '<div class="dnd35-warning">Esta perícia exige treinamento; sem graduações, não pode ser usada.</div>' : '';
+      labels.push(isClass ? 'Perícia de classe' : 'Fora de classe');
+      if (skill.treinada_apenas) labels.push('Somente treinada');
+      if (skill.penalidade_armadura) labels.push('Penalidade de armadura');
+      var trainedWarning = skill.treinada_apenas && rank < 1 ? '<div class="dnd35-warning">Esta perícia exige treinamento; sem graduações, não pode ser usada.</div>' : '';
       html += '<article class="dnd35-skill"><div class="dnd35-skill-head"><strong>'+esc(skill.nome)+'</strong><span class="dnd35-badge">'+esc(labels.join(' · '))+'</span></div>'+
-        (isLanguage ? '<p>Limite de compra: '+max+' idiomas · Custo: 1 ponto de perícia por idioma.</p>' : '<p>Atributo: '+esc(ability)+' · Máximo: '+max+' graduações · Custo: '+(isClass?'1':'2')+' ponto(s) por graduação'+(rank%1?' · incremento de 0,5':'')+'</p>')+
-        (creating ? '<div class="dnd35-skill-control"><label for="skill-'+esc(id)+'">'+(isLanguage?'Idiomas adicionais por pontos de perícia':'Graduações')+'</label><select id="skill-'+esc(id)+'" data-skill="'+esc(id)+'">'+options+'</select></div>' : '<p>'+(isLanguage?'Idiomas comprados':'Graduações')+': <b>'+rank+'</b></p>')+
-        (isLanguage?dnd35RenderLanguageSection(state,attrs,creating,rank):'<div class="dnd35-formula">Teste: 1d20 + graduações + modificador do atributo +3 se for perícia de classe com pelo menos 1 graduação.<br>Bônus agora: '+(computed>=0?'+':'')+computed+' ('+rank+' grad. '+(abilityMod>=0?'+':'')+abilityMod+' mod. '+(classBonus?'+3 classe':'')+')</div>')+trainedWarning+(skill.descricao?'<details class="dnd35-skill-rules"><summary>Regras e usos da perícia</summary><p>'+esc(dnd35SkillUsePt35(skill))+'</p>'+(skill.srd_source_url?'<a href="'+esc(skill.srd_source_url)+'" target="_blank" rel="noopener noreferrer">Fonte SRD ↗</a>':'')+'</details>':'')+'</article>';
+        '<p>Atributo: '+esc(ability)+' · Máximo: '+max+' graduações · Custo: '+((isClass||isLanguage)?'1':'2')+' ponto(s) por graduação'+(rank%1?' · incremento de 0,5':'')+'</p>'+
+        (creating ? '<div class="dnd35-skill-control"><label for="skill-'+esc(id)+'">Graduações</label><select id="skill-'+esc(id)+'" data-skill="'+esc(id)+'">'+options+'</select></div>' : '<p>Graduações: <b>'+rank+'</b></p>')+
+        (isLanguage?'<div class="dnd35-formula">Sem rolagem: cada graduação compra conhecimento de um idioma. Informe os idiomas na área de notas da ficha.</div>':'<div class="dnd35-formula">Teste: 1d20 + graduações + modificador do atributo +3 se for perícia de classe com pelo menos 1 graduação.<br>Bônus agora: '+(computed>=0?'+':'')+computed+' ('+rank+' grad. '+(abilityMod>=0?'+':'')+abilityMod+' mod. '+(classBonus?'+3 classe':'')+')</div>')+trainedWarning+(skill.descricao?'<details class="dnd35-skill-rules"><summary>Regras e usos da perícia</summary><p>'+esc(dnd35SkillUsePt35(skill))+'</p>'+(skill.srd_source_url?'<a href="'+esc(skill.srd_source_url)+'" target="_blank" rel="noopener noreferrer">Fonte SRD ↗</a>':'')+'</details>':'')+'</article>';
     });
     return {html:html,spent:spent,budget:budget};
   }
@@ -1784,16 +1845,17 @@ function dnd35TranslateCatalogText(value){
   function dnd35RenderFeats(state, attrs, creating) {
     var count = dnd35IsHuman(state.raca) ? 2 : 1, picks = state.featPicks || [], html = '';
     if (!creating) {
-      var saved = dnd35Objeto(state.sheet.talentos), list = Array.isArray(saved) ? saved : [];
-      if (!list.length) return '<p class="dnd35-readonly">Nenhum talento registrado.</p>';
+      var saved = dnd35Objeto(state.sheet.talentos), list = Array.isArray(saved) ? saved.filter(function(pick){return !(pick&&pick.origem==='class_feature');}) : [];
+      if (!list.length) return '<p class="dnd35-readonly">Nenhum talento escolhido.</p>';
       return '<ul class="dnd35-readonly">'+list.map(function(pick) {
         var feat = state.feats.filter(function(f) { return String(f.id) === String(pick && pick.id); })[0];
-        return '<li><b>'+esc(feat ? feat.nome : ('Talento '+(pick && pick.id || '')))+(pick && pick.parametro ? ' — '+esc(pick.parametro) : '')+'</b>'+(feat && feat.descricao ? ': '+esc(feat.descricao) : '')+'</li>';
+        var sourceLabel=pick&&pick.origem==='class_bonus'?'Talento bônus de classe: ':'';
+        return '<li><b>'+esc(sourceLabel+(feat ? dnd35FeatNamePt(feat) : ('Talento '+(pick && pick.id || '')))+(pick && pick.parametro ? ' — '+pick.parametro : ''))+'</b>'+(feat && feat.descricao ? ': '+esc(dnd35FeatDescriptionPt(feat)) : '')+'</li>';
       }).join('')+'</ul>';
     }
     for (var i=0;i<count;i++) {
       var pick = picks[i] || {id:'',parametro:''}, feat = state.feats.filter(function(f) { return String(f.id) === String(pick.id); })[0];
-      var classRuleKey=dnd35ClassRuleKey(state.classe&&((state.classe.class_key||state.classe.nome||state.classe.id))),optionFeats=state.feats.filter(function(f){var category=String(dnd35Objeto(f.requisitos).type||'General');return category==='General'&&!(classRuleKey==='monk'&&String(f.id)==='srd35_feat_improved_unarmed_strike')&&!(classRuleKey==='wizard'&&String(f.id)==='srd35_feat_scribe_scroll');});var optionHtml = '<option value="">Escolha um talento…</option>'+optionFeats.map(function(f) { return '<option value="'+esc(String(f.id))+'"'+(String(f.id)===String(pick.id)?' selected':'')+'>'+esc(f.nome)+'</option>'; }).join('');
+      var classRuleKey=dnd35ClassRuleKey(state.classe&&((state.classe.class_key||state.classe.nome||state.classe.id))),optionFeats=state.feats.filter(function(f){var category=String(dnd35Objeto(f.requisitos).type||'General');return category==='General'&&!(classRuleKey==='monk'&&String(f.id)==='srd35_feat_improved_unarmed_strike')&&!(classRuleKey==='wizard'&&String(f.id)==='srd35_feat_scribe_scroll');});var optionHtml = '<option value="">Escolha um talento…</option>'+optionFeats.map(function(f) { return '<option value="'+esc(String(f.id))+'"'+(String(f.id)===String(pick.id)?' selected':'')+'>'+esc(dnd35FeatNamePt(f))+'</option>'; }).join('');
       var paramType=feat?dnd35FeatParameterType(feat):'',needsParam = !!(feat && (feat.exige_parametro || paramType || dnd35FeatIsWeaponFocus(feat)));
       var reqData=feat?dnd35Objeto(feat.requisitos):{},reqText=feat?(typeof reqData==='string'?reqData:String(reqData.raw||'')):'';
       var paramRequired=!!(feat&&feat.exige_parametro)&&!(paramType==='spell_list'&&dnd35Modificador(Number(attrs.INT)||10)<=0);
@@ -1802,7 +1864,7 @@ function dnd35TranslateCatalogText(value){
       if (feat && paramRequired && !String(pick.parametro||'').trim()) warnings.push('Informe o parâmetro exigido.');
       if(feat&&dnd35FeatIsWeaponFocus(feat)){if(!String(pick.parametro||'').trim())warnings.push('Informe a arma escolhida.');else if(!dnd35WeaponProficient(state,pick.parametro))warnings.push('A classe não é proficiente com a arma escolhida.');}
       html += '<article class="dnd35-feat"><div class="dnd35-feat-head"><strong>Talento '+(i+1)+(dnd35IsHuman(state.raca)&&i===1?' · bônus humano':'')+'</strong></div><div class="dnd35-feat-control"><label for="feat-'+i+'">Escolha</label><select id="feat-'+i+'" data-feat="'+i+'">'+optionHtml+'</select></div>'+
-        (feat ? '<p>'+esc(feat.descricao||'Sem descrição.')+'</p>'+(reqText?'<p>Pré-requisitos: '+esc(reqText)+'</p>':'<p>Pré-requisitos: nenhum.</p>')+(reqData.dynamic_prerequisites?'<p class="dnd35-note">'+esc(String(reqData.dynamic_prerequisites))+'</p>':'')+(feat.srd_source_url?'<p><a href="'+esc(feat.srd_source_url)+'" target="_blank" rel="noopener noreferrer">Consultar fonte SRD ↗</a></p>':'') : '')+paramHtml+(warnings.length?'<div class="dnd35-warning">'+warnings.map(esc).join(' ')+'</div>':'')+'</article>';
+        (feat ? '<p>'+esc(dnd35FeatDescriptionPt(feat)||'Sem descrição.')+'</p>'+(reqText?'<p>Pré-requisitos: '+esc(reqText)+'</p>':'<p>Pré-requisitos: nenhum.</p>')+(reqData.dynamic_prerequisites?'<p class="dnd35-note">'+esc(String(reqData.dynamic_prerequisites))+'</p>':'')+(feat.srd_source_url?'<p><a href="'+esc(feat.srd_source_url)+'" target="_blank" rel="noopener noreferrer">Consultar fonte SRD ↗</a></p>':'') : '')+paramHtml+(warnings.length?'<div class="dnd35-warning">'+warnings.map(esc).join(' ')+'</div>':'')+'</article>';
     }
     return html;
   }
@@ -1833,7 +1895,7 @@ function dnd35WeaponProficient(state,weaponName){
       return dnd35FeatWarnings(feat,attrs,tempState,(tempState.featPicks||[]).length,'').length===0;
     }).sort(function(a,b){return String(a.nome).localeCompare(String(b.nome),'pt-BR');});
     var selected=candidates.find(function(feat){return String(feat.id)===String(pick.id);})||(state.feats||[]).find(function(feat){return String(feat.id)===String(pick.id);});
-    var options='<option value="">Escolha um talento bônus…</option>'+candidates.map(function(feat){return '<option value="'+esc(feat.id)+'"'+(String(feat.id)===String(pick.id)?' selected':'')+'>'+esc(feat.nome)+'</option>';}).join('');
+    var options='<option value="">Escolha um talento bônus…</option>'+candidates.map(function(feat){return '<option value="'+esc(feat.id)+'"'+(String(feat.id)===String(pick.id)?' selected':'')+'>'+esc(dnd35FeatNamePt(feat))+'</option>';}).join('');
     var needsParam=!!(selected&&(selected.exige_parametro||dnd35FeatParameterType(selected)||dnd35FeatIsWeaponFocus(selected)));
     var parameterHtml=needsParam?'<div class="dnd35-feat-control"><label for="class-feat-param">'+esc(dnd35FeatParameterLabel(selected))+'</label><input id="class-feat-param" data-class-feat-param maxlength="240" value="'+esc(pick.parametro||'')+'" placeholder="Informe a escolha"><small>'+esc(dnd35FeatParameterHint(selected,attrs))+'</small></div>':'';
     var warnings=[];
@@ -1875,30 +1937,26 @@ function dnd35WeaponProficient(state,weaponName){
     ].indexOf(id)>=0;
     return false;
   }
-  function dnd35LevelupReady(state){
-    var lu=state.levelUp;if(!lu)return false;
-    var currentLevel=Math.max(1,Number(state.sheet.nivel)||1),nextLevel=Math.min(20,currentLevel+1),die=Math.max(1,Number(state.classe.dado_vida)||8);
-    var specs=dnd35LevelupFeatSpec(state,nextLevel),feats=lu.feats||[];
-    var attrs=dnd35Objeto(state.sheet.atributos),oldInt=dnd35Modificador(Number(attrs.INT)||10),plannedInt=oldInt;
-    var featsReady=feats.length===specs.length&&feats.every(function(pick,index){
-      if(!pick||!pick.id)return false;
-      var feat=(state.feats||[]).find(function(item){return String(item.id)===String(pick.id);});
-      if(!feat)return false;
-      var needs=!!(feat.exige_parametro||dnd35FeatParameterType(feat)||dnd35FeatIsWeaponFocus(feat));
-      if(needs&&!String(pick.parametro||'').trim())return false;
-      return true;
-    });
-    if(nextLevel%4===0&&lu.attribute==='INT')plannedInt=dnd35Modificador((Number(attrs.INT)||10)+1);
-    var budget=Math.max(1,Number(state.classe.pericias_por_nivel||0)+plannedInt)+(dnd35IsHuman(state.raca)?1:0)+Math.max(0,plannedInt-oldInt)*currentLevel;
-    var classMap=dnd35SkillMap(state),spent=Object.keys(lu.skills||{}).reduce(function(total,id){return total+(Number(lu.skills[id])||0)*(classMap[String(id)]||String(id)==='srd35_skill_speak_language'?1:2);},0);
-    var tempSkills=Object.assign({},dnd35Objeto(state.sheet.pericias));Object.keys(lu.skills||{}).forEach(function(id){tempSkills[id]=(Number(tempSkills[id])||0)+(Number(lu.skills[id])||0);});
-    var tempAttrs=Object.assign({},attrs);if(nextLevel%4===0&&lu.attribute)tempAttrs[lu.attribute]=(Number(tempAttrs[lu.attribute])||10)+1;
-    var tempState=Object.assign({},state,{sheet:Object.assign({},state.sheet,{nivel:nextLevel,pericias:tempSkills}),featPicks:feats});
-    var prereqsReady=featsReady&&feats.every(function(pick,index){var feat=(state.feats||[]).find(function(item){return String(item.id)===String(pick.id);});return feat&&(specs[index].type==='monk'||dnd35FeatWarnings(feat,tempAttrs,tempState,index,pick.parametro||'').length===0);});
-    var languageData=dnd35LevelupLanguageData(state,attrs,lu),languageChoices=Array.from({length:languageData.needed},function(_,i){return languageData.picks[i]||'';}),knownLanguages=languageData.automatic.concat(languageData.bonus,languageData.purchased).map(dnd35LanguageNormalize),newLanguageNames=languageChoices.map(dnd35LanguageNormalize);
-    var languagesReady=languageChoices.length===languageData.needed&&languageChoices.every(function(name){return !!String(name||'').trim()&&languageData.rules.allSelectable.some(function(option){return dnd35LanguageNormalize(option)===dnd35LanguageNormalize(name);});})&&new Set(knownLanguages.concat(newLanguageNames)).size===knownLanguages.length+newLanguageNames.length;
-    var hitDieRoll=Number(lu.hitDieRoll),hitDieReady=Number.isInteger(hitDieRoll)&&hitDieRoll>=1&&hitDieRoll<=die;
-    return hitDieReady&&prereqsReady&&(nextLevel%4!==0||!!lu.attribute)&&spent<=budget&&languagesReady;
+function dnd35LanguageNormalize(value){
+    return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+  }
+  function dnd35LanguageRules(state,attrs){
+    var race=state.raca||{},lines=Array.isArray(race.habilidades_raciais)?race.habilidades_raciais:[];
+    var line=lines.find(function(x){return /idioma.*autom[aá]tico/i.test(String(x));})||'';
+    var autoMatch=String(line).match(/idiomas?\s+autom[aá]ticos?:\s*([^.]*)/i);
+    var autoText=autoMatch?autoMatch[1]:'';
+    var automatic=autoText.replace(/\s+e\s+/gi,',').split(',').map(function(x){return x.trim();}).filter(Boolean);
+    var languages=Array.isArray(state.languages)?state.languages:[];
+    function canonical(name){var found=languages.find(function(l){return dnd35LanguageNormalize(l.nome)===dnd35LanguageNormalize(name);});return found?found.nome:String(name||'').trim();}
+    automatic=automatic.map(canonical);
+    if(String(state.classe&&state.classe.id||'')==='druida'&&!automatic.some(function(x){return dnd35LanguageNormalize(x)==='druidico';}))automatic.push(canonical('Druídico'));
+    var anyBonus=/qualquer idioma|pode escolher idiomas adicionais/i.test(String(line));
+    var bonusMatch=String(line).match(/idiomas adicionais:\s*([^.]*)/i);
+    var bonusNames=bonusMatch?bonusMatch[1].replace(/\s+e\s+/gi,',').split(',').map(function(x){return x.trim();}).filter(Boolean):[];
+    var allSelectable=languages.filter(function(l){return !l.is_secret;}).map(function(l){return l.nome;});
+    var bonusOptions=anyBonus?allSelectable:allSelectable.filter(function(name){return bonusNames.some(function(x){return dnd35LanguageNormalize(x)===dnd35LanguageNormalize(name);});});
+    var intMod=Math.max(0,dnd35Modificador(attrs.INT));
+    return {automatic:Array.from(new Set(automatic)),bonusOptions:bonusOptions,bonusCount:Math.min(intMod,bonusOptions.length),intBonus:intMod,allSelectable:allSelectable,anyBonus:anyBonus};
   }
   function dnd35LevelupLanguageData(state,attrs,lu){
     var stored=state.sheet.idiomas_conhecidos||{},rules=dnd35LanguageRules(state,attrs);
@@ -1926,6 +1984,31 @@ function dnd35WeaponProficient(state,weaponName){
     html+='</div></div>';
     return html;
   }
+    function dnd35LevelupReady(state){
+    var lu=state.levelUp;if(!lu)return false;
+    var currentLevel=Math.max(1,Number(state.sheet.nivel)||1),nextLevel=Math.min(20,currentLevel+1),die=Math.max(1,Number(state.classe.dado_vida)||8);
+    var specs=dnd35LevelupFeatSpec(state,nextLevel),feats=lu.feats||[];
+    var attrs=dnd35Objeto(state.sheet.atributos),oldInt=dnd35Modificador(Number(attrs.INT)||10),plannedInt=oldInt;
+    var featsReady=feats.length===specs.length&&feats.every(function(pick,index){
+      if(!pick||!pick.id)return false;
+      var feat=(state.feats||[]).find(function(item){return String(item.id)===String(pick.id);});
+      if(!feat)return false;
+      var needs=!!(feat.exige_parametro||dnd35FeatParameterType(feat)||dnd35FeatIsWeaponFocus(feat));
+      if(needs&&!String(pick.parametro||'').trim())return false;
+      return true;
+    });
+    if(nextLevel%4===0&&lu.attribute==='INT')plannedInt=dnd35Modificador((Number(attrs.INT)||10)+1);
+    var budget=Math.max(1,Number(state.classe.pericias_por_nivel||0)+plannedInt)+(dnd35IsHuman(state.raca)?1:0)+Math.max(0,plannedInt-oldInt)*currentLevel;
+    var classMap=dnd35SkillMap(state),spent=Object.keys(lu.skills||{}).reduce(function(total,id){return total+(Number(lu.skills[id])||0)*(classMap[String(id)]||String(id)==='srd35_skill_speak_language'?1:2);},0);
+    var tempSkills=Object.assign({},dnd35Objeto(state.sheet.pericias));Object.keys(lu.skills||{}).forEach(function(id){tempSkills[id]=(Number(tempSkills[id])||0)+(Number(lu.skills[id])||0);});
+    var tempAttrs=Object.assign({},attrs);if(nextLevel%4===0&&lu.attribute)tempAttrs[lu.attribute]=(Number(tempAttrs[lu.attribute])||10)+1;
+    var tempState=Object.assign({},state,{sheet:Object.assign({},state.sheet,{nivel:nextLevel,pericias:tempSkills}),featPicks:feats});
+    var prereqsReady=featsReady&&feats.every(function(pick,index){var feat=(state.feats||[]).find(function(item){return String(item.id)===String(pick.id);});return feat&&(specs[index].type==='monk'||dnd35FeatWarnings(feat,tempAttrs,tempState,index,pick.parametro||'').length===0);});
+    var languageData=dnd35LevelupLanguageData(state,attrs,lu),languageChoices=Array.from({length:languageData.needed},function(_,i){return languageData.picks[i]||'';}),knownLanguages=languageData.automatic.concat(languageData.bonus,languageData.purchased).map(dnd35LanguageNormalize),newLanguageNames=languageChoices.map(dnd35LanguageNormalize);
+    var languagesReady=languageChoices.length===languageData.needed&&languageChoices.every(function(name){return !!String(name||'').trim()&&languageData.rules.allSelectable.some(function(option){return dnd35LanguageNormalize(option)===dnd35LanguageNormalize(name);});})&&new Set(knownLanguages.concat(newLanguageNames)).size===knownLanguages.length+newLanguageNames.length;
+    var hitDieRoll=Number(lu.hitDieRoll),hitDieReady=Number.isInteger(hitDieRoll)&&hitDieRoll>=1&&hitDieRoll<=die;
+    return hitDieReady&&prereqsReady&&(nextLevel%4!==0||!!lu.attribute)&&spent<=budget&&languagesReady;
+  }
   function dnd35LevelupMarkup(state,attrs){
     var pending=Math.max(0,Number(state.sheet.niveis_pendentes)||0);
     if(!pending)return '';
@@ -1945,7 +2028,7 @@ function dnd35WeaponProficient(state,weaponName){
       maxAdd=Math.floor((maxAdd+0.00001)/step)*step;
       var options='<option value="0">Manter ('+rank+')</option>';
       for(var value=step;value<=maxAdd+0.00001;value+=step)options+='<option value="'+value+'"'+(Math.abs(selected-value)<0.001?' selected':'')+'>'+value+' nova(s) · total '+(rank+value)+'</option>';
-      return '<article class="dnd35-skill"><div class="dnd35-skill-head"><strong>'+esc(skill.nome)+'</strong><span class="dnd35-badge">'+(language?'Idioma':(isClass?'Classe':'Fora de classe'))+' · '+(language?'1 pt/idioma':skillCost(id)+' pt/grad.')+'</span></div><p>Atual: '+rank+' · Máximo no nível '+nextLevel+': '+(language?'sem limite fixo':maxRank)+' · limite de compra: '+maxAdd+'</p><div class="dnd35-skill-control"><label for="lu-skill-'+esc(id)+'">'+(language?'Adicionar idiomas':'Adicionar graduações')+'</label><select id="lu-skill-'+esc(id)+'" data-lu-skill="'+esc(id)+'">'+options+'</select></div></article>';
+      return '<article class="dnd35-skill"><div class="dnd35-skill-head"><strong>'+esc(skill.nome)+'</strong><span class="dnd35-badge">'+(isClass?'Classe':'Fora de classe')+' · '+skillCost(id)+' pt/grad.</span></div><p>Atual: '+rank+' · Máximo no nível '+nextLevel+': '+(language?'sem limite fixo':maxRank)+' · limite de compra: '+maxAdd+'</p><div class="dnd35-skill-control"><label for="lu-skill-'+esc(id)+'">Adicionar graduações</label><select id="lu-skill-'+esc(id)+'" data-lu-skill="'+esc(id)+'">'+options+'</select></div></article>';
     }).join('');
     var featSpec=dnd35LevelupFeatSpec(state,nextLevel),owned=dnd35Objeto(state.sheet.talentos);
     var ownedIds=Array.isArray(owned)?owned.map(function(x){return String(x&&x.id||x);}):[];
@@ -1953,7 +2036,7 @@ function dnd35WeaponProficient(state,weaponName){
       var pick=lu.feats[i]||{id:'',parametro:'',choice_type:spec.type};
       var otherPicks=lu.feats.filter(function(pick,index){return index!==i&&pick&&pick.id;}).map(function(pick){return String(pick.id);});var candidates=(state.feats||[]).filter(function(feat){return dnd35LevelupFeatAllowed(feat,spec.type,nextLevel)&&ownedIds.indexOf(String(feat.id))<0&&otherPicks.indexOf(String(feat.id))<0;}).sort(function(a,b){return String(a.nome).localeCompare(String(b.nome),'pt-BR');});
       var selected=candidates.find(function(f){return String(f.id)===String(pick.id);})||(state.feats||[]).find(function(f){return String(f.id)===String(pick.id);});
-      var options='<option value="">Escolha um talento…</option>'+candidates.map(function(f){return '<option value="'+esc(f.id)+'"'+(String(f.id)===String(pick.id)?' selected':'')+'>'+esc(f.nome)+'</option>';}).join('');
+      var options='<option value="">Escolha um talento…</option>'+candidates.map(function(f){return '<option value="'+esc(f.id)+'"'+(String(f.id)===String(pick.id)?' selected':'')+'>'+esc(dnd35FeatNamePt(f))+'</option>';}).join('');
       var paramType=selected?dnd35FeatParameterType(selected):'',needsParam=!!(selected&&(selected.exige_parametro||paramType||dnd35FeatIsWeaponFocus(selected)));
       var paramHtml=needsParam?'<div class="dnd35-feat-control"><label for="lu-feat-param-'+i+'">'+esc(dnd35FeatParameterLabel(selected))+'</label><input id="lu-feat-param-'+i+'" data-lu-feat-param="'+i+'" maxlength="240" value="'+esc(pick.parametro||'')+'" placeholder="Informe a escolha"><small>'+esc(dnd35FeatParameterHint(selected,attrs))+'</small></div>':'';
       var warnings=[];
@@ -2054,8 +2137,8 @@ function dnd35WeaponProficient(state,weaponName){
   }
   function dnd35SpellBonusSlots(mod,circle) { return circle>0&&mod>=circle?Math.floor((mod-circle)/4)+1:0; }
   function dnd35SpellState(state) {
-    var raw=dnd35SpellParse(state.sheet.magias_preparadas),saved=raw&&typeof raw==='object'?raw:{};
-    var known=Array.isArray(saved.conhecidas)?saved.conhecidas.map(String):[],prepared=Array.isArray(saved.preparadas)?saved.preparadas:[],domainPrepared=Array.isArray(saved.dominio_preparadas)?saved.dominio_preparadas:[],uses=saved.usos&&typeof saved.usos==='object'?saved.usos:{};
+    var raw=state.criacao&&state.grimoireState?state.grimoireState:dnd35SpellParse(state.sheet.magias_preparadas),saved=raw&&typeof raw==='object'?raw:{};
+    var known=Array.isArray(saved.conhecidas)?saved.conhecidas.map(String):[],prepared=Array.isArray(saved.preparadas)?saved.preparadas:[],domainPrepared=Array.isArray(saved.dominioPreparadas)?saved.dominioPreparadas:(Array.isArray(saved.dominio_preparadas)?saved.dominio_preparadas:[]),uses=saved.usos&&typeof saved.usos==='object'?saved.usos:{};
     return {version:1,conhecidas:Array.from(new Set(known)),preparadas:prepared.filter(function(x){return x&&x.spell_id!=null;}).map(function(x){return {spell_id:String(x.spell_id),slot_level:Math.max(0,Number(x.slot_level)||0),expended:!!x.expended};}),dominioPreparadas:domainPrepared.filter(function(x){return x&&x.domain_id&&x.spell_id!=null;}).map(function(x){return {domain_id:String(x.domain_id),spell_id:String(x.spell_id),slot_level:Math.max(1,Number(x.slot_level)||1),expended:!!x.expended};}),usos:uses};
   }
   function dnd35SpellClassLabels(key) { return {wizard:['wizard','mago'],bard:['bard','bardo'],cleric:['cleric','clérigo','clerigo'],druid:['druid','druida'],paladin:['paladin','paladino'],ranger:['ranger','patrulheiro'],sorcerer:['sorcerer','feiticeiro']}[key]||[]; }
@@ -2068,26 +2151,94 @@ function dnd35WeaponProficient(state,weaponName){
     if(!candidates.length&&state.classe.class_key)candidates=progressions.filter(function(p){return String(p.class_key).toLowerCase()===String(state.classe.class_key).toLowerCase();});
     var progression=candidates[0]||state.progression||null;
     if(state.progressionClassKey!==key){state.progression=progression;state.progressionClassKey=key;}
-    var ability=key==='wizard'?'INT':(key==='sorcerer'||key==='bard'?'CAR':'SAB'),score=Number(attrs[ability]||10),mod=dnd35Modificador(score),base={},slots={},max=0;
-    for(var c=0;c<=9;c++){var n=dnd35SpellProgressionCount(state,'slots_by_level',charLevel,c);base[c]=n==null?-1:n;if(base[c]>=0&&score<10+c)base[c]=-1;if(c>0&&base[c]>=0)max=c;}
-    for(var i=0;i<=max;i++)slots[i]=base[i]>=0?(base[i]+dnd35SpellBonusSlots(mod,i)):0;
-    return {key:key,ability:ability,mod:mod,base:base,slots:slots,max:max,progression:progression};
+    var ability=key==='wizard'?'INT':(key==='sorcerer'||key==='bard'?'CAR':'SAB'),score=Number(attrs[ability]||10),mod=dnd35Modificador(score),base={},slots={},max=0,catalogMax=0;
+    for(var c=0;c<=9;c++){var n=dnd35SpellProgressionCount(state,'slots_by_level',charLevel,c);base[c]=n==null?-1:n;if(base[c]>=0)catalogMax=c;if(base[c]>=0&&score<10+c)base[c]=-1;if(c>0&&base[c]>=0)max=c;}
+    var baseSlots={};
+    for(var i=0;i<=max;i++){baseSlots[i]=base[i]>=0?(base[i]+dnd35SpellBonusSlots(mod,i)):0;slots[i]=baseSlots[i];}
+    if(key==='wizard'){
+      var spec=String(state.identidade&&state.identidade.wizard_specialization||'');
+      if(spec&&spec!=='universalista')for(var si=0;si<=max;si++)if(slots[si]>0)slots[si]+=1;
+    }
+    catalogMax=max;
+    return {key:key,ability:ability,mod:mod,base:base,slots:slots,baseSlots:baseSlots,max:max,catalogMax:catalogMax,progression:progression};
   }
   function dnd35SpellMatchesClass(spell,key) {
     var classes=spell.classes;if(typeof classes==='string')classes=classes.split(/[,;|]/);if(!Array.isArray(classes))return false;
     var aliases=dnd35SpellClassLabels(key);return classes.some(function(v){return dnd35SpellClassKey(v)===key||aliases.indexOf(String(v||'').toLowerCase())>=0;});
   }
+  function dnd35ClericDeityMarkup(state){
+    if(String(state.classe&&state.classe.id)!=='clerigo')return '';
+    var identity=state.identidade||{},source=identity.cleric_source||'deity',deities=(state.deities||[]).filter(function(d){var races=Array.isArray(d.racial_races)?d.racial_races:[];return !races.length||races.indexOf(String(state.raca&&state.raca.id))>=0;}),selected=deities.find(function(d){return String(d.deity_id)===String(identity.cleric_deity_id||'');});
+    var deityOptions='<option value="">Selecione uma divindade</option>'+deities.map(function(d){return '<option value="'+esc(d.deity_id)+'"'+(String(identity.cleric_deity_id||'')===String(d.deity_id)?' selected':'')+'>'+esc(d.name)+'</option>';}).join('');
+    var details=selected?'<div class="dnd35-cleric-deity-detail"><b>'+esc(selected.name)+'</b><span>Tendência: '+esc(selected.alignment)+'</span><span>Domínios: '+esc((selected.domains||[]).map(function(id){var d=(state.srdDomains||[]).find(function(x){return x.domain_id===id;});return d?d.name:id;}).join(', '))+'</span><span>Arma predileta: '+esc(selected.favored_weapon)+'</span><small>A arma predileta é uma referência da divindade; ela não concede proficiência automaticamente. O domínio Guerra concede proficiência e Foco na arma predileta.</small></div>':'';
+    return '<section class="dnd35-class-choice"><h3>Divindade e fonte de poder do Clérigo</h3><p class="dnd35-note">O Clérigo pode servir a uma divindade ou canalizar uma causa/ideal. A escolha determina a tendência permitida, os domínios e a arma predileta.</p><label>Fonte divina<select data-cleric-source><option value="deity"'+(source==='deity'?' selected':'')+'>Divindade</option><option value="cause"'+(source==='cause'?' selected':'')+'>Causa ou ideal</option></select></label>'+(source==='deity'?'<label>Divindade<select data-cleric-deity>'+deityOptions+'</select></label>'+details:'<label>Causa ou ideal<input type="text" maxlength="100" data-cleric-cause value="'+esc(identity.cleric_cause||'')+'" placeholder="Ex.: equilíbrio, proteção dos anões, justiça"></label><p class="dnd35-note">Ao seguir uma causa ou ideal, escolha dois domínios coerentes com essa fonte de poder. O Mestre pode avaliar a coerência narrativa.</p>')+'</section>';
+  }
+  function dnd35RangerFavoredEnemyMarkup(state){
+    if(String(state.classe&&state.classe.id)!=='ranger')return '';
+    var identity=state.identidade||{},selected=String(identity.ranger_favored_enemy||'');
+    var groups=[
+      {label:'Tipos de criatura',items:[['aberration','Aberração'],['animal','Animal'],['construct','Constructo'],['dragon','Dragão'],['elemental','Elemental'],['fey','Fada'],['giant','Gigante'],['magical_beast','Besta mágica'],['monstrous_humanoid','Humanoide monstruoso'],['ooze','Gosma'],['plant','Planta'],['undead','Morto-vivo'],['vermin','Inseto']]},
+      {label:'Humanoide (subtipo)',items:[['humanoid_aquatic','Humanoide (aquático)'],['humanoid_dwarf','Humanoide (anão)'],['humanoid_elf','Humanoide (elfo)'],['humanoid_gnoll','Humanoide (gnoll)'],['humanoid_gnome','Humanoide (gnomo)'],['humanoid_goblinoid','Humanoide (goblinoide)'],['humanoid_halfling','Humanoide (halfling)'],['humanoid_human','Humanoide (humano)'],['humanoid_orc','Humanoide (orc)'],['humanoid_reptilian','Humanoide (reptiliano)']]},
+      {label:'Extraplanar (subtipo)',items:[['outsider_air','Extraplanar (ar)'],['outsider_chaotic','Extraplanar (caótico)'],['outsider_earth','Extraplanar (terra)'],['outsider_evil','Extraplanar (mal)'],['outsider_fire','Extraplanar (fogo)'],['outsider_good','Extraplanar (bem)'],['outsider_lawful','Extraplanar (ordem)'],['outsider_native','Extraplanar (nativo)'],['outsider_water','Extraplanar (água)']]}
+    ];
+    var options='<option value="">Escolha um inimigo predileto</option>'+groups.map(function(g){return '<optgroup label="'+esc(g.label)+'">'+g.items.map(function(x){return '<option value="'+x[0]+'"'+(selected===x[0]?' selected':'')+'>'+esc(x[1])+'</option>';}).join('')+'</optgroup>';}).join('');
+    return '<section class="dnd35-class-choice"><h3>Inimigo Predileto · Patrulheiro</h3><p class="dnd35-note">No 1º nível, escolha um tipo de criatura ou subtipo. Contra esse inimigo, você recebe +2 nas jogadas de dano com armas e +2 em Blefar, Ouvir, Sentir Motivação, Observar e Sobrevivência. A escolha permanece relevante contra criaturas que pertençam à categoria selecionada.</p><label>Inimigo predileto<select data-ranger-favored-enemy>'+options+'</select></label></section>';
+  }
+  function dnd35DruidNatureBondMarkup(state){
+    if(String(state.classe&&state.classe.id)!=='druida')return '';
+    var identity=state.identidade||{},choice=identity.druid_nature_bond||'companion',animals=state.animalCompanions||[],selected=animals.find(function(a){return String(a.id)===String(identity.druid_animal_companion_id||'');});
+    var labels={badger:'Texugo',camel:'Camelo',dire_rat:'Rato atroz',dog:'Cão',dog_riding:'Cão de montaria',eagle:'Águia',hawk:'Falcão',horse_light:'Cavalo leve',owl:'Coruja',pony:'Pônei',snake_small_viper:'Víbora pequena',snake_medium_viper:'Víbora média',wolf:'Lobo'};
+    var options='<option value="">Selecione um companheiro animal</option>'+animals.map(function(a){return '<option value="'+esc(a.id)+'"'+(String(identity.druid_animal_companion_id||'')===String(a.id)?' selected':'')+'>'+esc(labels[a.id]||a.nome)+'</option>';}).join('');
+    var detail=selected?'<div class="dnd35-cleric-deity-detail"><b>'+esc(labels[selected.id]||selected.nome)+'</b><span>Tipo: Animal · Tamanho: '+esc(selected.tamanho||'—')+' · ND: '+esc(selected.nd||'—')+'</span><small>Vínculo e partilha de magias são concedidos automaticamente ao Druida de 1º nível. As estatísticas do companheiro começam pelas estatísticas da criatura selecionada e recebem os ajustes da habilidade Companheiro Animal conforme o nível efetivo do Druida.</small></div>':'';
+    return '<section class="dnd35-class-choice"><h3>Vínculo com a Natureza · Druida</h3><p class="dnd35-note">No 1º nível, escolha uma das duas formas de vínculo: um companheiro animal ou um domínio druídico. Esta escolha substitui a outra.</p><label>Forma de vínculo<select data-druid-nature-bond><option value="companion"'+(choice==='companion'?' selected':'')+'>Companheiro animal</option><option value="domain"'+(choice==='domain'?' selected':'')+'>Domínio da natureza</option></select></label>'+(choice==='companion'?'<label>Companheiro animal<select data-druid-animal-companion>'+options+'</select></label>'+detail+'<p class="dnd35-note">Opções de companheiro animal básico do 1º nível, conforme a lista do Livro do Jogador. Companheiros alternativos ou criaturas não listadas dependem da aprovação do Mestre.</p>':'<p class="dnd35-note">Escolha um domínio entre Ar, Animal, Terra, Fogo, Plantas e Água. O domínio concede seu poder e um espaço adicional por círculo para preparar uma magia do domínio.</p>')+'</section>';
+  }
+  function dnd35FamiliarChoiceMarkup(state){
+    var key=String(state.classe&&state.classe.id||'');
+    if(key!=='mago'&&key!=='feiticeiro')return '';
+    var identity=state.identidade||{},selected=String(identity.familiar_id||'');
+    var familiars=[
+      {id:'snake_small_viper',name:'Víbora pequena',bonus:'+3 em Blefar'},
+      {id:'cat',name:'Gato',bonus:'+3 em Furtividade'},
+      {id:'lizard',name:'Lagarto',bonus:'+3 em Escalar'},
+      {id:'rat',name:'Rato',bonus:'+3 em testes de Fortitude'},
+      {id:'badger',name:'Texugo',bonus:'+3 em testes de Reflexos'},
+      {id:'owl',name:'Coruja',bonus:'+3 em Observar na penumbra'},
+      {id:'raven',name:'Corvo',bonus:'+3 em Avaliação'},
+      {id:'hawk',name:'Falcão',bonus:'+3 em Observar sob luz intensa'},
+      {id:'bat',name:'Morcego',bonus:'+3 em Ouvir'},
+      {id:'toad',name:'Sapo',bonus:'+3 PV'}
+    ];
+    var options='<option value="">Não adquirir familiar agora</option>'+familiars.map(function(f){return '<option value="'+f.id+'"'+(selected===f.id?' selected':'')+'>'+f.name+'</option>';}).join('');
+    var familiar=familiars.find(function(f){return f.id===selected;});
+    var detail=familiar?'<div class="dnd35-cleric-deity-detail"><b>'+familiar.name+'</b><span>Benefício ao mestre: '+familiar.bonus+'</span>'+(selected==='raven'?'<small>O corvo também pode falar um idioma escolhido pelo mestre.</small>':'')+'<small>O familiar recebe as habilidades que dependem do nível combinado de Mago e Feiticeiro. A ficha registra a escolha; estatísticas completas e progressão do familiar serão conectadas ao bestiário quando o Livro dos Monstros for integrado.</small></div>':'';
+    return '<section class="dnd35-class-choice"><h3>Familiar Arcano · '+(key==='mago'?'Mago':'Feiticeiro')+'</h3><p class="dnd35-note">Você pode realizar o vínculo para obter um familiar ou deixar essa escolha para depois. O familiar concede o benefício indicado enquanto estiver a até 1,5 km de você. Os níveis de Mago e Feiticeiro se acumulam para determinar suas habilidades.</p><label>Escolha do familiar<select data-arcane-familiar>'+options+'</select></label>'+detail+'</section>';
+  }
+  function dnd35ClassChoiceMarkup(state,attrs,charLevel){
+    var key=String(state.classe&&state.classe.id||''),parts=['<section class="dnd35-panel dnd35-class-resource-panel"><h2>Recursos e escolhas da classe</h2><p class="dnd35-note">Leia as características do seu nível e conclua aqui as decisões específicas da classe antes de distribuir perícias e talentos.</p>'];
+    if(key==='mago')parts.push(dnd35WizardSpecializationMarkup(state));
+    if(key==='mago'||key==='feiticeiro')parts.push(dnd35FamiliarChoiceMarkup(state));
+    if(key==='clerigo'){parts.push(dnd35ClericDeityMarkup(state));var avail=dnd35GrimoireAvailability(state,attrs,charLevel||1),spellState=state.grimoireState||dnd35SpellState(state);parts.push(dnd35DomainPanel(state,avail,spellState));}
+    if(key==='druida'){parts.push(dnd35DruidNatureBondMarkup(state));if(String((state.identidade||{}).druid_nature_bond||'companion')==='domain'){var druidAvail=dnd35GrimoireAvailability(state,attrs,charLevel||1),druidSpellState=state.grimoireState||dnd35SpellState(state);parts.push(dnd35DomainPanel(state,druidAvail,druidSpellState));}}
+    if(key==='ranger')parts.push(dnd35RangerFavoredEnemyMarkup(state));
+    if(key!=='mago'&&key!=='feiticeiro'&&key!=='clerigo'&&key!=='druida'&&key!=='ranger')parts.push('<p class="dnd35-note">As características automáticas desta classe estão descritas acima. As escolhas específicas adicionais serão exibidas aqui quando aplicáveis.</p>');
+    parts.push('</section>');return parts.join('');
+  }
   function dnd35DomainPanel(state,avail,s) {
-    if(avail.key!=='cleric')return '';
-    var domains=state.srdDomains||[],rows=state.srdDomainSpells||[],choices=Array.isArray(state.domainChoices)?state.domainChoices:[],selected=choices.map(function(x){return String(x.domain_id||'');});
-    var locked=choices.filter(function(x){return x&&x.domain_id;}).length===2,panel='<section class="dnd35-spell-card" style="margin:10px 0"><h3>Domínios do clérigo</h3><p class="dnd35-spell-meta">Escolha dois domínios. Cada círculo que seu clérigo pode conjurar recebe um espaço extra para preparar uma magia de um desses domínios; esse espaço é gasto separadamente.</p>';
+    if(avail.key!=='cleric'&&avail.key!=='druid')return '';
+    var isDruid=avail.key==='druid',slotCount=isDruid?1:2,domains=state.srdDomains||[],rows=state.srdDomainSpells||[],choices=Array.isArray(state.domainChoices)?state.domainChoices:[],selected=choices.map(function(x){return String(x.domain_id||'');}),identity=state.identidade||{},deity=!isDruid&&identity.cleric_source==='deity'?(state.deities||[]).find(function(d){return String(d.deity_id)===String(identity.cleric_deity_id||'');}):null;
+    if(isDruid)domains=domains.filter(function(d){return ['air','animal','earth','fire','plant','water'].indexOf(String(d.domain_id))>=0;});
+    else if(identity.cleric_source==='deity'){
+      if(!deity)return '<section class="dnd35-spell-card"><h3>Domínios do Clérigo</h3><p class="dnd35-note">Escolha uma divindade para liberar os domínios correspondentes.</p></section>';
+      domains=domains.filter(function(d){return (deity.domains||[]).indexOf(String(d.domain_id))>=0;});
+    }
+    var locked=choices.filter(function(x){return x&&x.domain_id;}).length===slotCount,panel='<section class="dnd35-spell-card" style="margin:10px 0"><h3>'+ (isDruid?'Domínio do Druida':'Domínios do Clérigo')+'</h3><p class="dnd35-spell-meta">'+(isDruid?'Como vínculo com a natureza, você escolheu receber um domínio. O domínio concede seu poder e um espaço adicional por círculo para preparar uma magia desse domínio.':'Escolha dois domínios. Cada círculo que seu clérigo pode conjurar recebe um espaço extra para preparar uma magia de um desses domínios; esse espaço é gasto separadamente.')+'</p>';
     if(state.domainError||!domains.length||!rows.length)return panel+'<p class="dnd35-warning">'+esc(state.domainError||'Catálogo de domínios indisponível.')+'</p></section>';
-    for(var slot=1;slot<=2;slot++){
+    for(var slot=1;slot<=slotCount;slot++){
       var chosen=selected[slot-1]||'',domain=domains.find(function(d){return String(d.domain_id)===chosen;});
-      panel+='<label class="dnd35-spell-controls">Domínio '+slot+' <select data-domain-choice="'+slot+'" '+(locked&&!state.criacao?'disabled':'')+'><option value="">Escolha um domínio</option>'+domains.map(function(d){var id=String(d.domain_id);return '<option value="'+esc(id)+'"'+(id===chosen?' selected':'')+'>'+esc(d.name)+'</option>';}).join('')+'</select></label>';
+      panel+='<label class="dnd35-spell-controls">'+(isDruid?'Domínio':'Domínio '+slot)+' <select data-domain-choice="'+slot+'" '+(locked&&!state.criacao?'disabled':'')+'><option value="">Escolha '+(isDruid?'um domínio':'um domínio')+'</option>'+domains.map(function(d){var id=String(d.domain_id);return '<option value="'+esc(id)+'"'+(id===chosen?' selected':'')+'>'+esc(d.name)+'</option>';}).join('')+'</select></label>';
       if(domain&&domain.granted_power_summary)panel+='<p class="dnd35-spell-meta"><b>'+esc(domain.name)+' · Poder concedido:</b> '+esc(domain.granted_power_summary)+'</p>';
     }
-    if(selected.filter(Boolean).length===2&&selected[0]!==selected[1]){
+    if(selected.filter(Boolean).length===slotCount&&(isDruid||selected[0]!==selected[1])){
       var prep=Array.isArray(s.dominioPreparadas)?s.dominioPreparadas:[];
       panel+='<div class="dnd35-grimoire-guide"><b>Preparação dos espaços de domínio</b><br>Selecione uma magia de domínio para cada círculo disponível. Uma magia já gasta continua consumida até o descanso diário.</div>';
       for(var circle=1;circle<=avail.max;circle++){
@@ -2104,11 +2255,92 @@ function dnd35WeaponProficient(state,weaponName){
         panel+='<label class="dnd35-spell-controls">Espaço de domínio · círculo '+circle+' <select data-domain-prepared-level="'+circle+'"><option value="">Não preparar</option>'+options+'</select></label>';
         if(existing&&current)panel=panel.replace('data-domain-prepared-level="'+circle+'">','data-domain-prepared-level="'+circle+'" data-selected-domain-spell="'+esc(current)+'">');
       }
-    }else panel+='<p class="dnd35-note">Escolha dois domínios diferentes para ver e preparar as magias de domínio.</p>';
+    }else panel+='<p class="dnd35-note">Escolha '+(isDruid?'um domínio':'dois domínios diferentes')+' para ver e preparar as magias de domínio.</p>';
     panel+='</section>';return panel;
   }
+  function dnd35GrimoireQuotaSummary(state,attrs){
+    var avail=dnd35GrimoireAvailability(state,attrs,Math.max(1,Number(state.sheet&&state.sheet.nivel)||1)),s=state.grimoireState||dnd35SpellState(state),key=avail.key;
+    if(key==='bard'||key==='sorcerer'){
+      var parts=[];
+      for(var c=0;c<=avail.catalogMax;c++){var expected=dnd35SpellProgressionCount(state,'known_by_level',1,c);if(expected==null||expected<0||c>avail.max)expected=0;var actual=s.conhecidas.filter(function(id){var sp=(state.srdSpells||[]).find(function(x){return String(x.id)===String(id);});return sp&&dnd35SpellLevel(sp,key)===c;}).length;if(expected||actual)parts.push('Círculo '+c+': '+actual+'/'+expected);}
+      return 'Magias conhecidas · '+parts.join(' · ');
+    }
+    if(key==='wizard'){
+      var target=Math.max(0,3+dnd35Modificador(Number(attrs.INT)||10)),chosen=s.conhecidas.filter(function(id){var sp=(state.srdSpells||[]).find(function(x){return String(x.id)===String(id);});return sp&&dnd35SpellLevel(sp,key)===1;}).length;
+      var spec=String(state.identidade&&state.identidade.wizard_specialization||'universalista'),specName=(DND35_WIZARD_SCHOOLS.find(function(x){return x.id===spec;})||{}).name;return 'Grimório inicial · truques permitidos automaticamente · magias de 1º círculo: '+chosen+'/'+target+(specName?' · +1 espaço por círculo para '+specName:'')+' · preparação disponível: '+Object.keys(avail.slots).map(function(k){return 'C'+k+' '+(s.preparadas.filter(function(p){return Number(p.slot_level)===Number(k);}).length)+'/'+(avail.slots[k]||0);}).filter(function(x){return !x.endsWith('/0');}).join(' · ');
+    }
+    return 'Espaços de preparação · '+Object.keys(avail.slots).map(function(k){return 'C'+k+' '+(s.preparadas.filter(function(p){return Number(p.slot_level)===Number(k);}).length)+'/'+(avail.slots[k]||0);}).filter(function(x){return !x.endsWith('/0');}).join(' · ');
+  }
+  var DND35_WIZARD_SCHOOLS=[
+    {id:'abjuration',name:'Abjuração'},{id:'conjuration',name:'Conjuração'},{id:'divination',name:'Adivinhação'},{id:'enchantment',name:'Encantamento'},{id:'evocation',name:'Evocação'},{id:'illusion',name:'Ilusão'},{id:'necromancy',name:'Necromancia'},{id:'transmutation',name:'Transmutação'}
+  ];
+  function dnd35SpellSchoolKey(value){
+    var n=dnd35Norm(value);
+    if(n.indexOf('abjur')===0)return 'abjuration';
+    if(n.indexOf('conjur')===0)return 'conjuration';
+    if(n.indexOf('divin')===0||n.indexOf('adivin')===0)return 'divination';
+    if(n.indexOf('enchant')===0||n.indexOf('encant')===0)return 'enchantment';
+    if(n.indexOf('evoc')===0)return 'evocation';
+    if(n.indexOf('illus')===0)return 'illusion';
+    if(n.indexOf('necrom')===0)return 'necromancy';
+    if(n.indexOf('transmut')===0)return 'transmutation';
+    if(n.indexOf('universal')===0)return 'universal';
+    return '';
+  }
+  function dnd35WizardSpecializationMarkup(state){
+    if(String(state.classe&&state.classe.id)!=='mago')return '';
+    var identity=state.identidade||{},specialization=String(identity.wizard_specialization||''),prohibited=Array.isArray(identity.wizard_prohibited_schools)?identity.wizard_prohibited_schools:[];
+    var count=specialization==='divination'?1:(specialization&&specialization!=='universalista'?2:0);
+    var schools=DND35_WIZARD_SCHOOLS.filter(function(x){return x.id!==specialization;});
+    var schoolOptions='<option value="">Escolha uma escola</option>'+DND35_WIZARD_SCHOOLS.map(function(x){return '<option value="'+x.id+'"'+(specialization===x.id?' selected':'')+'>'+x.name+'</option>';}).join('');
+    var prohibitedHtml=Array.from({length:count},function(_,i){return '<label>Escola proibida '+(i+1)+'<select data-wizard-prohibited="'+i+'"><option value="">Escolha uma escola</option>'+schools.filter(function(x){return prohibited[i]===x.id||prohibited.indexOf(x.id)<0;}).map(function(x){return '<option value="'+x.id+'"'+(prohibited[i]===x.id?' selected':'')+'>'+x.name+'</option>';}).join('')+'</select></label>';}).join('');
+    return '<section class="dnd35-spell-card dnd35-wizard-school"><h3>Especialização em Escola</h3><p class="dnd35-note">No 1º nível, o Mago decide se será especialista ou universalista. Um especialista recebe um espaço adicional por círculo para magias da escola escolhida e não pode aprender nem conjurar magias das escolas proibidas.</p><label class="dnd35-spell-controls">Caminho arcano <select data-wizard-specialization><option value="">Escolha</option><option value="universalista"'+(specialization==='universalista'?' selected':'')+'>Universalista · sem escolas proibidas</option>'+schoolOptions+'</select></label>'+(count?'<div class="dnd35-identity-grid">'+prohibitedHtml+'</div><p class="dnd35-note">'+(count===1?'A especialização em Adivinhação exige uma escola proibida.':'Esta especialização exige duas escolas proibidas.')+' Escolha escolas diferentes da especialização e entre si.</p>':'')+'</section>';
+  }
+  function dnd35GrimoireCreationError(state,attrs){
+    var key=dnd35SpellClassKey(state.classe&&state.classe.nome)||dnd35SpellClassKey(state.classe&&state.classe.class_key)||dnd35SpellClassKey(state.classe&&state.classe.id);
+    if(!key)return null;
+    var avail=dnd35GrimoireAvailability(state,attrs,1),spellState=state.grimoireState||dnd35SpellState(state),catalog=state.srdSpells||[];
+    if(!avail.progression){
+      if(['bard','cleric','druid','sorcerer','wizard'].indexOf(key)>=0)return 'A progressão de magias desta classe não foi carregada; não é seguro criar a ficha sem validar suas escolhas.';
+      return null;
+    }
+    function findSpell(id){return catalog.find(function(sp){return String(sp.id)===String(id)&&dnd35SpellMatchesClass(sp,key);});}
+    function spellLevel(id){var sp=findSpell(id);return sp?dnd35SpellLevel(sp,key):-1;}
+    if(key==='bard'||key==='sorcerer'){
+      for(var circle=0;circle<=avail.catalogMax;circle++){
+        var expected=dnd35SpellProgressionCount(state,'known_by_level',1,circle);
+        if(expected==null||expected<0||circle>avail.max)expected=0;
+        var actual=spellState.conhecidas.filter(function(id){return spellLevel(id)===circle;}).length;
+        if(actual!==expected)return (key==='bard'?'Bardo':'Feiticeiro')+': escolha exatamente '+expected+' magia(s) conhecida(s) de círculo '+circle+'; atualmente '+actual+'.';
+      }
+      if(spellState.conhecidas.some(function(id){return !findSpell(id)||spellLevel(id)>avail.max;}))return 'Há uma magia conhecida que não pertence à lista ou ao círculo disponível da classe.';
+      return null;
+    }
+    if(key==='wizard'){
+      var identity=state.identidade||{},specialization=String(identity.wizard_specialization||''),prohibited=Array.isArray(identity.wizard_prohibited_schools)?identity.wizard_prohibited_schools:[];
+      var schoolIds=DND35_WIZARD_SCHOOLS.map(function(x){return x.id;}),requiredProhibited=specialization==='divination'?1:(specialization&&specialization!=='universalista'?2:0);
+      if(specialization!=='universalista'&&schoolIds.indexOf(specialization)<0)return 'Escolha a especialização em escola do Mago ou a opção Universalista.';
+      if(prohibited.length!==requiredProhibited||new Set(prohibited).size!==prohibited.length||prohibited.some(function(x){return schoolIds.indexOf(x)<0||x===specialization;}))return 'Complete as '+requiredProhibited+' escola(s) proibida(s), sem repetir a especialização.';
+      if(Number(attrs.INT)<10&&spellState.conhecidas.length)return 'O Mago precisa de Inteligência 10 para aprender truques.';if(spellState.conhecidas.concat(spellState.preparadas.map(function(p){return String(p.spell_id);})).some(function(id){var sp=findSpell(id);return sp&&prohibited.indexOf(dnd35SpellSchoolKey(sp.escola))>=0;}))return 'O grimório ou as preparações contêm magia de uma escola proibida. Remova essa magia ou reveja a especialização.';
+      var intMod=dnd35Modificador(Number(attrs.INT)||10),expectedBook=avail.max>=1?Math.max(0,3+intMod):0;
+      var firstLevelKnown=spellState.conhecidas.filter(function(id){return spellLevel(id)===1;}).length;
+      if(firstLevelKnown!==expectedBook)return 'Mago: escolha '+expectedBook+' magia(s) de 1º círculo para o grimório (3 + modificador de INT); atualmente '+firstLevelKnown+'.';
+      if(spellState.conhecidas.some(function(id){return !findSpell(id)||spellLevel(id)>1;}))return 'O grimório inicial só pode conter truques e magias de 1º círculo.';
+      if(spellState.preparadas.some(function(p){return spellState.conhecidas.indexOf(String(p.spell_id))<0;}))return 'O Mago só pode preparar magias que estejam em seu grimório.';
+      for(var circle=0;circle<=avail.max;circle++){var preparedInCircle=spellState.preparadas.filter(function(p){return Number(p.slot_level)===circle;}),baseCapacity=Number(avail.baseSlots[circle]||0);if(preparedInCircle.length>baseCapacity){var hasSpecialized=preparedInCircle.some(function(p){var sp=findSpell(p.spell_id);return sp&&dnd35SpellSchoolKey(sp.escola)===specialization;});if(!hasSpecialized)return 'O espaço adicional de especialização do círculo '+circle+' precisa preparar uma magia da escola '+specialization+'.';}}
+    }
+    var preparedBySlot={};
+    for(var i=0;i<spellState.preparadas.length;i++){
+      var p=spellState.preparadas[i],lvl=spellLevel(p.spell_id),slot=Number(p.slot_level);
+      if(lvl<0||slot<lvl||slot>avail.max||Number(avail.slots[slot]||0)<=0)return 'Há uma magia preparada em um círculo ou espaço que a classe não pode usar.';
+      preparedBySlot[slot]=(preparedBySlot[slot]||0)+1;
+      if(preparedBySlot[slot]>Number(avail.slots[slot]||0))return 'Os espaços preparados do círculo '+slot+' excedem o limite diário ('+avail.slots[slot]+').';
+    }
+    return null;
+  }
   function dnd35GrimoireRender(state,attrs,charLevel,creating) {
-    var avail=dnd35GrimoireAvailability(state,attrs,charLevel),s=dnd35SpellState(state),spells=(state.srdSpells||[]).filter(function(sp){var lvl=dnd35SpellLevel(sp,avail.key);return dnd35SpellMatchesClass(sp,avail.key)&&lvl>=0&&lvl<=avail.max;});
+    var avail=dnd35GrimoireAvailability(state,attrs,charLevel),s=dnd35SpellState(state),prohibitedSchools=state.identidade&&Array.isArray(state.identidade.wizard_prohibited_schools)?state.identidade.wizard_prohibited_schools:[],spells=(state.srdSpells||[]).filter(function(sp){var lvl=dnd35SpellLevel(sp,avail.key);return dnd35SpellMatchesClass(sp,avail.key)&&lvl>=0&&lvl<=avail.catalogMax;});
+    if(creating&&avail.key==='wizard'){var cantrips=Number(attrs.INT)>=10?spells.filter(function(sp){return dnd35SpellLevel(sp,avail.key)===0&&prohibitedSchools.indexOf(dnd35SpellSchoolKey(sp.escola))<0;}).map(function(sp){return String(sp.id);}):[];s.conhecidas=Array.from(new Set(s.conhecidas.concat(cantrips)));}
     state.grimoireState=s;
     var classNames={wizard:'Mago',bard:'Bardo',cleric:'Clérigo',druid:'Druida',paladin:'Paladino',ranger:'Patrulheiro',sorcerer:'Feiticeiro'},isSpontaneous=avail.key==='sorcerer'||avail.key==='bard',preparedCount=s.preparadas.length,knownCount=s.conhecidas.length,bookTitle=avail.key==='wizard'?'Grimório':(isSpontaneous?'Magias Conhecidas':'Preparação de Magias');
     var message='';
@@ -2131,8 +2363,7 @@ function dnd35WeaponProficient(state,weaponName){
     if(domainActive)activeHtml+=domainActive;
     if(!activeHtml)activeHtml='<div class="dnd35-spell-empty">'+(isSpontaneous?'Nenhuma magia conhecida selecionada.':'Nenhuma magia preparada selecionada.')+'</div>';
     var spellGuide=avail.key==='wizard'?'<strong>Mago:</strong> marque “No grimório” para registrar uma magia no livro. Depois marque “Preparar” para deixá-la pronta; cada preparação ocupa um espaço diário.':(isSpontaneous?'<strong>Feiticeiro/Bardo:</strong> escolha magias conhecidas. Você conjura qualquer uma delas sem preparar cada espaço; o círculo da magia e os usos por dia são recursos diferentes.':'<strong>Conjurador preparado:</strong> escolha as magias que deixa prontas após o descanso. O círculo é o nível da magia; o espaço diário é gasto ao conjurar.');
-    var domainPanel=dnd35DomainPanel(state,avail,s);
-    var section='<section class="dnd35-grimoire"><div class="dnd35-grimoire-head"><div><span class="dnd35-grimoire-kicker">D&amp;D 3.5 · Livro de fórmulas</span><h2>'+bookTitle+' <button type="button" class="dnd35-help" data-dnd35-help="spell">?</button></h2><p>'+(classNames[avail.key]||esc(state.classe.nome||'Classe'))+' · Nível '+charLevel+' · Atributo-chave '+esc(avail.ability||'—')+(avail.key?' ('+(avail.mod>=0?'+':'')+avail.mod+')':'')+'</p></div><button type="button" class="dnd35-grimoire-btn" data-grimoire-open>'+(avail.key==='wizard'?'Abrir Grimório':'Escolher magias')+'</button></div>'+(message?'<p class="dnd35-note">'+esc(message)+'</p>':'')+domainPanel+'<div class="dnd35-grimoire-guide">'+spellGuide+'</div><div class="dnd35-grimoire-ledger">'+(ledger||'<article><b>Progressão</b><span>Sem espaços disponíveis registrados.</span></article>')+'</div><div style="margin-top:12px"><b style="font-family:Cinzel,serif;font-size:11px">'+(isSpontaneous?'MAGIAS CONHECIDAS ('+knownCount+') E CONJURAÇÕES':'MAGIAS PREPARADAS ('+preparedCount+')')+'</b><div>'+activeHtml+'</div></div><div class="dnd35-grimoire-status" data-grimoire-status role="status" aria-live="polite">'+(creating?'As seleções serão salvas ao criar a ficha.':'')+'</div>'+(creating||!URL_PARAMS.get('mesa')?'':'<button type="button" class="dnd35-grimoire-action" data-grimoire-rest>Descanso longo · recuperar PV e magias</button>')+'</section>';
+    var section='<section class="dnd35-grimoire"><div class="dnd35-grimoire-head"><div><span class="dnd35-grimoire-kicker">D&amp;D 3.5 · Livro de fórmulas</span><h2>'+bookTitle+' <button type="button" class="dnd35-help" data-dnd35-help="spell">?</button></h2><p>'+(classNames[avail.key]||esc(state.classe.nome||'Classe'))+' · Nível '+charLevel+' · Atributo-chave '+esc(avail.ability||'—')+(avail.key?' ('+(avail.mod>=0?'+':'')+avail.mod+')':'')+'</p></div><button type="button" class="dnd35-grimoire-btn" data-grimoire-open>'+(avail.key==='wizard'?'Abrir Grimório':'Escolher magias')+'</button></div>'+(message?'<p class="dnd35-note">'+esc(message)+'</p>':'')+(creating&&avail.key?'<p class="dnd35-grimoire-guide" data-grimoire-quota>'+esc(dnd35GrimoireQuotaSummary(state,attrs))+'</p>':'')+'<div class="dnd35-grimoire-guide">'+spellGuide+'</div><div class="dnd35-grimoire-ledger">'+(ledger||'<article><b>Progressão</b><span>Sem espaços disponíveis registrados.</span></article>')+'</div><div style="margin-top:12px"><b style="font-family:Cinzel,serif;font-size:11px">'+(isSpontaneous?'MAGIAS CONHECIDAS ('+knownCount+') E CONJURAÇÕES':'MAGIAS PREPARADAS ('+preparedCount+')')+'</b><div>'+activeHtml+'</div></div><div class="dnd35-grimoire-status" data-grimoire-status role="status" aria-live="polite">'+(creating?'As seleções serão salvas ao criar a ficha.':'')+'</div>'+(creating||!URL_PARAMS.get('mesa')?'':'<button type="button" class="dnd35-grimoire-action" data-grimoire-rest>Descanso longo · recuperar PV e magias</button>')+'</section>';
     var catalog='';
     if(!spells.length)catalog='<div class="dnd35-spell-empty">'+esc(state.spellCatalogError||'Nenhuma magia disponível neste nível/classe.')+'</div>';
     else catalog='<div class="dnd35-spell-list">'+spells.map(function(sp){
@@ -2141,14 +2372,10 @@ function dnd35WeaponProficient(state,weaponName){
       var meta=['Círculo '+lvl,sp.escola?'Escola: '+sp.escola:'',sp.alcance?'Alcance: '+sp.alcance:'',sp.alvo?'Alvo/efeito: '+sp.alvo:'',sp.area?'Área: '+sp.area:'',sp.duracao?'Duração: '+sp.duracao:'',sp.componentes?'Componentes: '+sp.componentes:''].filter(Boolean).join(' · ');
       var controls='';
       if(avail.key){
-        if(avail.key==='wizard')controls='<label><input type="checkbox" data-spell-known="'+esc(id)+'" '+(known?'checked':'')+'> No grimório</label><label><input type="checkbox" data-spell-prepared="'+esc(id)+'" '+(prepared?'checked':'')+'> Preparar</label>';
-        else if(avail.key==='cleric'||avail.key==='druid'||avail.key==='paladin'||avail.key==='ranger')controls='<label><input type="checkbox" data-spell-prepared="'+esc(id)+'" '+(prepared?'checked':'')+'> Preparar</label>';
+        if(avail.key==='wizard'){var autoCantrip=lvl===0&&Number(attrs.INT)>=10,cantripUnavailable=lvl===0&&Number(attrs.INT)<10,isProhibited=prohibitedSchools.indexOf(dnd35SpellSchoolKey(sp.escola))>=0,slotOptions='';for(var wizardSlot=lvl;wizardSlot<=avail.max;wizardSlot++)if(Number(avail.slots[wizardSlot]||0)>0)slotOptions+='<option value="'+wizardSlot+'"'+(prepared&&Number(prepared.slot_level)===wizardSlot?' selected':'')+'>'+wizardSlot+'</option>';controls=isProhibited?((known?'<label><input type="checkbox" data-spell-known="'+esc(id)+'" checked> Remover do grimório · escola proibida</label>':'<span class="dnd35-warning">Escola proibida · não pode aprender</span>')+(prepared?'<label><input type="checkbox" data-spell-prepared="'+esc(id)+'" checked> Remover preparação</label>':'')):'<label><input type="checkbox" data-spell-known="'+esc(id)+'" '+(known?'checked':'')+(autoCantrip||cantripUnavailable?' disabled':'')+'>'+ (autoCantrip?'No grimório · automático':(cantripUnavailable?'INT 10 necessário para aprender':'No grimório'))+'</label>'+(slotOptions?'<label><input type="checkbox" data-spell-prepared="'+esc(id)+'" '+(prepared?'checked':'')+'> Preparar</label><label>Usar espaço de círculo <select data-spell-level="'+esc(id)+'">'+slotOptions+'</select></label>':'<span class="dnd35-note">Sem espaço disponível para preparar este círculo.</span>');}
+        else if(avail.key==='cleric'||avail.key==='druid'||avail.key==='paladin'||avail.key==='ranger'){var preparedOptions='';for(var prepSlot=lvl;prepSlot<=avail.max;prepSlot++)if(Number(avail.slots[prepSlot]||0)>0)preparedOptions+='<option value="'+prepSlot+'"'+(prepared&&Number(prepared.slot_level)===prepSlot?' selected':'')+'>'+prepSlot+'</option>';controls=preparedOptions?'<label><input type="checkbox" data-spell-prepared="'+esc(id)+'" '+(prepared?'checked':'')+'> Preparar</label><label>Usar espaço de círculo <select data-spell-level="'+esc(id)+'">'+preparedOptions+'</select></label>':'<span class="dnd35-note">Sem espaço disponível para este círculo.</span>';}
         else if(avail.key==='sorcerer'||avail.key==='bard')controls='<label><input type="checkbox" data-spell-known="'+esc(id)+'" '+(known?'checked':'')+'> Conhecida</label>';
-        if(!isSpontaneous){
-          var selectedSlot=prepared?Number(prepared.slot_level):lvl,opts='';
-          for(var slot=lvl;slot<=avail.max;slot++)opts+='<option value="'+slot+'"'+(slot===selectedSlot?' selected':'')+'>'+slot+'</option>';
-          controls+='<label>Usar espaço de círculo <select data-spell-level="'+esc(id)+'">'+opts+'</select></label>';
-        }
+
       }
       return '<article class="dnd35-spell-card" data-spell-card><h3>'+esc(sp.nome||'Magia sem nome')+'</h3><div class="dnd35-spell-meta">'+esc(meta)+'</div>'+(sp.descricao?'<div class="dnd35-spell-description">'+esc(sp.descricao)+'</div>':'')+(sp.srd_source_url?'<a class="dnd35-spell-meta" href="'+esc(sp.srd_source_url)+'" target="_blank" rel="noopener noreferrer">Consultar descrição SRD (OGL) ↗</a>':'')+(controls?'<div class="dnd35-spell-controls">'+controls+'</div>':'')+'</article>';
     }).join('')+'</div>';
@@ -2160,9 +2387,18 @@ function dnd35WeaponProficient(state,weaponName){
     if(open)open.addEventListener('click',function(){state.grimoireOpen=true;renderizarFichaSRD35();});
     if(close)close.addEventListener('click',function(){state.grimoireOpen=false;renderizarFichaSRD35();});
     if(modal)modal.addEventListener('click',function(e){if(e.target===modal){state.grimoireOpen=false;renderizarFichaSRD35();}});
+    var arcaneFamiliar=document.querySelector('[data-arcane-familiar]');if(arcaneFamiliar)arcaneFamiliar.addEventListener('change',function(){state.identidade=state.identidade||{};state.identidade.familiar_id=arcaneFamiliar.value;renderizarFichaSRD35();});
+    var rangerEnemy=document.querySelector('[data-ranger-favored-enemy]');if(rangerEnemy)rangerEnemy.addEventListener('change',function(){state.identidade=state.identidade||{};state.identidade.ranger_favored_enemy=rangerEnemy.value;});
+    var druidBond=document.querySelector('[data-druid-nature-bond]');if(druidBond)druidBond.addEventListener('change',function(){state.identidade=state.identidade||{};state.identidade.druid_nature_bond=druidBond.value;if(druidBond.value==='domain')state.identidade.druid_animal_companion_id='';state.domainChoices=[];if(state.grimoireState)state.grimoireState.dominioPreparadas=[];renderizarFichaSRD35();});
+    var druidAnimal=document.querySelector('[data-druid-animal-companion]');if(druidAnimal)druidAnimal.addEventListener('change',function(){state.identidade=state.identidade||{};state.identidade.druid_animal_companion_id=druidAnimal.value;});
+    var clericSource=document.querySelector('[data-cleric-source]');if(clericSource)clericSource.addEventListener('change',function(){state.identidade=state.identidade||{};state.identidade.cleric_source=clericSource.value;state.identidade.cleric_deity_id='';state.identidade.cleric_cause='';state.domainChoices=[];if(state.grimoireState)state.grimoireState.dominioPreparadas=[];renderizarFichaSRD35();});
+    var clericDeity=document.querySelector('[data-cleric-deity]');if(clericDeity)clericDeity.addEventListener('change',function(){state.identidade=state.identidade||{};state.identidade.cleric_deity_id=clericDeity.value;state.domainChoices=[];if(state.grimoireState)state.grimoireState.dominioPreparadas=[];renderizarFichaSRD35();});
+    var clericCause=document.querySelector('[data-cleric-cause]');if(clericCause)clericCause.addEventListener('input',function(){state.identidade=state.identidade||{};state.identidade.cleric_cause=clericCause.value;});
+    var wizardSpecSelect=document.querySelector('[data-wizard-specialization]');if(wizardSpecSelect)wizardSpecSelect.addEventListener('change',function(){state.identidade=state.identidade||{};state.identidade.wizard_specialization=wizardSpecSelect.value;state.identidade.wizard_prohibited_schools=[];renderizarFichaSRD35();});
+    document.querySelectorAll('[data-wizard-prohibited]').forEach(function(select){select.addEventListener('change',function(){state.identidade=state.identidade||{};var idx=Number(select.dataset.wizardProhibited),arr=Array.isArray(state.identidade.wizard_prohibited_schools)?state.identidade.wizard_prohibited_schools:[];arr[idx]=select.value;state.identidade.wizard_prohibited_schools=arr;renderizarFichaSRD35();});});
     document.querySelectorAll('[data-spell-search]').forEach(function(input){input.addEventListener('input',function(){var q=input.value.toLowerCase();document.querySelectorAll('[data-spell-card]').forEach(function(card){card.hidden=card.textContent.toLowerCase().indexOf(q)<0;});});});
-    document.querySelectorAll('[data-spell-known]').forEach(function(input){input.addEventListener('change',function(){var s=state.grimoireState,id=String(input.dataset.spellKnown),at=s.conhecidas.indexOf(id);if(input.checked&&at<0)s.conhecidas.push(id);if(!input.checked&&at>=0)s.conhecidas.splice(at,1);});});
-    document.querySelectorAll('[data-spell-prepared]').forEach(function(input){input.addEventListener('change',function(){var s=state.grimoireState,id=String(input.dataset.spellPrepared),at=s.preparadas.findIndex(function(p){return String(p.spell_id)===id;});if(input.checked&&at<0){var select=document.querySelector('[data-spell-level="'+CSS.escape(id)+'"]'),lvl=select?Number(select.value):0;s.preparadas.push({spell_id:id,slot_level:lvl,expended:false});}if(!input.checked&&at>=0)s.preparadas.splice(at,1);});});
+    document.querySelectorAll('[data-spell-known]').forEach(function(input){input.addEventListener('change',function(){var s=state.grimoireState,id=String(input.dataset.spellKnown),at=s.conhecidas.indexOf(id);if(input.checked&&at<0)s.conhecidas.push(id);if(!input.checked&&at>=0)s.conhecidas.splice(at,1);if(!input.checked)s.preparadas=s.preparadas.filter(function(p){return String(p.spell_id)!==id;});var attrs=state.criacao?dnd35AtributosIniciais(state.raca,state.baseAtributos,state.identidade):(state.sheet.atributos||{}),status=document.querySelector('[data-grimoire-status]');if(status)status.textContent=dnd35GrimoireQuotaSummary(state,attrs);var quota=document.querySelector('[data-grimoire-quota]');if(quota)quota.textContent=dnd35GrimoireQuotaSummary(state,attrs);});});
+    document.querySelectorAll('[data-spell-prepared]').forEach(function(input){input.addEventListener('change',function(){var s=state.grimoireState,id=String(input.dataset.spellPrepared),at=s.preparadas.findIndex(function(p){return String(p.spell_id)===id;});if(input.checked&&at<0){var select=document.querySelector('[data-spell-level="'+CSS.escape(id)+'"]'),lvl=select?Number(select.value):0;s.preparadas.push({spell_id:id,slot_level:lvl,expended:false});}if(!input.checked&&at>=0)s.preparadas.splice(at,1);var attrs=state.criacao?dnd35AtributosIniciais(state.raca,state.baseAtributos,state.identidade):(state.sheet.atributos||{}),status=document.querySelector('[data-grimoire-status]');if(status)status.textContent=dnd35GrimoireQuotaSummary(state,attrs);var quota=document.querySelector('[data-grimoire-quota]');if(quota)quota.textContent=dnd35GrimoireQuotaSummary(state,attrs);});});
     document.querySelectorAll('[data-spell-level]').forEach(function(select){select.addEventListener('change',function(){var id=String(select.dataset.spellLevel),p=state.grimoireState.preparadas.filter(function(x){return String(x.spell_id)===id;})[0];if(p){p.slot_level=Number(select.value);p.expended=false;}});});
     document.querySelectorAll('[data-domain-choice]').forEach(function(select){select.addEventListener('change',function(){var slot=Number(select.dataset.domainChoice),value=String(select.value||''),other=state.domainChoices.filter(function(x){return Number(x.domain_slot)!==slot;});if(value&&other.some(function(x){return String(x.domain_id)===value;})){select.value='';var status=document.querySelector('[data-grimoire-status]');if(status)status.textContent='Escolha dois domínios diferentes.';return;}state.domainChoices=other.concat(value?[{domain_slot:slot,domain_id:value}]:[]).sort(function(a,b){return Number(a.domain_slot)-Number(b.domain_slot);});state.grimoireState=state.grimoireState||dnd35SpellState(state);state.grimoireState.dominioPreparadas=(state.grimoireState.dominioPreparadas||[]).filter(function(x){return state.domainChoices.some(function(d){return String(d.domain_id)===String(x.domain_id);});});renderizarFichaSRD35();});});
     document.querySelectorAll('[data-domain-prepared-level]').forEach(function(select){if(select.dataset.selectedDomainSpell)select.value=select.dataset.selectedDomainSpell;select.addEventListener('change',function(){var stateSpell=state.grimoireState||dnd35SpellState(state),circle=Number(select.dataset.domainPreparedLevel),old=(stateSpell.dominioPreparadas||[]).find(function(x){return Number(x.slot_level)===circle;}),value=String(select.value||'');stateSpell.dominioPreparadas=(stateSpell.dominioPreparadas||[]).filter(function(x){return Number(x.slot_level)!==circle;});if(value){var parts=value.split('|');stateSpell.dominioPreparadas.push({domain_id:parts[0],spell_id:parts[1],slot_level:circle,expended:!!(old&&old.expended)});}state.grimoireState=stateSpell;});});
@@ -2210,9 +2446,9 @@ function dnd35WeaponProficient(state,weaponName){
       if(avail.key==='sorcerer'||avail.key==='bard'){
       for(var ul=0;ul<=avail.max;ul++)if(Number(s.usos[String(ul)]||0)>(avail.slots[ul]||0)){if(status)status.textContent='Espaços diários de círculo '+ul+' esgotados.';return;}
     }
-    if(avail.key==='cleric'){
-      var domainIds=(state.domainChoices||[]).map(function(x){return String(x.domain_id||'');}).filter(Boolean);
-      if(domainIds.length!==2||domainIds[0]===domainIds[1]){if(status)status.textContent='Escolha dois domínios diferentes antes de salvar.';return;}
+    if(avail.key==='cleric'||(avail.key==='druid'&&String((state.identidade||{}).druid_nature_bond)==='domain')){
+      var domainIds=(state.domainChoices||[]).map(function(x){return String(x.domain_id||'');}).filter(Boolean),expectedDomains=avail.key==='cleric'?2:1;
+      if(domainIds.length!==expectedDomains||(expectedDomains===2&&domainIds[0]===domainIds[1])){if(status)status.textContent=avail.key==='cleric'?'Escolha dois domínios diferentes antes de salvar.':'Escolha um domínio druídico antes de salvar.';return;}
       var validDomainRows=state.srdDomainSpells||[];
       s.dominioPreparadas=(s.dominioPreparadas||[]).filter(function(p){return domainIds.indexOf(String(p.domain_id))>=0&&validDomainRows.some(function(r){return String(r.domain_id)===String(p.domain_id)&&String(r.spell_id)===String(p.spell_id)&&Number(r.spell_level)===Number(p.slot_level);});});
       var domainLevels=s.dominioPreparadas.map(function(p){return Number(p.slot_level);});
@@ -2221,42 +2457,96 @@ function dnd35WeaponProficient(state,weaponName){
     }
     var payload=dnd35GrimoireSaveState({sheet:{magias_preparadas:s}});
     if(status)status.textContent='Salvando Grimório…';
-    try{if(avail.key==='cleric'){var domainSave=await sb.rpc('salvar_dominios_personagem_srd',{p_character_id:String(CHAR_ID),p_domain_ids:(state.domainChoices||[]).map(function(x){return String(x.domain_id);})});if(domainSave.error)throw domainSave.error;}var result=await sb.rpc('salvar_grimorio_srd',{p_character_id:String(CHAR_ID),p_estado:payload});if(result.error)throw result.error;var saved=result.data||payload;state.sheet.magias_preparadas=saved;state.grimoireState=dnd35SpellState({sheet:saved});state.grimoireOpen=false;renderizarFichaSRD35();var newStatus=document.querySelector('[data-grimoire-status]');if(newStatus)newStatus.textContent='Grimório salvo.';}catch(e){if(status)status.textContent='Não foi possível salvar o Grimório: '+(e.message||e);}
+    try{if(avail.key==='cleric'||(avail.key==='druid'&&String((state.identidade||{}).druid_nature_bond)==='domain')){var domainSave=await sb.rpc('salvar_dominios_personagem_srd',{p_character_id:String(CHAR_ID),p_domain_ids:(state.domainChoices||[]).map(function(x){return String(x.domain_id);})});if(domainSave.error)throw domainSave.error;}var result=await sb.rpc('salvar_grimorio_srd',{p_character_id:String(CHAR_ID),p_estado:payload});if(result.error)throw result.error;var saved=result.data||payload;state.sheet.magias_preparadas=saved;state.grimoireState=dnd35SpellState({sheet:saved});state.grimoireOpen=false;renderizarFichaSRD35();var newStatus=document.querySelector('[data-grimoire-status]');if(newStatus)newStatus.textContent='Grimório salvo.';}catch(e){if(status)status.textContent='Não foi possível salvar o Grimório: '+(e.message||e);}
   }
-  function dnd35StartWealth(cl){return [3,10];}
+  // Riqueza inicial oficial do Livro do Jogador 3.5, Tabela 7-1.
+  // O segundo valor é o multiplicador em peças de ouro; o Monge não multiplica por 10.
+  function dnd35StartWealth(cl){
+    var source=cl&&typeof cl==='object'?(cl.class_key||cl.nome||cl.name||cl.id):cl;
+    var key=dnd35ClassRuleKey(source);
+    var table={
+      barbarian:[4,10],bard:[4,10],cleric:[5,10],druid:[2,10],
+      fighter:[6,10],monk:[5,1],paladin:[6,10],ranger:[6,10],
+      rogue:[5,10],sorcerer:[3,10],wizard:[3,10]
+    };
+    return table[key]?table[key].slice():[0,0];
+  }
+  function dnd35StartWealthLabel(cl){
+    var d=dnd35StartWealth(cl);
+    return d[0]?d[0]+'d4 × '+d[1]+' po':'Tabela de riqueza inicial não cadastrada para esta classe';
+  }
   function dnd35StartCost(i){var n=Number(i&&(i.custo_po==null?i.preco:i.custo_po));return Number.isFinite(n)&&n>=0?n:null;}
   function dnd35StartingState(s){if(!s||typeof s!=='object')return {equipamentoInicial:{metodo:'',resultados:[],itens:{},busca:''},equipment:[],classe:null};if(!s.equipamentoInicial||typeof s.equipamentoInicial!=='object')s.equipamentoInicial={metodo:'',resultados:[],itens:{},busca:''};var x=s.equipamentoInicial;if(!Array.isArray(x.resultados))x.resultados=[];if(!x.itens||typeof x.itens!=='object')x.itens={};if(typeof x.busca!=='string')x.busca='';if(!Array.isArray(s.equipment))s.equipment=[];return s;}
   function dnd35StartTotal(s){s=dnd35StartingState(s);var x=s.equipamentoInicial,total=0;Object.keys(x.itens).forEach(function(id){var i=(s.equipment||[]).find(function(item){return String(item.id)===id;});if(i){var cost=dnd35StartCost(i);if(cost!=null)total+=cost*Number(x.itens[id]||0);}});return total;}
-  function dnd35StartReady(s){s=dnd35StartingState(s);var x=s.equipamentoInicial;if(x.metodo==='pacote')return !!s.startingPackage;if(x.metodo==='ouro'){var d=dnd35StartWealth(s.classe),r=x.resultados;if(!d[0])return false;return r.length===d[0]&&r.every(function(n){return n>=1&&n<=4;})&&dnd35StartTotal(s)<=r.reduce(function(a,b){return a+b;},0)*d[1];}return false;}
-  function dnd35StartMarkup(s){s=dnd35StartingState(s);var x=s.equipamentoInicial,d=dnd35StartWealth(s.classe),r=x.resultados,wealth=x.metodo==='pacote'?d[0]*2.5*d[1]:(r.length===d[0]?r.reduce(function(a,b){return a+b;},0)*d[1]:0),items=(s.equipment||[]).filter(function(i){return dnd35StartCost(i)!=null&&!/(rings|rods|staffs|wands|wondrous|potions|specific_|magic)/i.test(String(i.categoria||''))&&(!x.busca||String(i.nome+' '+i.categoria).toLowerCase().includes(x.busca.toLowerCase()));}).slice(0,80),body='';
-    if(x.metodo==='pacote'){var kit=s.startingPackage;body='<h3>'+esc(kit&&kit.nome||'Kit sugerido')+'</h3><p class="dnd35-note">Sugestão opcional do Vínculo para esta classe. A raça não altera a lista básica de equipamento no SRD 3.5. Custo: '+dnd35StartTotal(s)+' po · saldo: '+(wealth-dnd35StartTotal(s))+' po.</p><div class="dnd35-start-items">'+((kit&&kit.items)||[]).map(function(p){var i=(s.equipment||[]).find(function(z){return String(z.id)===String(p.id);});return '<article class="dnd35-start-item"><strong>'+esc(dnd35TranslateCatalogText(i&&i.nome||p.id))+'</strong><span>'+esc(dnd35TranslateCatalogText(i&&(i.categoria||i.tipo)||'Equipamento'))+' · Quantidade '+Number(p.quantidade||1)+'</span><small>'+esc(dnd35TranslateCatalogText(i&&(i.descricao||i.description||i.detalhes)||'Item do pacote inicial da classe.'))+'</small></article>';}).join('')+'</div>';}
-    if(x.metodo==='ouro')body=r.length?'<div class="dnd35-start-roll"><strong>OURO INICIAL · 3d4 × 10 po</strong><div class="dnd35-start-dice">'+r.map(function(v,i){return '<span class="dnd35-start-die" aria-label="Dado '+(i+1)+': '+v+'">d4<strong>'+v+'</strong></span>';}).join('')+'</div><p class="dnd35-note">Resultado: '+r.join(' + ')+' = '+wealth+' po · Compra: '+dnd35StartTotal(s)+' po · Saldo: '+(wealth-dnd35StartTotal(s))+' po</p></div><input id="dnd35-start-search" type="search" placeholder="Buscar equipamento" value="'+esc(x.busca||'')+'"><div class="dnd35-start-items">'+items.map(function(i){return '<article class="dnd35-start-item"><strong>'+esc(dnd35TranslateCatalogText(i.nome))+'</strong><span>'+esc(dnd35TranslateCatalogText(i.categoria||'Equipamento'))+' · '+dnd35StartCost(i)+' po'+(i.peso==null?'':' · '+esc(i.peso)+' kg')+'</span><small>'+esc(dnd35TranslateCatalogText(i.descricao||i.description||i.detalhes||'Item do catálogo de equipamentos.'))+'</small><button type="button" data-start-add="'+esc(i.id)+'">Adicionar ao kit</button></article>';}).join('')+'</div><div class="dnd35-start-selected">'+Object.keys(x.itens||{}).map(function(id){var i=(s.equipment||[]).find(function(z){return String(z.id)===id;});return i?'<div class="dnd35-start-selected-item"><span>'+esc(i.nome)+' × '+x.itens[id]+'</span><button type="button" data-start-remove="'+esc(id)+'">Remover</button></div>':'';}).join('')+'</div>':'<div class="dnd35-start-roll"><strong>OURO INICIAL · 3d4 × 10 po</strong><p class="dnd35-note">Role três dados de quatro faces. O resultado será multiplicado por 10.</p><button type="button" data-start-roll>Rolar 3d4 automaticamente</button></div>';
-    return '<section class="dnd35-panel"><h2>Equipamento inicial</h2><p class="dnd35-note">Escolha o kit recomendado ou role o ouro e compre itens do catálogo. Itens mágicos não entram na compra inicial.</p><div class="dnd35-actions"><button type="button" data-start-method="pacote">Kit recomendado</button><button type="button" data-start-method="ouro">Ouro inicial</button></div>'+body+'</section>';}
+  function dnd35StartReady(s){
+    s=dnd35StartingState(s);var x=s.equipamentoInicial;
+    if(x.metodo==='pacote')return !!s.startingPackage;
+    if(x.metodo==='ouro'){
+      var d=dnd35StartWealth(s.classe),r=x.resultados;
+      if(!d[0]||!Array.isArray(r))return false;
+      return r.length===d[0]&&r.every(function(n){return Number.isInteger(Number(n))&&Number(n)>=1&&Number(n)<=4;})&&dnd35StartTotal(s)<=r.reduce(function(a,b){return a+Number(b);},0)*d[1];
+    }
+    return false;
+  }
+  function dnd35PesoKg35(item){
+    var details=item&&item.detalhes||{};if(typeof details==='string'){try{details=JSON.parse(details);}catch(e){details={};}}
+    var weightText=String(details.weight||''),imperial=/\blb\.?/i.test(weightText)||details.source_dataset==='olimot/srd-v3.5-md';
+    return ((Number(item&&item.peso)||0)*(imperial?0.5:1)).toLocaleString('pt-BR',{maximumFractionDigits:1});
+  }
+  function dnd35StartMarkup(s){
+    s=dnd35StartingState(s);
+    var x=s.equipamentoInicial,d=dnd35StartWealth(s.classe),r=x.resultados;
+    var wealth=x.metodo==='pacote'?d[0]*2.5*d[1]:(d[0]&&r.length===d[0]?r.reduce(function(a,b){return a+Number(b);},0)*d[1]:0);
+    var wealthLabel=dnd35StartWealthLabel(s.classe);
+    var items=(s.equipment||[]).filter(function(i){
+      return dnd35StartCost(i)!=null&&!/(rings|rods|staffs|wands|wondrous|potions|specific_|magic)/i.test(String(i.categoria||''))&&(!x.busca||String(i.nome+' '+i.categoria).toLowerCase().includes(x.busca.toLowerCase()));
+    }).slice(0,80),body='';
+    if(x.metodo==='pacote'){
+      var kit=s.startingPackage;
+      body='<h3>'+esc(kit&&kit.nome||'Kit sugerido')+'</h3><p class="dnd35-note">Sugestão opcional do Vínculo para esta classe. A raça não altera a lista básica de equipamento no SRD 3.5. Custo: '+dnd35StartTotal(s)+' po · saldo estimado: '+(wealth-dnd35StartTotal(s))+' po.</p><div class="dnd35-start-items">'+((kit&&kit.items)||[]).map(function(p){
+        var i=(s.equipment||[]).find(function(z){return String(z.id)===String(p.id);});
+        return '<article class="dnd35-start-item"><strong>'+esc(dnd35TranslateCatalogText(i&&i.nome||p.id))+'</strong><span>'+esc(dnd35TranslateCatalogText(i&&(i.categoria||i.tipo)||'Equipamento'))+' · Quantidade '+Number(p.quantidade||1)+'</span><small>'+esc(dnd35TranslateCatalogText(i&&(i.descricao||i.description||i.detalhes)||'Item do pacote inicial da classe.'))+'</small></article>';
+      }).join('')+'</div>';
+    }
+    if(x.metodo==='ouro'){
+      if(!d[0]){
+        body='<div class="dnd35-start-roll"><strong>RIQUEZA INICIAL INDISPONÍVEL</strong><p class="dnd35-note">Não há uma entrada oficial da Tabela 7-1 cadastrada para esta classe. Use o kit recomendado ou peça ao Mestre para definir a riqueza inicial.</p></div>';
+      }else if(r.length){
+        body='<div class="dnd35-start-roll"><strong>OURO INICIAL · '+wealthLabel+'</strong><div class="dnd35-start-dice">'+r.map(function(v,i){return '<span class="dnd35-start-die" aria-label="Dado '+(i+1)+': '+v+'">d4<strong>'+v+'</strong></span>';}).join('')+'</div><p class="dnd35-note">Resultado: '+r.join(' + ')+' = '+wealth+' po · Compra: '+dnd35StartTotal(s)+' po · Saldo: '+(wealth-dnd35StartTotal(s))+' po</p></div><input id="dnd35-start-search" type="search" placeholder="Buscar equipamento" value="'+esc(x.busca||'')+'"><div class="dnd35-start-items">'+items.map(function(i){return '<article class="dnd35-start-item"><strong>'+esc(dnd35TranslateCatalogText(i.nome))+'</strong><span>'+esc(dnd35TranslateCatalogText(i.categoria||'Equipamento'))+' · '+dnd35StartCost(i)+' po'+(i.peso==null?'':' · '+esc(dnd35PesoKg35(i))+' kg')+'</span><small>'+esc(dnd35TranslateCatalogText(i.descricao||i.description||i.detalhes||'Item do catálogo de equipamentos.'))+'</small><button type="button" data-start-add="'+esc(i.id)+'">Adicionar ao kit</button></article>';}).join('')+'</div><div class="dnd35-start-selected">'+Object.keys(x.itens||{}).map(function(id){var i=(s.equipment||[]).find(function(z){return String(z.id)===id;});return i?'<div class="dnd35-start-selected-item"><span>'+esc(i.nome)+' × '+x.itens[id]+'</span><button type="button" data-start-remove="'+esc(id)+'">Remover</button></div>':'';}).join('')+'</div>';
+      }else{
+        body='<div class="dnd35-start-roll"><strong>OURO INICIAL · '+wealthLabel+'</strong><p class="dnd35-note">Role '+d[0]+' dados de quatro faces. O resultado será multiplicado por '+d[1]+' para definir seu ouro.</p><button type="button" data-start-roll>Rolar '+d[0]+'d4</button></div>';
+      }
+    }
+    return '<section class="dnd35-panel"><h2>Equipamento inicial</h2><p class="dnd35-note">Escolha o kit recomendado ou role o ouro e compre itens do catálogo. Itens mágicos não entram na compra inicial.</p><div class="dnd35-actions"><button type="button" data-start-method="pacote">Kit recomendado</button><button type="button" data-start-method="ouro">Ouro inicial</button></div>'+body+'</section>';
+  }
   var dnd35GoldRollState=null,dnd35GoldRollFrame=null;
   function fecharDadosOuroInicial(){var modal=document.getElementById('dnd35-gold-dice-modal');if(modal)modal.remove();dnd35GoldRollFrame=null;}
   function abrirDadosOuroInicial(s){
+    var wealthDice=dnd35StartWealth(s&&s.classe);
+    if(!wealthDice[0]){alert('A riqueza inicial desta classe ainda não está cadastrada na Tabela 7-1.');return;}
     dnd35GoldRollState=s;fecharDadosOuroInicial();
     var modal=document.createElement('div');modal.id='dnd35-gold-dice-modal';modal.className='dnd35-gold-dice-overlay';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-label','Rolagem de ouro inicial com três dados de quatro faces');
     var panel=document.createElement('section');panel.className='dnd35-gold-dice-panel';
-    var head=document.createElement('header');var title=document.createElement('div');title.innerHTML='<strong>OURO INICIAL</strong><span>Role automaticamente 3d4 × 10 po</span>';var close=document.createElement('button');close.type='button';close.textContent='✕';close.setAttribute('aria-label','Fechar dados');close.onclick=fecharDadosOuroInicial;head.append(title,close);
-    var iframe=document.createElement('iframe');iframe.id='dnd35-gold-dice-frame';iframe.src='dice.html';iframe.title='Dados 3D para rolar três dados de quatro faces';iframe.allow='autoplay';
-    var hint=document.createElement('p');hint.textContent='Os três D4 serão lançados automaticamente. O total será multiplicado por 10 para definir seu ouro.';
+    var head=document.createElement('header');var title=document.createElement('div');title.innerHTML='<strong>OURO INICIAL</strong><span>Role automaticamente '+wealthDice[0]+'d4 × '+wealthDice[1]+' po</span>';var close=document.createElement('button');close.type='button';close.textContent='✕';close.setAttribute('aria-label','Fechar dados');close.onclick=fecharDadosOuroInicial;head.append(title,close);
+    var iframe=document.createElement('iframe');iframe.id='dnd35-gold-dice-frame';iframe.src='dice.html';iframe.title='Dados 3D para rolar '+wealthDice[0]+' dados de quatro faces';iframe.allow='autoplay';
+    var hint=document.createElement('p');hint.textContent='Os '+wealthDice[0]+' D4 serão lançados automaticamente. O total será multiplicado por '+wealthDice[1]+' para definir seu ouro.';
     panel.append(head,iframe,hint);modal.appendChild(panel);modal.addEventListener('click',function(e){if(e.target===modal)fecharDadosOuroInicial();});document.body.appendChild(modal);dnd35GoldRollFrame=iframe;
-    iframe.addEventListener('load',function(){if(dnd35GoldRollFrame!==iframe)return;iframe.contentWindow.postMessage({action:'roll',expression:'3d4'},window.location.origin);});
+    iframe.addEventListener('load',function(){if(dnd35GoldRollFrame!==iframe)return;iframe.contentWindow.postMessage({action:'roll',expression:wealthDice[0]+'d4'},window.location.origin);});
   }
   if(!window.__dnd35GoldDiceListener){window.__dnd35GoldDiceListener=true;window.addEventListener('message',function(event){
     var iframe=document.getElementById('dnd35-gold-dice-frame');if(!iframe||event.source!==iframe.contentWindow||event.origin!==window.location.origin)return;
     if(!event.data||event.data.action!=='rollResult')return;
     var values=Array.isArray(event.data.values)?event.data.values.map(Number):[];
-    if(values.length!==3||values.some(function(n){return !Number.isInteger(n)||n<1||n>4;}))return;
     var state=dnd35GoldRollState;if(!state||!state.equipamentoInicial)return;
+    var wealthDice=dnd35StartWealth(state.classe);
+    if(!wealthDice[0]||values.length!==wealthDice[0]||values.some(function(n){return !Number.isInteger(n)||n<1||n>4;}))return;
     state.equipamentoInicial.resultados=values;dnd35GoldRollState=null;fecharDadosOuroInicial();renderizarFichaSRD35();
   });}
   function dnd35StartBind(s){var el=document.querySelector('[data-creation-step="equipment"]');if(!el)return;el.addEventListener('click',function(e){var m=e.target.closest('[data-start-method]');if(m){s.equipamentoInicial.metodo=m.dataset.startMethod;s.equipamentoInicial.resultados=null;s.equipamentoInicial.itens={};if(m.dataset.startMethod==='pacote'&&s.startingPackage)(s.startingPackage.items||[]).forEach(function(i){s.equipamentoInicial.itens[String(i.id)]=Number(i.quantidade)||1;});renderizarFichaSRD35();if(m.dataset.startMethod==='ouro')abrirDadosOuroInicial(s);return;}if(e.target.closest('[data-start-roll]')){abrirDadosOuroInicial(s);return;}var a=e.target.closest('[data-start-add]');if(a){var id=String(a.dataset.startAdd),q=Number(s.equipamentoInicial.itens[id]||0);s.equipamentoInicial.itens[id]=q+1;if(!dnd35StartReady(s)){s.equipamentoInicial.itens[id]=q;alert('O item ultrapassa o ouro disponível.');return;}renderizarFichaSRD35();return;}var b=e.target.closest('[data-start-remove]');if(b){var id2=String(b.dataset.startRemove),q2=Number(s.equipamentoInicial.itens[id2]||0);if(q2<=1)delete s.equipamentoInicial.itens[id2];else s.equipamentoInicial.itens[id2]=q2-1;renderizarFichaSRD35();}});var search=el.querySelector('#dnd35-start-search');if(search)search.addEventListener('input',function(){s.equipamentoInicial.busca=search.value;var panel=el.querySelector('.dnd35-panel');if(panel){panel.outerHTML=dnd35StartMarkup(s);var next=el.querySelector('#dnd35-start-search');if(next){next.focus();next.setSelectionRange(next.value.length,next.value.length);}}});}
   function renderizarFichaSRD35() {
     var state = fichaSRD35, creating = !!state.criacao;
     var attrs = dnd35Objeto(state.sheet.atributos), baseAttrs = state.baseAtributos || {FOR:10,DES:10,CON:10,INT:10,SAB:10,CAR:10};
-    if (creating) attrs = dnd35AtributosIniciais(state.raca,baseAttrs);
+    if (creating) attrs = dnd35AtributosIniciais(state.raca,baseAttrs,state.identidade);
     if (!Object.keys(attrs).length) attrs = dnd35AtributosIniciais(state.raca);
     var points = dnd35PontosCompra(baseAttrs), level = Math.max(1,Number(state.sheet.nivel)||1), conMod = dnd35Modificador(attrs.CON);
     var dadoVida = Math.max(1,Number(state.classe.dado_vida)||8), hpCalc = Math.max(1,dadoVida+conMod), hpMax = Math.max(1,Number(state.sheet.pv_max)||hpCalc);
@@ -2278,30 +2568,33 @@ function dnd35WeaponProficient(state,weaponName){
     }).join('');
     var skillsView=dnd35RenderSkills(state,attrs,creating,classMap), featsView=dnd35RenderFeats(state,attrs,creating);
     var skillBudgetNote='Pontos de perícia: '+skillsView.spent+' / '+skillsView.budget+' gastos';
-    var createStep=state.activeStep||'identity',spellAccess=dnd35GrimoireAvailability(state,attrs,level),magicClass=!!spellAccess.key&&Object.keys(spellAccess.slots).some(function(circle){return Number(spellAccess.slots[circle])>0;}),createSteps=[['identity','1 · Herói','Nome e identidade'],['attributes','2 · Atributos','Distribua 25 pontos'],['training','3 · Treino','Perícias e talentos']];if(magicClass)createSteps.push(['magic','4 · Magias','Conhecer e preparar']);createSteps.push(['equipment',(magicClass?'5':'4')+' · Equipamento','Kit ou ouro inicial']);
+    var createStep=state.activeStep||'identity',spellAccess=dnd35GrimoireAvailability(state,attrs,level),magicClass=!!spellAccess.key&&Object.keys(spellAccess.slots).some(function(circle){return Number(spellAccess.slots[circle])>0;}),createSteps=[['identity','1 · Herói','Nome e identidade'],['attributes','2 · Atributos','Distribua 25 pontos'],['class','3 · Classe','Recursos e escolhas'],['training','4 · Treino','Perícias e talentos']];if(magicClass)createSteps.push(['magic','5 · Magias','Conhecer e preparar']);createSteps.push(['equipment',(magicClass?'6':'5')+' · Equipamento','Kit ou ouro inicial']);
     var createNav=creating?'<nav class="dnd35-create-nav" aria-label="Etapas da ficha">'+createSteps.map(function(s){return '<button type="button" class="dnd35-create-step '+(createStep===s[0]?'active':'')+'" data-create-step="'+s[0]+'">'+s[1]+'<small>'+s[2]+'</small></button>';}).join('')+'</nav>':'';
-    var initialClassBonusHtml=creating?dnd35InitialClassBonusMarkup(state,attrs):'';var skillPanel=creating?'<div class="dnd35-tabs" role="tablist"><button type="button" class="dnd35-tab '+(state.activeTab!=='talentos'?'active':'')+'" data-tab="pericias">Perícias</button><button type="button" class="dnd35-tab '+(state.activeTab==='talentos'?'active':'')+'" data-tab="talentos">Talentos</button></div><section class="dnd35-build-panel dnd35-tab-panel" data-tab-panel="pericias" '+(state.activeTab==='talentos'?'hidden':'')+'><h2>Perícias · Nível 1 <button type="button" class="dnd35-help" data-dnd35-help="skill">?</button></h2><p class="dnd35-budget">'+skillBudgetNote+'</p><p class="dnd35-note">Orçamento = max(1, perícias por nível + modificador final de INT) × 4'+(dnd35IsHuman(state.raca)?' + 4 (humano)':'')+'. Graduações de classe custam 1 ponto; fora de classe custam 2 e avançam em passos de 0,5.</p><div class="dnd35-skill-list">'+skillsView.html+'</div></section><section class="dnd35-build-panel dnd35-tab-panel" data-tab-panel="talentos" '+(state.activeTab!=='talentos'?'hidden':'')+'><h2>Talentos básicos <button type="button" class="dnd35-help" data-dnd35-help="feat">?</button></h2><p class="dnd35-note">Escolha exatamente '+(dnd35IsHuman(state.raca)?'2 talentos (talento básico + extra humano).':'1 talento básico.')+' Pré-requisitos são verificados contra os atributos finais e o BBA disponível.</p><div class="dnd35-feat-list">'+featsView+'</div>'+initialClassBonusHtml+'</section>' : '<div class="dnd35-grid" style="margin-top:16px"><section class="dnd35-panel"><h2>Perícias</h2><ul class="dnd35-list"><li>'+esc(skillBudgetNote)+'</li></ul><div class="dnd35-skill-list">'+skillsView.html+'</div></section><section class="dnd35-panel"><h2>Talentos</h2>'+featsView+'</section></div>';
+    var initialClassBonusHtml=creating?dnd35InitialClassBonusMarkup(state,attrs):'';var initialClassFeaturesHtml=creating?dnd35ClassFeaturesMarkup(state):'';var skillPanel=creating?'<div class="dnd35-tabs" role="tablist"><button type="button" class="dnd35-tab '+(state.activeTab==='pericias'?'active':'')+'" data-tab="pericias">Perícias</button><button type="button" class="dnd35-tab '+(state.activeTab==='talentos'?'active':'')+'" data-tab="talentos">Talentos</button><button type="button" class="dnd35-tab '+(state.activeTab==='idiomas'?'active':'')+'" data-tab="idiomas">Idiomas</button></div><section class="dnd35-build-panel dnd35-tab-panel" data-tab-panel="pericias" '+(state.activeTab!=='pericias'?'hidden':'')+'><h2>Perícias · Nível 1 <button type="button" class="dnd35-help" data-dnd35-help="skill">?</button></h2><p class="dnd35-budget">'+skillBudgetNote+'</p>'+dnd35BarbarianLiteracyMarkup(state)+'<p class="dnd35-note">Orçamento = max(1, perícias por nível + modificador final de INT) × 4'+(dnd35IsHuman(state.raca)?' + 4 (humano)':'')+'. Graduações de classe custam 1 ponto; fora de classe custam 2 e avançam em passos de 0,5. Falar Idioma custa 1 ponto por idioma.</p><div class="dnd35-skill-list">'+skillsView.html+'</div></section><section class="dnd35-build-panel dnd35-tab-panel" data-tab-panel="talentos" '+(state.activeTab!=='talentos'?'hidden':'')+'><h2>Talentos básicos <button type="button" class="dnd35-help" data-dnd35-help="feat">?</button></h2><p class="dnd35-note">Escolha exatamente '+(dnd35IsHuman(state.raca)?'2 talentos (talento básico + extra humano).':'1 talento básico.')+' Pré-requisitos são verificados contra os atributos finais e o BBA disponível.</p><div class="dnd35-feat-list">'+featsView+'</div>'+initialClassBonusHtml+'</section><section class="dnd35-tab-panel" data-tab-panel="idiomas" '+(state.activeTab!=='idiomas'?'hidden':'')+'>'+dnd35DwarfLanguagesMarkup(state,attrs)+'</section>' : '<div class="dnd35-grid" style="margin-top:16px"><section class="dnd35-panel"><h2>Perícias</h2><ul class="dnd35-list"><li>'+esc(skillBudgetNote)+'</li></ul><div class="dnd35-skill-list">'+skillsView.html+'</div></section><section class="dnd35-panel"><h2>Talentos</h2>'+featsView+'</section></div>';
     var profs=dnd35Objeto(state.classe.dados_tecnicos).proficiencias||{};
-    var html='<div class="dnd35-page"><header class="dnd35-header"><div><div class="dnd35-kicker">VÍNCULO · D&amp;D 3.5</div><h1>'+esc(nome)+'</h1><p>'+esc(state.raca.nome)+' · '+esc(state.classe.nome)+' · Nível '+level+'</p></div><a class="dnd35-link" href="lobby.html">Voltar ao Lobby</a></header>'+
-      createNav+levelupNotice+levelupPanel+'<div class="dnd35-grid"><section class="dnd35-panel" '+(creating?'data-creation-step="identity" '+(createStep!=='identity'?'hidden':''):'')+'><h2>Identidade'+(creating?' <button type="button" class="dnd35-help" data-dnd35-help="identity">?</button>':'')+'</h2>'+(creating?'<label class="dnd35-name-label" for="dnd35-nome">Nome do personagem</label><input class="dnd35-name-input" id="dnd35-nome" maxlength="60" autocomplete="off" placeholder="Ex.: Arannis" value="'+esc(state.nomeDraft||'')+'">':'')+
+    var html='<div class="dnd35-page"><header class="dnd35-header"><div><div class="dnd35-kicker">VÍNCULO · D&amp;D 3.5</div><h1>'+esc(nome)+'</h1><p>'+esc(state.raca.nome)+' · '+esc(state.classe.nome)+' · Nível '+level+'</p>'+(creating?'<div class="dnd35-creation-choices"><label>Raça <select id="dnd35-race-choice">'+(state.races||[]).map(function(r){return '<option value="'+esc(r.id)+'"'+(String(r.id)===String(state.raca.id)?' selected':'')+'>'+esc(r.nome)+'</option>';}).join('')+'</select></label><label>Classe <select id="dnd35-class-choice">'+(state.classes||[]).map(function(c){return '<option value="'+esc(c.id)+'"'+(String(c.id)===String(state.classe.id)?' selected':'')+'>'+esc(c.nome)+'</option>';}).join('')+'</select></label><small>As sete raças e as onze classes básicas estão disponíveis. As restrições de tendência e as escolhas próprias de cada classe são validadas durante a criação.</small></div>':'')+'</div><a class="dnd35-link" href="lobby.html">Voltar ao Lobby</a></header>'+
+      createNav+levelupNotice+levelupPanel+'<div class="dnd35-grid"><section class="dnd35-panel" '+(creating?'data-creation-step="identity" '+(createStep!=='identity'?'hidden':''):'')+'><h2>Identidade'+(creating?' <button type="button" class="dnd35-help" data-dnd35-help="identity">?</button>':'')+'</h2>'+(creating?'<label class="dnd35-name-label" for="dnd35-nome">Nome do personagem</label><input class="dnd35-name-input" id="dnd35-nome" maxlength="60" autocomplete="off" placeholder="Ex.: Tordek" value="'+esc(state.nomeDraft||'')+'">'+dnd35DwarfIdentityMarkup(state):'')+
       '<div class="dnd35-meta"><div class="dnd35-stat"><small>Raça</small><strong>'+esc(state.raca.nome)+'</strong></div><div class="dnd35-stat"><small>Classe</small><strong>'+esc(state.classe.nome)+'</strong></div><div class="dnd35-stat"><small>Nível</small><strong>'+level+'</strong></div><div class="dnd35-stat"><small>Dado de Vida</small><strong>d'+dadoVida+'</strong></div><div class="dnd35-stat"><small>Pontos de Vida</small><strong class="dnd35-hp">'+hpAtual+' / '+hpMax+'</strong></div><div class="dnd35-stat"><small>Deslocamento</small><strong>'+esc(state.raca.deslocamento==null?'—':state.raca.deslocamento+' m')+'</strong></div><div class="dnd35-stat"><small>Tamanho</small><strong>'+esc(state.raca.tamanho||'—')+'</strong></div><div class="dnd35-stat"><small>XP</small><strong>'+Math.max(0,Number(state.sheet.xp)||0)+'</strong></div></div>'+(creating?'<p class="dnd35-note">Distribua até 25 pontos de compra entre valores-base de 8 a 18. Os ajustes raciais são aplicados depois. PV inicial = dado de vida máximo + modificador de Constituição (mínimo 1).</p>':'')+'</section>'+
-      '<section class="dnd35-panel" '+(creating?'data-creation-step="attributes" '+(createStep!=='attributes'?'hidden':''):'')+'><h2>Atributos'+(creating?' <button type="button" class="dnd35-help" data-dnd35-help="attributes">?</button>':'')+'</h2><div class="dnd35-attrs">'+attrHtml+'</div>'+(creating?'<p id="dnd35-point-budget" class="dnd35-point-budget">Pontos de compra: '+points+' / 25 · Restam '+(25-points)+'</p>':'')+'<p class="dnd35-note">Ajustes raciais: '+esc(Object.keys(ajustes).length?Object.keys(ajustes).map(function(k){return k+' '+(Number(ajustes[k])>0?'+':'')+ajustes[k];}).join(' · '):'nenhum')+'</p></section>'+
-      '<section class="dnd35-panel" '+(creating?'data-creation-step="identity" '+(createStep!=='identity'?'hidden':''):'')+'><h2>Traços Raciais</h2><ul class="dnd35-list">'+dnd35Lista(state.raca.habilidades_raciais)+'</ul></section><section class="dnd35-panel" '+(creating?'data-creation-step="identity" '+(createStep!=='identity'?'hidden':''):'')+'><h2>Perícias de Classe</h2><p class="dnd35-note">'+Number(state.classe.pericias_por_nivel||0)+' pontos de perícia por nível, antes dos ajustes de Inteligência.</p><ul class="dnd35-list">'+dnd35Lista(state.classe.pericias_classe)+'</ul></section><section class="dnd35-panel" '+(creating?'data-creation-step="identity" '+(createStep!=='identity'?'hidden':''):'')+'><h2>Proficiências</h2><p class="dnd35-note">As proficiências mostram quais armas, armaduras e escudos sua classe sabe usar.</p><strong>Armas</strong><ul class="dnd35-list">'+dnd35Lista(profs.armas)+'</ul><strong>Armaduras</strong><ul class="dnd35-list">'+dnd35Lista(profs.armaduras)+'</ul><strong>Escudos</strong><ul class="dnd35-list">'+dnd35Lista(profs.escudos)+'</ul>'+(profs.observacao?'<p class="dnd35-note">'+esc(profs.observacao)+'</p>':'')+'</section></div>'+ (creating?'<div data-creation-step="attributes" '+(createStep!=='attributes'?'hidden':'')+'>'+statusHtml+'</div><div data-creation-step="magic" '+(createStep!=='magic'?'hidden':'')+'>'+spellsHtml+'</div><div data-creation-step="training" '+(createStep!=='training'?'hidden':'')+'>'+skillPanel+'</div><div data-creation-step="equipment" '+(createStep!=='equipment'?'hidden':'')+'>'+startingEquipmentHtml+'</div>':statusHtml+dnd35ClassFeaturesMarkup(state)+spellsHtml+skillPanel)+
+      '<section class="dnd35-panel" '+(creating?'data-creation-step="attributes" '+(createStep!=='attributes'?'hidden':''):'')+'><h2>Atributos'+(creating?' <button type="button" class="dnd35-help" data-dnd35-help="attributes">?</button>':'')+'</h2><div class="dnd35-attrs">'+attrHtml+'</div>'+(creating?'<p id="dnd35-point-budget" class="dnd35-point-budget">Pontos de compra: '+points+' / 25 · Restam '+(25-points)+'</p>':'')+'<p class="dnd35-note">Ajustes raciais: '+esc(Object.keys(ajustes).length?Object.keys(ajustes).map(function(k){return k+' '+(Number(ajustes[k])>0?'+':'')+ajustes[k];}).join(' · '):'nenhum')+'</p>'+(creating&&Number(state.identidade&&state.identidade.idade)>=250?'<p class="dnd35-note">Idade venerável: ajustes adicionais de –6 em FOR, DES e CON e +3 em INT, SAB e CAR (efeitos cumulativos).</p>':creating&&Number(state.identidade&&state.identidade.idade)>=188?'<p class="dnd35-note">Velhice: ajustes adicionais cumulativos de –3 em FOR, DES e CON e +2 em INT, SAB e CAR.</p>':creating&&Number(state.identidade&&state.identidade.idade)>=125?'<p class="dnd35-note">Maturidade: –1 em FOR, DES e CON e +1 em INT, SAB e CAR.</p>':'')+'</section>'+
+      '<section class="dnd35-panel" '+(creating?'data-creation-step="identity" '+(createStep!=='identity'?'hidden':''):'')+'><h2>Traços Raciais</h2><ul class="dnd35-list">'+dnd35Lista(state.raca.habilidades_raciais)+'</ul></section><section class="dnd35-panel" '+(creating?'data-creation-step="identity" '+(createStep!=='identity'?'hidden':''):'')+'><h2>Perícias de Classe</h2><p class="dnd35-note">'+Number(state.classe.pericias_por_nivel||0)+' pontos de perícia por nível, antes dos ajustes de Inteligência.</p><ul class="dnd35-list">'+dnd35Lista(state.classe.pericias_classe)+'</ul></section><section class="dnd35-panel" '+(creating?'data-creation-step="identity" '+(createStep!=='identity'?'hidden':''):'')+'><h2>Proficiências</h2><p class="dnd35-note">As proficiências mostram quais armas, armaduras e escudos sua classe sabe usar.</p><strong>Armas</strong><ul class="dnd35-list">'+dnd35Lista(profs.armas)+'</ul><strong>Armaduras</strong><ul class="dnd35-list">'+dnd35Lista(profs.armaduras)+'</ul><strong>Escudos</strong><ul class="dnd35-list">'+dnd35Lista(profs.escudos)+'</ul>'+(profs.observacao?'<p class="dnd35-note">'+esc(profs.observacao)+'</p>':'')+'</section></div>'+(creating?'<div data-creation-step="class" '+(createStep!=='class'?'hidden':'')+'>'+initialClassFeaturesHtml+dnd35ClassChoiceMarkup(state,attrs,1)+'</div><div data-creation-step="attributes" '+(createStep!=='attributes'?'hidden':'')+'>'+statusHtml+'</div><div data-creation-step="magic" '+(createStep!=='magic'?'hidden':'')+'>'+spellsHtml+'</div><div data-creation-step="training" '+(createStep!=='training'?'hidden':'')+'>'+skillPanel+'</div><div data-creation-step="equipment" '+(createStep!=='equipment'?'hidden':'')+'>'+startingEquipmentHtml+'</div>':statusHtml+dnd35ClassFeaturesMarkup(state)+spellsHtml+skillPanel)+
       (creating?'<div class="dnd35-actions"><span class="dnd35-status" id="dnd35-status" role="status" aria-live="polite"></span><button type="button" class="dnd35-save" id="dnd35-save">Criar personagem</button></div>':'')+'</div>';
     var root=document.getElementById('root'); root.classList.add('dnd35-mode'); root.innerHTML=html;
     dnd35GrimoireBind(state);
     if (creating) { dnd35StartBind(state);
       var nameInput=document.getElementById('dnd35-nome'); if(nameInput)nameInput.addEventListener('input',function(){state.nomeDraft=nameInput.value;});
       document.querySelectorAll('[data-create-step]').forEach(function(tab){tab.addEventListener('click',function(){if(nameInput)state.nomeDraft=nameInput.value;state.activeStep=tab.dataset.createStep;renderizarFichaSRD35();});});
-      document.querySelectorAll('.dnd35-score').forEach(function(select){select.addEventListener('change',function(){if(nameInput)state.nomeDraft=nameInput.value;state.baseAtributos[select.dataset.attr]=Number(select.value);renderizarFichaSRD35();});});
+      document.querySelectorAll('.dnd35-score').forEach(function(select){select.addEventListener('change',function(){if(nameInput)state.nomeDraft=nameInput.value;state.baseAtributos[select.dataset.attr]=Number(select.value);if(select.dataset.attr==='INT'){var finalInt=dnd35AtributosIniciais(state.raca,state.baseAtributos,state.identidade).INT,bonusCount=Math.max(0,Math.floor((finalInt-10)/2));state.idiomasEscolhidos=state.idiomasEscolhidos||{automaticos:dnd35AutomaticLanguages(state.raca,state.classe),bonus_inteligencia:[],comprados_falar_idioma:[]};state.idiomasEscolhidos.bonus_inteligencia=(state.idiomasEscolhidos.bonus_inteligencia||[]).slice(0,bonusCount);}renderizarFichaSRD35();});});
       document.querySelectorAll('.dnd35-tab').forEach(function(tab){tab.addEventListener('click',function(){state.activeTab=tab.dataset.tab;renderizarFichaSRD35();});});
-      document.querySelectorAll('[data-skill]').forEach(function(select){select.addEventListener('change',function(){var value=Number(select.value);if(value)state.sheet.pericias[select.dataset.skill]=value;else delete state.sheet.pericias[select.dataset.skill];if(nameInput)state.nomeDraft=nameInput.value;renderizarFichaSRD35();});});
-      document.querySelectorAll('[data-language-choice]').forEach(function(select){select.addEventListener('change',function(){var group=select.dataset.languageChoice,index=Number(select.dataset.languageIndex);state.idiomasEscolhas=state.idiomasEscolhas||{bonus:[],comprados:[]};state.idiomasEscolhas[group]=state.idiomasEscolhas[group]||[];state.idiomasEscolhas[group][index]=select.value;if(nameInput)state.nomeDraft=nameInput.value;renderizarFichaSRD35();});});
+      document.querySelectorAll('[data-skill]').forEach(function(select){select.addEventListener('change',function(){var value=Number(select.value);if(value)state.sheet.pericias[select.dataset.skill]=value;else delete state.sheet.pericias[select.dataset.skill];if(select.dataset.skill==='srd35_skill_speak_language'){state.idiomasEscolhidos=state.idiomasEscolhidos||{automaticos:dnd35AutomaticLanguages(state.raca,state.classe),bonus_inteligencia:[],comprados_falar_idioma:[]};state.idiomasEscolhidos.comprados_falar_idioma=(state.idiomasEscolhidos.comprados_falar_idioma||[]).slice(0,Math.max(0,Math.floor(value||0)));}if(nameInput)state.nomeDraft=nameInput.value;renderizarFichaSRD35();});});
+      var literacyChoice=document.querySelector('[data-dwarf-literacy]');if(literacyChoice)literacyChoice.addEventListener('change',function(){state.identidade=state.identidade||{};state.identidade.alfabetizado=!!literacyChoice.checked;renderizarFichaSRD35();});
+      document.querySelectorAll('[data-dwarf-language]').forEach(function(select){select.addEventListener('change',function(){var group=select.dataset.dwarfLanguage,index=Number(select.dataset.index),key=group==='bonus'?'bonus_inteligencia':'comprados_falar_idioma';state.idiomasEscolhidos=state.idiomasEscolhidos||{automaticos:dnd35AutomaticLanguages(state.raca,state.classe),bonus_inteligencia:[],comprados_falar_idioma:[]};state.idiomasEscolhidos[key][index]=select.value;});});
       document.querySelectorAll('[data-feat]').forEach(function(select){select.addEventListener('change',function(){var i=Number(select.dataset.feat), prev=state.featPicks[i]||{};state.featPicks[i]={id:select.value,parametro:prev.parametro||''};if(nameInput)state.nomeDraft=nameInput.value;renderizarFichaSRD35();});});
       document.querySelectorAll('[data-feat-param]').forEach(function(input){input.addEventListener('input',function(){var i=Number(input.dataset.featParam);if(state.featPicks[i])state.featPicks[i].parametro=input.value;});});
        var classFeatSelect=document.querySelector('[data-class-feat]');if(classFeatSelect)classFeatSelect.addEventListener('change',function(){state.classFeatPicks=[{id:classFeatSelect.value,parametro:''}];renderizarFichaSRD35();});
        var classFeatParam=document.querySelector('[data-class-feat-param]');if(classFeatParam)classFeatParam.addEventListener('input',function(){if(state.classFeatPicks&&state.classFeatPicks[0])state.classFeatPicks[0].parametro=classFeatParam.value;});
-      var save=document.getElementById('dnd35-save'); save.disabled=points>25||!dnd35StartReady(state); save.addEventListener('click',salvarFichaSRD35);
+      document.querySelectorAll('[data-dwarf-identity]').forEach(function(input){input.addEventListener('input',function(){state.identidade=state.identidade||{};state.identidade[input.dataset.dwarfIdentity]=input.type==='number'?(input.value===''?'':Number(input.value)):input.value;});input.addEventListener('change',function(){state.identidade=state.identidade||{};state.identidade[input.dataset.dwarfIdentity]=input.type==='number'?(input.value===''?'':Number(input.value)):input.value;if(input.dataset.dwarfIdentity==='sexo'){renderizarFichaSRD35();}});});
+      document.querySelectorAll('[data-dwarf-roll]').forEach(function(button){button.addEventListener('click',function(){state.identidade=state.identidade||{};if(button.dataset.dwarfRoll==='age'){var profile=dnd35RaceAgeProfile(state.raca,state.classe);if(profile)state.identidade.idade=profile.adult+dnd35RollDice(profile.count,profile.sides);}else if(button.dataset.dwarfRoll==='body'){var body=dnd35RaceBodyProfile(state.raca,state.identidade.sexo);if(body){var hd=dnd35RollDice(body[1],body[2]);state.identidade.altura_cm=body[0]+hd*2.5;var wd=body[4]?dnd35RollDice(body[4],body[5]):1;state.identidade.peso_kg=body[3]+(body[7]?hd:1)*wd*body[6];}}renderizarFichaSRD35();});});
+      var raceChoice=document.getElementById('dnd35-race-choice'),classChoice=document.getElementById('dnd35-class-choice');function changeCreationChoice(){if(!confirm('Alterar raça ou classe reiniciará as escolhas feitas nesta ficha. Deseja continuar?')){if(raceChoice)raceChoice.value=String(state.raca.id);if(classChoice)classChoice.value=String(state.classe.id);return;}RACE_ID=raceChoice?raceChoice.value:String(state.raca.id);CLASS_ID=classChoice?classChoice.value:String(state.classe.id);carregarNovaFichaSRD35().catch(function(err){alert('Não foi possível carregar a combinação: '+err.message);});}if(raceChoice)raceChoice.addEventListener('change',changeCreationChoice);if(classChoice)classChoice.addEventListener('change',changeCreationChoice);var save=document.getElementById('dnd35-save'); save.disabled=points>25||!dnd35StartReady(state); save.addEventListener('click',salvarFichaSRD35);
     }
   }
 
@@ -2313,11 +2606,15 @@ function dnd35WeaponProficient(state,weaponName){
       sb.from('srd_spell_progressions').select('class_key,slots_by_level,known_by_level'),
       sb.from('srd_domains').select('domain_id,name,granted_power_summary,mechanics,source_url,verification_status').order('name'),
       sb.from('srd_domain_spells').select('domain_id,spell_level,spell_id,source_id,verification_status').order('domain_id').order('spell_level'),
-      sb.from('srd_languages').select('id,nome,is_secret').order('nome')
+      sb.from('srd_languages').select('id,nome,is_secret,source_status').eq('source_status','official').order('nome'),
+      sb.from('srd_deities').select('deity_id,name,alignment,domains,favored_weapon,racial_races,verification_status').eq('verification_status','verified_book').order('name'),
+      sb.from('srd_monsters').select('id,nome,nome_original,tamanho,nd,tipo,source_status').in('id',['badger','camel','dire_rat','dog','dog_riding','eagle','hawk','horse_light','owl','pony','snake_small_viper','snake_medium_viper','wolf']).eq('source_status','verified_srd').order('nome')
     ]);
     var error=results.slice(0,2).filter(function(r){return r.error;})[0];
     if(error) throw new Error('Migração SRD pendente: não foi possível carregar perícias/talentos. Detalhe: '+error.error.message);
-    if(results[6].error) throw new Error('Catálogo de idiomas indisponível. Aplique a migração de idiomas D&D 3.5. Detalhe: '+results[6].error.message);
+    if(results[6].error) throw new Error('Catálogo de idiomas indisponível: '+results[6].error.message);
+    if(results[7].error) throw new Error('Catálogo de divindades indisponível: '+results[7].error.message);
+    if(results[8].error) throw new Error('Catálogo de companheiros animais indisponível: '+results[8].error.message);
     return {
       skills:dnd35UniqueById((results[0].data||[]).filter(function(skill){return skill.source_status!=='excluded';})),feats:dnd35UniqueById(results[1].data||[]),
       spells:results[2].error?[]:dnd35UniqueById(results[2].data||[]),
@@ -2327,68 +2624,69 @@ function dnd35WeaponProficient(state,weaponName){
       domains:results[4].error?[]:(results[4].data||[]),
       domainSpells:results[5].error?[]:(results[5].data||[]),
       languages:results[6].error?[]:(results[6].data||[]),
-      languageError:results[6].error?results[6].error.message:'',
+      deities:results[7].error?[]:(results[7].data||[]),
+      animalCompanions:results[8].error?[]:(results[8].data||[]),
       domainError:results[4].error?results[4].error.message:(results[5].error?results[5].error.message:'')
     };
   }
+  async function renderizarEscolhaInicialDND35(races,classes) {
+    var root=document.getElementById('root');root.classList.add('dnd35-mode');
+    root.innerHTML='<div class="dnd35-page"><header class="dnd35-header"><div><div class="dnd35-kicker">VÍNCULO · D&amp;D 3.5</div><h1>Criação de personagem</h1><p>Nesta etapa, você poderá escolher entre as sete raças e as onze classes básicas de D&amp;D 3.5.</p></div><a class="dnd35-link" href="lobby.html">Voltar ao Lobby</a></header><section class="dnd35-panel"><h2>1 · Escolha sua raça</h2><p>Escolha uma das sete raças básicas disponíveis no Livro do Jogador de D&amp;D 3.5.</p><label>Raça <select id="dnd35-first-race">'+races.map(function(r){return '<option value="'+esc(r.id)+'"'+(String(r.id)==='anao'?' selected':'')+'>'+esc(r.nome)+'</option>';}).join('')+'</select></label><h2>2 · Escolha sua classe</h2><p>As onze classes básicas estão disponíveis para todas as raças. Restrições próprias, como tendência, serão verificadas nas próximas etapas.</p><label>Classe <select id="dnd35-first-class">'+classes.map(function(c){return '<option value="'+esc(c.id)+'"'+(String(c.id)==='guerreiro'?' selected':'')+'>'+esc(c.nome)+'</option>';}).join('')+'</select></label><div class="dnd35-actions"><button type="button" id="dnd35-begin-creation" class="dnd35-save">Continuar com esta combinação</button></div></section></div>';
+    document.getElementById('dnd35-begin-creation').addEventListener('click',function(){RACE_ID=document.getElementById('dnd35-first-race').value;CLASS_ID=document.getElementById('dnd35-first-class').value;carregarNovaFichaSRD35();});
+  }
   async function carregarNovaFichaSRD35() {
-    var results=await Promise.all([sb.from('srd_races').select('*').eq('id',String(RACE_ID)).single(),sb.from('srd_classes').select('*').eq('id',String(CLASS_ID)).single(),carregarCatalogosSRD35(),sb.from('srd_starting_packages').select('*').eq('class_id',String(CLASS_ID)).maybeSingle()]);
+    var catalogsResult=await Promise.all([sb.from('srd_races').select('*').order('nome'),sb.from('srd_classes').select('*').order('nome')]);
+    if(catalogsResult[0].error)throw new Error('Catálogo de raças indisponível: '+catalogsResult[0].error.message);
+    if(catalogsResult[1].error)throw new Error('Catálogo de classes indisponível: '+catalogsResult[1].error.message);
+    var races=catalogsResult[0].data||[],classes=catalogsResult[1].data||[];
+    if(!RACE_ID||!CLASS_ID){await renderizarEscolhaInicialDND35(races,classes);return;}
+    var results=await Promise.all([sb.from('srd_races').select('*').eq('id',String(RACE_ID)).single(),sb.from('srd_classes').select('*').eq('id',String(CLASS_ID)).single(),carregarCatalogosSRD35(),sb.from('srd_starting_packages').select('*').eq('class_id',String(CLASS_ID)).maybeSingle(),sb.from('srd_class_level_features').select('class_id,class_level,name,summary,mechanics,verification_status').eq('class_id',String(CLASS_ID)).eq('class_level',1)]);
     if(results[0].error)throw new Error('Raça não encontrada: '+results[0].error.message);
     if(results[1].error)throw new Error('Classe não encontrada: '+results[1].error.message);
-    var catalogs=results[2];if(results[3].error)throw new Error('Kit inicial indisponível: '+results[3].error.message);var eq=await sb.from('srd_equipment').select('*').order('nome').range(0,1999);if(eq.error)throw new Error('Catálogo de equipamentos indisponível: '+eq.error.message);
-    fichaSRD35={criacao:true,character:{},baseAtributos:{FOR:10,DES:10,CON:10,INT:10,SAB:10,CAR:10},nomeDraft:'',activeStep:'identity',sheet:{nivel:1,xp:0,ouro:0,atributos:{},pericias:{},talentos:[],magias_preparadas:{version:1,conhecidas:[],preparadas:[],dominio_preparadas:[],usos:{}}},raca:results[0].data,classe:results[1].data,startingPackage:results[3].data,equipment:eq.data||[],equipamentoInicial:{metodo:'',resultados:null,itens:{},busca:''},skills:catalogs.skills,feats:catalogs.feats,languages:catalogs.languages,idiomasEscolhas:{bonus:[],comprados:[]},srdSpells:catalogs.spells,progressions:catalogs.progressions,srdDomains:catalogs.domains,srdDomainSpells:catalogs.domainSpells,domainError:catalogs.domainError,domainChoices:[],spellCatalogError:catalogs.spellError,spellProgressionError:catalogs.progressionError,featPicks:[],classFeatPicks:[],activeTab:'pericias'};
+    var catalogs=results[2];if(results[3].error)throw new Error('Kit inicial indisponível: '+results[3].error.message);if(results[4].error)throw new Error('Progressão de classe indisponível: '+results[4].error.message);if(!Array.isArray(results[4].data)||!results[4].data.length)throw new Error('A classe selecionada não possui características de nível 1 cadastradas.');var eq=await sb.from('srd_equipment').select('*').order('nome').range(0,1999);if(eq.error)throw new Error('Catálogo de equipamentos indisponível: '+eq.error.message);
+    fichaSRD35={criacao:true,character:{},races:races,classes:classes,identidade:{sexo:'',idade:'',altura_cm:'',peso_kg:'',tendencia:'',alfabetizado:false,wizard_specialization:'',wizard_prohibited_schools:[],familiar_id:'',cleric_source:'deity',cleric_deity_id:'',cleric_cause:'',druid_nature_bond:'companion',druid_animal_companion_id:'',ranger_favored_enemy:''},idiomasEscolhidos:{automaticos:dnd35AutomaticLanguages(results[0].data,results[1].data),bonus_inteligencia:[],comprados_falar_idioma:[]},baseAtributos:{FOR:10,DES:10,CON:10,INT:10,SAB:10,CAR:10},nomeDraft:'',activeStep:'identity',sheet:{nivel:1,xp:0,ouro:0,atributos:{},pericias:{},talentos:[],magias_preparadas:{version:1,conhecidas:[],preparadas:[],dominio_preparadas:[],usos:{}}},raca:results[0].data,classe:results[1].data,startingPackage:results[3].data,classFeatures:results[4].data||[],equipment:eq.data||[],equipamentoInicial:{metodo:'',resultados:null,itens:{},busca:''},skills:catalogs.skills,feats:catalogs.feats,languages:catalogs.languages,deities:catalogs.deities,animalCompanions:catalogs.animalCompanions,srdSpells:catalogs.spells,progressions:catalogs.progressions,srdDomains:catalogs.domains,srdDomainSpells:catalogs.domainSpells,domainError:catalogs.domainError,domainChoices:[],spellCatalogError:catalogs.spellError,spellProgressionError:catalogs.progressionError,featPicks:[],classFeatPicks:[],activeTab:'pericias'};
     renderizarFichaSRD35();
   }
   async function carregarFichaSRD35(characterId,sheet) {
-    if(!Object.prototype.hasOwnProperty.call(sheet,'pericias')||!Object.prototype.hasOwnProperty.call(sheet,'talentos')||!Object.prototype.hasOwnProperty.call(sheet,'idiomas_conhecidos')) throw new Error('Migração SRD pendente: faltam colunas de perícias, talentos ou idiomas_conhecidos. Aplique as migrações SRD antes de abrir esta ficha.');
+    if(!Object.prototype.hasOwnProperty.call(sheet,'pericias')||!Object.prototype.hasOwnProperty.call(sheet,'talentos')||!Object.prototype.hasOwnProperty.call(sheet,'idiomas_conhecidos')) throw new Error('Migração SRD pendente: faltam as colunas srd_character_sheets.pericias e/ou talentos. Aplique a migração SRD antes de abrir esta ficha.');
     var results=await Promise.all([sb.from('characters').select('*').eq('id',characterId).single(),sb.from('srd_races').select('*').eq('id',String(sheet.raca_id)).single(),sb.from('srd_classes').select('*').eq('id',String(sheet.classe_id)).single(),carregarCatalogosSRD35()]);
     if(results[0].error)throw new Error('Personagem: '+results[0].error.message);
     if(results[1].error)throw new Error('Raça SRD: '+results[1].error.message);
     if(results[2].error)throw new Error('Classe SRD: '+results[2].error.message);
     var nextLevel=Math.min(20,Math.max(1,Number(sheet.nivel)||1)+1),featureResult=await sb.from('srd_class_level_features').select('class_id,class_level,name,summary,mechanics,verification_status').eq('class_id',String(sheet.classe_id)).eq('class_level',nextLevel),currentFeatureResult=await sb.from('srd_class_level_features').select('class_id,class_level,name,summary,mechanics,verification_status').eq('class_id',String(sheet.classe_id)).lte('class_level',Math.max(1,Number(sheet.nivel)||1)).order('class_level');var domainChoicesResult=await sb.from('srd_character_domain_choices').select('domain_slot,domain_id').eq('character_id',String(characterId)).order('domain_slot',{ascending:true});
     if(domainChoicesResult.error)throw new Error('Domínios do clérigo: '+domainChoicesResult.error.message);
-    fichaSRD35={criacao:false,character:results[0].data,sheet:sheet,raca:results[1].data,classe:results[2].data,skills:results[3].skills,feats:results[3].feats,languages:results[3].languages,srdSpells:results[3].spells,progressions:results[3].progressions,srdDomains:results[3].domains,srdDomainSpells:results[3].domainSpells,domainError:results[3].domainError,domainChoices:domainChoicesResult.data||[],nextLevelFeatures:featureResult.error?[]:(featureResult.data||[]),classFeatures:currentFeatureResult.error?[]:(currentFeatureResult.data||[]),spellCatalogError:results[3].spellError,spellProgressionError:results[3].progressionError,featPicks:[],activeTab:'pericias',grimoireOpen:URL_PARAMS.get('grimoire')==='1'};
+    fichaSRD35={criacao:false,character:results[0].data,sheet:sheet,identidade:sheet.identidade||{},raca:results[1].data,classe:results[2].data,skills:results[3].skills,feats:results[3].feats,srdSpells:results[3].spells,progressions:results[3].progressions,srdDomains:results[3].domains,srdDomainSpells:results[3].domainSpells,domainError:results[3].domainError,domainChoices:domainChoicesResult.data||[],nextLevelFeatures:featureResult.error?[]:(featureResult.data||[]),classFeatures:currentFeatureResult.error?[]:(currentFeatureResult.data||[]),spellCatalogError:results[3].spellError,spellProgressionError:results[3].progressionError,featPicks:[],activeTab:'pericias',grimoireOpen:URL_PARAMS.get('grimoire')==='1'};
     renderizarFichaSRD35();
   }
   async function salvarFichaSRD35() {
     var state=fichaSRD35,input=document.getElementById('dnd35-nome'),button=document.getElementById('dnd35-save'),status=document.getElementById('dnd35-status');
-    var nome=String(input&&input.value||state.nomeDraft||'').trim(),attrs=dnd35AtributosIniciais(state.raca,state.baseAtributos),classMap=dnd35SkillMap(state),ranks=dnd35Objeto(state.sheet.pericias);
+    var identity=state.identidade||{};
+    var nome=String(input&&input.value||state.nomeDraft||'').trim(),attrs=dnd35AtributosIniciais(state.raca,state.baseAtributos,state.identidade),classMap=dnd35SkillMap(state),ranks=dnd35Objeto(state.sheet.pericias);
     var creatingMagicKey=dnd35SpellClassKey(state.classe.nome)||dnd35SpellClassKey(state.classe.class_key)||dnd35SpellClassKey(state.classe.id);
+    if(String(state.classe&&state.classe.id)==='clerigo'){
+      if(identity.cleric_source==='deity'&&!identity.cleric_deity_id){mostrarErro('Escolha a divindade do Clérigo.','class');return;}
+      if(identity.cleric_source==='cause'&&!String(identity.cleric_cause||'').trim()){mostrarErro('Descreva a causa ou ideal que concede poder ao Clérigo.','class');return;}
+    }
+    var spellCreationIssue=dnd35GrimoireCreationError(state,attrs);
+    if(spellCreationIssue){state.activeStep='magic';state.grimoireOpen=true;renderizarFichaSRD35();var spellIssueStatus=document.querySelector('[data-grimoire-status]');if(spellIssueStatus)spellIssueStatus.textContent=spellCreationIssue;return;}
     if(creatingMagicKey==='cleric'){var creatingDomains=(state.domainChoices||[]).map(function(x){return String(x.domain_id||'');}).filter(Boolean);if(creatingDomains.length!==2||creatingDomains[0]===creatingDomains[1]){state.activeStep='training';state.grimoireOpen=true;renderizarFichaSRD35();var domainStatus=document.querySelector('[data-grimoire-status]');if(domainStatus)domainStatus.textContent='Escolha dois domínios diferentes antes de criar a ficha.';return;}}
     function mostrarErro(message,tab){state.activeStep='training';if(tab)state.activeTab=tab;renderizarFichaSRD35();var msg=document.getElementById('dnd35-status');if(msg)msg.textContent=message;}
     if(!dnd35StartReady(state)){state.activeStep='equipment';renderizarFichaSRD35();var es=document.getElementById('dnd35-status');if(es)es.textContent='Escolha o kit recomendado ou conclua as compras com o ouro inicial.';return;}
+    var minDwarfAge=dnd35DwarfMinAge(state.classe,state.raca);
+    if(!identity.sexo||!Number.isInteger(Number(identity.idade))||Number(identity.idade)<minDwarfAge||!Number(identity.altura_cm)||!Number(identity.peso_kg)||!identity.tendencia){
+      state.activeStep='identity';renderizarFichaSRD35();var identityStatus=document.getElementById('dnd35-status');if(identityStatus)identityStatus.textContent='Complete sexo, idade (mínimo '+minDwarfAge+' anos), altura, peso e tendência antes de continuar.';return;
+    }
     if(!nome){state.activeStep='identity';renderizarFichaSRD35();var nameStatus=document.getElementById('dnd35-status');if(nameStatus)nameStatus.textContent='Informe um nome para o personagem.';var nameField=document.getElementById('dnd35-nome');if(nameField)nameField.focus();return;}
     var custo=dnd35PontosCompra(state.baseAtributos);if(custo>25){status.textContent='A distribuição ultrapassa o limite de 25 pontos.';return;}
     var budget=dnd35PericiaBudget(state,attrs),spent=dnd35PericiaCostTotal(state,ranks,classMap);
     if(spent>budget){mostrarErro('Pontos de perícia excedidos: '+spent+' / '+budget+'.','pericias');return;}
     var skillLevel=Math.max(1,Number(state.sheet.nivel)||1);
     for(var skillId of Object.keys(ranks)){
-      var skillRank=Number(ranks[skillId]||0), isLanguage=String(skillId)==='srd35_skill_speak_language',isClass=!!classMap[String(skillId)], maximum=isLanguage?budget:(isClass?skillLevel+3:(skillLevel+3)/2);
+      var skillRank=Number(ranks[skillId]||0), isClass=!!classMap[String(skillId)], maximum=isClass?skillLevel+3:(skillLevel+3)/2;
       if(!Number.isFinite(skillRank)||skillRank<0||skillRank>maximum){mostrarErro('Graduações inválidas ou acima do máximo para '+skillId+'.','pericias');return;}
-      if((isClass||isLanguage)&&!Number.isInteger(skillRank)){mostrarErro(isLanguage?'Falar Idioma usa pontos inteiros, um por idioma.':'Perícias de classe usam graduações inteiras.','pericias');return;}
-      if(!isClass&&!isLanguage&&Math.abs(skillRank*2-Math.round(skillRank*2))>0.001){mostrarErro('Perícias fora de classe avançam em passos de 0,5.','pericias');return;}
+      if(skillId==='srd35_skill_speak_language'&&!Number.isInteger(skillRank)){mostrarErro('Falar Idioma exige graduações inteiras; cada ponto compra um idioma.','pericias');return;}if(isClass&&!Number.isInteger(skillRank)){mostrarErro('Perícias de classe usam graduações inteiras.','pericias');return;}
+      if(!isClass&&Math.abs(skillRank*2-Math.round(skillRank*2))>0.001){mostrarErro('Perícias fora de classe avançam em passos de 0,5.','pericias');return;}
     }
-    var languageRules=dnd35LanguageRules(state,attrs),languagePicks=state.idiomasEscolhas||{bonus:[],comprados:[]};
-    var languageBonusChoices=Array.from({length:languageRules.bonusCount},function(_,i){return (languagePicks.bonus||[])[i]||'';});
-    var languagePurchaseCount=Math.max(0,Number(ranks['srd35_skill_speak_language']||0));
-    var languagePurchasedChoices=Array.from({length:languagePurchaseCount},function(_,i){return (languagePicks.comprados||[])[i]||'';});
-    if(languageBonusChoices.length!==languageRules.bonusCount||languageBonusChoices.some(function(x){return !String(x||'').trim();})){
-      mostrarErro('Escolha todos os idiomas bônus concedidos pela Inteligência.','pericias');return;
-    }
-    if(languagePurchasedChoices.length!==languagePurchaseCount||languagePurchasedChoices.some(function(x){return !String(x||'').trim();})){
-      mostrarErro('Escolha um idioma para cada ponto investido em Falar Idioma.','pericias');return;
-    }
-    if(languageBonusChoices.some(function(x){return !languageRules.bonusOptions.some(function(opt){return dnd35LanguageNormalize(opt)===dnd35LanguageNormalize(x);});})){
-      mostrarErro('Um idioma bônus não é permitido pela lista da raça.','pericias');return;
-    }
-    if(languagePurchasedChoices.some(function(x){return !languageRules.allSelectable.some(function(opt){return dnd35LanguageNormalize(opt)===dnd35LanguageNormalize(x);});})){
-      mostrarErro('Um idioma comprado não está disponível no catálogo.','pericias');return;
-    }
-    var allLanguageChoices=languageRules.automatic.concat(languageBonusChoices,languagePurchasedChoices).map(dnd35LanguageNormalize);
-    if(new Set(allLanguageChoices).size!==allLanguageChoices.length){
-      mostrarErro('Não é permitido selecionar o mesmo idioma mais de uma vez.','pericias');return;
-    }
-    var languagePayload={automaticos:languageRules.automatic,bonus_inteligencia:languageBonusChoices,comprados_falar_idioma:languagePurchasedChoices};
     var needed=dnd35IsHuman(state.raca)?2:1,picks=state.featPicks||[];
     if(picks.length!==needed||picks.some(function(p){return !p||!p.id;})){mostrarErro('Escolha exatamente '+needed+' talento(s).','talentos');return;}
     var ids=picks.map(function(p){return String(p.id);});
@@ -2397,7 +2695,7 @@ function dnd35WeaponProficient(state,weaponName){
     for(var i=0;i<picks.length;i++){
       var feat=selected[i];if(!feat){mostrarErro('Um dos talentos escolhidos não está no catálogo.','talentos');return;}
       var paramType=dnd35FeatParameterType(feat),requires=!!(feat.exige_parametro||paramType||dnd35FeatIsWeaponFocus(feat)),paramOptional=paramType==='spell_list'&&dnd35Modificador(Number(attrs.INT)||10)<=0;
-      if(requires&&!paramOptional&&!String(picks[i].parametro||'').trim()){mostrarErro('Informe o parâmetro do talento '+feat.nome+'.','talentos');return;}
+      if(requires&&!paramOptional&&!String(picks[i].parametro||'').trim()){mostrarErro('Informe o parâmetro do talento '+dnd35FeatNamePt(feat)+'.','talentos');return;}
     }
     var talentos=picks.map(function(p){return {id:String(p.id),parametro:String(p.parametro||'').trim()||null};});
     var classBonusSpec=dnd35InitialClassBonusSpec(state),classBonusPicks=state.classFeatPicks||[],classBonusTalentos=[];
@@ -2416,19 +2714,51 @@ function dnd35WeaponProficient(state,weaponName){
       }
       classBonusTalentos=[{id:String(classPick.id),parametro:classParam||null}];
     }
+    if(['mago','feiticeiro'].indexOf(String(state.classe&&state.classe.id||''))>=0){
+      var familiarId=String((state.identidade||{}).familiar_id||'');
+      var allowedFamiliars=['snake_small_viper','cat','lizard','rat','badger','owl','raven','hawk','bat','toad'];
+      if(familiarId&&allowedFamiliars.indexOf(familiarId)<0){mostrarErro('Escolha um familiar básico válido.','class');return;}
+    }
+    if(String(state.classe&&state.classe.id)==='ranger'&&!String((state.identidade||{}).ranger_favored_enemy||'')){mostrarErro('Escolha o inimigo predileto do Patrulheiro.','class');return;}
+    if(String(state.classe&&state.classe.id)==='druida'){
+      var druidIdentity=state.identidade||{},bond=String(druidIdentity.druid_nature_bond||'companion'),druidDomains=(state.domainChoices||[]).map(function(x){return String(x.domain_id||'');}).filter(Boolean);
+      if(bond==='companion'){
+        if(!(state.animalCompanions||[]).some(function(a){return String(a.id)===String(druidIdentity.druid_animal_companion_id||'');})){mostrarErro('Escolha um companheiro animal disponível para o Druida.','class');return;}
+      }else if(bond==='domain'){
+        if(druidDomains.length!==1||['air','animal','earth','fire','plant','water'].indexOf(druidDomains[0])<0){mostrarErro('Escolha um domínio druídico válido.','class');return;}
+      }else{mostrarErro('Escolha companheiro animal ou domínio para o vínculo com a natureza.','class');return;}
+    }
+    if(String(state.classe&&state.classe.id)==='clerigo'){
+      var clericIdentity=state.identidade||{},clericDomains=(state.domainChoices||[]).map(function(x){return String(x.domain_id||'');}).filter(Boolean),selectedDeity=(state.deities||[]).find(function(d){return String(d.deity_id)===String(clericIdentity.cleric_deity_id||'');});
+      if(clericIdentity.cleric_source==='deity'&&!selectedDeity){mostrarErro('Escolha uma divindade para o Clérigo.','class');return;}
+      if(clericIdentity.cleric_source==='cause'&&!String(clericIdentity.cleric_cause||'').trim()){mostrarErro('Descreva a causa ou ideal do Clérigo.','class');return;}
+      if(clericDomains.length!==2||clericDomains[0]===clericDomains[1]){mostrarErro('Escolha dois domínios diferentes para o Clérigo.','class');return;}
+      if(selectedDeity&&clericDomains.some(function(id){return (selectedDeity.domains||[]).indexOf(id)<0;})){mostrarErro('Os dois domínios devem pertencer à divindade escolhida.','class');return;}
+    }
+    var automaticLanguages=dnd35RaceLanguages(state.raca).automatic.slice();
+    if(String(state.classe&&state.classe.id)==='druida')automaticLanguages.push('Druídico');
+    var languageState=state.idiomasEscolhidos||{automaticos:automaticLanguages.slice(),bonus_inteligencia:[],comprados_falar_idioma:[]};
+    languageState.automaticos=automaticLanguages.slice();
+    var bonusLanguages=(languageState.bonus_inteligencia||[]).filter(Boolean),purchasedLanguages=(languageState.comprados_falar_idioma||[]).filter(Boolean);
+    var expectedBonusLanguages=Math.max(0,Math.floor(((Number(attrs.INT)||10)-10)/2)),speakLanguageRanks=Math.max(0,Math.floor(Number(ranks.srd35_skill_speak_language)||0));
+    if(bonusLanguages.length!==expectedBonusLanguages){mostrarErro('Escolha '+expectedBonusLanguages+' idioma(s) adicional(is) concedido(s) pela Inteligência.','idiomas');return;}
+    if(purchasedLanguages.length!==speakLanguageRanks){mostrarErro('Escolha um idioma para cada graduação comprada em Falar Idioma.','idiomas');return;}
+    var allLanguageNames=automaticLanguages.concat(bonusLanguages,purchasedLanguages);
+    if(new Set(allLanguageNames.map(function(x){return String(x).toLowerCase();})).size!==allLanguageNames.length){mostrarErro('Não repita idiomas automáticos, bônus ou adquiridos.','idiomas');return;}
+    state.idiomasEscolhidos={automaticos:automaticLanguages.slice(),bonus_inteligencia:bonusLanguages,comprados_falar_idioma:purchasedLanguages};
     if(input)state.nomeDraft=nome;
     button.disabled=true;status.textContent='Gravando personagem…';
     try {
       var id=state.createdCharacterId;
-      if(!id){var result=await sb.rpc('criar_personagem_srd_completo',{p_nome:nome,p_raca_id:String(RACE_ID),p_classe_id:String(CLASS_ID),p_atributos:state.baseAtributos,p_pericias:ranks,p_talentos:talentos});
+      if(!id){var result=await sb.rpc('criar_personagem_srd_completo',{p_nome:nome,p_raca_id:String(state.raca.id),p_classe_id:String(state.classe.id),p_atributos:state.baseAtributos,p_pericias:ranks,p_talentos:talentos,p_identidade:{sexo:String(identity.sexo),idade:Number(identity.idade),altura_cm:Number(identity.altura_cm),peso_kg:Number(identity.peso_kg),tendencia:String(identity.tendencia),alfabetizado:!!identity.alfabetizado,wizard_specialization:String(identity.wizard_specialization||''),wizard_prohibited_schools:Array.isArray(identity.wizard_prohibited_schools)?identity.wizard_prohibited_schools:[],familiar_id:String(identity.familiar_id||''),cleric_source:String(identity.cleric_source||''),cleric_deity_id:String(identity.cleric_deity_id||''),cleric_cause:String(identity.cleric_cause||''),cleric_domain_ids:(state.domainChoices||[]).map(function(x){return String(x.domain_id);}),druid_nature_bond:String(identity.druid_nature_bond||''),druid_animal_companion_id:String(identity.druid_animal_companion_id||''),druid_domain_ids:(state.domainChoices||[]).map(function(x){return String(x.domain_id);}),ranger_favored_enemy:String(identity.ranger_favored_enemy||'')}});
         if(result.error){var message=result.error.message||'erro desconhecido';if(/criar_personagem_srd_completo|function|schema cache|column|pericias|talentos|relation|does not exist/i.test(message))throw new Error('Migração SRD pendente ou RPC indisponível. Aplique a migração com srd_character_sheets.pericias/talentos, catálogo srd_feats e criar_personagem_srd_completo. Detalhe: '+message);throw new Error(message);}
         id=result.data;if(Array.isArray(id))id=id[0];if(id&&typeof id==='object')id=id.character_id||id.id;
         if(!id)throw new Error('A ficha foi criada, mas o banco não retornou o identificador do personagem.');state.createdCharacterId=String(id);
       }
-      var languageResult=await sb.rpc('salvar_idiomas_personagem_srd',{p_character_id:String(id),p_idiomas:languagePayload});if(languageResult.error)throw new Error('Personagem criado; os idiomas não foram salvos. '+languageResult.error.message);
+      var languageResult=await sb.rpc('salvar_idiomas_personagem_srd',{p_character_id:String(id),p_idiomas:state.idiomasEscolhidos||{automaticos:dnd35AutomaticLanguages(state.raca,state.classe),bonus_inteligencia:[],comprados_falar_idioma:[]}});if(languageResult.error)throw new Error('Personagem criado; não foi possível registrar os idiomas. Revise a aba Idiomas. '+languageResult.error.message);
       var classBonusResult=await sb.rpc('salvar_talentos_bonus_classe_inicial_srd',{p_character_id:String(id),p_talentos:classBonusTalentos});if(classBonusResult.error)throw new Error('Não foi possível registrar os talentos bônus da classe. '+classBonusResult.error.message);
        var magicKey=dnd35SpellClassKey(state.classe.nome)||dnd35SpellClassKey(state.classe.class_key)||dnd35SpellClassKey(state.classe.id),spellState=state.grimoireState||dnd35SpellState(state);
-      if(magicKey==='cleric'){var savedDomains=await sb.rpc('salvar_dominios_personagem_srd',{p_character_id:String(id),p_domain_ids:(state.domainChoices||[]).map(function(x){return String(x.domain_id);})});if(savedDomains.error)throw new Error('Personagem criado, mas os domínios não foram salvos. '+savedDomains.error.message);}
+      if(magicKey==='cleric'||(magicKey==='druid'&&String(identity.druid_nature_bond||'companion')==='domain')){var savedDomains=await sb.rpc('salvar_dominios_personagem_srd',{p_character_id:String(id),p_domain_ids:(state.domainChoices||[]).map(function(x){return String(x.domain_id);})});if(savedDomains.error)throw new Error('Personagem criado, mas os domínios não foram salvos. '+savedDomains.error.message);}
       if(magicKey&&(spellState.conhecidas.length||spellState.preparadas.length||(spellState.dominioPreparadas||[]).length)){
         var spellResult=await sb.rpc('salvar_grimorio_srd',{p_character_id:String(id),p_estado:dnd35GrimoireSaveState({sheet:{magias_preparadas:spellState}})});
         if(spellResult.error)throw new Error('Personagem criado; não foi possível salvar as magias ainda. Revise as escolhas no Grimório e tente novamente. Detalhe: '+spellResult.error.message);
@@ -2440,7 +2770,7 @@ function dnd35WeaponProficient(state,weaponName){
 
 
   var dnd35TutorialTarget=null;
-  var dnd35Tutorials={identity:{title:'Identidade',text:'Dê um nome ao personagem. Raça e classe já foram escolhidas; este painel mostra seus traços principais.'},attributes:{title:'Atributos',text:'O orçamento é de 25 pontos de compra. O número exibido já inclui os ajustes raciais. Constituição altera PV, Destreza afeta CA e iniciativa, e o atributo-chave da classe define suas magias.'},skill:{title:'Perícias',text:'Distribua os pontos da classe e da Inteligência. Perícias listadas como de classe custam 1 ponto por graduação; as demais custam 2.'},feat:{title:'Talentos',text:'Escolha o número indicado e respeite os pré-requisitos. Se aparecer um campo de parâmetro, preencha-o antes de criar a ficha.'},spell:{title:'Magias: o que escolher?',text:'Círculo é o nível da magia; espaço é quantas vezes você pode conjurar naquele dia. Mago registra no grimório e prepara; Clérigo/Druida preparam; Feiticeiro/Bardo escolhem magias conhecidas e não as preparam. No Mago, escolha primeiro “No grimório” e depois “Preparar”.'} };
+  var dnd35Tutorials={identity:{title:'Identidade',text:'Defina nome, sexo, idade, altura, peso e tendência. Você pode escolher os valores ou gerar idade, altura e peso pelos dados das tabelas do Livro do Jogador. A idade também pode alterar atributos físicos e mentais.'},attributes:{title:'Atributos',text:'O orçamento é de 25 pontos de compra. O número exibido já inclui os ajustes raciais. Constituição altera PV, Destreza afeta CA e iniciativa, e o atributo-chave da classe define suas magias.'},skill:{title:'Perícias',text:'Distribua os pontos da classe e da Inteligência. Perícias listadas como de classe custam 1 ponto por graduação; as demais custam 2.'},feat:{title:'Talentos',text:'Escolha o número indicado e respeite os pré-requisitos. Se aparecer um campo de parâmetro, preencha-o antes de criar a ficha.'},spell:{title:'Magias: o que escolher?',text:'Círculo é o nível da magia; espaço é quantas vezes você pode conjurar naquele dia. Mago registra no grimório e prepara; Clérigo/Druida preparam; Feiticeiro/Bardo escolhem magias conhecidas e não as preparam. No Mago, escolha primeiro “No grimório” e depois “Preparar”.'} };
   function ligarTutorialFicha35(){var modal=document.getElementById('dnd35-tutorial');if(!modal||modal.dataset.bound==='1')return;modal.dataset.bound='1';document.addEventListener('click',function(e){var help=e.target.closest&&e.target.closest('[data-dnd35-help]');if(help){e.preventDefault();e.stopPropagation();var entry=dnd35Tutorials[help.dataset.dnd35Help];if(!entry)return;dnd35TutorialTarget=help;document.getElementById('dnd35-tutorial-title').textContent=entry.title;document.getElementById('dnd35-tutorial-copy').textContent=entry.text;modal.classList.add('open');var close=modal.querySelector('[data-tutorial-close="continue"]');if(close)close.focus();return;}var close=e.target.closest&&e.target.closest('[data-tutorial-close]');if(close){modal.classList.remove('open');if(dnd35TutorialTarget&&dnd35TutorialTarget.isConnected)dnd35TutorialTarget.focus({preventScroll:true});dnd35TutorialTarget=null;return;}if(e.target===modal)modal.classList.remove('open');});document.addEventListener('keydown',function(e){if(e.key==='Escape'&&modal.classList.contains('open')){modal.classList.remove('open');dnd35TutorialTarget=null;}});}
 
   async function carregar(){
