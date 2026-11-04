@@ -4101,18 +4101,22 @@ async function abrirModalEquipamentos(){
     if(!item)return true;
     var details=item.detalhes||{},slot=slotEquipamento35(item),raw=personagem&&personagem.cl&&personagem.cl.dados_tecnicos&&personagem.cl.dados_tecnicos.proficiencias||{};
     var normalize=function(value){return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();};
+    var feats=personagem&&personagem.sh&&personagem.sh.talentos||[];
+    if(typeof feats==='string'){try{feats=JSON.parse(feats);}catch(e){feats=[];}}
+    var hasFeat=function(id){return Array.isArray(feats)&&feats.some(function(feat){return String(feat&&feat.id||feat)===id;});};
     if(slot==='escudo'){
       var shields=Array.isArray(raw.escudos)?raw.escudos:[raw.escudos].filter(Boolean);
       var name=normalize(item.nome);
-      if(name.indexOf('torre')>=0||name.indexOf('tower')>=0)return shields.some(function(x){var n=normalize(x);return n==='todos os escudos'||n==='todos';});
-      return shields.some(function(x){var n=normalize(x);return n.indexOf('todos')===0||n.indexOf('escudos')>=0||n.indexOf('escudo')>=0;});
+      if(name.indexOf('torre')>=0||name.indexOf('tower')>=0)return hasFeat('srd35_feat_tower_shield_proficiency')||shields.some(function(x){var n=normalize(x);return n==='todos os escudos'||n==='todos';});
+      return hasFeat('srd35_feat_shield_proficiency')||shields.some(function(x){var n=normalize(x);return n.indexOf('todos')===0||n.indexOf('escudos')>=0||n.indexOf('escudo')>=0;});
     }
     if(slot!=='armadura')return true;
-    var maxDex=Number(details.max_dex_bonus==null?(details.max_des==null?(item.bonus_max_des==null?item.max_des: item.bonus_max_des):details.max_des):details.max_dex_bonus);
+    var maxDex=Number(details.max_dex_bonus==null?(details.max_des==null?(item.bonus_max_des==null?item.max_des:item.bonus_max_des):details.max_des):details.max_dex_bonus);
     if(!Number.isFinite(maxDex))maxDex=Number(item.bonus_max_des==null?item.max_des:item.bonus_max_des);
     var category=maxDex<=1?'pesada':maxDex<=3?'media':'leve';
     var armor=Array.isArray(raw.armaduras)?raw.armaduras:[raw.armaduras].filter(Boolean);
-    return armor.some(function(x){var n=normalize(x);return n==='todas'||n.indexOf('todas')===0||n.indexOf(category)>=0||category==='media'&&n.indexOf('medias')>=0||category==='leve'&&n.indexOf('leves')>=0;});
+    var featId=category==='pesada'?'srd35_feat_armor_proficiency_heavy':category==='media'?'srd35_feat_armor_proficiency_medium':'srd35_feat_armor_proficiency_light';
+    return hasFeat(featId)||armor.some(function(x){var n=normalize(x);return n==='todas'||n.indexOf('todas')===0||n.indexOf(category)>=0||category==='media'&&n.indexOf('medias')>=0||category==='leve'&&n.indexOf('leves')>=0;});
   }
   function penalidadeArmaduraNaoProficiente35(personagem){
     return (personagem&&personagem.equipamento||[]).some(function(item){return item.equipado&&['armadura','escudo'].indexOf(slotEquipamento35(item))>=0&&!personagemProficienteArmadura35(personagem,item);})?-4:0;
