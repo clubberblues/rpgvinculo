@@ -2232,7 +2232,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       var result=isMass
         ?(isHeal
           ?await sb.rpc('conjurar_magia_com_acao_srd_multialvo_v3',{p_character_id:String(p.ch.id),p_spell_id:String(spell.id),p_slot_level:Number(slot),p_target_token_keys:targetKeys,p_roll_results:rollResults})
-          :(isAttack&&isAutoEffectSpell?await sb.rpc('conjurar_magia_dano_multialvo_srd',{p_character_id:String(p.ch.id),p_spell_id:String(spell.id),p_slot_level:Number(slot),p_target_token_keys:targetKeys,p_roll_results:rollResults}):await sb.rpc('conjurar_magia_efeitos_multialvo',{p_character_id:String(p.ch.id),p_spell_id:String(spell.id),p_slot_level:Number(slot),p_target_token_keys:targetKeys})))
+          :(isAttack&&isAutoEffectSpell&&damageRule&&damageRule.resolver==='damage'?await sb.rpc('conjurar_magia_dano_multialvo_srd',{p_character_id:String(p.ch.id),p_spell_id:String(spell.id),p_slot_level:Number(slot),p_target_token_keys:targetKeys,p_roll_results:rollResults}):await sb.rpc('conjurar_magia_efeitos_multialvo',{p_character_id:String(p.ch.id),p_spell_id:String(spell.id),p_slot_level:Number(slot),p_target_token_keys:targetKeys})))
         :isMagicMissile?await sb.rpc('conjurar_missil_magico_srd_manual',{p_character_id:String(p.ch.id),p_spell_id:String(spell.id),p_slot_level:Number(slot),p_target_token_key:targetKey,p_damage_rolls:rollResults})
         :await sb.rpc('conjurar_magia_com_acao_srd_manual',{p_character_id:String(p.ch.id),p_spell_id:String(spell.id),p_slot_level:Number(slot),p_target_token_key:targetKey,p_roll_results:rollResults});
       if(result.error)throw new Error(result.error.message);var data=result.data||{};
@@ -2275,7 +2275,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       }else{
         cast({values:null});
       }
-    }else if(isAttack&&isAutoEffectSpell){
+    }else if(isAttack&&isAutoEffectSpell&&damageRule&&damageRule.resolver==='damage'){
       var damageSpec=spellDamageRollSpec35(spell,p.sh.nivel);
       if(!damageSpec){btn.disabled=false;alert('A expressão de dano desta magia ainda não está configurada para rolagem automática.');return;}
       abrirDado('Dano · '+String(spell.nome||spell.name||'Magia')+' · '+damageSpec.expression,function(total,values){
