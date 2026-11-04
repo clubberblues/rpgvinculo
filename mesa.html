@@ -4615,6 +4615,9 @@ async function abrirModalEquipamentos(){
       : (Date.now().toString(36) + '-' + Math.random().toString(36).slice(2));
     rollSessionToken = tokenSessao;
     var dadoOverlay = document.getElementById('dado-iframe-overlay');
+    // O markup legado fica dentro de .col-esq, cujas regras !important prendem o Dice ao sidebar.
+    // Reparenta para body antes de exibir: assim ele vira um modal real, fora do grid da mesa.
+    if (dadoOverlay.parentElement !== document.body) document.body.appendChild(dadoOverlay);
     dadoOverlay.classList.toggle('dado-rolagem-obrigatoria', !!aguardarClique);
     document.getElementById('dado-titulo').textContent = (aguardarClique ? 'ROLAGEM SOLICITADA · ' : '') + titulo;
     dadoOverlay.style.display = 'flex';
