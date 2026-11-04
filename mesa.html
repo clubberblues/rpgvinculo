@@ -3966,7 +3966,9 @@ async function abrirModalEquipamentos(){
               else texto='🌀 A resistência falhou; o efeito da magia foi aplicado a '+ficha.ch.nome+'.';
             }else{
               if(spellOutcome.status==='resisted')texto='🛡️ A resistência à magia bloqueou o efeito ('+d20+' + '+requestData.caster_level+' = '+spellOutcome.total+' contra RM '+spellOutcome.spell_resistance+').';
+              else if(spellOutcome.spell_negated_by_shield)texto='🛡️ O Escudo mágico do alvo negou Míssil Mágico; nenhum dano foi causado.';
               else texto='✨ A magia penetrou a resistência e seu efeito foi aplicado.';
+              if(spellOutcome.spell_negated_by_shield)extras.spell_negated_by_shield=true;
             }
           }else{
             var bonus=bonusDoTeste(tipoTeste,ficha.sh?ficha.sh.atributos:null);
