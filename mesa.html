@@ -3977,10 +3977,14 @@ async function abrirModalEquipamentos(){
             var total=Number(resultado)+bonus+featBonus;
             texto=tipoTeste+' — D20: '+resultado+' + bônus: '+bonus+' = '+total;
             if(isInitiative){
-              var salvo=await salvarIniciativa(personagemId,ficha.ch.nome,total);
-              if(!salvo.ok){btn.disabled=false;throw new Error('Sua rolagem foi '+total+', mas a ordem não pôde ser salva. '+salvo.error);}
-              texto='⚡ Iniciativa de '+esc(ficha.ch.nome)+': '+total+' (D20 '+resultado+' + DES '+bonus+(featBonus?' + Iniciativa Aprimorada +4':'')+')';
-              extras.iniciativa=true;extras.bonus=bonus;extras.bonus_talento=featBonus;extras.total=total;
+              var salvo=await salvarIniciativa(personagemId,ficha.ch.nome,Number(resultado));
+              if(!salvo.ok){btn.disabled=false;throw new Error('Sua rolagem foi registrada no dado, mas a iniciativa não pôde ser salva. '+salvo.error);}
+              var entry=(salvo.data&&Array.isArray(salvo.data.turn_order)?salvo.data.turn_order:[]).find(function(item){return String(item.id)===String(personagemId)&&!item.is_monster;});
+              if(!entry)throw new Error('O servidor não retornou o resultado calculado da iniciativa.');
+              total=Number(entry.valor);bonus=Number(entry.dex_mod)||0;featBonus=Number(entry.bonus_iniciativa)||0;
+              var effectBonus=Number(entry.effect_bonus)||0;
+              texto='⚡ Iniciativa de '+esc(ficha.ch.nome)+': '+total+' (D20 '+resultado+' + DES '+bonus+(featBonus?' + Iniciativa Aprimorada +4':'')+(effectBonus?' + efeitos '+effectBonus:'')+')';
+              extras.iniciativa=true;extras.bonus=bonus;extras.bonus_talento=featBonus;extras.bonus_efeitos=effectBonus;extras.total=total;extras.d20=Number(resultado);
             }else{extras.d20=Number(resultado);extras.bonus=bonus;extras.total=total;}
           }
           pedidosTesteRespondidos[responseKey]=true;
@@ -4136,7 +4140,7 @@ async function abrirModalEquipamentos(){
   async function salvarIniciativa(charId,nome,valor){
     try{
       var iniciativaEstavaAtiva=!!(combatDataState&&combatDataState.active);
-      var r=await sb.rpc('registrar_iniciativa',{p_campaign_id:Number(MESA_ID),p_personagem_id:String(charId),p_nome:String(nome||'Aventureiro'),p_valor:Number(valor)});
+      var r=await sb.rpc('registrar_iniciativa_d20',{p_campaign_id:Number(MESA_ID),p_personagem_id:String(charId),p_d20:Number(valor)});
       if(r.error) return {ok:false,error:r.error.message};
       combatDataState=r.data||combatDataState;
       renderizarIniciativa(combatDataState);
