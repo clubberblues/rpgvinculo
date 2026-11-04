@@ -103,6 +103,8 @@ button,input,textarea{font-family:inherit}
 .btn-fechar-livro:hover{color:#b83232}
 #barra-confirmar-teste{position:fixed;bottom:120px;left:50%;transform:translateX(-50%);background:#1b2419;border:2px solid #c9a050;padding:15px 20px;border-radius:8px;z-index:9500;display:none;box-shadow:0 10px 30px rgba(0,0,0,.9);text-align:center;width:min(94vw,520px)}
 #txt-teste-selecionado{font-family:'Cinzel',serif;color:#c9a050;font-size:15px;margin-bottom:10px}
+#teste-dc-wrap{display:none;align-items:center;justify-content:center;gap:8px;margin:0 0 10px;color:#c9a050;font-family:'Cinzel',serif;font-size:11px}
+#input-teste-dc{width:76px;padding:6px 8px;background:#10170f;color:#f5ecd6;border:1px solid #8a6a3a;border-radius:4px;font-family:'Cinzel',serif}
 .teste-confirmar,.teste-cancelar{background:#c9a050;color:#111;border:0;padding:9px 17px;font-family:'Cinzel',serif;font-weight:bold;border-radius:4px;cursor:pointer;font-size:12px}
 .teste-cancelar{background:transparent;color:#c9a050;border:1px solid #c5b995;margin-left:8px}
 .teste-confirmar:disabled{opacity:.5;cursor:wait}
@@ -1003,9 +1005,13 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         <button class="btn-teste" type="button" data-teste="Teste de Sabedoria (SAB)">Sabedoria (SAB)</button>
         <button class="btn-teste" type="button" data-teste="Teste de Carisma (CAR)">Carisma (CAR)</button>
 
-        <div class="testes-divisor"><span>DEFESAS</span></div>
-        <button class="btn-teste" type="button" data-teste="Resistência Física">Resistência Física</button>
-        <button class="btn-teste" type="button" data-teste="Resistência Mental">Resistência Mental</button>
+        <div class="testes-divisor"><span>RESISTÊNCIAS · D&D 3.5</span></div>
+        <button class="btn-teste" type="button" data-teste="Fortitude (CON)">Fortitude (CON)</button>
+        <button class="btn-teste" type="button" data-teste="Reflexos (DES)">Reflexos (DES)</button>
+        <button class="btn-teste" type="button" data-teste="Vontade (SAB)">Vontade (SAB)</button>
+        <button class="btn-teste" type="button" data-teste="Reflexos contra Armadilhas (DES)">Reflexos contra Armadilhas (DES)</button>
+        <button class="btn-teste" type="button" data-teste="Vontade contra Encantamento">Vontade contra Encantamento</button>
+        <button class="btn-teste" type="button" data-teste="Vontade contra Medo">Vontade contra Medo</button>
 
         <div class="testes-divisor"><span>PERÍCIAS</span></div>
         <button class="btn-teste" type="button" data-teste="Acrobacia">Acrobacia (DES)</button>
@@ -1033,6 +1039,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
 
 <div id="barra-confirmar-teste" role="group" aria-label="Confirmar alvos do teste">
   <p id="txt-teste-selecionado">Teste selecionado</p>
+  <div id="teste-dc-wrap"><label for="input-teste-dc">CD (opcional)</label><input id="input-teste-dc" type="number" min="1" max="100" placeholder="CD"></div>
   <button class="teste-confirmar" id="btn-confirmar-teste" type="button">CONFIRMAR ALVOS</button>
   <button class="teste-cancelar" id="btn-cancelar-teste" type="button">Cancelar</button>
 </div>
@@ -1605,7 +1612,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       else{
         var gmTurn=combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
         var gmOwnTurn=!!(gmTurn&&gmTurn.is_monster&&String(gmTurn.id)===String(item.id));
-        if(item.tipo==='npc'&&item.monsterStats&&item.monsterStats.attributes)adicionarBotaoContextual(menu,'npc-sheet','📜 Ver ficha completa');if(gmOwnTurn){adicionarBotaoContextual(menu,'gm-token-attack','⚔️ Atacar com este token');if(tokenTemMagiaPreparada35(item))adicionarBotaoContextual(menu,'gm-token-magic','✨ Conjurar magia disponível');adicionarBotaoContextual(menu,'gm-token-move','↔️ Mover token');adicionarBotaoContextual(menu,'gm-token-action','📜 Registrar outra ação');adicionarBotaoContextual(menu,'gm-token-end','⏭️ Encerrar turno do token');}
+        if(item.tipo==='npc'&&item.monsterStats&&item.monsterStats.attributes)adicionarBotaoContextual(menu,'npc-sheet','📜 Ver ficha completa');if(gmOwnTurn){adicionarBotaoContextual(menu,'gm-token-attack','⚔️ Atacar com este token');adicionarBotaoContextual(menu,'gm-token-trap-attack','🪤 Atacar como armadilha');if(tokenTemMagiaPreparada35(item))adicionarBotaoContextual(menu,'gm-token-magic','✨ Conjurar magia disponível');adicionarBotaoContextual(menu,'gm-token-move','↔️ Mover token');adicionarBotaoContextual(menu,'gm-token-action','📜 Registrar outra ação');adicionarBotaoContextual(menu,'gm-token-end','⏭️ Encerrar turno do token');}
         adicionarBotaoContextual(menu,'inventario','🎒 Inventário do token');
         adicionarBotaoContextual(menu,'pv-token','❤️ Ajustar PV da criatura');if(item.tipo==='monstro')adicionarBotaoContextual(menu,'monster-info','📜 Ver ficha no chat');
       }
@@ -1634,6 +1641,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(acao==='npc-sheet'){if(ehGM)publicarFichaNPC35(item).catch(function(err){alert('Não foi possível publicar a ficha do NPC: '+err.message);});return;}
     if(acao==='criatura-atacar'){iniciarAtaqueMestre(item);return;}
     if(acao==='gm-token-attack'){iniciarAtaqueMestre(item);return;}
+    if(acao==='gm-token-trap-attack'){iniciarAtaqueMestre(item,'trap');return;}
     if(acao==='gm-token-magic'){abrirMagiasTokenMestre(item);return;}
     if(acao==='gm-token-action'){registrarOutraAcaoMestre(item);return;}
     if(acao==='gm-token-move'){if(!ehGM||item.tipo!=='player'||!ehMeuTokenNoTurno(item)){alert('O Mestre só pode mover o token do jogador no turno ativo dessa ficha.');return;}document.getElementById('iniciativa-status').textContent='Mova '+item.nome+' arrastando seu token no tabuleiro. O deslocamento e a ação serão validados ao soltar.';return;}
@@ -1758,16 +1766,25 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var message='📜 '+item.nome+' · '+String(s.race_name||'Raça não identificada')+' '+String(s.class_name||'classe não identificada')+' nível '+String(s.level||'—')+'. PV '+String(item.hp==null?'—':item.hp)+'/'+String(item.maxHp||'—')+' · CA '+caToken35(item)+' · BBA +'+String(s.bab==null?'—':s.bab)+'.\nAtributos: '+attrText+'.\nResistências: Fort '+String(saves.fortitude==null?'—':saves.fortitude)+' · Ref '+String(saves.reflexos==null?'—':saves.reflexos)+' · Von '+String(saves.vontade==null?'—':saves.vontade)+'.\nPerícias: '+skillText+'.\nTalentos: '+featText+'.\nMagias: '+(spellNames.join(', ')||'nenhuma selecionada')+'.\nTraços raciais: '+traits+'.\nClasse: '+classDesc+'.\nEquipamento: '+gearNames+'.';
     await enviarMensagemChat(message,'sistema',{evento:'ficha_npc_gerada',token_id:String(item.id),level:Number(s.level)||1});
   }
-  async function iniciarAtaqueMestre(item){
+  async function iniciarAtaqueMestre(item,attackContext){
     if(!ehGM||!item||!combatDataState||!combatDataState.active){alert('O ataque do Mestre exige iniciativa ativa e um token controlado por ele.');return;}var turn=combatDataState.turn_order[Number(combatDataState.current_turn)||0];if(!turn||!turn.is_monster||String(turn.id)!==String(item.id)){alert('O Mestre só pode atacar com o token que está no turno atual.');return;}
     var bonus,formula,raw=item.monsterStats&&item.monsterStats.ataques||item.detalhe||'',equipped=equipamentoToken35(item).find(function(it){return it.equipado&&slotEquipamento35(it)==='arma';});
     if(item.tipo==='player'){var p=acharPersonagemDoToken(item);if(!p||p.ch.user_id!==eu.id){alert('Essa ficha não pertence ao Mestre.');return;}var level=Math.max(1,Number(p.sh.nivel)||1),weapon=(p.equipamento||[]).find(function(it){return it.equipado&&it.categoria==='arma';});bonus=bab35(p.cl,level)+modifier35((p.sh.atributos||{}).FOR);formula=weapon&&weapon.dano||'1d3';}
     else{if(typeof raw!=='string')raw=JSON.stringify(raw);var bonusMatch=raw.match(/[+\-]\d+\s+(?:melee|ranged|corpo a corpo|à distância|ataque básico)/i),damageMatch=raw.match(/\((\d+d(?:3|4|6|8|10|12|20|100)(?:[+\-]\d+)?)\)/i);bonus=bonusMatch?Number(bonusMatch[0].match(/[+\-]\d+/)[0]):Number(await window.vttUI.ask({title:'Bônus de ataque',label:'Bônus de ataque de '+item.nome+' conforme a ficha',defaultValue:'0',inputMode:'numeric'}));if(!Number.isFinite(bonus))return;formula=damageMatch?damageMatch[1]:(item.damageDice||'');if(equipped&&equipped.dano)formula=equipped.dano;if(!formula)formula=await window.vttUI.ask({title:'Dano do token',label:'Fórmula de dano de '+item.nome+' (por exemplo, 1d8+3)',defaultValue:'1d6'});if(!formula)return;if(equipped&&equipped.dano){var strength=modifier35((item.monsterStats||{}).forca);if(strength&&!/[+\-]\d+$/.test(formula))formula+=strength>0?'+'+strength:String(strength);}}
-    formula=String(formula).replace(/\s+/g,'');if(!/^\d{1,2}d(?:3|4|6|8|10|12|20|100)(?:[+\-]\d{1,3})?$/i.test(formula)){alert('Fórmula de dano inválida.');return;}ataqueMestreSelecionado={attacker:item,bonus:bonus,formula:formula};document.getElementById('iniciativa-status').textContent='Turno do Mestre · '+item.nome+': selecione um alvo no tabuleiro.';document.getElementById('area-tabuleiro').classList.add('selecionando-alvo');
+    formula=String(formula).replace(/\s+/g,'');if(!/^\d{1,2}d(?:3|4|6|8|10|12|20|100)(?:[+\-]\d{1,3})?$/i.test(formula)){alert('Fórmula de dano inválida.');return;}var resolvedAttackContext=attackContext||((item.monsterStats&&item.monsterStats.invisible===true)?'invisible':'normal');ataqueMestreSelecionado={attacker:item,bonus:bonus,formula:formula,attack_context:resolvedAttackContext};document.getElementById('iniciativa-status').textContent='Turno do Mestre · '+item.nome+': selecione um alvo no tabuleiro.';document.getElementById('area-tabuleiro').classList.add('selecionando-alvo');
   }
   function selecionarAlvoAtaqueMestre(target){
-    var selected=ataqueMestreSelecionado;ataqueMestreSelecionado=null;document.getElementById('area-tabuleiro').classList.remove('selecionando-alvo');if(!selected||String(target.id)===String(selected.attacker.id)){alert('Selecione outro token como alvo.');return;}var ac=caToken35(target);if(ac==null){alert('O alvo precisa ter uma CA numérica.');return;}
-    abrirDado('Ataque · '+selected.attacker.nome+' contra '+target.nome,async function(d20){var used=await sb.rpc('consumir_acao_token_gm_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(selected.attacker.id),p_acao:'padrao'});if(used.error)throw new Error('Ação do token não consumida: '+used.error.message);combatDataState=used.data.combat_data||combatDataState;renderizarIniciativa(combatDataState);var total=Number(d20)+selected.bonus,hit=Number(d20)===20||(Number(d20)!==1&&total>=ac);await enviarMensagemChat('⚔️ '+selected.attacker.nome+' atacou '+target.nome+': d20 '+d20+' + bônus '+selected.bonus+' = '+total+' contra CA '+ac+' — '+(hit?'ACERTO':'ERRO')+'.','rolagem',{evento:'ataque_token_mestre',token_id:String(selected.attacker.id),alvo_token_id:String(target.id),d20:Number(d20),bonus:selected.bonus,resultado:total,ca:ac,acertou:hit});if(!hit)return;
+    var selected=ataqueMestreSelecionado;ataqueMestreSelecionado=null;document.getElementById('area-tabuleiro').classList.remove('selecionando-alvo');if(!selected||String(target.id)===String(selected.attacker.id)){alert('Selecione outro token como alvo.');return;}var ac=target.tipo==='player'?null:caToken35(target);if(target.tipo!=='player'&&ac==null){alert('O alvo precisa ter uma CA numérica.');return;}
+    var attackContext=selected.attack_context|| (selected.attacker&&selected.attacker.monsterStats&&selected.attacker.monsterStats.invisible===true?'invisible':'normal');
+    abrirDado('Ataque · '+selected.attacker.nome+' contra '+target.nome,async function(d20){
+      var acDetails=null;
+      if(target.tipo==='player'){
+        var acResponse=await sb.rpc('srd_calcular_ca_personagem_srd',{p_campaign_id:Number(MESA_ID),p_character_id:String(target.id),p_attack_context:attackContext});
+        if(acResponse.error)throw new Error('Não foi possível calcular a CA atual da ficha: '+acResponse.error.message);
+        acDetails=acResponse.data||{};ac=Number(acDetails.final_ac);
+        if(!Number.isFinite(ac))throw new Error('O servidor não retornou uma CA válida para o personagem.');
+      }
+      var used=await sb.rpc('consumir_acao_token_gm_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(selected.attacker.id),p_acao:'padrao'});if(used.error)throw new Error('Ação do token não consumida: '+used.error.message);combatDataState=used.data.combat_data||combatDataState;renderizarIniciativa(combatDataState);var total=Number(d20)+selected.bonus,hit=Number(d20)===20||(Number(d20)!==1&&total>=ac);await enviarMensagemChat('⚔️ '+selected.attacker.nome+' atacou '+target.nome+': d20 '+d20+' + bônus '+selected.bonus+' = '+total+' contra CA '+ac+' — '+(hit?'ACERTO':'ERRO')+'.','rolagem',{evento:'ataque_token_mestre',token_id:String(selected.attacker.id),alvo_token_id:String(target.id),d20:Number(d20),bonus:selected.bonus,resultado:total,ca:ac,ca_detalhes:acDetails,contexto_ataque:attackContext,acertou:hit});if(!hit)return;
       abrirDado('Dano · '+selected.attacker.nome+' → '+target.nome+' · '+selected.formula,async function(rawDamage){
         var damageValue=Number(rawDamage);
         if(!Number.isFinite(damageValue)||damageValue<0)throw new Error('O dado não retornou um valor de dano válido. Role novamente antes de aplicar o dano.');
@@ -3785,6 +3802,17 @@ async function abrirModalEquipamentos(){
     }
   }
 
+  function specResistenciaDnd35(nomeTeste){
+    var texto=String(nomeTeste||'').toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    if(texto.includes('fortitude'))return {save_type:'fortitude',context:''};
+    if(texto.includes('reflexos contra armadilhas'))return {save_type:'reflex',context:'trap'};
+    if(texto.includes('reflexos'))return {save_type:'reflex',context:''};
+    if(texto.includes('vontade contra encantamento'))return {save_type:'will',context:'enchantment'};
+    if(texto.includes('vontade contra medo'))return {save_type:'will',context:'fear'};
+    if(texto.includes('vontade'))return {save_type:'will',context:''};
+    return null;
+  }
+
   function iniciarSelecaoTeste(nomeTeste){
     if(!ehGM || !nomeTeste) return;
     testeAtual = nomeTeste;
@@ -3793,6 +3821,9 @@ async function abrirModalEquipamentos(){
     document.getElementById('modal-testes').style.display = 'none';
     var testBar=document.getElementById('barra-confirmar-teste'),testRoster=document.querySelector('.painel-aventureiros');if(testRoster)testRoster.insertBefore(testBar,document.getElementById('cards-strip'));testBar.style.display = 'block';
     document.getElementById('txt-teste-selecionado').textContent = nomeTeste+' — selecione os alvos';
+    var dcWrap=document.getElementById('teste-dc-wrap'),dcInput=document.getElementById('input-teste-dc');
+    if(dcWrap)dcWrap.style.display=specResistenciaDnd35(nomeTeste)?'flex':'none';
+    if(dcInput)dcInput.value='';
     document.getElementById('cards-strip').classList.add('selecionando-teste');
     document.querySelectorAll('.card-pers').forEach(function(card){ card.classList.remove('selecionado-para-teste'); });
   }
@@ -3812,6 +3843,9 @@ async function abrirModalEquipamentos(){
     testeAtual = '';
     alvosSelecionados = [];
     document.getElementById('barra-confirmar-teste').style.display = 'none';
+    var dcWrap=document.getElementById('teste-dc-wrap'),dcInput=document.getElementById('input-teste-dc');
+    if(dcWrap)dcWrap.style.display='none';
+    if(dcInput)dcInput.value='';
     document.getElementById('cards-strip').classList.remove('selecionando-teste');
     document.querySelectorAll('.card-pers').forEach(function(card){ card.classList.remove('selecionado-para-teste'); });
     var confirmar = document.getElementById('btn-confirmar-teste');
@@ -3824,11 +3858,24 @@ async function abrirModalEquipamentos(){
     var confirmar = document.getElementById('btn-confirmar-teste');
     confirmar.disabled = true;
     var requestId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now()+'-'+Math.random().toString(36).slice(2));
+    var saveSpec=specResistenciaDnd35(testeAtual);
+    var dcInput=document.getElementById('input-teste-dc');
+    var dcValue=dcInput&&String(dcInput.value||'').trim()!==''?Number(dcInput.value):null;
+    if(saveSpec&&dcValue!==null&&(!Number.isInteger(dcValue)||dcValue<1||dcValue>100)){
+      confirmar.disabled=false;alert('A CD deve ser um número inteiro entre 1 e 100.');return;
+    }
+    var requestPayload={tipo:testeAtual,alvos:alvosSelecionados.slice(),mestre:meuPerfil.username,mestre_id:eu.id,request_id:requestId};
+    if(saveSpec){
+      requestPayload.resolution_type='saving_throw';
+      requestPayload.save_type=saveSpec.save_type;
+      requestPayload.context=saveSpec.context;
+      requestPayload.dc=dcValue;
+    }
     var r = await sb.from('campaign_log').insert({
       campaign_id: Number(MESA_ID),
       type: 'test_request',
       visibilidade: 'PUBLIC',
-      data: { tipo: testeAtual, alvos: alvosSelecionados.slice(), mestre: meuPerfil.username, mestre_id: eu.id, request_id: requestId }
+      data: requestPayload
     });
     if(r.error){ confirmar.disabled = false; alert('Erro ao enviar teste: '+r.error.message); return; }
     cancelarSelecaoTeste();
@@ -3841,7 +3888,7 @@ async function abrirModalEquipamentos(){
     pedidosTesteVistos[key]=true;
     if(ehGM){
       if(((data.resolution_type==='spell_save'||data.resolution_type==='condition_break')&&Array.isArray(data.npc_alvos)&&data.npc_alvos.length)
-        ||(data.resolution_type==='spell_resistance'&&Array.isArray(data.alvos)&&data.alvos.length)){
+        ||((data.resolution_type==='spell_resistance'||data.resolution_type==='saving_throw')&&Array.isArray(data.alvos)&&data.alvos.length)){
         ativarPedidoTeste(data,key);
       }
       return;
@@ -3865,10 +3912,11 @@ async function abrirModalEquipamentos(){
         data.npc_alvos.forEach(function(tokenId){
           criarBotaoRolagemNpcTeste(String(data.tipo||'Resistência'),String(tokenId),requestKey,data);
         });
-      }else if(data.resolution_type==='spell_resistance'&&Array.isArray(data.alvos)){
+      }else if((data.resolution_type==='spell_resistance'||data.resolution_type==='saving_throw')&&Array.isArray(data.alvos)){
         personagens.forEach(function(personagemAlvo){
-          if(personagemAlvo.ch.user_id===eu.id&&data.alvos.map(String).includes(String(personagemAlvo.ch.id))){
-            criarBotaoRolagemTeste(String(data.tipo||'Penetração de resistência à magia'),personagemAlvo.ch.id,requestKey,data);
+          if(personagemAlvo.ch.user_id===eu.id&&data.alvos.map(String).includes(String(personagemAlvo.ch.id))
+            &&!(data.results&&data.results[String(personagemAlvo.ch.id)])){
+            criarBotaoRolagemTeste(String(data.tipo||'Teste de resistência'),personagemAlvo.ch.id,requestKey,data);
           }
         });
       }
@@ -3878,6 +3926,7 @@ async function abrirModalEquipamentos(){
     var alvos=data.alvos.map(String);
     personagens.forEach(function(personagemAlvo){
       if(personagemAlvo.ch.user_id!==eu.id||alvos.indexOf(String(personagemAlvo.ch.id))===-1)return;
+      if(data.results&&data.results[String(personagemAlvo.ch.id)])return;
       var isInitiative=String(data.tipo||'').toLocaleLowerCase('pt-BR').includes('iniciativa');
       if(isInitiative){
         var expected=combatDataState&&Array.isArray(combatDataState.expected_character_ids)?combatDataState.expected_character_ids.map(String):[];
@@ -4003,6 +4052,7 @@ async function abrirModalEquipamentos(){
     var isDyingSave=tipoNormalizado.includes('estabilizacao')&&tipoNormalizado.includes('d100');
     var isSpellSave=requestData&&(requestData.resolution_type==='spell_save'||requestData.resolution_type==='condition_break');
     var isSpellResistance=requestData&&requestData.resolution_type==='spell_resistance';
+    var isSavingThrow=requestData&&requestData.resolution_type==='saving_throw';
     var container=document.getElementById('botoes-rolagem-pendente');
     if(!container){
       container=document.createElement('div');container.id='botoes-rolagem-pendente';
@@ -4013,17 +4063,17 @@ async function abrirModalEquipamentos(){
     var btn=document.createElement('button');btn.className='btn-rolar-teste';btn.type='button';
     btn.dataset.responseKey=responseKey;btn.dataset.requestKey=String(requestKey);btn.dataset.characterId=String(personagemId);
     btn.dataset.isInitiative=String(String(tipoTeste).toLocaleLowerCase('pt-BR').includes('iniciativa'));
-    btn.dataset.isDyingSave=String(isDyingSave);btn.dataset.isSpellSave=String(!!isSpellSave);btn.dataset.isSpellResistance=String(!!isSpellResistance);
+    btn.dataset.isDyingSave=String(isDyingSave);btn.dataset.isSpellSave=String(!!isSpellSave);btn.dataset.isSpellResistance=String(!!isSpellResistance);btn.dataset.isSavingThrow=String(!!isSavingThrow);
     if(btn.dataset.isInitiative==='true')Array.from(container.querySelectorAll('.btn-rolar-teste')).forEach(function(existing){if(existing.dataset.isInitiative==='true'&&existing.dataset.characterId===String(personagemId))existing.remove();});
     var nomePersonagem=personagem&&personagem.ch?String(personagem.ch.nome||'Personagem'):'Personagem';
-    btn.textContent=isDyingSave?'🩸 Rolar estabilização · '+nomePersonagem:(isSpellSave?'🛡️ Rolar resistência · '+nomePersonagem:(isSpellResistance?'✨ Rolar penetração · '+nomePersonagem:'⚡ Rolar '+tipoTeste+' · '+nomePersonagem));
+    btn.textContent=isDyingSave?'🩸 Rolar estabilização · '+nomePersonagem:(isSpellSave||isSavingThrow?'🛡️ Rolar resistência · '+nomePersonagem:(isSpellResistance?'✨ Rolar penetração · '+nomePersonagem:'⚡ Rolar '+tipoTeste+' · '+nomePersonagem));
     btn.setAttribute('aria-label',isDyingSave?'Rolar d100 de estabilização para '+nomePersonagem:'Rolar '+tipoTeste+' para '+nomePersonagem+' com o dado manual');
     btn.onclick=function(){
       if(btn.disabled)return;
       if(pedidoTesteAtivo){alert('Conclua ou feche a rolagem atual antes de iniciar outra.');return;}
       btn.disabled=true;
       pedidoTesteAtivo={tipo:tipoTeste,personagemId:String(personagemId),requestKey:String(requestKey),responseKey:responseKey,button:btn};
-      abrirDado(isDyingSave?'Estabilização · '+nomePersonagem+' · D100':tipoTeste+' · '+nomePersonagem+' · D20',async function(resultado){
+      abrirDado(isDyingSave?'Estabilização · '+nomePersonagem+' · D100':(isSavingThrow?'Resistência · '+nomePersonagem+' · D20':tipoTeste+' · '+nomePersonagem+' · D20'),async function(resultado){
         try{
           var ficha=personajesById(personagemId);
           if(!ficha){btn.disabled=false;throw new Error('Não foi possível localizar sua ficha para concluir a rolagem.');}
@@ -4056,6 +4106,25 @@ async function abrirModalEquipamentos(){
               else texto='✨ A magia penetrou a resistência e seu efeito foi aplicado.';
               if(spellOutcome.spell_negated_by_shield)extras.spell_negated_by_shield=true;
             }
+          }else if(isSavingThrow){
+            var d20Save=Number(resultado);
+            if(!Number.isInteger(d20Save)||d20Save<1||d20Save>20)throw new Error('O resultado precisa ser um d20 entre 1 e 20.');
+            var resolvedSave=await sb.rpc('srd_resolve_requested_saving_throw_srd',{
+              p_campaign_id:Number(MESA_ID),
+              p_character_id:String(personagemId),
+              p_request_id:String(requestData.request_id),
+              p_d20:d20Save
+            });
+            if(resolvedSave.error)throw new Error(resolvedSave.error.message);
+            var saveOutcome=resolvedSave.data||{};
+            extras.request_id=requestData.request_id||requestKey;
+            extras.d20=d20Save;extras.saving_throw=true;extras.save_type=saveOutcome.save_type;
+            extras.context=saveOutcome.context;extras.bonus=saveOutcome.bonus;extras.total=saveOutcome.total;
+            extras.dc=saveOutcome.dc;extras.success=saveOutcome.success;extras.trap_sense_bonus=saveOutcome.trap_sense_bonus;
+            var contextNote=Number(saveOutcome.trap_sense_bonus)>0?' (inclui Sentido para Armadilhas +'+saveOutcome.trap_sense_bonus+')':'';
+            var resultNote=saveOutcome.dc==null?' — resultado registrado':(saveOutcome.success?' — SUCESSO':' — FALHA');
+            texto='🛡️ '+ficha.ch.nome+' — '+tipoTeste+': D20 '+d20Save+' + bônus '+saveOutcome.bonus+' = '+saveOutcome.total+
+              (saveOutcome.dc!=null?' contra CD '+saveOutcome.dc:'')+contextNote+resultNote+'.';
           }else{
             var bonus=bonusDoTeste(tipoTeste,ficha.sh?ficha.sh.atributos:null);
             var isInitiative=String(tipoTeste).toLocaleLowerCase('pt-BR').includes('iniciativa');
