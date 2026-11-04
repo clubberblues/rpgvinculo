@@ -1569,12 +1569,11 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       if(badge){ badge.className='estado '+proximo; badge.textContent=proximo; }
       renderizarIniciativa(combatDataState);
       renderBotoesAcao();
-      var mensagem=proximo==='COMBATE'?'⚔️ O Mestre declarou COMBATE! Criaturas do CBA rolarão iniciativa automaticamente; jogadores receberão um pedido para rolar.':'🏕️ O Mestre encerrou o combate. Modo Exploração.';
+      var mensagem=proximo==='COMBATE'?'⚔️ O Mestre declarou COMBATE! Quando desejar, poderá solicitar a iniciativa pelo comando Iniciativa.':'🏕️ O Mestre encerrou o combate. Modo Exploração.';
       try{
         var log=await enviarMensagemChat(mensagem,'sistema',{evento:'estado_campanha',state:proximo});
         if(log && log.error) alert('O estado foi alterado, mas o aviso não entrou no chat.');
       }catch(logError){ console.warn('Estado atualizado; mensagem de chat não enviada.',logError); alert('O estado foi alterado, mas não foi possível enviar o aviso ao chat.'); }
-      if(proximo==='COMBATE') await pedirIniciativaGlobal();
     }catch(e){
       console.error('Falha ao alternar o estado da mesa:',e);
       alert('Não foi possível alterar o estado da mesa: '+e.message);
