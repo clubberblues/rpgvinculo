@@ -1958,7 +1958,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         if(prepared.error)throw prepared.error;
         if(!prepared.data||prepared.data.ok!==true)throw new Error(prepared.data&&prepared.data.erro||'O banco não autorizou a exclusão.');
         var mediaPaths=await coletarArquivosDaCampanha(campaignId);
-        if(mediaPaths.length)await removerArquivosDaCampanha(mediaPaths);
+        if((mediaPaths.midia&&mediaPaths.midia.length)||(mediaPaths.mesaMedia&&mediaPaths.mesaMedia.length))await removerArquivosDaCampanha(mediaPaths);
         var deleted=await sb.rpc('finalizar_exclusao_campanha_propria',{p_campaign_id:campaignId});
         if(deleted.error)throw deleted.error;
         if(!deleted.data||deleted.data.ok!==true)throw new Error(deleted.data&&deleted.data.erro||'O banco não confirmou a exclusão.');
