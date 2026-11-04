@@ -4120,7 +4120,7 @@ async function abrirModalEquipamentos(){
     return (personagem&&personagem.equipamento||[]).reduce(function(total,item){
       if(!item.equipado||['armadura','escudo'].indexOf(slotEquipamento35(item))<0)return total;
       var details=item.detalhes||{},catalog=details.campos_catalogo||{};
-      var value=Number(details.armor_check_penalty==null?(catalog.penalidade_armadura==null?details.penalidade_armadura:catalog.penalidade_armadura):details.armor_check_penalty);
+      var value=Number(details.armor_check_penalty==null?(catalog.penalidade_armadura==null?(item.penalidade_armadura==null?details.penalidade_armadura:item.penalidade_armadura):catalog.penalidade_armadura):details.armor_check_penalty);
       return total+(Number.isFinite(value)?value:0);
     },0);
   }
