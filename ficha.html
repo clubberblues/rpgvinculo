@@ -1557,15 +1557,21 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2938
   function dnd35AutomaticLanguages(raca,classe){var names=dnd35RaceLanguages(raca).automatic.slice();if(String(classe&&classe.id)==='druida')names.push('Druídico');return names;}
   function dnd35DwarfLanguagesMarkup(state,attrs){
     var raceLanguages=dnd35RaceLanguages(state.raca),automaticLanguages=dnd35AutomaticLanguages(state.raca,state.classe);
-    var choices=state.idiomasEscolhidos||{automaticos:automaticLanguages.slice(),bonus_inteligencia:[],comprados_falar_idioma:[]};
+    var savedLanguages=dnd35Objeto(state.sheet&&state.sheet.idiomas_conhecidos);
+    var choices=state.idiomasEscolhidos||{
+      automaticos:Array.isArray(savedLanguages.automaticos)?savedLanguages.automaticos.slice():automaticLanguages.slice(),
+      bonus_inteligencia:Array.isArray(savedLanguages.bonus_inteligencia)?savedLanguages.bonus_inteligencia.slice():[],
+      comprados_falar_idioma:Array.isArray(savedLanguages.comprados_falar_idioma)?savedLanguages.comprados_falar_idioma.slice():[]
+    };
     choices.automaticos=automaticLanguages.slice();
     var available=raceLanguages.bonus;
-    var catalog=(state.languages||[]).filter(function(l){return !l.is_secret&&(available===null||available.indexOf(l.nome)>=0);});
+    var languages=(state.languages||[]).filter(function(l){return !l.is_secret;});
+    var bonusCatalog=languages.filter(function(l){return available===null||available.indexOf(l.nome)>=0;});
     var intBonus=Math.max(0,Math.floor((Number(attrs&&attrs.INT||10)-10)/2));
     var skillId='srd35_skill_speak_language',rankCount=Math.max(0,Math.floor(Number((state.sheet.pericias||{})[skillId])||0));
-    function options(selected){return '<option value="">Selecione</option>'+catalog.map(function(l){return '<option value="'+esc(l.nome)+'"'+(selected===l.nome?' selected':'')+'>'+esc(l.nome)+'</option>';}).join('');}
-    var bonusHtml=Array.from({length:intBonus},function(_,i){return '<label>Idioma adicional por Inteligência '+(i+1)+'<select data-dwarf-language="bonus" data-index="'+i+'">'+options(choices.bonus_inteligencia[i]||'')+'</select></label>';}).join('');
-    var purchasedHtml=Array.from({length:rankCount},function(_,i){return '<label>Idioma adquirido por Falar Idioma '+(i+1)+'<select data-dwarf-language="purchased" data-index="'+i+'">'+options(choices.comprados_falar_idioma[i]||'')+'</select></label>';}).join('');
+    function options(selected,catalog){return '<option value="">Selecione</option>'+catalog.map(function(l){return '<option value="'+esc(l.nome)+'"'+(selected===l.nome?' selected':'')+'>'+esc(l.nome)+'</option>';}).join('');}
+    var bonusHtml=Array.from({length:intBonus},function(_,i){return '<label>Idioma adicional por Inteligência '+(i+1)+'<select data-dwarf-language="bonus" data-index="'+i+'">'+options(choices.bonus_inteligencia[i]||'',bonusCatalog)+'</select></label>';}).join('');
+    var purchasedHtml=Array.from({length:rankCount},function(_,i){return '<label>Idioma adquirido por Falar Idioma '+(i+1)+'<select data-dwarf-language="purchased" data-index="'+i+'">'+options(choices.comprados_falar_idioma[i]||'',languages)+'</select></label>';}).join('');
     return '<section class="dnd35-panel dnd35-language-panel"><h2>Idiomas da Raça</h2><p class="dnd35-note"><strong>Automáticos:</strong> '+automaticLanguages.map(esc).join(' e ')+'.</p><p class="dnd35-note"><strong>Idiomas adicionais da raça:</strong> '+(available===null?'qualquer idioma não secreto':(available.length?available.join(', '):'nenhum idioma racial adicional específico'))+'. A quantidade gratuita depende do modificador de Inteligência final.</p><div class="dnd35-identity-grid">'+(bonusHtml||'<p class="dnd35-note">Sua Inteligência atual não concede idiomas adicionais gratuitos.</p>')+'</div><div class="dnd35-identity-grid">'+(purchasedHtml||'<p class="dnd35-note">Para adquirir idiomas extras, distribua graduações em Falar Idioma na aba Perícias.</p>')+'</div><p class="dnd35-note">Falar Idioma não usa testes: cada graduação comprada corresponde a um idioma escolhido. Não repita idiomas.</p></section>';
   }
   function dnd35DwarfIdentityMarkup(state){
@@ -1673,7 +1679,7 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2938
   function dnd35FeatParameterType(feat) { return String(dnd35Objeto(feat&&feat.requisitos).parameter_type||(String(feat&&feat.id)==='srd35_feat_spell_mastery'?'spell_list':'')); }
   function dnd35FeatParameterLabel(feat) { var type=dnd35FeatParameterType(feat);return ({weapon:'Arma escolhida',weapon_exotic:'Arma exótica escolhida',weapon_martial:'Arma marcial escolhida',crossbow:'Tipo de besta',spell_school:'Escola de magia',skill:'Perícia escolhida',spell_list:'Magias de Maestria',improved_familiar:'Familiar melhorado escolhido'}[type]||(dnd35FeatIsWeaponFocus(feat)?'Arma escolhida':'Parâmetro')); }
   function dnd35FeatParameterHint(feat,attrs) { var type=dnd35FeatParameterType(feat);if(type==='weapon_exotic')return 'Informe uma arma exótica do catálogo; espada bastarda e machado de guerra anão também exigem FOR 13.';if(type==='weapon_martial')return 'Informe uma arma marcial do catálogo.';if(type==='crossbow')return 'Escolha besta de mão, besta leve ou besta pesada.';if(type==='spell_school')return 'Informe uma escola de magia; talentos encadeados precisam repetir a mesma escola.';if(type==='skill')return 'Informe uma perícia do catálogo.';if(type==='spell_list')return 'Mago: escolha '+Math.max(0,dnd35Modificador(Number(attrs.INT)||10))+' magia(s) já conhecida(s), separadas por vírgula.';if(type==='improved_familiar')return 'Informe o familiar da tabela do SRD. O sistema ainda não valida alinhamento compatível nem o nível arcano específico da opção; o Mestre deve conferir esses dois requisitos na fonte.';if(type==='weapon')return 'Informe a arma; talentos encadeados precisam repetir a mesma escolha.';return 'Informe a escolha específica exigida por este talento.'; }
-  function dnd35FeatParamNorm(value) { var n=dnd35Norm(value),aliases={'bastard sword':'espada bastarda','dwarven waraxe':'machado de guerra anao','conjuration':'conjuracao','abjuration':'abjuracao','divination':'adivinhacao','enchantment':'encantamento','evocation':'invocacao','illusion':'ilusao','necromancy':'necromancia','transmutation':'transmutacao'};return aliases[n]||n; }
+  function dnd35FeatParamNorm(value) { var n=dnd35Norm(value),aliases={'bastard sword':'espada bastarda','dwarven waraxe':'machado de guerra anao','waraxe dwarven':'machado de guerra anao','dwarven urgrosh':'urgrosh anao','urgrosh dwarven':'urgrosh anao','conjuration':'conjuracao','abjuration':'abjuracao','divination':'adivinhacao','enchantment':'encantamento','evocation':'invocacao','illusion':'ilusao','necromancy':'necromancia','transmutation':'transmutacao'};return aliases[n]||n; }
   function dnd35FeatWarnings(feat, attrs, state, pickIndex, featParameter) {
     var req=dnd35Objeto(feat.requisitos),out=[],abilities=[['FOR','for_min'],['DES','des_min'],['CON','con_min'],['INT','int_min'],['SAB','sab_min'],['CAR','car_min']];
     var weaponChoice=dnd35FeatParamNorm(featParameter||(state.featPicks&&state.featPicks[pickIndex]&&state.featPicks[pickIndex].parametro)||'');
@@ -1905,8 +1911,10 @@ function dnd35TranslateCatalogText(value){
 function dnd35WeaponProficient(state,weaponName){
     var normalized=dnd35FeatParamNorm(weaponName),weapon=(state.equipment||[]).find(function(item){return String(item.categoria||item.tipo||'').toLowerCase()==='arma'&&dnd35FeatParamNorm(item.nome)===normalized;});
     if(!weapon)return false;
-    var details=dnd35Objeto(weapon.detalhes),category=String(details.weapon_proficiency||''),proficiencies=dnd35Objeto(state.classe&&state.classe.dados_tecnicos).proficiencias||{},weapons=Array.isArray(proficiencies.armas)?proficiencies.armas:[proficiencies.armas].filter(Boolean);
-    return weapons.some(function(entry){var p=dnd35Norm(entry).replace(/\s+/g,'');return dnd35FeatParamNorm(entry)===normalized||(p==='armassimples'&&category==='simple')||(p==='todasasarmassimplesemarciais'&&['simple','martial'].indexOf(category)>=0);});
+    var details=dnd35Objeto(weapon.detalhes),weaponGroup=dnd35Norm(details.weapon_group||weapon.categoria),category=String(details.weapon_proficiency|| (weaponGroup.indexOf('exotic')>=0?'exotic':weaponGroup.indexOf('martial')>=0?'martial':weaponGroup.indexOf('simple')>=0?'simple':'')),proficiencies=dnd35Objeto(state.classe&&state.classe.dados_tecnicos).proficiencias||{},weapons=Array.isArray(proficiencies.armas)?proficiencies.armas:[proficiencies.armas].filter(Boolean);
+    var isDwarf=String(state.raca&&state.raca.id)==='anao';
+    var dwarfFamiliarity=isDwarf&&['machado de guerra anao','urgrosh anao'].indexOf(normalized)>=0;
+    return weapons.some(function(entry){var p=dnd35Norm(entry).replace(/\s+/g,'');return dnd35FeatParamNorm(entry)===normalized||(p==='armassimples'&&category==='simple')||((p==='todasasarmassimplesemarciais'||dwarfFamiliarity)&&['simple','martial','exotic'].indexOf(category)>=0);});
   }
   function dnd35InitialClassBonusSpec(state){
     var key=dnd35ClassRuleKey(state.classe&&((state.classe.class_key||state.classe.nome||state.classe.id)));
@@ -2754,7 +2762,7 @@ function dnd35LanguageNormalize(value){
     if(results[2].error)throw new Error('Classe SRD: '+results[2].error.message);
     var nextLevel=Math.min(20,Math.max(1,Number(sheet.nivel)||1)+1),featureResult=await sb.from('srd_class_level_features').select('class_id,class_level,name,summary,mechanics,verification_status').eq('class_id',String(sheet.classe_id)).eq('class_level',nextLevel),currentFeatureResult=await sb.from('srd_class_level_features').select('class_id,class_level,name,summary,mechanics,verification_status').eq('class_id',String(sheet.classe_id)).lte('class_level',Math.max(1,Number(sheet.nivel)||1)).order('class_level');var domainChoicesResult=await sb.from('srd_character_domain_choices').select('domain_slot,domain_id').eq('character_id',String(characterId)).order('domain_slot',{ascending:true});
     if(domainChoicesResult.error)throw new Error('Domínios do clérigo: '+domainChoicesResult.error.message);
-    fichaSRD35={criacao:false,character:results[0].data,sheet:sheet,identidade:sheet.identidade||{},raca:results[1].data,classe:results[2].data,skills:results[3].skills,feats:results[3].feats,srdSpells:results[3].spells,progressions:results[3].progressions,srdDomains:results[3].domains,srdDomainSpells:results[3].domainSpells,domainError:results[3].domainError,domainChoices:domainChoicesResult.data||[],nextLevelFeatures:featureResult.error?[]:(featureResult.data||[]),classFeatures:currentFeatureResult.error?[]:(currentFeatureResult.data||[]),spellCatalogError:results[3].spellError,spellProgressionError:results[3].progressionError,featPicks:[],activeTab:'pericias',grimoireOpen:URL_PARAMS.get('grimoire')==='1'};
+    fichaSRD35={criacao:false,character:results[0].data,sheet:sheet,identidade:sheet.identidade||{},raca:results[1].data,classe:results[2].data,skills:results[3].skills,feats:results[3].feats,srdSpells:results[3].spells,progressions:results[3].progressions,srdDomains:results[3].domains,srdDomainSpells:results[3].domainSpells,domainError:results[3].domainError,domainChoices:domainChoicesResult.data||[],idiomasEscolhidos:(function(){var saved=dnd35Objeto(sheet.idiomas_conhecidos);return {automaticos:Array.isArray(saved.automaticos)?saved.automaticos.slice():dnd35AutomaticLanguages(results[1].data,results[2].data),bonus_inteligencia:Array.isArray(saved.bonus_inteligencia)?saved.bonus_inteligencia.slice():[],comprados_falar_idioma:Array.isArray(saved.comprados_falar_idioma)?saved.comprados_falar_idioma.slice():[]};})(),nextLevelFeatures:featureResult.error?[]:(featureResult.data||[]),classFeatures:currentFeatureResult.error?[]:(currentFeatureResult.data||[]),spellCatalogError:results[3].spellError,spellProgressionError:results[3].progressionError,featPicks:[],activeTab:'pericias',grimoireOpen:URL_PARAMS.get('grimoire')==='1'};
     renderizarFichaSRD35();
   }
   async function salvarFichaSRD35() {
@@ -2781,10 +2789,13 @@ function dnd35LanguageNormalize(value){
     if(spent>budget){mostrarErro('Pontos de perícia excedidos: '+spent+' / '+budget+'.','pericias');return;}
     var skillLevel=Math.max(1,Number(state.sheet.nivel)||1);
     for(var skillId of Object.keys(ranks)){
-      var skillRank=Number(ranks[skillId]||0), isClass=!!classMap[String(skillId)], maximum=isClass?skillLevel+3:(skillLevel+3)/2;
+      var isLanguage=skillId==='srd35_skill_speak_language';
+      var skillRank=Number(ranks[skillId]||0), isClass=!!classMap[String(skillId)];
+      var maximum=isLanguage?budget:(isClass?skillLevel+3:(skillLevel+3)/2);
       if(!Number.isFinite(skillRank)||skillRank<0||skillRank>maximum){mostrarErro('Graduações inválidas ou acima do máximo para '+skillId+'.','pericias');return;}
-      if(skillId==='srd35_skill_speak_language'&&!Number.isInteger(skillRank)){mostrarErro('Falar Idioma exige graduações inteiras; cada ponto compra um idioma.','pericias');return;}if(isClass&&!Number.isInteger(skillRank)){mostrarErro('Perícias de classe usam graduações inteiras.','pericias');return;}
-      if(!isClass&&Math.abs(skillRank*2-Math.round(skillRank*2))>0.001){mostrarErro('Perícias fora de classe avançam em passos de 0,5.','pericias');return;}
+      if(isLanguage&&!Number.isInteger(skillRank)){mostrarErro('Falar Idioma exige pontos inteiros; cada ponto compra um idioma e não usa o limite normal de graduações.','pericias');return;}
+      if(isClass&&!Number.isInteger(skillRank)){mostrarErro('Perícias de classe usam graduações inteiras.','pericias');return;}
+      if(!isClass&&!isLanguage&&Math.abs(skillRank*2-Math.round(skillRank*2))>0.001){mostrarErro('Perícias fora de classe avançam em passos de 0,5.','pericias');return;}
     }
     var needed=dnd35IsHuman(state.raca)?2:1,picks=state.featPicks||[];
     if(picks.length!==needed||picks.some(function(p){return !p||!p.id;})){mostrarErro('Escolha exatamente '+needed+' talento(s).','talentos');return;}
