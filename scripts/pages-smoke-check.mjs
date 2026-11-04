@@ -16,6 +16,7 @@ try {
   page.setDefaultNavigationTimeout(30000);
 
   for (const item of pages) {
+    const failuresBeforePage = failures.length;
     const url = new URL(item.path, baseUrl).toString();
     let response;
     for (let attempt = 1; attempt <= 6; attempt++) {
@@ -49,7 +50,7 @@ try {
     if (!actual.viewport) failures.push(`${item.path}: viewport meta tag missing`);
     if (actual.bodyTextLength < 10) failures.push(`${item.path}: page body appears empty`);
 
-    if (failures.length === 0 || !failures.some(x => x.startsWith(item.path + ":"))) {
+    if (failures.length === failuresBeforePage) {
       console.log(`PASS ${item.path} — HTTP 200, title, language, viewport and body verified`);
     }
   }
