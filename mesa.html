@@ -103,6 +103,8 @@ button,input,textarea{font-family:inherit}
 .btn-fechar-livro:hover{color:#b83232}
 #barra-confirmar-teste{position:fixed;bottom:120px;left:50%;transform:translateX(-50%);background:#1b2419;border:2px solid #c9a050;padding:15px 20px;border-radius:8px;z-index:9500;display:none;box-shadow:0 10px 30px rgba(0,0,0,.9);text-align:center;width:min(94vw,520px)}
 #txt-teste-selecionado{font-family:'Cinzel',serif;color:#c9a050;font-size:15px;margin-bottom:10px}
+#teste-dc-wrap{display:none;align-items:center;justify-content:center;gap:8px;margin:0 0 10px;color:#c9a050;font-family:'Cinzel',serif;font-size:11px}
+#input-teste-dc{width:76px;padding:6px 8px;background:#10170f;color:#f5ecd6;border:1px solid #8a6a3a;border-radius:4px;font-family:'Cinzel',serif}
 .teste-confirmar,.teste-cancelar{background:#c9a050;color:#111;border:0;padding:9px 17px;font-family:'Cinzel',serif;font-weight:bold;border-radius:4px;cursor:pointer;font-size:12px}
 .teste-cancelar{background:transparent;color:#c9a050;border:1px solid #c5b995;margin-left:8px}
 .teste-confirmar:disabled{opacity:.5;cursor:wait}
@@ -1003,9 +1005,13 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         <button class="btn-teste" type="button" data-teste="Teste de Sabedoria (SAB)">Sabedoria (SAB)</button>
         <button class="btn-teste" type="button" data-teste="Teste de Carisma (CAR)">Carisma (CAR)</button>
 
-        <div class="testes-divisor"><span>DEFESAS</span></div>
-        <button class="btn-teste" type="button" data-teste="Resistência Física">Resistência Física</button>
-        <button class="btn-teste" type="button" data-teste="Resistência Mental">Resistência Mental</button>
+        <div class="testes-divisor"><span>RESISTÊNCIAS · D&D 3.5</span></div>
+        <button class="btn-teste" type="button" data-teste="Fortitude (CON)">Fortitude (CON)</button>
+        <button class="btn-teste" type="button" data-teste="Reflexos (DES)">Reflexos (DES)</button>
+        <button class="btn-teste" type="button" data-teste="Vontade (SAB)">Vontade (SAB)</button>
+        <button class="btn-teste" type="button" data-teste="Reflexos contra Armadilhas (DES)">Reflexos contra Armadilhas (DES)</button>
+        <button class="btn-teste" type="button" data-teste="Vontade contra Encantamento">Vontade contra Encantamento</button>
+        <button class="btn-teste" type="button" data-teste="Vontade contra Medo">Vontade contra Medo</button>
 
         <div class="testes-divisor"><span>PERÍCIAS</span></div>
         <button class="btn-teste" type="button" data-teste="Acrobacia">Acrobacia (DES)</button>
@@ -1033,6 +1039,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
 
 <div id="barra-confirmar-teste" role="group" aria-label="Confirmar alvos do teste">
   <p id="txt-teste-selecionado">Teste selecionado</p>
+  <div id="teste-dc-wrap"><label for="input-teste-dc">CD (opcional)</label><input id="input-teste-dc" type="number" min="1" max="100" placeholder="CD"></div>
   <button class="teste-confirmar" id="btn-confirmar-teste" type="button">CONFIRMAR ALVOS</button>
   <button class="teste-cancelar" id="btn-cancelar-teste" type="button">Cancelar</button>
 </div>
@@ -3785,6 +3792,17 @@ async function abrirModalEquipamentos(){
     }
   }
 
+  function specResistenciaDnd35(nomeTeste){
+    var texto=String(nomeTeste||'').toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    if(texto.includes('fortitude'))return {save_type:'fortitude',context:''};
+    if(texto.includes('reflexos contra armadilhas'))return {save_type:'reflex',context:'trap'};
+    if(texto.includes('reflexos'))return {save_type:'reflex',context:''};
+    if(texto.includes('vontade contra encantamento'))return {save_type:'will',context:'enchantment'};
+    if(texto.includes('vontade contra medo'))return {save_type:'will',context:'fear'};
+    if(texto.includes('vontade'))return {save_type:'will',context:''};
+    return null;
+  }
+
   function iniciarSelecaoTeste(nomeTeste){
     if(!ehGM || !nomeTeste) return;
     testeAtual = nomeTeste;
@@ -3793,6 +3811,9 @@ async function abrirModalEquipamentos(){
     document.getElementById('modal-testes').style.display = 'none';
     var testBar=document.getElementById('barra-confirmar-teste'),testRoster=document.querySelector('.painel-aventureiros');if(testRoster)testRoster.insertBefore(testBar,document.getElementById('cards-strip'));testBar.style.display = 'block';
     document.getElementById('txt-teste-selecionado').textContent = nomeTeste+' — selecione os alvos';
+    var dcWrap=document.getElementById('teste-dc-wrap'),dcInput=document.getElementById('input-teste-dc');
+    if(dcWrap)dcWrap.style.display=specResistenciaDnd35(nomeTeste)?'flex':'none';
+    if(dcInput)dcInput.value='';
     document.getElementById('cards-strip').classList.add('selecionando-teste');
     document.querySelectorAll('.card-pers').forEach(function(card){ card.classList.remove('selecionado-para-teste'); });
   }
@@ -3812,6 +3833,9 @@ async function abrirModalEquipamentos(){
     testeAtual = '';
     alvosSelecionados = [];
     document.getElementById('barra-confirmar-teste').style.display = 'none';
+    var dcWrap=document.getElementById('teste-dc-wrap'),dcInput=document.getElementById('input-teste-dc');
+    if(dcWrap)dcWrap.style.display='none';
+    if(dcInput)dcInput.value='';
     document.getElementById('cards-strip').classList.remove('selecionando-teste');
     document.querySelectorAll('.card-pers').forEach(function(card){ card.classList.remove('selecionado-para-teste'); });
     var confirmar = document.getElementById('btn-confirmar-teste');
@@ -3824,11 +3848,24 @@ async function abrirModalEquipamentos(){
     var confirmar = document.getElementById('btn-confirmar-teste');
     confirmar.disabled = true;
     var requestId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now()+'-'+Math.random().toString(36).slice(2));
+    var saveSpec=specResistenciaDnd35(testeAtual);
+    var dcInput=document.getElementById('input-teste-dc');
+    var dcValue=dcInput&&String(dcInput.value||'').trim()!==''?Number(dcInput.value):null;
+    if(saveSpec&&dcValue!==null&&(!Number.isInteger(dcValue)||dcValue<1||dcValue>100)){
+      confirmar.disabled=false;alert('A CD deve ser um número inteiro entre 1 e 100.');return;
+    }
+    var requestPayload={tipo:testeAtual,alvos:alvosSelecionados.slice(),mestre:meuPerfil.username,mestre_id:eu.id,request_id:requestId};
+    if(saveSpec){
+      requestPayload.resolution_type='saving_throw';
+      requestPayload.save_type=saveSpec.save_type;
+      requestPayload.context=saveSpec.context;
+      requestPayload.dc=dcValue;
+    }
     var r = await sb.from('campaign_log').insert({
       campaign_id: Number(MESA_ID),
       type: 'test_request',
       visibilidade: 'PUBLIC',
-      data: { tipo: testeAtual, alvos: alvosSelecionados.slice(), mestre: meuPerfil.username, mestre_id: eu.id, request_id: requestId }
+      data: requestPayload
     });
     if(r.error){ confirmar.disabled = false; alert('Erro ao enviar teste: '+r.error.message); return; }
     cancelarSelecaoTeste();
@@ -3841,7 +3878,7 @@ async function abrirModalEquipamentos(){
     pedidosTesteVistos[key]=true;
     if(ehGM){
       if(((data.resolution_type==='spell_save'||data.resolution_type==='condition_break')&&Array.isArray(data.npc_alvos)&&data.npc_alvos.length)
-        ||(data.resolution_type==='spell_resistance'&&Array.isArray(data.alvos)&&data.alvos.length)){
+        ||((data.resolution_type==='spell_resistance'||data.resolution_type==='saving_throw')&&Array.isArray(data.alvos)&&data.alvos.length)){
         ativarPedidoTeste(data,key);
       }
       return;
@@ -3865,10 +3902,11 @@ async function abrirModalEquipamentos(){
         data.npc_alvos.forEach(function(tokenId){
           criarBotaoRolagemNpcTeste(String(data.tipo||'Resistência'),String(tokenId),requestKey,data);
         });
-      }else if(data.resolution_type==='spell_resistance'&&Array.isArray(data.alvos)){
+      }else if((data.resolution_type==='spell_resistance'||data.resolution_type==='saving_throw')&&Array.isArray(data.alvos)){
         personagens.forEach(function(personagemAlvo){
-          if(personagemAlvo.ch.user_id===eu.id&&data.alvos.map(String).includes(String(personagemAlvo.ch.id))){
-            criarBotaoRolagemTeste(String(data.tipo||'Penetração de resistência à magia'),personagemAlvo.ch.id,requestKey,data);
+          if(personagemAlvo.ch.user_id===eu.id&&data.alvos.map(String).includes(String(personagemAlvo.ch.id))
+            &&!(data.results&&data.results[String(personagemAlvo.ch.id)])){
+            criarBotaoRolagemTeste(String(data.tipo||'Teste de resistência'),personagemAlvo.ch.id,requestKey,data);
           }
         });
       }
@@ -3878,6 +3916,7 @@ async function abrirModalEquipamentos(){
     var alvos=data.alvos.map(String);
     personagens.forEach(function(personagemAlvo){
       if(personagemAlvo.ch.user_id!==eu.id||alvos.indexOf(String(personagemAlvo.ch.id))===-1)return;
+      if(data.results&&data.results[String(personagemAlvo.ch.id)])return;
       var isInitiative=String(data.tipo||'').toLocaleLowerCase('pt-BR').includes('iniciativa');
       if(isInitiative){
         var expected=combatDataState&&Array.isArray(combatDataState.expected_character_ids)?combatDataState.expected_character_ids.map(String):[];
@@ -4003,6 +4042,7 @@ async function abrirModalEquipamentos(){
     var isDyingSave=tipoNormalizado.includes('estabilizacao')&&tipoNormalizado.includes('d100');
     var isSpellSave=requestData&&(requestData.resolution_type==='spell_save'||requestData.resolution_type==='condition_break');
     var isSpellResistance=requestData&&requestData.resolution_type==='spell_resistance';
+    var isSavingThrow=requestData&&requestData.resolution_type==='saving_throw';
     var container=document.getElementById('botoes-rolagem-pendente');
     if(!container){
       container=document.createElement('div');container.id='botoes-rolagem-pendente';
@@ -4013,17 +4053,17 @@ async function abrirModalEquipamentos(){
     var btn=document.createElement('button');btn.className='btn-rolar-teste';btn.type='button';
     btn.dataset.responseKey=responseKey;btn.dataset.requestKey=String(requestKey);btn.dataset.characterId=String(personagemId);
     btn.dataset.isInitiative=String(String(tipoTeste).toLocaleLowerCase('pt-BR').includes('iniciativa'));
-    btn.dataset.isDyingSave=String(isDyingSave);btn.dataset.isSpellSave=String(!!isSpellSave);btn.dataset.isSpellResistance=String(!!isSpellResistance);
+    btn.dataset.isDyingSave=String(isDyingSave);btn.dataset.isSpellSave=String(!!isSpellSave);btn.dataset.isSpellResistance=String(!!isSpellResistance);btn.dataset.isSavingThrow=String(!!isSavingThrow);
     if(btn.dataset.isInitiative==='true')Array.from(container.querySelectorAll('.btn-rolar-teste')).forEach(function(existing){if(existing.dataset.isInitiative==='true'&&existing.dataset.characterId===String(personagemId))existing.remove();});
     var nomePersonagem=personagem&&personagem.ch?String(personagem.ch.nome||'Personagem'):'Personagem';
-    btn.textContent=isDyingSave?'🩸 Rolar estabilização · '+nomePersonagem:(isSpellSave?'🛡️ Rolar resistência · '+nomePersonagem:(isSpellResistance?'✨ Rolar penetração · '+nomePersonagem:'⚡ Rolar '+tipoTeste+' · '+nomePersonagem));
+    btn.textContent=isDyingSave?'🩸 Rolar estabilização · '+nomePersonagem:(isSpellSave||isSavingThrow?'🛡️ Rolar resistência · '+nomePersonagem:(isSpellResistance?'✨ Rolar penetração · '+nomePersonagem:'⚡ Rolar '+tipoTeste+' · '+nomePersonagem));
     btn.setAttribute('aria-label',isDyingSave?'Rolar d100 de estabilização para '+nomePersonagem:'Rolar '+tipoTeste+' para '+nomePersonagem+' com o dado manual');
     btn.onclick=function(){
       if(btn.disabled)return;
       if(pedidoTesteAtivo){alert('Conclua ou feche a rolagem atual antes de iniciar outra.');return;}
       btn.disabled=true;
       pedidoTesteAtivo={tipo:tipoTeste,personagemId:String(personagemId),requestKey:String(requestKey),responseKey:responseKey,button:btn};
-      abrirDado(isDyingSave?'Estabilização · '+nomePersonagem+' · D100':tipoTeste+' · '+nomePersonagem+' · D20',async function(resultado){
+      abrirDado(isDyingSave?'Estabilização · '+nomePersonagem+' · D100':(isSavingThrow?'Resistência · '+nomePersonagem+' · D20':tipoTeste+' · '+nomePersonagem+' · D20'),async function(resultado){
         try{
           var ficha=personajesById(personagemId);
           if(!ficha){btn.disabled=false;throw new Error('Não foi possível localizar sua ficha para concluir a rolagem.');}
@@ -4056,6 +4096,25 @@ async function abrirModalEquipamentos(){
               else texto='✨ A magia penetrou a resistência e seu efeito foi aplicado.';
               if(spellOutcome.spell_negated_by_shield)extras.spell_negated_by_shield=true;
             }
+          }else if(isSavingThrow){
+            var d20Save=Number(resultado);
+            if(!Number.isInteger(d20Save)||d20Save<1||d20Save>20)throw new Error('O resultado precisa ser um d20 entre 1 e 20.');
+            var resolvedSave=await sb.rpc('srd_resolve_requested_saving_throw_srd',{
+              p_campaign_id:Number(MESA_ID),
+              p_character_id:String(personagemId),
+              p_request_id:String(requestData.request_id),
+              p_d20:d20Save
+            });
+            if(resolvedSave.error)throw new Error(resolvedSave.error.message);
+            var saveOutcome=resolvedSave.data||{};
+            extras.request_id=requestData.request_id||requestKey;
+            extras.d20=d20Save;extras.saving_throw=true;extras.save_type=saveOutcome.save_type;
+            extras.context=saveOutcome.context;extras.bonus=saveOutcome.bonus;extras.total=saveOutcome.total;
+            extras.dc=saveOutcome.dc;extras.success=saveOutcome.success;extras.trap_sense_bonus=saveOutcome.trap_sense_bonus;
+            var contextNote=Number(saveOutcome.trap_sense_bonus)>0?' (inclui Sentido para Armadilhas +'+saveOutcome.trap_sense_bonus+')':'';
+            var resultNote=saveOutcome.dc==null?' — resultado registrado':(saveOutcome.success?' — SUCESSO':' — FALHA');
+            texto='🛡️ '+ficha.ch.nome+' — '+tipoTeste+': D20 '+d20Save+' + bônus '+saveOutcome.bonus+' = '+saveOutcome.total+
+              (saveOutcome.dc!=null?' contra CD '+saveOutcome.dc:'')+contextNote+resultNote+'.';
           }else{
             var bonus=bonusDoTeste(tipoTeste,ficha.sh?ficha.sh.atributos:null);
             var isInitiative=String(tipoTeste).toLocaleLowerCase('pt-BR').includes('iniciativa');
