@@ -2135,10 +2135,11 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var btn=document.getElementById('confirmar-conjuracao');btn.disabled=true;
     async function cast(roll){try{
       if(!magiaAindaNoTurno(p))throw new Error('Apenas o personagem do jogador no turno atual pode conjurar.');
+      var rollResults=roll&&Array.isArray(roll.values)?roll.values:null;
       var result=isMass
-        ?await sb.rpc('conjurar_magia_com_acao_srd_multialvo_v2',{p_character_id:String(p.ch.id),p_spell_id:String(spell.id),p_slot_level:Number(slot),p_target_token_keys:targetKeys})
+        ?await sb.rpc('conjurar_magia_com_acao_srd_multialvo_v3',{p_character_id:String(p.ch.id),p_spell_id:String(spell.id),p_slot_level:Number(slot),p_target_token_keys:targetKeys,p_roll_results:rollResults})
         :isMagicMissile?await sb.rpc('conjurar_missil_magico_srd',{p_character_id:String(p.ch.id),p_spell_id:String(spell.id),p_slot_level:Number(slot),p_target_token_key:targetKey,p_damage:Number(roll&&roll.damage)})
-        :await sb.rpc('conjurar_magia_com_acao_srd',{p_character_id:String(p.ch.id),p_spell_id:String(spell.id),p_slot_level:Number(slot),p_target_token_key:targetKey});
+        :await sb.rpc('conjurar_magia_com_acao_srd_manual',{p_character_id:String(p.ch.id),p_spell_id:String(spell.id),p_slot_level:Number(slot),p_target_token_key:targetKey,p_roll_results:rollResults});
       if(result.error)throw new Error(result.error.message);var data=result.data||{};
       if(data.estado!==undefined)p.sh.magias_preparadas=data.estado;if(data.combat_data){combatDataState=data.combat_data;renderizarIniciativa(combatDataState);}
       if(data.cba_data){campanha.cba_data=data.cba_data;try{aplicarCBAnaMesa(data.cba_data,false);}catch(sceneError){console.warn('Conjuração aplicada; não foi possível atualizar a cena local:',sceneError);}}
@@ -2152,8 +2153,23 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       else msg+=' Efeito utilitário registrado pelo servidor.';
       var log=await enviarMensagemChat(msg,'rolagem',meta);if(log&&log.error)console.warn('Magia consumida; mensagem não entrou no chat:',log.error.message);fecharModalMagias();await carregarPersonagens();
     }catch(err){btn.disabled=false;alert('Não foi possível conjurar: '+err.message);}}
-    if(isMagicMissile){if(!targetKey){btn.disabled=false;alert('Escolha o alvo de Míssil Mágico.');return;}var missileCount=Math.min(5,Math.ceil(Math.max(1,Number(p.sh.nivel)||1)/2));abrirDado('Míssil Mágico · '+missileCount+' × (1d4+1)',function(damage){cast({damage:Number(damage)});},true,true,missileCount+'d4+'+missileCount);}
-    else cast(null);
+    if(isMagicMissile){
+      if(!targetKey){btn.disabled=false;alert('Escolha o alvo de Míssil Mágico.');return;}
+      var missileCount=Math.min(5,Math.ceil(Math.max(1,Number(p.sh.nivel)||1)/2));
+      abrirDado('Míssil Mágico · '+missileCount+' × (1d4+1)',function(damage){cast({damage:Number(damage)});},true,true,missileCount+'d4+'+missileCount);
+    }else if(isHeal){
+      var cureDice=String(tech.cura&&tech.cura.dados||'').trim();
+      if(/^[0-9]+d[0-9]+([+-][0-9]+)?$/i.test(cureDice)){
+        abrirDado('Cura · '+String(spell.nome||spell.name||'Magia')+' · '+cureDice,function(total,values){
+          if(!Array.isArray(values)||!values.length){btn.disabled=false;alert('A rolagem não retornou os resultados individuais dos dados. Role novamente.');return;}
+          cast({values:values});
+        },true,true,cureDice);
+      }else{
+        cast({values:null});
+      }
+    }else{
+      cast({values:null});
+    }
   }
 
   async function abrirHabilidadesClasse(){
