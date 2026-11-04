@@ -2605,6 +2605,7 @@ function dnd35WeaponProficient(state,weaponName){
   }
   async function salvarFichaSRD35() {
     var state=fichaSRD35,input=document.getElementById('dnd35-nome'),button=document.getElementById('dnd35-save'),status=document.getElementById('dnd35-status');
+    var identity=state.identidade||{};
     var nome=String(input&&input.value||state.nomeDraft||'').trim(),attrs=dnd35AtributosIniciais(state.raca,state.baseAtributos,state.identidade),classMap=dnd35SkillMap(state),ranks=dnd35Objeto(state.sheet.pericias);
     var creatingMagicKey=dnd35SpellClassKey(state.classe.nome)||dnd35SpellClassKey(state.classe.class_key)||dnd35SpellClassKey(state.classe.id);
     if(String(state.classe&&state.classe.id)==='clerigo'){
@@ -2616,7 +2617,7 @@ function dnd35WeaponProficient(state,weaponName){
     if(creatingMagicKey==='cleric'){var creatingDomains=(state.domainChoices||[]).map(function(x){return String(x.domain_id||'');}).filter(Boolean);if(creatingDomains.length!==2||creatingDomains[0]===creatingDomains[1]){state.activeStep='training';state.grimoireOpen=true;renderizarFichaSRD35();var domainStatus=document.querySelector('[data-grimoire-status]');if(domainStatus)domainStatus.textContent='Escolha dois domínios diferentes antes de criar a ficha.';return;}}
     function mostrarErro(message,tab){state.activeStep='training';if(tab)state.activeTab=tab;renderizarFichaSRD35();var msg=document.getElementById('dnd35-status');if(msg)msg.textContent=message;}
     if(!dnd35StartReady(state)){state.activeStep='equipment';renderizarFichaSRD35();var es=document.getElementById('dnd35-status');if(es)es.textContent='Escolha o kit recomendado ou conclua as compras com o ouro inicial.';return;}
-    var identity=state.identidade||{},minDwarfAge=dnd35DwarfMinAge(state.classe,state.raca);
+    var minDwarfAge=dnd35DwarfMinAge(state.classe,state.raca);
     if(!identity.sexo||!Number.isInteger(Number(identity.idade))||Number(identity.idade)<minDwarfAge||!Number(identity.altura_cm)||!Number(identity.peso_kg)||!identity.tendencia){
       state.activeStep='identity';renderizarFichaSRD35();var identityStatus=document.getElementById('dnd35-status');if(identityStatus)identityStatus.textContent='Complete sexo, idade (mínimo '+minDwarfAge+' anos), altura, peso e tendência antes de continuar.';return;
     }
