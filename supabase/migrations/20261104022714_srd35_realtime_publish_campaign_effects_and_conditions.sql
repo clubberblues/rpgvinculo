@@ -1,0 +1,2 @@
+ALTER PUBLICATION supabase_realtime ADD TABLE public.srd_campaign_conditions;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.srd_campaign_effects;
