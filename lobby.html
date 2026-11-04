@@ -1817,7 +1817,7 @@ function uploadCapaMesa(mesaId) {
     document.getElementById('b-content-mag').innerHTML = '<div class="catalogo-vazio">Carregando magias...</div>';
     modalBriefing.classList.add('ativo');
 
-    var rTal = await sb.from('talents').select('*').order('nivel_min');
+    var rTal = await sb.from('vinculo_talents').select('*').order('nivel_min');
     if (rTal.error) {
       document.getElementById('b-content-tal').innerHTML = '<div class="catalogo-vazio erro-catalogo">Não foi possível carregar talentos: ' + escapeHtml(rTal.error.message) + '</div>';
     } else if (rTal.data && rTal.data.length) {
@@ -1831,7 +1831,7 @@ function uploadCapaMesa(mesaId) {
       document.getElementById('b-content-tal').innerHTML = '<div class="catalogo-vazio">Nenhum talento cadastrado.</div>';
     }
 
-    var rMag = await sb.from('spells').select('*').order('circulo');
+    var rMag = await sb.from('vinculo_spells').select('*').order('circulo');
     if (rMag.error) {
       document.getElementById('b-content-mag').innerHTML = '<div class="catalogo-vazio erro-catalogo">Não foi possível carregar magias: ' + escapeHtml(rMag.error.message) + '</div>';
     } else if (rMag.data && rMag.data.length) {
