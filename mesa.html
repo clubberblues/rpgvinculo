@@ -3732,7 +3732,7 @@ async function abrirModalEquipamentos(){
     if(pedidosTesteVistos[key])return;
     pedidosTesteVistos[key]=true;
     if(ehGM){
-      if(data.resolution_type==='spell_save'&&Array.isArray(data.npc_alvos)&&data.npc_alvos.length){
+      if((data.resolution_type==='spell_save'||data.resolution_type==='condition_break')&&Array.isArray(data.npc_alvos)&&data.npc_alvos.length){
         ativarPedidoTeste(data,key);
       }
       return;
@@ -3752,7 +3752,7 @@ async function abrirModalEquipamentos(){
   function ativarPedidoTeste(data, requestKey){
     if(!data) return;
     if(ehGM){
-      if(data.resolution_type==='spell_save'&&Array.isArray(data.npc_alvos)){
+      if((data.resolution_type==='spell_save'||data.resolution_type==='condition_break')&&Array.isArray(data.npc_alvos)){
         data.npc_alvos.forEach(function(tokenId){
           criarBotaoRolagemNpcTeste(String(data.tipo||'Resistência'),String(tokenId),requestKey,data);
         });
@@ -3886,7 +3886,7 @@ async function abrirModalEquipamentos(){
     if(pedidosTesteRespondidos[responseKey])return;
     var tipoNormalizado=String(tipoTeste||'').toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');
     var isDyingSave=tipoNormalizado.includes('estabilizacao')&&tipoNormalizado.includes('d100');
-    var isSpellSave=requestData&&requestData.resolution_type==='spell_save';
+    var isSpellSave=requestData&&(requestData.resolution_type==='spell_save'||requestData.resolution_type==='condition_break');
     var isSpellResistance=requestData&&requestData.resolution_type==='spell_resistance';
     var container=document.getElementById('botoes-rolagem-pendente');
     if(!container){
@@ -3931,7 +3931,8 @@ async function abrirModalEquipamentos(){
             var spellOutcome=resolvedSpell.data||{};extras.d20=d20;extras.pending_id=requestData.pending_id;extras.spell_id=requestData.spell_id;
             extras.total=spellOutcome.total;extras.bonus=spellOutcome.bonus;extras.dc=spellOutcome.dc;extras.status=spellOutcome.status;
             if(isSpellSave){
-              if(spellOutcome.saved)texto='🛡️ '+ficha.ch.nome+' resistiu à magia ('+d20+' + '+spellOutcome.bonus+' = '+spellOutcome.total+' contra CD '+spellOutcome.dc+').';
+              if(requestData.resolution_type==='condition_break')texto=spellOutcome.condition_ended?'🛡️ '+ficha.ch.nome+' superou a resistência e encerrou a paralisia.':'🌀 '+ficha.ch.nome+' não superou a resistência e permanece paralisado.';
+              else if(spellOutcome.saved)texto='🛡️ '+ficha.ch.nome+' resistiu à magia ('+d20+' + '+spellOutcome.bonus+' = '+spellOutcome.total+' contra CD '+spellOutcome.dc+').';
               else if(spellOutcome.requires_spell_resistance)texto='✨ '+ficha.ch.nome+' falhou na resistência. O conjurador precisa superar a resistência à magia '+spellOutcome.spell_resistance+'.';
               else texto='🌀 A resistência falhou; o efeito da magia foi aplicado a '+ficha.ch.nome+'.';
             }else{
@@ -3995,7 +3996,7 @@ async function abrirModalEquipamentos(){
           if(resolved.error)throw new Error(resolved.error.message);
           var outcome=resolved.data||{};pedidosTesteRespondidos[responseKey]=true;
           removerBotaoRolagemTeste(requestKey,tokenId);
-          var texto=outcome.saved?'🛡️ '+nome+' resistiu à magia ('+d20+' + '+outcome.bonus+' = '+outcome.total+' contra CD '+outcome.dc+').':(outcome.requires_spell_resistance?'🌀 '+nome+' falhou na resistência; o conjurador agora deve superar RM '+outcome.spell_resistance+'.':'🌀 A resistência falhou; o efeito foi aplicado a '+nome+'.');
+          var texto=requestData.resolution_type==='condition_break'?(outcome.condition_ended?'🛡️ '+nome+' superou a resistência e encerrou a paralisia.':'🌀 '+nome+' não superou a resistência e permanece paralisado.'):(outcome.saved?'🛡️ '+nome+' resistiu à magia ('+d20+' + '+outcome.bonus+' = '+outcome.total+' contra CD '+outcome.dc+').':(outcome.requires_spell_resistance?'🌀 '+nome+' falhou na resistência; o conjurador agora deve superar RM '+outcome.spell_resistance+'.':'🌀 A resistência falhou; o efeito foi aplicado a '+nome+'.'));
           await enviarMensagemChat(texto,'rolagem',{request_id:requestKey,pending_id:requestData.pending_id,token_id:tokenId,d20:d20,total:outcome.total,status:outcome.status});
         }catch(err){btn.disabled=false;alert('Não foi possível concluir a resistência: '+(err.message||err));}
         finally{if(pedidoTesteAtivo&&pedidoTesteAtivo.responseKey===responseKey)pedidoTesteAtivo=null;}
