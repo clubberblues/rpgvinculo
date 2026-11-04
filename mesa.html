@@ -1790,8 +1790,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         var targetCharacter=personagens.find(function(p){return String(p.ch.id)===String(target.id);});
         var attackerStats=selected.attacker&&selected.attacker.monsterStats||{};
         // O bônus é contra criaturas do tipo Gigante, não contra qualquer criatura com "gigante" no nome.
-        var attackerType=String([attackerStats.tipo,attackerStats.subtipo,attackerStats.subtype,attackerStats.subtypes,attackerStats.type].filter(Boolean).join(' ')).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-        var attackerIsGiant=/(^|[^a-z])(giant|gigante)([^a-z]|$)/.test(attackerType);
+        var attackerType=String([selected.attacker&&selected.attacker.creature_type,attackerStats.tipo,attackerStats.subtipo,attackerStats.subtype,attackerStats.subtypes,attackerStats.type,attackerStats.creature_type].filter(Boolean).join(' ')).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+        var attackerIsGiant=/(giant|gigante)/.test(attackerType);
         if(targetCharacter&&['anao','gnomo'].indexOf(String(targetCharacter.sh&&targetCharacter.sh.raca_id))>=0&&attackerIsGiant&&!acDetails.dexterity_lost){
           ac+=4;acDetails.racial_giant_dodge_bonus=4;acDetails.final_ac=ac;
         }
