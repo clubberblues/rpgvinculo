@@ -1479,6 +1479,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         {id:'dados',ic:'🎲',txt:'Dados'},
         {id:'token-image-manager',ic:'🖼️',txt:'Alterar imagem do token'}
       ];
+      // A iniciativa é uma ação explícita do Mestre e só aparece durante o combate.
+      if(estado==='COMBATE') listaGM.splice(1,0,{id:'iniciativa',ic:'🎲',txt:'Solicitar Iniciativa'});
       el.innerHTML = listaGM.map(function(b){
         return '<button class="btn-acao '+(b.destaque?'destaque':'')+'" data-acao="'+b.id+'" title="'+esc(b.txt)+'"><span class="icone">'+b.ic+'</span><span>'+esc(b.txt)+'</span></button>';
       }).join('');
