@@ -4111,8 +4111,12 @@ async function abrirModalEquipamentos(){
             var spellOutcome=resolvedSpell.data||{};extras.d20=d20;extras.pending_id=requestData.pending_id;extras.spell_id=requestData.spell_id;
             extras.total=spellOutcome.total;extras.bonus=spellOutcome.bonus;extras.dc=spellOutcome.dc;extras.status=spellOutcome.status;
             if(isSpellSave){
+              extras.evasion=!!spellOutcome.evasion;extras.improved_evasion=!!spellOutcome.improved_evasion;
+              if(spellOutcome.damage!=null)extras.damage=spellOutcome.damage;
               if(requestData.resolution_type==='condition_break')texto=spellOutcome.condition_ended?'🛡️ '+ficha.ch.nome+' superou a resistência e encerrou a paralisia.':'🌀 '+ficha.ch.nome+' não superou a resistência e permanece paralisado.';
+              else if(spellOutcome.saved&&spellOutcome.evasion)texto='🛡️ '+ficha.ch.nome+' passou no teste de Reflexos e '+(spellOutcome.improved_evasion?'Evasão Aprimorada':'Evasão')+' evitou todo o dano da magia.';
               else if(spellOutcome.saved)texto='🛡️ '+ficha.ch.nome+' resistiu à magia ('+d20+' + '+spellOutcome.bonus+' = '+spellOutcome.total+' contra CD '+spellOutcome.dc+').';
+              else if(spellOutcome.improved_evasion)texto='🌀 '+ficha.ch.nome+' falhou no teste de Reflexos, mas Evasão Aprimorada reduziu o dano à metade.';
               else if(spellOutcome.requires_spell_resistance)texto='✨ '+ficha.ch.nome+' falhou na resistência. O conjurador precisa superar a resistência à magia '+spellOutcome.spell_resistance+'.';
               else texto='🌀 A resistência falhou; o efeito da magia foi aplicado a '+ficha.ch.nome+'.';
             }else{
