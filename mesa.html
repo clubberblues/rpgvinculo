@@ -661,6 +661,9 @@ html,body{min-height:100%;height:100%;overflow:hidden}body{min-width:320px}
 .card-flip-button{position:absolute;right:6px;top:6px;z-index:4;width:26px;height:26px;border:1px solid #c9a050;border-radius:50%;background:#0b1320;color:#f3d48a;font-size:15px;line-height:1;cursor:pointer;box-shadow:0 2px 7px #0008}
 .card-flip-button:hover{background:#c9a050;color:#101722}
 .card-pers-back .card-flip-button{top:auto;right:8px;bottom:7px}
+.card-racial-info-button{align-self:flex-start;max-width:100%;padding:3px 6px;border:1px solid #806b42;border-radius:4px;background:#172015;color:#e8ce91;font:700 8px Cinzel,serif;cursor:pointer}
+.racial-traits-full-list{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:9px;color:var(--text-primary,#eee);font:14px/1.4 'EB Garamond',serif}
+.racial-traits-full-list li{padding-left:3px}
 .card-pers-face .card-pers-info{padding-right:22px}
 .card-pers-back .card-pers-info{padding-right:0}
 @media(prefers-reduced-motion:reduce){.card-pers-inner{transition:none}}
@@ -1431,6 +1434,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     cardsStrip.addEventListener('click', function(e){
       var moveButton=e.target.closest?e.target.closest('[data-initiative-move]'):null;
       if(moveButton){e.preventDefault();e.stopPropagation();var moveIndex=Number(moveButton.dataset.initiativeMove),moveDirection=Number(moveButton.dataset.direction);if(Number.isInteger(moveIndex)&&Math.abs(moveDirection)===1)moverNaIniciativa(moveIndex,moveDirection);return;}
+      var racialInfoButton=e.target.closest?e.target.closest('[data-racial-info]'):null;if(racialInfoButton){e.preventDefault();e.stopPropagation();var racialCard=racialInfoButton.closest('.card-pers'),racialCharacter=racialCard&&racialCard.dataset.char?personagens.find(function(p){return String(p.ch.id)===String(racialCard.dataset.char);}):null;if(racialCharacter)abrirDetalhesRaciaisMesa35(racialCharacter);return;}
       var flipButton=e.target.closest?e.target.closest('[data-card-flip]'):null;
       if(flipButton){e.preventDefault();e.stopPropagation();var flipCard=flipButton.closest('.card-pers');if(flipCard)flipCard.classList.toggle('is-flipped');return;}
       var cardAcao = e.target.closest ? e.target.closest('.card-pers') : null;
@@ -2780,6 +2784,21 @@ async function abrirModalEquipamentos(){
     return 1;
   }
 
+  function abrirDetalhesRaciaisMesa35(personagem){
+    var race=personagem&&personagem.raca||{},traits=Array.isArray(race.habilidades_raciais)?race.habilidades_raciais:[];
+    if(!traits.length)return;
+    var existing=document.getElementById('modal-tracos-raciais-mesa');if(existing)existing.remove();
+    var overlay=document.createElement('div');overlay.id='modal-tracos-raciais-mesa';overlay.className='skill-roll-overlay';overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-label','Traços raciais de '+String(race.nome||'personagem'));
+    var panel=document.createElement('section');panel.className='skill-roll-panel';
+    var head=document.createElement('header');head.className='skill-roll-head';
+    var heading=document.createElement('div');var title=document.createElement('h2');title.textContent='Traços raciais · '+String(race.nome||'Raça');var subtitle=document.createElement('p');subtitle.textContent='Regras raciais completas desta ficha. O Mestre determina a aplicação de características condicionais conforme a situação.';heading.append(title,subtitle);
+    var close=document.createElement('button');close.type='button';close.className='skill-roll-close';close.textContent='✕';close.setAttribute('aria-label','Fechar traços raciais');close.onclick=function(){overlay.remove();};head.append(heading,close);
+    var list=document.createElement('ol');list.className='racial-traits-full-list';
+    traits.forEach(function(trait){var item=document.createElement('li');item.textContent=String(trait);list.appendChild(item);});
+    panel.append(head,list);overlay.appendChild(panel);
+    overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});
+    document.body.appendChild(overlay);
+  }
   function renderizarTokensCBA(layer,scene){
     if(!layer) return;
     scene = scene || cbaState;
@@ -4836,7 +4855,7 @@ async function abrirModalEquipamentos(){
       var statusText=(statusActor.conditions.length?'Condições: '+statusActor.conditions.join(', '):'')+(statusActor.effects.length?(statusActor.conditions.length?' · ':'')+'Efeitos: '+statusActor.effects.join(', '):'');
       var racialTraits=p&&p.raca&&Array.isArray(p.raca.habilidades_raciais)?p.raca.habilidades_raciais.join(' · '):'';
       var classTraits=p&&p.sh&&p.sh.classe_id==='barbaro'?'Bárbaro · '+(p.sh.identidade&&p.sh.identidade.alfabetizado===true?'alfabetizado':'analfabeto'):'';
-      var back='<div class="portrait-back-content"><strong>'+esc(name)+'</strong><span>'+esc(detail)+'</span><span>'+esc(initiative)+'</span><span>'+esc(hpText)+(ac==null?'':' · CA '+ac)+'</span>'+(statusText?'<small class="card-status-effects">'+esc(statusText)+'</small>':'')+'<small>'+esc(attributeText)+'</small>'+(racialTraits?'<small>Traços raciais: '+esc(racialTraits.slice(0,260))+'</small>':'')+(classTraits?'<small>Condição de classe: '+esc(classTraits)+'</small>':'')+'<small>'+esc(String(ms.qualidades_especiais||ms.ataques||ms.descricao||'').replace(/<[^>]*>/g,' ').slice(0,180))+'</small>'+controls+'<button type="button" class="card-flip-button" data-card-flip aria-label="Voltar ao retrato">↻</button></div>';
+      var back='<div class="portrait-back-content"><strong>'+esc(name)+'</strong><span>'+esc(detail)+'</span><span>'+esc(initiative)+'</span><span>'+esc(hpText)+(ac==null?'':' · CA '+ac)+'</span>'+(statusText?'<small class="card-status-effects">'+esc(statusText)+'</small>':'')+'<small>'+esc(attributeText)+'</small>'+(racialTraits?'<small>Traços raciais: '+esc(racialTraits.slice(0,120))+(racialTraits.length>120?'…':'')+'</small><button type="button" class="card-racial-info-button" data-racial-info>Ver todos os traços raciais</button>':'')+(classTraits?'<small>Condição de classe: '+esc(classTraits)+'</small>':'')+'<small>'+esc(String(ms.qualidades_especiais||ms.ataques||ms.descricao||'').replace(/<[^>]*>/g,' ').slice(0,180))+'</small>'+controls+'<button type="button" class="card-flip-button" data-card-flip aria-label="Voltar ao retrato">↻</button></div>';
       var html='<article class="card-pers deck-card token-card '+(token.tipo==='monstro'?'monstro':token.tipo==='npc'?'npc':'player-token')+(p&&p.ch.user_id===eu.id?' eu':'')+selected+(activeCard?' turno-ativo':'')+'" data-actor-key="'+esc(actorKey)+'" data-cba-token-key="'+esc(token.key||'')+'"'+(p?' data-char="'+esc(p.ch.id)+'"':'')+' tabindex="0" role="button" aria-label="Retrato de '+esc(name)+'"><div class="card-pers-inner"><div class="card-pers-face card-pers-front portrait-only-front">'+portrait+'</div><div class="card-pers-face card-pers-back">'+back+'</div></div></article>';
       cards.push({key:actorKey,rank:rank,html:html});
     });
