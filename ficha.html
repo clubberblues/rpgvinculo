@@ -2756,21 +2756,28 @@ function dnd35LanguageNormalize(value){
     if(input)state.nomeDraft=nome;
     button.disabled=true;status.textContent='Gravando personagem…';
     try {
-      var id=state.createdCharacterId;
-      if(!id){var result=await sb.rpc('criar_personagem_srd_completo',{p_nome:nome,p_raca_id:String(state.raca.id),p_classe_id:String(state.classe.id),p_atributos:state.baseAtributos,p_pericias:ranks,p_talentos:talentos,p_identidade:{sexo:String(identity.sexo),idade:Number(identity.idade),altura_cm:Number(identity.altura_cm),peso_kg:Number(identity.peso_kg),tendencia:String(identity.tendencia),alfabetizado:!!identity.alfabetizado,wizard_specialization:String(identity.wizard_specialization||''),wizard_prohibited_schools:Array.isArray(identity.wizard_prohibited_schools)?identity.wizard_prohibited_schools:[],familiar_id:String(identity.familiar_id||''),cleric_source:String(identity.cleric_source||''),cleric_deity_id:String(identity.cleric_deity_id||''),cleric_cause:String(identity.cleric_cause||''),cleric_domain_ids:(state.domainChoices||[]).map(function(x){return String(x.domain_id);}),druid_nature_bond:String(identity.druid_nature_bond||''),druid_animal_companion_id:String(identity.druid_animal_companion_id||''),druid_domain_ids:(state.domainChoices||[]).map(function(x){return String(x.domain_id);}),ranger_favored_enemy:String(identity.ranger_favored_enemy||'')}});
-        if(result.error){var message=result.error.message||'erro desconhecido';if(/criar_personagem_srd_completo|function|schema cache|column|pericias|talentos|relation|does not exist/i.test(message))throw new Error('Migração SRD pendente ou RPC indisponível. Aplique a migração com srd_character_sheets.pericias/talentos, catálogo srd_feats e criar_personagem_srd_completo. Detalhe: '+message);throw new Error(message);}
-        id=result.data;if(Array.isArray(id))id=id[0];if(id&&typeof id==='object')id=id.character_id||id.id;
-        if(!id)throw new Error('A ficha foi criada, mas o banco não retornou o identificador do personagem.');state.createdCharacterId=String(id);
-      }
-      var languageResult=await sb.rpc('salvar_idiomas_personagem_srd',{p_character_id:String(id),p_idiomas:state.idiomasEscolhidos||{automaticos:dnd35AutomaticLanguages(state.raca,state.classe),bonus_inteligencia:[],comprados_falar_idioma:[]}});if(languageResult.error)throw new Error('Personagem criado; não foi possível registrar os idiomas. Revise a aba Idiomas. '+languageResult.error.message);
-      var classBonusResult=await sb.rpc('salvar_talentos_bonus_classe_inicial_srd',{p_character_id:String(id),p_talentos:classBonusTalentos});if(classBonusResult.error)throw new Error('Não foi possível registrar os talentos bônus da classe. '+classBonusResult.error.message);
-       var magicKey=dnd35SpellClassKey(state.classe.nome)||dnd35SpellClassKey(state.classe.class_key)||dnd35SpellClassKey(state.classe.id),spellState=state.grimoireState||dnd35SpellState(state);
-      if(magicKey==='cleric'||(magicKey==='druid'&&String(identity.druid_nature_bond||'companion')==='domain')){var savedDomains=await sb.rpc('salvar_dominios_personagem_srd',{p_character_id:String(id),p_domain_ids:(state.domainChoices||[]).map(function(x){return String(x.domain_id);})});if(savedDomains.error)throw new Error('Personagem criado, mas os domínios não foram salvos. '+savedDomains.error.message);}
-      if(magicKey&&(spellState.conhecidas.length||spellState.preparadas.length||(spellState.dominioPreparadas||[]).length)){
-        var spellResult=await sb.rpc('salvar_grimorio_srd',{p_character_id:String(id),p_estado:dnd35GrimoireSaveState({sheet:{magias_preparadas:spellState}})});
-        if(spellResult.error)throw new Error('Personagem criado; não foi possível salvar as magias ainda. Revise as escolhas no Grimório e tente novamente. Detalhe: '+spellResult.error.message);
-      }
-      var start=state.equipamentoInicial,items=Object.keys(start.itens||{}).map(function(itemId){return {id:String(itemId),quantidade:Number(start.itens[itemId])||1};});var savedEquipment=await sb.rpc('finalizar_equipamento_inicial_srd',{p_character_id:String(id),p_metodo:String(start.metodo),p_resultados:Array.isArray(start.resultados)?start.resultados:[],p_itens:items});if(savedEquipment.error)throw new Error('Ficha criada; equipamento inicial pendente. Tente salvar novamente. '+savedEquipment.error.message);
+      var magicKey=dnd35SpellClassKey(state.classe.nome)||dnd35SpellClassKey(state.classe.class_key)||dnd35SpellClassKey(state.classe.id),spellState=state.grimoireState||dnd35SpellState(state);
+      var start=state.equipamentoInicial,items=Object.keys(start.itens||{}).map(function(itemId){return {id:String(itemId),quantidade:Number(start.itens[itemId])||1};});
+      var hasGrimoire=!!magicKey&&(spellState.conhecidas.length||spellState.preparadas.length||(spellState.dominioPreparadas||[]).length);
+      var result=await sb.rpc('finalizar_criacao_personagem_srd',{
+        p_nome:nome,
+        p_raca_id:String(state.raca.id),
+        p_classe_id:String(state.classe.id),
+        p_atributos:state.baseAtributos,
+        p_pericias:ranks,
+        p_talentos:talentos,
+        p_identidade:{sexo:String(identity.sexo),idade:Number(identity.idade),altura_cm:Number(identity.altura_cm),peso_kg:Number(identity.peso_kg),tendencia:String(identity.tendencia),alfabetizado:!!identity.alfabetizado,wizard_specialization:String(identity.wizard_specialization||''),wizard_prohibited_schools:Array.isArray(identity.wizard_prohibited_schools)?identity.wizard_prohibited_schools:[],familiar_id:String(identity.familiar_id||''),cleric_source:String(identity.cleric_source||''),cleric_deity_id:String(identity.cleric_deity_id||''),cleric_cause:String(identity.cleric_cause||''),cleric_domain_ids:(state.domainChoices||[]).map(function(x){return String(x.domain_id);}),druid_nature_bond:String(identity.druid_nature_bond||''),druid_animal_companion_id:String(identity.druid_animal_companion_id||''),druid_domain_ids:(state.domainChoices||[]).map(function(x){return String(x.domain_id);}),ranger_favored_enemy:String(identity.ranger_favored_enemy||'')},
+        p_idiomas:state.idiomasEscolhidos||{automaticos:dnd35AutomaticLanguages(state.raca,state.classe),bonus_inteligencia:[],comprados_falar_idioma:[]},
+        p_talentos_bonus:classBonusTalentos,
+        p_domain_ids:(state.domainChoices||[]).map(function(x){return String(x.domain_id);}),
+        p_grimorio:hasGrimoire?dnd35GrimoireSaveState({sheet:{magias_preparadas:spellState}}):null,
+        p_equipamento_metodo:String(start.metodo),
+        p_equipamento_resultados:Array.isArray(start.resultados)?start.resultados:[],
+        p_equipamento_itens:items
+      });
+      if(result.error)throw new Error(result.error.message||'Não foi possível concluir a criação da ficha.');
+      var id=result.data;if(Array.isArray(id))id=id[0];if(id&&typeof id==='object')id=id.character_id||id.id;
+      if(!id)throw new Error('A ficha foi criada, mas o banco não retornou o identificador do personagem.');
       window.location.href='ficha.html?ruleset=dnd35&char='+encodeURIComponent(String(id))+'&role=player&grimoire=1';
     } catch(err) {status.textContent='Não foi possível salvar: '+(err.message||err);button.disabled=false;}
   }
