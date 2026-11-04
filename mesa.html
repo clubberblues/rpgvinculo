@@ -2222,7 +2222,16 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
        var requiresGMResolution=!!typedKind&&!(isHeal||isMagicMissile||isAutoEffectSpell);
       var meta={evento:'magia_conjurada',character_id:String(p.ch.id),spell_id:String(spell.id),spell_name:String(spell.nome||spell.name||'Magia'),slot_level:slot,target_token_key:targetKey,target_name:targetName||null};
       if(isHeal){if(isMass){msg+=' O servidor aplicou a cura em '+String(data.target_count||targetKeys.length)+' alvo(s): '+targetName+'.';meta.targets=data.targets||[];meta.target_count=Number(data.target_count||targetKeys.length);}else if(healing!==null&&healing>0)msg+=' O servidor aplicou '+healing+' PV de cura'+(targetName?' em '+targetName:'')+'.';else msg+=' O servidor não aplicou cura.';if(pv!=null)msg+=' PV atual: '+pv+'.';meta.healing=healing;meta.pv_atual=pv;}
-      else if(isMagicMissile){msg+=' '+data.missiles+' míssil(is), acerto automático; dano '+data.damage+'. PV do alvo: '+data.pv_atual+' / '+data.pv_max+'. Resistência à magia ainda não automatizada.';meta.damage=data.damage;meta.missiles=data.missiles;meta.pv_atual=data.pv_atual;meta.pv_max=data.pv_max;meta.spell_resistance_pending=true;}
+      else if(isMagicMissile){
+        if(data.spell_resistance_pending){
+          msg+=' '+data.missiles+' míssil(is) preparado(s); o alvo possui Resistência à Magia '+data.spell_resistance+'. O dano só será aplicado se o conjurador superar a RM com uma rolagem manual de D20.';
+          meta.damage_pending=data.damage_pending;meta.pending_id=data.spell_resistance_pending_id;meta.spell_resistance=data.spell_resistance;meta.spell_resistance_pending=true;
+        }else{
+          msg+=' '+data.missiles+' míssil(is), acerto automático; dano '+data.damage+'. PV do alvo: '+data.pv_atual+' / '+data.pv_max+'.';
+          meta.damage=data.damage;meta.pv_atual=data.pv_atual;meta.pv_max=data.pv_max;meta.spell_resistance_pending=false;
+        }
+        meta.missiles=data.missiles;
+      }
       else if(isAutoEffectSpell){if(Array.isArray(data.pending_resolution_ids)&&data.pending_resolution_ids.length){msg+=' O sistema solicitou testes de resistência para '+data.pending_resolution_ids.length+' alvo(s); cada efeito será aplicado automaticamente após as rolagens.';meta.pending_resolution_ids=data.pending_resolution_ids;meta.save_pending=true;}else if(data.pending_resolution_id){msg+=' O sistema solicitou a resistência do alvo; o efeito será aplicado automaticamente conforme o resultado do D20.';meta.pending_resolution_id=data.pending_resolution_id;meta.save_pending=true;}else if(Array.isArray(data.effect_instance_ids)&&data.effect_instance_ids.length){msg+=' Efeitos aplicados automaticamente a '+data.effect_instance_ids.length+' alvo(s); duração controlada pelo sistema.';meta.effect_instance_ids=data.effect_instance_ids;meta.effect_automatic=true;}else if(data.effect_instance_id){msg+=' Efeito aplicado automaticamente; duração controlada pelo sistema.';meta.effect_instance_id=data.effect_instance_id;meta.effect_automatic=true;}else{msg+=' A magia foi consumida, mas o servidor não confirmou uma resolução automática.';meta.engine_warning=true;}}
       else if(requiresGMResolution){msg+=' Conjuração registrada. Efeito, resistência, duração e/ou dano aguardam resolução do Mestre; nenhum efeito automático foi presumido.';meta.gm_resolution_required=true;meta.effect_kind=typedKind||classifiedEffect||effect||'manual';}
       else msg+=' Efeito utilitário registrado pelo servidor.';
@@ -3734,7 +3743,8 @@ async function abrirModalEquipamentos(){
     if(pedidosTesteVistos[key])return;
     pedidosTesteVistos[key]=true;
     if(ehGM){
-      if((data.resolution_type==='spell_save'||data.resolution_type==='condition_break')&&Array.isArray(data.npc_alvos)&&data.npc_alvos.length){
+      if(((data.resolution_type==='spell_save'||data.resolution_type==='condition_break')&&Array.isArray(data.npc_alvos)&&data.npc_alvos.length)
+        ||(data.resolution_type==='spell_resistance'&&Array.isArray(data.alvos)&&data.alvos.length)){
         ativarPedidoTeste(data,key);
       }
       return;
@@ -3757,6 +3767,12 @@ async function abrirModalEquipamentos(){
       if((data.resolution_type==='spell_save'||data.resolution_type==='condition_break')&&Array.isArray(data.npc_alvos)){
         data.npc_alvos.forEach(function(tokenId){
           criarBotaoRolagemNpcTeste(String(data.tipo||'Resistência'),String(tokenId),requestKey,data);
+        });
+      }else if(data.resolution_type==='spell_resistance'&&Array.isArray(data.alvos)){
+        personagens.forEach(function(personagemAlvo){
+          if(personagemAlvo.ch.user_id===eu.id&&data.alvos.map(String).includes(String(personagemAlvo.ch.id))){
+            criarBotaoRolagemTeste(String(data.tipo||'Penetração de resistência à magia'),personagemAlvo.ch.id,requestKey,data);
+          }
         });
       }
       return;
