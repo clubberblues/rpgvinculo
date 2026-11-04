@@ -1937,7 +1937,54 @@ function dnd35WeaponProficient(state,weaponName){
     ].indexOf(id)>=0;
     return false;
   }
-  function dnd35LevelupReady(state){
+function dnd35LanguageNormalize(value){
+    return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+  }
+  function dnd35LanguageRules(state,attrs){
+    var race=state.raca||{},lines=Array.isArray(race.habilidades_raciais)?race.habilidades_raciais:[];
+    var line=lines.find(function(x){return /idioma.*autom[aá]tico/i.test(String(x));})||'';
+    var autoMatch=String(line).match(/idiomas?\s+autom[aá]ticos?:\s*([^.]*)/i);
+    var autoText=autoMatch?autoMatch[1]:'';
+    var automatic=autoText.replace(/\s+e\s+/gi,',').split(',').map(function(x){return x.trim();}).filter(Boolean);
+    var languages=Array.isArray(state.languages)?state.languages:[];
+    function canonical(name){var found=languages.find(function(l){return dnd35LanguageNormalize(l.nome)===dnd35LanguageNormalize(name);});return found?found.nome:String(name||'').trim();}
+    automatic=automatic.map(canonical);
+    if(String(state.classe&&state.classe.id||'')==='druida'&&!automatic.some(function(x){return dnd35LanguageNormalize(x)==='druidico';}))automatic.push(canonical('Druídico'));
+    var anyBonus=/qualquer idioma|pode escolher idiomas adicionais/i.test(String(line));
+    var bonusMatch=String(line).match(/idiomas adicionais:\s*([^.]*)/i);
+    var bonusNames=bonusMatch?bonusMatch[1].replace(/\s+e\s+/gi,',').split(',').map(function(x){return x.trim();}).filter(Boolean):[];
+    var allSelectable=languages.filter(function(l){return !l.is_secret;}).map(function(l){return l.nome;});
+    var bonusOptions=anyBonus?allSelectable:allSelectable.filter(function(name){return bonusNames.some(function(x){return dnd35LanguageNormalize(x)===dnd35LanguageNormalize(name);});});
+    var intMod=Math.max(0,dnd35Modificador(attrs.INT));
+    return {automatic:Array.from(new Set(automatic)),bonusOptions:bonusOptions,bonusCount:Math.min(intMod,bonusOptions.length),intBonus:intMod,allSelectable:allSelectable,anyBonus:anyBonus};
+  }
+  function dnd35LevelupLanguageData(state,attrs,lu){
+    var stored=state.sheet.idiomas_conhecidos||{},rules=dnd35LanguageRules(state,attrs);
+    var automatic=Array.isArray(stored.automaticos)?stored.automaticos.slice():[];
+    rules.automatic.forEach(function(name){if(!automatic.some(function(x){return dnd35LanguageNormalize(x)===dnd35LanguageNormalize(name);}))automatic.push(name);});
+    var bonus=Array.isArray(stored.bonus_inteligencia)?stored.bonus_inteligencia:[];
+    var purchased=Array.isArray(stored.comprados_falar_idioma)?stored.comprados_falar_idioma:[];
+    var currentRanks=Number(dnd35Objeto(state.sheet.pericias).srd35_skill_speak_language||0);
+    var missingExisting=Math.max(0,currentRanks-purchased.length);
+    var newRanks=Math.max(0,Math.floor(Number(lu.skills&&lu.skills.srd35_skill_speak_language)||0));
+    return {rules:rules,automatic:automatic,bonus:bonus,purchased:purchased,missingExisting:missingExisting,newRanks:newRanks,needed:missingExisting+newRanks,picks:Array.isArray(lu.idiomasNovos)?lu.idiomasNovos:[]};
+  }
+  function dnd35LevelupLanguageMarkup(state,attrs,lu){
+    var data=dnd35LevelupLanguageData(state,attrs,lu);
+    if(!data.needed)return '';
+    var html='<div class="dnd35-levelup-section"><h3>Idiomas</h3><p class="dnd35-note">Cada ponto em Falar Idioma compra um idioma. Se houver graduações antigas ainda não registradas, informe-as também para manter a ficha consistente.</p><div class="dnd35-language-list">';
+    for(var i=0;i<data.needed;i++){
+      var selected=data.picks[i]||'',used=data.automatic.concat(data.bonus,data.purchased);
+      data.picks.forEach(function(value,index){if(value&&index!==i)used.push(value);});
+      var label=i<data.missingExisting?'Registrar idioma já conhecido '+(i+1):'Novo idioma '+(i-data.missingExisting+1);
+      html+='<label class="dnd35-language-choice">'+label+'<select data-lu-language data-lu-language-index="'+i+'"><option value="">Selecione um idioma…</option>';
+      data.rules.allSelectable.forEach(function(name){if(name===selected||!used.some(function(x){return dnd35LanguageNormalize(x)===dnd35LanguageNormalize(name);}))html+='<option value="'+esc(name)+'"'+(name===selected?' selected':'')+'>'+esc(name)+'</option>';});
+      html+='</select></label>';
+    }
+    html+='</div></div>';
+    return html;
+  }
+    function dnd35LevelupReady(state){
     var lu=state.levelUp;if(!lu)return false;
     var currentLevel=Math.max(1,Number(state.sheet.nivel)||1),nextLevel=Math.min(20,currentLevel+1),die=Math.max(1,Number(state.classe.dado_vida)||8);
     var specs=dnd35LevelupFeatSpec(state,nextLevel),feats=lu.feats||[];
@@ -1957,13 +2004,16 @@ function dnd35WeaponProficient(state,weaponName){
     var tempAttrs=Object.assign({},attrs);if(nextLevel%4===0&&lu.attribute)tempAttrs[lu.attribute]=(Number(tempAttrs[lu.attribute])||10)+1;
     var tempState=Object.assign({},state,{sheet:Object.assign({},state.sheet,{nivel:nextLevel,pericias:tempSkills}),featPicks:feats});
     var prereqsReady=featsReady&&feats.every(function(pick,index){var feat=(state.feats||[]).find(function(item){return String(item.id)===String(pick.id);});return feat&&(specs[index].type==='monk'||dnd35FeatWarnings(feat,tempAttrs,tempState,index,pick.parametro||'').length===0);});
-    return lu.rollRequested===true&&prereqsReady&&(nextLevel%4!==0||!!lu.attribute)&&spent<=budget;
+    var languageData=dnd35LevelupLanguageData(state,attrs,lu),languageChoices=Array.from({length:languageData.needed},function(_,i){return languageData.picks[i]||'';}),knownLanguages=languageData.automatic.concat(languageData.bonus,languageData.purchased).map(dnd35LanguageNormalize),newLanguageNames=languageChoices.map(dnd35LanguageNormalize);
+    var languagesReady=languageChoices.length===languageData.needed&&languageChoices.every(function(name){return !!String(name||'').trim()&&languageData.rules.allSelectable.some(function(option){return dnd35LanguageNormalize(option)===dnd35LanguageNormalize(name);});})&&new Set(knownLanguages.concat(newLanguageNames)).size===knownLanguages.length+newLanguageNames.length;
+    var hitDieRoll=Number(lu.hitDieRoll),hitDieReady=Number.isInteger(hitDieRoll)&&hitDieRoll>=1&&hitDieRoll<=die;
+    return hitDieReady&&prereqsReady&&(nextLevel%4!==0||!!lu.attribute)&&spent<=budget&&languagesReady;
   }
   function dnd35LevelupMarkup(state,attrs){
     var pending=Math.max(0,Number(state.sheet.niveis_pendentes)||0);
     if(!pending)return '';
     var currentLevel=Math.max(1,Number(state.sheet.nivel)||1),nextLevel=Math.min(20,currentLevel+1),die=Math.max(1,Number(state.classe.dado_vida)||8);
-    if(!state.levelUp||state.levelUp.level!==nextLevel)state.levelUp={level:nextLevel,rollRequested:false,skills:{},feats:[],attribute:'',status:''};
+    if(!state.levelUp||state.levelUp.level!==nextLevel)state.levelUp={level:nextLevel,rollRequested:false,hitDieRoll:null,skills:{},feats:[],attribute:'',idiomasNovos:[],status:''};
     var lu=state.levelUp,classMap=dnd35SkillMap(state),oldInt=dnd35Modificador(attrs.INT),plannedInt=oldInt;
     if(nextLevel%4===0&&lu.attribute==='INT')plannedInt=dnd35Modificador(Number(attrs.INT)+1);
     var human=dnd35IsHuman(state.raca),budget=Math.max(1,Number(state.classe.pericias_por_nivel||0)+plannedInt)+(human?1:0)+Math.max(0,plannedInt-oldInt)*currentLevel;
@@ -2005,21 +2055,23 @@ function dnd35WeaponProficient(state,weaponName){
       return '<li><b>'+esc(featureName)+'</b>'+(feature.summary&&feature.summary!==feature.name?': '+esc(feature.summary):'')+(statusText?' <small>'+statusText+'</small>':'')+'</li>';
     }).join('')+'</ul>':'<p class="dnd35-note">Não há características de classe catalogadas para este nível. Isso não bloqueia o avanço, mas o Mestre deve conferir a progressão de classe.</p>';
     var attrHtml=nextLevel%4===0?'<div class="dnd35-feat-control"><label for="lu-attribute">Aumento de atributo (+1)</label><select id="lu-attribute" data-lu-attribute><option value="">Escolha um atributo…</option>'+ATR.map(function(a){return '<option value="'+a+'"'+(lu.attribute===a?' selected':'')+'>'+esc(ROT[a]||a)+' ('+Number(attrs[a]||10)+' → '+(Number(attrs[a]||10)+1)+')</option>';}).join('')+'</select></div>':'<p class="dnd35-note">Aumento de atributo nos níveis múltiplos de 4.</p>';
+    var languageHtml=dnd35LevelupLanguageMarkup(state,attrs,lu);
     var featCount=featSpec.length,featsReady=lu.feats.length===featCount&&lu.feats.every(function(p){return p&&p.id&&(!((state.feats||[]).find(function(f){return String(f.id)===String(p.id);})||{}).exige_parametro||String(p.parametro||'').trim());});
     var ready=dnd35LevelupReady(state);
     var status=lu.status?'<p class="dnd35-warning" role="status">'+esc(lu.status)+'</p>':'';
-    return '<section class="dnd35-panel dnd35-levelup" aria-labelledby="dnd35-levelup-title"><h2 id="dnd35-levelup-title">Avanço de nível · '+currentLevel+' → '+nextLevel+'</h2><p class="dnd35-note">Você tem '+pending+' nível(is) pendente(s). Conclua um nível por vez; as escolhas são validadas no servidor antes de gravar.</p><div class="dnd35-levelup-roll"><button type="button" data-lu-roll>Confirmar rolagem d'+die+'</button><strong>'+ (lu.rollRequested?'Rolagem será gerada pelo servidor ao aplicar':'O dado será rolado pelo servidor no momento da aplicação')+'</strong></div><div class="dnd35-levelup-section"><h3>Perícias</h3><p class="dnd35-budget">Pontos por nível: <b id="lu-budget">'+spent+' / '+budget+'</b> gastos</p><p class="dnd35-note">Graduações novas de perícias de classe custam 1 ponto e avançam de 1 em 1; fora de classe custam 2 e avançam de 0,5 em 0,5.</p><div class="dnd35-skill-list">'+skillsHtml+'</div></div><div class="dnd35-levelup-section"><h3>Talentos</h3>'+(featCount?'<div class="dnd35-feat-list">'+featsHtml+'</div>':'<p class="dnd35-note">Este nível não concede um talento novo.</p>')+'</div><div class="dnd35-levelup-section"><h3>Características de classe</h3>'+featuresHtml+'</div><div class="dnd35-levelup-section"><h3>Atributos</h3>'+attrHtml+'</div>'+status+'<div class="dnd35-actions"><button type="button" class="dnd35-save" data-lu-apply '+(ready?'':'disabled')+'>Aplicar nível '+nextLevel+'</button></div></section>';
+    return '<section class="dnd35-panel dnd35-levelup" aria-labelledby="dnd35-levelup-title"><h2 id="dnd35-levelup-title">Avanço de nível · '+currentLevel+' → '+nextLevel+'</h2><p class="dnd35-note">Você tem '+pending+' nível(is) pendente(s). Conclua um nível por vez; as escolhas são validadas no servidor antes de gravar.</p><div class="dnd35-levelup-roll"><button type="button" data-lu-roll>Confirmar rolagem d'+die+'</button><strong>'+ (lu.rollRequested?'Rolagem será gerada pelo servidor ao aplicar':'O dado será rolado pelo servidor no momento da aplicação')+'</strong></div><div class="dnd35-levelup-section"><h3>Perícias</h3><p class="dnd35-budget">Pontos por nível: <b id="lu-budget">'+spent+' / '+budget+'</b> gastos</p><p class="dnd35-note">Graduações novas de perícias de classe custam 1 ponto e avançam de 1 em 1; fora de classe custam 2 e avançam de 0,5 em 0,5.</p><div class="dnd35-skill-list">'+skillsHtml+'</div>'+languageHtml+'</div><div class="dnd35-levelup-section"><h3>Talentos</h3>'+(featCount?'<div class="dnd35-feat-list">'+featsHtml+'</div>':'<p class="dnd35-note">Este nível não concede um talento novo.</p>')+'</div><div class="dnd35-levelup-section"><h3>Características de classe</h3>'+featuresHtml+'</div><div class="dnd35-levelup-section"><h3>Atributos</h3>'+attrHtml+'</div>'+status+'<div class="dnd35-actions"><button type="button" class="dnd35-save" data-lu-apply '+(ready?'':'disabled')+'>Aplicar nível '+nextLevel+'</button></div></section>';
   }
   function dnd35LevelupBind(state){
     var panel=document.querySelector('.dnd35-levelup');if(!panel)return;
     panel.addEventListener('change',function(event){
       var skill=event.target.closest('[data-lu-skill]');if(skill){state.levelUp.skills[skill.dataset.luSkill]=Number(skill.value)||0;state.levelUp.status='';renderizarFichaSRD35();return;}
+      var language=event.target.closest('[data-lu-language]');if(language){var languageIndex=Number(language.dataset.luLanguageIndex);state.levelUp.idiomasNovos=state.levelUp.idiomasNovos||[];state.levelUp.idiomasNovos[languageIndex]=language.value;state.levelUp.status='';renderizarFichaSRD35();return;}
       var feat=event.target.closest('[data-lu-feat]');if(feat){var i=Number(feat.dataset.luFeat);state.levelUp.feats[i]={id:feat.value,parametro:'',choice_type:feat.dataset.luFeatType};state.levelUp.status='';renderizarFichaSRD35();return;}
       var attribute=event.target.closest('[data-lu-attribute]');if(attribute){state.levelUp.attribute=attribute.value;state.levelUp.status='';renderizarFichaSRD35();}
     });
     panel.addEventListener('input',function(event){var param=event.target.closest('[data-lu-feat-param]');if(param){var i=Number(param.dataset.luFeatParam);if(state.levelUp.feats[i])state.levelUp.feats[i].parametro=param.value;var applyButton=panel.querySelector('[data-lu-apply]');if(applyButton)applyButton.disabled=!dnd35LevelupReady(state);}});
     panel.addEventListener('click',async function(event){
-      var roll=event.target.closest('[data-lu-roll]');if(roll){state.levelUp.rollRequested=true;state.levelUp.status='O resultado será gerado pelo servidor ao aplicar o nível.';renderizarFichaSRD35();return;}
+      var roll=event.target.closest('[data-lu-roll]');if(roll){var die=Math.max(1,Number(state.classe.dado_vida)||8),raw=await window.vttUI.ask({title:'Dado de Vida',label:'Role 1d'+die+' no Dice da mesa e informe o resultado',defaultValue:String(state.levelUp.hitDieRoll||''),inputMode:'numeric'});if(raw===null)return;var hitDieRoll=Number(raw);if(!Number.isInteger(hitDieRoll)||hitDieRoll<1||hitDieRoll>die){state.levelUp.status='Resultado inválido. Informe um valor inteiro entre 1 e '+die+'.';renderizarFichaSRD35();return;}state.levelUp.hitDieRoll=hitDieRoll;state.levelUp.rollRequested=true;state.levelUp.status='Rolagem registrada: '+hitDieRoll+' no d'+die+'.';renderizarFichaSRD35();return;}
       var apply=event.target.closest('[data-lu-apply]');if(!apply||apply.disabled)return;
       apply.disabled=true;state.levelUp.status='Validando e aplicando o avanço…';
       var status=document.querySelector('.dnd35-levelup [role="status"]');if(status)status.textContent=state.levelUp.status;
@@ -2027,9 +2079,12 @@ function dnd35WeaponProficient(state,weaponName){
       var campaignId=Number(URL_PARAMS.get('mesa')||(state.character&&state.character.campaign_id)||0);
       if(!campaignId){state.levelUp.status='Não foi possível identificar a campanha desta ficha. Abra a ficha a partir da mesa.';renderizarFichaSRD35();return;}
       try{
-        var result=await sb.rpc('concluir_avanco_nivel_personagem_srd',{
-          p_campaign_id:campaignId,p_character_id:String(CHAR_ID),p_hit_die_roll:null,
-          p_skill_ranks:skills,p_feats:state.levelUp.feats||[],p_attribute:state.levelUp.attribute||null
+        var languageData=dnd35LevelupLanguageData(state,dnd35Objeto(state.sheet.atributos),state.levelUp);
+        var newLanguageChoices=Array.from({length:languageData.needed},function(_,i){return languageData.picks[i]||'';});
+        var languagePayload={automaticos:languageData.automatic,bonus_inteligencia:languageData.bonus,comprados_falar_idioma:languageData.purchased.concat(newLanguageChoices)};
+        var result=await sb.rpc('concluir_avanco_nivel_personagem_srd_v2',{
+          p_campaign_id:campaignId,p_character_id:String(CHAR_ID),p_hit_die_roll:Number(state.levelUp.hitDieRoll),
+          p_skill_ranks:skills,p_feats:state.levelUp.feats||[],p_attribute:state.levelUp.attribute||null,p_idiomas:languagePayload
         });
         if(result.error)throw result.error;
         var refreshed=await sb.from('srd_character_sheets').select('*').eq('character_id',String(CHAR_ID)).single();
@@ -2593,7 +2648,7 @@ function dnd35WeaponProficient(state,weaponName){
     renderizarFichaSRD35();
   }
   async function carregarFichaSRD35(characterId,sheet) {
-    if(!Object.prototype.hasOwnProperty.call(sheet,'pericias')||!Object.prototype.hasOwnProperty.call(sheet,'talentos')) throw new Error('Migração SRD pendente: faltam as colunas srd_character_sheets.pericias e/ou talentos. Aplique a migração SRD antes de abrir esta ficha.');
+    if(!Object.prototype.hasOwnProperty.call(sheet,'pericias')||!Object.prototype.hasOwnProperty.call(sheet,'talentos')||!Object.prototype.hasOwnProperty.call(sheet,'idiomas_conhecidos')) throw new Error('Migração SRD pendente: faltam as colunas srd_character_sheets.pericias e/ou talentos. Aplique a migração SRD antes de abrir esta ficha.');
     var results=await Promise.all([sb.from('characters').select('*').eq('id',characterId).single(),sb.from('srd_races').select('*').eq('id',String(sheet.raca_id)).single(),sb.from('srd_classes').select('*').eq('id',String(sheet.classe_id)).single(),carregarCatalogosSRD35()]);
     if(results[0].error)throw new Error('Personagem: '+results[0].error.message);
     if(results[1].error)throw new Error('Raça SRD: '+results[1].error.message);
