@@ -2213,7 +2213,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         ?(isHeal
           ?await sb.rpc('conjurar_magia_com_acao_srd_multialvo_v3',{p_character_id:String(p.ch.id),p_spell_id:String(spell.id),p_slot_level:Number(slot),p_target_token_keys:targetKeys,p_roll_results:rollResults})
           :await sb.rpc('conjurar_magia_efeitos_multialvo',{p_character_id:String(p.ch.id),p_spell_id:String(spell.id),p_slot_level:Number(slot),p_target_token_keys:targetKeys}))
-        :isMagicMissile?await sb.rpc('conjurar_missil_magico_srd',{p_character_id:String(p.ch.id),p_spell_id:String(spell.id),p_slot_level:Number(slot),p_target_token_key:targetKey,p_damage:Number(roll&&roll.damage)})
+        :isMagicMissile?await sb.rpc('conjurar_missil_magico_srd_manual',{p_character_id:String(p.ch.id),p_spell_id:String(spell.id),p_slot_level:Number(slot),p_target_token_key:targetKey,p_damage_rolls:rollResults})
         :await sb.rpc('conjurar_magia_com_acao_srd_manual',{p_character_id:String(p.ch.id),p_spell_id:String(spell.id),p_slot_level:Number(slot),p_target_token_key:targetKey,p_roll_results:rollResults});
       if(result.error)throw new Error(result.error.message);var data=result.data||{};
       if(data.estado!==undefined)p.sh.magias_preparadas=data.estado;if(data.combat_data){combatDataState=data.combat_data;renderizarIniciativa(combatDataState);}
@@ -2244,7 +2244,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(isMagicMissile){
       if(!targetKey){btn.disabled=false;alert('Escolha o alvo de Míssil Mágico.');return;}
       var missileCount=Math.min(5,Math.ceil(Math.max(1,Number(p.sh.nivel)||1)/2));
-      abrirDado('Míssil Mágico · '+missileCount+' × (1d4+1)',function(damage){cast({damage:Number(damage)});},true,true,missileCount+'d4+'+missileCount);
+      abrirDado('Míssil Mágico · '+missileCount+' × (1d4+1)',function(total,values){if(!Array.isArray(values)||values.length!==missileCount){btn.disabled=false;alert('A rolagem não retornou um resultado individual de D4 para cada míssil. Role novamente.');return;}cast({values:values});},true,true,missileCount+'d4+'+missileCount);
     }else if(isHeal){
       var cureDice=String(tech.cura&&tech.cura.dados||'').trim();
       if(/^[0-9]+d[0-9]+([+-][0-9]+)?$/i.test(cureDice)){
