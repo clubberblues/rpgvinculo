@@ -3927,7 +3927,7 @@ async function abrirModalEquipamentos(){
             var spellOutcome=resolvedSpell.data||{};extras.d20=d20;extras.pending_id=requestData.pending_id;extras.spell_id=requestData.spell_id;
             extras.total=spellOutcome.total;extras.bonus=spellOutcome.bonus;extras.dc=spellOutcome.dc;extras.status=spellOutcome.status;
             if(isSpellSave){
-              if(spellOutcome.saved)texto='🛡️ '+ficha.ch.nome+' resistiu à magia ('+d20+' + '+spellOutcome.bonus+' = '+spellOutcome.total;'+ ' contra CD '+spellOutcome.dc+').';
+              if(spellOutcome.saved)texto='🛡️ '+ficha.ch.nome+' resistiu à magia ('+d20+' + '+spellOutcome.bonus+' = '+spellOutcome.total+' contra CD '+spellOutcome.dc+').';
               else if(spellOutcome.requires_spell_resistance)texto='✨ '+ficha.ch.nome+' falhou na resistência. O conjurador precisa superar a resistência à magia '+spellOutcome.spell_resistance+'.';
               else texto='🌀 A resistência falhou; o efeito da magia foi aplicado a '+ficha.ch.nome+'.';
             }else{
@@ -3977,7 +3977,7 @@ async function abrirModalEquipamentos(){
     if(Array.from(container.querySelectorAll('.btn-rolar-teste')).some(function(btn){return btn.dataset.responseKey===responseKey;}))return;
     var token=(cbaState&&Array.isArray(cbaState.tokens)?cbaState.tokens:[]).find(function(t){return String(t.key||t.id)===String(tokenId);});
     var nome=token?String(token.nome||token.name||'Alvo NPC'):'Alvo NPC';
-    var btn=document.createElement('button');btn.className='btn-rolar-teste';btn.type='button';btn.dataset.responseKey=responseKey;
+    var btn=document.createElement('button');btn.className='btn-rolar-teste';btn.type='button';btn.dataset.responseKey=responseKey;btn.dataset.characterId=String(tokenId);btn.dataset.requestKey=String(requestKey);
     btn.textContent='🎲 Rolar resistência do NPC · '+nome;
     btn.onclick=function(){
       if(btn.disabled)return;
