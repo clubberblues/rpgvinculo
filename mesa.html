@@ -2286,9 +2286,16 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       var card=document.createElement('article');card.className='feature-action-card';
       var title=document.createElement('h3');title.textContent='Nível '+row.class_level+' · '+row.name;
       var desc=document.createElement('p');desc.textContent=row.summary||'Sem resumo cadastrado.';
-      var mechanics=document.createElement('small');var tech=row.mechanics&&typeof row.mechanics==='object'?JSON.stringify(row.mechanics):String(row.mechanics||'');mechanics.textContent=tech&&tech!=='{}'?'Regra registrada: '+tech:'Uso/recurso: consultar a descrição da ficha e confirmar com o Mestre.';
-      var use=document.createElement('button');use.type='button';use.className='feature-use-btn';use.textContent='Anunciar uso ao Mestre';use.addEventListener('click',async function(){use.disabled=true;try{var msg='⚔️ '+p.ch.nome+' anuncia o uso de '+row.name+' (nível '+row.class_level+'). O Mestre confirma custo, limite e efeito conforme a regra da ficha.';var sent=await enviarMensagemChat(msg,'rolagem',{evento:'habilidade_classe',character_id:String(p.ch.id),class_id:classId,feature_key:row.feature_key,feature_name:row.name,requires_gm_resolution:true});if(sent&&sent.error)throw new Error(sent.error.message);use.textContent='Uso anunciado';}catch(e){use.disabled=false;alert('Não foi possível anunciar: '+e.message);}});
-      card.append(title,desc,mechanics,use);list.appendChild(card);
+      var mechanics=document.createElement('small'),rule=row.mechanics&&typeof row.mechanics==='object'?row.mechanics:{},status=String(rule.engine_status||'needs_implementation'),implemented=Array.isArray(rule.implemented_features)?rule.implemented_features:[],pending=Array.isArray(rule.pending_features)?rule.pending_features:[];
+      if(status==='implemented'){
+        mechanics.textContent='Aplicada automaticamente pelo motor: '+(implemented.join(', ')||row.name)+'.';
+        card.append(title,desc,mechanics);
+      }else{
+        mechanics.textContent=(status==='partial'?'Implementação parcial. ':'Ainda não implementada no motor. ')+(pending.length?'Pendente: '+pending.join(', '):'O recurso não deve ser tratado como ação automática.');
+        var use=document.createElement('button');use.type='button';use.className='feature-use-btn';use.disabled=true;use.textContent=status==='partial'?'Parcial — aguardando implementação':'Em implementação';
+        card.append(title,desc,mechanics,use);
+      }
+      list.appendChild(card);
     });
   }
   document.querySelectorAll('[data-features-close]').forEach(function(b){b.addEventListener('click',function(){var m=document.getElementById('modal-habilidades-classe');m.classList.remove('ativo');m.hidden=true;});});
