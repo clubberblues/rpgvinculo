@@ -1629,8 +1629,6 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2938
     classNames.forEach(function(name) { names[dnd35Norm(name)] = true; });
     var ids = Object.create(null);
     var wildcardKnowledge = !!names['conhecimento qualquer'];
-    // O catálogo localizado usa Atletismo para a perícia Jump/Saltar do SRD 3.5.
-    if(names.saltar)names.atletismo=true;
     state.skills.forEach(function(skill) {
       var normalized = dnd35Norm(skill.nome), id = String(skill.id);
       if (names[normalized] || (wildcardKnowledge && (normalized === 'conhecimento' || normalized.indexOf('conhecimento ') === 0)) || (names.fuga && id === 'fuga')) ids[id] = true;
