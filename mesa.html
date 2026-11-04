@@ -1869,7 +1869,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var dwarfFavoredEnemyBonus=0;
     if(String(own.sh&&own.sh.raca_id)==='anao'){
       var targetTraits=String([target.nome,target.detalhe,target.monsterStats&&target.monsterStats.tipo,target.monsterStats&&target.monsterStats.subtipo,target.monsterStats&&target.monsterStats.subtype,target.monsterStats&&target.monsterStats.subtypes,target.monsterStats&&target.monsterStats.type,target.monsterStats&&target.monsterStats.race_id].filter(Boolean).join(' ')).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-      if(/orc|goblinoid|goblin|hobgoblin|bugbear/.test(targetTraits))dwarfFavoredEnemyBonus=1;
+      if(/(^|[^a-z])(orc|goblinoid|goblin|hobgoblin|bugbear)([^a-z]|$)/.test(targetTraits))dwarfFavoredEnemyBonus=1;
     }
     bonus+=dwarfFavoredEnemyBonus;
     var sneakAttackDice=0,sneakAttackEligible=false;
