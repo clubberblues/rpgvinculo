@@ -1597,6 +1597,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     fecharMenuContextualToken(false);menu.replaceChildren();ctxTokenAtualKey=String(item.key);ctxFocusTokenKey=String(item.key);
     if(ehGM){
       if(item.tipo==='player'){
+        adicionarBotaoContextual(menu,'pv-personagem','❤️ Ajustar PV do jogador');
         var playerTurn=combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
         if(playerTurn&&!playerTurn.is_monster&&String(playerTurn.id)===String(item.id))adicionarBotaoContextual(menu,'gm-token-move','↔️ Mover token do jogador');
       }
@@ -1608,7 +1609,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         adicionarBotaoContextual(menu,'pv-token','❤️ Ajustar PV da criatura');if(item.tipo==='monstro')adicionarBotaoContextual(menu,'monster-info','📜 Ver ficha no chat');
       }
     }else{
-      adicionarBotaoContextual(menu,'pv-personagem','❤️ Ajustar meus PV');adicionarBotaoContextual(menu,'atk-corpo','⚔️ Ataque corpo a corpo');adicionarBotaoContextual(menu,'atk-dist','🏹 Ataque à distância');adicionarBotaoContextual(menu,'atk-mag','✨ Conjurar magia');adicionarBotaoContextual(menu,'habilidades','⚔️ Habilidades da classe');adicionarBotaoContextual(menu,'inventario','🎒 Inventário');
+      adicionarBotaoContextual(menu,'atk-corpo','⚔️ Ataque corpo a corpo');adicionarBotaoContextual(menu,'atk-dist','🏹 Ataque à distância');adicionarBotaoContextual(menu,'atk-mag','✨ Conjurar magia');adicionarBotaoContextual(menu,'habilidades','⚔️ Habilidades da classe');adicionarBotaoContextual(menu,'inventario','🎒 Inventário');
     }
     var close=adicionarBotaoContextual(menu,'fechar','✕ Fechar',true);
     menu.classList.add('ativo');menu.setAttribute('aria-hidden','false');tokenEl.setAttribute('aria-expanded','true');
@@ -1626,7 +1627,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     fecharMenuContextualToken(false);
     if(acao==='fechar')return;
     if(acao==='token-image'){selecionarImagemToken(item);return;}
-    if(acao==='pv-personagem'){var owner=acharPersonagemDoToken(item);if(!ehGM&&item.tipo==='player'&&owner&&owner.ch.user_id===eu.id)abrirAjustePV(item.id);return;}
+    if(acao==='pv-personagem'){var owner=acharPersonagemDoToken(item);if(ehGM&&item.tipo==='player'&&owner)abrirAjustePV(owner.ch.id);return;}
     if(acao==='pv-token'){if(ehGM&&item.tipo!=='player')abrirAjustePVToken(item.key);return;}
     if(acao==='monster-info'){if(ehGM&&item.tipo==='monstro')infoTokenNoChat(item);return;}
     if(acao==='npc-sheet'){if(ehGM)publicarFichaNPC35(item).catch(function(err){alert('Não foi possível publicar a ficha do NPC: '+err.message);});return;}
@@ -1882,11 +1883,12 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     },true,true,'1d20');
   }
   function abrirAjustePV(characterId){
-    var p=personagens.find(function(x){return String(x.ch.id)===String(characterId);}); if(!p||p.ch.user_id!==eu.id)return;
+    var p=personagens.find(function(x){return String(x.ch.id)===String(characterId);}); if(!ehGM||!p)return;
     personagemPVSelecionado={tipo:'personagem',registro:p}; document.getElementById('pv-personagem-nome').textContent=p.ch.nome+' · '+(p.sh.pv_atual==null?pvMax(p.sh,p.cl):p.sh.pv_atual)+' / '+pvMax(p.sh,p.cl)+' PV';
     document.getElementById('pv-variacao').value='-1'; document.getElementById('modal-pv-personagem').classList.add('ativo');
   }
   async function abrirAjustePVToken(tokenKey){
+    if(!ehGM)return;
     var token=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key)===String(tokenKey);});if(!token||token.tipo==='player')return;
     var max=token.maxHp==null?Number(await window.vttUI.ask({title:'Definir pontos de vida',label:'PV máximo de '+token.nome,defaultValue:'10',inputMode:'numeric'})):Number(token.maxHp);if(!Number.isInteger(max)||max<1||max>100000)return;
     var current=token.hp==null?max:Number(token.hp);personagemPVSelecionado={tipo:'token',registro:Object.assign({},token,{maxHp:max,hp:current})};document.getElementById('pv-personagem-nome').textContent=token.nome+' · '+current+' / '+max+' PV';document.getElementById('pv-variacao').value='-1';document.getElementById('modal-pv-personagem').classList.add('ativo');
@@ -1900,7 +1902,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     camp.addEventListener('click',function(e){if(e.target===camp||e.target.closest('[data-campaign-delete-close]'))camp.classList.remove('ativo');});
     del.addEventListener('click',async function(){if(del.disabled)return; ;del.disabled=true;try{var r=await sb.rpc('excluir_campanha_propria',{p_campaign_id:Number(MESA_ID),p_confirmation_name:name.value});if(r.error)throw new Error(r.error.message);location.replace('lobby.html');}catch(err){alert('Não foi possível excluir a campanha: '+err.message);del.disabled=false;}});
     var pv=document.getElementById('modal-pv-personagem'); pv.addEventListener('click',function(e){if(e.target===pv||e.target.closest('[data-pv-close]'))pv.classList.remove('ativo');});
-    document.getElementById('confirmar-ajuste-pv').addEventListener('click',async function(){if(!personagemPVSelecionado)return;if(personagemPVSelecionado.tipo==='token'&&!ehGM)return;var ownedSheet=personagemPVSelecionado.tipo==='personagem'&&personagemPVSelecionado.registro;if(personagemPVSelecionado.tipo==='personagem'&&(!ownedSheet||ownedSheet.ch.user_id!==eu.id))return;var delta=Number(document.getElementById('pv-variacao').value);if(!Number.isInteger(delta)||delta===0){alert('Informe uma quantidade inteira diferente de zero.');return;}try{if(personagemPVSelecionado.tipo==='token'){var token=personagemPVSelecionado.registro;var r=await sb.rpc('alterar_pv_token_cba',{p_campaign_id:Number(MESA_ID),p_token_id:String(token.id),p_variacao:delta,p_pv_max:Number(token.maxHp)});if(r.error)throw new Error(r.error.message);campanha.cba_data=r.data.cba_data;pv.classList.remove('ativo');aplicarCBAnaMesa(r.data.cba_data,false);return;}var p=personagemPVSelecionado.registro;var r=await sb.rpc('alterar_pv_personagem',{p_campaign_id:Number(MESA_ID),p_character_id:String(p.ch.id),p_variacao:delta});if(r.error)throw new Error(r.error.message);p.sh.pv_atual=r.data.pv_atual;pv.classList.remove('ativo');renderCards();aplicarCBAnaMesa(campanha.cba_data,false);}catch(err){alert('Falha ao atualizar PV: '+err.message);}});
+    document.getElementById('confirmar-ajuste-pv').addEventListener('click',async function(){if(!ehGM||!personagemPVSelecionado)return;var delta=Number(document.getElementById('pv-variacao').value);if(!Number.isInteger(delta)||delta===0){alert('Informe uma quantidade inteira diferente de zero.');return;}try{if(personagemPVSelecionado.tipo==='token'){var token=personagemPVSelecionado.registro;var r=await sb.rpc('alterar_pv_token_cba',{p_campaign_id:Number(MESA_ID),p_token_id:String(token.id),p_variacao:delta,p_pv_max:Number(token.maxHp)});if(r.error)throw new Error(r.error.message);campanha.cba_data=r.data.cba_data;pv.classList.remove('ativo');aplicarCBAnaMesa(r.data.cba_data,false);return;}var p=personagemPVSelecionado.registro;var r=await sb.rpc('alterar_pv_personagem',{p_campaign_id:Number(MESA_ID),p_character_id:String(p.ch.id),p_variacao:delta});if(r.error)throw new Error(r.error.message);p.sh.pv_atual=r.data.pv_atual;pv.classList.remove('ativo');renderCards();aplicarCBAnaMesa(campanha.cba_data,false);}catch(err){alert('Falha ao atualizar PV: '+err.message);}});
     var inv=document.getElementById('modal-inventario-srd');inv.addEventListener('click',function(e){if(e.target===inv||e.target.closest('[data-inventory-close]'))inv.classList.remove('ativo');});
     var mag=document.getElementById('modal-magias');mag.addEventListener('click',function(e){if(e.target===mag||e.target.closest('[data-magic-close]'))fecharModalMagias();});
     document.getElementById('confirmar-conjuracao').addEventListener('click',confirmarConjuracao);
