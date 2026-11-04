@@ -1,0 +1,78 @@
+name: Validate mesa JavaScript
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "mesa.html"
+      - ".github/workflows/mesa-syntax-check.yml"
+  pull_request:
+    paths:
+      - "mesa.html"
+      - ".github/workflows/mesa-syntax-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Check inline JavaScript in mesa.html
+        run: |
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          import subprocess
+          import tempfile
+
+          class Scripts(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.current = None
+                  self.items = []
+
+              def handle_starttag(self, tag, attrs):
+                  if tag.lower() == "script":
+                      self.current = {"attrs": dict(attrs), "parts": []}
+
+              def handle_data(self, data):
+                  if self.current is not None:
+                      self.current["parts"].append(data)
+
+              def handle_endtag(self, tag):
+                  if tag.lower() == "script" and self.current is not None:
+                      self.items.append(self.current)
+                      self.current = None
+
+          parser = Scripts()
+          parser.feed(Path("mesa.html").read_text(encoding="utf-8"))
+          checked = 0
+          for script in parser.items:
+              attrs = script["attrs"]
+              if attrs.get("src"):
+                  continue
+              kind = attrs.get("type", "").strip().lower()
+              if kind and kind not in ("text/javascript", "application/javascript", "module"):
+                  continue
+              source = "".join(script["parts"]).strip()
+              if not source:
+                  continue
+              suffix = ".mjs" if kind == "module" else ".js"
+              with tempfile.NamedTemporaryFile("w", suffix=suffix, encoding="utf-8", delete=False) as handle:
+                  handle.write(source)
+                  temp_path = handle.name
+              try:
+                  subprocess.run(["node", "--check", temp_path], check=True)
+              finally:
+                  Path(temp_path).unlink(missing_ok=True)
+              checked += 1
+
+          if not checked:
+              raise SystemExit("No inline JavaScript blocks were checked in mesa.html.")
+          print(f"mesa.html: syntax OK ({checked} inline script block(s)).")
+          PY
