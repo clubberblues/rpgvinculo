@@ -1968,7 +1968,12 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var weapon=weapons.find(function(it){var d=it.detalhes||{};return type==='atk-dist'?d.weapon_ranged===true:d.weapon_melee!==false;});
     if(type==='atk-dist'&&!weapon){alert('Equipe uma arma à distância antes de atacar.');return;}
     var finesseWeapon=type==='atk-corpo'&&personagemTemTalento(own.sh,'srd35_feat_weapon_finesse')&&(!weapon||!!(weapon.detalhes&&weapon.detalhes.weapon_finesse_eligible===true));
-    var attackAttribute=type==='atk-dist'||finesseWeapon?'DES':'FOR',ability=modifier35(attrs[attackAttribute]),strengthModifier=modifier35(attrs.FOR);
+    var attackAttribute=type==='atk-dist'||finesseWeapon?'DES':'FOR';
+    var attackAbilityEffectModifier=modificadorEfeitoPersonagemMesa35(own,attackAttribute==='FOR'?'strength':'dexterity');
+    var strengthEffectModifier=modificadorEfeitoPersonagemMesa35(own,'strength');
+    var effectAttackModifier=modificadorEfeitoPersonagemMesa35(own,'attack_roll');
+    var ability=modifier35(Number(attrs[attackAttribute]||10)+attackAbilityEffectModifier);
+    var strengthModifier=modifier35(Number(attrs.FOR||10)+strengthEffectModifier);
     var weaponName=weapon?weapon.nome:'Ataque desarmado',weaponFocusName=weapon&&weapon.detalhes&&weapon.detalhes.weapon_focus_name||weaponName,damage=weapon&&weapon.dano||'1d3',weaponFocus=0,weaponSpecializationDamage=0,powerPenalty=0,powerDamage=0,proficiencyPenalty=personagemProficienteArma35(own,weapon)?0:4;
     if(weapon&&String(damage).includes('/')){
       var damageOptions=String(damage).split('/').map(function(value){return value.trim();}).filter(Boolean);
@@ -2002,7 +2007,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       rangePenalty=(rangeIncrements-1)*2;
     }
     var armorNonproficiencyPenalty=penalidadeArmaduraNaoProficiente35(own);
-    var sizeModifier=modifierTamanho35(own.tamanho),bonus=bab+ability+weaponFocus-powerPenalty+sizeModifier-rangePenalty-proficiencyPenalty+armorNonproficiencyPenalty;
+    var sizeModifier=modifierTamanho35(own.tamanho),bonus=bab+ability+weaponFocus+effectAttackModifier-powerPenalty+sizeModifier-rangePenalty-proficiencyPenalty+armorNonproficiencyPenalty;
     var racialFavoredEnemyBonus=0;
     var targetTraits=String([target.nome,target.detalhe,target.creature_type,target.monsterStats&&target.monsterStats.tipo,target.monsterStats&&target.monsterStats.subtipo,target.monsterStats&&target.monsterStats.subtype,target.monsterStats&&target.monsterStats.subtypes,target.monsterStats&&target.monsterStats.type,target.monsterStats&&target.monsterStats.creature_type,target.monsterStats&&target.monsterStats.race_id].filter(Boolean).join(' ')).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
     var racialRace=String(own.sh&&own.sh.raca_id||'');
@@ -2066,7 +2071,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     }
     function registrarResultadoAtaque(d20,isCritical){
       var total=Number(d20)+bonus,automaticMiss=Number(d20)===1,automaticHit=Number(d20)===20,hit=!automaticMiss&&(automaticHit||total>=targetAC);
-      var breakdown='1d20 '+d20+' + BBA '+bab+' + '+attackAttribute+' '+ability+(sizeModifier?' + tamanho '+(sizeModifier>0?'+':'')+sizeModifier:'')+(weaponFocus?' + Foco em Arma +'+weaponFocus:'')+(racialFavoredEnemyBonus?' + bônus racial de ataque +1':'')+(powerPenalty?' − Ataque Poderoso '+powerPenalty:'')+(rangePenalty?' − distância '+rangePenalty:'')+(proficiencyPenalty?' − arma sem proficiência '+proficiencyPenalty:'')+(armorNonproficiencyPenalty?' − armadura/escudo sem proficiência '+Math.abs(armorNonproficiencyPenalty):'');
+      var breakdown='1d20 '+d20+' + BBA '+bab+' + '+attackAttribute+' '+ability+(attackAbilityEffectModifier?' (atributo ajustado por efeito +'+attackAbilityEffectModifier+')':'')+(effectAttackModifier?' + efeitos de ataque '+(effectAttackModifier>0?'+':'')+effectAttackModifier:'')+(sizeModifier?' + tamanho '+(sizeModifier>0?'+':'')+sizeModifier:'')+(weaponFocus?' + Foco em Arma +'+weaponFocus:'')+(racialFavoredEnemyBonus?' + bônus racial de ataque +1':'')+(powerPenalty?' − Ataque Poderoso '+powerPenalty:'')+(rangePenalty?' − distância '+rangePenalty:'')+(proficiencyPenalty?' − arma sem proficiência '+proficiencyPenalty:'')+(armorNonproficiencyPenalty?' − armadura/escudo sem proficiência '+Math.abs(armorNonproficiencyPenalty):'');
       if(!hit){
         enviarMensagemChat('⚔️ '+title+' com '+weaponName+' contra '+target.nome+': '+breakdown+' = **'+total+'** contra CA '+targetAC+' — ERRO. O dano não será rolado.','rolagem',{evento:'ataque_dnd35',atacante:String(own.ch.id),atacante_nome:String(own.ch.nome||''),alvo:String(target.id),alvo_nome:String(target.nome||''),resultado:total,d20:Number(d20),ca_alvo:targetAC,acerto:false,bab:bab,modificador:ability,bonus_foco:weaponFocus,bonus_tamanho:sizeModifier,bonus_racial:racialFavoredEnemyBonus,penalidade_ataque_poderoso:powerPenalty,penalidade_arma_sem_proficiencia:proficiencyPenalty,penalidade_armadura_sem_proficiencia:armorNonproficiencyPenalty,arma:weaponName,dano:damage});
         return;
@@ -5185,6 +5190,27 @@ async function abrirModalEquipamentos(){
     return ordem.findIndex(function(entry){return String(entry.id)===String(personagem.ch.id)&&!!entry.is_monster===gmOwned;});
   }
   var efeitosCampanhaMesa={conditions:[],effects:[]};
+  function modificadorEfeitoPersonagemMesa35(personagem,stat){
+    var characterId=personagem&&personagem.ch?String(personagem.ch.id):String(personagem||'');
+    if(!characterId||!stat)return 0;
+    var buckets=Object.create(null);
+    efeitosCampanhaMesa.effects.filter(function(effect){
+      return effect.target_kind==='character'&&String(effect.target_id)===characterId;
+    }).forEach(function(effect){
+      var modifiers=effect.effect_data&&Array.isArray(effect.effect_data.modifiers)?effect.effect_data.modifiers:[];
+      modifiers.forEach(function(modifier){
+        if(String(modifier.stat||'').toLowerCase()!==String(stat).toLowerCase())return;
+        var value=Number(modifier.value);if(!Number.isFinite(value))return;
+        var type=String(modifier.bonus_type||'untyped').toLowerCase();
+        var bucket=buckets[type]||(buckets[type]={sum:0,max:null});
+        bucket.sum+=value;bucket.max=bucket.max===null?value:Math.max(bucket.max,value);
+      });
+    });
+    return Object.keys(buckets).reduce(function(total,type){
+      var bucket=buckets[type];
+      return total+(['untyped','dodge','circumstance'].indexOf(type)>=0?bucket.sum:bucket.max);
+    },0);
+  }
   var nomesCondicoesMesa={
     paralyzed:'Paralisado',blinded:'Cego',deafened:'Surdo',stunned:'Atordoado',dazed:'Pasmo',
     frightened:'Assustado',panicked:'Em pânico',shaken:'Abalado',sickened:'Enjoado',
