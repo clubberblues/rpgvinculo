@@ -2295,17 +2295,35 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var selectedFeats=listaTalentosUI(p.sh&&p.sh.talentos);
     var selectedFeatIds=selectedFeats.map(function(choice){return String(typeof choice==='string'?choice:(choice&& (choice.id||choice.feat_id||choice.talent_id)||''));}).filter(Boolean);
     var featSkillEffects={};
+    var normalizeFeatParam=function(value){return String(value||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();};
     if(selectedFeatIds.length){
       var featResult=await sb.from('srd_feats').select('id,mechanics').in('id',selectedFeatIds);
       if(featResult.error){alert('Não foi possível carregar os efeitos passivos dos talentos: '+featResult.error.message);return;}
-      (featResult.data||[]).forEach(function(feat){
+      var featCatalogById=Object.create(null);
+      (featResult.data||[]).forEach(function(feat){featCatalogById[String(feat.id)]=feat;});
+      // Itera as escolhas da ficha, não apenas as linhas únicas do catálogo:
+      // talentos repetíveis podem ter parâmetros distintos e produzir efeitos distintos.
+      selectedFeats.forEach(function(choice){
+        var choiceId=String(typeof choice==='string'?choice:(choice&& (choice.id||choice.feat_id||choice.talent_id)||''));
+        var feat=featCatalogById[choiceId];
+        if(!feat)return;
         var mechanics=feat.mechanics&&typeof feat.mechanics==='object'?feat.mechanics:{};
         if(['ready','implemented'].indexOf(String(mechanics.engine_status||''))<0||!mechanics.activation||mechanics.activation.mode!=='passive')return;
+        var featParameter=typeof choice==='object'&&choice?String(choice.parametro||choice.parameter||''):'';
         var effects=mechanics.resolution&&Array.isArray(mechanics.resolution.effects)?mechanics.resolution.effects:[];
         effects.forEach(function(effect){
-          var match=String(effect&&effect.stat||'').match(/^skill:(.+)$/);
-          var value=Number(effect&&effect.value);
-          if(!effect||effect.kind!=='modifier'||!match||!Number.isFinite(value))return;
+          if(!effect||effect.kind!=='modifier')return;
+          var stat=String(effect.stat||'');
+          if(effect.parameter_source==='feat_parameter'&&effect.stat_template){
+            var selectedSkill=(result.data||[]).find(function(skill){
+              return normalizeFeatParam(skill.id)===normalizeFeatParam(featParameter)
+                ||normalizeFeatParam(skill.nome)===normalizeFeatParam(featParameter);
+            });
+            if(!selectedSkill)return;
+            stat=String(effect.stat_template).replace('{parameter}',String(selectedSkill.id));
+          }
+          var match=stat.match(/^skill:(.+)$/),value=Number(effect.value);
+          if(!match||!Number.isFinite(value))return;
           if(!featSkillEffects[match[1]])featSkillEffects[match[1]]=[];
           featSkillEffects[match[1]].push({bonusType:String(effect.bonus_type||'untyped'),value:value});
         });
