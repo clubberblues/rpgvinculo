@@ -2298,7 +2298,9 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var normalizeFeatParam=function(value){return String(value||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();};
     var featIdentity=p.sh.identidade||{};
     if(typeof featIdentity==='string'){try{featIdentity=JSON.parse(featIdentity);}catch(e){featIdentity={};}}
-    var featSkillSpecializations=Array.isArray(featIdentity.skill_specializations)?featIdentity.skill_specializations:[];
+    var featSkillSpecializations=featIdentity.skill_specializations||[];
+    if(typeof featSkillSpecializations==='string'){try{featSkillSpecializations=JSON.parse(featSkillSpecializations);}catch(e){featSkillSpecializations=[];}}
+    if(!Array.isArray(featSkillSpecializations))featSkillSpecializations=[];
     if(selectedFeatIds.length){
       var featResult=await sb.from('srd_feats').select('id,mechanics').in('id',selectedFeatIds);
       if(featResult.error){alert('Não foi possível carregar os efeitos passivos dos talentos: '+featResult.error.message);return;}
