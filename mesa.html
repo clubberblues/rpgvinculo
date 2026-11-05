@@ -2292,6 +2292,25 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(!p){alert(somenteConsulta?'Não foi possível localizar a ficha selecionada.':'Nenhuma ficha própria disponível.');return;}
     var result=await sb.from('srd_skills').select('id,nome,atributo,source_status,treinada_apenas,penalidade_armadura,descricao');
     if(result.error){alert('Catálogo de perícias indisponível: '+result.error.message);return;}
+    var selectedFeats=listaTalentosUI(p.sh&&p.sh.talentos);
+    var selectedFeatIds=selectedFeats.map(function(choice){return String(typeof choice==='string'?choice:(choice&& (choice.id||choice.feat_id||choice.talent_id)||''));}).filter(Boolean);
+    var featSkillEffects={};
+    if(selectedFeatIds.length){
+      var featResult=await sb.from('srd_feats').select('id,mechanics').in('id',selectedFeatIds);
+      if(featResult.error){alert('Não foi possível carregar os efeitos passivos dos talentos: '+featResult.error.message);return;}
+      (featResult.data||[]).forEach(function(feat){
+        var mechanics=feat.mechanics&&typeof feat.mechanics==='object'?feat.mechanics:{};
+        if(['ready','implemented'].indexOf(String(mechanics.engine_status||''))<0||!mechanics.activation||mechanics.activation.mode!=='passive')return;
+        var effects=mechanics.resolution&&Array.isArray(mechanics.resolution.effects)?mechanics.resolution.effects:[];
+        effects.forEach(function(effect){
+          var match=String(effect&&effect.stat||'').match(/^skill:(.+)$/);
+          var value=Number(effect&&effect.value);
+          if(!effect||effect.kind!=='modifier'||!match||!Number.isFinite(value))return;
+          if(!featSkillEffects[match[1]])featSkillEffects[match[1]]=[];
+          featSkillEffects[match[1]].push({bonusType:String(effect.bonus_type||'untyped'),value:value});
+        });
+      });
+    }
     var trained=p.sh.pericias||{},classList=p.cl.pericias_classe||[],identity=p.sh.identidade||{},skillSpecializations=identity.skill_specializations||[];
     if(typeof classList==='string'){try{classList=JSON.parse(classList);}catch(e){classList=classList.split(',');}}
     if(typeof skillSpecializations==='string'){try{skillSpecializations=JSON.parse(skillSpecializations);}catch(e){skillSpecializations=[];}}
@@ -2308,11 +2327,19 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         if(rank<=0&&sk.treinada_apenas)return;
         var mod=modifier35((p.sh.atributos||{})[ability]),skillName=norm(sk.nome);
         var classSkill=normalizedClassSkills.some(function(classSkillName){return classSkillName===skillName||(['oficio','profissao'].indexOf(String(sk.id))>=0&&classSkillName.indexOf(skillName+' ')===0);})||normalizedClassSkills.indexOf('conhecimento qualquer')>=0&&skillName.indexOf('conhecimento ')===0;
-        var classBonus=classSkill&&rank>0?3:0,racialBonus=bonusRacialPericia35(p.sh.raca_id,sk.id);
+        // Em D&D 3.5, perícia de classe não concede +3 no teste; ela altera custo e limite de graduações.
+        var racialBonus=bonusRacialPericia35(p.sh.raca_id,sk.id);
         var armorCheckPenalty=sk.penalidade_armadura?penalidadeArmaduraHabilidade35(p)*(['natacao','natação'].indexOf(String(sk.id))>=0?2:1):0;
         var armorNonproficiencyPenalty=sk.penalidade_armadura&&(ability==='FOR'||ability==='DES')?penalidadeArmaduraNaoProficiente35(p):0;
-        var bonus=rank+mod+classBonus+racialBonus+armorCheckPenalty+armorNonproficiencyPenalty;
-        options.push({sk:sk,skillKey:skillKey,specializationName:specializationName,displayName:displayName,rank:rank,ability:ability,mod:mod,classBonus:classBonus,racialBonus:racialBonus,armorCheckPenalty:armorCheckPenalty,armorNonproficiencyPenalty:armorNonproficiencyPenalty,bonus:bonus});
+        var skillBonusByType={};
+        (featSkillEffects[String(sk.id)]||[]).forEach(function(effect){
+          var type=effect.bonusType||'untyped';
+          if(['untyped','dodge','circumstance'].indexOf(type)>=0)skillBonusByType[type]=(skillBonusByType[type]||0)+effect.value;
+          else skillBonusByType[type]=Math.max(skillBonusByType[type]||0,effect.value);
+        });
+        var featBonus=Object.keys(skillBonusByType).reduce(function(total,type){return total+skillBonusByType[type];},0);
+        var bonus=rank+mod+racialBonus+armorCheckPenalty+armorNonproficiencyPenalty+featBonus;
+        options.push({sk:sk,skillKey:skillKey,specializationName:specializationName,displayName:displayName,rank:rank,ability:ability,mod:mod,classSkill:classSkill,featBonus:featBonus,racialBonus:racialBonus,armorCheckPenalty:armorCheckPenalty,armorNonproficiencyPenalty:armorNonproficiencyPenalty,bonus:bonus});
       });
     });
     options.sort(function(a,b){return a.displayName.localeCompare(b.displayName,'pt-BR');});
@@ -2330,9 +2357,9 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     options.forEach(function(option){
       var card=document.createElement(somenteConsulta?'article':'button');if(!somenteConsulta)card.type='button';card.className='skill-roll-card';card.dataset.search=norm(option.displayName);
       var name=document.createElement('strong');name.textContent=option.displayName;
-      var meta=document.createElement('span');meta.textContent=option.ability+' · '+(option.rank?option.rank+' graduações':'sem graduação')+(option.classBonus?' · perícia de classe': '');
+      var meta=document.createElement('span');meta.textContent=option.ability+' · '+(option.rank?option.rank+' graduações':'sem graduação')+(option.classSkill?' · perícia de classe': '');
       var total=document.createElement('b');total.textContent=(option.bonus>=0?'+':'')+option.bonus;
-      var rule=document.createElement('small');rule.className='skill-roll-rule';rule.textContent=resumoPericiaPt35(option.sk.nome,option.sk.descricao);var dwarfRuleNote='';if(String(p.sh&&p.sh.raca_id)==='anao'){if(String(option.sk.id)==='procurar')dwarfRuleNote='Traço anão — Astúcia com pedras: +2 em Procurar para notar construções incomuns de pedra. Quando estiver a até 3 m de uma construção incomum de pedra, o Anão pode fazer um teste de Procurar como se estivesse procurando ativamente. O Mestre decide se a circunstância narrativa permite aplicar a regra e o bônus.';else if(String(option.sk.id)==='avaliacao')dwarfRuleNote='Traço anão: +2 em Avaliação ao examinar itens de pedra ou metal; o Mestre determina quando se aplica.';else if(String(option.sk.id)==='oficio')dwarfRuleNote='Traço anão: +2 em Ofício ao trabalhar com pedra ou metal; o Mestre determina quando se aplica.';}var detail=document.createElement('small');detail.className='skill-roll-formula';detail.textContent='Teste: 1d20 '+(option.bonus>=0?'+':'')+option.bonus+' · bônus total'+(option.racialBonus?' · bônus racial '+(option.racialBonus>=0?'+':'')+option.racialBonus:'');
+      var rule=document.createElement('small');rule.className='skill-roll-rule';rule.textContent=resumoPericiaPt35(option.sk.nome,option.sk.descricao);var dwarfRuleNote='';if(String(p.sh&&p.sh.raca_id)==='anao'){if(String(option.sk.id)==='procurar')dwarfRuleNote='Traço anão — Astúcia com pedras: +2 em Procurar para notar construções incomuns de pedra. Quando estiver a até 3 m de uma construção incomum de pedra, o Anão pode fazer um teste de Procurar como se estivesse procurando ativamente. O Mestre decide se a circunstância narrativa permite aplicar a regra e o bônus.';else if(String(option.sk.id)==='avaliacao')dwarfRuleNote='Traço anão: +2 em Avaliação ao examinar itens de pedra ou metal; o Mestre determina quando se aplica.';else if(String(option.sk.id)==='oficio')dwarfRuleNote='Traço anão: +2 em Ofício ao trabalhar com pedra ou metal; o Mestre determina quando se aplica.';}var detail=document.createElement('small');detail.className='skill-roll-formula';detail.textContent='Teste: 1d20 '+(option.bonus>=0?'+':'')+option.bonus+' · bônus total'+(option.racialBonus?' · bônus racial '+(option.racialBonus>=0?'+':'')+option.racialBonus:'')+(option.featBonus?' · talentos '+(option.featBonus>=0?'+':'')+option.featBonus:'');
       card.append(name,meta,total,rule);if(dwarfRuleNote){var racialInfo=document.createElement('small');racialInfo.className='skill-roll-rule';racialInfo.textContent=dwarfRuleNote;card.appendChild(racialInfo);}card.appendChild(detail);
       if(!somenteConsulta)card.onclick=async function(){
         if(card.disabled)return;
@@ -2349,7 +2376,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
             if(!finalGate.data||finalGate.data.allowed!==true)throw new Error(finalGate.data&&finalGate.data.reason||'A perícia deixou de estar disponível antes de concluir a rolagem.');
             var trapfinding=!!finalGate.data.trapfinding,trapfindingNote='',conditionalRacialBonus=0,conditionalRacialLabel='';
             var parts=['D20 físico: '+d20,'graduações '+option.rank,'atributo '+option.ability+' '+(option.mod>=0?'+':'')+option.mod];
-            if(option.classBonus)parts.push('perícia de classe +3');
+            if(option.classSkill)parts.push('perícia de classe (sem bônus fixo; afeta custo e limite de graduações)');
+            if(option.featBonus)parts.push('talentos passivos '+(option.featBonus>=0?'+':'')+option.featBonus);
             if(option.racialBonus)parts.push('bônus racial aplicável '+(option.racialBonus>=0?'+':'')+option.racialBonus);
             if(option.armorCheckPenalty)parts.push('penalidade de armadura '+option.armorCheckPenalty);
             if(option.armorNonproficiencyPenalty)parts.push('armadura sem proficiência '+option.armorNonproficiencyPenalty);
@@ -2364,7 +2392,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
             var breakdown='📚 '+p.ch.nome+' — '+option.displayName+': '+parts.join(' · ')+'. O Mestre aplica os bônus pertinentes e compara com a CD.';
             if(conditionalRacialLabel)breakdown+='\n🪨 '+conditionalRacialLabel;
             if(trapfindingNote)breakdown+='\n🪤 '+trapfindingNote;
-            await enviarMensagemChat(breakdown,'rolagem',{evento:'pericia_dnd35',character_id:String(p.ch.id),skill_id:option.sk.id,skill_key:option.skillKey,especializacao:option.specializationName||null,d20:Number(d20),graduações:option.rank,modificador_atributo:option.mod,bônus_classe:option.classBonus,bonus_racial:option.racialBonus,bonus_racial_condicional:conditionalRacialBonus,bonus_racial_condicional_descricao:conditionalRacialLabel,penalidade_armadura:option.armorCheckPenalty,penalidade_armadura_sem_proficiencia:option.armorNonproficiencyPenalty,trapfinding:trapfinding,trapfinding_note:trapfindingNote});
+            await enviarMensagemChat(breakdown,'rolagem',{evento:'pericia_dnd35',character_id:String(p.ch.id),skill_id:option.sk.id,skill_key:option.skillKey,especializacao:option.specializationName||null,d20:Number(d20),graduações:option.rank,modificador_atributo:option.mod,bônus_classe:0,pericia_de_classe:option.classSkill,bonus_talentos:option.featBonus,bonus_racial:option.racialBonus,bonus_racial_condicional:conditionalRacialBonus,bonus_racial_condicional_descricao:conditionalRacialLabel,penalidade_armadura:option.armorCheckPenalty,penalidade_armadura_sem_proficiencia:option.armorNonproficiencyPenalty,trapfinding:trapfinding,trapfinding_note:trapfindingNote});
           },true,true,'1d20');
         }catch(error){alert('Não foi possível usar esta perícia: '+(error&&error.message||error));card.disabled=false;}
       };
