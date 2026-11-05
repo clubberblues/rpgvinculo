@@ -243,3 +243,21 @@ Esta proteção não cria ataques da mão secundária: em uma ficha com duas arm
 a sequência atual continua usando somente a arma principal. A geração dos
 ataques secundários e seus bônus/penalidades ainda depende do resolvedor misto
 por ataque e da validação autoritativa correspondente.
+
+
+### Mãos de armas em NPCs e monstros
+
+A tabela `srd_cba_token_equipment` agora persiste `hand_slot` (`main_hand` ou
+`off_hand`) para NPCs e monstros, com no máximo uma arma equipada por mão.
+Armas equipadas anteriormente são migradas para `main_hand`. A RPC
+`equipar_item_token_srd_maos` valida o papel GM, o inventário do token e as
+restrições de armas de duas mãos; somente `authenticated` pode executá-la.
+O inventário do Mestre passou a oferecer equipar/desequipar cada mão e a
+carregar `hand_slot` no estado local. O ataque do Mestre prioriza a arma da mão
+principal quando houver uma seleção explícita.
+
+Isto prepara o equipamento de NPCs/monstros para o resolvedor misto, mas não
+implementa ainda ataques secundários automáticos, penalidades de duas armas,
+dano reduzido da mão secundária, críticos por arma ou seleção independente de
+alvos. Essas regras continuam bloqueadas até o fluxo de ataque por arma ser
+implementado e testado.
