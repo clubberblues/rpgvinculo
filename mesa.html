@@ -1547,7 +1547,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         var gmOwnTurn=!!(gmTurn&&gmTurn.is_monster&&String(gmTurn.id)===String(item.id));
         if(item.tipo==='npc')adicionarBotaoContextual(menu,'npc-sheet','📜 Ficha e controles do NPC');if(gmOwnTurn){adicionarBotaoContextual(menu,'gm-token-attack','⚔️ Atacar com este token');adicionarBotaoContextual(menu,'gm-token-trap-attack','🪤 Atacar como armadilha');if(tokenTemMagiaPreparada35(item))adicionarBotaoContextual(menu,'gm-token-magic','✨ Conjurar magia disponível');adicionarBotaoContextual(menu,'gm-token-move','↔️ Mover token');adicionarBotaoContextual(menu,'gm-token-action','📜 Registrar outra ação');adicionarBotaoContextual(menu,'gm-token-end','⏭️ Encerrar turno do token');}
         adicionarBotaoContextual(menu,'inventario','🎒 Inventário do token');
-        adicionarBotaoContextual(menu,'pv-token','❤️ Ajustar PV da criatura');if(item.tipo==='monstro')adicionarBotaoContextual(menu,'monster-info','📜 Ver ficha no chat');
+        adicionarBotaoContextual(menu,'pv-token','❤️ Ajustar PV da criatura');if(item.tipo==='monstro'){adicionarBotaoContextual(menu,'monster-sheet','🐉 Ficha tática do monstro');adicionarBotaoContextual(menu,'monster-info','📣 Publicar ficha no chat');}
       }
     }else{
       adicionarBotaoContextual(menu,'pv-personagem','❤️ Ajustar meus PV');adicionarBotaoContextual(menu,'atk-corpo','⚔️ Ataque corpo a corpo');adicionarBotaoContextual(menu,'atk-dist','🏹 Ataque à distância');adicionarBotaoContextual(menu,'atk-mag','✨ Conjurar magia');adicionarBotaoContextual(menu,'habilidades','⚔️ Habilidades da classe');adicionarBotaoContextual(menu,'inventario','🎒 Inventário');
@@ -1640,10 +1640,70 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(tokenEhTurnoMestre35(item)){
       addAction('⚔️ Atacar',function(){overlay.remove();iniciarAtaqueMestre(item);});
       addAction('📜 Registrar ação',function(){overlay.remove();registrarOutraAcaoMestre(item);});
+      addAction('↔️ Mover token',function(){overlay.remove();document.getElementById('iniciativa-status').textContent='Mova '+item.nome+' arrastando seu token no tabuleiro.';});
       if(tokenTemMagiaPreparada35(item))addAction('✨ Magias',function(){overlay.remove();abrirMagiasTokenMestre(item);});
     }
     panel.appendChild(actions);
     var note=document.createElement('p');note.className='skill-roll-hint';note.textContent='Ficha genérica de NPC controlada pelo Mestre. Ataques, ações e magias só ficam disponíveis no turno ativo do NPC.';
+    panel.appendChild(note);
+    overlay.appendChild(panel);overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});document.body.appendChild(overlay);
+  }
+  async function abrirPainelControleMonstro35(item){
+    if(!ehGM||!item||item.tipo!=='monstro')return;
+    var catalog=[];
+    try{catalog=cbaMonsterCatalogLoaded?cbaMonsterCatalog:await carregarCatalogoMonstrosSRD();}
+    catch(error){catalog=cbaMonsterCatalog||[];}
+    var monster=catalog.find(function(row){return String(row.id)===String(item.monsterId||item.id);})||null;
+    var stats=monster||item.monsterStats||{},tech=jsonValueSRD(stats.dados_tecnicos||stats.technical_data,{});
+    var old=document.getElementById('modal-controle-monstro-gm');if(old)old.remove();
+    var overlay=document.createElement('div');overlay.id='modal-controle-monstro-gm';overlay.className='skill-roll-overlay';overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');
+    var panel=document.createElement('section');panel.className='skill-roll-panel';
+    var head=document.createElement('header');head.className='skill-roll-head';
+    var title=document.createElement('h2');title.textContent='Monstro · '+String(stats.nome||item.nome||'Criatura');
+    var close=document.createElement('button');close.type='button';close.className='skill-roll-close';close.textContent='✕';close.onclick=function(){overlay.remove();};
+    head.append(title,close);panel.appendChild(head);
+    var identity=document.createElement('p');identity.className='skill-roll-hint';
+    identity.textContent=['ND '+String(stats.nd||'—'),traduzirTipoMonstro35(stats.tipo),traduzirTamanhoMonstro35(stats.tamanho),traduzirTendenciaMonstro35(stats.tendencia)].filter(Boolean).join(' · ');
+    panel.appendChild(identity);
+    var currentHp=item.hp==null?(stats.pv==null?'—':Number(stats.pv)):Number(item.hp),maxHp=item.maxHp==null?(stats.pv==null?'—':Number(stats.pv)):Number(item.maxHp);
+    var vitals=document.createElement('div');vitals.className='player-action-vitals';
+    [['❤',currentHp+' / '+maxHp+' PV'],['🛡',String(item.ac==null?(stats.ca||'—'):item.ac)+' CA'],['⚡','Iniciativa '+String(stats.iniciativa||'—')]].forEach(function(pair){var value=document.createElement('span');value.textContent=pair[0]+' '+pair[1];vitals.appendChild(value);});
+    panel.appendChild(vitals);
+    function addField(label,value,preLine){
+      if(value==null||value===''||(Array.isArray(value)&&!value.length))return;
+      var row=document.createElement('p');row.className='feature-detail';
+      if(preLine)row.style.whiteSpace='pre-line';
+      var strong=document.createElement('strong');strong.textContent=label+': ';
+      row.append(strong,document.createTextNode(formatarValorMonstro35(value)));panel.appendChild(row);
+    }
+    addField('Dados de vida',stats.dados_vida);
+    addField('Deslocamento',stats.deslocamento);
+    addField('BBA / Agarrar',stats.base_attack_grapple);
+    addField('Espaço / alcance',stats.espaco_alcance);
+    addField('Resistências',['Fortitude '+(stats.fortitude==null?'—':stats.fortitude),'Reflexos '+(stats.reflexos==null?'—':stats.reflexos),'Vontade '+(stats.vontade==null?'—':stats.vontade)].join(' · '));
+    addField('Atributos',['FOR','DES','CON','INT','SAB','CAR'].map(function(key){var value=stats[{FOR:'forca',DES:'destreza',CON:'constituicao',INT:'inteligencia',SAB:'sabedoria',CAR:'carisma'}[key]];if(value==null)return null;var score=Number(value),mod=modifier35(score);return key+' '+score+' ('+(mod>=0?'+':'')+mod+')';}).filter(Boolean).join(' · '));
+    addField('Ataques',traduzirAtaquesMonstro35(stats.ataques));
+    addField('Perícias',stats.pericias);
+    addField('Talentos',stats.talentos);
+    addField('Qualidades especiais',stats.qualidades_especiais,true);
+    var technicalLabels={special_attacks:'Ataques especiais',special_qualities:'Qualidades especiais adicionais',damage_reduction:'Redução de dano',spell_resistance:'Resistência à magia',resistances:'Resistências especiais',immunities:'Imunidades',senses:'Sentidos',languages:'Idiomas',environment:'Ambiente',organization:'Organização',treasure:'Tesouro',advancement:'Progressão',level_adjustment:'Ajuste de nível'};
+    Object.keys(technicalLabels).forEach(function(key){if(tech&&tech[key]!=null&&tech[key]!=='')addField(technicalLabels[key],tech[key],true);});
+    addField('Descrição',stats.descricao,true);
+    var sourceUrl=String(stats.srd_source_url||item.srdSourceUrl||'');
+    if(/^https?:\/\//i.test(sourceUrl)){var source=document.createElement('a');source.href=sourceUrl;source.target='_blank';source.rel='noopener noreferrer';source.textContent='Consultar referência SRD';panel.appendChild(source);}
+    var actions=document.createElement('div');actions.className='player-action-grid';
+    function addAction(label,callback){var button=document.createElement('button');button.type='button';button.className='btn-acao';button.textContent=label;button.addEventListener('click',callback);actions.appendChild(button);}
+    addAction('❤️ Ajustar PV',function(){overlay.remove();abrirAjustePVToken(item.key);});
+    addAction('🎒 Inventário',function(){overlay.remove();abrirInventarioTokenSRD(item);});
+    addAction('📣 Publicar ficha no chat',function(){publicarInfoMonstro(monster||{id:item.monsterId||item.id,nome:item.nome,nd:stats.nd,ca:stats.ca,pv:maxHp,ataques:stats.ataques,srd_source_url:sourceUrl});});
+    if(tokenEhTurnoMestre35(item)){
+      addAction('⚔️ Atacar',function(){overlay.remove();iniciarAtaqueMestre(item);});
+      addAction('📜 Registrar ação',function(){overlay.remove();registrarOutraAcaoMestre(item);});
+      addAction('↔️ Mover token',function(){overlay.remove();document.getElementById('iniciativa-status').textContent='Mova '+item.nome+' arrastando seu token no tabuleiro.';});
+      if(tokenTemMagiaPreparada35(item))addAction('✨ Magias',function(){overlay.remove();abrirMagiasTokenMestre(item);});
+    }
+    panel.appendChild(actions);
+    var note=document.createElement('p');note.className='skill-roll-hint';note.textContent=monster?'Ficha tática carregada do Bestiário SRD.':'Dados táticos recuperados do token; alguns campos podem estar ausentes do catálogo local.';
     panel.appendChild(note);
     overlay.appendChild(panel);overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});document.body.appendChild(overlay);
   }
@@ -1660,6 +1720,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(acao==='token-image'){selecionarImagemToken(item);return;}
     if(acao==='pv-personagem'){var owner=acharPersonagemDoToken(item);if(!ehGM&&item.tipo==='player'&&owner&&owner.ch.user_id===eu.id)abrirAjustePV(owner.ch.id);return;}
     if(acao==='pv-token'){if(ehGM&&item.tipo!=='player')abrirAjustePVToken(item.key);return;}
+    if(acao==='monster-sheet'){if(ehGM)abrirPainelControleMonstro35(item).catch(function(err){alert('Não foi possível abrir a ficha do monstro: '+err.message);});return;}
     if(acao==='monster-info'){if(ehGM&&item.tipo==='monstro')infoTokenNoChat(item);return;}
     if(acao==='gm-character-sheet'){if(ehGM)abrirPainelControlePersonagemGM(item);return;}
     if(acao==='npc-sheet'){if(ehGM)abrirPainelControleNPC35(item);return;}
@@ -1668,7 +1729,13 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(acao==='gm-token-trap-attack'){iniciarAtaqueMestre(item,'trap');return;}
     if(acao==='gm-token-magic'){abrirMagiasTokenMestre(item);return;}
     if(acao==='gm-token-action'){registrarOutraAcaoMestre(item);return;}
-    if(acao==='gm-token-move'){if(!ehGM||item.tipo!=='player'||!ehMeuTokenNoTurno(item)){alert('O Mestre só pode mover o token do jogador no turno ativo dessa ficha.');return;}document.getElementById('iniciativa-status').textContent='Mova '+item.nome+' arrastando seu token no tabuleiro. O deslocamento e a ação serão validados ao soltar.';return;}
+    if(acao==='gm-token-move'){
+      if(!ehGM)return;
+      var activeTurn=combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
+      var allowedMove=!!(activeTurn&&String(activeTurn.id)===String(item.id)&&(item.tipo==='player'?!activeTurn.is_monster:!!activeTurn.is_monster));
+      if(!allowedMove){alert('O Mestre só pode mover este token durante o turno correspondente da iniciativa.');return;}
+      document.getElementById('iniciativa-status').textContent='Mova '+item.nome+' arrastando seu token no tabuleiro. O deslocamento e a ação serão validados ao soltar.';return;
+    }
     if(acao==='gm-token-end'){if(ehGM)avancarTurno();return;}
     if(acao==='inventario'&&ehGM&&item.tipo!=='player'){abrirInventarioTokenSRD(item);return;}
     if(!acharPersonagemDoToken(item)||acharPersonagemDoToken(item).ch.user_id!==eu.id)return;
@@ -3701,7 +3768,7 @@ async function abrirModalEquipamentos(){
       if(!scene) return;
       var item = scene.tokens.find(function(t){ return t.key === token.dataset.cbaTokenKey; });
       if(!item) return;
-      if(!ePreview && ehGM && String(campanha.state||'').toUpperCase()==='COMBATE' && combatDataState&&combatDataState.active){var gmTurn=combatDataState.turn_order&&combatDataState.turn_order[Number(combatDataState.current_turn)||0];if(!gmTurn||!gmTurn.is_monster||String(gmTurn.id)!==String(item.id))return;}
+      if(!ePreview && ehGM && String(campanha.state||'').toUpperCase()==='COMBATE' && combatDataState&&combatDataState.active){var gmTurn=combatDataState.turn_order&&combatDataState.turn_order[Number(combatDataState.current_turn)||0],gmCanMove=!!(gmTurn&&String(gmTurn.id)===String(item.id)&&(item.tipo==='player'?!gmTurn.is_monster:!!gmTurn.is_monster));if(!gmCanMove)return;}
       if(!ePreview && !ehGM){
         if(item.tipo!=='player'||!modoMovimentoJogadorAtivo)return;
         var ownedCharacter=personagens.find(function(p){return String(p.ch.id)===String(item.id)&&p.ch.user_id===eu.id;});
