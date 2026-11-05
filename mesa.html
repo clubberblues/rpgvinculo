@@ -1576,7 +1576,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     [['❤',currentHp+' / '+maxHp+' PV'],['🛡',caFichaMesa(p)+' CA'],['↔',(p.deslocamento_m==null?'—':p.deslocamento_m)+' m']].forEach(function(pair){var value=document.createElement('span');value.textContent=pair[0]+' '+pair[1];vitals.appendChild(value);});
     panel.appendChild(vitals);
     var attrs=p.sh.atributos&&typeof p.sh.atributos==='object'?p.sh.atributos:{};
-    var attr=document.createElement('p');attr.className='feature-detail';attr.textContent='Atributos: '+['FOR','DES','CON','INT','SAB','CAR'].map(function(key){return key+' '+Number(attrs[key]||10)+' ('+(modifier35(attrs[key])>=0?'+':'')+modifier35(attrs[key])+')';}).join(' · ');
+    var attr=document.createElement('p');attr.className='feature-detail';attr.textContent='Atributos: '+['FOR','DES','CON','INT','SAB','CAR'].map(function(key){var score=Number(attrs[key]||10),mod=modifier35(score);return key+' '+score+' ('+(mod>=0?'+':'')+mod+')';}).join(' · ');
     panel.appendChild(attr);
     var equipment=Array.isArray(p.equipamento)?p.equipamento:[];
     var gear=document.createElement('p');gear.className='feature-detail';gear.textContent='Equipamentos carregados: '+(equipment.length?equipment.map(function(it){return String(it.nome||it.equipment_id||'Item')+(it.equipado?' (equipado)':'')+(Number(it.quantidade)>1?' ×'+it.quantidade:'');}).join(' · '):'nenhum item carregado na leitura da mesa.');
