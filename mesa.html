@@ -1716,6 +1716,18 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     addField('Perícias',stats.pericias);
     addField('Talentos',stats.talentos);
     addField('Qualidades especiais',stats.qualidades_especiais,true);
+    var specialAbilityData=stats.qualidades_especiais&&typeof stats.qualidades_especiais==='object'?stats.qualidades_especiais:{};
+    var specialAttackText=String(specialAbilityData.special_attacks||tech.special_attacks||'').trim();
+    var specialAttackNames=[];
+    if(specialAttackText){
+      var currentAbility='',depth=0;
+      Array.from(specialAttackText).forEach(function(ch){
+        if(ch==='(')depth++;else if(ch===')')depth=Math.max(0,depth-1);
+        if((ch===','||ch===';'||ch==='\n')&&depth===0){if(currentAbility.trim())specialAttackNames.push(currentAbility.trim());currentAbility='';}
+        else currentAbility+=ch;
+      });
+      if(currentAbility.trim())specialAttackNames.push(currentAbility.trim());
+    }
     var technicalLabels={special_attacks:'Ataques especiais',special_qualities:'Qualidades especiais adicionais',damage_reduction:'Redução de dano',spell_resistance:'Resistência à magia',resistances:'Resistências especiais',immunities:'Imunidades',senses:'Sentidos',languages:'Idiomas',environment:'Ambiente',organization:'Organização',treasure:'Tesouro',advancement:'Progressão',level_adjustment:'Ajuste de nível'};
     Object.keys(technicalLabels).forEach(function(key){if(tech&&tech[key]!=null&&tech[key]!=='')addField(technicalLabels[key],tech[key],true);});
     addField('Descrição',stats.descricao,true);
@@ -1729,6 +1741,9 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(tokenEhTurnoMestre35(item)){
       addAction('⚔️ Atacar',function(){overlay.remove();iniciarAtaqueMestre(item);});
       addAction('📜 Registrar ação',function(){overlay.remove();registrarOutraAcaoMestre(item);});
+      specialAttackNames.forEach(function(abilityName){
+        addAction('✨ '+abilityName,function(){overlay.remove();registrarOutraAcaoMestre(item,abilityName);});
+      });
       addAction('↔️ Mover token',function(){overlay.remove();document.getElementById('iniciativa-status').textContent='Mova '+item.nome+' arrastando seu token no tabuleiro.';});
       if(tokenTemMagiaPreparada35(item))addAction('✨ Magias',function(){overlay.remove();abrirMagiasTokenMestre(item);});
     }
@@ -1873,9 +1888,9 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   async function registrarAcaoTokenGM(item,category,note){
     if(!ehGM||!item||!combatDataState||!combatDataState.active)return;var used=await sb.rpc('consumir_acao_token_gm_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(item.id),p_acao:category});if(used.error){alert('Ação não realizada: '+used.error.message);return;}combatDataState=used.data.combat_data||combatDataState;renderizarIniciativa(combatDataState);await enviarMensagemChat('🎭 '+item.nome+' usou '+category+': '+String(note).trim(),'sistema',{evento:'acao_token_mestre',token_id:String(item.id),round:used.data.round,acao:category});
   }
-  async function registrarOutraAcaoMestre(item){
+  async function registrarOutraAcaoMestre(item,abilityName){
     if(!ehGM||!item||!combatDataState||!combatDataState.active)return;var turn=combatDataState.turn_order[Number(combatDataState.current_turn)||0];if(!turn||!turn.is_monster||String(turn.id)!==String(item.id)){alert('Este token não está no turno ativo do Mestre.');return;}
-    var category=await window.vttUI.ask({title:'Registrar ação do token',label:'Escolha o tipo de ação',kind:'select',options:[{value:'padrao',label:'Ação padrão'},{value:'rapida',label:'Ação rápida'}],defaultValue:'padrao'});if(!category)return;category=category.trim().toLowerCase();if(['padrao','rapida'].indexOf(category)<0){alert('Escolha padrao ou rapida. O movimento é aplicado ao arrastar o token.');return;}var note=await window.vttUI.ask({title:'Ação de '+item.nome,label:'Descreva brevemente a ação',defaultValue:''});if(!note||!note.trim())return;await registrarAcaoTokenGM(item,category,note);
+    var category=await window.vttUI.ask({title:abilityName?'Ativar habilidade · '+abilityName:'Registrar ação do token',label:'Escolha o tipo de ação conforme a regra da habilidade',kind:'select',options:[{value:'padrao',label:'Ação padrão'},{value:'rapida',label:'Ação rápida'}],defaultValue:'padrao'});if(!category)return;category=category.trim().toLowerCase();if(['padrao','rapida'].indexOf(category)<0){alert('Escolha padrao ou rapida. O movimento é aplicado ao arrastar o token.');return;}var prompt=abilityName?'Descreva alvos, testes, efeitos e resultado aplicados conforme a regra da habilidade.':'Descreva brevemente a ação';var note=await window.vttUI.ask({title:abilityName?'Resolução assistida · '+abilityName:'Ação de '+item.nome,label:prompt,defaultValue:abilityName?abilityName+' — ':''});if(!note||!note.trim())return;await registrarAcaoTokenGM(item,category,note);
   }
   async function publicarFichaNPC35(item){
     if(!ehGM||!item)return;var s=item.monsterStats||{},a=s.attributes||{},skills=Array.isArray(s.skills)?s.skills:[],feats=Array.isArray(s.feats)?s.feats:[],state=tokenSpellState35(item),ids=Array.from(new Set([].concat(state.conhecidas||[],(state.preparadas||[]).map(function(x){return x.spell_id;})).map(String).filter(Boolean))),spellNames=[];
