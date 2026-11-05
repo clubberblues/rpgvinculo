@@ -115,6 +115,12 @@ Testes devem declarar atributo/perícia, CD e resultado em sucesso/falha. Ataque
 
 Este exemplo é um modelo de dados, não uma ativação liberada. A habilidade só passa para `implemented` depois de validar requisitos, duração, limite diário, efeitos nos cálculos e encerramento/exaustão contra as regras da classe.
 
+## Execução de talentos passivos
+
+Talentos com `activation.mode = "passive"`, `engine_status = "implemented"` e efeitos `modifier` podem ser consultados pelo helper interno `priv.srd_passive_feat_modifier(character_id, stat)`. O helper aplica apenas efeitos estruturados e implementados; bônus sem tipo, de esquiva e circunstância são somados, enquanto bônus tipados iguais usam o maior valor.
+
+A iniciativa do jogador (d20 físico) e a iniciativa rolada pelo Mestre para tokens que controla consultam esse helper. Assim, o bônus de Iniciativa Aprimorada não depende mais de um ID hardcoded nas rotinas de iniciativa.
+
 ## Estados de implementação
 
 - `draft`: estrutura ainda incompleta; não executa.
