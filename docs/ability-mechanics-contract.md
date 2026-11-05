@@ -261,3 +261,12 @@ implementa ainda ataques secundários automáticos, penalidades de duas armas,
 dano reduzido da mão secundária, críticos por arma ou seleção independente de
 alvos. Essas regras continuam bloqueadas até o fluxo de ataque por arma ser
 implementado e testado.
+
+
+**Limitação de inventário identificada:** as tabelas de equipamento de ficha e
+CBA usam chaves por personagem/token + `equipment_id`, com quantidade na mesma
+linha. Portanto, duas cópias do mesmo tipo de arma ainda não podem ser
+representadas como duas instâncias equipadas simultaneamente. A próxima
+refatoração de inventário deve introduzir identificadores por instância (ou
+uma tabela de instâncias) antes de declarar suporte completo a duas armas
+idênticas. Até lá, o suporte de mãos permite duas armas de IDs distintos.
