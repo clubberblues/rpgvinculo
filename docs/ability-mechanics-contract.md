@@ -63,6 +63,8 @@ Os campos antigos são preservados para compatibilidade e auditoria da fonte.
 
 ## Tipos de ativação e ação
 
+`unclassified` é permitido somente quando `engine_status` for `draft` ou `needs_review`. Ele serve para preservar e enfileirar dados de origem ainda não classificados; nunca pode ser executado pelo motor.
+
 - `passive`: sempre considerado pelo motor, sem botão de ativação.
 - `toggle`: botão liga/desliga; estado persistente até desativação ou condição de término.
 - `activated`: botão executa uma ação pontual.
