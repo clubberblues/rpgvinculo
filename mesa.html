@@ -2296,6 +2296,9 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var selectedFeatIds=selectedFeats.map(function(choice){return String(typeof choice==='string'?choice:(choice&& (choice.id||choice.feat_id||choice.talent_id)||''));}).filter(Boolean);
     var featSkillEffects={};
     var normalizeFeatParam=function(value){return String(value||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();};
+    var featIdentity=p.sh.identidade||{};
+    if(typeof featIdentity==='string'){try{featIdentity=JSON.parse(featIdentity);}catch(e){featIdentity={};}}
+    var featSkillSpecializations=Array.isArray(featIdentity.skill_specializations)?featIdentity.skill_specializations:[];
     if(selectedFeatIds.length){
       var featResult=await sb.from('srd_feats').select('id,mechanics').in('id',selectedFeatIds);
       if(featResult.error){alert('Não foi possível carregar os efeitos passivos dos talentos: '+featResult.error.message);return;}
@@ -2315,12 +2318,20 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
           if(!effect||effect.kind!=='modifier')return;
           var stat=String(effect.stat||'');
           if(effect.parameter_source==='feat_parameter'&&effect.stat_template){
-            var selectedSkill=(result.data||[]).find(function(skill){
+            var selectedSpecialization=featSkillSpecializations.find(function(spec){
+              return spec&&(
+                normalizeFeatParam(spec.key)===normalizeFeatParam(featParameter)
+                ||normalizeFeatParam(spec.name)===normalizeFeatParam(featParameter)
+                ||normalizeFeatParam((spec.type||'')+' '+(spec.name||''))===normalizeFeatParam(featParameter)
+              );
+            });
+            var selectedSkill=selectedSpecialization?null:(result.data||[]).find(function(skill){
               return normalizeFeatParam(skill.id)===normalizeFeatParam(featParameter)
                 ||normalizeFeatParam(skill.nome)===normalizeFeatParam(featParameter);
             });
-            if(!selectedSkill)return;
-            stat=String(effect.stat_template).replace('{parameter}',String(selectedSkill.id));
+            var selectedSkillId=selectedSpecialization?selectedSpecialization.key:(selectedSkill&&selectedSkill.id);
+            if(!selectedSkillId)return;
+            stat=String(effect.stat_template).replace('{parameter}',String(selectedSkillId));
           }
           var match=stat.match(/^skill:(.+)$/),value=Number(effect.value);
           if(!match||!Number.isFinite(value))return;
