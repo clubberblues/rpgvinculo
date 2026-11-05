@@ -288,6 +288,8 @@ button,input,textarea{font-family:inherit}
 .ctx-btn.vermelho{color:#f87171;border-color:#b83232}
 .ctx-btn.vermelho:hover,.ctx-btn.vermelho:focus-visible{background:#b83232;color:#fff}
 .token-cba:focus-visible{outline:3px solid #f5c451;outline-offset:3px}
+.token-cba.movimento-ativo{outline:3px solid #70d59a;outline-offset:4px;box-shadow:0 0 0 7px rgba(112,213,154,.18),0 0 22px rgba(112,213,154,.75);cursor:grab}
+.btn-acao.ativo{border-color:#70d59a!important;color:#a7f3c4!important;box-shadow:0 0 0 1px rgba(112,213,154,.25),0 0 14px rgba(112,213,154,.2)}
 .cba-live-movement-preview{position:fixed;z-index:9997;display:none;pointer-events:none;max-width:min(340px,calc(100vw - 20px));padding:8px 11px;border:1px solid #c9a050;border-radius:6px;background:rgba(10,15,30,.96);color:#f4d07a;font:12px 'Cinzel',serif;line-height:1.4;box-shadow:0 6px 18px #000}
 .cba-live-movement-preview.excede{border-color:#f87171;color:#fca5a5}
 #painel-economia{position:fixed;left:12px;bottom:112px;z-index:9500;width:min(320px,calc(100vw - 24px));padding:10px;background:rgba(20,29,51,.96);border:2px solid #c9a050;border-radius:8px;box-shadow:0 10px 20px rgba(0,0,0,.8);pointer-events:none}
@@ -482,7 +484,6 @@ body{background:radial-gradient(ellipse at 50% -15%,#283b50 0,#111a28 38%,var(--
 #botoes-rolagem-pendente .btn-rolar-teste{width:100%;text-align:left}
 #token-context-menu{position:relative!important;inset:auto!important;transform:none!important;width:100%;max-width:none;max-height:30vh;margin-top:8px;box-shadow:none}
 #token-context-menu.ativo{display:flex}
-.cba-live-movement-preview{display:none!important}
 #painel-iniciativa{z-index:auto!important}
 @media(max-width:900px){#botoes-rolagem-pendente{max-height:18vh!important}#token-context-menu{max-height:24vh}}
 
@@ -1258,6 +1259,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   var ataqueMestreSelecionado = null;
   var reforcoAbaAtiva = 'npc';
   var ataqueSelecionado = null;
+  var modoMovimentoJogadorAtivo = false;
   var personagemPVSelecionado = null;
   var cbaZoom = 1;
   var cbaPinchInProgress = false;
@@ -1476,7 +1478,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       {title:'Ataque',actions:[{id:'atk-corpo',ic:'⚔️',txt:'Ataque corpo a corpo'},{id:'atk-dist',ic:'🏹',txt:'Ataque à distância'}].concat(magic?[{id:'atk-mag',ic:'✨',txt:'Conjurar magia'}]:[])},
       {title:'Tática e defesa',actions:[{id:'manobras-ui',ic:'🛡️',txt:'Manobras de combate'},{id:'defesa-ui',ic:'🧱',txt:'Ações defensivas'},{id:'movimento-ui',ic:'👣',txt:'Movimentação'}]},
       {title:'Personagem',actions:[{id:'ficha',ic:'📜',txt:'Minha ficha'},{id:'inventario',ic:'🎒',txt:'Equipamentos'},{id:'pericia',ic:'📚',txt:'Perícias'},{id:'racial-ui',ic:'⛰️',txt:'Características raciais'},{id:'talentos-ui',ic:'🏅',txt:'Talentos'},{id:'habilidades',ic:'⚔️',txt:'Características da classe'},{id:'dados',ic:'🎲',txt:'Dados livres'},{id:'avancar-turno',ic:'⏭️',txt:'Encerrar turno'}]}
-    ]:[{title:'Aventureiro',actions:[{id:'ficha',ic:'📜',txt:'Minha ficha'},{id:'inventario',ic:'🎒',txt:'Equipamentos e mochila'},{id:'pericia',ic:'📚',txt:'Perícias'},{id:'racial-ui',ic:'⛰️',txt:'Características raciais'},{id:'talentos-ui',ic:'🏅',txt:'Talentos'},{id:'habilidades',ic:'⚔️',txt:'Características da classe'},{id:'dados',ic:'🎲',txt:'Dados livres'}].concat(magic?[{id:'atk-mag',ic:'✨',txt:'Magias disponíveis'}]:[])}];montarPainelAcaoUI(el,groups,(p&&p.ch.nome||'Aventureiro')+' · '+classeUI(p),p);}
+    ]:[{title:'Aventureiro',actions:[{id:'movimento-ui',ic:'👣',txt:'Movimentação'},{id:'ficha',ic:'📜',txt:'Minha ficha'},{id:'inventario',ic:'🎒',txt:'Equipamentos e mochila'},{id:'pericia',ic:'📚',txt:'Perícias'},{id:'racial-ui',ic:'⛰️',txt:'Características raciais'},{id:'talentos-ui',ic:'🏅',txt:'Talentos'},{id:'habilidades',ic:'⚔️',txt:'Características da classe'},{id:'dados',ic:'🎲',txt:'Dados livres'}].concat(magic?[{id:'atk-mag',ic:'✨',txt:'Magias disponíveis'}]:[])}];montarPainelAcaoUI(el,groups,(p&&p.ch.nome||'Aventureiro')+' · '+classeUI(p),p);}
     var economy=document.getElementById('painel-economia');if(economy&&economy.parentNode)economy.parentNode.removeChild(economy);var combatPanel=document.createElement('section');combatPanel.id='painel-combate-acoes';combatPanel.hidden=true;combatPanel.innerHTML='<h3>CONTROLE DO TURNO</h3><p id="turno-controle-status">Aguardando a iniciativa.</p><div id="iniciativa-acoes-mestre"></div>';el.appendChild(combatPanel);if(economy)combatPanel.appendChild(economy);if(tokenMenu)el.appendChild(tokenMenu);var oldRoster=document.querySelector('.mesa-footer .painel-aventureiros');if(oldRoster)oldRoster.remove();var roster=document.createElement('section');roster.className='painel painel-aventureiros';roster.setAttribute('aria-label','Aventureiros da mesa');roster.innerHTML='<div class="painel-cab">AVENTUREIROS</div><div class="painel-corpo" id="cards-strip" aria-label="Cards de personagens, NPCs e monstros"></div>';var footer=document.querySelector('.mesa-footer');if(footer)footer.appendChild(roster);else el.appendChild(roster);if(diceOverlay){if(diceOverlay.parentElement!==document.body)document.body.appendChild(diceOverlay);diceOverlay.classList.add('dado-modal-global');}if(document.getElementById('painel-iniciativa'))renderizarIniciativa(combatDataState);
   }
   async function alternarEstadoMesa(){
@@ -1633,8 +1635,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       if(result.error) throw new Error(result.error.message);
       campanha.cba_data=result.data.cba_data; cbaPublishedState=normalizarCBAData(result.data.cba_data);
       aplicarCBAnaMesa(result.data.cba_data,false);
-      var remain=Number(result.data.movement_remaining_m);
-      document.getElementById('iniciativa-status').textContent='Movimento restante neste turno: '+remain.toLocaleString('pt-BR')+' m.';
+      var remain=result.data.movement_remaining_m;
+      document.getElementById('iniciativa-status').textContent=remain==null?'Posição atualizada no Grid. Movimento livre durante a exploração.':'Movimento restante neste turno: '+Number(remain).toLocaleString('pt-BR')+' m.';
       var combatRefresh=await sb.from('campaigns').select('combat_data').eq('id',MESA_ID).maybeSingle();if(!combatRefresh.error&&combatRefresh.data){combatDataState=combatRefresh.data.combat_data||combatDataState;renderizarIniciativa(combatDataState);}
     }catch(err){
       alert('Movimento não permitido: '+err.message);
@@ -2470,7 +2472,31 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(id === 'talentos-ui'){abrirTalentosJogadorUI();return;}
     if(id === 'manobras-ui'){abrirOpcoesTaticasUI('manobras');return;}
     if(id === 'defesa-ui'){abrirOpcoesTaticasUI('defesa');return;}
-    if(id === 'movimento-ui'){var mp=personagemAtivoDaInterface();var speed=mp&&mp.deslocamento_m;alert('Deslocamento: '+(speed==null?'consulte sua ficha':speed+' m por ação de movimento')+'. No combate, arraste seu token no Grid; a mesa valida distância e movimento restante.');return;}
+    if(id === 'movimento-ui'){
+      var mp=personagemAtivoDaInterface();
+      if(!mp){alert('Não foi possível localizar a ficha ativa para movimentação.');return;}
+      if(!cbaPublishedState){alert('O Mestre ainda não publicou o Grid.');return;}
+      var playerToken=(cbaPublishedState.tokens||[]).find(function(t){return t.tipo==='player'&&String(t.id)===String(mp.ch.id);});
+      if(!playerToken){alert('Não existe um token associado a esta ficha no Grid. Peça ao Mestre para vincular/publicar o token.');return;}
+      if(String(campanha&&campanha.state||'').toUpperCase()==='COMBATE'&&!ehMeuTokenNoTurno(playerToken)){
+        document.getElementById('iniciativa-status').textContent='Aguarde seu turno na iniciativa para movimentar.';return;
+      }
+      modoMovimentoJogadorAtivo=!modoMovimentoJogadorAtivo;
+      var moveButton=document.querySelector('[data-acao="movimento-ui"]');
+      if(moveButton){moveButton.classList.toggle('ativo',modoMovimentoJogadorAtivo);var label=moveButton.querySelector('span:last-child');if(label)label.textContent=modoMovimentoJogadorAtivo?'Concluir movimento':'Movimentação';}
+      var tokenElement=Array.from(document.querySelectorAll('#cba-token-layer .token-cba')).find(function(t){return String(t.dataset.cbaTokenKey)===String(playerToken.key);});
+      if(modoMovimentoJogadorAtivo){
+        if(tokenElement){tokenElement.classList.add('movimento-ativo');tokenElement.scrollIntoView({behavior:'smooth',block:'nearest',inline:'nearest'});}
+        var speed=Number(mp.deslocamento_m)||0;
+        document.getElementById('iniciativa-status').textContent=String(campanha&&campanha.state||'').toUpperCase()==='COMBATE'?'Movimentação habilitada · até '+speed.toLocaleString('pt-BR')+' m neste turno. Arraste seu token no Grid.':'Movimentação livre habilitada. Arraste seu token no Grid.';
+        var preview=document.getElementById('cba-live-movement-preview');if(preview){preview.textContent=String(campanha&&campanha.state||'').toUpperCase()==='COMBATE'?'Deslocamento disponível: '+speed.toLocaleString('pt-BR')+' m':'Exploração · movimento livre';preview.hidden=false;preview.style.display='block';}
+      }else{
+        document.querySelectorAll('#cba-token-layer .token-cba.movimento-ativo').forEach(function(t){t.classList.remove('movimento-ativo');});
+        var preview=document.getElementById('cba-live-movement-preview');if(preview){preview.hidden=true;preview.style.display='none';}
+        document.getElementById('iniciativa-status').textContent='Modo de movimentação encerrado.';
+      }
+      return;
+    }
     if(id === 'ficha'){ abrirMinhaFicha(); return; }
     if(id === 'config-campanha'){ if(ehGM&&String(campanha&&campanha.owner_id)===String(eu&&eu.id)) abrirModalExcluirCampanha(); return; }
     if(id === 'token-image-manager'){ if(ehGM) abrirSeletorImagemToken(); return; }
@@ -3494,8 +3520,12 @@ async function abrirModalEquipamentos(){
       var item = scene.tokens.find(function(t){ return t.key === token.dataset.cbaTokenKey; });
       if(!item) return;
       if(!ePreview && ehGM && String(campanha.state||'').toUpperCase()==='COMBATE' && combatDataState&&combatDataState.active){var gmTurn=combatDataState.turn_order&&combatDataState.turn_order[Number(combatDataState.current_turn)||0];if(!gmTurn||!gmTurn.is_monster||String(gmTurn.id)!==String(item.id))return;}
-      if(!ePreview && !ehGM && item.tipo!=='player') return;
-      if(!ePreview && !ehGM && (!ehMeuTokenNoTurno(item))) return;
+      if(!ePreview && !ehGM){
+        if(item.tipo!=='player'||!modoMovimentoJogadorAtivo)return;
+        var ownedCharacter=personagens.find(function(p){return String(p.ch.id)===String(item.id)&&p.ch.user_id===eu.id;});
+        if(!ownedCharacter)return;
+        if(String(campanha&&campanha.state||'').toUpperCase()==='COMBATE'&&!ehMeuTokenNoTurno(item))return;
+      }
       var rect = token.getBoundingClientRect();
       arrasto = {token:token,item:item,scene:scene,pointerId:e.pointerId,cell:tamanhoCelulaLayerCBA(layer,scene),offsetX:(e.clientX-rect.left)/cbaZoom,offsetY:(e.clientY-rect.top)/cbaZoom,startClientX:e.clientX,startClientY:e.clientY,startGridX:Number(item.gridX)||0,startGridY:Number(item.gridY)||0,moved:false};
       if(!ePreview)fecharMenuContextualToken(false);
@@ -3519,7 +3549,7 @@ async function abrirModalEquipamentos(){
       arrasto.token.style.left = left+'px';
       arrasto.token.style.top = top+'px';
       if(ePreview) atualizarReguaCBA(arrasto.item,left,top,cell);
-      else if(arrasto.item.tipo==='player'&&ehMeuTokenNoTurno(arrasto.item))atualizarPreviewMovimento(arrasto.item,left,top,cell,arrasto.startGridX,arrasto.startGridY,e.clientX,e.clientY);
+      else if(arrasto.item.tipo==='player'&&!ehGM&&modoMovimentoJogadorAtivo)atualizarPreviewMovimento(arrasto.item,left,top,cell,arrasto.startGridX,arrasto.startGridY,e.clientX,e.clientY);
     });
     function encerrar(e){
       if(!arrasto || (e && e.pointerId !== arrasto.pointerId)) return;
@@ -3551,7 +3581,7 @@ async function abrirModalEquipamentos(){
       arrasto = null;
       var tooltip = document.getElementById('cba-distancia-preview');
       if(tooltip) tooltip.style.display = 'none';
-      var livePreview=document.getElementById('cba-live-movement-preview');if(livePreview)livePreview.hidden=true;
+      var livePreview=document.getElementById('cba-live-movement-preview');if(livePreview){livePreview.hidden=true;livePreview.style.display='none';}
     }
     layer.addEventListener('pointerup',encerrar);
     layer.addEventListener('pointercancel',encerrar);
@@ -3585,7 +3615,8 @@ async function abrirModalEquipamentos(){
     preview.classList.toggle('excede',speed!=null&&spent>speed);
     if(speed==null)preview.textContent='Movimento previsto: '+spent.toLocaleString('pt-BR',{maximumFractionDigits:1})+' m · velocidade racial indisponível; o servidor validará.';
     else preview.textContent='Movimento no turno: '+spent.toLocaleString('pt-BR',{maximumFractionDigits:1})+' / '+speed.toLocaleString('pt-BR',{maximumFractionDigits:1})+' m'+(spent>speed?' · EXCEDE O DESLOCAMENTO!':' · restam '+Math.max(0,speed-spent).toLocaleString('pt-BR',{maximumFractionDigits:1})+' m');
-    preview.setAttribute('aria-label',preview.textContent);preview.hidden=true;var status=document.getElementById('iniciativa-status');if(status)status.textContent=preview.textContent;
+    if(String(campanha&&campanha.state||'').toUpperCase()!=='COMBATE')preview.textContent='Exploração · movimento livre · '+(speed==null?'deslocamento conforme ficha':speed.toLocaleString('pt-BR',{maximumFractionDigits:1})+' m de deslocamento');
+    preview.setAttribute('aria-label',preview.textContent);preview.hidden=false;preview.style.display='block';var status=document.getElementById('iniciativa-status');if(status)status.textContent=preview.textContent;
   }
 
   function normalizarCBAData(data){
