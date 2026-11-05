@@ -2011,11 +2011,32 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         damage=String(selectedDamage);
       }
     }
-    var feats=own.sh.talentos||[];if(typeof feats==='string'){try{feats=JSON.parse(feats);}catch(e){feats=[];}}
-    var normalizeName=function(value){var n=String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();return ({'dwarven waraxe':'machado de guerra anao','waraxe dwarven':'machado de guerra anao','dwarven urgrosh':'urgrosh anao','urgrosh dwarven':'urgrosh anao'})[n]||n;};
-    var hasWeaponFeat=function(id){return Array.isArray(feats)&&feats.some(function(feat){return feat&&String(feat.id)===id&&normalizeName(feat.parametro)===normalizeName(weaponFocusName);});};
-    weaponFocus=(hasWeaponFeat('foco_em_arma')?1:0)+(hasWeaponFeat('srd35_feat_greater_weapon_focus')?1:0);
-    weaponSpecializationDamage=(hasWeaponFeat('srd35_feat_weapon_specialization')?2:0)+(hasWeaponFeat('srd35_feat_greater_weapon_specialization')?2:0);
+    var selectedWeaponFeats=listaTalentosUI(own.sh.talentos);
+    var selectedWeaponFeatIds=selectedWeaponFeats.map(function(choice){return String(typeof choice==='string'?choice:(choice&& (choice.id||choice.feat_id||choice.talent_id)||''));}).filter(Boolean);
+    var normalizeName=function(value){var n=String(value||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();return ({'dwarven waraxe':'machado de guerra anao','waraxe dwarven':'machado de guerra anao','dwarven urgrosh':'urgrosh anao','urgrosh dwarven':'urgrosh anao'})[n]||n;};
+    if(selectedWeaponFeatIds.length){
+      var weaponFeatResult=await sb.from('srd_feats').select('id,mechanics').in('id',selectedWeaponFeatIds);
+      if(weaponFeatResult.error){alert('Não foi possível carregar os efeitos de foco em arma: '+weaponFeatResult.error.message);return;}
+      var weaponFeatCatalog=Object.create(null);
+      (weaponFeatResult.data||[]).forEach(function(feat){weaponFeatCatalog[String(feat.id)]=feat;});
+      selectedWeaponFeats.forEach(function(choice){
+        var choiceId=String(typeof choice==='string'?choice:(choice&& (choice.id||choice.feat_id||choice.talent_id)||''));
+        var feat=weaponFeatCatalog[choiceId];
+        if(!feat)return;
+        var mechanics=feat.mechanics&&typeof feat.mechanics==='object'?feat.mechanics:{};
+        if(['ready','implemented'].indexOf(String(mechanics.engine_status||''))<0||!mechanics.activation||mechanics.activation.mode!=='passive')return;
+        var featParameter=typeof choice==='object'&&choice?String(choice.parametro||choice.parameter||''):'';
+        if(normalizeName(featParameter)!==normalizeName(weaponFocusName))return;
+        var effects=mechanics.resolution&&Array.isArray(mechanics.resolution.effects)?mechanics.resolution.effects:[];
+        effects.forEach(function(effect){
+          if(!effect||effect.kind!=='modifier'||effect.parameter_source!=='feat_parameter'||!effect.stat_template)return;
+          var stat=String(effect.stat_template).replace('{parameter}',featParameter),value=Number(effect.value);
+          if(!Number.isFinite(value))return;
+          if(stat.indexOf('weapon_attack:')===0)weaponFocus+=value;
+          else if(stat.indexOf('weapon_damage:')===0)weaponSpecializationDamage+=value;
+        });
+      });
+    }
     if(type==='atk-corpo'&&weapon&&!(weapon.detalhes&&weapon.detalhes.weapon_light===true)&&personagemTemTalento(own.sh,'ataque_poderoso')){var rawPenalty=await window.vttUI.ask({title:'Ataque Poderoso',label:'Penalidade de ataque (0 a '+Math.max(0,bab)+')',defaultValue:'0',inputMode:'numeric'});if(rawPenalty===null)return;powerPenalty=Number(rawPenalty);if(!Number.isInteger(powerPenalty)||powerPenalty<0||powerPenalty>bab){alert('A penalidade deve ser um inteiro entre 0 e '+Math.max(0,bab)+'.');return;}powerDamage=powerPenalty*(armaDuasMaos35(weapon)?2:1);}
     var rangePenalty=0,rangeDistanceMeters=0,rangeIncrementMeters=0,rangeIncrements=0;
     if(type==='atk-dist'){
