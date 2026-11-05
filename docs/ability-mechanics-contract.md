@@ -208,3 +208,22 @@ Os campos `two_weapon_primary_attack_penalty_reduction`,
 suportados pelo resolvedor. Não os executar genericamente nem promover esses
 talentos a `ready`/ `implemented` antes de testes ponta a ponta com rolagens
 físicas separadas e aplicação de dano por arma.
+
+
+## Validação de bônus em ataques iterativos
+
+A RPC `aplicar_dano_token_ataque_srd_v2` recalcula no servidor o bônus-base
+máximo a partir da ficha, arma, proficiência, atributo, tamanho, foco e
+penalidades já declaradas. A validação agora aceita um bônus informado menor
+que esse máximo (até 30 pontos abaixo), para que ataques iterativos e
+penalidades adicionais de uma sequência não sejam rejeitados como divergência
+da ficha. O cliente **não pode elevar** o bônus acima do valor recalculado pelo
+servidor. A confirmação de acerto continua sendo refeita no servidor com o
+d20, o bônus recebido e os modificadores de efeito.
+
+Esta é uma correção de compatibilidade para bônus reduzidos, não uma
+implementação de Combater com Duas Armas: a RPC ainda não recebe um identificador
+de posição na sequência nem valida que a penalidade escolhida corresponde
+exatamente ao ataque principal/secundário esperado. A sequência mista e a
+validação estrita por ataque continuam pendentes. O talento permanece
+`needs_review`.
