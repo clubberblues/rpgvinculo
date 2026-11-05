@@ -77,6 +77,7 @@ A ação usa a economia de D&D 3.5: `standard`, `move`, `full_round`, `swift`, `
 Cada item de `resolution.effects` deve ter `kind` e parâmetros explícitos:
 
 - `modifier`: atributo/estatística, valor, tipo de bônus e duração.
+  - Modificadores condicionais podem declarar `conditions`; condição não reconhecida deve falhar de forma segura. O resolvedor de ataques atualmente suporta `target_distance_max_m` para modificadores `attack_ranged` e `damage_ranged`.
 - `damage` / `healing`: expressão de dados, tipo e regra de aplicação.
 - `condition`: identificador de condição e duração.
 - `movement`: distância, modo e restrições.
