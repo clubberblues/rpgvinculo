@@ -1836,7 +1836,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         campanha.cba_data=aplicado.data.cba_data;aplicarCBAnaMesa(aplicado.data.cba_data,false);
         var restante=Number(aplicado.data.hp),maximo=Number(aplicado.data.max_hp);
         var completeDescription=rollDescription+(sneakAttackDice?' + Ataque Furtivo '+sneakAttackDice+'d6 ('+sneakDescription+')':'');
-        await enviarMensagemChat('💥 '+weaponName+' atingiu '+target.nome+': '+completeDescription+' = **'+totalRolado+'** de dano rolado. PV: '+restante+' / '+maximo+'.','rolagem',{evento:'dano_ataque_dnd35_aplicado',atacante:String(own.ch.id),alvo:String(target.id),arma:weaponName,dano_base:rawDamage,dano_total:totalRolado,sneak_attack_dice:sneakAttackDice,sneak_attack_damage:sneak,critico:isCritical,ca_alvo:targetAC,pv_atual:restante,pv_max:maximo});
+        await enviarMensagemChat('💥 '+weaponName+' atingiu '+target.nome+': '+completeDescription+' = **'+totalRolado+'** de dano rolado. PV: '+restante+' / '+maximo+'.','rolagem',{evento:'dano_ataque_dnd35_aplicado',atacante:String(own.ch.id),atacante_nome:String(own.ch.nome||''),alvo:String(target.id),alvo_nome:String(target.nome||''),arma:weaponName,dano_base:rawDamage,dano_total:totalRolado,sneak_attack_dice:sneakAttackDice,sneak_attack_damage:sneak,critico:isCritical,ca_alvo:targetAC,pv_atual:restante,pv_max:maximo});
       }
       function concluirRolagemDano(total,description){
         if(sneakAttackDice<=0){registrarDano(total,description,0,'');return;}
@@ -1862,11 +1862,11 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       var total=Number(d20)+bonus,automaticMiss=Number(d20)===1,automaticHit=Number(d20)===20,hit=!automaticMiss&&(automaticHit||total>=targetAC);
       var breakdown='1d20 '+d20+' + BBA '+bab+' + '+attackAttribute+' '+ability+(sizeModifier?' + tamanho '+(sizeModifier>0?'+':'')+sizeModifier:'')+(weaponFocus?' + Foco em Arma +'+weaponFocus:'')+(racialFavoredEnemyBonus?' + bônus racial de ataque +1':'')+(powerPenalty?' − Ataque Poderoso '+powerPenalty:'')+(rangePenalty?' − distância '+rangePenalty:'')+(proficiencyPenalty?' − arma sem proficiência '+proficiencyPenalty:'')+(armorNonproficiencyPenalty?' − armadura/escudo sem proficiência '+Math.abs(armorNonproficiencyPenalty):'');
       if(!hit){
-        enviarMensagemChat('⚔️ '+title+' com '+weaponName+' contra '+target.nome+': '+breakdown+' = **'+total+'** contra CA '+targetAC+' — ERRO. O dano não será rolado.','rolagem',{evento:'ataque_dnd35',atacante:String(own.ch.id),alvo:target.id,resultado:total,d20:Number(d20),ca_alvo:targetAC,acerto:false,bab:bab,modificador:ability,bonus_foco:weaponFocus,bonus_tamanho:sizeModifier,bonus_racial:racialFavoredEnemyBonus,penalidade_ataque_poderoso:powerPenalty,penalidade_arma_sem_proficiencia:proficiencyPenalty,penalidade_armadura_sem_proficiencia:armorNonproficiencyPenalty,arma:weaponName,dano:damage});
+        enviarMensagemChat('⚔️ '+title+' com '+weaponName+' contra '+target.nome+': '+breakdown+' = **'+total+'** contra CA '+targetAC+' — ERRO. O dano não será rolado.','rolagem',{evento:'ataque_dnd35',atacante:String(own.ch.id),atacante_nome:String(own.ch.nome||''),alvo:String(target.id),alvo_nome:String(target.nome||''),resultado:total,d20:Number(d20),ca_alvo:targetAC,acerto:false,bab:bab,modificador:ability,bonus_foco:weaponFocus,bonus_tamanho:sizeModifier,bonus_racial:racialFavoredEnemyBonus,penalidade_ataque_poderoso:powerPenalty,penalidade_arma_sem_proficiencia:proficiencyPenalty,penalidade_armadura_sem_proficiencia:armorNonproficiencyPenalty,arma:weaponName,dano:damage});
         return;
       }
       var criticalLabel=isCritical?' · ACERTO CRÍTICO x'+critical.multiplier:'';
-      enviarMensagemChat('⚔️ '+title+' com '+weaponName+' contra '+target.nome+': '+breakdown+' = **'+total+'** contra CA '+targetAC+' — ACERTO'+criticalLabel+'. Iniciando rolagem de dano no dado 3D.','rolagem',{evento:'ataque_dnd35',atacante:String(own.ch.id),alvo:target.id,resultado:total,d20:Number(d20),ca_alvo:targetAC,acerto:true,critico:isCritical,bab:bab,modificador:ability,bonus_foco:weaponFocus,bonus_tamanho:sizeModifier,penalidade_ataque_poderoso:powerPenalty,arma:weaponName,dano:damage});
+      enviarMensagemChat('⚔️ '+title+' com '+weaponName+' contra '+target.nome+': '+breakdown+' = **'+total+'** contra CA '+targetAC+' — ACERTO'+criticalLabel+'. Iniciando rolagem de dano no dado 3D.','rolagem',{evento:'ataque_dnd35',atacante:String(own.ch.id),atacante_nome:String(own.ch.nome||''),alvo:String(target.id),alvo_nome:String(target.nome||''),resultado:total,d20:Number(d20),ca_alvo:targetAC,acerto:true,critico:isCritical,bab:bab,modificador:ability,bonus_foco:weaponFocus,bonus_tamanho:sizeModifier,penalidade_ataque_poderoso:powerPenalty,arma:weaponName,dano:damage});
       abrirRolagemDano(isCritical);
     }
     function confirmarCritico(d20){
@@ -4918,6 +4918,15 @@ async function abrirModalEquipamentos(){
     }
     if(m.type === 'sistema' || m.type === 'xp' || m.type === 'nivel'){ return '<div class="chat-msg sistema">'+esc(d.texto||'')+'</div>'; }
     if(m.type === 'rolagem'){
+      if(d.evento==='ataque_dnd35'){
+        var hit=!!d.acerto,cls=hit?' chat-combat-hit':' chat-combat-miss';
+        var line='<span class="chat-event-title">'+esc(d.atacante_nome||d.autor_nome||'Aventureiro')+' · '+esc(d.arma||'Ataque')+' → '+esc(d.alvo_nome||'alvo')+'</span><br><span class="chat-event-result">'+(hit?'ACERTO':'ERRO')+' · '+esc(String(d.resultado==null?'—':d.resultado))+'</span><span class="chat-event-meta">d20 '+esc(String(d.d20==null?'—':d.d20))+' · CA '+esc(String(d.ca_alvo==null?'—':d.ca_alvo))+(d.critico?' · CRÍTICO':'')+'</span>';
+        return '<div class="chat-msg rolagem'+cls+'">'+line+'</div>';
+      }
+      if(d.evento==='dano_ataque_dnd35_aplicado'){
+        var damageLine='<span class="chat-event-title">'+esc(d.atacante_nome||d.autor_nome||'Aventureiro')+' atingiu '+esc(d.alvo_nome||'o alvo')+'</span><br><span class="chat-event-result">−'+esc(String(d.dano_total==null?'—':d.dano_total))+' PV</span><span class="chat-event-meta">'+esc(d.arma||'Arma')+' · PV do alvo: '+esc(String(d.pv_atual==null?'—':d.pv_atual))+'/'+esc(String(d.pv_max==null?'—':d.pv_max))+'</span>';
+        return '<div class="chat-msg rolagem chat-combat-hit">'+damageLine+'</div>';
+      }
       if(d.request_id && d.character_id){
         var responseKey = String(d.request_id)+'|'+String(d.character_id);
         pedidosTesteRespondidos[responseKey] = true;
