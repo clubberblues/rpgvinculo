@@ -2078,7 +2078,6 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(racialRace==='halfling'&&type==='atk-dist'&&weapon&&(String(weapon.detalhes&&weapon.detalhes.weapon_ranged_type||'')==='thrown'||normalizeName(weapon.nome)==='funda'))racialFavoredEnemyBonus=1;
     baseAttackBonus=bab+baseAbility+weaponFocus-powerPenalty+sizeModifier-rangePenalty-proficiencyPenalty+racialFavoredEnemyBonus;
     bonus=baseAttackBonus+abilityEffectDelta+effectAttackModifier+armorNonproficiencyPenalty+rangedAttackFeatBonus;
-    baseAttackBonusInitial=baseAttackBonus;bonusInitial=bonus;
     var sneakAttackDice=0,sneakAttackEligible=false;
     var activeTargetConditions=efeitosCampanhaMesa.conditions.filter(function(c){return c.target_kind==='token'&&(String(c.target_id)===String(target.key)||String(c.target_id)===String(target.id));}).map(function(c){return String(c.condition_id);});
     var dexDeniedConditions=['blinded','cowering','flatfooted','helpless','paralyzed','pinned','stunned','unconscious','dying','stable','dead'];
@@ -2097,7 +2096,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       if(['undead','construct','ooze','plant','elemental','incorporeal'].indexOf(targetType)>=0)sneakAttackDice=0;
     }
     var title=type==='atk-corpo'?'Ataque Corpo a Corpo':'Ataque à Distância', critical=critico35(weapon&&weapon.critico);
-    var attackSequence=[];if(fullAttack){attackSequence.push(bab);for(var iterativeBab=bab-5;iterativeBab>=1;iterativeBab-=5)attackSequence.push(iterativeBab);for(var rapidIndex=0;rapidIndex<rapidShotExtraAttacks;rapidIndex++)attackSequence.push(bab);if(!attackSequence.length)attackSequence.push(bab);if(rapidShotAttackPenalty<0){baseAttackBonus+=rapidShotAttackPenalty;bonus+=rapidShotAttackPenalty;}}var attackSequenceIndex=0,baseAttackBonusInitial=0,bonusInitial=0;
+    var attackSequence=[];if(fullAttack){attackSequence.push(bab);for(var iterativeBab=bab-5;iterativeBab>=1;iterativeBab-=5)attackSequence.push(iterativeBab);for(var rapidIndex=0;rapidIndex<rapidShotExtraAttacks;rapidIndex++)attackSequence.push(bab);if(!attackSequence.length)attackSequence.push(bab);if(rapidShotAttackPenalty<0){baseAttackBonus+=rapidShotAttackPenalty;bonus+=rapidShotAttackPenalty;}}var attackSequenceIndex=0,baseAttackBonusInitial=baseAttackBonus,bonusInitial=bonus;
     function abrirRolagemDano(isCritical){
       var rawDamage=String(damage||'1d3').split('/')[0].trim(), parsed=rawDamage.match(/^(\d+)d(2|3|4|6|8|10|12|20|100)(?:([+-]\d+))?$/i);
       if(!parsed){alert('O ataque acertou, mas a expressão de dano da arma não pôde ser interpretada: '+rawDamage+'. O Mestre pode aplicar o dano manualmente.');return;}
