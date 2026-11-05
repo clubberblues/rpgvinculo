@@ -4722,9 +4722,9 @@ async function abrirModalEquipamentos(){
               else if(spellOutcome.requires_spell_resistance)texto='✨ '+ficha.ch.nome+' falhou na resistência. O conjurador precisa superar a resistência à magia '+spellOutcome.spell_resistance+'.';
               else texto='🌀 A resistência falhou; o efeito da magia foi aplicado a '+ficha.ch.nome+'.';
             }else{
-              var penetrationBonus=Number(spellOutcome.feat_bonus)||0;var penetrationFormula='D20 '+d20+' + nível de conjurador '+Number(requestData.caster_level||0)+(penetrationBonus>0?' + talentos '+penetrationBonus:'')+' = '+spellOutcome.total+' contra RM '+spellOutcome.spell_resistance;if(spellOutcome.status==='resisted')texto='🛡️ A resistência à magia bloqueou o efeito ('+penetrationFormula+').';
+              var penetrationBonus=Number(spellOutcome.feat_bonus)||0;var penetrationFormula='D20 '+d20+' + nível de conjurador '+Number(spellOutcome.caster_level==null?requestData.caster_level:spellOutcome.caster_level||0)+(penetrationBonus>0?' + talentos '+penetrationBonus:'')+' = '+spellOutcome.total+' contra RM '+spellOutcome.spell_resistance;if(spellOutcome.status==='resisted')texto='🛡️ A resistência à magia bloqueou o efeito ('+penetrationFormula+').';
               else if(spellOutcome.spell_negated_by_shield)texto='🛡️ O Escudo mágico do alvo negou Míssil Mágico; nenhum dano foi causado.';
-              else texto='✨ A magia penetrou a resistência e seu efeito foi aplicado.';
+              else texto='✨ A magia penetrou a resistência ('+penetrationFormula+'); seu efeito foi aplicado.';
               if(spellOutcome.spell_negated_by_shield)extras.spell_negated_by_shield=true;
             }
           }else if(isSavingThrow){
