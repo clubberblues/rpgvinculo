@@ -1227,6 +1227,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="scripts/dnd35-two-weapon-sequence.js"></script>
 <script>
 (function(){
   var SUPABASE_URL = 'https://grrgwxcagvvafdmzsmro.supabase.co';
@@ -1259,6 +1260,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   var ataqueMestreSelecionado = null;
   var reforcoAbaAtiva = 'npc';
   var ataqueSelecionado = null;
+  var ataqueTotalSelecionado = false;
   var modoMovimentoJogadorAtivo = false;
   var personagemPVSelecionado = null;
   var cbaZoom = 1;
@@ -1475,7 +1477,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var estado=campanha?(campanha.state||'EXPLORACAO'):'EXPLORACAO';
     if(ehGM){var gm=[{id:'alternar-combate',ic:'⚔️',txt:estado==='COMBATE'?'Encerrar combate':'Iniciar combate'},{id:'cba',ic:'🗺️',txt:'Campo de batalha'},{id:'npc',ic:'👤',txt:'Adicionar NPC'},{id:'monstros',ic:'🐉',txt:'Bestiário'},{id:'testes',ic:'📜',txt:'Solicitar teste'},{id:'avancar-turno',ic:'⏭️',txt:'Avançar turno'},{id:'equipamentos',ic:'🛡️',txt:'Distribuir equipamento'},{id:'xp',ic:'⭐',txt:'Experiência'},{id:'dados',ic:'🎲',txt:'Dados'},{id:'token-image-manager',ic:'🖼️',txt:'Imagens dos tokens'}];if(estado==='COMBATE')gm.splice(1,0,{id:'iniciativa',ic:'🎲',txt:'Solicitar iniciativa'});var wrap=document.createElement('div');wrap.className='player-action-grid';gm.forEach(function(x){wrap.appendChild(criarBotaoAcaoUI(x));});el.replaceChildren(wrap);
     }else{var p=personagemAtivoDaInterface(),magic=possuiMagiasUI(p),combat=estado==='COMBATE';var groups=combat?[
-      {title:'Ataque',actions:[{id:'atk-corpo',ic:'⚔️',txt:'Ataque corpo a corpo'},{id:'atk-dist',ic:'🏹',txt:'Ataque à distância'}].concat(magic?[{id:'atk-mag',ic:'✨',txt:'Conjurar magia'}]:[])},
+      {title:'Ataque',actions:[{id:'atk-corpo',ic:'⚔️',txt:'Ataque corpo a corpo'},{id:'atk-dist',ic:'🏹',txt:'Ataque à distância'},{id:'atk-total',ic:'🗡️',txt:'Ataque total'}].concat(magic?[{id:'atk-mag',ic:'✨',txt:'Conjurar magia'}]:[])},
       {title:'Tática e defesa',actions:[{id:'manobras-ui',ic:'🛡️',txt:'Manobras de combate'},{id:'defesa-ui',ic:'🧱',txt:'Ações defensivas'},{id:'movimento-ui',ic:'👣',txt:'Movimentação'}]},
       {title:'Personagem',actions:[{id:'ficha',ic:'📜',txt:'Minha ficha'},{id:'inventario',ic:'🎒',txt:'Equipamentos'},{id:'pericia',ic:'📚',txt:'Perícias'},{id:'racial-ui',ic:'⛰️',txt:'Características raciais'},{id:'talentos-ui',ic:'🏅',txt:'Talentos'},{id:'habilidades',ic:'⚔️',txt:'Características da classe'},{id:'dados',ic:'🎲',txt:'Dados livres'},{id:'avancar-turno',ic:'⏭️',txt:'Encerrar turno'}]}
     ]:[{title:'Aventureiro',actions:[{id:'movimento-ui',ic:'👣',txt:'Movimentação'},{id:'ficha',ic:'📜',txt:'Minha ficha'},{id:'inventario',ic:'🎒',txt:'Equipamentos e mochila'},{id:'pericia',ic:'📚',txt:'Perícias'},{id:'racial-ui',ic:'⛰️',txt:'Características raciais'},{id:'talentos-ui',ic:'🏅',txt:'Talentos'},{id:'habilidades',ic:'⚔️',txt:'Características da classe'},{id:'dados',ic:'🎲',txt:'Dados livres'}].concat(magic?[{id:'atk-mag',ic:'✨',txt:'Magias disponíveis'}]:[])}];montarPainelAcaoUI(el,groups,(p&&p.ch.nome||'Aventureiro')+' · '+classeUI(p),p);}
@@ -1550,7 +1552,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         adicionarBotaoContextual(menu,'pv-token','❤️ Ajustar PV da criatura');if(item.tipo==='monstro'){adicionarBotaoContextual(menu,'monster-sheet','🐉 Ficha tática do monstro');adicionarBotaoContextual(menu,'monster-info','📣 Publicar ficha no chat');}
       }
     }else{
-      adicionarBotaoContextual(menu,'pv-personagem','❤️ Ajustar meus PV');adicionarBotaoContextual(menu,'atk-corpo','⚔️ Ataque corpo a corpo');adicionarBotaoContextual(menu,'atk-dist','🏹 Ataque à distância');adicionarBotaoContextual(menu,'atk-mag','✨ Conjurar magia');adicionarBotaoContextual(menu,'habilidades','⚔️ Habilidades da classe');adicionarBotaoContextual(menu,'inventario','🎒 Inventário');
+      adicionarBotaoContextual(menu,'pv-personagem','❤️ Ajustar meus PV');adicionarBotaoContextual(menu,'atk-corpo','⚔️ Ataque corpo a corpo');adicionarBotaoContextual(menu,'atk-dist','🏹 Ataque à distância');adicionarBotaoContextual(menu,'atk-total','🗡️ Ataque total');adicionarBotaoContextual(menu,'atk-mag','✨ Conjurar magia');adicionarBotaoContextual(menu,'habilidades','⚔️ Habilidades da classe');adicionarBotaoContextual(menu,'inventario','🎒 Inventário');
     }
     var close=adicionarBotaoContextual(menu,'fechar','✕ Fechar',true);
     menu.classList.add('ativo');menu.setAttribute('aria-hidden','false');tokenEl.setAttribute('aria-expanded','true');
@@ -1769,8 +1771,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(acao==='monster-info'){if(ehGM&&item.tipo==='monstro')infoTokenNoChat(item);return;}
     if(acao==='gm-character-sheet'){if(ehGM)abrirPainelControlePersonagemGM(item);return;}
     if(acao==='npc-sheet'){if(ehGM)abrirPainelControleNPC35(item);return;}
-    if(acao==='criatura-atacar'){iniciarAtaqueMestre(item);return;}
-    if(acao==='gm-token-attack'){iniciarAtaqueMestre(item);return;}
+    if(acao==='criatura-atacar'){iniciarAtaqueMestre(item).catch(function(err){alert('Não foi possível iniciar o ataque do Mestre: '+err.message);});return;}
+    if(acao==='gm-token-attack'){iniciarAtaqueMestre(item).catch(function(err){alert('Não foi possível iniciar o ataque do Mestre: '+err.message);});return;}
     if(acao==='gm-token-trap-attack'){iniciarAtaqueMestre(item,'trap');return;}
     if(acao==='gm-token-magic'){abrirMagiasTokenMestre(item);return;}
     if(acao==='gm-token-action'){registrarOutraAcaoMestre(item);return;}
@@ -1784,7 +1786,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(acao==='gm-token-end'){if(ehGM)avancarTurno();return;}
     if(acao==='inventario'&&ehGM&&item.tipo!=='player'){abrirInventarioTokenSRD(item);return;}
     if(!acharPersonagemDoToken(item)||acharPersonagemDoToken(item).ch.user_id!==eu.id)return;
-    if(acao==='atk-corpo'||acao==='atk-dist'){iniciarSelecaoAtaque(acao);return;}
+    if(acao==='atk-corpo'||acao==='atk-dist'){iniciarSelecaoAtaque(acao,false);return;}
+    if(acao==='atk-total'){(async function(){var mode=await window.vttUI.ask({title:'Ataque total',label:'Escolha o tipo de ataque que será repetido nesta ação de rodada completa.',kind:'select',options:[{value:'atk-corpo',label:'Ataques corpo a corpo'},{value:'atk-dist',label:'Ataques à distância'}]});if(mode==='atk-corpo'||mode==='atk-dist')iniciarSelecaoAtaque(mode,true);})();return;}
     if(acao==='atk-mag'){abrirListaMagias(item.id);return;}
     if(acao==='inventario'){abrirInventarioSRD(item.id);return;}
   }
@@ -1855,14 +1858,14 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     board.addEventListener('touchmove',function(e){if(e.touches.length===2&&pinchStart>0){var d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);cbaZoom=Math.max(1,Math.min(2.5,zoomStart*d/pinchStart));atualizarZoomCBA();e.preventDefault();}},{passive:false});
     board.addEventListener('touchend',function(e){if(e.touches.length<2){pinchStart=0;window.setTimeout(function(){cbaPinchInProgress=false;},120);}});
   }
-  function iniciarSelecaoAtaque(tipo){
+  function iniciarSelecaoAtaque(tipo,fullRound){
     if(!personagemDoTurnoDoJogador()){alert('Apenas o personagem do jogador no turno atual pode atacar.');return;}
     if(!cbaPublishedState){alert('O Mestre ainda não publicou um campo de batalha.');return;}
-    ataqueSelecionado=tipo; suppressTokenClickUntil=0; var board=document.getElementById('area-tabuleiro'); board.classList.add('selecionando-alvo');
-    document.getElementById('iniciativa-status').textContent='Mira ativa: selecione um token inimigo no tabuleiro.';
+    ataqueSelecionado=tipo; ataqueTotalSelecionado=fullRound===true; suppressTokenClickUntil=0; var board=document.getElementById('area-tabuleiro'); board.classList.add('selecionando-alvo');
+    document.getElementById('iniciativa-status').textContent=ataqueTotalSelecionado?'Ataque total: selecione um inimigo. A ação padrão e o movimento serão reservados antes da primeira rolagem.':'Mira ativa: selecione um token inimigo no tabuleiro.';
   }
   function modifier35(score){return Math.floor((Number(score||10)-10)/2);}function modifierTamanho35(tamanho){var n=String(tamanho||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();return n==='pequeno'||n==='small'?1:0;}
-  function valorCA35(value){if(value==null||value==='')return null;var direct=Number(value);if(Number.isFinite(direct))return direct;var match=String(value).trim().match(/^(-?\d+)/);return match?Number(match[1]):null;}function equipamentoToken35(token){var merged=Object.create(null),embedded=token&&token.monsterStats&&Array.isArray(token.monsterStats.loadout)?token.monsterStats.loadout:[],stored=equipamentoTokens[String(token&&token.id)]||[];embedded.concat(stored).forEach(function(item){if(!item)return;var id=String(item.equipment_id||item.id||item.nome||Math.random());merged[id]=Object.assign({},merged[id]||{},item);});return Object.keys(merged).map(function(id){return merged[id];});}
+  function valorCA35(value){if(value==null||value==='')return null;var direct=Number(value);if(Number.isFinite(direct))return direct;var match=String(value).trim().match(/^(-?\d+)/);return match?Number(match[1]):null;}function equipamentoToken35(token){var merged=Object.create(null),embedded=token&&token.monsterStats&&Array.isArray(token.monsterStats.loadout)?token.monsterStats.loadout:[],stored=equipamentoTokens[String(token&&token.id)]||[];embedded.concat(stored).forEach(function(item){if(!item)return;var id=String(item.instance_id||item.equipment_id||item.id||item.nome||Math.random());merged[id]=Object.assign({},merged[id]||{},item);});return Object.keys(merged).map(function(id){return merged[id];});}
   function caToken35(token){
     if(!token)return 10;
     var record=token.tipo==='player'?acharPersonagemDoToken(token):null;if(record)return caFichaMesa(record);
@@ -1905,10 +1908,10 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   async function iniciarAtaqueMestre(item,attackContext){
     if(!ehGM||!item||!combatDataState||!combatDataState.active){alert('O ataque do Mestre exige iniciativa ativa e um token controlado por ele.');return;}var turn=combatDataState.turn_order[Number(combatDataState.current_turn)||0];if(!turn||!turn.is_monster||String(turn.id)!==String(item.id)){alert('O Mestre só pode atacar com o token que está no turno atual.');return;}
     await carregarEfeitosCampanha();
-    var bonus,formula,raw=item.monsterStats&&item.monsterStats.ataques||item.detalhe||'',equipped=equipamentoToken35(item).find(function(it){return it.equipado&&slotEquipamento35(it)==='arma';});
+    var bonus,formula,raw=item.monsterStats&&item.monsterStats.ataques||item.detalhe||'',equippedWeapons=equipamentoToken35(item).filter(function(it){return it.equipado&&slotEquipamento35(it)==='arma';}),equipped=equippedWeapons.find(function(it){return it.hand_slot==='main_hand';})||(equippedWeapons.length===1?equippedWeapons[0]:null);
     if(item.tipo==='player'){
       var p=acharPersonagemDoToken(item);if(!p||p.ch.user_id!==eu.id){alert('Essa ficha não pertence ao Mestre.');return;}
-      var level=Math.max(1,Number(p.sh.nivel)||1),weapon=(p.equipamento||[]).find(function(it){return it.equipado&&it.categoria==='arma';});
+      var level=Math.max(1,Number(p.sh.nivel)||1),playerWeapons=(p.equipamento||[]).filter(function(it){return it.equipado&&it.categoria==='arma';}),weapon=playerWeapons.find(function(it){return it.hand_slot==='main_hand';})||(playerWeapons.length===1?playerWeapons[0]:null);
       var strengthScore=Number((p.sh.atributos||{}).FOR||10)+modificadorEfeitoPersonagemMesa35(p,'strength');
       var strengthModifier=modifier35(strengthScore);
       bonus=bab35(p.cl,level)+strengthModifier+modificadorEfeitoPersonagemMesa35(p,'attack_roll');
@@ -1970,7 +1973,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     },true,true);
   }
   async function selecionarAlvoAtaque(tokenKey){
-    var type=ataqueSelecionado; ataqueSelecionado=null; document.getElementById('area-tabuleiro').classList.remove('selecionando-alvo');
+    var type=ataqueSelecionado, fullAttack=ataqueTotalSelecionado===true; ataqueSelecionado=null; ataqueTotalSelecionado=false; document.getElementById('area-tabuleiro').classList.remove('selecionando-alvo');
     var state=cbaPublishedState||normalizarCBAData(campanha.cba_data), target=state&&state.tokens.find(function(t){return String(t.key)===String(tokenKey);});
     var own=personagemDoTurnoDoJogador(), ownToken=own&&state&&state.tokens.find(function(t){return t.tipo==='player'&&String(t.id)===String(own.ch.id);});
     if(!target||!ownToken){alert('Não foi possível localizar seu token e o alvo publicado.');return;}
@@ -1983,8 +1986,31 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       if(squares>reachSquares){alert('Alvo fora de alcance: distância entre as áreas ocupadas excede o alcance corporal da criatura.');return;}
     }
     var level=Math.max(1,Number(own.sh.nivel)||1), attrs=own.sh.atributos||{}, bab=bab35(own.cl,level);
+    if(personagemTemTalento(own.sh,'srd35_feat_weapon_finesse')&&bab<1){alert('Acuidade com Arma exige bônus base de ataque +1.');return;}
     var weapons=(own.equipamento||[]).filter(function(it){return it.equipado&&it.categoria==='arma';});
-    var weapon=weapons.find(function(it){var d=it.detalhes||{};return type==='atk-dist'?d.weapon_ranged===true:d.weapon_melee!==false;});
+    var meleeWeapons=weapons.filter(function(it){return !it.detalhes||it.detalhes.weapon_melee!==false;});
+    var equippedMainHand=meleeWeapons.filter(function(it){return it.hand_slot==='main_hand';})[0]||null;
+    var equippedOffHand=meleeWeapons.filter(function(it){return it.hand_slot==='off_hand';})[0]||null;
+    if(fullAttack&&type==='atk-corpo'&&equippedMainHand&&equippedOffHand){
+      try{
+        var plannedTwoWeaponSequence=window.buildTwoWeaponSequence35({
+          baseAttackBonus:bab35(own.cl,Math.max(1,Number(own.sh.nivel)||1)),
+          dexterity:Number(attrs.DES)||10,
+          hasTwoWeaponFighting:personagemTemTalento(own.sh,'srd35_feat_two_weapon_fighting'),
+          hasImprovedTwoWeaponFighting:personagemTemTalento(own.sh,'srd35_feat_improved_two_weapon_fighting'),
+          hasGreaterTwoWeaponFighting:personagemTemTalento(own.sh,'srd35_feat_greater_two_weapon_fighting'),
+          primaryWeapon:equippedMainHand,offhandWeapon:equippedOffHand
+        });
+        var plannedSummary=plannedTwoWeaponSequence.attacks.map(function(a){return (a.hand==='main_hand'?'Principal':'Secundária')+' '+a.weapon_name+' · BBA '+(a.base_attack_bonus>=0?'+':'')+a.base_attack_bonus+' · penalidade '+a.two_weapon_penalty;}).join('\\n');
+        alert('Combate com Duas Armas identificado. A sequência correta foi calculada, mas a resolução individual ainda não está habilitada no servidor. Nenhuma ação ou rolagem foi consumida.\\n\\n'+plannedSummary+'\\n\\nAguarde a integração de rolagem, dano e validação por instância.');
+      }catch(sequenceError){alert('Não foi possível montar a sequência de duas armas: '+sequenceError.message);}
+      return;
+    }
+    var mainHandWeapons=meleeWeapons.filter(function(it){return String(it.hand_slot||'')==='main_hand';});
+    var legacyMeleeWeapons=meleeWeapons.filter(function(it){return !it.hand_slot;});
+    if(type==='atk-corpo'&&meleeWeapons.length>1&&mainHandWeapons.length!==1){alert('Não foi possível identificar uma única arma da mão principal. Confira as mãos equipadas no inventário antes de atacar.');return;}
+    var weaponPool=type==='atk-corpo'?(mainHandWeapons.length?mainHandWeapons:(meleeWeapons.length===1?meleeWeapons:legacyMeleeWeapons)):weapons;
+    var weapon=weaponPool.find(function(it){var d=it.detalhes||{};return type==='atk-dist'?d.weapon_ranged===true:d.weapon_melee!==false;});
     if(type==='atk-dist'&&!weapon){alert('Equipe uma arma à distância antes de atacar.');return;}
     var finesseWeapon=type==='atk-corpo'&&personagemTemTalento(own.sh,'srd35_feat_weapon_finesse')&&(!weapon||!!(weapon.detalhes&&weapon.detalhes.weapon_finesse_eligible===true));
     var attackAttribute=type==='atk-dist'||finesseWeapon?'DES':'FOR';
@@ -1995,7 +2021,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var strengthModifier=modifier35(Number(attrs.FOR||10));
     var effectAttackModifier=modificadorEfeitoPersonagemMesa35(own,'attack')+
       modificadorEfeitoPersonagemMesa35(own,type==='atk-corpo'?'attack_melee':'attack_ranged');
-    var weaponName=weapon?weapon.nome:'Ataque desarmado',weaponFocusName=weapon&&weapon.detalhes&&weapon.detalhes.weapon_focus_name||weaponName,damage=weapon&&weapon.dano||'1d3',weaponFocus=0,weaponSpecializationDamage=0,powerPenalty=0,powerDamage=0,proficiencyPenalty=personagemProficienteArma35(own,weapon)?0:4;
+    var weaponName=weapon?weapon.nome:'Ataque desarmado',weaponFocusName=weapon&&weapon.detalhes&&weapon.detalhes.weapon_focus_name||weaponName,damage=weapon&&weapon.dano||'1d3',weaponFocus=0,weaponSpecializationDamage=0,rangedAttackFeatBonus=0,rangedDamageFeatBonus=0,rapidShotExtraAttacks=0,rapidShotAttackPenalty=0,powerPenalty=0,powerDamage=0,proficiencyPenalty=personagemProficienteArma35(own,weapon)?0:4;
     if(weapon&&String(damage).includes('/')){
       var damageOptions=String(damage).split('/').map(function(value){return value.trim();}).filter(Boolean);
       if(damageOptions.length===2){
@@ -2011,18 +2037,57 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         damage=String(selectedDamage);
       }
     }
-    var feats=own.sh.talentos||[];if(typeof feats==='string'){try{feats=JSON.parse(feats);}catch(e){feats=[];}}
-    var normalizeName=function(value){var n=String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();return ({'dwarven waraxe':'machado de guerra anao','waraxe dwarven':'machado de guerra anao','dwarven urgrosh':'urgrosh anao','urgrosh dwarven':'urgrosh anao'})[n]||n;};
-    var hasWeaponFeat=function(id){return Array.isArray(feats)&&feats.some(function(feat){return feat&&String(feat.id)===id&&normalizeName(feat.parametro)===normalizeName(weaponFocusName);});};
-    weaponFocus=(hasWeaponFeat('foco_em_arma')?1:0)+(hasWeaponFeat('srd35_feat_greater_weapon_focus')?1:0);
-    weaponSpecializationDamage=(hasWeaponFeat('srd35_feat_weapon_specialization')?2:0)+(hasWeaponFeat('srd35_feat_greater_weapon_specialization')?2:0);
-    if(type==='atk-corpo'&&weapon&&!(weapon.detalhes&&weapon.detalhes.weapon_light===true)&&personagemTemTalento(own.sh,'ataque_poderoso')){var rawPenalty=await window.vttUI.ask({title:'Ataque Poderoso',label:'Penalidade de ataque (0 a '+Math.max(0,bab)+')',defaultValue:'0',inputMode:'numeric'});if(rawPenalty===null)return;powerPenalty=Number(rawPenalty);if(!Number.isInteger(powerPenalty)||powerPenalty<0||powerPenalty>bab){alert('A penalidade deve ser um inteiro entre 0 e '+Math.max(0,bab)+'.');return;}powerDamage=powerPenalty*(armaDuasMaos35(weapon)?2:1);}
-    var rangePenalty=0,rangeDistanceMeters=0,rangeIncrementMeters=0,rangeIncrements=0;
+    var rangeDistanceMeters=type==='atk-dist'?distanciaTokensQuadrados35(ownToken,target)*1.5:0;
+    var selectedWeaponFeats=listaTalentosUI(own.sh.talentos);
+    var selectedWeaponFeatIds=selectedWeaponFeats.map(function(choice){return String(typeof choice==='string'?choice:(choice&& (choice.id||choice.feat_id||choice.talent_id)||''));}).filter(Boolean);
+    var normalizeName=function(value){var n=String(value||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();return ({'dwarven waraxe':'machado de guerra anao','waraxe dwarven':'machado de guerra anao','dwarven urgrosh':'urgrosh anao','urgrosh dwarven':'urgrosh anao'})[n]||n;};
+    if(selectedWeaponFeatIds.length){
+      var weaponFeatResult=await sb.from('srd_feats').select('id,mechanics').in('id',selectedWeaponFeatIds);
+      if(weaponFeatResult.error){alert('Não foi possível carregar os efeitos de foco em arma: '+weaponFeatResult.error.message);return;}
+      var weaponFeatCatalog=Object.create(null);
+      (weaponFeatResult.data||[]).forEach(function(feat){weaponFeatCatalog[String(feat.id)]=feat;});
+      selectedWeaponFeats.forEach(function(choice){
+        var choiceId=String(typeof choice==='string'?choice:(choice&& (choice.id||choice.feat_id||choice.talent_id)||''));
+        var feat=weaponFeatCatalog[choiceId];
+        if(!feat)return;
+        var mechanics=feat.mechanics&&typeof feat.mechanics==='object'?feat.mechanics:{};
+        if(['ready','implemented'].indexOf(String(mechanics.engine_status||''))<0||!mechanics.activation||mechanics.activation.mode!=='passive')return;
+        var featParameter=typeof choice==='object'&&choice?String(choice.parametro||choice.parameter||''):'';
+        var effects=mechanics.resolution&&Array.isArray(mechanics.resolution.effects)?mechanics.resolution.effects:[];
+        effects.forEach(function(effect){
+          if(!effect)return;
+          if(effect.kind==='extra_attack'){
+            if(fullAttack&&type==='atk-dist'&&effect.trigger==='full_attack'&&effect.weapon_type==='ranged'&&effect.attack_bonus==='highest_base_attack_bonus'){
+              var extraCount=Math.max(0,Math.min(4,Math.trunc(Number(effect.quantity)||0))),extraPenalty=Number(effect.attack_penalty);
+              if(Number.isInteger(extraPenalty)&&extraPenalty<=0){rapidShotExtraAttacks+=extraCount;rapidShotAttackPenalty=Math.min(0,extraPenalty);}
+            }
+            return;
+          }
+          if(effect.kind!=='modifier')return;
+          var stat='',value=Number(effect.value);
+          if(effect.parameter_source==='feat_parameter'&&effect.stat_template){
+            if(normalizeName(featParameter)!==normalizeName(weaponFocusName))return;
+            stat=String(effect.stat_template).replace('{parameter}',featParameter);
+          }else stat=String(effect.stat||'');
+          if(!Number.isFinite(value))return;
+          var conditions=Array.isArray(effect.conditions)?effect.conditions:[];
+          var conditionMet=conditions.every(function(condition){
+            if(!condition||condition.type!=='target_distance_max_m')return false;
+            return type==='atk-dist'&&rangeDistanceMeters<=Number(condition.value);
+          });
+          if(conditions.length&&!conditionMet)return;
+          if(stat.indexOf('weapon_attack:')===0)weaponFocus+=value;
+          else if(stat.indexOf('weapon_damage:')===0)weaponSpecializationDamage+=value;
+          else if(stat==='attack_ranged'&&type==='atk-dist')rangedAttackFeatBonus+=value;
+          else if(stat==='damage_ranged'&&type==='atk-dist')rangedDamageFeatBonus+=value;
+        });
+      });
+    }
+    if(type==='atk-corpo'&&(!weapon||!(weapon.detalhes&&weapon.detalhes.weapon_light===true))&&personagemTemTalento(own.sh,'ataque_poderoso')){var rawPenalty=await window.vttUI.ask({title:'Ataque Poderoso',label:'Penalidade de ataque (0 a '+Math.max(0,bab)+')',defaultValue:'0',inputMode:'numeric'});if(rawPenalty===null)return;powerPenalty=Number(rawPenalty);if(!Number.isInteger(powerPenalty)||powerPenalty<0||powerPenalty>bab){alert('A penalidade deve ser um inteiro entre 0 e '+Math.max(0,bab)+'.');return;}powerDamage=powerPenalty*(armaDuasMaos35(weapon)?2:1);}
+    var rangePenalty=0,rangeIncrementMeters=0,rangeIncrements=0;
     if(type==='atk-dist'){
       rangeIncrementMeters=Number(weapon.detalhes&&weapon.detalhes.range_increment_m);
       if(!Number.isFinite(rangeIncrementMeters)||rangeIncrementMeters<=0){alert('O catálogo ainda não possui o incremento de distância desta arma.');return;}
-      var distanceSquares=distanciaTokensQuadrados35(ownToken,target);
-      rangeDistanceMeters=distanceSquares*1.5;
       rangeIncrements=Math.max(1,Math.ceil(rangeDistanceMeters/rangeIncrementMeters));
       var maxRangeIncrements=Number(weapon.detalhes.max_range_increments||10);if(rangeIncrements>maxRangeIncrements){alert('Alvo fora do alcance máximo da arma ('+maxRangeIncrements+' incrementos de '+rangeIncrementMeters+' m).');return;}
       rangePenalty=(rangeIncrements-1)*2;
@@ -2036,7 +2101,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(racialRace==='gnomo'&&/(kobold|goblin|hobgoblin|bugbear|goblinoid)/.test(targetTraits))racialFavoredEnemyBonus=1;
     if(racialRace==='halfling'&&type==='atk-dist'&&weapon&&(String(weapon.detalhes&&weapon.detalhes.weapon_ranged_type||'')==='thrown'||normalizeName(weapon.nome)==='funda'))racialFavoredEnemyBonus=1;
     baseAttackBonus=bab+baseAbility+weaponFocus-powerPenalty+sizeModifier-rangePenalty-proficiencyPenalty+racialFavoredEnemyBonus;
-    bonus=baseAttackBonus+abilityEffectDelta+effectAttackModifier+armorNonproficiencyPenalty;
+    bonus=baseAttackBonus+abilityEffectDelta+effectAttackModifier+armorNonproficiencyPenalty+rangedAttackFeatBonus;
     var sneakAttackDice=0,sneakAttackEligible=false;
     var activeTargetConditions=efeitosCampanhaMesa.conditions.filter(function(c){return c.target_kind==='token'&&(String(c.target_id)===String(target.key)||String(c.target_id)===String(target.id));}).map(function(c){return String(c.condition_id);});
     var dexDeniedConditions=['blinded','cowering','flatfooted','helpless','paralyzed','pinned','stunned','unconscious','dying','stable','dead'];
@@ -2055,12 +2120,13 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       if(['undead','construct','ooze','plant','elemental','incorporeal'].indexOf(targetType)>=0)sneakAttackDice=0;
     }
     var title=type==='atk-corpo'?'Ataque Corpo a Corpo':'Ataque à Distância', critical=critico35(weapon&&weapon.critico);
+    var attackSequence=[];if(fullAttack){attackSequence.push(bab);for(var iterativeBab=bab-5;iterativeBab>=1;iterativeBab-=5)attackSequence.push(iterativeBab);for(var rapidIndex=0;rapidIndex<rapidShotExtraAttacks;rapidIndex++)attackSequence.push(bab);if(!attackSequence.length)attackSequence.push(bab);if(rapidShotAttackPenalty<0){baseAttackBonus+=rapidShotAttackPenalty;bonus+=rapidShotAttackPenalty;}}var attackSequenceIndex=0,baseAttackBonusInitial=baseAttackBonus,bonusInitial=bonus;
     function abrirRolagemDano(isCritical){
       var rawDamage=String(damage||'1d3').split('/')[0].trim(), parsed=rawDamage.match(/^(\d+)d(2|3|4|6|8|10|12|20|100)(?:([+-]\d+))?$/i);
       if(!parsed){alert('O ataque acertou, mas a expressão de dano da arma não pôde ser interpretada: '+rawDamage+'. O Mestre pode aplicar o dano manualmente.');return;}
       var diceCount=Math.max(1,Math.min(20,Number(parsed[1]))),sides=Number(parsed[2]),baseFlat=Number(parsed[3]||0),multiplier=isCritical?critical.multiplier:1;
       var rangedStrengthDamage=type==='atk-dist'&&weapon&&weapon.detalhes&&weapon.detalhes.ranged_damage_uses_strength===true;
-      var strengthDamage=type==='atk-corpo'?(armaDuasMaos35(weapon)?Math.floor(strengthModifier*1.5):strengthModifier):(rangedStrengthDamage?strengthModifier:0),flat=(baseFlat+strengthDamage+powerDamage+weaponSpecializationDamage)*multiplier,diceTotal=diceCount*multiplier;
+      var strengthDamage=type==='atk-corpo'?(armaDuasMaos35(weapon)?Math.floor(strengthModifier*1.5):strengthModifier):(rangedStrengthDamage?strengthModifier:0),flat=(baseFlat+strengthDamage+powerDamage+weaponSpecializationDamage+rangedDamageFeatBonus)*multiplier,diceTotal=diceCount*multiplier;
       var formula=diceTotal+'d'+sides+(flat>0?'+'+flat:flat<0?String(flat):''),critLabel=isCritical?' · CRÍTICO x'+multiplier:'';
       async function registrarDano(total,rollDescription,sneakDamage,sneakDescription){
         var dano=Math.max(1,Math.trunc(Number(total))),sneak=Math.max(0,Math.trunc(Number(sneakDamage)||0)),totalRolado=dano+sneak;
@@ -2071,6 +2137,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         var completeDescription=rollDescription+(sneakAttackDice?' + Ataque Furtivo '+sneakAttackDice+'d6 ('+sneakDescription+')':'');
         var appliedDamage=Number(aplicado.data.damage),damageFinal=Number.isFinite(appliedDamage)?appliedDamage:totalRolado;
         await enviarMensagemChat('💥 '+weaponName+' atingiu '+target.nome+': '+completeDescription+' = **'+totalRolado+'** rolados; **'+damageFinal+'** de dano aplicado após os efeitos. PV: '+restante+' / '+maximo+'.','rolagem',{evento:'dano_ataque_dnd35_aplicado',atacante:String(own.ch.id),atacante_nome:String(own.ch.nome||''),alvo:String(target.id),alvo_nome:String(target.nome||''),arma:weaponName,dano_base:rawDamage,dano_rolado:totalRolado,dano_aplicado:damageFinal,sneak_attack_dice:sneakAttackDice,sneak_attack_damage:sneak,critico:isCritical,ca_alvo:targetAC,pv_atual:restante,pv_max:maximo});
+        proximoAtaqueCompleto();
       }
       function concluirRolagemDano(total,description){
         if(sneakAttackDice<=0){registrarDano(total,description,0,'');return;}
@@ -2092,15 +2159,16 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       }
       abrirDado('Dano '+weaponName+' · '+formula+critLabel,async function(result){concluirRolagemDano(Math.max(1,Number(result)),'Rolagem 3D '+formula);},true,true,formula);
     }
-    function registrarResultadoAtaque(d20,isCritical){
+    async function registrarResultadoAtaque(d20,isCritical){
       var total=Number(d20)+bonus,automaticMiss=Number(d20)===1,automaticHit=Number(d20)===20,hit=!automaticMiss&&(automaticHit||total>=targetAC);
-      var breakdown='1d20 '+d20+' + BBA '+bab+' + '+attackAttribute+' '+ability+(abilityEffectDelta?' (modificador de atributo por efeito '+(abilityEffectDelta>0?'+':'')+abilityEffectDelta+')':'')+(effectAttackModifier?' + efeitos de ataque '+(effectAttackModifier>0?'+':'')+effectAttackModifier:'')+(sizeModifier?' + tamanho '+(sizeModifier>0?'+':'')+sizeModifier:'')+(weaponFocus?' + Foco em Arma +'+weaponFocus:'')+(racialFavoredEnemyBonus?' + bônus racial de ataque +1':'')+(powerPenalty?' − Ataque Poderoso '+powerPenalty:'')+(rangePenalty?' − distância '+rangePenalty:'')+(proficiencyPenalty?' − arma sem proficiência '+proficiencyPenalty:'')+(armorNonproficiencyPenalty?' − armadura/escudo sem proficiência '+Math.abs(armorNonproficiencyPenalty):'');
+      var currentIterativeBab=fullAttack?attackSequence[attackSequenceIndex]:bab;
+      var breakdown='1d20 '+d20+' + BBA '+currentIterativeBab+' + '+attackAttribute+' '+ability+(abilityEffectDelta?' (modificador de atributo por efeito '+(abilityEffectDelta>0?'+':'')+abilityEffectDelta+')':'')+(effectAttackModifier?' + efeitos de ataque '+(effectAttackModifier>0?'+':'')+effectAttackModifier:'')+(sizeModifier?' + tamanho '+(sizeModifier>0?'+':'')+sizeModifier:'')+(weaponFocus?' + Foco em Arma +'+weaponFocus:'')+(rangedAttackFeatBonus?' + bônus condicional de talento à distância +'+rangedAttackFeatBonus:'')+(rapidShotAttackPenalty?' − Tiro Rápido '+Math.abs(rapidShotAttackPenalty):'')+(racialFavoredEnemyBonus?' + bônus racial de ataque +1':'')+(powerPenalty?' − Ataque Poderoso '+powerPenalty:'')+(rangePenalty?' − distância '+rangePenalty:'')+(proficiencyPenalty?' − arma sem proficiência '+proficiencyPenalty:'')+(armorNonproficiencyPenalty?' − armadura/escudo sem proficiência '+Math.abs(armorNonproficiencyPenalty):'');
       if(!hit){
-        enviarMensagemChat('⚔️ '+title+' com '+weaponName+' contra '+target.nome+': '+breakdown+' = **'+total+'** contra CA '+targetAC+' — ERRO. O dano não será rolado.','rolagem',{evento:'ataque_dnd35',atacante:String(own.ch.id),atacante_nome:String(own.ch.nome||''),alvo:String(target.id),alvo_nome:String(target.nome||''),resultado:total,d20:Number(d20),ca_alvo:targetAC,acerto:false,bab:bab,modificador:ability,bonus_foco:weaponFocus,bonus_tamanho:sizeModifier,bonus_racial:racialFavoredEnemyBonus,penalidade_ataque_poderoso:powerPenalty,penalidade_arma_sem_proficiencia:proficiencyPenalty,penalidade_armadura_sem_proficiencia:armorNonproficiencyPenalty,arma:weaponName,dano:damage});
-        return;
+        await enviarMensagemChat('⚔️ '+title+(fullAttack?' · ataque '+(attackSequenceIndex+1)+'/'+attackSequence.length:'')+' com '+weaponName+' contra '+target.nome+': '+breakdown+' = **'+total+'** contra CA '+targetAC+' — ERRO. O dano não será rolado.','rolagem',{evento:'ataque_dnd35',atacante:String(own.ch.id),atacante_nome:String(own.ch.nome||''),alvo:String(target.id),alvo_nome:String(target.nome||''),resultado:total,d20:Number(d20),ca_alvo:targetAC,acerto:false,bab:currentIterativeBab,modificador:ability,bonus_foco:weaponFocus,bonus_tamanho:sizeModifier,bonus_racial:racialFavoredEnemyBonus,penalidade_ataque_poderoso:powerPenalty,penalidade_arma_sem_proficiencia:proficiencyPenalty,penalidade_armadura_sem_proficiencia:armorNonproficiencyPenalty,arma:weaponName,dano:damage});
+        proximoAtaqueCompleto();return;
       }
       var criticalLabel=isCritical?' · ACERTO CRÍTICO x'+critical.multiplier:'';
-      enviarMensagemChat('⚔️ '+title+' com '+weaponName+' contra '+target.nome+': '+breakdown+' = **'+total+'** contra CA '+targetAC+' — ACERTO'+criticalLabel+'. Iniciando rolagem de dano no dado 3D.','rolagem',{evento:'ataque_dnd35',atacante:String(own.ch.id),atacante_nome:String(own.ch.nome||''),alvo:String(target.id),alvo_nome:String(target.nome||''),resultado:total,d20:Number(d20),ca_alvo:targetAC,acerto:true,critico:isCritical,bab:bab,modificador:ability,bonus_foco:weaponFocus,bonus_tamanho:sizeModifier,penalidade_ataque_poderoso:powerPenalty,arma:weaponName,dano:damage});
+      enviarMensagemChat('⚔️ '+title+(fullAttack?' · ataque '+(attackSequenceIndex+1)+'/'+attackSequence.length:'')+' com '+weaponName+' contra '+target.nome+': '+breakdown+' = **'+total+'** contra CA '+targetAC+' — ACERTO'+criticalLabel+'. Iniciando rolagem de dano no dado 3D.','rolagem',{evento:'ataque_dnd35',atacante:String(own.ch.id),atacante_nome:String(own.ch.nome||''),alvo:String(target.id),alvo_nome:String(target.nome||''),resultado:total,d20:Number(d20),ca_alvo:targetAC,acerto:true,critico:isCritical,bab:currentIterativeBab,modificador:ability,bonus_foco:weaponFocus,bonus_tamanho:sizeModifier,penalidade_ataque_poderoso:powerPenalty,arma:weaponName,dano:damage,ataque_total:fullAttack,ataque_numero:fullAttack?attackSequenceIndex+1:null,ataques_na_sequencia:fullAttack?attackSequence.length:null});
       abrirRolagemDano(isCritical);
     }
     function confirmarCritico(d20){
@@ -2113,13 +2181,30 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       return true;
     }
     var attackRoll=null;
-    abrirDado(title+' · '+weaponName+' contra '+target.nome,async function(d20){
-      attackRoll=Number(d20);
-      try{await consumirAcaoTurnoServidor(own.ch.id,'padrao');}catch(err){alert('Ataque não realizado: '+err.message+' A ação padrão não foi consumida.');return;}
-      var natural=Number(d20),threat=natural>=critical.min&&natural<=critical.max;
-      if(natural!==1&&threat){confirmarCritico(d20);return;}
-      registrarResultadoAtaque(d20,false);
-    },true,true,'1d20');
+    async function proximoAtaqueCompleto(){
+      if(!fullAttack)return;
+      attackSequenceIndex++;
+      if(attackSequenceIndex>=attackSequence.length){await enviarMensagemChat('🏁 '+title+' concluído: '+attackSequence.length+' ataque(s) da ação de rodada completa foram resolvidos.','sistema',{evento:'ataque_total_concluido',atacante:String(own.ch.id),alvo:String(target.id),quantidade_ataques:attackSequence.length});return;}
+      var nextBab=attackSequence[attackSequenceIndex];baseAttackBonus=baseAttackBonusInitial-bab+nextBab;bonus=bonusInitial-bab+nextBab;
+      solicitarRolagemAtaqueTotal();
+    }
+    function solicitarRolagemAtaqueTotal(){
+      var sequenceTitle=title+' · ataque '+(attackSequenceIndex+1)+'/'+attackSequence.length+' · BBA +'+attackSequence[attackSequenceIndex];
+      abrirDado(sequenceTitle+' · '+weaponName+' contra '+target.nome,async function(d20){attackRoll=Number(d20);var natural=Number(d20),threat=natural>=critical.min&&natural<=critical.max;if(natural!==1&&threat){confirmarCritico(d20);return;}registrarResultadoAtaque(d20,false);},true,true,'1d20');
+    }
+    if(fullAttack){
+      try{var reserved=await sb.rpc('consumir_acao_rodada_completa_srd',{p_campaign_id:Number(MESA_ID),p_actor_id:String(own.ch.id),p_actor_kind:'character'});if(reserved.error)throw new Error(reserved.error.message||'Ação de rodada completa indisponível.');combatDataState=reserved.data&&reserved.data.combat_data||combatDataState;renderizarIniciativa(combatDataState);}
+      catch(err){alert('Ataque total não iniciado: '+err.message);return;}
+      solicitarRolagemAtaqueTotal();
+    }else{
+      abrirDado(title+' · '+weaponName+' contra '+target.nome,async function(d20){
+        attackRoll=Number(d20);
+        try{await consumirAcaoTurnoServidor(own.ch.id,'padrao');}catch(err){alert('Ataque não realizado: '+err.message+' A ação padrão não foi consumida.');return;}
+        var natural=Number(d20),threat=natural>=critical.min&&natural<=critical.max;
+        if(natural!==1&&threat){confirmarCritico(d20);return;}
+        registrarResultadoAtaque(d20,false);
+      },true,true,'1d20');
+    }
   }
   function abrirAjustePV(characterId){
     var p=personagens.find(function(x){return String(x.ch.id)===String(characterId);}); if(!p||(!ehGM&&p.ch.user_id!==eu.id))return;
@@ -2215,12 +2300,25 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var p=characterId?personagens.find(function(x){return String(x.ch.id)===String(characterId)&&(ehGM||x.ch.user_id===eu.id);}):(personagemDoTurnoDoJogador()||personagens.find(function(x){return x.ch.user_id===eu.id;}));if(!p){alert('Nenhuma ficha acessível está disponível nesta mesa.');return;}inventarioPersonagemAtivo=p;
     var gmControlandoFichaAlheia=!!(ehGM&&p.ch.user_id!==eu.id);
     var modal=document.getElementById('modal-inventario-srd'),list=document.getElementById('inventario-srd-lista'),status=document.getElementById('inventario-srd-status');document.getElementById('titulo-inventario-srd').textContent='Mochila · '+p.ch.nome;status.textContent='Carregando mochila de '+p.ch.nome+'…';list.replaceChildren();modal.classList.add('ativo');
-    var r=await sb.from('srd_character_equipment').select('equipment_id,quantidade,equipado,equipment:srd_equipment(*)').eq('character_id',String(p.ch.id));
+    var r=await sb.from('srd_character_equipment').select('equipment_id,quantidade,equipado,hand_slot,equipment:srd_equipment(*)').eq('character_id',String(p.ch.id));
     if(r.error){status.textContent='Inventário SRD indisponível. Aplique vtt_dnd35_final_migration.sql. Detalhe: '+r.error.message;return;}
-    var rows=r.data||[]; if(!rows.length){status.textContent='A mochila está vazia. Peça ao Mestre para entregar equipamento pela mesa.';return;}
+    var wi=await sb.from('srd_character_weapon_instances').select('instance_id,equipment_id,equipado,hand_slot,equipment:srd_equipment(*)').eq('character_id',String(p.ch.id));
+    if(wi.error){status.textContent='Instâncias de armas indisponíveis: '+wi.error.message;return;}
+    var rows=(r.data||[]).filter(function(row){return slotEquipamento35(row.equipment||{})!=='arma';});
+    (wi.data||[]).forEach(function(row){rows.push({instance_id:row.instance_id,equipment_id:row.equipment_id,quantidade:1,equipado:!!row.equipado,hand_slot:row.hand_slot||null,equipment:row.equipment});});
+    if(!rows.length){status.textContent='A mochila está vazia. Peça ao Mestre para entregar equipamento pela mesa.';return;}
     status.textContent=gmControlandoFichaAlheia?'O Mestre pode equipar e desequipar itens. Consumíveis continuam sendo usados pelo próprio jogador no turno dele.':'Atributos calculados com o equipamento atualmente equipado.';
-    list.innerHTML=rows.map(function(row){var it=row.equipment||{},usable=it.categoria==='consumivel'&&!gmControlandoFichaAlheia,equipable=!!slotEquipamento35(it);return '<article style="padding:10px;margin:8px 0;border:1px solid #75613d;border-radius:6px"><strong>'+esc(it.nome||row.equipment_id)+'</strong><div style="color:#9eabc0;font-size:13px">'+esc(nomeCategoriaEquipamento35(it.categoria||'item'))+' · x'+row.quantidade+(it.dano?' · dano '+esc(it.dano):'')+(bonusCAEquipamento35(it)?' · CA +'+bonusCAEquipamento35(it):'')+(row.equipado?' · Equipado':'')+(it.categoria==='consumivel'&&gmControlandoFichaAlheia?' · uso pelo jogador':'')+'</div>'+(usable||equipable?'<button type="button" class="btn-acao" data-equip-id="'+esc(row.equipment_id)+'" data-equip-action="'+(usable?'consume':'equip')+'" data-equipped="'+(!row.equipado)+'" style="margin-top:8px">'+(usable?'Usar':(row.equipado?'Desequipar':'Equipar'))+'</button>':'')+'</article>';}).join('');
-    list.querySelectorAll('[data-equip-id]').forEach(function(button){button.addEventListener('click',async function(){button.disabled=true;if(button.dataset.equipAction==='consume'){
+    list.innerHTML=rows.map(function(row){
+      var it=row.equipment||{},usable=it.categoria==='consumivel'&&!gmControlandoFichaAlheia,slot=slotEquipamento35(it),equipable=!!slot,isWeapon=slot==='arma',twoHanded=!!(it.detalhes&&String(it.detalhes.weapon_two_handed)==='true'),controls='';
+      if(usable)controls='<button type="button" class="btn-acao" data-equip-id="'+esc(row.equipment_id)+'" data-equip-action="consume" style="margin-top:8px">Usar</button>';
+      else if(isWeapon){
+        if(row.equipado){var hand=row.hand_slot==='off_hand'?'off_hand':'main_hand';controls='<button type="button" class="btn-acao" data-instance-id="'+esc(row.instance_id)+'" data-equip-action="weapon-instance" data-hand-slot="'+hand+'" data-equipped="false" style="margin:8px 6px 0 0">Desequipar '+(hand==='off_hand'?'mão secundária':'mão principal')+'</button>';}
+        else{controls='<button type="button" class="btn-acao" data-instance-id="'+esc(row.instance_id)+'" data-equip-action="weapon-instance" data-hand-slot="main_hand" data-equipped="true" style="margin:8px 6px 0 0">Equipar na mão principal</button>'+(twoHanded?'':'<button type="button" class="btn-acao" data-instance-id="'+esc(row.instance_id)+'" data-equip-action="weapon-instance" data-hand-slot="off_hand" data-equipped="true" style="margin:8px 6px 0 0">Equipar na mão secundária</button>');}
+      }else if(equipable)controls='<button type="button" class="btn-acao" data-equip-id="'+esc(row.equipment_id)+'" data-equip-action="equip" data-equipped="'+(!row.equipado)+'" style="margin-top:8px">'+(row.equipado?'Desequipar':'Equipar')+'</button>';
+      var handLabel=row.equipado&&isWeapon?(row.hand_slot==='off_hand'?' · Mão secundária':' · Mão principal'):'';
+      return '<article style="padding:10px;margin:8px 0;border:1px solid #75613d;border-radius:6px"><strong>'+esc(it.nome||row.equipment_id)+'</strong><div style="color:#9eabc0;font-size:13px">'+esc(nomeCategoriaEquipamento35(it.categoria||'item'))+' · x'+row.quantidade+(it.dano?' · dano '+esc(it.dano):'')+(bonusCAEquipamento35(it)?' · CA +'+bonusCAEquipamento35(it):'')+(row.equipado?' · Equipado'+handLabel:'')+(it.categoria==='consumivel'&&gmControlandoFichaAlheia?' · uso pelo jogador':'')+'</div>'+controls+'</article>';
+    }).join('');
+    list.querySelectorAll('[data-equip-id],[data-instance-id]').forEach(function(button){button.addEventListener('click',async function(){button.disabled=true;if(button.dataset.equipAction==='consume'){
         var potionDice={pocao_cura_lig:1,pocao_cura_mod:2,pocao_cura_grav:3},diceCount=potionDice[button.dataset.equipId];
         if(!diceCount){button.disabled=false;alert('Esta poção não possui uma rolagem manual configurada.');return;}
         abrirDado('Poção de Cura · '+diceCount+'d8',async function(total,values){
@@ -2232,17 +2330,22 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
           await carregarPersonagens();abrirInventarioSRD(p.ch.id);
         },true,true,diceCount+'d8');
         return;
-      }var q=await sb.rpc('equipar_item_srd',{p_character_id:String(p.ch.id),p_equipment_id:button.dataset.equipId,p_equipado:button.dataset.equipped==='true'});if(q.error){alert('Não foi possível atualizar o equipamento: '+q.error.message);button.disabled=false;return;}await carregarPersonagens();abrirInventarioSRD(p.ch.id);});});
+      }var q=button.dataset.equipAction==='weapon-instance'?await sb.rpc('equipar_arma_instancia_personagem',{p_character_id:String(p.ch.id),p_instance_id:button.dataset.instanceId,p_hand_slot:button.dataset.handSlot,p_equipado:button.dataset.equipped==='true'}):await sb.rpc('equipar_item_srd',{p_character_id:String(p.ch.id),p_equipment_id:button.dataset.equipId,p_equipado:button.dataset.equipped==='true'});if(q.error){alert('Não foi possível atualizar o equipamento: '+q.error.message);button.disabled=false;return;}await carregarPersonagens();abrirInventarioSRD(p.ch.id);});});
   }
   async function abrirInventarioTokenSRD(token){
     if(!ehGM||!token||token.tipo==='player')return;var modal=document.getElementById('modal-inventario-srd'),list=document.getElementById('inventario-srd-lista'),status=document.getElementById('inventario-srd-status');
     document.getElementById('titulo-inventario-srd').textContent='Equipamento · '+token.nome;status.textContent='Carregando inventário do token…';list.replaceChildren();modal.classList.add('ativo');
-    var r=await sb.from('srd_cba_token_equipment').select('equipment_id,quantidade,equipado,equipment:srd_equipment(*)').eq('campaign_id',Number(MESA_ID)).eq('token_id',String(token.id));
+    var r=await sb.from('srd_cba_token_equipment').select('equipment_id,quantidade,equipado,hand_slot,equipment:srd_equipment(*)').eq('campaign_id',Number(MESA_ID)).eq('token_id',String(token.id));
     if(r.error){status.textContent='Inventário de tokens indisponível. Aplique srd35_token_equipment_migration.sql. '+r.error.message;return;}
-    if(!(r.data||[]).length){status.textContent='Este token ainda não carrega equipamento.';return;}
-    status.textContent='Equipar ou desequipar atualiza automaticamente a CA do token.';
-    list.innerHTML=r.data.map(function(row){var it=row.equipment||{},canEquip=!!slotEquipamento35(it);return '<article style="padding:10px;margin:8px 0;border:1px solid #75613d;border-radius:6px"><strong>'+esc(it.nome||row.equipment_id)+'</strong><div style="color:#9eabc0;font-size:13px">'+esc(it.categoria||'item')+' · x'+row.quantidade+(it.dano?' · dano '+esc(it.dano):'')+(bonusCAEquipamento35(it)?' · CA +'+bonusCAEquipamento35(it):'')+'</div>'+(canEquip?'<button type="button" class="btn-acao" data-token-equip-id="'+esc(row.equipment_id)+'" data-equipped="'+(!row.equipado)+'" style="margin-top:8px">'+(row.equipado?'Desequipar':'Equipar')+'</button>':'')+'</article>';}).join('');
-    list.querySelectorAll('[data-token-equip-id]').forEach(function(button){button.addEventListener('click',async function(){button.disabled=true;var q=await sb.rpc('equipar_item_token_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(token.id),p_equipment_id:String(button.dataset.tokenEquipId),p_equipado:button.dataset.equipped==='true'});if(q.error){alert('Não foi possível atualizar o equipamento: '+q.error.message);button.disabled=false;return;}campanha.cba_data=q.data.cba_data;aplicarCBAnaMesa(q.data.cba_data,false);await carregarEquipamentosTokens();abrirInventarioTokenSRD(token);});});
+    var wi=await sb.from('srd_cba_token_weapon_instances').select('instance_id,equipment_id,equipado,hand_slot,equipment:srd_equipment(*)').eq('campaign_id',Number(MESA_ID)).eq('token_id',String(token.id));
+    if(wi.error){status.textContent='Instâncias de armas indisponíveis: '+wi.error.message;return;}
+    var tokenRows=(r.data||[]).filter(function(row){return slotEquipamento35(row.equipment||{})!=='arma';});
+    (wi.data||[]).forEach(function(row){tokenRows.push({instance_id:row.instance_id,equipment_id:row.equipment_id,quantidade:1,equipado:!!row.equipado,hand_slot:row.hand_slot||null,equipment:row.equipment});});
+    if(!tokenRows.length){status.textContent='Este token ainda não carrega equipamento.';return;}
+    status.textContent='Armas podem ocupar mãos distintas; cada arma possui uma instância independente.';
+    list.innerHTML=tokenRows.map(function(row){var it=row.equipment||{},slot=slotEquipamento35(it),canEquip=!!slot,twoHanded=!!(it.detalhes&&String(it.detalhes.weapon_two_handed)==='true');var buttons='';if(slot==='arma'){if(row.equipado){buttons='<button type="button" class="btn-acao" data-token-instance-id="'+esc(row.instance_id)+'" data-token-hand-slot="'+esc(row.hand_slot||'main_hand')+'" data-equipped="false" style="margin-top:8px">Desequipar '+(row.hand_slot==='off_hand'?'mão secundária':'mão principal')+'</button>';}else{buttons='<button type="button" class="btn-acao" data-token-instance-id="'+esc(row.instance_id)+'" data-token-hand-slot="main_hand" data-equipped="true" style="margin-top:8px">Equipar mão principal</button>'+(twoHanded?'':' <button type="button" class="btn-acao" data-token-instance-id="'+esc(row.instance_id)+'" data-token-hand-slot="off_hand" data-equipped="true" style="margin-top:8px">Equipar mão secundária</button>');}}else if(canEquip){buttons='<button type="button" class="btn-acao" data-token-equip-id="'+esc(row.equipment_id)+'" data-equipped="'+(!row.equipado)+'" style="margin-top:8px">'+(row.equipado?'Desequipar':'Equipar')+'</button>'; }return '<article style="padding:10px;margin:8px 0;border:1px solid #75613d;border-radius:6px"><strong>'+esc(it.nome||row.equipment_id)+'</strong><div style="color:#9eabc0;font-size:13px">'+esc(it.categoria||'item')+' · x'+row.quantidade+(row.hand_slot?' · '+(row.hand_slot==='off_hand'?'mão secundária':'mão principal'):'')+(it.dano?' · dano '+esc(it.dano):'')+(bonusCAEquipamento35(it)?' · CA +'+bonusCAEquipamento35(it):'')+'</div>'+buttons+'</article>';}).join('');
+    list.querySelectorAll('[data-token-instance-id]').forEach(function(button){button.addEventListener('click',async function(){button.disabled=true;var q=await sb.rpc('equipar_arma_instancia_token',{p_campaign_id:Number(MESA_ID),p_token_id:String(token.id),p_instance_id:button.dataset.tokenInstanceId,p_hand_slot:button.dataset.tokenHandSlot,p_equipado:button.dataset.equipped==='true'});if(q.error){alert('Não foi possível atualizar o equipamento: '+q.error.message);button.disabled=false;return;}campanha.cba_data=q.data.cba_data;aplicarCBAnaMesa(q.data.cba_data,false);await carregarEquipamentosTokens();abrirInventarioTokenSRD(token);});});
+    list.querySelectorAll('[data-token-equip-id]').forEach(function(button){button.addEventListener('click',async function(){button.disabled=true;var args={p_campaign_id:Number(MESA_ID),p_token_id:String(token.id),p_equipment_id:String(button.dataset.tokenEquipId),p_equipado:button.dataset.equipped==='true'};var q=await sb.rpc('equipar_item_token_srd',args);if(q.error){alert('Não foi possível atualizar o equipamento: '+q.error.message);button.disabled=false;return;}campanha.cba_data=q.data.cba_data;aplicarCBAnaMesa(q.data.cba_data,false);await carregarEquipamentosTokens();abrirInventarioTokenSRD(token);});});
   }
   function bonusRacialPericia35(racaId,skillId){
     var race=String(racaId||''),skill=String(skillId||'');
@@ -2292,6 +2395,56 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(!p){alert(somenteConsulta?'Não foi possível localizar a ficha selecionada.':'Nenhuma ficha própria disponível.');return;}
     var result=await sb.from('srd_skills').select('id,nome,atributo,source_status,treinada_apenas,penalidade_armadura,descricao');
     if(result.error){alert('Catálogo de perícias indisponível: '+result.error.message);return;}
+    var selectedFeats=listaTalentosUI(p.sh&&p.sh.talentos);
+    var selectedFeatIds=selectedFeats.map(function(choice){return String(typeof choice==='string'?choice:(choice&& (choice.id||choice.feat_id||choice.talent_id)||''));}).filter(Boolean);
+    var featSkillEffects={};
+    var normalizeFeatParam=function(value){return String(value||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();};
+    var featIdentity=p.sh.identidade||{};
+    if(typeof featIdentity==='string'){try{featIdentity=JSON.parse(featIdentity);}catch(e){featIdentity={};}}
+    var featSkillSpecializations=featIdentity.skill_specializations||[];
+    if(typeof featSkillSpecializations==='string'){try{featSkillSpecializations=JSON.parse(featSkillSpecializations);}catch(e){featSkillSpecializations=[];}}
+    if(!Array.isArray(featSkillSpecializations))featSkillSpecializations=[];
+    if(selectedFeatIds.length){
+      var featResult=await sb.from('srd_feats').select('id,mechanics').in('id',selectedFeatIds);
+      if(featResult.error){alert('Não foi possível carregar os efeitos passivos dos talentos: '+featResult.error.message);return;}
+      var featCatalogById=Object.create(null);
+      (featResult.data||[]).forEach(function(feat){featCatalogById[String(feat.id)]=feat;});
+      // Itera as escolhas da ficha, não apenas as linhas únicas do catálogo:
+      // talentos repetíveis podem ter parâmetros distintos e produzir efeitos distintos.
+      selectedFeats.forEach(function(choice){
+        var choiceId=String(typeof choice==='string'?choice:(choice&& (choice.id||choice.feat_id||choice.talent_id)||''));
+        var feat=featCatalogById[choiceId];
+        if(!feat)return;
+        var mechanics=feat.mechanics&&typeof feat.mechanics==='object'?feat.mechanics:{};
+        if(['ready','implemented'].indexOf(String(mechanics.engine_status||''))<0||!mechanics.activation||mechanics.activation.mode!=='passive')return;
+        var featParameter=typeof choice==='object'&&choice?String(choice.parametro||choice.parameter||''):'';
+        var effects=mechanics.resolution&&Array.isArray(mechanics.resolution.effects)?mechanics.resolution.effects:[];
+        effects.forEach(function(effect){
+          if(!effect||effect.kind!=='modifier')return;
+          var stat=String(effect.stat||'');
+          if(effect.parameter_source==='feat_parameter'&&effect.stat_template){
+            var selectedSpecialization=featSkillSpecializations.find(function(spec){
+              return spec&&(
+                normalizeFeatParam(spec.key)===normalizeFeatParam(featParameter)
+                ||normalizeFeatParam(spec.name)===normalizeFeatParam(featParameter)
+                ||normalizeFeatParam((spec.type||'')+' '+(spec.name||''))===normalizeFeatParam(featParameter)
+              );
+            });
+            var selectedSkill=selectedSpecialization?null:(result.data||[]).find(function(skill){
+              return normalizeFeatParam(skill.id)===normalizeFeatParam(featParameter)
+                ||normalizeFeatParam(skill.nome)===normalizeFeatParam(featParameter);
+            });
+            var selectedSkillId=selectedSpecialization?selectedSpecialization.key:(selectedSkill&&selectedSkill.id);
+            if(!selectedSkillId)return;
+            stat=String(effect.stat_template).replace('{parameter}',String(selectedSkillId));
+          }
+          var match=stat.match(/^skill:(.+)$/),value=Number(effect.value);
+          if(!match||!Number.isFinite(value))return;
+          if(!featSkillEffects[match[1]])featSkillEffects[match[1]]=[];
+          featSkillEffects[match[1]].push({bonusType:String(effect.bonus_type||'untyped'),value:value});
+        });
+      });
+    }
     var trained=p.sh.pericias||{},classList=p.cl.pericias_classe||[],identity=p.sh.identidade||{},skillSpecializations=identity.skill_specializations||[];
     if(typeof classList==='string'){try{classList=JSON.parse(classList);}catch(e){classList=classList.split(',');}}
     if(typeof skillSpecializations==='string'){try{skillSpecializations=JSON.parse(skillSpecializations);}catch(e){skillSpecializations=[];}}
@@ -2308,11 +2461,19 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         if(rank<=0&&sk.treinada_apenas)return;
         var mod=modifier35((p.sh.atributos||{})[ability]),skillName=norm(sk.nome);
         var classSkill=normalizedClassSkills.some(function(classSkillName){return classSkillName===skillName||(['oficio','profissao'].indexOf(String(sk.id))>=0&&classSkillName.indexOf(skillName+' ')===0);})||normalizedClassSkills.indexOf('conhecimento qualquer')>=0&&skillName.indexOf('conhecimento ')===0;
-        var classBonus=classSkill&&rank>0?3:0,racialBonus=bonusRacialPericia35(p.sh.raca_id,sk.id);
+        // Em D&D 3.5, perícia de classe não concede +3 no teste; ela altera custo e limite de graduações.
+        var racialBonus=bonusRacialPericia35(p.sh.raca_id,sk.id);
         var armorCheckPenalty=sk.penalidade_armadura?penalidadeArmaduraHabilidade35(p)*(['natacao','natação'].indexOf(String(sk.id))>=0?2:1):0;
         var armorNonproficiencyPenalty=sk.penalidade_armadura&&(ability==='FOR'||ability==='DES')?penalidadeArmaduraNaoProficiente35(p):0;
-        var bonus=rank+mod+classBonus+racialBonus+armorCheckPenalty+armorNonproficiencyPenalty;
-        options.push({sk:sk,skillKey:skillKey,specializationName:specializationName,displayName:displayName,rank:rank,ability:ability,mod:mod,classBonus:classBonus,racialBonus:racialBonus,armorCheckPenalty:armorCheckPenalty,armorNonproficiencyPenalty:armorNonproficiencyPenalty,bonus:bonus});
+        var skillBonusByType={};
+        (featSkillEffects[String(sk.id)]||[]).forEach(function(effect){
+          var type=effect.bonusType||'untyped';
+          if(['untyped','dodge','circumstance'].indexOf(type)>=0)skillBonusByType[type]=(skillBonusByType[type]||0)+effect.value;
+          else skillBonusByType[type]=Math.max(skillBonusByType[type]||0,effect.value);
+        });
+        var featBonus=Object.keys(skillBonusByType).reduce(function(total,type){return total+skillBonusByType[type];},0);
+        var bonus=rank+mod+racialBonus+armorCheckPenalty+armorNonproficiencyPenalty+featBonus;
+        options.push({sk:sk,skillKey:skillKey,specializationName:specializationName,displayName:displayName,rank:rank,ability:ability,mod:mod,classSkill:classSkill,featBonus:featBonus,racialBonus:racialBonus,armorCheckPenalty:armorCheckPenalty,armorNonproficiencyPenalty:armorNonproficiencyPenalty,bonus:bonus});
       });
     });
     options.sort(function(a,b){return a.displayName.localeCompare(b.displayName,'pt-BR');});
@@ -2330,9 +2491,9 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     options.forEach(function(option){
       var card=document.createElement(somenteConsulta?'article':'button');if(!somenteConsulta)card.type='button';card.className='skill-roll-card';card.dataset.search=norm(option.displayName);
       var name=document.createElement('strong');name.textContent=option.displayName;
-      var meta=document.createElement('span');meta.textContent=option.ability+' · '+(option.rank?option.rank+' graduações':'sem graduação')+(option.classBonus?' · perícia de classe': '');
+      var meta=document.createElement('span');meta.textContent=option.ability+' · '+(option.rank?option.rank+' graduações':'sem graduação')+(option.classSkill?' · perícia de classe': '');
       var total=document.createElement('b');total.textContent=(option.bonus>=0?'+':'')+option.bonus;
-      var rule=document.createElement('small');rule.className='skill-roll-rule';rule.textContent=resumoPericiaPt35(option.sk.nome,option.sk.descricao);var dwarfRuleNote='';if(String(p.sh&&p.sh.raca_id)==='anao'){if(String(option.sk.id)==='procurar')dwarfRuleNote='Traço anão — Astúcia com pedras: +2 em Procurar para notar construções incomuns de pedra. Quando estiver a até 3 m de uma construção incomum de pedra, o Anão pode fazer um teste de Procurar como se estivesse procurando ativamente. O Mestre decide se a circunstância narrativa permite aplicar a regra e o bônus.';else if(String(option.sk.id)==='avaliacao')dwarfRuleNote='Traço anão: +2 em Avaliação ao examinar itens de pedra ou metal; o Mestre determina quando se aplica.';else if(String(option.sk.id)==='oficio')dwarfRuleNote='Traço anão: +2 em Ofício ao trabalhar com pedra ou metal; o Mestre determina quando se aplica.';}var detail=document.createElement('small');detail.className='skill-roll-formula';detail.textContent='Teste: 1d20 '+(option.bonus>=0?'+':'')+option.bonus+' · bônus total'+(option.racialBonus?' · bônus racial '+(option.racialBonus>=0?'+':'')+option.racialBonus:'');
+      var rule=document.createElement('small');rule.className='skill-roll-rule';rule.textContent=resumoPericiaPt35(option.sk.nome,option.sk.descricao);var dwarfRuleNote='';if(String(p.sh&&p.sh.raca_id)==='anao'){if(String(option.sk.id)==='procurar')dwarfRuleNote='Traço anão — Astúcia com pedras: +2 em Procurar para notar construções incomuns de pedra. Quando estiver a até 3 m de uma construção incomum de pedra, o Anão pode fazer um teste de Procurar como se estivesse procurando ativamente. O Mestre decide se a circunstância narrativa permite aplicar a regra e o bônus.';else if(String(option.sk.id)==='avaliacao')dwarfRuleNote='Traço anão: +2 em Avaliação ao examinar itens de pedra ou metal; o Mestre determina quando se aplica.';else if(String(option.sk.id)==='oficio')dwarfRuleNote='Traço anão: +2 em Ofício ao trabalhar com pedra ou metal; o Mestre determina quando se aplica.';}var detail=document.createElement('small');detail.className='skill-roll-formula';detail.textContent='Teste: 1d20 '+(option.bonus>=0?'+':'')+option.bonus+' · bônus total'+(option.racialBonus?' · bônus racial '+(option.racialBonus>=0?'+':'')+option.racialBonus:'')+(option.featBonus?' · talentos '+(option.featBonus>=0?'+':'')+option.featBonus:'');
       card.append(name,meta,total,rule);if(dwarfRuleNote){var racialInfo=document.createElement('small');racialInfo.className='skill-roll-rule';racialInfo.textContent=dwarfRuleNote;card.appendChild(racialInfo);}card.appendChild(detail);
       if(!somenteConsulta)card.onclick=async function(){
         if(card.disabled)return;
@@ -2349,7 +2510,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
             if(!finalGate.data||finalGate.data.allowed!==true)throw new Error(finalGate.data&&finalGate.data.reason||'A perícia deixou de estar disponível antes de concluir a rolagem.');
             var trapfinding=!!finalGate.data.trapfinding,trapfindingNote='',conditionalRacialBonus=0,conditionalRacialLabel='';
             var parts=['D20 físico: '+d20,'graduações '+option.rank,'atributo '+option.ability+' '+(option.mod>=0?'+':'')+option.mod];
-            if(option.classBonus)parts.push('perícia de classe +3');
+            if(option.classSkill)parts.push('perícia de classe (sem bônus fixo; afeta custo e limite de graduações)');
+            if(option.featBonus)parts.push('talentos passivos '+(option.featBonus>=0?'+':'')+option.featBonus);
             if(option.racialBonus)parts.push('bônus racial aplicável '+(option.racialBonus>=0?'+':'')+option.racialBonus);
             if(option.armorCheckPenalty)parts.push('penalidade de armadura '+option.armorCheckPenalty);
             if(option.armorNonproficiencyPenalty)parts.push('armadura sem proficiência '+option.armorNonproficiencyPenalty);
@@ -2364,7 +2526,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
             var breakdown='📚 '+p.ch.nome+' — '+option.displayName+': '+parts.join(' · ')+'. O Mestre aplica os bônus pertinentes e compara com a CD.';
             if(conditionalRacialLabel)breakdown+='\n🪨 '+conditionalRacialLabel;
             if(trapfindingNote)breakdown+='\n🪤 '+trapfindingNote;
-            await enviarMensagemChat(breakdown,'rolagem',{evento:'pericia_dnd35',character_id:String(p.ch.id),skill_id:option.sk.id,skill_key:option.skillKey,especializacao:option.specializationName||null,d20:Number(d20),graduações:option.rank,modificador_atributo:option.mod,bônus_classe:option.classBonus,bonus_racial:option.racialBonus,bonus_racial_condicional:conditionalRacialBonus,bonus_racial_condicional_descricao:conditionalRacialLabel,penalidade_armadura:option.armorCheckPenalty,penalidade_armadura_sem_proficiencia:option.armorNonproficiencyPenalty,trapfinding:trapfinding,trapfinding_note:trapfindingNote});
+            await enviarMensagemChat(breakdown,'rolagem',{evento:'pericia_dnd35',character_id:String(p.ch.id),skill_id:option.sk.id,skill_key:option.skillKey,especializacao:option.specializationName||null,d20:Number(d20),graduações:option.rank,modificador_atributo:option.mod,bônus_classe:0,pericia_de_classe:option.classSkill,bonus_talentos:option.featBonus,bonus_racial:option.racialBonus,bonus_racial_condicional:conditionalRacialBonus,bonus_racial_condicional_descricao:conditionalRacialLabel,penalidade_armadura:option.armorCheckPenalty,penalidade_armadura_sem_proficiencia:option.armorNonproficiencyPenalty,trapfinding:trapfinding,trapfinding_note:trapfindingNote});
           },true,true,'1d20');
         }catch(error){alert('Não foi possível usar esta perícia: '+(error&&error.message||error));card.disabled=false;}
       };
@@ -3784,7 +3946,7 @@ async function abrirModalEquipamentos(){
       if(tipoToken==='npc'){
         var sheetResult=await sb.from('srd_character_sheets').select('*').eq('character_id',String(entidade.id)).maybeSingle();
         if(!sheetResult.error&&sheetResult.data){
-          var sheet=sheetResult.data,classResult=await sb.from('srd_classes').select('*').eq('id',sheet.classe_id).maybeSingle(),cls=classResult.data||{},gearResult=await sb.from('srd_character_equipment').select('equipado,equipment:srd_equipment(*)').eq('character_id',String(entidade.id)),gear=(gearResult.data||[]).filter(function(row){return row.equipado&&row.equipment;}).map(function(row){return Object.assign({},row.equipment,{equipado:true});}),weapon=gear.find(function(it){return slotEquipamento35(it)==='arma';}),sheetProxy={sh:sheet,cl:cls,equipamento:gear},attrs=sheet.atributos||{},level=Math.max(1,Number(sheet.nivel)||1),maxHp=pvMax(sheet,cls);
+          var sheet=sheetResult.data,classResult=await sb.from('srd_classes').select('*').eq('id',sheet.classe_id).maybeSingle(),cls=classResult.data||{},gearResult=await sb.from('srd_character_equipment').select('equipado,equipment:srd_equipment(*)').eq('character_id',String(entidade.id)),weaponInstancesResult=await sb.from('srd_character_weapon_instances').select('instance_id,equipado,hand_slot,equipment:srd_equipment(*)').eq('character_id',String(entidade.id)),gear=(gearResult.data||[]).filter(function(row){return row.equipado&&row.equipment&&slotEquipamento35(row.equipment)!=='arma';}).map(function(row){return Object.assign({},row.equipment,{equipado:true});}).concat((weaponInstancesResult.data||[]).filter(function(row){return row.equipado&&row.equipment;}).map(function(row){return Object.assign({},row.equipment,{instance_id:row.instance_id,equipado:true,hand_slot:row.hand_slot,categoria:'arma'});})),weapon=gear.find(function(it){return slotEquipamento35(it)==='arma'&&it.hand_slot==='main_hand';})||gear.find(function(it){return slotEquipamento35(it)==='arma';}),sheetProxy={sh:sheet,cl:cls,equipamento:gear},attrs=sheet.atributos||{},level=Math.max(1,Number(sheet.nivel)||1),maxHp=pvMax(sheet,cls);
           token.sourceCharacterId=String(entidade.id);token.bonusIniciativa=personagemTemTalento({talentos:sheet.talentos},'iniciativa_aprimorada')?4:0;token.hp=Math.max(0,Math.min(maxHp,Number(sheet.pv_atual==null?maxHp:sheet.pv_atual)));token.maxHp=maxHp;token.ac=caFichaMesa(sheetProxy);token.baseAc=token.ac;token.attackBonus=bab35(cls,level)+modifier35(attrs.FOR);token.damageDice=weapon&&weapon.dano||'1d3';token.spellState=jsonValueSRD(sheet.magias_preparadas,null);token.monsterStats={level:level,class_id:String(sheet.classe_id||''),class_name:String(cls.nome||''),spellcasting_key:String(cls.spellcasting_key||cls.progression_key||cls.nome||''),race_id:String(sheet.raca_id||''),forca:Number(attrs.FOR)||10,destreza:Number(attrs.DES)||10,ataques:'Ataque '+(weapon&&weapon.nome||'desarmado')+' '+(token.attackBonus>=0?'+':'')+token.attackBonus+' corpo a corpo ('+token.damageDice+')'};
         }
       }
@@ -4642,9 +4804,9 @@ async function abrirModalEquipamentos(){
               else if(spellOutcome.requires_spell_resistance)texto='✨ '+ficha.ch.nome+' falhou na resistência. O conjurador precisa superar a resistência à magia '+spellOutcome.spell_resistance+'.';
               else texto='🌀 A resistência falhou; o efeito da magia foi aplicado a '+ficha.ch.nome+'.';
             }else{
-              if(spellOutcome.status==='resisted')texto='🛡️ A resistência à magia bloqueou o efeito ('+d20+' + '+requestData.caster_level+' = '+spellOutcome.total+' contra RM '+spellOutcome.spell_resistance+').';
+              var penetrationBonus=Number(spellOutcome.feat_bonus)||0;var penetrationFormula='D20 '+d20+' + nível de conjurador '+Number(spellOutcome.caster_level==null?requestData.caster_level:spellOutcome.caster_level||0)+(penetrationBonus>0?' + talentos '+penetrationBonus:'')+' = '+spellOutcome.total+' contra RM '+spellOutcome.spell_resistance;if(spellOutcome.status==='resisted')texto='🛡️ A resistência à magia bloqueou o efeito ('+penetrationFormula+').';
               else if(spellOutcome.spell_negated_by_shield)texto='🛡️ O Escudo mágico do alvo negou Míssil Mágico; nenhum dano foi causado.';
-              else texto='✨ A magia penetrou a resistência e seu efeito foi aplicado.';
+              else texto='✨ A magia penetrou a resistência ('+penetrationFormula+'); seu efeito foi aplicado.';
               if(spellOutcome.spell_negated_by_shield)extras.spell_negated_by_shield=true;
             }
           }else if(isSavingThrow){
@@ -5152,10 +5314,13 @@ async function abrirModalEquipamentos(){
       else console.warn('Não foi possível carregar srd_classes:',rc.error.message);
     }
 
-    var invResult=await sb.from('srd_character_equipment').select('character_id,equipment_id,quantidade,equipado,equipment:srd_equipment(*)').in('character_id',ids);
+    var invResult=await sb.from('srd_character_equipment').select('character_id,equipment_id,quantidade,equipado,hand_slot,equipment:srd_equipment(*)').in('character_id',ids);
+    var weaponInvResult=await sb.from('srd_character_weapon_instances').select('instance_id,character_id,equipment_id,equipado,hand_slot,equipment:srd_equipment(*)').in('character_id',ids);
     var equipmentByChar=Object.create(null);
-    if(!invResult.error) (invResult.data||[]).forEach(function(row){var it=Object.assign({},row.equipment||{},{equipment_id:row.equipment_id,quantidade:row.quantidade,equipado:!!row.equipado});it.categoria_original=it.categoria;var slot=slotEquipamento35(it);if(slot)it.categoria=slot;it.bonus_ca=bonusCAEquipamento35(it);if(it.bonus_max_des==null)it.bonus_max_des=maxDexEquipamento35(it);(equipmentByChar[String(row.character_id)]||(equipmentByChar[String(row.character_id)]=[])).push(it);});
+    if(!invResult.error) (invResult.data||[]).filter(function(row){return slotEquipamento35(row.equipment||{})!=='arma';}).forEach(function(row){var it=Object.assign({},row.equipment||{},{equipment_id:row.equipment_id,quantidade:row.quantidade,equipado:!!row.equipado,hand_slot:row.hand_slot||null});it.categoria_original=it.categoria;var slot=slotEquipamento35(it);if(slot)it.categoria=slot;it.bonus_ca=bonusCAEquipamento35(it);if(it.bonus_max_des==null)it.bonus_max_des=maxDexEquipamento35(it);(equipmentByChar[String(row.character_id)]||(equipmentByChar[String(row.character_id)]=[])).push(it);});
     else console.warn('Inventário SRD indisponível:',invResult.error.message);
+    if(!weaponInvResult.error) (weaponInvResult.data||[]).forEach(function(row){var it=Object.assign({},row.equipment||{},{instance_id:row.instance_id,equipment_id:row.equipment_id,quantidade:1,equipado:!!row.equipado,hand_slot:row.hand_slot||null});it.categoria_original=it.categoria;it.categoria='arma';it.bonus_ca=bonusCAEquipamento35(it);(equipmentByChar[String(row.character_id)]||(equipmentByChar[String(row.character_id)]=[])).push(it);});
+    else console.warn('Instâncias de armas indisponíveis:',weaponInvResult.error.message);
     personagens = chs.map(function(c){
       var s = shs[String(c.id)] || {};
       return { ch:c, sh:s, cl: cls[String(s.classe_id)] || {}, raca:raceDataById[String(s.raca_id)]||{}, perfil:perfisMap[c.user_id]||{}, equipamento:equipmentByChar[String(c.id)]||[], tamanho:raceSizeById[String(s.raca_id)]||'Medium', deslocamento_m:raceSpeedById[String(s.raca_id)]==null?null:raceSpeedById[String(s.raca_id)] };
@@ -5178,10 +5343,12 @@ async function abrirModalEquipamentos(){
   }
 
   async function carregarEquipamentosTokens(){
-    var r=await sb.from('srd_cba_token_equipment').select('token_id,equipment_id,quantidade,equipado,equipment:srd_equipment(*)').eq('campaign_id',Number(MESA_ID));
-    if(r.error){equipamentoTokens=Object.create(null);if(!/relation .* does not exist|schema cache/i.test(r.error.message||''))console.warn('Inventário dos tokens indisponível:',r.error.message);renderCards();return;}
+    var r=await sb.from('srd_cba_token_equipment').select('token_id,equipment_id,quantidade,equipado,hand_slot,equipment:srd_equipment(*)').eq('campaign_id',Number(MESA_ID));
+    var wi=await sb.from('srd_cba_token_weapon_instances').select('instance_id,token_id,equipment_id,equipado,hand_slot,equipment:srd_equipment(*)').eq('campaign_id',Number(MESA_ID));
+    if(r.error||wi.error){equipamentoTokens=Object.create(null);console.warn('Inventário dos tokens indisponível:',(r.error||wi.error).message);renderCards();return;}
     equipamentoTokens=Object.create(null);
-    (r.data||[]).forEach(function(row){(equipamentoTokens[String(row.token_id)]||(equipamentoTokens[String(row.token_id)]=[])).push(Object.assign({},row.equipment||{},{equipment_id:row.equipment_id,quantidade:row.quantidade,equipado:!!row.equipado}));});
+    (r.data||[]).filter(function(row){return slotEquipamento35(row.equipment||{})!=='arma';}).forEach(function(row){(equipamentoTokens[String(row.token_id)]||(equipamentoTokens[String(row.token_id)]=[])).push(Object.assign({},row.equipment||{},{equipment_id:row.equipment_id,quantidade:row.quantidade,equipado:!!row.equipado,hand_slot:row.hand_slot||null}));});
+    (wi.data||[]).forEach(function(row){(equipamentoTokens[String(row.token_id)]||(equipamentoTokens[String(row.token_id)]=[])).push(Object.assign({},row.equipment||{},{instance_id:row.instance_id,equipment_id:row.equipment_id,quantidade:1,equipado:!!row.equipado,hand_slot:row.hand_slot||null,categoria:'arma'}));});
     renderCards();
   }
 
