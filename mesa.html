@@ -1545,7 +1545,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       else{
         var gmTurn=combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
         var gmOwnTurn=!!(gmTurn&&gmTurn.is_monster&&String(gmTurn.id)===String(item.id));
-        if(item.tipo==='npc'&&item.monsterStats&&item.monsterStats.attributes)adicionarBotaoContextual(menu,'npc-sheet','📜 Ver ficha completa');if(gmOwnTurn){adicionarBotaoContextual(menu,'gm-token-attack','⚔️ Atacar com este token');adicionarBotaoContextual(menu,'gm-token-trap-attack','🪤 Atacar como armadilha');if(tokenTemMagiaPreparada35(item))adicionarBotaoContextual(menu,'gm-token-magic','✨ Conjurar magia disponível');adicionarBotaoContextual(menu,'gm-token-move','↔️ Mover token');adicionarBotaoContextual(menu,'gm-token-action','📜 Registrar outra ação');adicionarBotaoContextual(menu,'gm-token-end','⏭️ Encerrar turno do token');}
+        if(item.tipo==='npc')adicionarBotaoContextual(menu,'npc-sheet','📜 Ficha e controles do NPC');if(gmOwnTurn){adicionarBotaoContextual(menu,'gm-token-attack','⚔️ Atacar com este token');adicionarBotaoContextual(menu,'gm-token-trap-attack','🪤 Atacar como armadilha');if(tokenTemMagiaPreparada35(item))adicionarBotaoContextual(menu,'gm-token-magic','✨ Conjurar magia disponível');adicionarBotaoContextual(menu,'gm-token-move','↔️ Mover token');adicionarBotaoContextual(menu,'gm-token-action','📜 Registrar outra ação');adicionarBotaoContextual(menu,'gm-token-end','⏭️ Encerrar turno do token');}
         adicionarBotaoContextual(menu,'inventario','🎒 Inventário do token');
         adicionarBotaoContextual(menu,'pv-token','❤️ Ajustar PV da criatura');if(item.tipo==='monstro')adicionarBotaoContextual(menu,'monster-info','📜 Ver ficha no chat');
       }
@@ -1591,6 +1591,62 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     panel.appendChild(note);
     overlay.appendChild(panel);overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});document.body.appendChild(overlay);
   }
+  function abrirPainelControleNPC35(item){
+    if(!ehGM||!item||item.tipo!=='npc')return;
+    var stats=item.monsterStats&&typeof item.monsterStats==='object'?item.monsterStats:{},attrs=stats.attributes&&typeof stats.attributes==='object'?stats.attributes:{};
+    var old=document.getElementById('modal-controle-npc-gm');if(old)old.remove();
+    var overlay=document.createElement('div');overlay.id='modal-controle-npc-gm';overlay.className='skill-roll-overlay';overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');
+    var panel=document.createElement('section');panel.className='skill-roll-panel';
+    var head=document.createElement('header');head.className='skill-roll-head';
+    var title=document.createElement('h2');title.textContent='NPC · '+String(item.nome||'Personagem não jogador');
+    var close=document.createElement('button');close.type='button';close.className='skill-roll-close';close.textContent='✕';close.onclick=function(){overlay.remove();};
+    head.append(title,close);panel.appendChild(head);
+    var identity=document.createElement('p');identity.className='skill-roll-hint';
+    identity.textContent=[stats.race_name,stats.class_name,stats.level?'Nível '+stats.level:null,stats.archetype].filter(Boolean).join(' · ')||String(item.detalhe||'Ficha genérica de NPC');
+    panel.appendChild(identity);
+    var currentHp=item.hp==null?'—':Number(item.hp),maxHp=item.maxHp==null?'—':Number(item.maxHp),ac=item.ac==null?(stats.ca||'—'):item.ac;
+    var vitals=document.createElement('div');vitals.className='player-action-vitals';
+    [['❤',currentHp+' / '+maxHp+' PV'],['🛡',String(ac)+' CA'],['⚔','BBA '+(stats.bab==null?'—':(Number(stats.bab)>=0?'+':'')+stats.bab)]].forEach(function(pair){var value=document.createElement('span');value.textContent=pair[0]+' '+pair[1];vitals.appendChild(value);});
+    panel.appendChild(vitals);
+    function addField(label,value){
+      if(value==null||value===''||(Array.isArray(value)&&!value.length))return;
+      var row=document.createElement('p');row.className='feature-detail';var strong=document.createElement('strong');strong.textContent=label+': ';row.append(strong,document.createTextNode(formatarValorMonstro35(value)));panel.appendChild(row);
+    }
+    if(Object.keys(attrs).length){
+      addField('Atributos',['FOR','DES','CON','INT','SAB','CAR'].map(function(key){var score=Number(attrs[key]||10),mod=modifier35(score);return key+' '+score+' ('+(mod>=0?'+':'')+mod+')';}).join(' · '));
+    }else{
+      addField('Atributos',['FOR','DES','CON','INT','SAB','CAR'].map(function(key){var value=stats[key.toLowerCase()]??stats[key]??null;return value==null?null:key+' '+value;}).filter(Boolean).join(' · '));
+    }
+    var saves=stats.saves||{};
+    addField('Resistências',['Fortitude '+(saves.fortitude==null?'—':saves.fortitude),'Reflexos '+(saves.reflexos==null?'—':saves.reflexos),'Vontade '+(saves.vontade==null?'—':saves.vontade)].join(' · '));
+    addField('Deslocamento',stats.deslocamento||stats.movement||stats.speed||item.deslocamento||null);
+    addField('Ataques',stats.ataques||stats.attacks||item.detalhe||null);
+    var skills=Array.isArray(stats.skills)?stats.skills:[];
+    addField('Perícias',skills.map(function(skill){return String(skill.nome||skill.name||'Perícia')+(skill.graduacoes!=null?' '+skill.graduacoes:skill.ranks!=null?' '+skill.ranks:'');}).join(' · '));
+    var feats=Array.isArray(stats.feats)?stats.feats:(Array.isArray(stats.talentos)?stats.talentos:[]);
+    addField('Talentos',feats.map(function(feat){return String(feat.nome||feat.name||feat.id||feat)+(feat.parametro?' ('+feat.parametro+')':'');}).join(' · '));
+    addField('Traços raciais',stats.racial_traits||null);
+    addField('Características da classe',stats.class_traits||null);
+    addField('Descrição da classe',stats.class_description||null);
+    var loadout=Array.isArray(stats.loadout)?stats.loadout:[];
+    addField('Equipamento',loadout.map(function(it){return String(it.nome||it.name||'Item')+(Number(it.quantidade)>1?' ×'+it.quantidade:'');}).join(' · '));
+    var spellState=tokenSpellState35(item),known=Array.isArray(spellState.conhecidas)?spellState.conhecidas.length:0,prepared=Array.isArray(spellState.preparadas)?spellState.preparadas.filter(function(row){return row&&!row.expended&&!row.gasta;}).length:0;
+    if(known||prepared)addField('Magias',known+' conhecida(s) · '+prepared+' preparada(s)');
+    var actions=document.createElement('div');actions.className='player-action-grid';
+    function addAction(label,callback){var button=document.createElement('button');button.type='button';button.className='btn-acao';button.textContent=label;button.addEventListener('click',callback);actions.appendChild(button);}
+    addAction('❤️ Ajustar PV',function(){overlay.remove();abrirAjustePVToken(item.key);});
+    addAction('🎒 Inventário',function(){overlay.remove();abrirInventarioTokenSRD(item);});
+    addAction('📣 Publicar ficha no chat',function(){publicarFichaNPC35(item).catch(function(err){alert('Não foi possível publicar a ficha do NPC: '+err.message);});});
+    if(tokenEhTurnoMestre35(item)){
+      addAction('⚔️ Atacar',function(){overlay.remove();iniciarAtaqueMestre(item);});
+      addAction('📜 Registrar ação',function(){overlay.remove();registrarOutraAcaoMestre(item);});
+      if(tokenTemMagiaPreparada35(item))addAction('✨ Magias',function(){overlay.remove();abrirMagiasTokenMestre(item);});
+    }
+    panel.appendChild(actions);
+    var note=document.createElement('p');note.className='skill-roll-hint';note.textContent='Ficha genérica de NPC controlada pelo Mestre. Ataques, ações e magias só ficam disponíveis no turno ativo do NPC.';
+    panel.appendChild(note);
+    overlay.appendChild(panel);overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});document.body.appendChild(overlay);
+  }
   function infoTokenNoChat(item){
     if(!item)return;var m=item.monsterId&&cbaMonsterCatalog.find(function(x){return String(x.id)===String(item.monsterId);});
     if(m){publicarInfoMonstro(m);return;}
@@ -1606,7 +1662,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(acao==='pv-token'){if(ehGM&&item.tipo!=='player')abrirAjustePVToken(item.key);return;}
     if(acao==='monster-info'){if(ehGM&&item.tipo==='monstro')infoTokenNoChat(item);return;}
     if(acao==='gm-character-sheet'){if(ehGM)abrirPainelControlePersonagemGM(item);return;}
-    if(acao==='npc-sheet'){if(ehGM)publicarFichaNPC35(item).catch(function(err){alert('Não foi possível publicar a ficha do NPC: '+err.message);});return;}
+    if(acao==='npc-sheet'){if(ehGM)abrirPainelControleNPC35(item);return;}
     if(acao==='criatura-atacar'){iniciarAtaqueMestre(item);return;}
     if(acao==='gm-token-attack'){iniciarAtaqueMestre(item);return;}
     if(acao==='gm-token-trap-attack'){iniciarAtaqueMestre(item,'trap');return;}
