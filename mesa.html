@@ -1538,7 +1538,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     fecharMenuContextualToken(false);menu.replaceChildren();ctxTokenAtualKey=String(item.key);ctxFocusTokenKey=String(item.key);
     if(ehGM){
       if(item.tipo==='player'){
-        if(own)adicionarBotaoContextual(menu,'gm-character-sheet','📜 Ficha e controles do personagem');
+        adicionarBotaoContextual(menu,'gm-character-sheet','📜 Ficha e controles do personagem');
         var playerTurn=combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
         if(playerTurn&&!playerTurn.is_monster&&String(playerTurn.id)===String(item.id))adicionarBotaoContextual(menu,'gm-token-move','↔️ Mover token do jogador');
       }
@@ -1584,6 +1584,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var actions=document.createElement('div');actions.className='player-action-grid';
     function addAction(label,callback){var button=document.createElement('button');button.type='button';button.className='btn-acao';button.textContent=label;button.addEventListener('click',callback);actions.appendChild(button);}
     addAction('❤️ Ajustar PV',function(){overlay.remove();abrirAjustePV(p.ch.id);});
+    addAction('🎒 Mochila e equipamento',function(){overlay.remove();abrirInventarioSRD(p.ch.id);});
     addAction('⚔️ Características da classe',function(){overlay.remove();abrirHabilidadesClasse(p.ch.id);});
     addAction('🏅 Talentos escolhidos',function(){overlay.remove();abrirTalentosJogadorUI(p.ch.id);});
     panel.appendChild(actions);
@@ -2139,13 +2140,14 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     document.addEventListener('keydown',function(e){if(!mag.classList.contains('ativo'))return;if(e.key==='Escape'){fecharModalMagias();return;}if(e.key==='Tab'){var f=Array.from(mag.querySelectorAll('button:not(:disabled),select,input,[tabindex="0"]')).filter(function(x){return !x.hidden;});if(!f.length)return;var i=f.indexOf(document.activeElement);if(e.shiftKey&&i<=0){e.preventDefault();f[f.length-1].focus();}else if(!e.shiftKey&&i===f.length-1){e.preventDefault();f[0].focus();}}if(e.key==='Enter'&&document.activeElement&&document.activeElement.classList.contains('magia-opcao')){e.preventDefault();}});
   }
   async function abrirInventarioSRD(characterId){
-    var p=characterId?personagens.find(function(x){return String(x.ch.id)===String(characterId)&&x.ch.user_id===eu.id;}):(personagemDoTurnoDoJogador()||personagens.find(function(x){return x.ch.user_id===eu.id;}));if(!p){alert('Nenhuma ficha própria está disponível nesta mesa.');return;}inventarioPersonagemAtivo=p;
+    var p=characterId?personagens.find(function(x){return String(x.ch.id)===String(characterId)&&(ehGM||x.ch.user_id===eu.id);}):(personagemDoTurnoDoJogador()||personagens.find(function(x){return x.ch.user_id===eu.id;}));if(!p){alert('Nenhuma ficha acessível está disponível nesta mesa.');return;}inventarioPersonagemAtivo=p;
+    var gmControlandoFichaAlheia=!!(ehGM&&p.ch.user_id!==eu.id);
     var modal=document.getElementById('modal-inventario-srd'),list=document.getElementById('inventario-srd-lista'),status=document.getElementById('inventario-srd-status');document.getElementById('titulo-inventario-srd').textContent='Mochila · '+p.ch.nome;status.textContent='Carregando mochila de '+p.ch.nome+'…';list.replaceChildren();modal.classList.add('ativo');
     var r=await sb.from('srd_character_equipment').select('equipment_id,quantidade,equipado,equipment:srd_equipment(*)').eq('character_id',String(p.ch.id));
     if(r.error){status.textContent='Inventário SRD indisponível. Aplique vtt_dnd35_final_migration.sql. Detalhe: '+r.error.message;return;}
     var rows=r.data||[]; if(!rows.length){status.textContent='A mochila está vazia. Peça ao Mestre para entregar equipamento pela mesa.';return;}
-    status.textContent='Atributos calculados com o equipamento atualmente equipado.';
-    list.innerHTML=rows.map(function(row){var it=row.equipment||{},usable=it.categoria==='consumivel',equipable=!!slotEquipamento35(it);return '<article style="padding:10px;margin:8px 0;border:1px solid #75613d;border-radius:6px"><strong>'+esc(it.nome||row.equipment_id)+'</strong><div style="color:#9eabc0;font-size:13px">'+esc(nomeCategoriaEquipamento35(it.categoria||'item'))+' · x'+row.quantidade+(it.dano?' · dano '+esc(it.dano):'')+(bonusCAEquipamento35(it)?' · CA +'+bonusCAEquipamento35(it):'')+(row.equipado?' · Equipado':'')+'</div>'+(usable||equipable?'<button type="button" class="btn-acao" data-equip-id="'+esc(row.equipment_id)+'" data-equip-action="'+(usable?'consume':'equip')+'" data-equipped="'+(!row.equipado)+'" style="margin-top:8px">'+(usable?'Usar':(row.equipado?'Desequipar':'Equipar'))+'</button>':'')+'</article>';}).join('');
+    status.textContent=gmControlandoFichaAlheia?'O Mestre pode equipar e desequipar itens. Consumíveis continuam sendo usados pelo próprio jogador no turno dele.':'Atributos calculados com o equipamento atualmente equipado.';
+    list.innerHTML=rows.map(function(row){var it=row.equipment||{},usable=it.categoria==='consumivel'&&!gmControlandoFichaAlheia,equipable=!!slotEquipamento35(it);return '<article style="padding:10px;margin:8px 0;border:1px solid #75613d;border-radius:6px"><strong>'+esc(it.nome||row.equipment_id)+'</strong><div style="color:#9eabc0;font-size:13px">'+esc(nomeCategoriaEquipamento35(it.categoria||'item'))+' · x'+row.quantidade+(it.dano?' · dano '+esc(it.dano):'')+(bonusCAEquipamento35(it)?' · CA +'+bonusCAEquipamento35(it):'')+(row.equipado?' · Equipado':'')+(it.categoria==='consumivel'&&gmControlandoFichaAlheia?' · uso pelo jogador':'')+'</div>'+(usable||equipable?'<button type="button" class="btn-acao" data-equip-id="'+esc(row.equipment_id)+'" data-equip-action="'+(usable?'consume':'equip')+'" data-equipped="'+(!row.equipado)+'" style="margin-top:8px">'+(usable?'Usar':(row.equipado?'Desequipar':'Equipar'))+'</button>':'')+'</article>';}).join('');
     list.querySelectorAll('[data-equip-id]').forEach(function(button){button.addEventListener('click',async function(){button.disabled=true;if(button.dataset.equipAction==='consume'){
         var potionDice={pocao_cura_lig:1,pocao_cura_mod:2,pocao_cura_grav:3},diceCount=potionDice[button.dataset.equipId];
         if(!diceCount){button.disabled=false;alert('Esta poção não possui uma rolagem manual configurada.');return;}
