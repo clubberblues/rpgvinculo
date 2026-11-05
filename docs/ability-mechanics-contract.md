@@ -174,3 +174,34 @@ Limites ainda conhecidos:
 - **Tiro Preciso** está estruturado como bônus condicional de +4 para neutralizar
   a penalidade de –4 contra alvo engajado em combate corpo a corpo, mas continua
   `needs_review` e inativo até a mesa registrar engajamento de forma explícita.
+
+
+## Combater com Duas Armas — contrato ainda não executável
+
+Os três talentos possuem estrutura mecânica explícita no catálogo, mas permanecem em
+`needs_review` e **não podem conceder ataques ou bônus no combate** até a integração.
+
+- **Combater com Duas Armas:** exige duas armas corpo a corpo equipadas e reduz em 2
+  a penalidade da mão principal e em 6 a da mão secundária.
+- **Combater com Duas Armas Aprimorado:** exige DES 17, o talento básico e BBA +6;
+  acrescenta um segundo ataque da mão secundária com penalidade adicional de –5.
+- **Combater com Duas Armas Maior:** exige DES 19, os dois talentos anteriores e
+  BBA +11; acrescenta um terceiro ataque da mão secundária com penalidade adicional
+  de –10.
+
+O catálogo descreve os requisitos e os efeitos, mas o modelo atual de equipamento
+da ficha só persiste `equipado` e não identifica com segurança mão principal e mão
+secundária. A rotina de ataque total atual também mantém uma única arma, fórmula de
+dano e confirmação de crítico para toda a sequência. Portanto, ainda é necessário:
+identificar/selecionar as duas mãos; rejeitar armas incompatíveis (por exemplo,
+arma de duas mãos); construir uma sequência mista de ataques principais e
+secundários; calcular penalidades cumulativas corretas; e, para cada ataque,
+usar a arma correspondente em crítico, dano e RPC autoritativa. Falha em qualquer
+requisito deve impedir o início da sequência, sem consumir a ação.
+
+Os campos `two_weapon_primary_attack_penalty_reduction`,
+`two_weapon_offhand_attack_penalty_reduction` e o gatilho
+`full_attack_offhand` são descritores pendentes, não tipos de efeito já
+suportados pelo resolvedor. Não os executar genericamente nem promover esses
+talentos a `ready`/ `implemented` antes de testes ponta a ponta com rolagens
+físicas separadas e aplicação de dano por arma.
