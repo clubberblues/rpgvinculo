@@ -2128,7 +2128,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       }
       abrirDado('Dano '+weaponName+' · '+formula+critLabel,async function(result){concluirRolagemDano(Math.max(1,Number(result)),'Rolagem 3D '+formula);},true,true,formula);
     }
-    function registrarResultadoAtaque(d20,isCritical){
+    async function registrarResultadoAtaque(d20,isCritical){
       var total=Number(d20)+bonus,automaticMiss=Number(d20)===1,automaticHit=Number(d20)===20,hit=!automaticMiss&&(automaticHit||total>=targetAC);
       var currentIterativeBab=fullAttack?attackSequence[attackSequenceIndex]:bab;
       var breakdown='1d20 '+d20+' + BBA '+currentIterativeBab+' + '+attackAttribute+' '+ability+(abilityEffectDelta?' (modificador de atributo por efeito '+(abilityEffectDelta>0?'+':'')+abilityEffectDelta+')':'')+(effectAttackModifier?' + efeitos de ataque '+(effectAttackModifier>0?'+':'')+effectAttackModifier:'')+(sizeModifier?' + tamanho '+(sizeModifier>0?'+':'')+sizeModifier:'')+(weaponFocus?' + Foco em Arma +'+weaponFocus:'')+(rangedAttackFeatBonus?' + bônus condicional de talento à distância +'+rangedAttackFeatBonus:'')+(racialFavoredEnemyBonus?' + bônus racial de ataque +1':'')+(powerPenalty?' − Ataque Poderoso '+powerPenalty:'')+(rangePenalty?' − distância '+rangePenalty:'')+(proficiencyPenalty?' − arma sem proficiência '+proficiencyPenalty:'')+(armorNonproficiencyPenalty?' − armadura/escudo sem proficiência '+Math.abs(armorNonproficiencyPenalty):'');
