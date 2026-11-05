@@ -2568,6 +2568,35 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         var harmUse=document.createElement('button');harmUse.type='button';harmUse.className='feature-use-btn';harmUse.textContent='Rolar toque · Ferir morto-vivo';
         harmUse.addEventListener('click',function(){var amount=Number(harmAmount.value);if(!undeadSelect.value){alert('Escolha um token morto-vivo no campo de batalha.');return;}if(!Number.isInteger(amount)||amount<1){alert('Informe uma quantidade válida de pontos para gastar.');return;}harmUse.disabled=true;abrirDado('Ataque de toque · Imposição das Mãos',async function(d20){try{var result=await sb.rpc('usar_imposicao_maos_mortos_vivos_srd',{p_character_id:String(p.ch.id),p_target_token_key:String(undeadSelect.value),p_d20:Number(d20),p_amount:amount});if(result.error)throw new Error(result.error.message);var data=result.data||{};if(data.cba_data){campanha.cba_data=data.cba_data;try{aplicarCBAnaMesa(data.cba_data,false);}catch(sceneError){console.warn('Dano positivo aplicado; falha ao atualizar a cena local:',sceneError);}}var targetName=String(data.target_name||'morto-vivo');var msg=data.hit?'☀️ '+p.ch.nome+' acerta o toque contra '+targetName+': d20 '+data.d20+' + '+data.attack_bonus+' = '+data.attack_total+' contra CA de toque '+data.touch_ac+'. Imposição das Mãos causa '+data.damage+' de dano positivo. Restam '+data.resource_remaining+' ponto(s) na reserva.':'☀️ '+p.ch.nome+' erra o toque contra '+targetName+': d20 '+data.d20+' + '+data.attack_bonus+' = '+data.attack_total+' contra CA de toque '+data.touch_ac+'. Nenhum ponto da reserva foi gasto.';var sent=await enviarMensagemChat(msg,'rolagem',{evento:'habilidade_classe_aplicada',feature_key:'lay_on_hands_harm_undead',character_id:String(p.ch.id),target_id:String(data.target_id||undeadSelect.value),hit:!!data.hit,d20:data.d20,attack_bonus:data.attack_bonus,attack_total:data.attack_total,touch_ac:data.touch_ac,damage:data.damage,resource_remaining:data.resource_remaining});if(sent&&sent.error)console.warn('Imposição das Mãos aplicada; falha ao registrar no chat:',sent.error.message);harmUse.textContent=data.hit?'Toque acertou · '+Number(data.resource_remaining||0)+' restante(s)':'Toque errou · ação consumida';try{await carregarPersonagens();}catch(refreshError){console.warn('Dano positivo aplicado; falha ao atualizar fichas:',refreshError);}}catch(e){alert('Não foi possível ferir o morto-vivo: '+(e&&e.message||e));}finally{harmUse.disabled=false;}},true);});
         card.append(title,desc,mechanics,targetSelect,amountInput,use,undeadSelect,harmAmount,harmUse);
+      }else if(implemented.indexOf('rage_core')>=0){
+        mechanics.textContent='Fúria do Bárbaro · ativação controlada pelo motor: usos diários, bônus de FOR/CON/Vontade, penalidade de CA, PV temporários, duração e fadiga ao terminar.';
+        var use=document.createElement('button');use.type='button';use.className='feature-use-btn';use.textContent='Consultar e ativar Fúria';
+        use.addEventListener('click',async function(){
+          use.disabled=true;use.textContent='Verificando disponibilidade…';
+          try{
+            var statusResult=await sb.rpc('consultar_furia_barbaro_srd',{p_character_id:String(p.ch.id)});
+            if(statusResult.error)throw new Error(statusResult.error.message);
+            var state=statusResult.data||{};
+            if(!state.eligible)throw new Error('Esta ficha não possui nível efetivo de Bárbaro.');
+            var action=state.active?'end':'start';
+            if(action==='start'&&!state.can_start){
+              var reason=Number(state.uses_remaining||0)<=0?'Todos os usos diários de Fúria já foram gastos.':'Fúria indisponível: verifique turno ativo, fadiga, exaustão ou condições que impeçam ações.';
+              throw new Error(reason);
+            }
+            if(action==='end'&&!state.can_end)throw new Error('A Fúria só pode ser encerrada no turno do personagem durante o combate.');
+            var used=await sb.rpc('usar_furia_barbaro_srd',{p_character_id:String(p.ch.id),p_action:action});
+            if(used.error)throw new Error(used.error.message);
+            var data=used.data||{};
+            var message=action==='start'
+              ?'🔥 '+p.ch.nome+' entra em Fúria: +'+data.strength_bonus+' FOR, +'+data.constitution_bonus+' CON, +'+data.will_bonus+' Vontade, −2 CA. Duração: '+data.duration_rounds+' rodada(s). Usos restantes: '+data.uses_remaining+'.'
+              :'🛡️ '+p.ch.nome+' encerra a Fúria. PV temporários removidos: '+Number(data.rage_hp_removed||0)+'. '+(data.fatigue_applied?'Fadiga aplicada.':'Sem fadiga adicional.');
+            var sent=await enviarMensagemChat(message,'rolagem',{evento:'habilidade_classe_aplicada',feature_key:'barbarian_rage',action:action,character_id:String(p.ch.id),duration_rounds:data.duration_rounds||null,uses_remaining:data.uses_remaining||null});
+            if(sent&&sent.error)console.warn('Fúria aplicada, mas não foi possível registrar o evento adicional no chat:',sent.error.message);
+            await carregarPersonagens();
+            use.textContent=action==='start'?'Fúria ativada · '+Number(data.uses_remaining||0)+' uso(s) restante(s)':'Fúria encerrada';
+          }catch(error){use.disabled=false;use.textContent='Consultar e ativar Fúria';alert('Não foi possível usar Fúria: '+String(error&&error.message||error));}
+        });
+        card.append(title,desc,mechanics,use);
       }else if(status==='implemented'){
         mechanics.textContent='Aplicada automaticamente pelo motor: '+(implemented.join(', ')||row.name)+'.';
         card.append(title,desc,mechanics);
