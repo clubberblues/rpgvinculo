@@ -1585,6 +1585,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     function addAction(label,callback){var button=document.createElement('button');button.type='button';button.className='btn-acao';button.textContent=label;button.addEventListener('click',callback);actions.appendChild(button);}
     addAction('❤️ Ajustar PV',function(){overlay.remove();abrirAjustePV(p.ch.id);});
     addAction('🎒 Mochila e equipamento',function(){overlay.remove();abrirInventarioSRD(p.ch.id);});
+    addAction('📚 Perícias (consulta)',function(){overlay.remove();abrirTestePericiaJogador(p.ch.id,true);});
+    addAction('⛰️ Características raciais',function(){overlay.remove();abrirDetalhesRaciaisMesa35(p);});
     addAction('⚔️ Características da classe',function(){overlay.remove();abrirHabilidadesClasse(p.ch.id);});
     addAction('🏅 Talentos escolhidos',function(){overlay.remove();abrirTalentosJogadorUI(p.ch.id);});
     panel.appendChild(actions);
@@ -2215,9 +2217,9 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var summary=summaries[n]||'Use esta perícia quando a ação exigir treinamento ou conhecimento específico. O Mestre define a dificuldade (CD) conforme a situação e as condições do ambiente.';
     return summary;
   }
-  async function abrirTestePericiaJogador(){
-    var p=personagemDoTurnoDoJogador()||personagens.find(function(x){return x.ch.user_id===eu.id;});
-    if(!p){alert('Nenhuma ficha própria disponível.');return;}
+  async function abrirTestePericiaJogador(characterId,somenteConsulta){
+    var p=characterId&&ehGM?personagens.find(function(x){return String(x.ch.id)===String(characterId);}):(personagemDoTurnoDoJogador()||personagens.find(function(x){return x.ch.user_id===eu.id;}));
+    if(!p){alert(somenteConsulta?'Não foi possível localizar a ficha selecionada.':'Nenhuma ficha própria disponível.');return;}
     var result=await sb.from('srd_skills').select('id,nome,atributo,source_status,treinada_apenas,penalidade_armadura,descricao');
     if(result.error){alert('Catálogo de perícias indisponível: '+result.error.message);return;}
     var trained=p.sh.pericias||{},classList=p.cl.pericias_classe||[],identity=p.sh.identidade||{},skillSpecializations=identity.skill_specializations||[];
@@ -2247,22 +2249,22 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(!options.length){alert('Não há perícias disponíveis para esta ficha.');return;}
     var modal=document.getElementById('modal-pericia-jogador');
     if(modal)modal.remove();
-    modal=document.createElement('div');modal.id='modal-pericia-jogador';modal.className='skill-roll-overlay';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-label','Escolher perícia para rolagem');
+    modal=document.createElement('div');modal.id='modal-pericia-jogador';modal.className='skill-roll-overlay';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-label',somenteConsulta?'Consultar perícias da ficha':'Escolher perícia para rolagem');
     var panel=document.createElement('section');panel.className='skill-roll-panel';
     var head=document.createElement('header');head.className='skill-roll-head';
-    var heading=document.createElement('div');var title=document.createElement('h2');title.textContent='Teste de perícia';var subtitle=document.createElement('p');subtitle.textContent='Escolha uma perícia de '+String(p.ch.nome||'seu personagem')+'. O bônus é calculado automaticamente.';heading.append(title,subtitle);
+    var heading=document.createElement('div');var title=document.createElement('h2');title.textContent=somenteConsulta?'Perícias da ficha':'Teste de perícia';var subtitle=document.createElement('p');subtitle.textContent=somenteConsulta?'Consulta do Mestre · '+String(p.ch.nome||'personagem')+'. Os bônus são exibidos sem iniciar rolagens.':'Escolha uma perícia de '+String(p.ch.nome||'seu personagem')+'. O bônus é calculado automaticamente.';heading.append(title,subtitle);
     var close=document.createElement('button');close.type='button';close.className='skill-roll-close';close.textContent='✕';close.setAttribute('aria-label','Fechar seleção de perícia');close.onclick=function(){modal.remove();};head.append(heading,close);
     var search=document.createElement('input');search.type='search';search.className='skill-roll-search';search.placeholder='Buscar perícia…';search.setAttribute('aria-label','Buscar perícia');
-    var summary=document.createElement('p');summary.className='skill-roll-hint';summary.textContent='Selecione um card para abrir o dado D20. Perícias não treinadas aparecem quando as regras permitem.';
+    var summary=document.createElement('p');summary.className='skill-roll-hint';summary.textContent=somenteConsulta?'Bônus calculados a partir de graduações, atributo, classe, raça e penalidades de equipamento. O Mestre decide a CD e as condições.':'Selecione um card para abrir o dado D20. Perícias não treinadas aparecem quando as regras permitem.';
     var grid=document.createElement('div');grid.className='skill-roll-grid';
     options.forEach(function(option){
-      var card=document.createElement('button');card.type='button';card.className='skill-roll-card';card.dataset.search=norm(option.displayName);
+      var card=document.createElement(somenteConsulta?'article':'button');if(!somenteConsulta)card.type='button';card.className='skill-roll-card';card.dataset.search=norm(option.displayName);
       var name=document.createElement('strong');name.textContent=option.displayName;
       var meta=document.createElement('span');meta.textContent=option.ability+' · '+(option.rank?option.rank+' graduações':'sem graduação')+(option.classBonus?' · perícia de classe': '');
       var total=document.createElement('b');total.textContent=(option.bonus>=0?'+':'')+option.bonus;
       var rule=document.createElement('small');rule.className='skill-roll-rule';rule.textContent=resumoPericiaPt35(option.sk.nome,option.sk.descricao);var dwarfRuleNote='';if(String(p.sh&&p.sh.raca_id)==='anao'){if(String(option.sk.id)==='procurar')dwarfRuleNote='Traço anão — Astúcia com pedras: +2 em Procurar para notar construções incomuns de pedra. Quando estiver a até 3 m de uma construção incomum de pedra, o Anão pode fazer um teste de Procurar como se estivesse procurando ativamente. O Mestre decide se a circunstância narrativa permite aplicar a regra e o bônus.';else if(String(option.sk.id)==='avaliacao')dwarfRuleNote='Traço anão: +2 em Avaliação ao examinar itens de pedra ou metal; o Mestre determina quando se aplica.';else if(String(option.sk.id)==='oficio')dwarfRuleNote='Traço anão: +2 em Ofício ao trabalhar com pedra ou metal; o Mestre determina quando se aplica.';}var detail=document.createElement('small');detail.className='skill-roll-formula';detail.textContent='Teste: 1d20 '+(option.bonus>=0?'+':'')+option.bonus+' · bônus total'+(option.racialBonus?' · bônus racial '+(option.racialBonus>=0?'+':'')+option.racialBonus:'');
       card.append(name,meta,total,rule);if(dwarfRuleNote){var racialInfo=document.createElement('small');racialInfo.className='skill-roll-rule';racialInfo.textContent=dwarfRuleNote;card.appendChild(racialInfo);}card.appendChild(detail);
-      card.onclick=async function(){
+      if(!somenteConsulta)card.onclick=async function(){
         if(card.disabled)return;
         card.disabled=true;
         try{
