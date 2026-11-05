@@ -1557,6 +1557,25 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     menu.style.left='';menu.style.top='';
     (menu.querySelector('[data-ctx-action]:not([data-ctx-action="fechar"])')||close).focus();
   }
+
+  function organizarAcoesPainelToken(actions){
+    if(!actions||!actions.children.length)return;
+    var buttons=Array.from(actions.children),groups=[
+      {id:'combate',label:'Ações e combate',match:/Atacar|Registrar ação|Mover token|Magias/i},
+      {id:'personagem',label:'Recursos do personagem',match:/Perícias|Características raciais|Características da classe|Talentos|Ficha|Publicar ficha/i},
+      {id:'mestre',label:'Gestão do Mestre',match:/Ajustar PV|Inventário|Mochila|Equipamento/i}
+    ];
+    var nav=document.createElement('nav');nav.className='gm-token-action-tabs';nav.setAttribute('aria-label','Grupos de ações do token');
+    var sections=groups.map(function(group,index){
+      var section=document.createElement('section');section.className='gm-token-action-group';section.dataset.group=group.id;section.hidden=index!==0;
+      var tab=document.createElement('button');tab.type='button';tab.textContent=group.label;tab.setAttribute('aria-selected',String(index===0));
+      tab.addEventListener('click',function(){sections.forEach(function(s){s.hidden=s!==section;});Array.from(nav.children).forEach(function(t){t.setAttribute('aria-selected',String(t===tab));});});
+      nav.appendChild(tab);return section;
+    });
+    buttons.forEach(function(button){var label=button.textContent||'',group=groups.find(function(g){return g.match.test(label);})||groups[1];sections[groups.indexOf(group)].appendChild(button);});
+    actions.replaceChildren(nav);var activeIndex=sections.findIndex(function(section){return section.children.length>0;});sections.forEach(function(section,index){var tab=nav.children[index];if(!section.children.length){if(tab)tab.remove();return;}section.hidden=index!==activeIndex;if(tab)tab.setAttribute('aria-selected',String(index===activeIndex));actions.appendChild(section);});
+  }
+
   function abrirPainelControlePersonagemGM(item){
     if(!ehGM||!item||item.tipo!=='player')return;
     var p=acharPersonagemDoToken(item);
@@ -1589,7 +1608,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     addAction('⛰️ Características raciais',function(){overlay.remove();abrirDetalhesRaciaisMesa35(p);});
     addAction('⚔️ Características da classe',function(){overlay.remove();abrirHabilidadesClasse(p.ch.id);});
     addAction('🏅 Talentos escolhidos',function(){overlay.remove();abrirTalentosJogadorUI(p.ch.id);});
-    panel.appendChild(actions);
+    organizarAcoesPainelToken(actions);panel.appendChild(actions);
     var note=document.createElement('p');note.className='skill-roll-hint';note.textContent='O Mestre pode consultar a ficha e ajustar seus PV. Ataques, testes e conjuração continuam sujeitos às regras de turno, solicitações e rolagens da mesa.';
     panel.appendChild(note);
     overlay.appendChild(panel);overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});document.body.appendChild(overlay);
@@ -1646,7 +1665,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       addAction('↔️ Mover token',function(){overlay.remove();document.getElementById('iniciativa-status').textContent='Mova '+item.nome+' arrastando seu token no tabuleiro.';});
       if(tokenTemMagiaPreparada35(item))addAction('✨ Magias',function(){overlay.remove();abrirMagiasTokenMestre(item);});
     }
-    panel.appendChild(actions);
+    organizarAcoesPainelToken(actions);panel.appendChild(actions);
     var note=document.createElement('p');note.className='skill-roll-hint';note.textContent='Ficha genérica de NPC controlada pelo Mestre. Ataques, ações e magias só ficam disponíveis no turno ativo do NPC.';
     panel.appendChild(note);
     overlay.appendChild(panel);overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});document.body.appendChild(overlay);
@@ -1705,7 +1724,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       addAction('↔️ Mover token',function(){overlay.remove();document.getElementById('iniciativa-status').textContent='Mova '+item.nome+' arrastando seu token no tabuleiro.';});
       if(tokenTemMagiaPreparada35(item))addAction('✨ Magias',function(){overlay.remove();abrirMagiasTokenMestre(item);});
     }
-    panel.appendChild(actions);
+    organizarAcoesPainelToken(actions);panel.appendChild(actions);
     var note=document.createElement('p');note.className='skill-roll-hint';note.textContent=monster?'Ficha tática carregada do Bestiário SRD.':'Dados táticos recuperados do token; alguns campos podem estar ausentes do catálogo local.';
     panel.appendChild(note);
     overlay.appendChild(panel);overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});document.body.appendChild(overlay);
@@ -2580,7 +2599,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     }else{
       var loading=document.createElement('p');loading.className='feature-empty';loading.textContent='Carregando descrições e requisitos do catálogo…';panel.appendChild(loading);
       try{
-        var catalogResult=await sb.from('srd_feats').select('id,nome,descricao,requisitos,exige_parametro,source_status,srd_source_url').order('nome',{ascending:true});
+        var catalogResult=await sb.from('srd_feats').select('id,nome,nome_pt,descricao,descricao_pt,mechanics,requisitos,exige_parametro,source_status,srd_source_url').order('nome',{ascending:true});
         if(catalogResult.error)throw new Error(catalogResult.error.message);
         var catalog=catalogResult.data||[];
         loading.remove();
@@ -2591,7 +2610,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
           var chosenName=String(choiceData.nome||choiceData.name||choiceData.talento||key||'Talento');
           var feat=catalog.find(function(item){return key&&String(item.id)===key;})||catalog.find(function(item){return normalizeTalent(item.nome)===normalizeTalent(chosenName);})||null;
           var card=document.createElement('article');card.className='feature-action-card';
-          var name=document.createElement('h3');name.textContent=String(feat&&feat.nome||chosenName||('Talento '+(index+1)));
+          var name=document.createElement('h3');name.textContent=String(feat&&(feat.nome_pt||feat.nome)||chosenName||('Talento '+(index+1)));
           card.appendChild(name);
           if(!feat){
             var missing=document.createElement('p');missing.textContent='Este talento está registrado na ficha, mas não foi localizado no catálogo SRD. A descrição abaixo é apenas o texto que veio salvo na ficha, se disponível.';
@@ -2599,7 +2618,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
           }
           var parameter=choiceData.parametro||choiceData.parameter||choiceData.escolha||'';
           if(parameter){var param=document.createElement('p');param.className='feature-detail';param.textContent='Escolha registrada: '+String(parameter);card.appendChild(param);}
-          var description=String(feat&&feat.descricao||choiceData.descricao||choiceData.description||choiceData.summary||'').replace(/\r\n/g,'\n').trim();
+          var description=String(feat&&(feat.descricao_pt||feat.descricao)||choiceData.descricao||choiceData.description||choiceData.summary||'').replace(/\r\n/g,'\n').trim();
           var req=feat&&feat.requisitos||{};
           if(typeof req==='string'){try{req=JSON.parse(req);}catch(e){req={raw:req};}}
           if(!req||typeof req!=='object')req={};
@@ -2637,6 +2656,19 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
           });
           if(feat&&feat.exige_parametro&&!parameter){
             var missingParameter=document.createElement('p');missingParameter.className='feature-detail';missingParameter.textContent='Este talento exige uma escolha ou parâmetro, mas a ficha não contém uma escolha associada.';card.appendChild(missingParameter);
+          }
+          if(feat){
+            var mechanics=feat.mechanics&&typeof feat.mechanics==='object'?feat.mechanics:{};
+            var engineStatus=String(mechanics.engine_status||'draft');
+            var mechanicStatus=document.createElement('small');
+            mechanicStatus.className='feature-detail';
+            mechanicStatus.textContent=engineStatus==='implemented'?'Motor: implementado':engineStatus==='ready'?'Motor: pronto para integração':'Motor: '+(engineStatus==='needs_review'?'revisão necessária':'mecânica ainda não estruturada');
+            card.appendChild(mechanicStatus);
+            if(engineStatus!=='implemented'&&engineStatus!=='ready'){
+              var blocked=document.createElement('p');blocked.className='feature-detail';
+              blocked.textContent='Ativação automática indisponível até que custos, requisitos, alvo, duração e efeitos sejam estruturados e validados. O texto descritivo não será executado como regra.';
+              card.appendChild(blocked);
+            }
           }
           if(feat&&feat.source_status){
             var status=document.createElement('small');status.textContent='Catálogo: '+String(feat.source_status);card.appendChild(status);
@@ -5538,6 +5570,48 @@ body > #dado-iframe-overlay.dado-modal-global,
 
 /* Central de ações por identidade de personagem */
 .player-action-identity{padding:12px 11px;border:1px solid #75613d;border-radius:8px;background:linear-gradient(135deg,rgba(201,160,80,.13),rgba(16,23,15,.96));display:flex;flex-direction:column;gap:5px;margin-bottom:8px}.player-action-identity strong{font:800 13px 'Cinzel',serif;letter-spacing:1px;color:#f5ecd6;text-transform:uppercase}.player-action-identity>span{font-size:11px;color:#b8ad91}.player-action-vitals{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}.player-action-vitals span{font-size:10px;color:#c9c0a9;background:#090f0c;border:1px solid #55472e;border-radius:5px;padding:5px}.player-action-vitals b{color:#f5ecd6}.player-action-section{padding:3px 0 8px}.player-action-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.player-action-grid .btn-acao{min-height:56px;padding:8px;letter-spacing:.3px;font-size:10px;line-height:1.25;white-space:normal}.player-action-grid .btn-acao .icone{font-size:18px;width:24px}.action-group-tabs{display:flex;gap:5px;overflow-x:auto;padding:3px 0 8px}.action-group-tab{flex:1 0 auto;background:#111910;border:1px solid #655334;color:#c9b98f;border-radius:6px;padding:8px;font:700 10px 'Cinzel',serif;cursor:pointer}.action-group-tab[aria-selected="true"]{background:#3a3020;border-color:#d1a957;color:#fff0c7;box-shadow:inset 0 -2px #c9a050}#acoes-dir{gap:8px;padding:12px;min-width:0}#chat-lista{gap:7px;padding:10px 12px}.chat-msg{font-family:Inter,system-ui,sans-serif;font-size:12px;line-height:1.4;color:#d8d3c5;padding:7px 9px;border:1px solid rgba(117,97,61,.38);border-radius:6px;background:rgba(255,255,255,.025);overflow-wrap:anywhere}.chat-msg .autor{font-family:Inter,system-ui,sans-serif;font-size:10px;letter-spacing:.2px;color:#d8b66d;display:block;margin:0 0 3px}.chat-msg.sistema{font-style:normal;text-align:left;font-size:11px;color:#c9c0a9;background:rgba(201,160,80,.055);border:1px dashed #665638;padding:7px 9px}.chat-msg.rolagem{font-family:Inter,system-ui,sans-serif;font-size:11px;line-height:1.35;border-left:3px solid #c9a050;background:rgba(201,160,80,.09);padding:8px 10px}.chat-msg.chat-combat-hit{border-left-color:#72c68c;background:rgba(63,145,86,.12)}.chat-msg.chat-combat-miss{border-left-color:#cf7770;background:rgba(145,63,63,.1)}.chat-event-title{font-weight:800;color:#f5ecd6}.chat-event-result{font-weight:900;font-size:13px;color:#f2cc77}.chat-event-meta{display:block;color:#a9a18d;font-size:10px;margin-top:2px}@media(max-width:1050px){.mesa-corpo{grid-template-columns:250px minmax(0,1fr) 260px}}@media(max-width:760px){.mesa-corpo{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto auto}.tabuleiro{grid-row:1;min-height:48vh}.col-esq{grid-row:2;max-height:25vh}.col-dir{grid-row:3;max-height:30vh;border-left:0;border-top:2px solid #665638}}
+
+/* Painéis de controle do Mestre: ficha de token em tela integral e navegação por grupos. */
+#modal-controle-ficha-gm.skill-roll-overlay,
+#modal-controle-npc-gm.skill-roll-overlay,
+#modal-controle-monstro-gm.skill-roll-overlay{
+  position:fixed;inset:0;z-index:9900;padding:0;align-items:stretch;justify-content:stretch;
+  background:rgba(4,7,5,.96);backdrop-filter:blur(8px)
+}
+#modal-controle-ficha-gm .skill-roll-panel,
+#modal-controle-npc-gm .skill-roll-panel,
+#modal-controle-monstro-gm .skill-roll-panel{
+  width:100%;height:100%;max-width:none;max-height:none;min-height:0;border:0;border-radius:0;
+  padding:clamp(14px,2.2vw,30px);overflow-y:auto;gap:16px;
+  background:radial-gradient(ellipse at top,#293423 0%,#141c13 48%,#0b100b 100%);
+}
+#modal-controle-ficha-gm .skill-roll-head,
+#modal-controle-npc-gm .skill-roll-head,
+#modal-controle-monstro-gm .skill-roll-head{
+  position:sticky;top:calc(-1 * clamp(14px,2.2vw,30px));z-index:2;padding:12px 0;
+  background:linear-gradient(180deg,#141c13 82%,transparent);align-items:center
+}
+#modal-controle-ficha-gm .skill-roll-head h2,
+#modal-controle-npc-gm .skill-roll-head h2,
+#modal-controle-monstro-gm .skill-roll-head h2{font-size:clamp(18px,2vw,27px);letter-spacing:1px}
+.gm-token-action-tabs{display:flex;gap:8px;flex-wrap:wrap;border-bottom:1px solid #75613d;padding-bottom:9px}
+.gm-token-action-tabs button{padding:10px 16px;border:1px solid #75613d;border-radius:6px;background:#172016;color:#d8c79c;font:700 11px Cinzel,serif;cursor:pointer}
+.gm-token-action-tabs button[aria-selected="true"]{background:#c9a050;color:#17130a;border-color:#f0d080}
+.gm-token-action-group{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px}
+.gm-token-action-group[hidden]{display:none!important}
+#modal-controle-ficha-gm .btn-acao,
+#modal-controle-npc-gm .btn-acao,
+#modal-controle-monstro-gm .btn-acao{min-height:52px;font-size:12px}
+#cards-strip{display:flex!important;flex-direction:row!important;flex-wrap:nowrap!important;align-items:stretch;gap:10px;overflow-x:auto!important;overflow-y:hidden!important;min-height:0;width:100%;padding:4px 2px 8px}
+#cards-strip .card-pers{flex:0 0 230px;min-width:230px;max-width:260px}
+.mesa-footer .painel-aventureiros{min-width:0;overflow:hidden}
+.mesa-footer .painel-aventureiros .painel-corpo{overflow:hidden;min-height:0;padding:5px 8px}
+@media(max-width:700px){
+ #modal-controle-ficha-gm .skill-roll-panel,#modal-controle-npc-gm .skill-roll-panel,#modal-controle-monstro-gm .skill-roll-panel{padding:12px}
+ .gm-token-action-group{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+ #cards-strip .card-pers{flex-basis:205px;min-width:205px}
+}
+
 </style>
 </body>
 </html>
