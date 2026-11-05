@@ -2137,7 +2137,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         proximoAtaqueCompleto();return;
       }
       var criticalLabel=isCritical?' · ACERTO CRÍTICO x'+critical.multiplier:'';
-      enviarMensagemChat('⚔️ '+title+' com '+weaponName+' contra '+target.nome+': '+breakdown+' = **'+total+'** contra CA '+targetAC+' — ACERTO'+criticalLabel+'. Iniciando rolagem de dano no dado 3D.','rolagem',{evento:'ataque_dnd35',atacante:String(own.ch.id),atacante_nome:String(own.ch.nome||''),alvo:String(target.id),alvo_nome:String(target.nome||''),resultado:total,d20:Number(d20),ca_alvo:targetAC,acerto:true,critico:isCritical,bab:bab,modificador:ability,bonus_foco:weaponFocus,bonus_tamanho:sizeModifier,penalidade_ataque_poderoso:powerPenalty,arma:weaponName,dano:damage});
+      enviarMensagemChat('⚔️ '+title+(fullAttack?' · ataque '+(attackSequenceIndex+1)+'/'+attackSequence.length:'')+' com '+weaponName+' contra '+target.nome+': '+breakdown+' = **'+total+'** contra CA '+targetAC+' — ACERTO'+criticalLabel+'. Iniciando rolagem de dano no dado 3D.','rolagem',{evento:'ataque_dnd35',atacante:String(own.ch.id),atacante_nome:String(own.ch.nome||''),alvo:String(target.id),alvo_nome:String(target.nome||''),resultado:total,d20:Number(d20),ca_alvo:targetAC,acerto:true,critico:isCritical,bab:currentIterativeBab,modificador:ability,bonus_foco:weaponFocus,bonus_tamanho:sizeModifier,penalidade_ataque_poderoso:powerPenalty,arma:weaponName,dano:damage,ataque_total:fullAttack,ataque_numero:fullAttack?attackSequenceIndex+1:null,ataques_na_sequencia:fullAttack?attackSequence.length:null});
       abrirRolagemDano(isCritical);
     }
     function confirmarCritico(d20){
