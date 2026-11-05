@@ -1227,6 +1227,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="scripts/dnd35-two-weapon-sequence.js"></script>
 <script>
 (function(){
   var SUPABASE_URL = 'https://grrgwxcagvvafdmzsmro.supabase.co';
@@ -1988,6 +1989,23 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(personagemTemTalento(own.sh,'srd35_feat_weapon_finesse')&&bab<1){alert('Acuidade com Arma exige bônus base de ataque +1.');return;}
     var weapons=(own.equipamento||[]).filter(function(it){return it.equipado&&it.categoria==='arma';});
     var meleeWeapons=weapons.filter(function(it){return !it.detalhes||it.detalhes.weapon_melee!==false;});
+    var equippedMainHand=meleeWeapons.filter(function(it){return it.hand_slot==='main_hand';})[0]||null;
+    var equippedOffHand=meleeWeapons.filter(function(it){return it.hand_slot==='off_hand';})[0]||null;
+    if(fullAttack&&type==='atk-corpo'&&equippedMainHand&&equippedOffHand){
+      try{
+        var plannedTwoWeaponSequence=window.buildTwoWeaponSequence35({
+          baseAttackBonus:bab35(own.cl,Math.max(1,Number(own.sh.nivel)||1)),
+          dexterity:Number(attrs.DES)||10,
+          hasTwoWeaponFighting:personagemTemTalento(own.sh,'srd35_feat_two_weapon_fighting'),
+          hasImprovedTwoWeaponFighting:personagemTemTalento(own.sh,'srd35_feat_improved_two_weapon_fighting'),
+          hasGreaterTwoWeaponFighting:personagemTemTalento(own.sh,'srd35_feat_greater_two_weapon_fighting'),
+          primaryWeapon:equippedMainHand,offhandWeapon:equippedOffHand
+        });
+        var plannedSummary=plannedTwoWeaponSequence.attacks.map(function(a){return (a.hand==='main_hand'?'Principal':'Secundária')+' '+a.weapon_name+' · BBA '+(a.base_attack_bonus>=0?'+':'')+a.base_attack_bonus+' · penalidade '+a.two_weapon_penalty;}).join('\\n');
+        alert('Combate com Duas Armas identificado. A sequência correta foi calculada, mas a resolução individual ainda não está habilitada no servidor. Nenhuma ação ou rolagem foi consumida.\\n\\n'+plannedSummary+'\\n\\nAguarde a integração de rolagem, dano e validação por instância.');
+      }catch(sequenceError){alert('Não foi possível montar a sequência de duas armas: '+sequenceError.message);}
+      return;
+    }
     var mainHandWeapons=meleeWeapons.filter(function(it){return String(it.hand_slot||'')==='main_hand';});
     var legacyMeleeWeapons=meleeWeapons.filter(function(it){return !it.hand_slot;});
     if(type==='atk-corpo'&&meleeWeapons.length>1&&mainHandWeapons.length!==1){alert('Não foi possível identificar uma única arma da mão principal. Confira as mãos equipadas no inventário antes de atacar.');return;}
