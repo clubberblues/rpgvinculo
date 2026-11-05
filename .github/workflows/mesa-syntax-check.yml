@@ -11,6 +11,8 @@ on:
   pull_request:
     paths:
       - "mesa.html"
+      - "scripts/dnd35-two-weapon-sequence.js"
+      - "scripts/dnd35-two-weapon-sequence.test.js"
       - ".github/workflows/mesa-syntax-check.yml"
 
 permissions:
