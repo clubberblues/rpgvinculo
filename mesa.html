@@ -2400,14 +2400,92 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     });
   }
   document.querySelectorAll('[data-features-close]').forEach(function(b){b.addEventListener('click',function(){var m=document.getElementById('modal-habilidades-classe');m.classList.remove('ativo');m.hidden=true;});});
-  function abrirTalentosJogadorUI(){
-    var p=personagemAtivoDaInterface();if(!p){alert('Não foi possível localizar sua ficha.');return;}
-    var feats=listaTalentosUI(p.sh&&p.sh.talentos),old=document.getElementById('modal-talentos-jogador');if(old)old.remove();
+  async function abrirTalentosJogadorUI(){
+    var p=personagemAtivoDaInterface();
+    if(!p){alert('Não foi possível localizar sua ficha.');return;}
+    var selected=listaTalentosUI(p.sh&&p.sh.talentos),old=document.getElementById('modal-talentos-jogador');
+    if(old)old.remove();
     var overlay=document.createElement('div');overlay.id='modal-talentos-jogador';overlay.className='skill-roll-overlay';overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');
-    var panel=document.createElement('section');panel.className='skill-roll-panel';var head=document.createElement('header');head.className='skill-roll-head';var title=document.createElement('h2');title.textContent='Talentos · '+p.ch.nome;var close=document.createElement('button');close.type='button';close.className='skill-roll-close';close.textContent='✕';close.onclick=function(){overlay.remove();};head.append(title,close);panel.appendChild(head);
-    var intro=document.createElement('p');intro.className='skill-roll-hint';intro.textContent='Talentos registrados na ficha. A disponibilidade depende dos requisitos, do equipamento e da situação atual.';panel.appendChild(intro);
-    if(!feats.length){var empty=document.createElement('p');empty.className='feature-empty';empty.textContent='Nenhum talento registrado na ficha.';panel.appendChild(empty);}
-    feats.forEach(function(feat){var card=document.createElement('article');card.className='feature-action-card';var name=document.createElement('h3');name.textContent=String(feat.nome||feat.name||feat.id||'Talento');var desc=document.createElement('p');desc.textContent=String(feat.descricao||feat.summary||feat.parametro||'Talento registrado. Consulte a descrição e os requisitos na ficha.');card.append(name,desc);panel.appendChild(card);});
+    var panel=document.createElement('section');panel.className='skill-roll-panel';
+    var head=document.createElement('header');head.className='skill-roll-head';
+    var title=document.createElement('h2');title.textContent='Talentos · '+p.ch.nome;
+    var close=document.createElement('button');close.type='button';close.className='skill-roll-close';close.textContent='✕';close.onclick=function(){overlay.remove();};
+    head.append(title,close);panel.appendChild(head);
+    var intro=document.createElement('p');intro.className='skill-roll-hint';intro.textContent='Talentos escolhidos para esta ficha. Cada registro apresenta a descrição integral disponível no catálogo, seus requisitos e benefícios quando informados pela fonte.';panel.appendChild(intro);
+    if(!selected.length){
+      var empty=document.createElement('p');empty.className='feature-empty';empty.textContent='Nenhum talento registrado na ficha.';panel.appendChild(empty);
+    }else{
+      var loading=document.createElement('p');loading.className='feature-empty';loading.textContent='Carregando descrições e requisitos do catálogo…';panel.appendChild(loading);
+      try{
+        var catalogResult=await sb.from('srd_feats').select('id,nome,descricao,requisitos,exige_parametro,source_status,srd_source_url').order('nome',{ascending:true});
+        if(catalogResult.error)throw new Error(catalogResult.error.message);
+        var catalog=catalogResult.data||[];
+        loading.remove();
+        var normalizeTalent=function(value){return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();};
+        selected.forEach(function(choice,index){
+          var choiceData=choice&&typeof choice==='object'?choice:{};
+          var key=String(typeof choice==='string'?choice:(choiceData.id||choiceData.feat_id||choiceData.talent_id||''));
+          var chosenName=String(choiceData.nome||choiceData.name||choiceData.talento||key||'Talento');
+          var feat=catalog.find(function(item){return key&&String(item.id)===key;})||catalog.find(function(item){return normalizeTalent(item.nome)===normalizeTalent(chosenName);})||null;
+          var card=document.createElement('article');card.className='feature-action-card';
+          var name=document.createElement('h3');name.textContent=String(feat&&feat.nome||chosenName||('Talento '+(index+1)));
+          card.appendChild(name);
+          if(!feat){
+            var missing=document.createElement('p');missing.textContent='Este talento está registrado na ficha, mas não foi localizado no catálogo SRD. A descrição abaixo é apenas o texto que veio salvo na ficha, se disponível.';
+            card.appendChild(missing);
+          }
+          var parameter=choiceData.parametro||choiceData.parameter||choiceData.escolha||'';
+          if(parameter){var param=document.createElement('p');param.className='feature-detail';param.textContent='Escolha registrada: '+String(parameter);card.appendChild(param);}
+          var description=String(feat&&feat.descricao||choiceData.descricao||choiceData.description||choiceData.summary||'').replace(/\r\n/g,'\n').trim();
+          var req=feat&&feat.requisitos||{};
+          if(typeof req==='string'){try{req=JSON.parse(req);}catch(e){req={raw:req};}}
+          if(!req||typeof req!=='object')req={};
+          var requirementText=String(req.raw||'').trim();
+          var sectionPattern=/(^|\n)\s*(Prerequisites?|Pré-requisitos?|Pré-requisito|Benefit|Benefits|Benefício|Benefícios|Normal|Special|Especial):\s*/gi;
+          var sections=[],matches=[],match;
+          while((match=sectionPattern.exec(description))!==null)matches.push({index:match.index,prefix:match[1],heading:match[2],contentStart:sectionPattern.lastIndex});
+          if(matches.length){
+            var introText=description.slice(0,matches[0].index).trim();
+            if(introText)sections.push({label:'Descrição',text:introText});
+            matches.forEach(function(section,sectionIndex){
+              var endIndex=sectionIndex+1<matches.length?matches[sectionIndex+1].index:description.length;
+              var label=section.heading.toLowerCase(),content=description.slice(section.contentStart,endIndex).trim();
+              if(label.indexOf('prerequisite')===0||label.indexOf('pré-requisito')===0){label='Requisitos';if(requirementText)content=requirementText;requirementText='';}
+              else if(label.indexOf('benefit')===0||label.indexOf('benefício')===0)label='Benefício';
+              else if(label==='normal')label='Normal';
+              else if(label==='special'||label==='especial')label='Especial';
+              else label='Descrição';
+              if(content)sections.push({label:label,text:content});
+            });
+          }else if(description){sections.push({label:'Descrição completa',text:description});}
+          if(requirementText)sections.unshift({label:'Requisitos',text:requirementText});
+          var prerequisiteIds=Array.isArray(req.feat_ids)?req.feat_ids:[];
+          if(prerequisiteIds.length){
+            var prerequisiteNames=prerequisiteIds.map(function(id){var found=catalog.find(function(item){return String(item.id)===String(id);});return found?found.nome:String(id);});
+            sections.unshift({label:'Talentos exigidos',text:prerequisiteNames.join(' · ')});
+          }
+          if(!sections.length){
+            var noDescription=document.createElement('p');noDescription.textContent='O catálogo ainda não possui uma descrição textual para este registro.';card.appendChild(noDescription);
+          }
+          sections.forEach(function(section){
+            var heading=document.createElement('h4');heading.textContent=section.label;
+            var body=document.createElement('p');body.className='feature-detail';body.style.whiteSpace='pre-line';body.textContent=section.text;
+            card.append(heading,body);
+          });
+          if(feat&&feat.exige_parametro&&!parameter){
+            var missingParameter=document.createElement('p');missingParameter.className='feature-detail';missingParameter.textContent='Este talento exige uma escolha ou parâmetro, mas a ficha não contém uma escolha associada.';card.appendChild(missingParameter);
+          }
+          if(feat&&feat.source_status){
+            var status=document.createElement('small');status.textContent='Catálogo: '+String(feat.source_status);card.appendChild(status);
+          }
+          var sourceUrl=feat&&feat.srd_source_url;
+          if(sourceUrl){var source=document.createElement('a');source.href=sourceUrl;source.target='_blank';source.rel='noopener noreferrer';source.textContent='Consultar referência SRD';card.appendChild(source);}
+          panel.appendChild(card);
+        });
+      }catch(error){
+        loading.textContent='Não foi possível carregar o catálogo de talentos: '+String(error&&error.message||error);
+      }
+    }
     overlay.appendChild(panel);overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});document.body.appendChild(overlay);
   }
   function registrarIntencaoTaticaUI(kind,label,detail){
