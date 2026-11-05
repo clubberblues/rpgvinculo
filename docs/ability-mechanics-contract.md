@@ -310,3 +310,27 @@ contrato de ataque para `instance_id`.
 A mesma exigência de mão principal foi aplicada também ao overload do resolvedor
 que recebe dados de Ataque Furtivo. Portanto, os dois caminhos server-side de
 ataque do jogador rejeitam uma arma equipada somente na mão secundária.
+
+
+### Preparação da sequência de Combater com Duas Armas (D&D 3.5)
+
+Foi adicionado o módulo isolado `scripts/dnd35-two-weapon-sequence.js`, que
+constrói uma sequência determinística sem executar rolagens nem aplicar dano.
+Cada registro identifica mão, UUID da instância, arma, BBA iterativo e
+penalidade de combate com duas armas. O módulo calcula a sequência principal
+(BBA, BBA-5, BBA-10...) e a sequência secundária (BBA, BBA-5 com Aprimorado,
+BBA-10 com Maior), além das penalidades SRD conforme a arma secundária seja
+leve e o talento básico esteja presente.
+
+O módulo valida a presença de duas armas corpo a corpo, rejeita armas de duas
+mãos e confere DES/BBA e a progressão dos talentos. Sete testes automatizados
+cobrem penalidades, ataques adicionais e pré-requisitos. O workflow de CI foi
+ampliado para executar esses testes.
+
+Na mesa, quando o jogador tenta iniciar um ataque total com ambas as mãos
+ocupadas por armas, o construtor calcula e exibe a sequência prevista, mas a
+interface interrompe a ação antes de consumir a ação de rodada completa ou
+solicitar dados. Isso é uma proteção temporária: o resolvedor ainda usa um
+único `equipment_id`, uma arma e um alvo para toda a sequência, e o contrato
+server-side não aceita ainda `instance_id`/mão secundária por ataque. Portanto,
+nenhum talento de Combater com Duas Armas foi ativado ou promovido.
