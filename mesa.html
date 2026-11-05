@@ -1864,7 +1864,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     document.getElementById('iniciativa-status').textContent=ataqueTotalSelecionado?'Ataque total: selecione um inimigo. A ação padrão e o movimento serão reservados antes da primeira rolagem.':'Mira ativa: selecione um token inimigo no tabuleiro.';
   }
   function modifier35(score){return Math.floor((Number(score||10)-10)/2);}function modifierTamanho35(tamanho){var n=String(tamanho||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();return n==='pequeno'||n==='small'?1:0;}
-  function valorCA35(value){if(value==null||value==='')return null;var direct=Number(value);if(Number.isFinite(direct))return direct;var match=String(value).trim().match(/^(-?\d+)/);return match?Number(match[1]):null;}function equipamentoToken35(token){var merged=Object.create(null),embedded=token&&token.monsterStats&&Array.isArray(token.monsterStats.loadout)?token.monsterStats.loadout:[],stored=equipamentoTokens[String(token&&token.id)]||[];embedded.concat(stored).forEach(function(item){if(!item)return;var id=String(item.equipment_id||item.id||item.nome||Math.random());merged[id]=Object.assign({},merged[id]||{},item);});return Object.keys(merged).map(function(id){return merged[id];});}
+  function valorCA35(value){if(value==null||value==='')return null;var direct=Number(value);if(Number.isFinite(direct))return direct;var match=String(value).trim().match(/^(-?\d+)/);return match?Number(match[1]):null;}function equipamentoToken35(token){var merged=Object.create(null),embedded=token&&token.monsterStats&&Array.isArray(token.monsterStats.loadout)?token.monsterStats.loadout:[],stored=equipamentoTokens[String(token&&token.id)]||[];embedded.concat(stored).forEach(function(item){if(!item)return;var id=String(item.instance_id||item.equipment_id||item.id||item.nome||Math.random());merged[id]=Object.assign({},merged[id]||{},item);});return Object.keys(merged).map(function(id){return merged[id];});}
   function caToken35(token){
     if(!token)return 10;
     var record=token.tipo==='player'?acharPersonagemDoToken(token):null;if(record)return caFichaMesa(record);
@@ -5297,9 +5297,12 @@ async function abrirModalEquipamentos(){
     }
 
     var invResult=await sb.from('srd_character_equipment').select('character_id,equipment_id,quantidade,equipado,hand_slot,equipment:srd_equipment(*)').in('character_id',ids);
+    var weaponInvResult=await sb.from('srd_character_weapon_instances').select('instance_id,character_id,equipment_id,equipado,hand_slot,equipment:srd_equipment(*)').in('character_id',ids);
     var equipmentByChar=Object.create(null);
-    if(!invResult.error) (invResult.data||[]).forEach(function(row){var it=Object.assign({},row.equipment||{},{equipment_id:row.equipment_id,quantidade:row.quantidade,equipado:!!row.equipado,hand_slot:row.hand_slot||null});it.categoria_original=it.categoria;var slot=slotEquipamento35(it);if(slot)it.categoria=slot;it.bonus_ca=bonusCAEquipamento35(it);if(it.bonus_max_des==null)it.bonus_max_des=maxDexEquipamento35(it);(equipmentByChar[String(row.character_id)]||(equipmentByChar[String(row.character_id)]=[])).push(it);});
+    if(!invResult.error) (invResult.data||[]).filter(function(row){return slotEquipamento35(row.equipment||{})!=='arma';}).forEach(function(row){var it=Object.assign({},row.equipment||{},{equipment_id:row.equipment_id,quantidade:row.quantidade,equipado:!!row.equipado,hand_slot:row.hand_slot||null});it.categoria_original=it.categoria;var slot=slotEquipamento35(it);if(slot)it.categoria=slot;it.bonus_ca=bonusCAEquipamento35(it);if(it.bonus_max_des==null)it.bonus_max_des=maxDexEquipamento35(it);(equipmentByChar[String(row.character_id)]||(equipmentByChar[String(row.character_id)]=[])).push(it);});
     else console.warn('Inventário SRD indisponível:',invResult.error.message);
+    if(!weaponInvResult.error) (weaponInvResult.data||[]).forEach(function(row){var it=Object.assign({},row.equipment||{},{instance_id:row.instance_id,equipment_id:row.equipment_id,quantidade:1,equipado:!!row.equipado,hand_slot:row.hand_slot||null});it.categoria_original=it.categoria;it.categoria='arma';it.bonus_ca=bonusCAEquipamento35(it);(equipmentByChar[String(row.character_id)]||(equipmentByChar[String(row.character_id)]=[])).push(it);});
+    else console.warn('Instâncias de armas indisponíveis:',weaponInvResult.error.message);
     personagens = chs.map(function(c){
       var s = shs[String(c.id)] || {};
       return { ch:c, sh:s, cl: cls[String(s.classe_id)] || {}, raca:raceDataById[String(s.raca_id)]||{}, perfil:perfisMap[c.user_id]||{}, equipamento:equipmentByChar[String(c.id)]||[], tamanho:raceSizeById[String(s.raca_id)]||'Medium', deslocamento_m:raceSpeedById[String(s.raca_id)]==null?null:raceSpeedById[String(s.raca_id)] };
@@ -5323,9 +5326,11 @@ async function abrirModalEquipamentos(){
 
   async function carregarEquipamentosTokens(){
     var r=await sb.from('srd_cba_token_equipment').select('token_id,equipment_id,quantidade,equipado,hand_slot,equipment:srd_equipment(*)').eq('campaign_id',Number(MESA_ID));
-    if(r.error){equipamentoTokens=Object.create(null);if(!/relation .* does not exist|schema cache/i.test(r.error.message||''))console.warn('Inventário dos tokens indisponível:',r.error.message);renderCards();return;}
+    var wi=await sb.from('srd_cba_token_weapon_instances').select('instance_id,token_id,equipment_id,equipado,hand_slot,equipment:srd_equipment(*)').eq('campaign_id',Number(MESA_ID));
+    if(r.error||wi.error){equipamentoTokens=Object.create(null);console.warn('Inventário dos tokens indisponível:',(r.error||wi.error).message);renderCards();return;}
     equipamentoTokens=Object.create(null);
-    (r.data||[]).forEach(function(row){(equipamentoTokens[String(row.token_id)]||(equipamentoTokens[String(row.token_id)]=[])).push(Object.assign({},row.equipment||{},{equipment_id:row.equipment_id,quantidade:row.quantidade,equipado:!!row.equipado,hand_slot:row.hand_slot||null}));});
+    (r.data||[]).filter(function(row){return slotEquipamento35(row.equipment||{})!=='arma';}).forEach(function(row){(equipamentoTokens[String(row.token_id)]||(equipamentoTokens[String(row.token_id)]=[])).push(Object.assign({},row.equipment||{},{equipment_id:row.equipment_id,quantidade:row.quantidade,equipado:!!row.equipado,hand_slot:row.hand_slot||null}));});
+    (wi.data||[]).forEach(function(row){(equipamentoTokens[String(row.token_id)]||(equipamentoTokens[String(row.token_id)]=[])).push(Object.assign({},row.equipment||{},{instance_id:row.instance_id,equipment_id:row.equipment_id,quantidade:1,equipado:!!row.equipado,hand_slot:row.hand_slot||null,categoria:'arma'}));});
     renderCards();
   }
 
