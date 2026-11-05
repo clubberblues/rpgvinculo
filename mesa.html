@@ -1723,7 +1723,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       var currentAbility='',depth=0;
       Array.from(specialAttackText).forEach(function(ch){
         if(ch==='(')depth++;else if(ch===')')depth=Math.max(0,depth-1);
-        if((ch===','||ch===';'||ch==='\\n')&&depth===0){if(currentAbility.trim())specialAttackNames.push(currentAbility.trim());currentAbility='';}
+        if((ch===','||ch===';'||ch==='\n')&&depth===0){if(currentAbility.trim())specialAttackNames.push(currentAbility.trim());currentAbility='';}
         else currentAbility+=ch;
       });
       if(currentAbility.trim())specialAttackNames.push(currentAbility.trim());
