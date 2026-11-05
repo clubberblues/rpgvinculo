@@ -2394,6 +2394,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         var use=document.createElement('button');use.type='button';use.className='feature-use-btn';use.disabled=true;use.textContent=status==='partial'?'Parcial — não usar como efeito completo':'Registro informativo — ação não automatizada';
         card.append(title,desc,mechanics,use);
       }
+      card.insertBefore(title,card.firstChild);
+      card.insertBefore(desc,title.nextSibling);
       list.appendChild(card);
     });
   }
