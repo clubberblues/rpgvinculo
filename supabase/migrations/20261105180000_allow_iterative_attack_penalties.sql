@@ -3,6 +3,9 @@
 -- A validação continua conservadora: o cliente nunca pode informar bônus maior
 -- que o bônus-base recalculado pelo servidor; a margem inferior só permite
 -- penalidades adicionais (iterativos, Tiro Rápido e combate com duas armas).
+--
+-- Idempotente porque a alteração também pode ter sido aplicada diretamente
+-- no projeto Supabase antes da migration ser registrada no histórico.
 
 DO $$
 DECLARE
@@ -14,8 +17,12 @@ BEGIN
     'public.aplicar_dano_token_ataque_srd_v2(bigint,text,text,integer,integer,integer,text,text,integer,integer,integer)'::regprocedure
   ) INTO v_def;
 
+  IF position(v_new IN v_def) > 0 THEN
+    RETURN;
+  END IF;
+
   IF position(v_old IN v_def) = 0 THEN
-    RAISE EXCEPTION 'Trecho de validação original não encontrado; migração interrompida.';
+    RAISE EXCEPTION 'Trecho de validação original não encontrado; migration interrompida.';
   END IF;
 
   v_def := replace(v_def, v_old, v_new);
