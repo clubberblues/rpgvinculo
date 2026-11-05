@@ -167,9 +167,10 @@ Limites ainda conhecidos:
 - A sequência mantém o mesmo alvo escolhido no início; seleção de alvo
   independente por ataque ainda não foi implementada.
 - **Tiro Rápido** está estruturado como efeito `extra_attack` (+1 ataque com
-  maior BBA e –2 em todos os ataques), mas continua `needs_review` e ainda não
-  é interpretado pelo resolvedor genérico. Portanto, ainda não concede o
-  ataque extra.
+  maior BBA e –2 em todos os ataques). O resolvedor da sequência reconhece esse
+  contrato quando o talento estiver `ready` ou `implemented`, mas o registro
+  permanece `needs_review`; por segurança, ainda não concede o ataque extra.
+  Faltam revisão final dos pré-requisitos e validação ponta a ponta.
 - **Tiro Preciso** está estruturado como bônus condicional de +4 para neutralizar
   a penalidade de –4 contra alvo engajado em combate corpo a corpo, mas continua
   `needs_review` e inativo até a mesa registrar engajamento de forma explícita.
