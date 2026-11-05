@@ -306,3 +306,7 @@ agora exige que a arma informada tenha uma instância efetivamente equipada na
 como arma de ataque principal pelo cliente. A validação ainda usa `equipment_id`
 para o ataque de mão principal; a sequência mista futura deverá migrar o
 contrato de ataque para `instance_id`.
+
+A mesma exigência de mão principal foi aplicada também ao overload do resolvedor
+que recebe dados de Ataque Furtivo. Portanto, os dois caminhos server-side de
+ataque do jogador rejeitam uma arma equipada somente na mão secundária.
