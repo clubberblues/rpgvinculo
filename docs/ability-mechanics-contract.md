@@ -131,3 +131,22 @@ A iniciativa do jogador (d20 físico) e a iniciativa rolada pelo Mestre para tok
 - `partial`: apenas os efeitos listados em `implemented_features` podem ser executados.
 
 O motor deve falhar de forma segura: efeito ausente ou desconhecido não é aplicado silenciosamente. A interface abre resolução assistida pelo Mestre e registra a decisão no log.
+
+## Ações de rodada completa e sequência de ataques
+
+A reserva de uma ação de rodada completa é atômica no servidor por meio de
+`public.consumir_acao_rodada_completa_srd(p_campaign_id, p_actor_id, p_actor_kind)`.
+O procedimento exige combate e iniciativa ativos, valida o ator do turno, a
+propriedade da ficha (jogador) ou o controle do token (Mestre), e bloqueia
+condições `no_actions`, `no_full_round`, `only_move_action` e
+`one_move_or_standard`. Também rejeita uma ação padrão/movimento já gasto ou
+movimento já realizado na rodada. Quando aceita, registra `padrao`,
+`movimento` e `ataque_total` juntos na economia de ações.
+
+Essa RPC reserva a economia; ela **não** executa ataques nem rola dados. A
+sequência de ataque total ainda deve ser conduzida pela mesa, exigindo uma
+rolagem física separada para cada ataque, calculando os ataques iterativos a
+cada +5 de BBA e registrando cada acerto/dano individualmente. Talentos como
+Tiro Rápido só podem acrescentar ataques quando essa sequência estiver
+integrada e validada. Cancelar uma sequência depois da reserva não devolve a
+ação: a ação de rodada completa já foi iniciada.
