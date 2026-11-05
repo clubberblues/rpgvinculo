@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "mesa.html"
+      - "scripts/dnd35-two-weapon-sequence.js"
+      - "scripts/dnd35-two-weapon-sequence.test.js"
       - ".github/workflows/mesa-syntax-check.yml"
   pull_request:
     paths:
@@ -22,6 +24,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+      - name: Test D&D 3.5 two-weapon sequence rules
+        run: node --test scripts/dnd35-two-weapon-sequence.test.js
       - name: Check inline JavaScript in mesa.html
         run: |
           python3 - <<'PY'
