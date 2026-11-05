@@ -2027,7 +2027,6 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         var mechanics=feat.mechanics&&typeof feat.mechanics==='object'?feat.mechanics:{};
         if(['ready','implemented'].indexOf(String(mechanics.engine_status||''))<0||!mechanics.activation||mechanics.activation.mode!=='passive')return;
         var featParameter=typeof choice==='object'&&choice?String(choice.parametro||choice.parameter||''):'';
-        if(normalizeName(featParameter)!==normalizeName(weaponFocusName))return;
         var effects=mechanics.resolution&&Array.isArray(mechanics.resolution.effects)?mechanics.resolution.effects:[];
         effects.forEach(function(effect){
           if(!effect||effect.kind!=='modifier')return;
