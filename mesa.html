@@ -2343,25 +2343,35 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   }
 
   async function abrirHabilidadesClasse(){
-    var p=personagemDoTurnoDoJogador();
-    if(!p&&!ehGM)p=personagens.find(function(x){return x.ch&&x.ch.user_id===eu.id;})||null;
+    var p=personagemAtivoDaInterface();
+
     if(!p){alert('Não foi possível identificar sua ficha ativa.');return;}
     var modal=document.getElementById('modal-habilidades-classe'),summary=document.getElementById('habilidades-classe-resumo'),list=document.getElementById('habilidades-classe-lista');
     modal.hidden=false;modal.classList.add('ativo');list.replaceChildren();summary.textContent='Carregando habilidades registradas para '+String(p.ch.nome||'personagem')+'…';
-    var raw=[p.sh&&p.sh.classe_id,p.cl&&p.cl.id,p.cl&&p.cl.class_key,p.cl&&p.cl.nome,p.ch&&p.ch.classe].filter(Boolean).join(' ').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();
-    var aliases={barbarian:'barbaro',barbaro:'barbaro',bard:'bardo',bardo:'bardo',cleric:'clerigo',clerigo:'clerigo',druid:'druida',druida:'druida',sorcerer:'feiticeiro',feiticeiro:'feiticeiro',fighter:'guerreiro',guerreiro:'guerreiro',rogue:'ladino',ladino:'ladino',wizard:'mago',mago:'mago',monk:'monge',monge:'monge',paladin:'paladino',paladino:'paladino',ranger:'ranger',patrulheiro:'ranger'};
-    var classId=Object.keys(aliases).map(function(k){return raw.indexOf(k)>=0?aliases[k]:'';}).filter(Boolean)[0]||'';
+    var aliases={barbaro:'barbaro',barbarian:'barbaro',bardo:'bardo',bard:'bardo',clerigo:'clerigo',cleric:'clerigo',druida:'druida',druid:'druida',feiticeiro:'feiticeiro',sorcerer:'feiticeiro',guerreiro:'guerreiro',fighter:'guerreiro',ladino:'ladino',rogue:'ladino',mago:'mago',wizard:'mago',monge:'monge',monk:'monge',paladino:'paladino',paladin:'paladino',ranger:'ranger',patrulheiro:'ranger'};
+    function normalizarIdentificadorClasse(value){return String(value||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9_-]/g,'');}
+    var candidatosClasse=[p.sh&&p.sh.classe_id,p.cl&&p.cl.id,p.cl&&p.cl.class_key,p.cl&&p.cl.nome,p.ch&&p.ch.classe].map(normalizarIdentificadorClasse).filter(Boolean);
+    var classId='';
+    for(var ci=0;ci<candidatosClasse.length;ci++){var candidate=candidatosClasse[ci];if(aliases[candidate]){classId=aliases[candidate];break;}}
     if(!classId){summary.textContent='A classe desta ficha ainda não está identificada no catálogo de características. Consulte o Mestre para registrar uma habilidade específica.';return;}
-    var level=Math.max(1,Number(p.sh&&p.sh.nivel)||1),result=await sb.from('srd_class_level_features').select('class_id,class_level,feature_key,name,summary,mechanics,verification_status').eq('class_id',classId).lte('class_level',level).order('class_level',{ascending:true});
+    var level=Math.max(1,Number(p.sh&&p.sh.nivel)||1),result=await sb.from('srd_class_level_features').select('class_id,class_level,feature_key,name,summary,mechanics,source_id,verification_status').eq('class_id',classId).lte('class_level',level).order('class_level',{ascending:true});
     if(result.error){summary.textContent='Não foi possível consultar as habilidades: '+result.error.message;return;}
     var rows=result.data||[];
-    summary.textContent=String(p.ch.nome||'Personagem')+' · '+classId+' · nível '+level+' · '+rows.length+' característica(s) registradas. Recursos com uso limitado dependem da ficha e da validação do Mestre.';
-    if(!rows.length){list.innerHTML='<p class="feature-empty">Ainda não há características catalogadas para esta classe/nível. O sistema não inventará poderes ou usos.</p>';return;}
+    summary.textContent=String(p.ch.nome||'Personagem')+' · '+String(p.cl&&p.cl.nome||classId)+' · nível '+level+' · '+rows.length+' característica(s) de classe liberada(s) até este nível.';
+    if(!rows.length){list.innerHTML='<p class="feature-empty">O catálogo não retornou características até este nível. Verifique a classe e o nível registrados na ficha.</p>';return;}
     rows.forEach(function(row){
       var card=document.createElement('article');card.className='feature-action-card';
       var title=document.createElement('h3');title.textContent='Nível '+row.class_level+' · '+row.name;
       var desc=document.createElement('p');desc.textContent=row.summary||'Sem resumo cadastrado.';
       var mechanics=document.createElement('small'),rule=row.mechanics&&typeof row.mechanics==='object'?row.mechanics:{},status=String(rule.engine_status||'needs_implementation'),implemented=Array.isArray(rule.implemented_features)?rule.implemented_features:[],pending=Array.isArray(rule.pending_features)?rule.pending_features:[];
+      var requirements=rule.prerequisites||rule.requirements||null,resource=rule.resource_cost||rule.cost||rule.uses_per_day||null;
+      if(requirements){var req=document.createElement('p');req.className='feature-detail';req.textContent='Requisitos: '+(Array.isArray(requirements)?requirements.join(' · '):typeof requirements==='object'?Object.keys(requirements).map(function(k){return k+': '+requirements[k];}).join(' · '):String(requirements));card.appendChild(req);}
+      if(resource){var cost=document.createElement('p');cost.className='feature-detail';cost.textContent='Recurso/uso: '+(typeof resource==='object'?Object.keys(resource).map(function(k){return k+': '+resource[k];}).join(' · '):String(resource));card.appendChild(cost);}
+      if(rule.engine_rule&&typeof rule.engine_rule==='object'){
+        var effect=document.createElement('p');effect.className='feature-detail';var engineRule=rule.engine_rule;
+        effect.textContent='Efeito no motor: '+String(engineRule.kind||engineRule.key||'regra cadastrada')+(engineRule.value!=null?' · valor '+engineRule.value:'')+(engineRule.damage_type?' · '+engineRule.damage_type:'');
+        card.appendChild(effect);
+      }
       if(rule.engine_rule&&rule.engine_rule.key==='lay_on_hands'&&(status==='partial'||status==='implemented')){
         mechanics.textContent=status==='implemented'?'Cura e dano por toque contra mortos-vivos disponíveis. Reserva diária compartilhada entre os dois usos.':'Cura de aliados ativa; dano por toque contra mortos-vivos em implementação.';
         var targetSelect=document.createElement('select');targetSelect.className='feature-target-select';targetSelect.appendChild(new Option('Curar a si mesmo',''));
@@ -2380,10 +2390,12 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         mechanics.textContent='Aplicada automaticamente pelo motor: '+(implemented.join(', ')||row.name)+'.';
         card.append(title,desc,mechanics);
       }else{
-        mechanics.textContent=(status==='partial'?'Implementação parcial. ':'Ainda não implementada no motor. ')+(pending.length?'Pendente: '+pending.join(', '):'O recurso não deve ser tratado como ação automática.');
-        var use=document.createElement('button');use.type='button';use.className='feature-use-btn';use.disabled=true;use.textContent=status==='partial'?'Parcial — aguardando implementação':'Em implementação';
+        mechanics.textContent=(status==='partial'?'Implementação parcial no motor. ':'Ainda não implementada no motor. ')+(implemented.length?'Ativo: '+implemented.join(', ')+'. ':'')+(pending.length?'Pendente: '+pending.join(', '):'');
+        var use=document.createElement('button');use.type='button';use.className='feature-use-btn';use.disabled=true;use.textContent=status==='partial'?'Parcial — não usar como efeito completo':'Registro informativo — ação não automatizada';
         card.append(title,desc,mechanics,use);
       }
+      card.insertBefore(title,card.firstChild);
+      card.insertBefore(desc,title.nextSibling);
       list.appendChild(card);
     });
   }
