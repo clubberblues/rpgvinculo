@@ -189,10 +189,13 @@ Os três talentos possuem estrutura mecânica explícita no catálogo, mas perma
   BBA +11; acrescenta um terceiro ataque da mão secundária com penalidade adicional
   de –10.
 
-O catálogo descreve os requisitos e os efeitos, mas o modelo atual de equipamento
-da ficha só persiste `equipado` e não identifica com segurança mão principal e mão
-secundária. A rotina de ataque total atual também mantém uma única arma, fórmula de
-dano e confirmação de crítico para toda a sequência. Portanto, ainda é necessário:
+O catálogo descreve os requisitos e os efeitos. A tabela `srd_character_equipment`
+agora persiste `hand_slot` (`main_hand`/`off_hand`) para fichas de jogadores, com
+limite de uma arma equipada por mão e bloqueio de armas de duas mãos incompatíveis.
+A interface de inventário já permite escolher a mão ao equipar uma arma. A tabela de
+equipamento de tokens NPC/monstros ainda não possui esse campo. A rotina de ataque
+total atual também mantém uma única arma, fórmula de dano e confirmação de crítico
+para toda a sequência. Portanto, ainda é necessário:
 identificar/selecionar as duas mãos; rejeitar armas incompatíveis (por exemplo,
 arma de duas mãos); construir uma sequência mista de ataques principais e
 secundários; calcular penalidades cumulativas corretas; e, para cada ataque,
