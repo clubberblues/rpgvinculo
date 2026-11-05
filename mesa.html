@@ -1259,6 +1259,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   var ataqueMestreSelecionado = null;
   var reforcoAbaAtiva = 'npc';
   var ataqueSelecionado = null;
+  var ataqueTotalSelecionado = false;
   var modoMovimentoJogadorAtivo = false;
   var personagemPVSelecionado = null;
   var cbaZoom = 1;
@@ -1475,7 +1476,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var estado=campanha?(campanha.state||'EXPLORACAO'):'EXPLORACAO';
     if(ehGM){var gm=[{id:'alternar-combate',ic:'⚔️',txt:estado==='COMBATE'?'Encerrar combate':'Iniciar combate'},{id:'cba',ic:'🗺️',txt:'Campo de batalha'},{id:'npc',ic:'👤',txt:'Adicionar NPC'},{id:'monstros',ic:'🐉',txt:'Bestiário'},{id:'testes',ic:'📜',txt:'Solicitar teste'},{id:'avancar-turno',ic:'⏭️',txt:'Avançar turno'},{id:'equipamentos',ic:'🛡️',txt:'Distribuir equipamento'},{id:'xp',ic:'⭐',txt:'Experiência'},{id:'dados',ic:'🎲',txt:'Dados'},{id:'token-image-manager',ic:'🖼️',txt:'Imagens dos tokens'}];if(estado==='COMBATE')gm.splice(1,0,{id:'iniciativa',ic:'🎲',txt:'Solicitar iniciativa'});var wrap=document.createElement('div');wrap.className='player-action-grid';gm.forEach(function(x){wrap.appendChild(criarBotaoAcaoUI(x));});el.replaceChildren(wrap);
     }else{var p=personagemAtivoDaInterface(),magic=possuiMagiasUI(p),combat=estado==='COMBATE';var groups=combat?[
-      {title:'Ataque',actions:[{id:'atk-corpo',ic:'⚔️',txt:'Ataque corpo a corpo'},{id:'atk-dist',ic:'🏹',txt:'Ataque à distância'}].concat(magic?[{id:'atk-mag',ic:'✨',txt:'Conjurar magia'}]:[])},
+      {title:'Ataque',actions:[{id:'atk-corpo',ic:'⚔️',txt:'Ataque corpo a corpo'},{id:'atk-dist',ic:'🏹',txt:'Ataque à distância'},{id:'atk-total',ic:'🗡️',txt:'Ataque total'}].concat(magic?[{id:'atk-mag',ic:'✨',txt:'Conjurar magia'}]:[])},
       {title:'Tática e defesa',actions:[{id:'manobras-ui',ic:'🛡️',txt:'Manobras de combate'},{id:'defesa-ui',ic:'🧱',txt:'Ações defensivas'},{id:'movimento-ui',ic:'👣',txt:'Movimentação'}]},
       {title:'Personagem',actions:[{id:'ficha',ic:'📜',txt:'Minha ficha'},{id:'inventario',ic:'🎒',txt:'Equipamentos'},{id:'pericia',ic:'📚',txt:'Perícias'},{id:'racial-ui',ic:'⛰️',txt:'Características raciais'},{id:'talentos-ui',ic:'🏅',txt:'Talentos'},{id:'habilidades',ic:'⚔️',txt:'Características da classe'},{id:'dados',ic:'🎲',txt:'Dados livres'},{id:'avancar-turno',ic:'⏭️',txt:'Encerrar turno'}]}
     ]:[{title:'Aventureiro',actions:[{id:'movimento-ui',ic:'👣',txt:'Movimentação'},{id:'ficha',ic:'📜',txt:'Minha ficha'},{id:'inventario',ic:'🎒',txt:'Equipamentos e mochila'},{id:'pericia',ic:'📚',txt:'Perícias'},{id:'racial-ui',ic:'⛰️',txt:'Características raciais'},{id:'talentos-ui',ic:'🏅',txt:'Talentos'},{id:'habilidades',ic:'⚔️',txt:'Características da classe'},{id:'dados',ic:'🎲',txt:'Dados livres'}].concat(magic?[{id:'atk-mag',ic:'✨',txt:'Magias disponíveis'}]:[])}];montarPainelAcaoUI(el,groups,(p&&p.ch.nome||'Aventureiro')+' · '+classeUI(p),p);}
@@ -1550,7 +1551,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         adicionarBotaoContextual(menu,'pv-token','❤️ Ajustar PV da criatura');if(item.tipo==='monstro'){adicionarBotaoContextual(menu,'monster-sheet','🐉 Ficha tática do monstro');adicionarBotaoContextual(menu,'monster-info','📣 Publicar ficha no chat');}
       }
     }else{
-      adicionarBotaoContextual(menu,'pv-personagem','❤️ Ajustar meus PV');adicionarBotaoContextual(menu,'atk-corpo','⚔️ Ataque corpo a corpo');adicionarBotaoContextual(menu,'atk-dist','🏹 Ataque à distância');adicionarBotaoContextual(menu,'atk-mag','✨ Conjurar magia');adicionarBotaoContextual(menu,'habilidades','⚔️ Habilidades da classe');adicionarBotaoContextual(menu,'inventario','🎒 Inventário');
+      adicionarBotaoContextual(menu,'pv-personagem','❤️ Ajustar meus PV');adicionarBotaoContextual(menu,'atk-corpo','⚔️ Ataque corpo a corpo');adicionarBotaoContextual(menu,'atk-dist','🏹 Ataque à distância');adicionarBotaoContextual(menu,'atk-total','🗡️ Ataque total');adicionarBotaoContextual(menu,'atk-mag','✨ Conjurar magia');adicionarBotaoContextual(menu,'habilidades','⚔️ Habilidades da classe');adicionarBotaoContextual(menu,'inventario','🎒 Inventário');
     }
     var close=adicionarBotaoContextual(menu,'fechar','✕ Fechar',true);
     menu.classList.add('ativo');menu.setAttribute('aria-hidden','false');tokenEl.setAttribute('aria-expanded','true');
@@ -1784,7 +1785,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(acao==='gm-token-end'){if(ehGM)avancarTurno();return;}
     if(acao==='inventario'&&ehGM&&item.tipo!=='player'){abrirInventarioTokenSRD(item);return;}
     if(!acharPersonagemDoToken(item)||acharPersonagemDoToken(item).ch.user_id!==eu.id)return;
-    if(acao==='atk-corpo'||acao==='atk-dist'){iniciarSelecaoAtaque(acao);return;}
+    if(acao==='atk-corpo'||acao==='atk-dist'){iniciarSelecaoAtaque(acao,false);return;}
+    if(acao==='atk-total'){(async function(){var mode=await window.vttUI.ask({title:'Ataque total',label:'Escolha o tipo de ataque que será repetido nesta ação de rodada completa.',kind:'select',options:[{value:'atk-corpo',label:'Ataques corpo a corpo'},{value:'atk-dist',label:'Ataques à distância'}]});if(mode==='atk-corpo'||mode==='atk-dist')iniciarSelecaoAtaque(mode,true);})();return;}
     if(acao==='atk-mag'){abrirListaMagias(item.id);return;}
     if(acao==='inventario'){abrirInventarioSRD(item.id);return;}
   }
@@ -1855,11 +1857,11 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     board.addEventListener('touchmove',function(e){if(e.touches.length===2&&pinchStart>0){var d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);cbaZoom=Math.max(1,Math.min(2.5,zoomStart*d/pinchStart));atualizarZoomCBA();e.preventDefault();}},{passive:false});
     board.addEventListener('touchend',function(e){if(e.touches.length<2){pinchStart=0;window.setTimeout(function(){cbaPinchInProgress=false;},120);}});
   }
-  function iniciarSelecaoAtaque(tipo){
+  function iniciarSelecaoAtaque(tipo,fullRound){
     if(!personagemDoTurnoDoJogador()){alert('Apenas o personagem do jogador no turno atual pode atacar.');return;}
     if(!cbaPublishedState){alert('O Mestre ainda não publicou um campo de batalha.');return;}
-    ataqueSelecionado=tipo; suppressTokenClickUntil=0; var board=document.getElementById('area-tabuleiro'); board.classList.add('selecionando-alvo');
-    document.getElementById('iniciativa-status').textContent='Mira ativa: selecione um token inimigo no tabuleiro.';
+    ataqueSelecionado=tipo; ataqueTotalSelecionado=fullRound===true; suppressTokenClickUntil=0; var board=document.getElementById('area-tabuleiro'); board.classList.add('selecionando-alvo');
+    document.getElementById('iniciativa-status').textContent=ataqueTotalSelecionado?'Ataque total: selecione um inimigo. A ação padrão e o movimento serão reservados antes da primeira rolagem.':'Mira ativa: selecione um token inimigo no tabuleiro.';
   }
   function modifier35(score){return Math.floor((Number(score||10)-10)/2);}function modifierTamanho35(tamanho){var n=String(tamanho||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();return n==='pequeno'||n==='small'?1:0;}
   function valorCA35(value){if(value==null||value==='')return null;var direct=Number(value);if(Number.isFinite(direct))return direct;var match=String(value).trim().match(/^(-?\d+)/);return match?Number(match[1]):null;}function equipamentoToken35(token){var merged=Object.create(null),embedded=token&&token.monsterStats&&Array.isArray(token.monsterStats.loadout)?token.monsterStats.loadout:[],stored=equipamentoTokens[String(token&&token.id)]||[];embedded.concat(stored).forEach(function(item){if(!item)return;var id=String(item.equipment_id||item.id||item.nome||Math.random());merged[id]=Object.assign({},merged[id]||{},item);});return Object.keys(merged).map(function(id){return merged[id];});}
@@ -1970,7 +1972,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     },true,true);
   }
   async function selecionarAlvoAtaque(tokenKey){
-    var type=ataqueSelecionado; ataqueSelecionado=null; document.getElementById('area-tabuleiro').classList.remove('selecionando-alvo');
+    var type=ataqueSelecionado, fullAttack=ataqueTotalSelecionado===true; ataqueSelecionado=null; ataqueTotalSelecionado=false; document.getElementById('area-tabuleiro').classList.remove('selecionando-alvo');
     var state=cbaPublishedState||normalizarCBAData(campanha.cba_data), target=state&&state.tokens.find(function(t){return String(t.key)===String(tokenKey);});
     var own=personagemDoTurnoDoJogador(), ownToken=own&&state&&state.tokens.find(function(t){return t.tipo==='player'&&String(t.id)===String(own.ch.id);});
     if(!target||!ownToken){alert('Não foi possível localizar seu token e o alvo publicado.');return;}
@@ -2068,6 +2070,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(racialRace==='halfling'&&type==='atk-dist'&&weapon&&(String(weapon.detalhes&&weapon.detalhes.weapon_ranged_type||'')==='thrown'||normalizeName(weapon.nome)==='funda'))racialFavoredEnemyBonus=1;
     baseAttackBonus=bab+baseAbility+weaponFocus-powerPenalty+sizeModifier-rangePenalty-proficiencyPenalty+racialFavoredEnemyBonus;
     bonus=baseAttackBonus+abilityEffectDelta+effectAttackModifier+armorNonproficiencyPenalty+rangedAttackFeatBonus;
+    baseAttackBonusInitial=baseAttackBonus;bonusInitial=bonus;
     var sneakAttackDice=0,sneakAttackEligible=false;
     var activeTargetConditions=efeitosCampanhaMesa.conditions.filter(function(c){return c.target_kind==='token'&&(String(c.target_id)===String(target.key)||String(c.target_id)===String(target.id));}).map(function(c){return String(c.condition_id);});
     var dexDeniedConditions=['blinded','cowering','flatfooted','helpless','paralyzed','pinned','stunned','unconscious','dying','stable','dead'];
@@ -2086,6 +2089,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       if(['undead','construct','ooze','plant','elemental','incorporeal'].indexOf(targetType)>=0)sneakAttackDice=0;
     }
     var title=type==='atk-corpo'?'Ataque Corpo a Corpo':'Ataque à Distância', critical=critico35(weapon&&weapon.critico);
+    var attackSequence=[];if(fullAttack){attackSequence.push(bab);for(var iterativeBab=bab-5;iterativeBab>=1;iterativeBab-=5)attackSequence.push(iterativeBab);if(!attackSequence.length)attackSequence.push(bab);}var attackSequenceIndex=0,baseAttackBonusInitial=0,bonusInitial=0;
     function abrirRolagemDano(isCritical){
       var rawDamage=String(damage||'1d3').split('/')[0].trim(), parsed=rawDamage.match(/^(\d+)d(2|3|4|6|8|10|12|20|100)(?:([+-]\d+))?$/i);
       if(!parsed){alert('O ataque acertou, mas a expressão de dano da arma não pôde ser interpretada: '+rawDamage+'. O Mestre pode aplicar o dano manualmente.');return;}
@@ -2102,6 +2106,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         var completeDescription=rollDescription+(sneakAttackDice?' + Ataque Furtivo '+sneakAttackDice+'d6 ('+sneakDescription+')':'');
         var appliedDamage=Number(aplicado.data.damage),damageFinal=Number.isFinite(appliedDamage)?appliedDamage:totalRolado;
         await enviarMensagemChat('💥 '+weaponName+' atingiu '+target.nome+': '+completeDescription+' = **'+totalRolado+'** rolados; **'+damageFinal+'** de dano aplicado após os efeitos. PV: '+restante+' / '+maximo+'.','rolagem',{evento:'dano_ataque_dnd35_aplicado',atacante:String(own.ch.id),atacante_nome:String(own.ch.nome||''),alvo:String(target.id),alvo_nome:String(target.nome||''),arma:weaponName,dano_base:rawDamage,dano_rolado:totalRolado,dano_aplicado:damageFinal,sneak_attack_dice:sneakAttackDice,sneak_attack_damage:sneak,critico:isCritical,ca_alvo:targetAC,pv_atual:restante,pv_max:maximo});
+        proximoAtaqueCompleto();
       }
       function concluirRolagemDano(total,description){
         if(sneakAttackDice<=0){registrarDano(total,description,0,'');return;}
@@ -2125,10 +2130,11 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     }
     function registrarResultadoAtaque(d20,isCritical){
       var total=Number(d20)+bonus,automaticMiss=Number(d20)===1,automaticHit=Number(d20)===20,hit=!automaticMiss&&(automaticHit||total>=targetAC);
-      var breakdown='1d20 '+d20+' + BBA '+bab+' + '+attackAttribute+' '+ability+(abilityEffectDelta?' (modificador de atributo por efeito '+(abilityEffectDelta>0?'+':'')+abilityEffectDelta+')':'')+(effectAttackModifier?' + efeitos de ataque '+(effectAttackModifier>0?'+':'')+effectAttackModifier:'')+(sizeModifier?' + tamanho '+(sizeModifier>0?'+':'')+sizeModifier:'')+(weaponFocus?' + Foco em Arma +'+weaponFocus:'')+(rangedAttackFeatBonus?' + bônus condicional de talento à distância +'+rangedAttackFeatBonus:'')+(racialFavoredEnemyBonus?' + bônus racial de ataque +1':'')+(powerPenalty?' − Ataque Poderoso '+powerPenalty:'')+(rangePenalty?' − distância '+rangePenalty:'')+(proficiencyPenalty?' − arma sem proficiência '+proficiencyPenalty:'')+(armorNonproficiencyPenalty?' − armadura/escudo sem proficiência '+Math.abs(armorNonproficiencyPenalty):'');
+      var currentIterativeBab=fullAttack?attackSequence[attackSequenceIndex]:bab;
+      var breakdown='1d20 '+d20+' + BBA '+currentIterativeBab+' + '+attackAttribute+' '+ability+(abilityEffectDelta?' (modificador de atributo por efeito '+(abilityEffectDelta>0?'+':'')+abilityEffectDelta+')':'')+(effectAttackModifier?' + efeitos de ataque '+(effectAttackModifier>0?'+':'')+effectAttackModifier:'')+(sizeModifier?' + tamanho '+(sizeModifier>0?'+':'')+sizeModifier:'')+(weaponFocus?' + Foco em Arma +'+weaponFocus:'')+(rangedAttackFeatBonus?' + bônus condicional de talento à distância +'+rangedAttackFeatBonus:'')+(racialFavoredEnemyBonus?' + bônus racial de ataque +1':'')+(powerPenalty?' − Ataque Poderoso '+powerPenalty:'')+(rangePenalty?' − distância '+rangePenalty:'')+(proficiencyPenalty?' − arma sem proficiência '+proficiencyPenalty:'')+(armorNonproficiencyPenalty?' − armadura/escudo sem proficiência '+Math.abs(armorNonproficiencyPenalty):'');
       if(!hit){
-        enviarMensagemChat('⚔️ '+title+' com '+weaponName+' contra '+target.nome+': '+breakdown+' = **'+total+'** contra CA '+targetAC+' — ERRO. O dano não será rolado.','rolagem',{evento:'ataque_dnd35',atacante:String(own.ch.id),atacante_nome:String(own.ch.nome||''),alvo:String(target.id),alvo_nome:String(target.nome||''),resultado:total,d20:Number(d20),ca_alvo:targetAC,acerto:false,bab:bab,modificador:ability,bonus_foco:weaponFocus,bonus_tamanho:sizeModifier,bonus_racial:racialFavoredEnemyBonus,penalidade_ataque_poderoso:powerPenalty,penalidade_arma_sem_proficiencia:proficiencyPenalty,penalidade_armadura_sem_proficiencia:armorNonproficiencyPenalty,arma:weaponName,dano:damage});
-        return;
+        await enviarMensagemChat('⚔️ '+title+(fullAttack?' · ataque '+(attackSequenceIndex+1)+'/'+attackSequence.length:'')+' com '+weaponName+' contra '+target.nome+': '+breakdown+' = **'+total+'** contra CA '+targetAC+' — ERRO. O dano não será rolado.','rolagem',{evento:'ataque_dnd35',atacante:String(own.ch.id),atacante_nome:String(own.ch.nome||''),alvo:String(target.id),alvo_nome:String(target.nome||''),resultado:total,d20:Number(d20),ca_alvo:targetAC,acerto:false,bab:currentIterativeBab,modificador:ability,bonus_foco:weaponFocus,bonus_tamanho:sizeModifier,bonus_racial:racialFavoredEnemyBonus,penalidade_ataque_poderoso:powerPenalty,penalidade_arma_sem_proficiencia:proficiencyPenalty,penalidade_armadura_sem_proficiencia:armorNonproficiencyPenalty,arma:weaponName,dano:damage});
+        proximoAtaqueCompleto();return;
       }
       var criticalLabel=isCritical?' · ACERTO CRÍTICO x'+critical.multiplier:'';
       enviarMensagemChat('⚔️ '+title+' com '+weaponName+' contra '+target.nome+': '+breakdown+' = **'+total+'** contra CA '+targetAC+' — ACERTO'+criticalLabel+'. Iniciando rolagem de dano no dado 3D.','rolagem',{evento:'ataque_dnd35',atacante:String(own.ch.id),atacante_nome:String(own.ch.nome||''),alvo:String(target.id),alvo_nome:String(target.nome||''),resultado:total,d20:Number(d20),ca_alvo:targetAC,acerto:true,critico:isCritical,bab:bab,modificador:ability,bonus_foco:weaponFocus,bonus_tamanho:sizeModifier,penalidade_ataque_poderoso:powerPenalty,arma:weaponName,dano:damage});
@@ -2144,13 +2150,30 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       return true;
     }
     var attackRoll=null;
-    abrirDado(title+' · '+weaponName+' contra '+target.nome,async function(d20){
-      attackRoll=Number(d20);
-      try{await consumirAcaoTurnoServidor(own.ch.id,'padrao');}catch(err){alert('Ataque não realizado: '+err.message+' A ação padrão não foi consumida.');return;}
-      var natural=Number(d20),threat=natural>=critical.min&&natural<=critical.max;
-      if(natural!==1&&threat){confirmarCritico(d20);return;}
-      registrarResultadoAtaque(d20,false);
-    },true,true,'1d20');
+    async function proximoAtaqueCompleto(){
+      if(!fullAttack)return;
+      attackSequenceIndex++;
+      if(attackSequenceIndex>=attackSequence.length){await enviarMensagemChat('🏁 '+title+' concluído: '+attackSequence.length+' ataque(s) da ação de rodada completa foram resolvidos.','sistema',{evento:'ataque_total_concluido',atacante:String(own.ch.id),alvo:String(target.id),quantidade_ataques:attackSequence.length});return;}
+      var nextBab=attackSequence[attackSequenceIndex];baseAttackBonus=baseAttackBonusInitial-bab+nextBab;bonus=bonusInitial-bab+nextBab;
+      solicitarRolagemAtaqueTotal();
+    }
+    function solicitarRolagemAtaqueTotal(){
+      var sequenceTitle=title+' · ataque '+(attackSequenceIndex+1)+'/'+attackSequence.length+' · BBA +'+attackSequence[attackSequenceIndex];
+      abrirDado(sequenceTitle+' · '+weaponName+' contra '+target.nome,async function(d20){attackRoll=Number(d20);var natural=Number(d20),threat=natural>=critical.min&&natural<=critical.max;if(natural!==1&&threat){confirmarCritico(d20);return;}registrarResultadoAtaque(d20,false);},true,true,'1d20');
+    }
+    if(fullAttack){
+      try{var reserved=await sb.rpc('consumir_acao_rodada_completa_srd',{p_campaign_id:Number(MESA_ID),p_actor_id:String(own.ch.id),p_actor_kind:'character'});if(reserved.error)throw new Error(reserved.error.message||'Ação de rodada completa indisponível.');combatDataState=reserved.data&&reserved.data.combat_data||combatDataState;renderizarIniciativa(combatDataState);}
+      catch(err){alert('Ataque total não iniciado: '+err.message);return;}
+      solicitarRolagemAtaqueTotal();
+    }else{
+      abrirDado(title+' · '+weaponName+' contra '+target.nome,async function(d20){
+        attackRoll=Number(d20);
+        try{await consumirAcaoTurnoServidor(own.ch.id,'padrao');}catch(err){alert('Ataque não realizado: '+err.message+' A ação padrão não foi consumida.');return;}
+        var natural=Number(d20),threat=natural>=critical.min&&natural<=critical.max;
+        if(natural!==1&&threat){confirmarCritico(d20);return;}
+        registrarResultadoAtaque(d20,false);
+      },true,true,'1d20');
+    }
   }
   function abrirAjustePV(characterId){
     var p=personagens.find(function(x){return String(x.ch.id)===String(characterId);}); if(!p||(!ehGM&&p.ch.user_id!==eu.id))return;
