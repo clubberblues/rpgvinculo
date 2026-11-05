@@ -227,3 +227,19 @@ de posição na sequência nem valida que a penalidade escolhida corresponde
 exatamente ao ataque principal/secundário esperado. A sequência mista e a
 validação estrita por ataque continuam pendentes. O talento permanece
 `needs_review`.
+
+
+### Seleção explícita da arma principal no ataque corpo a corpo
+
+O fluxo de ataque do jogador agora prioriza a arma marcada `main_hand` ao
+calcular ataques corpo a corpo. Se houver mais de uma arma corpo a corpo
+ equipada, mas não houver exatamente uma identificada como mão principal, a
+mesa interrompe a ação antes de pedir a rolagem, em vez de escolher uma arma
+pela ordem incidental do inventário. Personagens legados com apenas uma arma
+sem `hand_slot` continuam compatíveis. Ataques à distância continuam buscando
+uma arma à distância equipada.
+
+Esta proteção não cria ataques da mão secundária: em uma ficha com duas armas,
+a sequência atual continua usando somente a arma principal. A geração dos
+ataques secundários e seus bônus/penalidades ainda depende do resolvedor misto
+por ataque e da validação autoritativa correspondente.
