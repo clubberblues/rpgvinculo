@@ -1573,7 +1573,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       nav.appendChild(tab);return section;
     });
     buttons.forEach(function(button){var label=button.textContent||'',group=groups.find(function(g){return g.match.test(label);})||groups[1];sections[groups.indexOf(group)].appendChild(button);});
-    actions.replaceChildren(nav);sections.forEach(function(section){if(section.children.length)actions.appendChild(section);});
+    actions.replaceChildren(nav);var activeIndex=sections.findIndex(function(section){return section.children.length>0;});sections.forEach(function(section,index){var tab=nav.children[index];if(!section.children.length){if(tab)tab.remove();return;}section.hidden=index!==activeIndex;if(tab)tab.setAttribute('aria-selected',String(index===activeIndex));actions.appendChild(section);});
   }
 
   function abrirPainelControlePersonagemGM(item){
