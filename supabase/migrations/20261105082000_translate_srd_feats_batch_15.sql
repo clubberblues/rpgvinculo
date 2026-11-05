@@ -1,4 +1,4 @@
--- Lote 15: tradução de Rastrear (SRD) e Tenacidade (registro não-SRD).
+-- Lote 15: tradução de Rastrear e Tenacidade (ambos verificados no D&D 3.5 SRD).
 -- Não altera engine_status.
 update public.srd_feats set nome_pt=v.nome_pt, descricao_pt=v.descricao_pt
 from (values
