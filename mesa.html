@@ -1989,10 +1989,12 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var finesseWeapon=type==='atk-corpo'&&personagemTemTalento(own.sh,'srd35_feat_weapon_finesse')&&(!weapon||!!(weapon.detalhes&&weapon.detalhes.weapon_finesse_eligible===true));
     var attackAttribute=type==='atk-dist'||finesseWeapon?'DES':'FOR';
     var attackAbilityEffectModifier=modificadorEfeitoPersonagemMesa35(own,attackAttribute==='FOR'?'strength':'dexterity');
-    var strengthEffectModifier=modificadorEfeitoPersonagemMesa35(own,'strength');
-    var effectAttackModifier=modificadorEfeitoPersonagemMesa35(own,'attack_roll');
     var ability=modifier35(Number(attrs[attackAttribute]||10)+attackAbilityEffectModifier);
-    var strengthModifier=modifier35(Number(attrs.FOR||10)+strengthEffectModifier);
+    var baseAbility=modifier35(Number(attrs[attackAttribute]||10));
+    var abilityEffectDelta=ability-baseAbility;
+    var strengthModifier=modifier35(Number(attrs.FOR||10));
+    var effectAttackModifier=modificadorEfeitoPersonagemMesa35(own,'attack')+
+      modificadorEfeitoPersonagemMesa35(own,type==='atk-corpo'?'attack_melee':'attack_ranged');
     var weaponName=weapon?weapon.nome:'Ataque desarmado',weaponFocusName=weapon&&weapon.detalhes&&weapon.detalhes.weapon_focus_name||weaponName,damage=weapon&&weapon.dano||'1d3',weaponFocus=0,weaponSpecializationDamage=0,powerPenalty=0,powerDamage=0,proficiencyPenalty=personagemProficienteArma35(own,weapon)?0:4;
     if(weapon&&String(damage).includes('/')){
       var damageOptions=String(damage).split('/').map(function(value){return value.trim();}).filter(Boolean);
@@ -2026,14 +2028,15 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       rangePenalty=(rangeIncrements-1)*2;
     }
     var armorNonproficiencyPenalty=penalidadeArmaduraNaoProficiente35(own);
-    var sizeModifier=modifierTamanho35(own.tamanho),bonus=bab+ability+weaponFocus+effectAttackModifier-powerPenalty+sizeModifier-rangePenalty-proficiencyPenalty+armorNonproficiencyPenalty;
+    var sizeModifier=modifierTamanho35(own.tamanho),bonus=0,baseAttackBonus=0;
     var racialFavoredEnemyBonus=0;
     var targetTraits=String([target.nome,target.detalhe,target.creature_type,target.monsterStats&&target.monsterStats.tipo,target.monsterStats&&target.monsterStats.subtipo,target.monsterStats&&target.monsterStats.subtype,target.monsterStats&&target.monsterStats.subtypes,target.monsterStats&&target.monsterStats.type,target.monsterStats&&target.monsterStats.creature_type,target.monsterStats&&target.monsterStats.race_id].filter(Boolean).join(' ')).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
     var racialRace=String(own.sh&&own.sh.raca_id||'');
     if(racialRace==='anao'&&/(orc|goblin|hobgoblin|bugbear|goblinoid)/.test(targetTraits))racialFavoredEnemyBonus=1;
     if(racialRace==='gnomo'&&/(kobold|goblin|hobgoblin|bugbear|goblinoid)/.test(targetTraits))racialFavoredEnemyBonus=1;
     if(racialRace==='halfling'&&type==='atk-dist'&&weapon&&(String(weapon.detalhes&&weapon.detalhes.weapon_ranged_type||'')==='thrown'||normalizeName(weapon.nome)==='funda'))racialFavoredEnemyBonus=1;
-    bonus+=racialFavoredEnemyBonus;
+    baseAttackBonus=bab+baseAbility+weaponFocus-powerPenalty+sizeModifier-rangePenalty-proficiencyPenalty+racialFavoredEnemyBonus;
+    bonus=baseAttackBonus+abilityEffectDelta+effectAttackModifier+armorNonproficiencyPenalty;
     var sneakAttackDice=0,sneakAttackEligible=false;
     var activeTargetConditions=efeitosCampanhaMesa.conditions.filter(function(c){return c.target_kind==='token'&&(String(c.target_id)===String(target.key)||String(c.target_id)===String(target.id));}).map(function(c){return String(c.condition_id);});
     var dexDeniedConditions=['blinded','cowering','flatfooted','helpless','paralyzed','pinned','stunned','unconscious','dying','stable','dead'];
@@ -2061,12 +2064,13 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       var formula=diceTotal+'d'+sides+(flat>0?'+'+flat:flat<0?String(flat):''),critLabel=isCritical?' · CRÍTICO x'+multiplier:'';
       async function registrarDano(total,rollDescription,sneakDamage,sneakDescription){
         var dano=Math.max(1,Math.trunc(Number(total))),sneak=Math.max(0,Math.trunc(Number(sneakDamage)||0)),totalRolado=dano+sneak;
-        var aplicado=await sb.rpc('aplicar_dano_token_ataque_srd_v2',{p_campaign_id:Number(MESA_ID),p_character_id:String(own.ch.id),p_token_id:String(target.id),p_d20:Number(attackRoll),p_bonus_ataque:Number(bonus),p_dano:dano,p_weapon_id:weapon?String(weapon.id):null,p_attack_type:type,p_power_penalty:Number(powerPenalty),p_sneak_attack_dice:sneakAttackDice,p_sneak_attack_damage:sneak});
+        var aplicado=await sb.rpc('aplicar_dano_token_ataque_srd_v2',{p_campaign_id:Number(MESA_ID),p_character_id:String(own.ch.id),p_token_id:String(target.id),p_d20:Number(attackRoll),p_bonus_ataque:Number(baseAttackBonus),p_dano:dano,p_weapon_id:weapon?String(weapon.id):null,p_attack_type:type,p_power_penalty:Number(powerPenalty),p_sneak_attack_dice:sneakAttackDice,p_sneak_attack_damage:sneak});
         if(aplicado.error)throw new Error(aplicado.error.message);
         campanha.cba_data=aplicado.data.cba_data;aplicarCBAnaMesa(aplicado.data.cba_data,false);
         var restante=Number(aplicado.data.hp),maximo=Number(aplicado.data.max_hp);
         var completeDescription=rollDescription+(sneakAttackDice?' + Ataque Furtivo '+sneakAttackDice+'d6 ('+sneakDescription+')':'');
-        await enviarMensagemChat('💥 '+weaponName+' atingiu '+target.nome+': '+completeDescription+' = **'+totalRolado+'** de dano rolado. PV: '+restante+' / '+maximo+'.','rolagem',{evento:'dano_ataque_dnd35_aplicado',atacante:String(own.ch.id),atacante_nome:String(own.ch.nome||''),alvo:String(target.id),alvo_nome:String(target.nome||''),arma:weaponName,dano_base:rawDamage,dano_total:totalRolado,sneak_attack_dice:sneakAttackDice,sneak_attack_damage:sneak,critico:isCritical,ca_alvo:targetAC,pv_atual:restante,pv_max:maximo});
+        var appliedDamage=Number(aplicado.data.damage),damageFinal=Number.isFinite(appliedDamage)?appliedDamage:totalRolado;
+        await enviarMensagemChat('💥 '+weaponName+' atingiu '+target.nome+': '+completeDescription+' = **'+totalRolado+'** rolados; **'+damageFinal+'** de dano aplicado após os efeitos. PV: '+restante+' / '+maximo+'.','rolagem',{evento:'dano_ataque_dnd35_aplicado',atacante:String(own.ch.id),atacante_nome:String(own.ch.nome||''),alvo:String(target.id),alvo_nome:String(target.nome||''),arma:weaponName,dano_base:rawDamage,dano_rolado:totalRolado,dano_aplicado:damageFinal,sneak_attack_dice:sneakAttackDice,sneak_attack_damage:sneak,critico:isCritical,ca_alvo:targetAC,pv_atual:restante,pv_max:maximo});
       }
       function concluirRolagemDano(total,description){
         if(sneakAttackDice<=0){registrarDano(total,description,0,'');return;}
@@ -2090,7 +2094,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     }
     function registrarResultadoAtaque(d20,isCritical){
       var total=Number(d20)+bonus,automaticMiss=Number(d20)===1,automaticHit=Number(d20)===20,hit=!automaticMiss&&(automaticHit||total>=targetAC);
-      var breakdown='1d20 '+d20+' + BBA '+bab+' + '+attackAttribute+' '+ability+(attackAbilityEffectModifier?' (atributo ajustado por efeito +'+attackAbilityEffectModifier+')':'')+(effectAttackModifier?' + efeitos de ataque '+(effectAttackModifier>0?'+':'')+effectAttackModifier:'')+(sizeModifier?' + tamanho '+(sizeModifier>0?'+':'')+sizeModifier:'')+(weaponFocus?' + Foco em Arma +'+weaponFocus:'')+(racialFavoredEnemyBonus?' + bônus racial de ataque +1':'')+(powerPenalty?' − Ataque Poderoso '+powerPenalty:'')+(rangePenalty?' − distância '+rangePenalty:'')+(proficiencyPenalty?' − arma sem proficiência '+proficiencyPenalty:'')+(armorNonproficiencyPenalty?' − armadura/escudo sem proficiência '+Math.abs(armorNonproficiencyPenalty):'');
+      var breakdown='1d20 '+d20+' + BBA '+bab+' + '+attackAttribute+' '+ability+(abilityEffectDelta?' (modificador de atributo por efeito '+(abilityEffectDelta>0?'+':'')+abilityEffectDelta+')':'')+(effectAttackModifier?' + efeitos de ataque '+(effectAttackModifier>0?'+':'')+effectAttackModifier:'')+(sizeModifier?' + tamanho '+(sizeModifier>0?'+':'')+sizeModifier:'')+(weaponFocus?' + Foco em Arma +'+weaponFocus:'')+(racialFavoredEnemyBonus?' + bônus racial de ataque +1':'')+(powerPenalty?' − Ataque Poderoso '+powerPenalty:'')+(rangePenalty?' − distância '+rangePenalty:'')+(proficiencyPenalty?' − arma sem proficiência '+proficiencyPenalty:'')+(armorNonproficiencyPenalty?' − armadura/escudo sem proficiência '+Math.abs(armorNonproficiencyPenalty):'');
       if(!hit){
         enviarMensagemChat('⚔️ '+title+' com '+weaponName+' contra '+target.nome+': '+breakdown+' = **'+total+'** contra CA '+targetAC+' — ERRO. O dano não será rolado.','rolagem',{evento:'ataque_dnd35',atacante:String(own.ch.id),atacante_nome:String(own.ch.nome||''),alvo:String(target.id),alvo_nome:String(target.nome||''),resultado:total,d20:Number(d20),ca_alvo:targetAC,acerto:false,bab:bab,modificador:ability,bonus_foco:weaponFocus,bonus_tamanho:sizeModifier,bonus_racial:racialFavoredEnemyBonus,penalidade_ataque_poderoso:powerPenalty,penalidade_arma_sem_proficiencia:proficiencyPenalty,penalidade_armadura_sem_proficiencia:armorNonproficiencyPenalty,arma:weaponName,dano:damage});
         return;
