@@ -323,7 +323,7 @@ BBA-10 com Maior), além das penalidades SRD conforme a arma secundária seja
 leve e o talento básico esteja presente.
 
 O módulo valida a presença de duas armas corpo a corpo, rejeita armas de duas
-mãos e confere DES/BBA e a progressão dos talentos. Sete testes automatizados
+mãos e confere DES/BBA e a progressão dos talentos. Nove testes automatizados
 cobrem penalidades, ataques adicionais e pré-requisitos. O workflow de CI foi
 ampliado para executar esses testes.
 
