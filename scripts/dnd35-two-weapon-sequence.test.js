@@ -31,3 +31,6 @@ test('recusa talento aprimorado sem pré-requisitos',()=>{
 test('recusa armas de duas mãos',()=>{
  assert.throws(()=>build({baseAttackBonus:6,dexterity:17,primaryWeapon:{...sword,detalhes:{weapon_melee:true,weapon_two_handed:true}},offhandWeapon:dagger}),/duas mãos/);
 });
+
+test('aceita indicadores booleanos serializados do catálogo',()=>{const r=build({baseAttackBonus:1,dexterity:10,primaryWeapon:sword,offhandWeapon:{...dagger,detalhes:{weapon_melee:true,weapon_light:'true'}}});assert.equal(r.offhand_light,true);assert.equal(r.penalties.off_hand,-8);});
+test('rejeita arma de duas mãos serializada como texto',()=>{assert.throws(()=>build({baseAttackBonus:1,dexterity:10,primaryWeapon:{...sword,detalhes:{weapon_melee:true,weapon_two_handed:'true'}},offhandWeapon:dagger}),/duas mãos/);});
