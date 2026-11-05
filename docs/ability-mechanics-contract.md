@@ -296,3 +296,13 @@ preserva cada instância separadamente e prioriza `main_hand` para ataques que
 usam uma única arma. Isso ainda não ativa o combate com duas armas: penalidades,
 ataques adicionais, dano e críticos por mão e alvos independentes permanecem
 pendentes de implementação e teste.
+
+
+**Integração com o resolvedor de ataque atual:** ao equipar/desequipar uma
+instância, as RPCs também sincronizam o estado agregado legado para manter
+compatibilidade com consultas existentes. Além disso, `aplicar_dano_token_ataque_srd_v2`
+agora exige que a arma informada tenha uma instância efetivamente equipada na
+`main_hand`; uma arma que esteja somente na mão secundária não pode ser enviada
+como arma de ataque principal pelo cliente. A validação ainda usa `equipment_id`
+para o ataque de mão principal; a sequência mista futura deverá migrar o
+contrato de ataque para `instance_id`.
