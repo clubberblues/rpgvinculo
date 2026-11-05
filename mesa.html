@@ -1987,7 +1987,12 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var level=Math.max(1,Number(own.sh.nivel)||1), attrs=own.sh.atributos||{}, bab=bab35(own.cl,level);
     if(personagemTemTalento(own.sh,'srd35_feat_weapon_finesse')&&bab<1){alert('Acuidade com Arma exige bônus base de ataque +1.');return;}
     var weapons=(own.equipamento||[]).filter(function(it){return it.equipado&&it.categoria==='arma';});
-    var weapon=weapons.find(function(it){var d=it.detalhes||{};return type==='atk-dist'?d.weapon_ranged===true:d.weapon_melee!==false;});
+    var meleeWeapons=weapons.filter(function(it){return !it.detalhes||it.detalhes.weapon_melee!==false;});
+    var mainHandWeapons=meleeWeapons.filter(function(it){return String(it.hand_slot||'')==='main_hand';});
+    var legacyMeleeWeapons=meleeWeapons.filter(function(it){return !it.hand_slot;});
+    if(type==='atk-corpo'&&meleeWeapons.length>1&&mainHandWeapons.length!==1){alert('Não foi possível identificar uma única arma da mão principal. Confira as mãos equipadas no inventário antes de atacar.');return;}
+    var weaponPool=type==='atk-corpo'?(mainHandWeapons.length?mainHandWeapons:(meleeWeapons.length===1?meleeWeapons:legacyMeleeWeapons)):weapons;
+    var weapon=weaponPool.find(function(it){var d=it.detalhes||{};return type==='atk-dist'?d.weapon_ranged===true:d.weapon_melee!==false;});
     if(type==='atk-dist'&&!weapon){alert('Equipe uma arma à distância antes de atacar.');return;}
     var finesseWeapon=type==='atk-corpo'&&personagemTemTalento(own.sh,'srd35_feat_weapon_finesse')&&(!weapon||!!(weapon.detalhes&&weapon.detalhes.weapon_finesse_eligible===true));
     var attackAttribute=type==='atk-dist'||finesseWeapon?'DES':'FOR';
