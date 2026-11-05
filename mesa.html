@@ -1538,6 +1538,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     fecharMenuContextualToken(false);menu.replaceChildren();ctxTokenAtualKey=String(item.key);ctxFocusTokenKey=String(item.key);
     if(ehGM){
       if(item.tipo==='player'){
+        if(own)adicionarBotaoContextual(menu,'gm-character-sheet','📜 Ficha e controles do personagem');
         var playerTurn=combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
         if(playerTurn&&!playerTurn.is_monster&&String(playerTurn.id)===String(item.id))adicionarBotaoContextual(menu,'gm-token-move','↔️ Mover token do jogador');
       }
@@ -1556,6 +1557,40 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     menu.style.left='';menu.style.top='';
     (menu.querySelector('[data-ctx-action]:not([data-ctx-action="fechar"])')||close).focus();
   }
+  function abrirPainelControlePersonagemGM(item){
+    if(!ehGM||!item||item.tipo!=='player')return;
+    var p=acharPersonagemDoToken(item);
+    if(!p){alert('A ficha associada a este token não foi carregada.');return;}
+    var old=document.getElementById('modal-controle-ficha-gm');if(old)old.remove();
+    var overlay=document.createElement('div');overlay.id='modal-controle-ficha-gm';overlay.className='skill-roll-overlay';overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');
+    var panel=document.createElement('section');panel.className='skill-roll-panel';
+    var head=document.createElement('header');head.className='skill-roll-head';
+    var title=document.createElement('h2');title.textContent='Ficha · '+String(p.ch.nome||item.nome||'Personagem');
+    var close=document.createElement('button');close.type='button';close.className='skill-roll-close';close.textContent='✕';close.onclick=function(){overlay.remove();};
+    head.append(title,close);panel.appendChild(head);
+    var identity=document.createElement('p');identity.className='skill-roll-hint';
+    identity.textContent=(p.ch.user_id===eu.id?'Ficha do Mestre':'Ficha de jogador')+' · '+String(p.raca&&p.raca.nome||p.sh.raca_id||'Raça não identificada')+' · '+String(p.cl&&p.cl.nome||p.sh.classe_id||'Classe não identificada')+' · Nível '+Math.max(1,Number(p.sh.nivel)||1);
+    panel.appendChild(identity);
+    var currentHp=Number(p.sh.pv_atual==null?pvMax(p.sh,p.cl):p.sh.pv_atual),maxHp=pvMax(p.sh,p.cl);
+    var vitals=document.createElement('div');vitals.className='player-action-vitals';
+    [['❤',currentHp+' / '+maxHp+' PV'],['🛡',caFichaMesa(p)+' CA'],['↔',(p.deslocamento_m==null?'—':p.deslocamento_m)+' m']].forEach(function(pair){var value=document.createElement('span');value.textContent=pair[0]+' '+pair[1];vitals.appendChild(value);});
+    panel.appendChild(vitals);
+    var attrs=p.sh.atributos&&typeof p.sh.atributos==='object'?p.sh.atributos:{};
+    var attr=document.createElement('p');attr.className='feature-detail';attr.textContent='Atributos: '+['FOR','DES','CON','INT','SAB','CAR'].map(function(key){var score=Number(attrs[key]||10),mod=modifier35(score);return key+' '+score+' ('+(mod>=0?'+':'')+mod+')';}).join(' · ');
+    panel.appendChild(attr);
+    var equipment=Array.isArray(p.equipamento)?p.equipamento:[];
+    var gear=document.createElement('p');gear.className='feature-detail';gear.textContent='Equipamentos carregados: '+(equipment.length?equipment.map(function(it){return String(it.nome||it.equipment_id||'Item')+(it.equipado?' (equipado)':'')+(Number(it.quantidade)>1?' ×'+it.quantidade:'');}).join(' · '):'nenhum item carregado na leitura da mesa.');
+    panel.appendChild(gear);
+    var actions=document.createElement('div');actions.className='player-action-grid';
+    function addAction(label,callback){var button=document.createElement('button');button.type='button';button.className='btn-acao';button.textContent=label;button.addEventListener('click',callback);actions.appendChild(button);}
+    addAction('❤️ Ajustar PV',function(){overlay.remove();abrirAjustePV(p.ch.id);});
+    addAction('⚔️ Características da classe',function(){overlay.remove();abrirHabilidadesClasse(p.ch.id);});
+    addAction('🏅 Talentos escolhidos',function(){overlay.remove();abrirTalentosJogadorUI(p.ch.id);});
+    panel.appendChild(actions);
+    var note=document.createElement('p');note.className='skill-roll-hint';note.textContent='O Mestre pode consultar a ficha e ajustar seus PV. Ataques, testes e conjuração continuam sujeitos às regras de turno, solicitações e rolagens da mesa.';
+    panel.appendChild(note);
+    overlay.appendChild(panel);overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});document.body.appendChild(overlay);
+  }
   function infoTokenNoChat(item){
     if(!item)return;var m=item.monsterId&&cbaMonsterCatalog.find(function(x){return String(x.id)===String(item.monsterId);});
     if(m){publicarInfoMonstro(m);return;}
@@ -1570,6 +1605,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(acao==='pv-personagem'){var owner=acharPersonagemDoToken(item);if(!ehGM&&item.tipo==='player'&&owner&&owner.ch.user_id===eu.id)abrirAjustePV(owner.ch.id);return;}
     if(acao==='pv-token'){if(ehGM&&item.tipo!=='player')abrirAjustePVToken(item.key);return;}
     if(acao==='monster-info'){if(ehGM&&item.tipo==='monstro')infoTokenNoChat(item);return;}
+    if(acao==='gm-character-sheet'){if(ehGM)abrirPainelControlePersonagemGM(item);return;}
     if(acao==='npc-sheet'){if(ehGM)publicarFichaNPC35(item).catch(function(err){alert('Não foi possível publicar a ficha do NPC: '+err.message);});return;}
     if(acao==='criatura-atacar'){iniciarAtaqueMestre(item);return;}
     if(acao==='gm-token-attack'){iniciarAtaqueMestre(item);return;}
@@ -1890,7 +1926,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     },true,true,'1d20');
   }
   function abrirAjustePV(characterId){
-    var p=personagens.find(function(x){return String(x.ch.id)===String(characterId);}); if(!p||p.ch.user_id!==eu.id)return;
+    var p=personagens.find(function(x){return String(x.ch.id)===String(characterId);}); if(!p||(!ehGM&&p.ch.user_id!==eu.id))return;
     personagemPVSelecionado={tipo:'personagem',registro:p}; document.getElementById('pv-personagem-nome').textContent=p.ch.nome+' · '+(p.sh.pv_atual==null?pvMax(p.sh,p.cl):p.sh.pv_atual)+' / '+pvMax(p.sh,p.cl)+' PV';
     document.getElementById('pv-variacao').value='-1'; document.getElementById('modal-pv-personagem').classList.add('ativo');
   }
@@ -1972,7 +2008,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       }catch(err){alert('Não foi possível excluir a campanha: '+(err.message||err));del.disabled=false;}
     });
     var pv=document.getElementById('modal-pv-personagem'); pv.addEventListener('click',function(e){if(e.target===pv||e.target.closest('[data-pv-close]'))pv.classList.remove('ativo');});
-    document.getElementById('confirmar-ajuste-pv').addEventListener('click',async function(){if(!personagemPVSelecionado)return;if(personagemPVSelecionado.tipo==='token'&&!ehGM)return;var ownedSheet=personagemPVSelecionado.tipo==='personagem'&&personagemPVSelecionado.registro;if(personagemPVSelecionado.tipo==='personagem'&&(!ownedSheet||ownedSheet.ch.user_id!==eu.id))return;var delta=Number(document.getElementById('pv-variacao').value);if(!Number.isInteger(delta)||delta===0){alert('Informe uma quantidade inteira diferente de zero.');return;}try{if(personagemPVSelecionado.tipo==='token'){var token=personagemPVSelecionado.registro;var r=await sb.rpc('alterar_pv_token_cba',{p_campaign_id:Number(MESA_ID),p_token_id:String(token.id),p_variacao:delta,p_pv_max:Number(token.maxHp)});if(r.error)throw new Error(r.error.message);campanha.cba_data=r.data.cba_data;pv.classList.remove('ativo');aplicarCBAnaMesa(r.data.cba_data,false);return;}var p=personagemPVSelecionado.registro;var r=await sb.rpc('alterar_pv_personagem',{p_campaign_id:Number(MESA_ID),p_character_id:String(p.ch.id),p_variacao:delta});if(r.error)throw new Error(r.error.message);p.sh.pv_atual=r.data.pv_atual;pv.classList.remove('ativo');renderCards();aplicarCBAnaMesa(campanha.cba_data,false);}catch(err){alert('Falha ao atualizar PV: '+err.message);}});
+    document.getElementById('confirmar-ajuste-pv').addEventListener('click',async function(){if(!personagemPVSelecionado)return;if(personagemPVSelecionado.tipo==='token'&&!ehGM)return;var ownedSheet=personagemPVSelecionado.tipo==='personagem'&&personagemPVSelecionado.registro;if(personagemPVSelecionado.tipo==='personagem'&&(!ownedSheet||(!ehGM&&ownedSheet.ch.user_id!==eu.id)))return;var delta=Number(document.getElementById('pv-variacao').value);if(!Number.isInteger(delta)||delta===0){alert('Informe uma quantidade inteira diferente de zero.');return;}try{if(personagemPVSelecionado.tipo==='token'){var token=personagemPVSelecionado.registro;var r=await sb.rpc('alterar_pv_token_cba',{p_campaign_id:Number(MESA_ID),p_token_id:String(token.id),p_variacao:delta,p_pv_max:Number(token.maxHp)});if(r.error)throw new Error(r.error.message);campanha.cba_data=r.data.cba_data;pv.classList.remove('ativo');aplicarCBAnaMesa(r.data.cba_data,false);return;}var p=personagemPVSelecionado.registro;var r=await sb.rpc('alterar_pv_personagem',{p_campaign_id:Number(MESA_ID),p_character_id:String(p.ch.id),p_variacao:delta});if(r.error)throw new Error(r.error.message);p.sh.pv_atual=r.data.pv_atual;pv.classList.remove('ativo');renderCards();aplicarCBAnaMesa(campanha.cba_data,false);}catch(err){alert('Falha ao atualizar PV: '+err.message);}});
     var inv=document.getElementById('modal-inventario-srd');inv.addEventListener('click',function(e){if(e.target===inv||e.target.closest('[data-inventory-close]'))inv.classList.remove('ativo');});
     var mag=document.getElementById('modal-magias');mag.addEventListener('click',function(e){if(e.target===mag||e.target.closest('[data-magic-close]'))fecharModalMagias();});
     document.getElementById('confirmar-conjuracao').addEventListener('click',confirmarConjuracao);
@@ -2342,8 +2378,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     }
   }
 
-  async function abrirHabilidadesClasse(){
-    var p=personagemAtivoDaInterface();
+  async function abrirHabilidadesClasse(characterId){
+    var p=characterId&&ehGM?personagens.find(function(x){return String(x.ch.id)===String(characterId);}):personagemAtivoDaInterface();
 
     if(!p){alert('Não foi possível identificar sua ficha ativa.');return;}
     var modal=document.getElementById('modal-habilidades-classe'),summary=document.getElementById('habilidades-classe-resumo'),list=document.getElementById('habilidades-classe-lista');
@@ -2400,8 +2436,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     });
   }
   document.querySelectorAll('[data-features-close]').forEach(function(b){b.addEventListener('click',function(){var m=document.getElementById('modal-habilidades-classe');m.classList.remove('ativo');m.hidden=true;});});
-  async function abrirTalentosJogadorUI(){
-    var p=personagemAtivoDaInterface();
+  async function abrirTalentosJogadorUI(characterId){
+    var p=characterId&&ehGM?personagens.find(function(x){return String(x.ch.id)===String(characterId);}):personagemAtivoDaInterface();
     if(!p){alert('Não foi possível localizar sua ficha.');return;}
     var selected=listaTalentosUI(p.sh&&p.sh.talentos),old=document.getElementById('modal-talentos-jogador');
     if(old)old.remove();
