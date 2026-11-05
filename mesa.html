@@ -1904,7 +1904,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var message='📜 '+item.nome+' · '+String(s.race_name||'Raça não identificada')+' '+String(s.class_name||'classe não identificada')+' nível '+String(s.level||'—')+'. PV '+String(item.hp==null?'—':item.hp)+'/'+String(item.maxHp||'—')+' · CA '+caToken35(item)+' · BBA +'+String(s.bab==null?'—':s.bab)+'.\nAtributos: '+attrText+'.\nResistências: Fort '+String(saves.fortitude==null?'—':saves.fortitude)+' · Ref '+String(saves.reflexos==null?'—':saves.reflexos)+' · Von '+String(saves.vontade==null?'—':saves.vontade)+'.\nPerícias: '+skillText+'.\nTalentos: '+featText+'.\nMagias: '+(spellNames.join(', ')||'nenhuma selecionada')+'.\nTraços raciais: '+traits+'.\nClasse: '+classDesc+'.\nEquipamento: '+gearNames+'.';
     await enviarMensagemChat(message,'sistema',{evento:'ficha_npc_gerada',token_id:String(item.id),level:Number(s.level)||1});
   }
-  async async function iniciarAtaqueMestre(item,attackContext){
+  async function iniciarAtaqueMestre(item,attackContext){
     if(!ehGM||!item||!combatDataState||!combatDataState.active){alert('O ataque do Mestre exige iniciativa ativa e um token controlado por ele.');return;}var turn=combatDataState.turn_order[Number(combatDataState.current_turn)||0];if(!turn||!turn.is_monster||String(turn.id)!==String(item.id)){alert('O Mestre só pode atacar com o token que está no turno atual.');return;}
     await carregarEfeitosCampanha();
     var bonus,formula,raw=item.monsterStats&&item.monsterStats.ataques||item.detalhe||'',equipped=equipamentoToken35(item).find(function(it){return it.equipado&&slotEquipamento35(it)==='arma';});
