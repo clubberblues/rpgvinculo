@@ -1904,8 +1904,26 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   }
   async function iniciarAtaqueMestre(item,attackContext){
     if(!ehGM||!item||!combatDataState||!combatDataState.active){alert('O ataque do Mestre exige iniciativa ativa e um token controlado por ele.');return;}var turn=combatDataState.turn_order[Number(combatDataState.current_turn)||0];if(!turn||!turn.is_monster||String(turn.id)!==String(item.id)){alert('O Mestre só pode atacar com o token que está no turno atual.');return;}
+    await carregarEfeitosCampanha();
     var bonus,formula,raw=item.monsterStats&&item.monsterStats.ataques||item.detalhe||'',equipped=equipamentoToken35(item).find(function(it){return it.equipado&&slotEquipamento35(it)==='arma';});
-    if(item.tipo==='player'){var p=acharPersonagemDoToken(item);if(!p||p.ch.user_id!==eu.id){alert('Essa ficha não pertence ao Mestre.');return;}var level=Math.max(1,Number(p.sh.nivel)||1),weapon=(p.equipamento||[]).find(function(it){return it.equipado&&it.categoria==='arma';});bonus=bab35(p.cl,level)+modifier35((p.sh.atributos||{}).FOR);formula=weapon&&weapon.dano||'1d3';}
+    if(item.tipo==='player'){
+      var p=acharPersonagemDoToken(item);if(!p||p.ch.user_id!==eu.id){alert('Essa ficha não pertence ao Mestre.');return;}
+      var level=Math.max(1,Number(p.sh.nivel)||1),weapon=(p.equipamento||[]).find(function(it){return it.equipado&&it.categoria==='arma';});
+      var strengthScore=Number((p.sh.atributos||{}).FOR||10)+modificadorEfeitoPersonagemMesa35(p,'strength');
+      var strengthModifier=modifier35(strengthScore);
+      bonus=bab35(p.cl,level)+strengthModifier+modificadorEfeitoPersonagemMesa35(p,'attack_roll');
+      formula=weapon&&weapon.dano||'1d3';
+      if(weapon){
+        var rangedWeapon=!!(weapon.detalhes&&weapon.detalhes.weapon_ranged===true);
+        var usesStrengthDamage=!rangedWeapon||!!(weapon.detalhes&&weapon.detalhes.ranged_damage_uses_strength===true);
+        var strengthDamage=usesStrengthDamage?(armaDuasMaos35(weapon)?Math.floor(strengthModifier*1.5):strengthModifier):0;
+        var damageParts=String(formula).match(/^(\d+d(?:2|3|4|6|8|10|12|20|100))(?:([+\-]\d+))?$/i);
+        if(damageParts&&strengthDamage){
+          var flatDamage=Number(damageParts[2]||0)+strengthDamage;
+          formula=damageParts[1]+(flatDamage>0?'+'+flatDamage:flatDamage<0?String(flatDamage):'');
+        }
+      }
+    }
     else{if(typeof raw!=='string')raw=JSON.stringify(raw);var bonusMatch=raw.match(/[+\-]\d+\s+(?:melee|ranged|corpo a corpo|à distância|ataque básico)/i),damageMatch=raw.match(/\((\d+d(?:3|4|6|8|10|12|20|100)(?:[+\-]\d+)?)\)/i);bonus=bonusMatch?Number(bonusMatch[0].match(/[+\-]\d+/)[0]):Number(await window.vttUI.ask({title:'Bônus de ataque',label:'Bônus de ataque de '+item.nome+' conforme a ficha',defaultValue:'0',inputMode:'numeric'}));if(!Number.isFinite(bonus))return;formula=damageMatch?damageMatch[1]:(item.damageDice||'');if(equipped&&equipped.dano)formula=equipped.dano;if(!formula)formula=await window.vttUI.ask({title:'Dano do token',label:'Fórmula de dano de '+item.nome+' (por exemplo, 1d8+3)',defaultValue:'1d6'});if(!formula)return;if(equipped&&equipped.dano){var strength=modifier35((item.monsterStats||{}).forca);if(strength&&!/[+\-]\d+$/.test(formula))formula+=strength>0?'+'+strength:String(strength);}}
     formula=String(formula).replace(/\s+/g,'');if(!/^\d{1,2}d(?:3|4|6|8|10|12|20|100)(?:[+\-]\d{1,3})?$/i.test(formula)){alert('Fórmula de dano inválida.');return;}var resolvedAttackContext=attackContext||((item.monsterStats&&item.monsterStats.invisible===true)?'invisible':'normal');ataqueMestreSelecionado={attacker:item,bonus:bonus,formula:formula,attack_context:resolvedAttackContext};document.getElementById('iniciativa-status').textContent='Turno do Mestre · '+item.nome+': selecione um alvo no tabuleiro.';document.getElementById('area-tabuleiro').classList.add('selecionando-alvo');
   }
@@ -1957,6 +1975,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var own=personagemDoTurnoDoJogador(), ownToken=own&&state&&state.tokens.find(function(t){return t.tipo==='player'&&String(t.id)===String(own.ch.id);});
     if(!target||!ownToken){alert('Não foi possível localizar seu token e o alvo publicado.');return;}
     if(target.tipo==='player'){alert('Escolha um NPC ou monstro como alvo.');return;}
+    await carregarEfeitosCampanha();
     var targetAC=caToken35(target);
     if(targetAC==null){alert('Este alvo está sem CA cadastrada. Peça ao Mestre para atualizar os dados da criatura antes de atacar.');return;}
     if(type==='atk-corpo'){
@@ -1968,7 +1987,12 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var weapon=weapons.find(function(it){var d=it.detalhes||{};return type==='atk-dist'?d.weapon_ranged===true:d.weapon_melee!==false;});
     if(type==='atk-dist'&&!weapon){alert('Equipe uma arma à distância antes de atacar.');return;}
     var finesseWeapon=type==='atk-corpo'&&personagemTemTalento(own.sh,'srd35_feat_weapon_finesse')&&(!weapon||!!(weapon.detalhes&&weapon.detalhes.weapon_finesse_eligible===true));
-    var attackAttribute=type==='atk-dist'||finesseWeapon?'DES':'FOR',ability=modifier35(attrs[attackAttribute]),strengthModifier=modifier35(attrs.FOR);
+    var attackAttribute=type==='atk-dist'||finesseWeapon?'DES':'FOR';
+    var attackAbilityEffectModifier=modificadorEfeitoPersonagemMesa35(own,attackAttribute==='FOR'?'strength':'dexterity');
+    var strengthEffectModifier=modificadorEfeitoPersonagemMesa35(own,'strength');
+    var effectAttackModifier=modificadorEfeitoPersonagemMesa35(own,'attack_roll');
+    var ability=modifier35(Number(attrs[attackAttribute]||10)+attackAbilityEffectModifier);
+    var strengthModifier=modifier35(Number(attrs.FOR||10)+strengthEffectModifier);
     var weaponName=weapon?weapon.nome:'Ataque desarmado',weaponFocusName=weapon&&weapon.detalhes&&weapon.detalhes.weapon_focus_name||weaponName,damage=weapon&&weapon.dano||'1d3',weaponFocus=0,weaponSpecializationDamage=0,powerPenalty=0,powerDamage=0,proficiencyPenalty=personagemProficienteArma35(own,weapon)?0:4;
     if(weapon&&String(damage).includes('/')){
       var damageOptions=String(damage).split('/').map(function(value){return value.trim();}).filter(Boolean);
@@ -2002,7 +2026,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       rangePenalty=(rangeIncrements-1)*2;
     }
     var armorNonproficiencyPenalty=penalidadeArmaduraNaoProficiente35(own);
-    var sizeModifier=modifierTamanho35(own.tamanho),bonus=bab+ability+weaponFocus-powerPenalty+sizeModifier-rangePenalty-proficiencyPenalty+armorNonproficiencyPenalty;
+    var sizeModifier=modifierTamanho35(own.tamanho),bonus=bab+ability+weaponFocus+effectAttackModifier-powerPenalty+sizeModifier-rangePenalty-proficiencyPenalty+armorNonproficiencyPenalty;
     var racialFavoredEnemyBonus=0;
     var targetTraits=String([target.nome,target.detalhe,target.creature_type,target.monsterStats&&target.monsterStats.tipo,target.monsterStats&&target.monsterStats.subtipo,target.monsterStats&&target.monsterStats.subtype,target.monsterStats&&target.monsterStats.subtypes,target.monsterStats&&target.monsterStats.type,target.monsterStats&&target.monsterStats.creature_type,target.monsterStats&&target.monsterStats.race_id].filter(Boolean).join(' ')).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
     var racialRace=String(own.sh&&own.sh.raca_id||'');
@@ -2066,7 +2090,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     }
     function registrarResultadoAtaque(d20,isCritical){
       var total=Number(d20)+bonus,automaticMiss=Number(d20)===1,automaticHit=Number(d20)===20,hit=!automaticMiss&&(automaticHit||total>=targetAC);
-      var breakdown='1d20 '+d20+' + BBA '+bab+' + '+attackAttribute+' '+ability+(sizeModifier?' + tamanho '+(sizeModifier>0?'+':'')+sizeModifier:'')+(weaponFocus?' + Foco em Arma +'+weaponFocus:'')+(racialFavoredEnemyBonus?' + bônus racial de ataque +1':'')+(powerPenalty?' − Ataque Poderoso '+powerPenalty:'')+(rangePenalty?' − distância '+rangePenalty:'')+(proficiencyPenalty?' − arma sem proficiência '+proficiencyPenalty:'')+(armorNonproficiencyPenalty?' − armadura/escudo sem proficiência '+Math.abs(armorNonproficiencyPenalty):'');
+      var breakdown='1d20 '+d20+' + BBA '+bab+' + '+attackAttribute+' '+ability+(attackAbilityEffectModifier?' (atributo ajustado por efeito +'+attackAbilityEffectModifier+')':'')+(effectAttackModifier?' + efeitos de ataque '+(effectAttackModifier>0?'+':'')+effectAttackModifier:'')+(sizeModifier?' + tamanho '+(sizeModifier>0?'+':'')+sizeModifier:'')+(weaponFocus?' + Foco em Arma +'+weaponFocus:'')+(racialFavoredEnemyBonus?' + bônus racial de ataque +1':'')+(powerPenalty?' − Ataque Poderoso '+powerPenalty:'')+(rangePenalty?' − distância '+rangePenalty:'')+(proficiencyPenalty?' − arma sem proficiência '+proficiencyPenalty:'')+(armorNonproficiencyPenalty?' − armadura/escudo sem proficiência '+Math.abs(armorNonproficiencyPenalty):'');
       if(!hit){
         enviarMensagemChat('⚔️ '+title+' com '+weaponName+' contra '+target.nome+': '+breakdown+' = **'+total+'** contra CA '+targetAC+' — ERRO. O dano não será rolado.','rolagem',{evento:'ataque_dnd35',atacante:String(own.ch.id),atacante_nome:String(own.ch.nome||''),alvo:String(target.id),alvo_nome:String(target.nome||''),resultado:total,d20:Number(d20),ca_alvo:targetAC,acerto:false,bab:bab,modificador:ability,bonus_foco:weaponFocus,bonus_tamanho:sizeModifier,bonus_racial:racialFavoredEnemyBonus,penalidade_ataque_poderoso:powerPenalty,penalidade_arma_sem_proficiencia:proficiencyPenalty,penalidade_armadura_sem_proficiencia:armorNonproficiencyPenalty,arma:weaponName,dano:damage});
         return;
@@ -5185,6 +5209,27 @@ async function abrirModalEquipamentos(){
     return ordem.findIndex(function(entry){return String(entry.id)===String(personagem.ch.id)&&!!entry.is_monster===gmOwned;});
   }
   var efeitosCampanhaMesa={conditions:[],effects:[]};
+  function modificadorEfeitoPersonagemMesa35(personagem,stat){
+    var characterId=personagem&&personagem.ch?String(personagem.ch.id):String(personagem||'');
+    if(!characterId||!stat)return 0;
+    var buckets=Object.create(null);
+    efeitosCampanhaMesa.effects.filter(function(effect){
+      return effect.target_kind==='character'&&String(effect.target_id)===characterId;
+    }).forEach(function(effect){
+      var modifiers=effect.effect_data&&Array.isArray(effect.effect_data.modifiers)?effect.effect_data.modifiers:[];
+      modifiers.forEach(function(modifier){
+        if(String(modifier.stat||'').toLowerCase()!==String(stat).toLowerCase())return;
+        var value=Number(modifier.value);if(!Number.isFinite(value))return;
+        var type=String(modifier.bonus_type||'untyped').toLowerCase();
+        var bucket=buckets[type]||(buckets[type]={sum:0,max:null});
+        bucket.sum+=value;bucket.max=bucket.max===null?value:Math.max(bucket.max,value);
+      });
+    });
+    return Object.keys(buckets).reduce(function(total,type){
+      var bucket=buckets[type];
+      return total+(['untyped','dodge','circumstance'].indexOf(type)>=0?bucket.sum:bucket.max);
+    },0);
+  }
   var nomesCondicoesMesa={
     paralyzed:'Paralisado',blinded:'Cego',deafened:'Surdo',stunned:'Atordoado',dazed:'Pasmo',
     frightened:'Assustado',panicked:'Em pânico',shaken:'Abalado',sickened:'Enjoado',
