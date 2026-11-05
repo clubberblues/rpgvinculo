@@ -2277,11 +2277,20 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var p=characterId?personagens.find(function(x){return String(x.ch.id)===String(characterId)&&(ehGM||x.ch.user_id===eu.id);}):(personagemDoTurnoDoJogador()||personagens.find(function(x){return x.ch.user_id===eu.id;}));if(!p){alert('Nenhuma ficha acessível está disponível nesta mesa.');return;}inventarioPersonagemAtivo=p;
     var gmControlandoFichaAlheia=!!(ehGM&&p.ch.user_id!==eu.id);
     var modal=document.getElementById('modal-inventario-srd'),list=document.getElementById('inventario-srd-lista'),status=document.getElementById('inventario-srd-status');document.getElementById('titulo-inventario-srd').textContent='Mochila · '+p.ch.nome;status.textContent='Carregando mochila de '+p.ch.nome+'…';list.replaceChildren();modal.classList.add('ativo');
-    var r=await sb.from('srd_character_equipment').select('equipment_id,quantidade,equipado,equipment:srd_equipment(*)').eq('character_id',String(p.ch.id));
+    var r=await sb.from('srd_character_equipment').select('equipment_id,quantidade,equipado,hand_slot,equipment:srd_equipment(*)').eq('character_id',String(p.ch.id));
     if(r.error){status.textContent='Inventário SRD indisponível. Aplique vtt_dnd35_final_migration.sql. Detalhe: '+r.error.message;return;}
     var rows=r.data||[]; if(!rows.length){status.textContent='A mochila está vazia. Peça ao Mestre para entregar equipamento pela mesa.';return;}
     status.textContent=gmControlandoFichaAlheia?'O Mestre pode equipar e desequipar itens. Consumíveis continuam sendo usados pelo próprio jogador no turno dele.':'Atributos calculados com o equipamento atualmente equipado.';
-    list.innerHTML=rows.map(function(row){var it=row.equipment||{},usable=it.categoria==='consumivel'&&!gmControlandoFichaAlheia,equipable=!!slotEquipamento35(it);return '<article style="padding:10px;margin:8px 0;border:1px solid #75613d;border-radius:6px"><strong>'+esc(it.nome||row.equipment_id)+'</strong><div style="color:#9eabc0;font-size:13px">'+esc(nomeCategoriaEquipamento35(it.categoria||'item'))+' · x'+row.quantidade+(it.dano?' · dano '+esc(it.dano):'')+(bonusCAEquipamento35(it)?' · CA +'+bonusCAEquipamento35(it):'')+(row.equipado?' · Equipado':'')+(it.categoria==='consumivel'&&gmControlandoFichaAlheia?' · uso pelo jogador':'')+'</div>'+(usable||equipable?'<button type="button" class="btn-acao" data-equip-id="'+esc(row.equipment_id)+'" data-equip-action="'+(usable?'consume':'equip')+'" data-equipped="'+(!row.equipado)+'" style="margin-top:8px">'+(usable?'Usar':(row.equipado?'Desequipar':'Equipar'))+'</button>':'')+'</article>';}).join('');
+    list.innerHTML=rows.map(function(row){
+      var it=row.equipment||{},usable=it.categoria==='consumivel'&&!gmControlandoFichaAlheia,slot=slotEquipamento35(it),equipable=!!slot,isWeapon=slot==='arma',twoHanded=!!(it.detalhes&&it.detalhes.weapon_two_handed===true),controls='';
+      if(usable)controls='<button type="button" class="btn-acao" data-equip-id="'+esc(row.equipment_id)+'" data-equip-action="consume" style="margin-top:8px">Usar</button>';
+      else if(isWeapon){
+        if(row.equipado){var hand=row.hand_slot==='off_hand'?'off_hand':'main_hand';controls='<button type="button" class="btn-acao" data-equip-id="'+esc(row.equipment_id)+'" data-equip-action="hand" data-hand-slot="'+hand+'" data-equipped="false" style="margin:8px 6px 0 0">Desequipar '+(hand==='off_hand'?'mão secundária':'mão principal')+'</button>';}
+        else{controls='<button type="button" class="btn-acao" data-equip-id="'+esc(row.equipment_id)+'" data-equip-action="hand" data-hand-slot="main_hand" data-equipped="true" style="margin:8px 6px 0 0">Equipar na mão principal</button>'+(twoHanded?'':'<button type="button" class="btn-acao" data-equip-id="'+esc(row.equipment_id)+'" data-equip-action="hand" data-hand-slot="off_hand" data-equipped="true" style="margin:8px 6px 0 0">Equipar na mão secundária</button>');}
+      }else if(equipable)controls='<button type="button" class="btn-acao" data-equip-id="'+esc(row.equipment_id)+'" data-equip-action="equip" data-equipped="'+(!row.equipado)+'" style="margin-top:8px">'+(row.equipado?'Desequipar':'Equipar')+'</button>';
+      var handLabel=row.equipado&&isWeapon?(row.hand_slot==='off_hand'?' · Mão secundária':' · Mão principal'):'';
+      return '<article style="padding:10px;margin:8px 0;border:1px solid #75613d;border-radius:6px"><strong>'+esc(it.nome||row.equipment_id)+'</strong><div style="color:#9eabc0;font-size:13px">'+esc(nomeCategoriaEquipamento35(it.categoria||'item'))+' · x'+row.quantidade+(it.dano?' · dano '+esc(it.dano):'')+(bonusCAEquipamento35(it)?' · CA +'+bonusCAEquipamento35(it):'')+(row.equipado?' · Equipado'+handLabel:'')+(it.categoria==='consumivel'&&gmControlandoFichaAlheia?' · uso pelo jogador':'')+'</div>'+controls+'</article>';
+    }).join('');
     list.querySelectorAll('[data-equip-id]').forEach(function(button){button.addEventListener('click',async function(){button.disabled=true;if(button.dataset.equipAction==='consume'){
         var potionDice={pocao_cura_lig:1,pocao_cura_mod:2,pocao_cura_grav:3},diceCount=potionDice[button.dataset.equipId];
         if(!diceCount){button.disabled=false;alert('Esta poção não possui uma rolagem manual configurada.');return;}
@@ -2294,7 +2303,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
           await carregarPersonagens();abrirInventarioSRD(p.ch.id);
         },true,true,diceCount+'d8');
         return;
-      }var q=await sb.rpc('equipar_item_srd',{p_character_id:String(p.ch.id),p_equipment_id:button.dataset.equipId,p_equipado:button.dataset.equipped==='true'});if(q.error){alert('Não foi possível atualizar o equipamento: '+q.error.message);button.disabled=false;return;}await carregarPersonagens();abrirInventarioSRD(p.ch.id);});});
+      }var q=button.dataset.equipAction==='hand'?await sb.rpc('equipar_item_srd_maos',{p_character_id:String(p.ch.id),p_equipment_id:button.dataset.equipId,p_hand_slot:button.dataset.handSlot,p_equipado:button.dataset.equipped==='true'}):await sb.rpc('equipar_item_srd',{p_character_id:String(p.ch.id),p_equipment_id:button.dataset.equipId,p_equipado:button.dataset.equipped==='true'});if(q.error){alert('Não foi possível atualizar o equipamento: '+q.error.message);button.disabled=false;return;}await carregarPersonagens();abrirInventarioSRD(p.ch.id);});});
   }
   async function abrirInventarioTokenSRD(token){
     if(!ehGM||!token||token.tipo==='player')return;var modal=document.getElementById('modal-inventario-srd'),list=document.getElementById('inventario-srd-lista'),status=document.getElementById('inventario-srd-status');
@@ -5273,9 +5282,9 @@ async function abrirModalEquipamentos(){
       else console.warn('Não foi possível carregar srd_classes:',rc.error.message);
     }
 
-    var invResult=await sb.from('srd_character_equipment').select('character_id,equipment_id,quantidade,equipado,equipment:srd_equipment(*)').in('character_id',ids);
+    var invResult=await sb.from('srd_character_equipment').select('character_id,equipment_id,quantidade,equipado,hand_slot,equipment:srd_equipment(*)').in('character_id',ids);
     var equipmentByChar=Object.create(null);
-    if(!invResult.error) (invResult.data||[]).forEach(function(row){var it=Object.assign({},row.equipment||{},{equipment_id:row.equipment_id,quantidade:row.quantidade,equipado:!!row.equipado});it.categoria_original=it.categoria;var slot=slotEquipamento35(it);if(slot)it.categoria=slot;it.bonus_ca=bonusCAEquipamento35(it);if(it.bonus_max_des==null)it.bonus_max_des=maxDexEquipamento35(it);(equipmentByChar[String(row.character_id)]||(equipmentByChar[String(row.character_id)]=[])).push(it);});
+    if(!invResult.error) (invResult.data||[]).forEach(function(row){var it=Object.assign({},row.equipment||{},{equipment_id:row.equipment_id,quantidade:row.quantidade,equipado:!!row.equipado,hand_slot:row.hand_slot||null});it.categoria_original=it.categoria;var slot=slotEquipamento35(it);if(slot)it.categoria=slot;it.bonus_ca=bonusCAEquipamento35(it);if(it.bonus_max_des==null)it.bonus_max_des=maxDexEquipamento35(it);(equipmentByChar[String(row.character_id)]||(equipmentByChar[String(row.character_id)]=[])).push(it);});
     else console.warn('Inventário SRD indisponível:',invResult.error.message);
     personagens = chs.map(function(c){
       var s = shs[String(c.id)] || {};
