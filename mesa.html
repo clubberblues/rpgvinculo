@@ -2716,6 +2716,19 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
             mechanicStatus.className='feature-detail';
             mechanicStatus.textContent=engineStatus==='implemented'?'Motor: implementado':engineStatus==='ready'?'Motor: pronto para integração':'Motor: '+(engineStatus==='needs_review'?'revisão necessária':'mecânica ainda não estruturada');
             card.appendChild(mechanicStatus);
+            var structuredEffects=mechanics.resolution&&Array.isArray(mechanics.resolution.effects)?mechanics.resolution.effects:[];
+            if(structuredEffects.length){
+              var effectSummary=document.createElement('p');effectSummary.className='feature-detail';
+              effectSummary.textContent='Efeitos estruturados: '+structuredEffects.map(function(effect){
+                if(effect.kind==='modifier'){
+                  var statLabels={initiative:'iniciativa',strength:'Força',constitution:'Constituição',will:'Vontade',armor_class:'Classe de Armadura'};
+                  var amount=Number(effect.value||0),formatted=(amount>0?'+':'')+amount;
+                  return formatted+' '+String(statLabels[effect.stat]||effect.stat||'atributo')+(effect.bonus_type?' ('+effect.bonus_type+')':'');
+                }
+                return String(effect.kind||'efeito');
+              }).join(' · ');
+              card.appendChild(effectSummary);
+            }
             if(engineStatus!=='implemented'&&engineStatus!=='ready'){
               var blocked=document.createElement('p');blocked.className='feature-detail';
               blocked.textContent='Ativação automática indisponível até que custos, requisitos, alvo, duração e efeitos sejam estruturados e validados. O texto descritivo não será executado como regra.';
