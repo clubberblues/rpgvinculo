@@ -2287,7 +2287,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var rows=r.data||[]; if(!rows.length){status.textContent='A mochila está vazia. Peça ao Mestre para entregar equipamento pela mesa.';return;}
     status.textContent=gmControlandoFichaAlheia?'O Mestre pode equipar e desequipar itens. Consumíveis continuam sendo usados pelo próprio jogador no turno dele.':'Atributos calculados com o equipamento atualmente equipado.';
     list.innerHTML=rows.map(function(row){
-      var it=row.equipment||{},usable=it.categoria==='consumivel'&&!gmControlandoFichaAlheia,slot=slotEquipamento35(it),equipable=!!slot,isWeapon=slot==='arma',twoHanded=!!(it.detalhes&&it.detalhes.weapon_two_handed===true),controls='';
+      var it=row.equipment||{},usable=it.categoria==='consumivel'&&!gmControlandoFichaAlheia,slot=slotEquipamento35(it),equipable=!!slot,isWeapon=slot==='arma',twoHanded=!!(it.detalhes&&String(it.detalhes.weapon_two_handed)==='true'),controls='';
       if(usable)controls='<button type="button" class="btn-acao" data-equip-id="'+esc(row.equipment_id)+'" data-equip-action="consume" style="margin-top:8px">Usar</button>';
       else if(isWeapon){
         if(row.equipado){var hand=row.hand_slot==='off_hand'?'off_hand':'main_hand';controls='<button type="button" class="btn-acao" data-equip-id="'+esc(row.equipment_id)+'" data-equip-action="hand" data-hand-slot="'+hand+'" data-equipped="false" style="margin:8px 6px 0 0">Desequipar '+(hand==='off_hand'?'mão secundária':'mão principal')+'</button>';}
