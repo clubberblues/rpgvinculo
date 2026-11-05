@@ -9,12 +9,12 @@
     function details(weapon){return weapon&&weapon.detalhes&&typeof weapon.detalhes==='object'?weapon.detalhes:{};}
     var pd=details(primary),od=details(offhand);
     if(pd.weapon_melee===false||od.weapon_melee===false)throw new Error('Combater com Duas Armas exige duas armas corpo a corpo.');
-    if(pd.weapon_two_handed===true||od.weapon_two_handed===true)throw new Error('Armas de duas mãos não podem compor esta sequência.');
+    if(pd.weapon_two_handed===true||String(pd.weapon_two_handed).toLowerCase()==='true'||od.weapon_two_handed===true||String(od.weapon_two_handed).toLowerCase()==='true')throw new Error('Armas de duas mãos não podem compor esta sequência.');
     var basic=input.hasTwoWeaponFighting===true,improved=input.hasImprovedTwoWeaponFighting===true,greater=input.hasGreaterTwoWeaponFighting===true;
     if(basic&&(!Number.isFinite(dex)||dex<15))throw new Error('Combater com Duas Armas exige DES 15.');
     if(improved&&(!basic||bab<6||!Number.isFinite(dex)||dex<17))throw new Error('Combater com Duas Armas Aprimorado exige o talento básico, BBA +6 e DES 17.');
     if(greater&&(!improved||bab<11||!Number.isFinite(dex)||dex<19))throw new Error('Combater com Duas Armas Maior exige o talento aprimorado, BBA +11 e DES 19.');
-    var offhandLight=od.weapon_light===true;
+    var offhandLight=od.weapon_light===true||String(od.weapon_light).toLowerCase()==='true';
     var primaryPenalty=basic?(offhandLight?-2:-4):(offhandLight?-4:-6);
     var offhandPenalty=basic?(offhandLight?-2:-4):(offhandLight?-8:-10);
     var attacks=[];
