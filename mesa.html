@@ -1997,7 +1997,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var strengthModifier=modifier35(Number(attrs.FOR||10));
     var effectAttackModifier=modificadorEfeitoPersonagemMesa35(own,'attack')+
       modificadorEfeitoPersonagemMesa35(own,type==='atk-corpo'?'attack_melee':'attack_ranged');
-    var weaponName=weapon?weapon.nome:'Ataque desarmado',weaponFocusName=weapon&&weapon.detalhes&&weapon.detalhes.weapon_focus_name||weaponName,damage=weapon&&weapon.dano||'1d3',weaponFocus=0,weaponSpecializationDamage=0,rangedAttackFeatBonus=0,rangedDamageFeatBonus=0,powerPenalty=0,powerDamage=0,proficiencyPenalty=personagemProficienteArma35(own,weapon)?0:4;
+    var weaponName=weapon?weapon.nome:'Ataque desarmado',weaponFocusName=weapon&&weapon.detalhes&&weapon.detalhes.weapon_focus_name||weaponName,damage=weapon&&weapon.dano||'1d3',weaponFocus=0,weaponSpecializationDamage=0,rangedAttackFeatBonus=0,rangedDamageFeatBonus=0,rapidShotExtraAttacks=0,rapidShotAttackPenalty=0,powerPenalty=0,powerDamage=0,proficiencyPenalty=personagemProficienteArma35(own,weapon)?0:4;
     if(weapon&&String(damage).includes('/')){
       var damageOptions=String(damage).split('/').map(function(value){return value.trim();}).filter(Boolean);
       if(damageOptions.length===2){
@@ -2031,7 +2031,15 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         var featParameter=typeof choice==='object'&&choice?String(choice.parametro||choice.parameter||''):'';
         var effects=mechanics.resolution&&Array.isArray(mechanics.resolution.effects)?mechanics.resolution.effects:[];
         effects.forEach(function(effect){
-          if(!effect||effect.kind!=='modifier')return;
+          if(!effect)return;
+          if(effect.kind==='extra_attack'){
+            if(fullAttack&&type==='atk-dist'&&effect.trigger==='full_attack'&&effect.weapon_type==='ranged'&&effect.attack_bonus==='highest_base_attack_bonus'){
+              var extraCount=Math.max(0,Math.min(4,Math.trunc(Number(effect.quantity)||0))),extraPenalty=Number(effect.attack_penalty);
+              if(Number.isInteger(extraPenalty)&&extraPenalty<=0){rapidShotExtraAttacks+=extraCount;rapidShotAttackPenalty=Math.min(0,extraPenalty);}
+            }
+            return;
+          }
+          if(effect.kind!=='modifier')return;
           var stat='',value=Number(effect.value);
           if(effect.parameter_source==='feat_parameter'&&effect.stat_template){
             if(normalizeName(featParameter)!==normalizeName(weaponFocusName))return;
@@ -2089,7 +2097,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       if(['undead','construct','ooze','plant','elemental','incorporeal'].indexOf(targetType)>=0)sneakAttackDice=0;
     }
     var title=type==='atk-corpo'?'Ataque Corpo a Corpo':'Ataque à Distância', critical=critico35(weapon&&weapon.critico);
-    var attackSequence=[];if(fullAttack){attackSequence.push(bab);for(var iterativeBab=bab-5;iterativeBab>=1;iterativeBab-=5)attackSequence.push(iterativeBab);if(!attackSequence.length)attackSequence.push(bab);}var attackSequenceIndex=0,baseAttackBonusInitial=0,bonusInitial=0;
+    var attackSequence=[];if(fullAttack){attackSequence.push(bab);for(var iterativeBab=bab-5;iterativeBab>=1;iterativeBab-=5)attackSequence.push(iterativeBab);for(var rapidIndex=0;rapidIndex<rapidShotExtraAttacks;rapidIndex++)attackSequence.push(bab);if(!attackSequence.length)attackSequence.push(bab);if(rapidShotAttackPenalty<0){baseAttackBonus+=rapidShotAttackPenalty;bonus+=rapidShotAttackPenalty;}}var attackSequenceIndex=0,baseAttackBonusInitial=0,bonusInitial=0;
     function abrirRolagemDano(isCritical){
       var rawDamage=String(damage||'1d3').split('/')[0].trim(), parsed=rawDamage.match(/^(\d+)d(2|3|4|6|8|10|12|20|100)(?:([+-]\d+))?$/i);
       if(!parsed){alert('O ataque acertou, mas a expressão de dano da arma não pôde ser interpretada: '+rawDamage+'. O Mestre pode aplicar o dano manualmente.');return;}
@@ -2131,7 +2139,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     async function registrarResultadoAtaque(d20,isCritical){
       var total=Number(d20)+bonus,automaticMiss=Number(d20)===1,automaticHit=Number(d20)===20,hit=!automaticMiss&&(automaticHit||total>=targetAC);
       var currentIterativeBab=fullAttack?attackSequence[attackSequenceIndex]:bab;
-      var breakdown='1d20 '+d20+' + BBA '+currentIterativeBab+' + '+attackAttribute+' '+ability+(abilityEffectDelta?' (modificador de atributo por efeito '+(abilityEffectDelta>0?'+':'')+abilityEffectDelta+')':'')+(effectAttackModifier?' + efeitos de ataque '+(effectAttackModifier>0?'+':'')+effectAttackModifier:'')+(sizeModifier?' + tamanho '+(sizeModifier>0?'+':'')+sizeModifier:'')+(weaponFocus?' + Foco em Arma +'+weaponFocus:'')+(rangedAttackFeatBonus?' + bônus condicional de talento à distância +'+rangedAttackFeatBonus:'')+(racialFavoredEnemyBonus?' + bônus racial de ataque +1':'')+(powerPenalty?' − Ataque Poderoso '+powerPenalty:'')+(rangePenalty?' − distância '+rangePenalty:'')+(proficiencyPenalty?' − arma sem proficiência '+proficiencyPenalty:'')+(armorNonproficiencyPenalty?' − armadura/escudo sem proficiência '+Math.abs(armorNonproficiencyPenalty):'');
+      var breakdown='1d20 '+d20+' + BBA '+currentIterativeBab+' + '+attackAttribute+' '+ability+(abilityEffectDelta?' (modificador de atributo por efeito '+(abilityEffectDelta>0?'+':'')+abilityEffectDelta+')':'')+(effectAttackModifier?' + efeitos de ataque '+(effectAttackModifier>0?'+':'')+effectAttackModifier:'')+(sizeModifier?' + tamanho '+(sizeModifier>0?'+':'')+sizeModifier:'')+(weaponFocus?' + Foco em Arma +'+weaponFocus:'')+(rangedAttackFeatBonus?' + bônus condicional de talento à distância +'+rangedAttackFeatBonus:'')+(rapidShotAttackPenalty?' − Tiro Rápido '+Math.abs(rapidShotAttackPenalty):'')+(racialFavoredEnemyBonus?' + bônus racial de ataque +1':'')+(powerPenalty?' − Ataque Poderoso '+powerPenalty:'')+(rangePenalty?' − distância '+rangePenalty:'')+(proficiencyPenalty?' − arma sem proficiência '+proficiencyPenalty:'')+(armorNonproficiencyPenalty?' − armadura/escudo sem proficiência '+Math.abs(armorNonproficiencyPenalty):'');
       if(!hit){
         await enviarMensagemChat('⚔️ '+title+(fullAttack?' · ataque '+(attackSequenceIndex+1)+'/'+attackSequence.length:'')+' com '+weaponName+' contra '+target.nome+': '+breakdown+' = **'+total+'** contra CA '+targetAC+' — ERRO. O dano não será rolado.','rolagem',{evento:'ataque_dnd35',atacante:String(own.ch.id),atacante_nome:String(own.ch.nome||''),alvo:String(target.id),alvo_nome:String(target.nome||''),resultado:total,d20:Number(d20),ca_alvo:targetAC,acerto:false,bab:currentIterativeBab,modificador:ability,bonus_foco:weaponFocus,bonus_tamanho:sizeModifier,bonus_racial:racialFavoredEnemyBonus,penalidade_ataque_poderoso:powerPenalty,penalidade_arma_sem_proficiencia:proficiencyPenalty,penalidade_armadura_sem_proficiencia:armorNonproficiencyPenalty,arma:weaponName,dano:damage});
         proximoAtaqueCompleto();return;
