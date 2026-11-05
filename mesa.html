@@ -3981,7 +3981,8 @@ async function abrirModalEquipamentos(){
     try{
       var current=combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
       if(String(campanha.state||'').toUpperCase()==='COMBATE'&&movedToken){
-        if(!combatDataState||!combatDataState.active||!current||!current.is_monster||String(current.id)!==String(movedToken.id))throw new Error('O Mestre só pode mover o token que está no turno ativo.');
+        var gmMoveTurnMatches=!!(current&&String(current.id)===String(movedToken.id)&&(movedToken.tipo==='player'?!current.is_monster:!!current.is_monster));
+        if(!combatDataState||!combatDataState.active||!gmMoveTurnMatches)throw new Error('O Mestre só pode mover o token correspondente ao turno ativo da iniciativa.');
         var moved=await sb.rpc('mover_token_gm_cba_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(movedToken.id),p_grid_x:Number(movedToken.gridX),p_grid_y:Number(movedToken.gridY)});if(moved.error)throw new Error(moved.error.message||'A movimentação do token não foi permitida.');campanha.cba_data=moved.data.cba_data;cbaPublishedState=normalizarCBAData(moved.data.cba_data);combatDataState=moved.data.combat_data||combatDataState;aplicarCBAnaMesa(moved.data.cba_data,false);renderizarIniciativa(combatDataState);document.getElementById('iniciativa-status').textContent='Movimento de '+movedToken.nome+' aplicado · '+Number(moved.data.movement_remaining_m||0).toLocaleString('pt-BR')+' m restantes.';return;
       }
       var data=serializarEstadoCBA(cbaPublishedState),salvo=await gravarCBAnaCampanha(data);if(salvo)aplicarCBAnaMesa(salvo,false);
