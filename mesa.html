@@ -1475,8 +1475,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     }else{var p=personagemAtivoDaInterface(),magic=possuiMagiasUI(p),combat=estado==='COMBATE';var groups=combat?[
       {title:'Ataque',actions:[{id:'atk-corpo',ic:'⚔️',txt:'Ataque corpo a corpo'},{id:'atk-dist',ic:'🏹',txt:'Ataque à distância'}].concat(magic?[{id:'atk-mag',ic:'✨',txt:'Conjurar magia'}]:[])},
       {title:'Tática e defesa',actions:[{id:'manobras-ui',ic:'🛡️',txt:'Manobras de combate'},{id:'defesa-ui',ic:'🧱',txt:'Ações defensivas'},{id:'movimento-ui',ic:'👣',txt:'Movimentação'}]},
-      {title:'Personagem',actions:[{id:'ficha',ic:'📜',txt:'Minha ficha'},{id:'equipamentos',ic:'🎒',txt:'Equipamentos'},{id:'pericia',ic:'📚',txt:'Perícias'},{id:'racial-ui',ic:'⛰️',txt:'Características raciais'},{id:'talentos-ui',ic:'🏅',txt:'Talentos'},{id:'habilidades',ic:'⚔️',txt:'Características da classe'},{id:'dados',ic:'🎲',txt:'Dados livres'},{id:'avancar-turno',ic:'⏭️',txt:'Encerrar turno'}]}
-    ]:[{title:'Aventureiro',actions:[{id:'ficha',ic:'📜',txt:'Minha ficha'},{id:'equipamentos',ic:'🎒',txt:'Equipamentos e mochila'},{id:'pericia',ic:'📚',txt:'Perícias'},{id:'racial-ui',ic:'⛰️',txt:'Características raciais'},{id:'talentos-ui',ic:'🏅',txt:'Talentos'},{id:'habilidades',ic:'⚔️',txt:'Características da classe'},{id:'dados',ic:'🎲',txt:'Dados livres'}].concat(magic?[{id:'atk-mag',ic:'✨',txt:'Magias disponíveis'}]:[])}];montarPainelAcaoUI(el,groups,(p&&p.ch.nome||'Aventureiro')+' · '+classeUI(p),p);}
+      {title:'Personagem',actions:[{id:'ficha',ic:'📜',txt:'Minha ficha'},{id:'inventario',ic:'🎒',txt:'Equipamentos'},{id:'pericia',ic:'📚',txt:'Perícias'},{id:'racial-ui',ic:'⛰️',txt:'Características raciais'},{id:'talentos-ui',ic:'🏅',txt:'Talentos'},{id:'habilidades',ic:'⚔️',txt:'Características da classe'},{id:'dados',ic:'🎲',txt:'Dados livres'},{id:'avancar-turno',ic:'⏭️',txt:'Encerrar turno'}]}
+    ]:[{title:'Aventureiro',actions:[{id:'ficha',ic:'📜',txt:'Minha ficha'},{id:'inventario',ic:'🎒',txt:'Equipamentos e mochila'},{id:'pericia',ic:'📚',txt:'Perícias'},{id:'racial-ui',ic:'⛰️',txt:'Características raciais'},{id:'talentos-ui',ic:'🏅',txt:'Talentos'},{id:'habilidades',ic:'⚔️',txt:'Características da classe'},{id:'dados',ic:'🎲',txt:'Dados livres'}].concat(magic?[{id:'atk-mag',ic:'✨',txt:'Magias disponíveis'}]:[])}];montarPainelAcaoUI(el,groups,(p&&p.ch.nome||'Aventureiro')+' · '+classeUI(p),p);}
     var economy=document.getElementById('painel-economia');if(economy&&economy.parentNode)economy.parentNode.removeChild(economy);var combatPanel=document.createElement('section');combatPanel.id='painel-combate-acoes';combatPanel.hidden=true;combatPanel.innerHTML='<h3>CONTROLE DO TURNO</h3><p id="turno-controle-status">Aguardando a iniciativa.</p><div id="iniciativa-acoes-mestre"></div>';el.appendChild(combatPanel);if(economy)combatPanel.appendChild(economy);if(tokenMenu)el.appendChild(tokenMenu);var roster=document.createElement('section');roster.className='painel painel-aventureiros';roster.setAttribute('aria-label','Aventureiros da mesa');roster.innerHTML='<div class="painel-cab">AVENTUREIROS</div><div class="painel-corpo" id="cards-strip" aria-label="Cards de personagens, NPCs e monstros"></div>';var footer=document.querySelector('.mesa-footer');if(footer)footer.appendChild(roster);else el.appendChild(roster);if(diceOverlay){if(diceOverlay.parentElement!==document.body)document.body.appendChild(diceOverlay);diceOverlay.classList.add('dado-modal-global');}if(document.getElementById('painel-iniciativa'))renderizarIniciativa(combatDataState);
   }
   async function alternarEstadoMesa(){
@@ -2386,6 +2386,41 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     });
   }
   document.querySelectorAll('[data-features-close]').forEach(function(b){b.addEventListener('click',function(){var m=document.getElementById('modal-habilidades-classe');m.classList.remove('ativo');m.hidden=true;});});
+  function abrirTalentosJogadorUI(){
+    var p=personagemAtivoDaInterface();if(!p){alert('Não foi possível localizar sua ficha.');return;}
+    var feats=listaTalentosUI(p.sh&&p.sh.talentos),old=document.getElementById('modal-talentos-jogador');if(old)old.remove();
+    var overlay=document.createElement('div');overlay.id='modal-talentos-jogador';overlay.className='skill-roll-overlay';overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');
+    var panel=document.createElement('section');panel.className='skill-roll-panel';var head=document.createElement('header');head.className='skill-roll-head';var title=document.createElement('h2');title.textContent='Talentos · '+p.ch.nome;var close=document.createElement('button');close.type='button';close.className='skill-roll-close';close.textContent='✕';close.onclick=function(){overlay.remove();};head.append(title,close);panel.appendChild(head);
+    var intro=document.createElement('p');intro.className='skill-roll-hint';intro.textContent='Talentos registrados na ficha. A disponibilidade depende dos requisitos, do equipamento e da situação atual.';panel.appendChild(intro);
+    if(!feats.length){var empty=document.createElement('p');empty.className='feature-empty';empty.textContent='Nenhum talento registrado na ficha.';panel.appendChild(empty);}
+    feats.forEach(function(feat){var card=document.createElement('article');card.className='feature-action-card';var name=document.createElement('h3');name.textContent=String(feat.nome||feat.name||feat.id||'Talento');var desc=document.createElement('p');desc.textContent=String(feat.descricao||feat.summary||feat.parametro||'Talento registrado. Consulte a descrição e os requisitos na ficha.');card.append(name,desc);panel.appendChild(card);});
+    overlay.appendChild(panel);overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});document.body.appendChild(overlay);
+  }
+  function registrarIntencaoTaticaUI(kind,label,detail){
+    var p=personagemDoTurnoDoJogador();if(!p){alert('Esta ação só pode ser solicitada durante seu turno ativo.');return;}
+    enviarMensagemChat('🛡️ '+p.ch.nome+' solicita '+label+'.','sistema',{evento:'acao_tatica_solicitada',acao:kind,character_id:String(p.ch.id),character_name:String(p.ch.nome||''),detalhe:String(detail||'')});
+    alert(label+' registrado para adjudicação do Mestre. Nenhum bônus ou efeito será aplicado automaticamente antes da validação.');
+  }
+  function abrirOpcoesTaticasUI(kind){
+    var isDefense=kind==='defesa',entries=isDefense?[
+      ['defesa_total','Defesa total','Ação padrão. +4 de bônus de esquiva na CA até o início do próximo turno; não pode atacar.'],
+      ['lutar_defensivamente','Lutar defensivamente','−4 nos ataques corpo a corpo para receber +2 de esquiva na CA durante a rodada, conforme os requisitos da ação.'],
+      ['retirada','Retirada','Movimento para sair da área ameaçada sem provocar ataque de oportunidade pela saída inicial, conforme a regra.'],
+      ['preparar_acao','Preparar ação','Define um gatilho e uma ação para executar como resposta, sujeito à adjudicação do Mestre.']
+    ]:[
+      ['derrubar','Derrubar','Teste resistido de Força ou Destreza; pode provocar ataque de oportunidade sem o talento apropriado.'],
+      ['desarmar','Desarmar','Ataque resistido para remover a arma do adversário; tamanho e arma podem alterar o teste.'],
+      ['agarrar','Agarrar','Inicia a sequência de agarrar, com ataque de toque e testes resistidos.'],
+      ['separar','Separar','Ataque contra objeto empunhado ou carregado, sujeito às regras de dureza, PV e tamanho.'],
+      ['fintar','Fintar','Blefar contra Sentir Motivação para negar a Destreza do alvo no próximo ataque, quando aplicável.']
+    ];
+    var old=document.getElementById('modal-taticas-jogador');if(old)old.remove();
+    var overlay=document.createElement('div');overlay.id='modal-taticas-jogador';overlay.className='skill-roll-overlay';overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');
+    var panel=document.createElement('section');panel.className='skill-roll-panel';var head=document.createElement('header');head.className='skill-roll-head';var h=document.createElement('h2');h.textContent=isDefense?'Ações defensivas':'Manobras de combate';var close=document.createElement('button');close.type='button';close.className='skill-roll-close';close.textContent='✕';close.onclick=function(){overlay.remove();};head.append(h,close);panel.appendChild(head);
+    var note=document.createElement('p');note.className='skill-roll-hint';note.textContent='A solicitação é registrada para o Mestre confirmar requisitos, alvo, ataques de oportunidade e resolução. A mesa não aplica efeitos ainda não implementados.';panel.appendChild(note);
+    entries.forEach(function(entry){var card=document.createElement('article');card.className='feature-action-card';var name=document.createElement('h3');name.textContent=entry[1];var desc=document.createElement('p');desc.textContent=entry[2];var button=document.createElement('button');button.type='button';button.className='feature-use-btn';button.textContent='Solicitar ao Mestre';button.onclick=function(){registrarIntencaoTaticaUI(entry[0],entry[1],entry[2]);overlay.remove();};card.append(name,desc,button);panel.appendChild(card);});
+    overlay.appendChild(panel);overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});document.body.appendChild(overlay);
+  }
   function acao(id){
     if(id === 'alternar-combate'){
       alternarEstadoMesa();
@@ -2431,6 +2466,11 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       abrirModalXP();
       return;
     }
+    if(id === 'racial-ui'){var rp=personagemAtivoDaInterface();if(rp)abrirDetalhesRaciaisMesa35(rp);return;}
+    if(id === 'talentos-ui'){abrirTalentosJogadorUI();return;}
+    if(id === 'manobras-ui'){abrirOpcoesTaticasUI('manobras');return;}
+    if(id === 'defesa-ui'){abrirOpcoesTaticasUI('defesa');return;}
+    if(id === 'movimento-ui'){var mp=personagemAtivoDaInterface();var speed=mp&&mp.deslocamento_m;alert('Deslocamento: '+(speed==null?'consulte sua ficha':speed+' m por ação de movimento')+'. No combate, arraste seu token no Grid; a mesa valida distância e movimento restante.');return;}
     if(id === 'ficha'){ abrirMinhaFicha(); return; }
     if(id === 'config-campanha'){ if(ehGM&&String(campanha&&campanha.owner_id)===String(eu&&eu.id)) abrirModalExcluirCampanha(); return; }
     if(id === 'token-image-manager'){ if(ehGM) abrirSeletorImagemToken(); return; }
