@@ -2059,7 +2059,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         });
       });
     }
-    if(type==='atk-corpo'&&weapon&&!(weapon.detalhes&&weapon.detalhes.weapon_light===true)&&personagemTemTalento(own.sh,'ataque_poderoso')){var rawPenalty=await window.vttUI.ask({title:'Ataque Poderoso',label:'Penalidade de ataque (0 a '+Math.max(0,bab)+')',defaultValue:'0',inputMode:'numeric'});if(rawPenalty===null)return;powerPenalty=Number(rawPenalty);if(!Number.isInteger(powerPenalty)||powerPenalty<0||powerPenalty>bab){alert('A penalidade deve ser um inteiro entre 0 e '+Math.max(0,bab)+'.');return;}powerDamage=powerPenalty*(armaDuasMaos35(weapon)?2:1);}
+    if(type==='atk-corpo'&&(!weapon||!(weapon.detalhes&&weapon.detalhes.weapon_light===true))&&personagemTemTalento(own.sh,'ataque_poderoso')){var rawPenalty=await window.vttUI.ask({title:'Ataque Poderoso',label:'Penalidade de ataque (0 a '+Math.max(0,bab)+')',defaultValue:'0',inputMode:'numeric'});if(rawPenalty===null)return;powerPenalty=Number(rawPenalty);if(!Number.isInteger(powerPenalty)||powerPenalty<0||powerPenalty>bab){alert('A penalidade deve ser um inteiro entre 0 e '+Math.max(0,bab)+'.');return;}powerDamage=powerPenalty*(armaDuasMaos35(weapon)?2:1);}
     var rangePenalty=0,rangeIncrementMeters=0,rangeIncrements=0;
     if(type==='atk-dist'){
       rangeIncrementMeters=Number(weapon.detalhes&&weapon.detalhes.range_increment_m);
