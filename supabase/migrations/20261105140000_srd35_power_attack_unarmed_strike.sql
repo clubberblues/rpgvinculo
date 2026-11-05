@@ -7,7 +7,7 @@ DECLARE
   v_function RECORD;
   v_definition TEXT;
   v_old TEXT := $old$OR v_weapon.id IS NULL OR COALESCE(v_weapon.detalhes->>'weapon_light','false')='true'$old$;
-  v_new TEXT := $new$OR (v_weapon.id IS NOT NULL AND COALESCE(v_weapon.detalhes->>'weapon_light','false')='true'$new$;
+  v_new TEXT := $new$OR (v_weapon.id IS NOT NULL AND COALESCE(v_weapon.detalhes->>'weapon_light','false')='true')$new$;
   v_updated INTEGER := 0;
 BEGIN
   FOR v_function IN
