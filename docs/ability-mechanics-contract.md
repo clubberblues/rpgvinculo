@@ -150,3 +150,26 @@ cada +5 de BBA e registrando cada acerto/dano individualmente. Talentos como
 Tiro Rápido só podem acrescentar ataques quando essa sequência estiver
 integrada e validada. Cancelar uma sequência depois da reserva não devolve a
 ação: a ação de rodada completa já foi iniciada.
+
+### Estado da sequência de ataque total na mesa
+
+A interface do jogador já oferece a ação **Ataque total** no painel e no menu
+contextual. Após escolher corpo a corpo ou à distância e selecionar o alvo, a
+mesa reserva a ação de rodada completa no servidor **antes** de solicitar a
+primeira rolagem física. A sequência resolve os ataques iterativos a cada –5
+no BBA (por exemplo, +11/+6/+1), pede um d20 físico para cada ataque e solicita
+o dano separadamente para cada acerto. Erros não geram rolagem de dano. Cada
+ataque é registrado individualmente no log.
+
+Limites ainda conhecidos:
+- A sequência atual é do fluxo de jogador; o fluxo de ataque do Mestre para
+  NPCs/monstros ainda não usa a nova reserva de rodada completa.
+- A sequência mantém o mesmo alvo escolhido no início; seleção de alvo
+  independente por ataque ainda não foi implementada.
+- **Tiro Rápido** está estruturado como efeito `extra_attack` (+1 ataque com
+  maior BBA e –2 em todos os ataques), mas continua `needs_review` e ainda não
+  é interpretado pelo resolvedor genérico. Portanto, ainda não concede o
+  ataque extra.
+- **Tiro Preciso** está estruturado como bônus condicional de +4 para neutralizar
+  a penalidade de –4 contra alvo engajado em combate corpo a corpo, mas continua
+  `needs_review` e inativo até a mesa registrar engajamento de forma explícita.
