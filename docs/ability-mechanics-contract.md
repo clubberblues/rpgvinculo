@@ -270,3 +270,29 @@ representadas como duas instâncias equipadas simultaneamente. A próxima
 refatoração de inventário deve introduzir identificadores por instância (ou
 uma tabela de instâncias) antes de declarar suporte completo a duas armas
 idênticas. Até lá, o suporte de mãos permite duas armas de IDs distintos.
+
+
+### Instâncias individuais de armas
+
+Para permitir duas cópias do mesmo tipo de arma, o inventário passa a manter
+instâncias individuais nas tabelas `srd_character_weapon_instances` e
+`srd_cba_token_weapon_instances`. Cada arma possui `instance_id` UUID próprio,
+`equipment_id` aponta para o catálogo e `hand_slot` identifica a mão ocupada.
+Os registros legados foram copiados para as novas tabelas; quando uma linha
+legada tinha quantidade maior que um, ela foi desdobrada em uma instância por
+unidade, mantendo no máximo a primeira equipada.
+
+Triggers privados sincronizam a quantidade agregada das tabelas antigas com
+as instâncias: novas entregas geram novas instâncias; exclusões removem as
+instâncias; redução de quantidade só remove instâncias não equipadas e falha
+se não houver unidades livres suficientes. Assim, os fluxos existentes de
+entrega e equipamento inicial continuam compatíveis sem duplicar a lógica de
+entrega em cada RPC.
+
+As interfaces da mochila e do Mestre leem as instâncias, e as RPCs
+`equipar_arma_instancia_personagem` e `equipar_arma_instancia_token` recebem o
+UUID individual para equipar/desequipar cada cópia. O carregamento do combate
+preserva cada instância separadamente e prioriza `main_hand` para ataques que
+usam uma única arma. Isso ainda não ativa o combate com duas armas: penalidades,
+ataques adicionais, dano e críticos por mão e alvos independentes permanecem
+pendentes de implementação e teste.
