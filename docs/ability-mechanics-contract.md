@@ -334,3 +334,19 @@ solicitar dados. Isso é uma proteção temporária: o resolvedor ainda usa um
 único `equipment_id`, uma arma e um alvo para toda a sequência, e o contrato
 server-side não aceita ainda `instance_id`/mão secundária por ataque. Portanto,
 nenhum talento de Combater com Duas Armas foi ativado ou promovido.
+
+
+### Correção do total de acerto dos ataques iterativos
+
+Os dois overloads de `aplicar_dano_token_ataque_srd_v2` (com e sem Ataque
+Furtivo) validavam que `p_bonus_ataque` não ultrapassasse o bônus máximo
+calculado pelo servidor, mas o total final ainda somava o bônus máximo em vez
+do bônus efetivamente enviado para aquele ataque. Isso anulava a penalidade
+iterativa no teste server-side de acerto. Agora o total é calculado com
+`p_d20 + p_bonus_ataque + modificadores efetivos`, preservando os modificadores
+que o servidor calcula e aplicando o BBA reduzido do ataque correspondente.
+
+A validação atual ainda aceita uma faixa inferior de até 30 pontos e não
+confere o índice exato da sequência. Portanto, a mudança corrige a resolução
+matemática dos ataques iterativos, mas não substitui a futura validação
+server-side da sequência/índice e da mão da arma.
