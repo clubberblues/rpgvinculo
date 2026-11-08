@@ -2631,7 +2631,7 @@ function dnd35LanguageNormalize(value){
       if(response.error)throw response.error;
       var status=response.data||{};
       if(!status.eligible){panel.hidden=true;return;}
-      var tier=status.tier==='mighty'?'Fúria poderosa':status.tier==='greater'?'Fúria maior':'Fúria';
+      var barbarianLevel=Number(status.barbarian_level)||0;var tier=status.tier==='mighty'||barbarianLevel>=20?'Fúria poderosa':status.tier==='greater'||barbarianLevel>=11?'Fúria maior':'Fúria';
       var uses=Number(status.uses_remaining)||0,spent=Number(status.uses_spent)||0,total=Number(status.uses_per_day)||0;
       var stateLine=status.active
         ? 'Ativa · '+Number(status.rounds_remaining||0)+' rodada(s) restante(s)'
