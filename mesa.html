@@ -2011,8 +2011,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
               await registrarEventoAOO('↩️ '+name+' não realizou o Ataque de Oportunidade; a reação foi encerrada.',{pending_id:movement.pending_id,reactor_token_id:reaction.reactor_token_id});
               await renderQueue();
             });
-          }else if(reaction.status==='attack_started'){
-            addButton(row,'Retomar ataque',async function(){
+          }else if(reaction.status==='attack_started'||reaction.status==='hit_pending_damage'){
+            addButton(row,reaction.status==='hit_pending_damage'?'Retomar ocultação/dano':'Retomar ataque',async function(){
               await executarEtapasAtaqueAOO(String(reaction.attack_id),name,'arma equipada');
               await renderQueue();
             });
