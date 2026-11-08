@@ -3718,15 +3718,53 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     weaponWrap.append(weapon,weaponText);panel.appendChild(weaponWrap);
     function syncTripWeapon(){weaponWrap.style.display=maneuver.value==='trip'?'flex':'none';}
     maneuver.addEventListener('change',syncTripWeapon);syncTripWeapon();
+    var dexWrap=document.createElement('label');dexWrap.style.display='flex';dexWrap.style.alignItems='center';dexWrap.style.gap='8px';dexWrap.style.margin='12px 0';
+    var dexChoice=document.createElement('input');dexChoice.type='checkbox';
+    var dexText=document.createElement('span');dexText.textContent='Na resistência contra Derrubar, o defensor escolhe usar DES em vez de FOR';
+    dexWrap.append(dexChoice,dexText);panel.appendChild(dexWrap);
+    function syncTripChoices(){weaponWrap.style.display=maneuver.value==='trip'?'flex':'none';dexWrap.style.display=maneuver.value==='trip'?'flex':'none';}
+    maneuver.removeEventListener('change',syncTripWeapon);maneuver.addEventListener('change',syncTripChoices);syncTripChoices();
     var run=document.createElement('button');run.type='button';run.className='feature-use-btn';run.textContent='Calcular modificadores';panel.appendChild(run);
     var result=document.createElement('pre');result.style.whiteSpace='pre-wrap';result.style.overflowWrap='anywhere';result.style.marginTop='14px';result.style.padding='12px';result.style.borderRadius='8px';result.style.background='rgba(0,0,0,.18)';result.textContent='Selecione os participantes e consulte os modificadores.';panel.appendChild(result);
+    var resolveTrip=document.createElement('button');resolveTrip.type='button';resolveTrip.className='feature-use-btn';resolveTrip.textContent='🎲 Resolver Derrubar · consumir ação padrão';resolveTrip.style.display='none';resolveTrip.style.marginTop='10px';panel.appendChild(resolveTrip);
+    var lastManeuverData=null;
+    resolveTrip.onclick=function(){
+      if(!lastManeuverData||maneuver.value!=='trip')return;
+      if(['provokes','requires_weapon_context'].indexOf(lastManeuverData.aoo_status)>=0){result.textContent='A tentativa provoca ataque de oportunidade. Resolva a reação antes; esta integração ainda não executa AOO de manobra.';return;}
+      resolveTrip.disabled=true;
+      abrirDado('Derrubar · teste de FOR do atacante · D20',async function(attackerRoll){
+        var attackerD20=Number(attackerRoll);
+        if(!Number.isInteger(attackerD20)||attackerD20<1||attackerD20>20)throw new Error('O atacante precisa fornecer um D20 físico válido.');
+        abrirDado('Derrubar · resistência do defensor · D20',async function(defenderRoll){
+          try{
+            var defenderD20=Number(defenderRoll);
+            if(!Number.isInteger(defenderD20)||defenderD20<1||defenderD20>20)throw new Error('O defensor precisa fornecer um D20 físico válido.');
+            var resolved=await sb.rpc('srd_resolver_derrubar_srd',{
+              p_campaign_id:Number(MESA_ID),p_attacker_token_id:attacker.value,p_defender_token_id:defender.value,
+              p_attacker_d20:attackerD20,p_defender_d20:defenderD20,p_defender_uses_dex:dexChoice.checked,
+              p_defender_firm_ground:ground.checked,p_trip_using_weapon:weapon.checked
+            });
+            if(resolved.error)throw new Error(resolved.error.message||'Não foi possível resolver Derrubar.');
+            var outcome=resolved.data||{};
+            result.textContent='DERRUBAR · '+(outcome.success?'SUCESSO — alvo Caído':'FALHA — alvo permanece de pé')+'\\n'+
+              'Atacante: D20 '+outcome.attacker_d20+' + '+outcome.attacker_modifier+' = '+outcome.attacker_total+'\\n'+
+              'Defensor: D20 '+outcome.defender_d20+' + '+outcome.defender_modifier+' = '+outcome.defender_total+' ('+(outcome.defender_uses_dex?'DES':'FOR')+')\\n'+
+              'Ação padrão consumida · Rodada '+outcome.round;
+            await enviarMensagemChat((outcome.success?'⚔️ ':'🛡️ ')+(attacker.options[attacker.selectedIndex].textContent)+' tentou Derrubar '+defender.options[defender.selectedIndex].textContent+': '+outcome.attacker_total+' contra '+outcome.defender_total+'. '+(outcome.success?'O alvo ficou Caído.':'A manobra falhou.'),'sistema',{evento:'combat_maneuver_resolved',maneuver:'trip',success:outcome.success,attacker_token_id:attacker.value,defender_token_id:defender.value,attacker_total:outcome.attacker_total,defender_total:outcome.defender_total});
+            resolveTrip.style.display='none';
+          }catch(error){result.textContent='Falha ao resolver: '+String(error&&error.message||error);}
+          finally{resolveTrip.disabled=false;}
+        },true,true,'1d20');
+      },true,true,'1d20');
+    };
     run.onclick=async function(){
       if(attacker.value===defender.value){result.textContent='Escolha dois tokens diferentes.';return;}
       run.disabled=true;run.textContent='Calculando…';
       try{
         var response=await sb.rpc('srd_consultar_modificadores_manobra_srd',{p_campaign_id:Number(MESA_ID),p_attacker_token_id:attacker.value,p_defender_token_id:defender.value,p_maneuver:maneuver.value,p_defender_firm_ground:ground.checked,p_trip_using_weapon:weapon.checked});
         if(response.error)throw new Error(response.error.message||'Não foi possível calcular os modificadores.');
-        var data=response.data||{};
+        var data=response.data||{};lastManeuverData=data;
+        resolveTrip.style.display=(data.maneuver==='trip'&&['not_provoked_by_armed_trip','suppressed_by_feat'].indexOf(data.aoo_status)>=0)?'block':'none';
         result.textContent='Manobra: '+(data.maneuver==='trip'?'Derrubar / Rasteira':'Encontrão')+'\n'+
           'Atacante — teste de FOR: '+(Number(data.attacker_modifier)>=0?'+':'')+data.attacker_modifier+'\n'+
           'Defensor — '+(data.defender_check==='strength_or_dexterity'?'melhor entre FOR/DES':'teste de FOR')+': '+(Number(data.defender_modifier)>=0?'+':'')+data.defender_modifier+'\n'+
