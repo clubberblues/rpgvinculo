@@ -2366,8 +2366,9 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   }
   function caToken35(token){
     if(!token)return 10;
+    if(efeitosCampanhaMesa.loadError)return null;
     if(token.tipo==='npc'&&token.sourceCharacterId&&linkedNpcSheetLoadErrors[String(token.id)])return null;
-    var record=token.tipo==='player'?acharPersonagemDoToken(token):null;if(record)return caFichaMesa(record);
+    var record=token.tipo==='player'?acharPersonagemDoToken(token):null;if(record){var playerCa=caFichaMesa(record);return playerCa==null?null:Math.max(1,playerCa+modificadorEfeitoPersonagemMesa35(record,'ac'));}
     var stats=token.monsterStats||{},sheetAttrs=linkedNpcSheetAttributes[String(token.id)]||(stats.attributes&&typeof stats.attributes==='object'?stats.attributes:null),gear=equipamentoToken35(token),worn=gear.filter(function(it){return it.equipado&&['armadura','escudo','acessorio'].indexOf(slotEquipamento35(it))>=0;}),isGenerated=token.tipo==='npc'&&!!sheetAttrs;
     var direct=valorCA35(token.ac),base=valorCA35(token.baseAc),full=valorCA35(stats.ca),dex=token.dexMod!=null?Number(token.dexMod):modifier35(isGenerated?sheetAttrs.DES:(stats.destreza==null?10:stats.destreza)),natural=Number(stats.armadura_natural||stats.natural_armor||stats.bonus_armadura_natural||0);
     if(!Number.isFinite(dex))dex=0;if(!Number.isFinite(natural))natural=0;
@@ -2378,7 +2379,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(base==null)base=10+dex+natural;
     if(!isGenerated&&!worn.length&&direct!=null)return Math.max(1,direct);
     var bonus=worn.reduce(function(sum,it){return sum+bonusCAEquipamento35(it);},0),cap=worn.reduce(function(value,it){var max=slotEquipamento35(it)==='armadura'?maxDexEquipamento35(it):null;return max==null?value:Math.min(value,max);},99);
-    var effectModifier=token.tipo==='npc'&&token.sourceCharacterId?modificadorEfeitoTokenMesa35(token,'ac'):0;
+    var effectModifier=modificadorEfeitoTokenMesa35(token,'ac');
     return Math.max(1,Math.floor(base+Math.min(dex,cap)+bonus+effectModifier));
   }
   function slotEquipamento35(item){var cat=String(item&&item.categoria||'').toLowerCase().trim(),name=String(item&&item.nome||'').toLowerCase();if(cat==='arma'||cat.indexOf('weapon')>=0||cat==='specific_weapons')return 'arma';if(cat==='armadura'||cat==='light armor'||cat==='medium armor'||cat==='heavy armor'||cat==='specific_armors'||cat==='armor_and_shields'&&name.indexOf('shield')<0)return 'armadura';if(cat==='escudo'||cat==='shields'||cat==='specific_shields'||cat==='armor_and_shields'&&name.indexOf('shield')>=0)return 'escudo';if(cat==='acessorio'||['rings','rods','staffs','wands','wondrous_items'].indexOf(cat)>=0)return 'acessorio';return '';}
@@ -6632,7 +6633,7 @@ async function abrirModalEquipamentos(){
     var gmOwned=!!(ehGM&&personagem.ch.user_id===eu.id);
     return ordem.findIndex(function(entry){return String(entry.id)===String(personagem.ch.id)&&!!entry.is_monster===gmOwned;});
   }
-  var efeitosCampanhaMesa={conditions:[],effects:[]};
+  var efeitosCampanhaMesa={conditions:[],effects:[],loadError:true};
   function modificadorEfeitoPersonagemMesa35(personagem,stat){
     var characterId=personagem&&personagem.ch?String(personagem.ch.id):String(personagem||'');
     if(!characterId||!stat)return 0;
@@ -6672,14 +6673,15 @@ async function abrirModalEquipamentos(){
   };
   async function carregarEfeitosCampanha(){
     var campaignId=Number(MESA_ID);
-    if(!Number.isFinite(campaignId)||campaignId<1){efeitosCampanhaMesa={conditions:[],effects:[]};return;}
+    if(!Number.isFinite(campaignId)||campaignId<1){efeitosCampanhaMesa={conditions:[],effects:[],loadError:true};return;}
     var results=await Promise.all([
       sb.from('srd_campaign_conditions').select('target_kind,target_id,condition_id,expires_round,notes').eq('campaign_id',campaignId).eq('active',true),
       sb.from('srd_campaign_effects').select('target_kind,target_id,effect_kind,source_spell_id,effect_data,expires_round').eq('campaign_id',campaignId).eq('active',true)
     ]);
     efeitosCampanhaMesa={
       conditions:results[0].error?[]:(results[0].data||[]),
-      effects:results[1].error?[]:(results[1].data||[])
+      effects:results[1].error?[]:(results[1].data||[]),
+      loadError:!!(results[0].error||results[1].error)
     };
     if(results[0].error)console.warn('Não foi possível carregar condições ativas:',results[0].error.message);
     if(results[1].error)console.warn('Não foi possível carregar efeitos ativos:',results[1].error.message);
@@ -6704,7 +6706,7 @@ async function abrirModalEquipamentos(){
       var initIndex=entradaIniciativaToken(token,ordem),entry=initIndex>=0?ordem[initIndex]:null,activeCard=!!(active&&initIndex===turnIndex);
       var rank=initIndex>=0?(active?(initIndex-turnIndex+ordem.length)%ordem.length:initIndex):100000+originalIndex;
       var name=String(token.nome||(p&&p.ch.nome)||'Combatente'),detail=token.tipo==='monstro'?'Monstro · ND '+String((token.monsterStats||{}).nd||'—'):token.tipo==='npc'?(token.sourceCharacterId?'NPC · Ficha SRD vinculada':'NPC · Nv '+String((token.monsterStats||{}).level||'—')):p?String((p.raca&&p.raca.nome)||'Raça não definida')+' · '+String((p.cl&&p.cl.nome)||p.sh.classe||'Personagem'):'Ficha do Mestre';
-      var max=p?pvMax(p.sh,p.cl):(token.maxHp==null?null:Number(token.maxHp)),hp=p?Number(p.sh.pv_atual==null?max:p.sh.pv_atual):(token.hp==null?max:Number(token.hp)),ac=p?caFichaMesa(p):caToken35(token);
+      var max=p?pvMax(p.sh,p.cl):(token.maxHp==null?null:Number(token.maxHp)),hp=p?Number(p.sh.pv_atual==null?max:p.sh.pv_atual):(token.hp==null?max:Number(token.hp)),ac=caToken35(token);
       var url=String(token.imagem||(p&&((p.perfil&&p.perfil.avatar_url)||p.ch.retrato_url||p.ch.arte_url))||'').trim(),img=/^https?:\/\/[^\s"'<>]+$/i.test(url);
       var portrait=img?'<img class="portrait-only-image" src="'+esc(url)+'" alt="" draggable="false">':'<span class="portrait-placeholder" aria-hidden="true">'+(token.tipo==='monstro'?'🐉':token.tipo==='npc'?'👤':'✦')+'</span>';
       var initiative=entry?'Iniciativa '+String(entry.valor==null?'—':entry.valor):'Aguardando iniciativa',hpText=hp==null?'PV não definido':Math.max(-10,hp)+' / '+(max==null?'—':max)+' PV';
