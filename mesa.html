@@ -5355,7 +5355,7 @@ async function abrirModalEquipamentos(){
         return t.tipo==='player'&&gmCharacterIds[String(t.id)];
       });
       if(!ids.length&&!controlled.length) throw new Error('Não há fichas de jogadores nem tokens do Mestre no CBA para iniciar a iniciativa.');
-      var sheetIds=controlled.filter(function(t){return gmCharacterIds[String(t.id)];}).map(function(t){return String(t.id);});
+      var sheetIds=controlled.filter(function(t){return gmCharacterIds[String(t.id)]||(t.tipo==='npc'&&t.sourceCharacterId);}).map(function(t){return String(t.tipo==='npc'&&t.sourceCharacterId?t.sourceCharacterId:t.id);});
       var sheetsById=Object.create(null);
       if(sheetIds.length){
         var sheetsResult=await sb.from('srd_character_sheets').select('character_id,atributos,talentos').in('character_id',sheetIds);
@@ -5364,13 +5364,20 @@ async function abrirModalEquipamentos(){
       }
       for(var controlledIndex=0;controlledIndex<controlled.length;controlledIndex++){
         var token=controlled[controlledIndex];
-        var sheet=sheetsById[String(token.id)];
-        if(token.dexMod!=null){var savedDex=Number(token.dexMod);token.dexMod=Number.isFinite(savedDex)?Math.max(-20,Math.min(20,Math.trunc(savedDex))):null;}
-        if(token.dexMod==null&&sheet&&sheet.atributos&&sheet.atributos.DES!=null) token.dexMod=Math.floor((Number(sheet.atributos.DES)-10)/2);
-        if(token.dexMod==null&&token.monsterStats&&token.monsterStats.destreza!=null) token.dexMod=modifier35(token.monsterStats.destreza);
-        if(token.bonusIniciativa!=null&&Number.isFinite(Number(token.bonusIniciativa))) token.bonusIniciativa=Math.max(-20,Math.min(20,Math.trunc(Number(token.bonusIniciativa))));
-        if(token.bonusIniciativa==null&&sheet&&personagemTemTalento({talentos:sheet.talentos},'iniciativa_aprimorada')) token.bonusIniciativa=4;
-        if(token.bonusIniciativa==null&&token.monsterStats&&personagemTemTalento({talentos:token.monsterStats.talentos},'iniciativa_aprimorada')) token.bonusIniciativa=4;
+        var linkedNpc=token.tipo==='npc'&&token.sourceCharacterId;
+        var sheet=sheetsById[String(linkedNpc?token.sourceCharacterId:token.id)];
+        if(linkedNpc){
+          if(!sheet||!sheet.atributos||sheet.atributos.DES==null||!Number.isFinite(Number(sheet.atributos.DES))) throw new Error('A ficha SRD de origem de '+token.nome+' não possui Destreza válida; a iniciativa não foi iniciada.');
+          token.dexMod=Math.floor((Number(sheet.atributos.DES)-10)/2);
+          if(token.bonusIniciativa==null&&personagemTemTalento({talentos:sheet.talentos},'iniciativa_aprimorada')) token.bonusIniciativa=4;
+        }else{
+          if(token.dexMod!=null){var savedDex=Number(token.dexMod);token.dexMod=Number.isFinite(savedDex)?Math.max(-20,Math.min(20,Math.trunc(savedDex))):null;}
+          if(token.dexMod==null&&sheet&&sheet.atributos&&sheet.atributos.DES!=null) token.dexMod=Math.floor((Number(sheet.atributos.DES)-10)/2);
+          if(token.dexMod==null&&token.monsterStats&&token.monsterStats.destreza!=null) token.dexMod=modifier35(token.monsterStats.destreza);
+          if(token.bonusIniciativa!=null&&Number.isFinite(Number(token.bonusIniciativa))) token.bonusIniciativa=Math.max(-20,Math.min(20,Math.trunc(Number(token.bonusIniciativa))));
+          if(token.bonusIniciativa==null&&sheet&&personagemTemTalento({talentos:sheet.talentos},'iniciativa_aprimorada')) token.bonusIniciativa=4;
+          if(token.bonusIniciativa==null&&token.monsterStats&&personagemTemTalento({talentos:token.monsterStats.talentos},'iniciativa_aprimorada')) token.bonusIniciativa=4;
+        }
         if(token.dexMod==null){
           var resposta=await window.vttUI.ask({title:'Iniciativa de '+token.nome,label:'Modificador de Destreza (use 0 se não souber)',defaultValue:'0',inputMode:'numeric'});
           if(resposta===null) throw new Error('Rolagem cancelada; nenhuma iniciativa foi iniciada.');
