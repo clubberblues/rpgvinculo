@@ -3718,11 +3718,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     weaponWrap.append(weapon,weaponText);panel.appendChild(weaponWrap);
     function syncTripWeapon(){weaponWrap.style.display=maneuver.value==='trip'?'flex':'none';}
     maneuver.addEventListener('change',syncTripWeapon);syncTripWeapon();
-    var dexWrap=document.createElement('label');dexWrap.style.display='flex';dexWrap.style.alignItems='center';dexWrap.style.gap='8px';dexWrap.style.margin='12px 0';
-    var dexChoice=document.createElement('input');dexChoice.type='checkbox';
-    var dexText=document.createElement('span');dexText.textContent='Na resistência contra Derrubar, o defensor escolhe usar DES em vez de FOR';
-    dexWrap.append(dexChoice,dexText);panel.appendChild(dexWrap);
-    function syncTripChoices(){weaponWrap.style.display=maneuver.value==='trip'?'flex':'none';dexWrap.style.display=maneuver.value==='trip'?'flex':'none';}
+    function syncTripChoices(){weaponWrap.style.display=maneuver.value==='trip'?'flex':'none';}
     maneuver.removeEventListener('change',syncTripWeapon);maneuver.addEventListener('change',syncTripChoices);syncTripChoices();
     var run=document.createElement('button');run.type='button';run.className='feature-use-btn';run.textContent='Calcular modificadores';panel.appendChild(run);
     var result=document.createElement('pre');result.style.whiteSpace='pre-wrap';result.style.overflowWrap='anywhere';result.style.marginTop='14px';result.style.padding='12px';result.style.borderRadius='8px';result.style.background='rgba(0,0,0,.18)';result.textContent='Selecione os participantes e consulte os modificadores.';panel.appendChild(result);
@@ -3741,7 +3737,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
             if(!Number.isInteger(defenderD20)||defenderD20<1||defenderD20>20)throw new Error('O defensor precisa fornecer um D20 físico válido.');
             var resolved=await sb.rpc('srd_resolver_derrubar_srd',{
               p_campaign_id:Number(MESA_ID),p_attacker_token_id:attacker.value,p_defender_token_id:defender.value,
-              p_attacker_d20:attackerD20,p_defender_d20:defenderD20,p_defender_uses_dex:dexChoice.checked,
+              p_attacker_d20:attackerD20,p_defender_d20:defenderD20,
               p_defender_firm_ground:ground.checked,p_trip_using_weapon:weapon.checked
             });
             if(resolved.error)throw new Error(resolved.error.message||'Não foi possível resolver Derrubar.');
