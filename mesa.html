@@ -3712,13 +3712,19 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var ground=document.createElement('input');ground.type='checkbox';
     var groundText=document.createElement('span');groundText.textContent='Defensor está firmemente apoiado no chão (necessário para Estabilidade Anã)';
     groundWrap.append(ground,groundText);panel.appendChild(groundWrap);
+    var weaponWrap=document.createElement('label');weaponWrap.style.display='flex';weaponWrap.style.alignItems='center';weaponWrap.style.gap='8px';weaponWrap.style.margin='12px 0';
+    var weapon=document.createElement('input');weapon.type='checkbox';
+    var weaponText=document.createElement('span');weaponText.textContent='Derrubar: atacante usa arma apropriada (não está desarmado)';
+    weaponWrap.append(weapon,weaponText);panel.appendChild(weaponWrap);
+    function syncTripWeapon(){weaponWrap.style.display=maneuver.value==='trip'?'flex':'none';}
+    maneuver.addEventListener('change',syncTripWeapon);syncTripWeapon();
     var run=document.createElement('button');run.type='button';run.className='feature-use-btn';run.textContent='Calcular modificadores';panel.appendChild(run);
     var result=document.createElement('pre');result.style.whiteSpace='pre-wrap';result.style.overflowWrap='anywhere';result.style.marginTop='14px';result.style.padding='12px';result.style.borderRadius='8px';result.style.background='rgba(0,0,0,.18)';result.textContent='Selecione os participantes e consulte os modificadores.';panel.appendChild(result);
     run.onclick=async function(){
       if(attacker.value===defender.value){result.textContent='Escolha dois tokens diferentes.';return;}
       run.disabled=true;run.textContent='Calculando…';
       try{
-        var response=await sb.rpc('srd_consultar_modificadores_manobra_srd',{p_campaign_id:Number(MESA_ID),p_attacker_token_id:attacker.value,p_defender_token_id:defender.value,p_maneuver:maneuver.value,p_defender_firm_ground:ground.checked});
+        var response=await sb.rpc('srd_consultar_modificadores_manobra_srd',{p_campaign_id:Number(MESA_ID),p_attacker_token_id:attacker.value,p_defender_token_id:defender.value,p_maneuver:maneuver.value,p_defender_firm_ground:ground.checked,p_trip_using_weapon:weapon.checked});
         if(response.error)throw new Error(response.error.message||'Não foi possível calcular os modificadores.');
         var data=response.data||{};
         result.textContent='Manobra: '+(data.maneuver==='trip'?'Derrubar / Rasteira':'Encontrão')+'\n'+
@@ -3728,7 +3734,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
           'Estabilidade Anã: +'+Number(data.dwarf_stability_bonus||0)+'\n'+
           'Bônus de talento do atacante: +'+Number(data.attacker_feat_bonus||0)+'\n'+
           'Talento aplicável: '+(data.improved_trip?'Derrubar Aprimorado':data.improved_bull_rush?'Encontrão Aprimorado':'nenhum identificado')+'\n'+
-          'Ataque de oportunidade: '+(data.aoo_status==='provokes'?'provocado pelo defensor':data.aoo_status==='suppressed_by_feat'?'dispensado por Encontrão Aprimorado':'depende de confirmar se a tentativa de Derrubar é desarmada')+'\n\n'+
+          'Ataque de oportunidade: '+(data.aoo_status==='provokes'?'provocado pelo defensor':data.aoo_status==='suppressed_by_feat'?'dispensado por talento aprimorado':data.aoo_status==='not_provoked_by_armed_trip'?'não provocado: tentativa com arma apropriada':'não provocado nesta manobra')+'\n\n'+
           'FOR atacante: '+data.attacker.strength_score+' ('+(data.attacker.strength_modifier>=0?'+':'')+data.attacker.strength_modifier+') · tamanho '+data.attacker.size+'\n'+
           'FOR defensor: '+data.defender.strength_score+' ('+(data.defender.strength_modifier>=0?'+':'')+data.defender.strength_modifier+') · DES '+data.defender.dexterity_score+' ('+(data.defender.dexterity_modifier>=0?'+':'')+data.defender.dexterity_modifier+') · tamanho '+data.defender.size+'\n\n'+
           String(data.note||'')+'\n\nConsulta apenas: nenhuma rolagem, ação ou condição foi aplicada.';
