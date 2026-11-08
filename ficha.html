@@ -1848,7 +1848,7 @@ function dnd35TranslateCatalogText(value){
   }
   
   function dnd35RenderSkills(state, attrs, creating, classMap) {
-    var ranks = dnd35Objeto(state.sheet.pericias), budget = dnd35PericiaBudget(state,attrs), spent = dnd35PericiaCostTotal(state,ranks,classMap);
+    var ranks = dnd35Objeto(state.sheet.pericias), budget = dnd35PericiaBudget(state,attrs), spent = dnd35PericiaCostTotal(state,ranks,classMap) + (String(state.classe&&state.classe.id)==='barbaro'&&state.identidade&&state.identidade.alfabetizado?2:0);
     var level = Math.max(1,Number(state.sheet.nivel)||1), html = creating ? '<p class="dnd35-note">Atuação e Conhecimento têm especialidades próprias. Ofício e Profissão também: cada atividade escolhida recebe graduações e consome seus próprios pontos.</p>' : '';
     var sorted = state.skills.slice().sort(function(a,b) { var ac=!!classMap[String(a.id)], bc=!!classMap[String(b.id)]; return ac===bc ? String(a.nome).localeCompare(String(b.nome),'pt-BR') : (ac?-1:1); });
     sorted.forEach(function(skill) {
@@ -2957,7 +2957,7 @@ function dnd35LanguageNormalize(value){
     }
     if(!nome){state.activeStep='identity';renderizarFichaSRD35();var nameStatus=document.getElementById('dnd35-status');if(nameStatus)nameStatus.textContent='Informe um nome para o personagem.';var nameField=document.getElementById('dnd35-nome');if(nameField)nameField.focus();return;}
     var custo=dnd35PontosCompra(state.baseAtributos);if(custo>25){status.textContent='A distribuição ultrapassa o limite de 25 pontos.';return;}
-    var budget=dnd35PericiaBudget(state,attrs),spent=dnd35PericiaCostTotal(state,ranks,classMap);
+    var budget=dnd35PericiaBudget(state,attrs),spent=dnd35PericiaCostTotal(state,ranks,classMap)+(String(state.classe&&state.classe.id)==='barbaro'&&identity.alfabetizado?2:0);
     if(spent>budget){mostrarErro('Pontos de perícia excedidos: '+spent+' / '+budget+'.','pericias');return;}
     var skillLevel=Math.max(1,Number(state.sheet.nivel)||1);
     for(var skillId of Object.keys(ranks)){
