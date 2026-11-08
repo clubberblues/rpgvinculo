@@ -5587,7 +5587,7 @@ async function abrirModalEquipamentos(){
     if(pedidosTesteVistos[key])return;
     pedidosTesteVistos[key]=true;
     if(ehGM){
-      if(((data.resolution_type==='spell_save'||data.resolution_type==='condition_break'||data.resolution_type==='npc_dying_save')&&Array.isArray(data.npc_alvos)&&data.npc_alvos.length)
+      if(((data.resolution_type==='spell_save'||data.resolution_type==='condition_break'||(data.resolution_type==='npc_dying_save'||data.resolution_type==='confusion_d100')&&Array.isArray(data.npc_alvos)&&data.npc_alvos.length)
         ||((data.resolution_type==='spell_resistance'||data.resolution_type==='saving_throw')&&Array.isArray(data.alvos)&&data.alvos.length)){
         ativarPedidoTeste(data,key);
       }
@@ -5608,7 +5608,7 @@ async function abrirModalEquipamentos(){
   function ativarPedidoTeste(data, requestKey){
     if(!data) return;
     if(ehGM){
-      if((data.resolution_type==='spell_save'||data.resolution_type==='condition_break'||data.resolution_type==='npc_dying_save')&&Array.isArray(data.npc_alvos)){
+      if((data.resolution_type==='spell_save'||data.resolution_type==='condition_break'||(data.resolution_type==='npc_dying_save'||data.resolution_type==='confusion_d100')&&Array.isArray(data.npc_alvos)){
         data.npc_alvos.forEach(function(tokenId){
           criarBotaoRolagemNpcTeste(String(data.tipo||'Resistência'),String(tokenId),requestKey,data);
         });
@@ -5792,6 +5792,7 @@ async function abrirModalEquipamentos(){
     if(pedidosTesteRespondidos[responseKey])return;
     var tipoNormalizado=String(tipoTeste||'').toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');
     var isDyingSave=tipoNormalizado.includes('estabilizacao')&&tipoNormalizado.includes('d100');
+    var isConfusion=requestData&&requestData.resolution_type==='confusion_d100';
     var isSpellSave=requestData&&(requestData.resolution_type==='spell_save'||requestData.resolution_type==='condition_break');
     var isSpellResistance=requestData&&requestData.resolution_type==='spell_resistance';
     var isSavingThrow=requestData&&requestData.resolution_type==='saving_throw';
@@ -5805,10 +5806,10 @@ async function abrirModalEquipamentos(){
     var btn=document.createElement('button');btn.className='btn-rolar-teste';btn.type='button';
     btn.dataset.responseKey=responseKey;btn.dataset.requestKey=String(requestKey);btn.dataset.characterId=String(personagemId);
     btn.dataset.isInitiative=String(String(tipoTeste).toLocaleLowerCase('pt-BR').includes('iniciativa'));
-    btn.dataset.isDyingSave=String(isDyingSave);btn.dataset.isSpellSave=String(!!isSpellSave);btn.dataset.isSpellResistance=String(!!isSpellResistance);btn.dataset.isSavingThrow=String(!!isSavingThrow);
+    btn.dataset.isDyingSave=String(isDyingSave);btn.dataset.isConfusion=String(!!isConfusion);btn.dataset.isSpellSave=String(!!isSpellSave);btn.dataset.isSpellResistance=String(!!isSpellResistance);btn.dataset.isSavingThrow=String(!!isSavingThrow);
     if(btn.dataset.isInitiative==='true')Array.from(container.querySelectorAll('.btn-rolar-teste')).forEach(function(existing){if(existing.dataset.isInitiative==='true'&&existing.dataset.characterId===String(personagemId))existing.remove();});
     var nomePersonagem=personagem&&personagem.ch?String(personagem.ch.nome||'Personagem'):'Personagem';
-    btn.textContent=isDyingSave?'🩸 Rolar estabilização · '+nomePersonagem:(isSpellSave||isSavingThrow?'🛡️ Rolar resistência · '+nomePersonagem:(isSpellResistance?'✨ Rolar penetração · '+nomePersonagem:'⚡ Rolar '+tipoTeste+' · '+nomePersonagem));
+    btn.textContent=isConfusion?'🎲 Rolar comportamento aleatório D100 · '+nomePersonagem:(isDyingSave?'🩸 Rolar estabilização · '+nomePersonagem:(isSpellSave||isSavingThrow?'🛡️ Rolar resistência · '+nomePersonagem:(isSpellResistance?'✨ Rolar penetração · '+nomePersonagem:'⚡ Rolar '+tipoTeste+' · '+nomePersonagem));
     btn.setAttribute('aria-label',isDyingSave?'Rolar d100 de estabilização para '+nomePersonagem:'Rolar '+tipoTeste+' para '+nomePersonagem+' com o dado manual');
     btn.onclick=function(){
       if(btn.disabled)return;
@@ -5820,7 +5821,14 @@ async function abrirModalEquipamentos(){
           var ficha=personajesById(personagemId);
           if(!ficha){btn.disabled=false;throw new Error('Não foi possível localizar sua ficha para concluir a rolagem.');}
           var texto='',extras={request_id:requestKey,character_id:personagemId,teste:tipoTeste};
-          if(isDyingSave){
+          if(isConfusion){
+            var confusionD100=Number(resultado);
+            if(!Number.isInteger(confusionD100)||confusionD100<1||confusionD100>100)throw new Error('O resultado precisa ser um D100 entre 1 e 100.');
+            var confusionResult=await sb.rpc('srd_resolve_confusion_turn_srd',{p_campaign_id:Number(MESA_ID),p_target_kind:'character',p_target_id:String(personagemId),p_request_id:String(requestData.request_id),p_manual_d100:confusionD100});
+            if(confusionResult.error)throw new Error(confusionResult.error.message);
+            var confusionOutcome=confusionResult.data||{};extras.d100=confusionD100;extras.confusion=true;extras.outcome=confusionOutcome.outcome;
+            texto='🌀 '+ficha.ch.nome+' — Confusão: D100 '+confusionD100+' — '+confusionOutcome.description;
+          }else if(isDyingSave){
             var d100=Number(resultado);
             if(!Number.isInteger(d100)||d100<1||d100>100)throw new Error('O resultado precisa ser um d100 entre 1 e 100.');
             var resolved=await sb.rpc('srd_resolve_dying_round',{p_campaign_id:Number(MESA_ID),p_character_id:String(personagemId),p_d100:d100});
@@ -5901,7 +5909,7 @@ async function abrirModalEquipamentos(){
           if(!pedidosTesteRespondidos[responseKey])btn.disabled=false;
           alert('Não foi possível concluir a rolagem: '+(err.message||err));
         }finally{if(pedidoTesteAtivo&&pedidoTesteAtivo.responseKey===responseKey)pedidoTesteAtivo=null;}
-      },true,true,isDyingSave?'1d100':'1d20');
+      },true,true,(isDyingSave||isConfusion)?'1d100':'1d20');
     };
     container.appendChild(btn);
   }
@@ -5910,6 +5918,7 @@ async function abrirModalEquipamentos(){
     var responseKey=String(requestKey)+'|npc|'+String(tokenId);
     if(pedidosTesteRespondidos[responseKey])return;
     var isNpcDying=requestData&&requestData.resolution_type==='npc_dying_save';
+    var isNpcConfusion=requestData&&requestData.resolution_type==='confusion_d100';
     var container=document.getElementById('botoes-rolagem-pendente');
     if(!container){
       container=document.createElement('div');container.id='botoes-rolagem-pendente';
@@ -5920,14 +5929,21 @@ async function abrirModalEquipamentos(){
     var token=(cbaState&&Array.isArray(cbaState.tokens)?cbaState.tokens:[]).find(function(t){return String(t.key||t.id)===String(tokenId);});
     var nome=token?String(token.nome||token.name||'Alvo NPC'):'Alvo NPC';
     var btn=document.createElement('button');btn.className='btn-rolar-teste';btn.type='button';btn.dataset.responseKey=responseKey;btn.dataset.characterId=String(tokenId);btn.dataset.requestKey=String(requestKey);
-    btn.textContent=isNpcDying?'🩸 Rolar estabilização D100 · '+nome:'🎲 Rolar resistência do NPC · '+nome;
+    btn.textContent=isNpcConfusion?'🎲 Rolar comportamento aleatório D100 · '+nome:(isNpcDying?'🩸 Rolar estabilização D100 · '+nome:'🎲 Rolar resistência do NPC · '+nome);
     btn.onclick=function(){
       if(btn.disabled)return;
       if(pedidoTesteAtivo){alert('Conclua ou feche a rolagem atual antes de iniciar outra.');return;}
       btn.disabled=true;pedidoTesteAtivo={tipo:tipoTeste,personagemId:String(tokenId),requestKey:String(requestKey),responseKey:responseKey,button:btn};
-      abrirDado(tipoTeste+' · '+nome+' · '+(isNpcDying?'D100':'D20'),async function(resultado){
+      abrirDado(tipoTeste+' · '+nome+' · '+((isNpcDying||isNpcConfusion)?'D100':'D20'),async function(resultado){
         try{
-          if(isNpcDying){
+          if(isNpcConfusion){
+            var confusionD100=Number(resultado);
+            if(!Number.isInteger(confusionD100)||confusionD100<1||confusionD100>100)throw new Error('O resultado precisa ser um D100 entre 1 e 100.');
+            var confusionResult=await sb.rpc('srd_resolve_confusion_turn_srd',{p_campaign_id:Number(MESA_ID),p_target_kind:'token',p_target_id:String(tokenId),p_request_id:String(requestData.request_id),p_manual_d100:confusionD100});
+            if(confusionResult.error)throw new Error(confusionResult.error.message);
+            var confusionOutcome=confusionResult.data||{};pedidosTesteRespondidos[responseKey]=true;removerBotaoRolagemTeste(requestKey,tokenId);
+            await enviarMensagemChat('🌀 '+nome+' — Confusão: D100 '+confusionD100+' — '+confusionOutcome.description,'rolagem',{request_id:requestKey,token_id:tokenId,d100:confusionD100,confusion:true,outcome:confusionOutcome.outcome});
+          }else if(isNpcDying){
             var d100=Number(resultado);
             if(!Number.isInteger(d100)||d100<1||d100>100)throw new Error('O resultado precisa ser um D100 entre 1 e 100.');
             var dyingResult=await sb.rpc('srd_resolve_npc_dying_round',{p_campaign_id:Number(MESA_ID),p_token_id:String(tokenId),p_d100:d100});
@@ -5954,7 +5970,7 @@ async function abrirModalEquipamentos(){
           }
         }catch(err){btn.disabled=false;alert('Não foi possível concluir a rolagem: '+(err.message||err));}
         finally{if(pedidoTesteAtivo&&pedidoTesteAtivo.responseKey===responseKey)pedidoTesteAtivo=null;}
-      },true,true,isNpcDying?'1d100':'1d20');
+      },true,true,(isNpcDying||isNpcConfusion)?'1d100':'1d20');
     };
     container.appendChild(btn);
   }
