@@ -2761,7 +2761,7 @@ function dnd35LanguageNormalize(value){
           return linked
             ? {p_campaign_id:linked.campaignId,p_token_id:linked.tokenId,p_instance_id:button.dataset.srdEquipWeapon,p_hand_slot:button.dataset.handSlot,p_equipado:true}
             : {p_character_id:String(state.character.id),p_instance_id:button.dataset.srdEquipWeapon,p_hand_slot:button.dataset.handSlot,p_equipado:true};
-        },rpcName:'equipar_arma_instancia_personagem'},'arma').then(function(){});
+        }},'arma');
       });
     });
     root.querySelectorAll('[data-srd-unequip-weapon]').forEach(function(button){
