@@ -5274,6 +5274,33 @@ async function abrirModalEquipamentos(){
     var equipmentByChar=Object.create(null);
     if(!invResult.error) (invResult.data||[]).forEach(function(row){var it=Object.assign({},row.equipment||{},{equipment_id:row.equipment_id,quantidade:row.quantidade,equipado:!!row.equipado});it.categoria_original=it.categoria;var slot=slotEquipamento35(it);if(slot)it.categoria=slot;it.bonus_ca=bonusCAEquipamento35(it);if(it.bonus_max_des==null)it.bonus_max_des=maxDexEquipamento35(it);(equipmentByChar[String(row.character_id)]||(equipmentByChar[String(row.character_id)]=[])).push(it);});
     else console.warn('Inventário SRD indisponível:',invResult.error.message);
+    // Mantém as instâncias individuais vinculadas a cada arma da ficha.
+    // O combate poderá então usar o UUID e a mão reais, sem inferir uma arma apenas pelo item do catálogo.
+    var weaponInstancesByCharacter=Object.create(null);
+    var weaponInstancesResult=await sb.from('srd_character_weapon_instances')
+      .select('instance_id,character_id,equipment_id,equipado,hand_slot')
+      .in('character_id',ids);
+    if(!weaponInstancesResult.error){
+      (weaponInstancesResult.data||[]).forEach(function(instance){
+        var byEquipment=weaponInstancesByCharacter[String(instance.character_id)]||
+          (weaponInstancesByCharacter[String(instance.character_id)]=Object.create(null));
+        (byEquipment[String(instance.equipment_id)]||(byEquipment[String(instance.equipment_id)]=[])).push({
+          instance_id:String(instance.instance_id),
+          equipado:instance.equipado===true,
+          hand_slot:instance.hand_slot||null
+        });
+      });
+      Object.keys(equipmentByChar).forEach(function(characterId){
+        equipmentByChar[characterId].forEach(function(item){
+          if(slotEquipamento35(item)==='arma'){
+            var byEquipment=weaponInstancesByCharacter[characterId]||Object.create(null);
+            item.weapon_instances=byEquipment[String(item.equipment_id)]||[];
+          }
+        });
+      });
+    }else{
+      console.warn('Instâncias individuais de armas indisponíveis; ataques iterativos ficarão bloqueados até a leitura ser corrigida:',weaponInstancesResult.error.message);
+    }
     personagens = chs.map(function(c){
       var s = shs[String(c.id)] || {};
       return { ch:c, sh:s, cl: cls[String(s.classe_id)] || {}, raca:raceDataById[String(s.raca_id)]||{}, perfil:perfisMap[c.user_id]||{}, equipamento:equipmentByChar[String(c.id)]||[], tamanho:raceSizeById[String(s.raca_id)]||'Medium', deslocamento_m:raceSpeedById[String(s.raca_id)]==null?null:raceSpeedById[String(s.raca_id)] };
