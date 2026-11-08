@@ -5809,7 +5809,7 @@ async function abrirModalEquipamentos(){
     btn.dataset.isDyingSave=String(isDyingSave);btn.dataset.isConfusion=String(!!isConfusion);btn.dataset.isSpellSave=String(!!isSpellSave);btn.dataset.isSpellResistance=String(!!isSpellResistance);btn.dataset.isSavingThrow=String(!!isSavingThrow);
     if(btn.dataset.isInitiative==='true')Array.from(container.querySelectorAll('.btn-rolar-teste')).forEach(function(existing){if(existing.dataset.isInitiative==='true'&&existing.dataset.characterId===String(personagemId))existing.remove();});
     var nomePersonagem=personagem&&personagem.ch?String(personagem.ch.nome||'Personagem'):'Personagem';
-    btn.textContent=isConfusion?'🎲 Rolar comportamento aleatório D100 · '+nomePersonagem:(isDyingSave?'🩸 Rolar estabilização · '+nomePersonagem:(isSpellSave||isSavingThrow?'🛡️ Rolar resistência · '+nomePersonagem:(isSpellResistance?'✨ Rolar penetração · '+nomePersonagem:'⚡ Rolar '+tipoTeste+' · '+nomePersonagem));
+    btn.textContent=isConfusion?'🎲 Rolar comportamento aleatório D100 · '+nomePersonagem:(isDyingSave?'🩸 Rolar estabilização · '+nomePersonagem:(isSpellSave||isSavingThrow?'🛡️ Rolar resistência · '+nomePersonagem:(isSpellResistance?'✨ Rolar penetração · '+nomePersonagem:'⚡ Rolar '+tipoTeste+' · '+nomePersonagem)))
     btn.setAttribute('aria-label',isDyingSave?'Rolar d100 de estabilização para '+nomePersonagem:'Rolar '+tipoTeste+' para '+nomePersonagem+' com o dado manual');
     btn.onclick=function(){
       if(btn.disabled)return;
