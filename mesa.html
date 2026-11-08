@@ -5587,7 +5587,7 @@ async function abrirModalEquipamentos(){
     if(pedidosTesteVistos[key])return;
     pedidosTesteVistos[key]=true;
     if(ehGM){
-      if(((data.resolution_type==='spell_save'||data.resolution_type==='condition_break'||(data.resolution_type==='npc_dying_save'||data.resolution_type==='confusion_d100')&&Array.isArray(data.npc_alvos)&&data.npc_alvos.length)
+      if(((data.resolution_type==='spell_save'||data.resolution_type==='condition_break'||data.resolution_type==='npc_dying_save'||data.resolution_type==='confusion_d100')&&Array.isArray(data.npc_alvos)&&data.npc_alvos.length)
         ||((data.resolution_type==='spell_resistance'||data.resolution_type==='saving_throw')&&Array.isArray(data.alvos)&&data.alvos.length)){
         ativarPedidoTeste(data,key);
       }
@@ -5608,7 +5608,7 @@ async function abrirModalEquipamentos(){
   function ativarPedidoTeste(data, requestKey){
     if(!data) return;
     if(ehGM){
-      if((data.resolution_type==='spell_save'||data.resolution_type==='condition_break'||(data.resolution_type==='npc_dying_save'||data.resolution_type==='confusion_d100')&&Array.isArray(data.npc_alvos)){
+      if((data.resolution_type==='spell_save'||data.resolution_type==='condition_break'||data.resolution_type==='npc_dying_save'||data.resolution_type==='confusion_d100')&&Array.isArray(data.npc_alvos)){
         data.npc_alvos.forEach(function(tokenId){
           criarBotaoRolagemNpcTeste(String(data.tipo||'Resistência'),String(tokenId),requestKey,data);
         });
