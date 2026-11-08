@@ -1907,8 +1907,9 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         const section=document.createElement('section');section.className='player-action-groups';
         const mover=(cbaPublishedState&&cbaPublishedState.tokens||[]).find(function(t){return String(t.id)===String(movement.mover_token_id)||String(t.key)===String(movement.mover_token_id);});
         const isTripManeuver=Array.isArray(movement.threats)&&movement.threats.some(function(t){return t&&t.maneuver_event==='trip';});
+        const isBullRushManeuver=Array.isArray(movement.threats)&&movement.threats.some(function(t){return t&&t.maneuver_event==='bull_rush';});
         const isStandUpEvent=Array.isArray(movement.threats)&&movement.threats.some(function(t){return t&&t.standing_event==='stand_up';});
-        addText(section,(isTripManeuver?'⚔️ Derrubar · reação de oportunidade · ':isStandUpEvent?'🧍 Levantar-se · reação de oportunidade · ':'')+(mover&&mover.nome||movement.mover_token_id)+' · rodada '+movement.round+((isTripManeuver||isStandUpEvent)?'':' · '+(movement.movement_controller==='gm'?'movimento do Mestre':'movimento do jogador')),'feature-detail');
+        addText(section,(isTripManeuver?'⚔️ Derrubar · reação de oportunidade · ':isBullRushManeuver?'💥 Encontrão · reação de oportunidade · ':isStandUpEvent?'🧍 Levantar-se · reação de oportunidade · ':'')+(mover&&mover.nome||movement.mover_token_id)+' · rodada '+movement.round+((isTripManeuver||isBullRushManeuver||isStandUpEvent)?'':' · '+(movement.movement_controller==='gm'?'movimento do Mestre':'movimento do jogador')),'feature-detail');
         if(!isTripManeuver&&!isStandUpEvent)addText(section,'Origem ('+(movement.origin||[]).join(', ')+') → destino ('+(movement.destination||[]).join(', ')+')','skill-roll-hint');
         const reactions=Array.isArray(movement.pending_reactions)?movement.pending_reactions:[];
         for(const reaction of reactions){
@@ -2021,6 +2022,38 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
             var cancelled=await sb.rpc('srd_cancelar_movimento_aoo_pendente_srd',{p_campaign_id:Number(MESA_ID),p_pending_id:String(movement.pending_id)});
             if(cancelled.error)throw new Error(cancelled.error.message);
             await registrarEventoAOO('⛔ O Mestre cancelou a tentativa de levantar-se.',{pending_id:movement.pending_id,event:'stand_up'});
+            await renderQueue();
+          });
+        }else if(isBullRushManeuver){
+          addButton(section,'🎲 Resolver Encontrão após a reação',async function(){
+            var defenderId=movement.threats[0]&&movement.threats[0].defender_token_id;
+            if(!defenderId)throw new Error('Defensor do Encontrão não foi localizado.');
+            var follow=window.confirm('O atacante deseja acompanhar o defensor para o espaço que ele ocupava?');
+            abrirDado('Encontrão · teste de FOR do atacante · D20',async function(attackerRoll){
+              abrirDado('Encontrão · resistência de FOR do defensor · D20',async function(defenderRoll){
+                try{
+                  var resolved=await sb.rpc('srd_resolver_encontrao_srd',{
+                    p_campaign_id:Number(MESA_ID),p_pending_id:String(movement.pending_id),
+                    p_attacker_d20:Number(attackerRoll),p_defender_d20:Number(defenderRoll),p_follow:follow
+                  });
+                  if(resolved.error)throw new Error(resolved.error.message||'Não foi possível resolver Encontrão.');
+                  var outcome=resolved.data||{};
+                  var defenderToken=(cbaPublishedState.tokens||[]).find(function(t){return String(t.id)===String(defenderId)||String(t.key)===String(defenderId);});
+                  await registrarEventoAOO((outcome.success?'💥 Encontrão bem-sucedido: ':'🛡️ Encontrão resistido: ')+
+                    (mover&&mover.nome||movement.mover_token_id)+' contra '+(defenderToken&&defenderToken.nome||defenderId)+'. '+
+                    outcome.attacker_total+' contra '+outcome.defender_total+'. '+
+                    (outcome.success?'O alvo foi deslocado '+outcome.squares_pushed+' quadrado(s).'+(outcome.attacker_followed?' O atacante acompanhou.':''):'A manobra falhou.'),
+                    {pending_id:movement.pending_id,maneuver:'bull_rush',success:outcome.success,squares_pushed:outcome.squares_pushed,attacker_followed:outcome.attacker_followed});
+                  await atualizarCenaAOO();await renderQueue();
+                }catch(error){alert('Falha ao resolver Encontrão: '+String(error&&error.message||error));}
+              },true,true,'1d20');
+            },true,true,'1d20');
+          },reactions.some(function(r){return ['waiting','reserved','attack_started','hit_pending_damage'].includes(String(r.status));}));
+          addButton(section,'Cancelar tentativa de Encontrão',async function(){
+            if(!window.confirm('Cancelar esta tentativa? Reações já reservadas continuarão consumidas.'))return;
+            var cancelled=await sb.rpc('srd_cancelar_movimento_aoo_pendente_srd',{p_campaign_id:Number(MESA_ID),p_pending_id:String(movement.pending_id)});
+            if(cancelled.error)throw new Error(cancelled.error.message);
+            await registrarEventoAOO('⛔ O Mestre cancelou esta tentativa de Encontrão.',{pending_id:movement.pending_id,maneuver:'bull_rush'});
             await renderQueue();
           });
         }else if(isTripManeuver){
