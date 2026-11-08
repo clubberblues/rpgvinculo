@@ -2646,6 +2646,88 @@ function dnd35LanguageNormalize(value){
     }
   }
 
+  async function dnd35CarregarEquipamento(characterId) {
+    var results=await Promise.all([
+      sb.from('srd_character_equipment').select('equipment_id,quantidade,equipado,hand_slot,equipment:srd_equipment(*)').eq('character_id',String(characterId)),
+      sb.from('srd_character_weapon_instances').select('instance_id,equipment_id,equipado,hand_slot').eq('character_id',String(characterId))
+    ]);
+    if(results[0].error)throw new Error('Inventário SRD: '+results[0].error.message);
+    if(results[1].error)throw new Error('Instâncias de armas: '+results[1].error.message);
+    return (results[0].data||[]).map(function(row){
+      return {equipment_id:String(row.equipment_id),quantity:Number(row.quantidade||1),equipped:!!row.equipado,hand_slot:row.hand_slot||null,item:row.equipment||{},
+        instances:(results[1].data||[]).filter(function(instance){return String(instance.equipment_id)===String(row.equipment_id);})};
+    });
+  }
+  function dnd35EquipmentSlot(item) {
+    var category=String(item&&item.categoria||'').trim().toLowerCase(),name=String(item&&item.nome||'').toLowerCase();
+    if(['arma','weapon','specific_weapons'].indexOf(category)>=0||category.indexOf('weapon')>=0)return 'arma';
+    if(['armadura','light armor','medium armor','heavy armor','specific_armors'].indexOf(category)>=0)return 'armadura';
+    if(['escudo','shields','specific_shields'].indexOf(category)>=0)return 'escudo';
+    if(category==='armor_and_shields')return name.indexOf('shield')>=0?'escudo':'armadura';
+    if(['acessorio','rings','rods','staffs','wands','wondrous_items'].indexOf(category)>=0)return 'acessorio';
+    return '';
+  }
+  function dnd35EquipmentMarkup(state) {
+    var rows=Array.isArray(state.equipment)?state.equipment:[];
+    var cards=rows.map(function(row){
+      var item=row.item||{},slot=dnd35EquipmentSlot(item),details=dnd35Objeto(item.detalhes),name=String(item.nome||row.equipment_id);
+      var meta=[];
+      if(item.dano)meta.push('Dano '+item.dano);
+      if(item.critico)meta.push('Crítico '+item.critico);
+      if(item.peso!=null)meta.push('Peso '+item.peso+' kg');
+      if(row.quantity>1)meta.push('Quantidade '+row.quantity);
+      var actions='';
+      if(slot==='arma'){
+        var instances=Array.isArray(row.instances)?row.instances:[];
+        if(!instances.length)actions='<span class="dnd35-equipment-muted">Sem instância de arma vinculada; não é possível equipar.</span>';
+        else actions=instances.map(function(instance){
+          var hand=instance.hand_slot==='off_hand'?'mão secundária':'mão principal';
+          if(instance.equipado)return '<div class="dnd35-equipment-action"><span class="dnd35-equipment-status">Equipada · '+hand+'</span><button type="button" class="dnd35-equipment-button secondary" data-srd-unequip-weapon="'+esc(instance.instance_id)+'" data-hand-slot="'+esc(instance.hand_slot||'main_hand')+'">Desequipar</button></div>';
+          var twoHanded=details.weapon_two_handed===true||String(details.weapon_two_handed)==='true';
+          return '<div class="dnd35-equipment-action"><span class="dnd35-equipment-status">Instância disponível</span><button type="button" class="dnd35-equipment-button" data-srd-equip-weapon="'+esc(instance.instance_id)+'" data-hand-slot="main_hand">Equipar · principal</button>'+(twoHanded?'':'<button type="button" class="dnd35-equipment-button secondary" data-srd-equip-weapon="'+esc(instance.instance_id)+'" data-hand-slot="off_hand">Equipar · secundária</button>')+'</div>';
+        }).join('');
+      } else if(slot){
+        actions=row.equipped
+          ?'<div class="dnd35-equipment-action"><span class="dnd35-equipment-status">Equipado</span><button type="button" class="dnd35-equipment-button secondary" data-srd-unequip-item="'+esc(row.equipment_id)+'">Desequipar</button></div>'
+          :'<div class="dnd35-equipment-action"><span class="dnd35-equipment-status">Guardado</span><button type="button" class="dnd35-equipment-button" data-srd-equip-item="'+esc(row.equipment_id)+'">Equipar</button></div>';
+      } else actions='<span class="dnd35-equipment-muted">Item de inventário · não ocupa espaço de equipamento.</span>';
+      return '<article class="dnd35-equipment-card"><div class="dnd35-equipment-head"><strong>'+esc(name)+'</strong><span>'+esc(slot||item.tipo||item.categoria||'item')+'</span></div><p>'+esc(item.descricao||'')+'</p>'+(meta.length?'<small>'+esc(meta.join(' · '))+'</small>':'')+'<div class="dnd35-equipment-actions">'+actions+'</div></article>';
+    }).join('');
+    return '<section class="dnd35-panel dnd35-equipment-panel"><h2>Equipamento SRD 3.5</h2><p class="dnd35-note">Gerencie as armas, armaduras e acessórios da ficha. Armas usam instâncias individuais e ocupam mão principal ou secundária; armas de duas mãos só podem ocupar a principal. As alterações são sincronizadas com a mesa.</p><div class="dnd35-equipment-list">'+(cards||'<p class="dnd35-note">Nenhum equipamento SRD cadastrado nesta ficha.</p>')+'</div></section>';
+  }
+  function dnd35BindEquipment(state) {
+    var root=document.getElementById('root');
+    async function run(button,request,label) {
+      button.disabled=true;var old=button.textContent;button.textContent='Salvando…';
+      try{
+        var response=await sb.rpc(request.name,request.args);
+        if(response.error)throw new Error(response.error.message);
+        state.equipment=await dnd35CarregarEquipamento(state.character.id);
+        renderizarFichaSRD35();
+      }catch(error){button.disabled=false;button.textContent=old;alert('Não foi possível atualizar o equipamento: '+(error.message||String(error)));}
+    }
+    root.querySelectorAll('[data-srd-equip-weapon]').forEach(function(button){
+      button.addEventListener('click',function(){
+        run(button,{name:'equipar_arma_instancia_personagem',args:{p_character_id:String(state.character.id),p_instance_id:button.dataset.srdEquipWeapon,p_hand_slot:button.dataset.handSlot,p_equipado:true}},'arma');
+      });
+    });
+    root.querySelectorAll('[data-srd-unequip-weapon]').forEach(function(button){
+      button.addEventListener('click',function(){
+        run(button,{name:'equipar_arma_instancia_personagem',args:{p_character_id:String(state.character.id),p_instance_id:button.dataset.srdUnequipWeapon,p_hand_slot:button.dataset.handSlot,p_equipado:false}},'arma');
+      });
+    });
+    root.querySelectorAll('[data-srd-equip-item]').forEach(function(button){
+      button.addEventListener('click',function(){
+        run(button,{name:'equipar_item_srd',args:{p_character_id:String(state.character.id),p_equipment_id:button.dataset.srdEquipItem,p_equipado:true}},'item');
+      });
+    });
+    root.querySelectorAll('[data-srd-unequip-item]').forEach(function(button){
+      button.addEventListener('click',function(){
+        run(button,{name:'equipar_item_srd',args:{p_character_id:String(state.character.id),p_equipment_id:button.dataset.srdUnequipItem,p_equipado:false}},'item');
+      });
+    });
+  }
+
   function renderizarFichaSRD35() {
     var state = fichaSRD35, creating = !!state.criacao;
     var attrs = dnd35Objeto(state.sheet.atributos), baseAttrs = state.baseAtributos || {FOR:10,DES:10,CON:10,INT:10,SAB:10,CAR:10};
@@ -2661,7 +2743,7 @@ function dnd35LanguageNormalize(value){
     var fortBase=saveBase(saveGood(['bárbaro','barbaro','guerreiro','clérigo','clerigo','druida','paladino','monge','patrulheiro','ranger'],['fortitude_progression','fortitude_progressao','fort_progression']),level);
     var reflexBase=saveBase(saveGood(['bárbaro','barbaro','bardo','ladino','monge','patrulheiro','ranger'],['reflex_progression','reflexos_progression','ref_progression']),level);
     var willBase=saveBase(saveGood(['bardo','clérigo','clerigo','druida','monge','paladino','feiticeiro','sorcerer','mago','wizard'],['vontade_progression','will_progression']),level);
-    var startingEquipmentHtml=dnd35StartMarkup(state);var statusHtml='<section class="dnd35-panel"><h2>Defesas e Status</h2><div class="dnd35-meta"><div class="dnd35-stat"><small>CA base</small><strong>'+(10+dexMod+sizeBonus)+'</strong><small>10 + DES'+(sizeBonus?' + tamanho +1':'')+'; armadura/escudo pela mochila da mesa</small></div><div class="dnd35-stat"><small>Fortitude</small><strong>'+(fortBase+fortMod>=0?'+':'')+(fortBase+fortMod)+'</strong><small>base '+fortBase+' + CON '+fortMod+'</small></div><div class="dnd35-stat"><small>Reflexos</small><strong>'+(reflexBase+reflexMod>=0?'+':'')+(reflexBase+reflexMod)+'</strong><small>base '+reflexBase+' + DES '+reflexMod+'</small></div><div class="dnd35-stat"><small>Vontade</small><strong>'+(willBase+willMod>=0?'+':'')+(willBase+willMod)+'</strong><small>base '+willBase+' + SAB '+willMod+'</small></div></div></section>';
+    var startingEquipmentHtml=dnd35StartMarkup(state);var statusHtml='<section class="dnd35-panel"><h2>Defesas e Status</h2><div class="dnd35-meta"><div class="dnd35-stat"><small>CA base</small><strong>'+(10+dexMod+sizeBonus)+'</strong><small>10 + DES'+(sizeBonus?' + tamanho +1':'')+'; armadura e escudo equipados são somados pelo motor de regras</small></div><div class="dnd35-stat"><small>Fortitude</small><strong>'+(fortBase+fortMod>=0?'+':'')+(fortBase+fortMod)+'</strong><small>base '+fortBase+' + CON '+fortMod+'</small></div><div class="dnd35-stat"><small>Reflexos</small><strong>'+(reflexBase+reflexMod>=0?'+':'')+(reflexBase+reflexMod)+'</strong><small>base '+reflexBase+' + DES '+reflexMod+'</small></div><div class="dnd35-stat"><small>Vontade</small><strong>'+(willBase+willMod>=0?'+':'')+(willBase+willMod)+'</strong><small>base '+willBase+' + SAB '+willMod+'</small></div></div></section>';
     var ragePanelHtml=!creating?'<section class="dnd35-panel dnd35-rage-panel" data-barbarian-rage-panel hidden><h2>Fúria do Bárbaro</h2><p class="dnd35-note">Carregando recursos de Fúria…</p></section>':'';var levelupNotice=!creating&&Number(state.sheet.niveis_pendentes)>0?'<div class="dnd35-note" role="status">Há avanço de nível disponível. Conclua as escolhas abaixo para aplicar cada nível.</div>':'';var levelupPanel=!creating?dnd35LevelupMarkup(state,attrs):'';
     var spellsHtml=dnd35GrimoireRender(state,attrs,level,creating);
     var attrHtml = ATR.map(function(sigla) {
@@ -2679,11 +2761,11 @@ function dnd35LanguageNormalize(value){
       createNav+levelupNotice+levelupPanel+'<div class="dnd35-grid"><section class="dnd35-panel" '+(creating?'data-creation-step="identity" '+(createStep!=='identity'?'hidden':''):'')+'><h2>Identidade'+(creating?' <button type="button" class="dnd35-help" data-dnd35-help="identity">?</button>':'')+'</h2>'+(creating?'<label class="dnd35-name-label" for="dnd35-nome">Nome do personagem</label><input class="dnd35-name-input" id="dnd35-nome" maxlength="60" autocomplete="off" placeholder="Ex.: Tordek" value="'+esc(state.nomeDraft||'')+'">'+dnd35DwarfIdentityMarkup(state):'')+
       '<div class="dnd35-meta"><div class="dnd35-stat"><small>Raça</small><strong>'+esc(state.raca.nome)+'</strong></div><div class="dnd35-stat"><small>Classe</small><strong>'+esc(state.classe.nome)+'</strong></div><div class="dnd35-stat"><small>Nível</small><strong>'+level+'</strong></div><div class="dnd35-stat"><small>Dado de Vida</small><strong>d'+dadoVida+'</strong></div><div class="dnd35-stat"><small>Pontos de Vida</small><strong class="dnd35-hp">'+hpAtual+' / '+hpMax+'</strong></div><div class="dnd35-stat"><small>Deslocamento</small><strong>'+esc(state.raca.deslocamento==null?'—':state.raca.deslocamento+' m')+'</strong></div><div class="dnd35-stat"><small>Tamanho</small><strong>'+esc(state.raca.tamanho||'—')+'</strong></div><div class="dnd35-stat"><small>XP</small><strong>'+Math.max(0,Number(state.sheet.xp)||0)+'</strong></div></div>'+(creating?'<p class="dnd35-note">Distribua até 25 pontos de compra entre valores-base de 8 a 18. Os ajustes raciais são aplicados depois. PV inicial = dado de vida máximo + modificador de Constituição (mínimo 1).</p>':'')+'</section>'+
       '<section class="dnd35-panel" '+(creating?'data-creation-step="attributes" '+(createStep!=='attributes'?'hidden':''):'')+'><h2>Atributos'+(creating?' <button type="button" class="dnd35-help" data-dnd35-help="attributes">?</button>':'')+'</h2><div class="dnd35-attrs">'+attrHtml+'</div>'+(creating?'<p id="dnd35-point-budget" class="dnd35-point-budget">Pontos de compra: '+points+' / 25 · Restam '+(25-points)+'</p>':'')+'<p class="dnd35-note">Ajustes raciais: '+esc(Object.keys(ajustes).length?Object.keys(ajustes).map(function(k){return k+' '+(Number(ajustes[k])>0?'+':'')+ajustes[k];}).join(' · '):'nenhum')+'</p>'+(creating&&Number(state.identidade&&state.identidade.idade)>=250?'<p class="dnd35-note">Idade venerável: ajustes adicionais de –6 em FOR, DES e CON e +3 em INT, SAB e CAR (efeitos cumulativos).</p>':creating&&Number(state.identidade&&state.identidade.idade)>=188?'<p class="dnd35-note">Velhice: ajustes adicionais cumulativos de –3 em FOR, DES e CON e +2 em INT, SAB e CAR.</p>':creating&&Number(state.identidade&&state.identidade.idade)>=125?'<p class="dnd35-note">Maturidade: –1 em FOR, DES e CON e +1 em INT, SAB e CAR.</p>':'')+'</section>'+
-      '<section class="dnd35-panel" '+(creating?'data-creation-step="identity" '+(createStep!=='identity'?'hidden':''):'')+'><h2>Traços Raciais</h2><ul class="dnd35-list">'+dnd35Lista(state.raca.habilidades_raciais)+'</ul></section><section class="dnd35-panel" '+(creating?'data-creation-step="identity" '+(createStep!=='identity'?'hidden':''):'')+'><h2>Perícias de Classe</h2><p class="dnd35-note">'+Number(state.classe.pericias_por_nivel||0)+' pontos de perícia por nível, antes dos ajustes de Inteligência.</p><ul class="dnd35-list">'+dnd35Lista(state.classe.pericias_classe)+'</ul></section><section class="dnd35-panel" '+(creating?'data-creation-step="identity" '+(createStep!=='identity'?'hidden':''):'')+'><h2>Proficiências</h2><p class="dnd35-note">As proficiências mostram quais armas, armaduras e escudos sua classe sabe usar.</p><strong>Armas</strong><ul class="dnd35-list">'+dnd35Lista(profs.armas)+'</ul><strong>Armaduras</strong><ul class="dnd35-list">'+dnd35Lista(profs.armaduras)+'</ul><strong>Escudos</strong><ul class="dnd35-list">'+dnd35Lista(profs.escudos)+'</ul>'+(profs.observacao?'<p class="dnd35-note">'+esc(profs.observacao)+'</p>':'')+'</section></div>'+(creating?'<div data-creation-step="class" '+(createStep!=='class'?'hidden':'')+'>'+initialClassFeaturesHtml+dnd35ClassChoiceMarkup(state,attrs,1)+'</div><div data-creation-step="attributes" '+(createStep!=='attributes'?'hidden':'')+'>'+statusHtml+'</div><div data-creation-step="magic" '+(createStep!=='magic'?'hidden':'')+'>'+spellsHtml+'</div><div data-creation-step="training" '+(createStep!=='training'?'hidden':'')+'>'+skillPanel+'</div><div data-creation-step="equipment" '+(createStep!=='equipment'?'hidden':'')+'>'+startingEquipmentHtml+'</div>':statusHtml+ragePanelHtml+dnd35ClassFeaturesMarkup(state)+spellsHtml+skillPanel)+
+      '<section class="dnd35-panel" '+(creating?'data-creation-step="identity" '+(createStep!=='identity'?'hidden':''):'')+'><h2>Traços Raciais</h2><ul class="dnd35-list">'+dnd35Lista(state.raca.habilidades_raciais)+'</ul></section><section class="dnd35-panel" '+(creating?'data-creation-step="identity" '+(createStep!=='identity'?'hidden':''):'')+'><h2>Perícias de Classe</h2><p class="dnd35-note">'+Number(state.classe.pericias_por_nivel||0)+' pontos de perícia por nível, antes dos ajustes de Inteligência.</p><ul class="dnd35-list">'+dnd35Lista(state.classe.pericias_classe)+'</ul></section><section class="dnd35-panel" '+(creating?'data-creation-step="identity" '+(createStep!=='identity'?'hidden':''):'')+'><h2>Proficiências</h2><p class="dnd35-note">As proficiências mostram quais armas, armaduras e escudos sua classe sabe usar.</p><strong>Armas</strong><ul class="dnd35-list">'+dnd35Lista(profs.armas)+'</ul><strong>Armaduras</strong><ul class="dnd35-list">'+dnd35Lista(profs.armaduras)+'</ul><strong>Escudos</strong><ul class="dnd35-list">'+dnd35Lista(profs.escudos)+'</ul>'+(profs.observacao?'<p class="dnd35-note">'+esc(profs.observacao)+'</p>':'')+'</section></div>'+(creating?'<div data-creation-step="class" '+(createStep!=='class'?'hidden':'')+'>'+initialClassFeaturesHtml+dnd35ClassChoiceMarkup(state,attrs,1)+'</div><div data-creation-step="attributes" '+(createStep!=='attributes'?'hidden':'')+'>'+statusHtml+'</div><div data-creation-step="magic" '+(createStep!=='magic'?'hidden':'')+'>'+spellsHtml+'</div><div data-creation-step="training" '+(createStep!=='training'?'hidden':'')+'>'+skillPanel+'</div><div data-creation-step="equipment" '+(createStep!=='equipment'?'hidden':'')+'>'+startingEquipmentHtml+'</div>':statusHtml+ragePanelHtml+dnd35EquipmentMarkup(state)+dnd35ClassFeaturesMarkup(state)+spellsHtml+skillPanel)+
       (creating?'<div class="dnd35-actions"><span class="dnd35-status" id="dnd35-status" role="status" aria-live="polite"></span><button type="button" class="dnd35-save" id="dnd35-save">Criar personagem</button></div>':'')+'</div>';
     var root=document.getElementById('root'); root.classList.add('dnd35-mode'); root.innerHTML=html;
     dnd35GrimoireBind(state);
-    if (!creating) dnd35BindBarbarianRage(state);
+    if (!creating) { dnd35BindBarbarianRage(state); dnd35BindEquipment(state); }
     if (creating) { dnd35StartBind(state);
       var nameInput=document.getElementById('dnd35-nome'); if(nameInput)nameInput.addEventListener('input',function(){state.nomeDraft=nameInput.value;});
       document.querySelectorAll('[data-create-step]').forEach(function(tab){tab.addEventListener('click',function(){if(nameInput)state.nomeDraft=nameInput.value;state.activeStep=tab.dataset.createStep;renderizarFichaSRD35();});});
@@ -2770,7 +2852,8 @@ function dnd35LanguageNormalize(value){
     if(results[2].error)throw new Error('Classe SRD: '+results[2].error.message);
     var nextLevel=Math.min(20,Math.max(1,Number(sheet.nivel)||1)+1),featureResult=await sb.from('srd_class_level_features').select('class_id,class_level,name,summary,mechanics,verification_status').eq('class_id',String(sheet.classe_id)).eq('class_level',nextLevel),currentFeatureResult=await sb.from('srd_class_level_features').select('class_id,class_level,name,summary,mechanics,verification_status').eq('class_id',String(sheet.classe_id)).lte('class_level',Math.max(1,Number(sheet.nivel)||1)).order('class_level');var domainChoicesResult=await sb.from('srd_character_domain_choices').select('domain_slot,domain_id').eq('character_id',String(characterId)).order('domain_slot',{ascending:true});
     if(domainChoicesResult.error)throw new Error('Domínios do clérigo: '+domainChoicesResult.error.message);
-    fichaSRD35={criacao:false,character:results[0].data,sheet:sheet,identidade:sheet.identidade||{},raca:results[1].data,classe:results[2].data,skills:results[3].skills,feats:results[3].feats,srdSpells:results[3].spells,progressions:results[3].progressions,srdDomains:results[3].domains,srdDomainSpells:results[3].domainSpells,domainError:results[3].domainError,domainChoices:domainChoicesResult.data||[],idiomasEscolhidos:(function(){var saved=dnd35Objeto(sheet.idiomas_conhecidos);return {automaticos:Array.isArray(saved.automaticos)?saved.automaticos.slice():dnd35AutomaticLanguages(results[1].data,results[2].data),bonus_inteligencia:Array.isArray(saved.bonus_inteligencia)?saved.bonus_inteligencia.slice():[],comprados_falar_idioma:Array.isArray(saved.comprados_falar_idioma)?saved.comprados_falar_idioma.slice():[]};})(),nextLevelFeatures:featureResult.error?[]:(featureResult.data||[]),classFeatures:currentFeatureResult.error?[]:(currentFeatureResult.data||[]),spellCatalogError:results[3].spellError,spellProgressionError:results[3].progressionError,featPicks:[],activeTab:'pericias',grimoireOpen:URL_PARAMS.get('grimoire')==='1'};
+    var equipmentState=await dnd35CarregarEquipamento(characterId);
+    fichaSRD35={criacao:false,character:results[0].data,sheet:sheet,identidade:sheet.identidade||{},raca:results[1].data,classe:results[2].data,skills:results[3].skills,feats:results[3].feats,srdSpells:results[3].spells,progressions:results[3].progressions,srdDomains:results[3].domains,srdDomainSpells:results[3].domainSpells,domainError:results[3].domainError,domainChoices:domainChoicesResult.data||[],equipment:equipmentState,idiomasEscolhidos:(function(){var saved=dnd35Objeto(sheet.idiomas_conhecidos);return {automaticos:Array.isArray(saved.automaticos)?saved.automaticos.slice():dnd35AutomaticLanguages(results[1].data,results[2].data),bonus_inteligencia:Array.isArray(saved.bonus_inteligencia)?saved.bonus_inteligencia.slice():[],comprados_falar_idioma:Array.isArray(saved.comprados_falar_idioma)?saved.comprados_falar_idioma.slice():[]};})(),nextLevelFeatures:featureResult.error?[]:(featureResult.data||[]),classFeatures:currentFeatureResult.error?[]:(currentFeatureResult.data||[]),spellCatalogError:results[3].spellError,spellProgressionError:results[3].progressionError,featPicks:[],activeTab:'pericias',grimoireOpen:URL_PARAMS.get('grimoire')==='1'};
     renderizarFichaSRD35();
   }
   async function salvarFichaSRD35() {
@@ -2933,5 +3016,19 @@ function dnd35LanguageNormalize(value){
 })();
 </script>
 <script src="vinculo-ui.js"></script>
+<style id="dnd35-equipment-manager">
+.dnd35-equipment-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;margin-top:12px}
+.dnd35-equipment-card{min-width:0;padding:12px;border:1px solid rgba(201,160,80,.32);border-radius:9px;background:linear-gradient(145deg,rgba(201,160,80,.08),rgba(10,17,12,.7))}
+.dnd35-equipment-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.dnd35-equipment-head strong{color:#f4e7c3;font-size:14px}
+.dnd35-equipment-head span,.dnd35-equipment-card small,.dnd35-equipment-muted{color:#b9ad8f;font-size:11px}
+.dnd35-equipment-card p{margin:6px 0;color:#c9c0a9;font-size:12px;line-height:1.4}
+.dnd35-equipment-actions{display:flex;flex-direction:column;gap:7px;margin-top:10px}
+.dnd35-equipment-action{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.dnd35-equipment-status{color:#d8c79c;font-size:11px}
+.dnd35-equipment-button{border:1px solid #c9a050;border-radius:6px;background:#c9a050;color:#17130a;padding:7px 10px;font:700 10px 'Cinzel',serif;cursor:pointer}
+.dnd35-equipment-button.secondary{background:transparent;color:#d9c18a}
+.dnd35-equipment-button:disabled{opacity:.55;cursor:wait}
+</style>
 </body>
 </html>
