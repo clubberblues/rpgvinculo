@@ -1915,10 +1915,20 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
               if(weapons.error)throw new Error(weapons.error.message);
               var list=Array.isArray(weapons.data&&weapons.data.weapons)?weapons.data.weapons:[];
               if(!list.length){
-                var reason=weapons.data&&weapons.data.reason==='unlinked_creature_requires_gm_adjudication'
-                  ?'Esta criatura não possui ficha SRD vinculada. O Mestre precisa resolver manualmente o ataque e encerrar a reação.'
-                  :'Não há arma corpo a corpo equipada e sincronizada. O Mestre precisa adjudicar a reação.';
-                alert(reason);return;
+                if(weapons.data&&weapons.data.reason==='unlinked_creature_requires_gm_adjudication'){
+                  var natural=await sb.rpc('srd_iniciar_ataque_oportunidade_monstro_srd',{
+                    p_campaign_id:Number(MESA_ID),p_pending_id:String(movement.pending_id),
+                    p_reactor_token_id:String(reaction.reactor_token_id),p_reaction_id:String(reaction.reservation_id)
+                  });
+                  if(natural.error)throw new Error(natural.error.message);
+                  await registrarEventoAOO('🐾 '+name+' iniciou um Ataque de Oportunidade com seu ataque natural.',{
+                    pending_id:movement.pending_id,attack_id:natural.data.attack_id,
+                    reactor_token_id:reaction.reactor_token_id,weapon:'Ataque natural'
+                  });
+                  await executarEtapasAtaqueAOO(String(natural.data.attack_id),name,'Ataque natural');
+                  await renderQueue();return;
+                }
+                alert('Não há arma corpo a corpo equipada e sincronizada. A reação permanece reservada; equipe uma arma ou encerre a reação manualmente.');return;
               }
               var chosen=list[0];
               if(list.length>1){
@@ -2021,7 +2031,10 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       abrirDado('Dano do Ataque de Oportunidade · '+weaponName,async function(total,values){
         if(!Array.isArray(values)||values.length!==diceCount)throw new Error('O dado 3D não retornou os resultados individuais de dano.');
         var rolls=values.map(function(v){var n=Number(v);if(!Number.isInteger(n)||n<1||n>mappedFaces)throw new Error('Resultado de dano inválido.');return faces===2||faces===3?Math.ceil(n/2):n;});
-        var applied=await sb.rpc('srd_aplicar_dano_ataque_oportunidade_srd',{
+        var damageRpc=attack.weapon_hand_slot==='natural'
+          ?'srd_aplicar_dano_ataque_oportunidade_monstro_srd'
+          :'srd_aplicar_dano_ataque_oportunidade_srd';
+        var applied=await sb.rpc(damageRpc,{
           p_campaign_id:Number(MESA_ID),p_attack_id:attackId,p_damage_rolls:rolls,p_idempotency_key:uuidAtaqueIterativo35()
         });
         if(applied.error)throw new Error(applied.error.message);
