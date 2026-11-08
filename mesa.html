@@ -1960,14 +1960,16 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     }
     else{
       if(typeof raw!=='string')raw=JSON.stringify(raw);
-      var bonusMatch=raw.match(/[+\-]\d+\s+(?:melee|ranged|corpo a corpo|à distância|ataque básico)/i),damageMatch=raw.match(/\((\d+d(?:3|4|6|8|10|12|20|100)(?:[+\-]\d+)?)\)/i);
-      bonus=bonusMatch?Number(bonusMatch[0].match(/[+\-]\d+/)[0]):Number(await window.vttUI.ask({title:'Bônus de ataque',label:'Bônus de ataque de '+item.nome+' conforme a ficha',defaultValue:'0',inputMode:'numeric'}));
-      if(!Number.isFinite(bonus))return;
-      formula=damageMatch?damageMatch[1]:(item.damageDice||'');
-      if(equipped&&equipped.dano)formula=equipped.dano;
-      if(!formula)formula=await window.vttUI.ask({title:'Dano do token',label:'Fórmula de dano de '+item.nome+' (por exemplo, 1d8+3)',defaultValue:'1d6'});
-      if(!formula)return;
       var linkedNpc=item.tipo==='npc'&&item.sourceCharacterId;
+      if(!linkedNpc){
+        var bonusMatch=raw.match(/[+\\-]\\d+\\s+(?:melee|ranged|corpo a corpo|à distância|ataque básico)/i),damageMatch=raw.match(/\\((\\d+d(?:3|4|6|8|10|12|20|100)(?:[+\\-]\\d+)?)\\)/i);
+        bonus=bonusMatch?Number(bonusMatch[0].match(/[+\\-]\\d+/)[0]):Number(await window.vttUI.ask({title:'Bônus de ataque',label:'Bônus de ataque de '+item.nome+' conforme a ficha',defaultValue:'0',inputMode:'numeric'}));
+        if(!Number.isFinite(bonus))return;
+        formula=damageMatch?damageMatch[1]:(item.damageDice||'');
+        if(equipped&&equipped.dano)formula=equipped.dano;
+        if(!formula)formula=await window.vttUI.ask({title:'Dano do token',label:'Fórmula de dano de '+item.nome+' (por exemplo, 1d8+3)',defaultValue:'1d6'});
+        if(!formula)return;
+      }
       if(linkedNpc){
         // NPC vinculado usa o inventário SRD da ficha de origem, não apenas o equipamento legado do token.
         var sourceId=String(item.sourceCharacterId),sourceSheetResult=await sb.from('srd_character_sheets').select('nivel,classe_id,atributos').eq('character_id',sourceId).maybeSingle();
