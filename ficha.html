@@ -1911,10 +1911,18 @@ function dnd35TranslateCatalogText(value){
 function dnd35WeaponProficient(state,weaponName){
     var normalized=dnd35FeatParamNorm(weaponName),weapon=(state.equipment||[]).find(function(item){var category=dnd35Norm(item.categoria||item.tipo||''),details=dnd35Objeto(item.detalhes),isWeapon=category==='arma'||category==='weapon'||category.indexOf('weapon')>=0||String(details.tipo_origem||'').toLowerCase()==='weapon'||!!details.weapon_group;return isWeapon&&dnd35FeatParamNorm(item.nome)===normalized;});
     if(!weapon)return false;
-    var details=dnd35Objeto(weapon.detalhes),weaponGroup=dnd35Norm(details.weapon_group||weapon.categoria),category=String(details.weapon_proficiency|| (weaponGroup.indexOf('exotic')>=0?'exotic':weaponGroup.indexOf('martial')>=0?'martial':weaponGroup.indexOf('simple')>=0?'simple':'')),proficiencies=dnd35Objeto(state.classe&&state.classe.dados_tecnicos).proficiencias||{},weapons=Array.isArray(proficiencies.armas)?proficiencies.armas:[proficiencies.armas].filter(Boolean);
+    var details=dnd35Objeto(weapon.detalhes),weaponGroup=dnd35Norm(details.weapon_group||weapon.categoria),category=String(details.weapon_proficiency||(weaponGroup.indexOf('exotic')>=0?'exotic':weaponGroup.indexOf('martial')>=0?'martial':weaponGroup.indexOf('simple')>=0?'simple':'')),proficiencies=dnd35Objeto(state.classe&&state.classe.dados_tecnicos).proficiencias||{},weapons=Array.isArray(proficiencies.armas)?proficiencies.armas:[proficiencies.armas].filter(Boolean);
     var isDwarf=String(state.raca&&state.raca.id)==='anao';
     var dwarfFamiliarity=isDwarf&&['machado de guerra anao','urgrosh anao'].indexOf(normalized)>=0;
-    return weapons.some(function(entry){var p=dnd35Norm(entry).replace(/\s+/g,'');return dnd35FeatParamNorm(entry)===normalized||(p==='armassimples'&&category==='simple')||((p==='todasasarmassimplesemarciais'||dwarfFamiliarity)&&['simple','martial','exotic'].indexOf(category)>=0);});
+    // D&D 3.5: dwarf familiarity changes these exotic weapons to martial;
+    // it does not grant proficiency to a class lacking martial proficiency.
+    var effectiveCategory=dwarfFamiliarity?'martial':category;
+    return weapons.some(function(entry){
+      var p=dnd35Norm(entry).replace(/\\s+/g,'');
+      return dnd35FeatParamNorm(entry)===normalized||
+        (p==='armassimples'&&effectiveCategory==='simple')||
+        (p==='todasasarmassimplesemarciais'&&['simple','martial'].indexOf(effectiveCategory)>=0);
+    });
   }
   function dnd35InitialClassBonusSpec(state){
     var key=dnd35ClassRuleKey(state.classe&&((state.classe.class_key||state.classe.nome||state.classe.id)));
