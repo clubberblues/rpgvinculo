@@ -1667,6 +1667,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     addAction('❤️ Ajustar PV',function(){overlay.remove();abrirAjustePVToken(item.key);});
     addAction('🎒 Inventário',function(){overlay.remove();abrirInventarioTokenSRD(item);});
     if(item.sourceCharacterId)addAction('⚔️ Características da classe',function(){overlay.remove();abrirHabilidadesClasse(item.id);});
+    if(item.tipo==='npc'&&item.sourceCharacterId)addAction('⚔️ Ataque Total',function(){overlay.remove();iniciarAtaqueTotalNpcMestre(item).catch(function(err){alert('Ataque Total indisponível: '+err.message);});});
     addAction('📣 Publicar ficha no chat',function(){publicarFichaNPC35(item).catch(function(err){alert('Não foi possível publicar a ficha do NPC: '+err.message);});});
     if(tokenEhTurnoMestre35(item)){
       addAction('⚔️ Atacar',function(){overlay.remove();iniciarAtaqueMestre(item);});
@@ -1960,7 +1961,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     formula=String(formula).replace(/\s+/g,'');if(!/^\d{1,2}d(?:3|4|6|8|10|12|20|100)(?:[+\-]\d{1,3})?$/i.test(formula)){alert('Fórmula de dano inválida.');return;}var resolvedAttackContext=attackContext||((item.monsterStats&&item.monsterStats.invisible===true)?'invisible':'normal');ataqueMestreSelecionado={attacker:item,bonus:bonus,formula:formula,attack_context:resolvedAttackContext};document.getElementById('iniciativa-status').textContent='Turno do Mestre · '+item.nome+': selecione um alvo no tabuleiro.';document.getElementById('area-tabuleiro').classList.add('selecionando-alvo');
   }
   function selecionarAlvoAtaqueMestre(target){
-    var selected=ataqueMestreSelecionado;ataqueMestreSelecionado=null;document.getElementById('area-tabuleiro').classList.remove('selecionando-alvo');if(!selected||String(target.id)===String(selected.attacker.id)){alert('Selecione outro token como alvo.');return;}var ac=target.tipo==='player'?null:caToken35(target);if(target.tipo!=='player'&&ac==null){alert('O alvo precisa ter uma CA numérica.');return;}
+    var selected=ataqueMestreSelecionado;ataqueMestreSelecionado=null;document.getElementById('area-tabuleiro').classList.remove('selecionando-alvo');if(!selected||String(target.id)===String(selected.attacker.id)){alert('Selecione outro token como alvo.');return;}var ac=target.tipo==='player'?null:caToken35(target);
+    if(selected&&selected.npc_iterative){executarAtaqueIterativoNpcMestre(selected.attacker,target,selected.weapon,selected.weapon_end).catch(function(err){console.error('Ataque Total NPC:',err);alert('Ataque Total interrompido: '+err.message+'. Se a rolagem já foi registrada, selecione o mesmo alvo para retomar sem repetir dados.');});return;}if(target.tipo!=='player'&&ac==null){alert('O alvo precisa ter uma CA numérica.');return;}
     var attackContext=selected.attack_context|| (selected.attacker&&selected.attacker.monsterStats&&selected.attacker.monsterStats.invisible===true?'invisible':'normal');
     abrirDado('Ataque · '+selected.attacker.nome+' contra '+target.nome,async function(d20){
       var acDetails=null;
@@ -2300,6 +2302,117 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     }
     continueSequence(1);
   }
+  async function iniciarAtaqueTotalNpcMestre(item){
+    if(!ehGM||!item||item.tipo!=='npc'||!item.sourceCharacterId){alert('Ataque Total exige um NPC vinculado a uma ficha SRD.');return;}
+    if(!combatDataState||!combatDataState.active){alert('Ataque Total exige iniciativa ativa.');return;}
+    var turn=combatDataState.turn_order&&combatDataState.turn_order[Number(combatDataState.current_turn)||0];
+    if(!turn||!turn.is_monster||String(turn.id)!==String(item.id)){alert('Este NPC não está no turno ativo do Mestre.');return;}
+    await carregarEfeitosCampanha();
+    var response=await sb.rpc('consultar_ataque_iterativo_npc_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(item.id),p_attack_type:'atk-corpo'});
+    if(response.error)throw new Error(response.error.message);
+    var profile=response.data||{};
+    if(!profile.eligible){alert('Ataque Total indisponível: '+(profile.reason==='bab_below_6'?'BBA '+profile.base_attack_bonus+'; é necessário BBA +6.':'Nenhuma arma compatível equipada ou ficha inválida.'));return;}
+    var weapons=Array.isArray(profile.weapons)?profile.weapons:[];
+    if(!weapons.length){alert('Nenhuma arma compatível foi encontrada.');return;}
+    var labels=weapons.map(function(w,i){return (i+1)+'. '+String(w.name||'Arma')+' · '+String(w.hand_slot||'mão')+' · '+String(w.damage||'dano não cadastrado');}).join('\n');
+    var choice=await window.vttUI.ask({title:'Arma · Ataque Total',label:'Escolha a arma equipada:\n'+labels,defaultValue:'1',inputMode:'numeric'});
+    var index=Number(choice)-1;if(!Number.isInteger(index)||index<0||index>=weapons.length)return;
+    var weapon=weapons[index],weaponEnd=null;
+    if(weapon.details&&weapon.details.weapon_double===true){
+      var end=await window.vttUI.ask({title:'Arma dupla',label:'Digite main ou off para escolher a extremidade.',defaultValue:'main'});
+      weaponEnd=String(end||'').trim().toLowerCase();if(['main','off'].indexOf(weaponEnd)<0)return;
+    }
+    ataqueMestreSelecionado={npc_iterative:true,attacker:item,profile:profile,weapon:weapon,weapon_end:weaponEnd};
+    document.getElementById('iniciativa-status').textContent='Ataque Total · '+item.nome+': selecione um alvo no tabuleiro.';
+    document.getElementById('area-tabuleiro').classList.add('selecionando-alvo');
+  }
+
+  async function executarAtaqueIterativoNpcMestre(attacker,target,weapon,weaponEnd){
+    var campaignId=Number(MESA_ID),actorId=String(attacker.id),targetId=String(target.id);
+    if(!ehGM||!combatDataState||!combatDataState.active)throw new Error('Ataque Total exige Mestre e iniciativa ativa.');
+    if(targetId===actorId)throw new Error('O NPC não pode selecionar a si mesmo.');
+    var profileResponse=await sb.rpc('consultar_ataque_iterativo_npc_srd',{p_campaign_id:campaignId,p_token_id:actorId,p_attack_type:'atk-corpo'});
+    if(profileResponse.error)throw new Error(profileResponse.error.message);
+    var profile=profileResponse.data||{};
+    if(!profile.eligible)throw new Error('NPC sem requisitos: '+String(profile.reason||'não elegível')+'.');
+    var pendingResponse=await sb.rpc('consultar_ataque_iterativo_npc_pendente_srd',{p_campaign_id:campaignId,p_actor_token_id:actorId});
+    if(pendingResponse.error)throw new Error('Consulta de sequência anterior falhou: '+pendingResponse.error.message);
+    var saved=pendingResponse.data||{},sequenceId;
+    if(saved.active){
+      if(String(saved.target_token_id)!==targetId){alert('Existe sequência interrompida contra '+String(saved.target_token_id)+'. Selecione o alvo original.');return;}
+      if(String(saved.weapon_instance_id)!==String(weapon.instance_id)||String(saved.weapon_hand_slot)!==String(weapon.hand_slot)){alert('A sequência exige a mesma instância de arma e mão originais.');return;}
+      sequenceId=saved.sequence_id;
+    }else{
+      if(profile.full_round_action_already_used)throw new Error('A ação de rodada completa deste NPC já foi consumida.');
+      var started=await sb.rpc('iniciar_ataque_iterativo_npc_srd',{p_campaign_id:campaignId,p_actor_token_id:actorId,p_target_token_id:targetId,p_attack_type:'atk-corpo',p_weapon_instance_id:weapon.instance_id,p_weapon_hand_slot:weapon.hand_slot,p_weapon_end:weaponEnd});
+      if(started.error)throw new Error('Início da sequência: '+started.error.message);
+      sequenceId=started.data.sequence_id;
+      await enviarMensagemChat('⚔️ '+attacker.nome+' iniciou Ataque Total contra '+target.nome+'.','rolagem',{evento:'ataque_total_npc_iniciado',token_id:actorId,alvo_token_id:targetId,sequence_id:sequenceId});
+    }
+    var details=weapon.details||{},expr=String((String(profile.size||'').toLowerCase()==='pequeno'?details.damage_small:details.damage_medium)||weapon.damage||'').replace(/\s+/g,'');
+    var match=expr.match(/^(\d+)d(\d+)$/i);if(!match)throw new Error('Expressão de dano da arma não está normalizada (XdY).');
+    var diceCount=Number(match[1]),faces=Number(match[2]);if(diceCount<1||diceCount>10||faces<2||faces>100)throw new Error('Expressão de dano fora dos limites.');
+    var busy=false;
+    function roll(title,formula,callback){abrirDado(title,function(total,values){if(!Array.isArray(values)||!values.length)throw new Error('O dado não retornou os resultados individuais.');callback(total,values.map(Number));},true,true,formula);}
+    async function refreshScene(){var result=await sb.from('campaigns').select('cba_data').eq('id',campaignId).single();if(result.error)throw new Error('Falha ao atualizar a cena: '+result.error.message);campanha.cba_data=result.data.cba_data;aplicarCBAnaMesa(result.data.cba_data,false);}
+    async function run(){
+      if(busy)return;busy=true;
+      try{
+        while(true){
+          var stateResult=await sb.rpc('consultar_ataque_iterativo_npc_pendente_srd',{p_campaign_id:campaignId,p_actor_token_id:actorId});
+          if(stateResult.error)throw new Error(stateResult.error.message);
+          var state=stateResult.data||{};if(!state.active){document.getElementById('iniciativa-status').textContent='Ataque Total concluído · '+attacker.nome+'.';break;}
+          var attempts=Array.isArray(state.attempts)?state.attempts:[],last=attempts.length?attempts[attempts.length-1]:null;
+          if(!last||['miss','damage_applied'].indexOf(last.status)>=0){
+            if(Number(state.next_attack_index)>Number(state.attacks_total))break;
+            var attackIndex=Number(state.next_attack_index),penalty=(attackIndex-1)*5;
+            await new Promise(function(resolve,reject){roll('Ataque '+attackIndex+'/'+state.attacks_total+' · '+attacker.nome+' · d20 manual','1d20',async function(d20){
+              try{
+                var recorded=await sb.rpc('registrar_rolagem_ataque_iterativo_npc_srd',{p_campaign_id:campaignId,p_sequence_id:sequenceId,p_manual_d20:Number(d20),p_idempotency_key:uuidAtaqueIterativo35()});
+                if(recorded.error)throw new Error(recorded.error.message);
+                var resolved=await sb.rpc('resolver_ataque_iterativo_npc_srd',{p_campaign_id:campaignId,p_attempt_id:recorded.data.attempt_id});
+                if(resolved.error)throw new Error(resolved.error.message);
+                await enviarMensagemChat('🎲 '+attacker.nome+' · ataque '+attackIndex+'/'+state.attacks_total+': d20 '+d20+' − '+penalty+' iterativo · '+(resolved.data.status==='miss'?'ERRO':resolved.data.status==='critical_confirmation_pending'?'AMEAÇA DE CRÍTICO':'ACERTO')+'.','rolagem',{evento:'ataque_total_npc_rolagem',token_id:actorId,alvo_token_id:targetId,d20:Number(d20),penalidade_iterativa:penalty,resultado:resolved.data.attack_total,ca:resolved.data.target_ac,status:resolved.data.status});
+                resolve();
+              }catch(error){reject(error);}
+            });});
+            continue;
+          }
+          if(last.status==='pending_resolution'){
+            var resolvedPending=await sb.rpc('resolver_ataque_iterativo_npc_srd',{p_campaign_id:campaignId,p_attempt_id:last.id});
+            if(resolvedPending.error)throw new Error(resolvedPending.error.message);continue;
+          }
+          if(last.status==='critical_confirmation_pending'){
+            await new Promise(function(resolve,reject){roll('Confirmar crítico · '+attacker.nome+' · d20 manual','1d20',async function(d20){
+              try{var result=await sb.rpc('confirmar_critico_ataque_iterativo_npc_srd',{p_campaign_id:campaignId,p_attempt_id:last.id,p_confirmation_d20:Number(d20)});if(result.error)throw new Error(result.error.message);await enviarMensagemChat((result.data.is_critical?'💥 Crítico confirmado':'🛡️ Crítico não confirmado')+' · '+attacker.nome+' contra '+target.nome+'.','rolagem',{evento:'ataque_total_npc_critico',attempt_id:last.id,d20:Number(d20),confirmado:!!result.data.is_critical});resolve();}catch(error){reject(error);}
+            });});continue;
+          }
+          if(last.status==='hit_pending_damage'){
+            var mult=last.is_critical?Math.max(2,Math.min(5,Number(last.resolution_data&&last.resolution_data.critical_multiplier)||2)):1;
+            var expression=(diceCount*mult)+'d'+faces;
+            await new Promise(function(resolve,reject){roll('Dano · '+attacker.nome+' → '+target.nome+' · '+expression,expression,async function(total,rolls){
+              try{
+                if(rolls.length!==diceCount*mult||rolls.some(function(n){return !Number.isInteger(n)||n<1||n>faces;}))throw new Error('Resultados individuais de dano inválidos.');
+                var sneakCount=Math.max(0,Number(last.resolution_data&&last.resolution_data.sneak_attack_dice)||0);
+                var apply=async function(sneakRolls){
+                  var result=await sb.rpc('aplicar_dano_ataque_iterativo_npc_srd',{p_campaign_id:campaignId,p_attempt_id:last.id,p_damage_rolls:rolls,p_idempotency_key:uuidAtaqueIterativo35(),p_sneak_damage_rolls:sneakRolls});
+                  if(result.error)throw new Error(result.error.message);
+                  await refreshScene();
+                  await enviarMensagemChat('💥 '+attacker.nome+' causou '+result.data.damage_applied+' de dano em '+target.nome+'. PV restantes: '+result.data.target_hp+'.','rolagem',{evento:'ataque_total_npc_dano',attempt_id:last.id,token_id:actorId,alvo_token_id:targetId,dano:result.data.damage_applied,critical:!!result.data.critical});
+                  resolve();
+                };
+                if(sneakCount>0)roll('Ataque Furtivo · '+sneakCount+'d6',sneakCount+'d6',function(stotal,sneakValues){if(sneakValues.length!==sneakCount||sneakValues.some(function(n){return n<1||n>6;}))throw new Error('Rolagens de Ataque Furtivo inválidas.');apply(sneakValues).catch(reject);});
+                else await apply([]);
+              }catch(error){reject(error);}
+            });});continue;
+          }
+          throw new Error('Estado de tentativa não reconhecido: '+String(last.status));
+        }
+      }finally{busy=false;}
+    }
+    await run();
+  }
+
   async function selecionarAlvoAtaque(tokenKey){
     var requestedType=ataqueSelecionado,iterativeAttack=requestedType==='atk-total-corpo'||requestedType==='atk-total-dist';
     var type=requestedType==='atk-total-dist'?'atk-dist':requestedType==='atk-total-corpo'?'atk-corpo':requestedType;
