@@ -2730,10 +2730,20 @@ function dnd35LanguageNormalize(value){
   }
   function dnd35BindEquipment(state) {
     var root=document.getElementById('root');
+    async function resolveLinkedNpcToken(){
+      var campaignId=Number(URL_PARAMS.get('mesa')||(state.character&&state.character.campaign_id)||0);
+      if(!campaignId||state.character.campaign_id)return null;
+      var campaignResult=await sb.from('campaigns').select('cba_data').eq('id',campaignId).single();
+      if(campaignResult.error)throw campaignResult.error;
+      var tokens=campaignResult.data&&campaignResult.data.cba_data&&Array.isArray(campaignResult.data.cba_data.tokens)?campaignResult.data.cba_data.tokens:[];
+      var matches=tokens.filter(function(token){return token&&token.tipo==='npc'&&String(token.sourceCharacterId||'')===String(state.character.id);});
+      if(matches.length!==1)throw new Error(matches.length?'Mais de um token NPC está vinculado a esta ficha.':'Token NPC vinculado não encontrado na campanha.');
+      return {campaignId:campaignId,tokenId:String(matches[0].id)};
+    }
     async function run(button,request,label) {
       button.disabled=true;var old=button.textContent;button.textContent='Salvando…';
       try{
-        var response=await sb.rpc(request.name,request.args);
+        var resolvedArgs=await request.args();var rpcName=request.name;if(request.rpcName&&resolvedArgs.p_campaign_id)rpcName=rpcName==='equipar_arma_instancia_personagem'?'equipar_arma_instancia_npc_vinculado_srd':rpcName==='equipar_item_srd'?'equipar_item_npc_vinculado_srd':rpcName;var response=await sb.rpc(rpcName,resolvedArgs);
         if(response.error)throw new Error(response.error.message);
         state.equipment=await dnd35CarregarEquipamento(state.character.id);
         var movementResult=await sb.rpc('srd35_deslocamento_personagem',{p_character_id:String(state.character.id),p_base_speed_m:Number(state.raca.deslocamento)});
@@ -2746,22 +2756,42 @@ function dnd35LanguageNormalize(value){
     }
     root.querySelectorAll('[data-srd-equip-weapon]').forEach(function(button){
       button.addEventListener('click',function(){
-        run(button,{name:'equipar_arma_instancia_personagem',args:{p_character_id:String(state.character.id),p_instance_id:button.dataset.srdEquipWeapon,p_hand_slot:button.dataset.handSlot,p_equipado:true}},'arma');
+        run(button,{name:'equipar_arma_instancia_personagem',args:async function(){
+          var linked=await resolveLinkedNpcToken();
+          return linked
+            ? {p_campaign_id:linked.campaignId,p_token_id:linked.tokenId,p_instance_id:button.dataset.srdEquipWeapon,p_hand_slot:button.dataset.handSlot,p_equipado:true}
+            : {p_character_id:String(state.character.id),p_instance_id:button.dataset.srdEquipWeapon,p_hand_slot:button.dataset.handSlot,p_equipado:true};
+        },rpcName:'equipar_arma_instancia_personagem'},'arma').then(function(){});
       });
     });
     root.querySelectorAll('[data-srd-unequip-weapon]').forEach(function(button){
       button.addEventListener('click',function(){
-        run(button,{name:'equipar_arma_instancia_personagem',args:{p_character_id:String(state.character.id),p_instance_id:button.dataset.srdUnequipWeapon,p_hand_slot:button.dataset.handSlot,p_equipado:false}},'arma');
+        run(button,{name:'equipar_arma_instancia_personagem',args:async function(){
+          var linked=await resolveLinkedNpcToken();
+          return linked
+            ? {p_campaign_id:linked.campaignId,p_token_id:linked.tokenId,p_instance_id:button.dataset.srdUnequipWeapon,p_hand_slot:button.dataset.handSlot,p_equipado:false}
+            : {p_character_id:String(state.character.id),p_instance_id:button.dataset.srdUnequipWeapon,p_hand_slot:button.dataset.handSlot,p_equipado:false};
+        }},'arma');
       });
     });
     root.querySelectorAll('[data-srd-equip-item]').forEach(function(button){
       button.addEventListener('click',function(){
-        run(button,{name:'equipar_item_srd',args:{p_character_id:String(state.character.id),p_equipment_id:button.dataset.srdEquipItem,p_equipado:true}},'item');
+        run(button,{name:'equipar_item_srd',args:async function(){
+          var linked=await resolveLinkedNpcToken();
+          return linked
+            ? {p_campaign_id:linked.campaignId,p_token_id:linked.tokenId,p_equipment_id:button.dataset.srdEquipItem,p_equipado:true}
+            : {p_character_id:String(state.character.id),p_equipment_id:button.dataset.srdEquipItem,p_equipado:true};
+        }},'item');
       });
     });
     root.querySelectorAll('[data-srd-unequip-item]').forEach(function(button){
       button.addEventListener('click',function(){
-        run(button,{name:'equipar_item_srd',args:{p_character_id:String(state.character.id),p_equipment_id:button.dataset.srdUnequipItem,p_equipado:false}},'item');
+        run(button,{name:'equipar_item_srd',args:async function(){
+          var linked=await resolveLinkedNpcToken();
+          return linked
+            ? {p_campaign_id:linked.campaignId,p_token_id:linked.tokenId,p_equipment_id:button.dataset.srdUnequipItem,p_equipado:false}
+            : {p_character_id:String(state.character.id),p_equipment_id:button.dataset.srdUnequipItem,p_equipado:false};
+        }},'item');
       });
     });
   }
