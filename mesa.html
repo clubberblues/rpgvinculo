@@ -2542,8 +2542,17 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   function tokenSpellState35(item){return parseJsonSeguro35(item&&item.spellState,null)||{};}
   function tokenTemMagiaPreparada35(item){var state=tokenSpellState35(item),prepared=Array.isArray(state.preparadas)?state.preparadas:[],remaining=state.slots_restantes||{};return prepared.some(function(row){return row&&row.spell_id!=null&&!row.expended&&!row.gasta;})||Array.isArray(state.conhecidas)&&state.conhecidas.length>0&&Object.keys(remaining).some(function(level){return Number(remaining[level])>0;});}
   function tokenEhTurnoMestre35(item){var order=combatDataState&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order:[],idx=Math.max(0,Number(combatDataState&&combatDataState.current_turn)||0),entry=order[idx];return !!(ehGM&&combatDataState&&combatDataState.active&&item&&entry&&entry.is_monster&&String(entry.id)===String(item.id));}
+  async function tokenEmFuria35(item){
+    if(!item||item.tipo!=='npc')return false;
+    var rageResult=await sb.from('srd_campaign_effects').select('effect_data')
+      .eq('campaign_id',Number(MESA_ID)).eq('target_kind','token')
+      .eq('target_id',String(item.id)).eq('active',true);
+    if(rageResult.error)throw new Error('Não foi possível verificar restrições de Fúria: '+rageResult.error.message);
+    return (rageResult.data||[]).some(function(effect){return effect&&effect.effect_data&&effect.effect_data.source_feature==='barbarian_rage';});
+  }
   async function abrirMagiasTokenMestre(item){
     if(!tokenEhTurnoMestre35(item)){alert('Só é possível conjurar no turno ativo deste token.');return;}
+    try{if(await tokenEmFuria35(item)){alert('Um Bárbaro em Fúria não pode conjurar magias.');return;}}catch(rageError){alert(rageError.message);return;}
     var state=tokenSpellState35(item),prepared=Array.isArray(state.preparadas)?state.preparadas:[];
     var rows=prepared.map(function(row,index){return {row:row,index:index,mode:'prepared',slotLevel:Number(row&&row.slot_level)};}).filter(function(x){return x.row&&x.row.spell_id!=null&&!x.row.expended&&!x.row.gasta;});
     var classKey=String(state.class_key||((item.monsterStats||{}).spellcasting_key)||''),remaining=state.slots_restantes||{},knownIds=Array.isArray(state.conhecidas)?state.conhecidas.map(String):[];
@@ -2569,6 +2578,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     async function cast(roll){
       try{
         if(!tokenEhTurnoMestre35(item))throw new Error('O turno deste token terminou.');
+        if(await tokenEmFuria35(item))throw new Error('Um Bárbaro em Fúria não pode conjurar magias.');
         var used=await sb.rpc('consumir_acao_token_gm_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(item.id),p_acao:'padrao'});if(used.error)throw new Error(used.error.message);
         combatDataState=used.data.combat_data||combatDataState;renderizarIniciativa(combatDataState);
         var fresh=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key)===active.tokenKey;});if(!fresh)throw new Error('Token removido durante a conjuração.');
