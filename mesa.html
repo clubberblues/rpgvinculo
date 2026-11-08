@@ -1367,7 +1367,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var cargas=[
       comPrazoMesa('A lista de participantes',carregarMembros(),15000),
       comPrazoMesa('As fichas da campanha',carregarPersonagens(),15000),
-      comPrazoMesa('O histórico do chat',carregarChat(),15000)
+      comPrazoMesa('O histórico do chat',carregarChat(),15000),
+      comPrazoMesa('As condições e efeitos ativos',carregarEfeitosCampanha(),15000)
     ];
     Promise.allSettled(cargas).then(async function(resultados){
       var falhas=resultados.filter(function(r){return r.status==='rejected';});
