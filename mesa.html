@@ -1717,7 +1717,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
           var refreshed=normalizarCBAData(campanha.cba_data);
           var updated=(refreshed&&Array.isArray(refreshed.tokens)?refreshed.tokens:[]).find(function(token){return String(token.id)===String(item.id);});
           if(updated)abrirPainelControleNPC35(updated);
-        });
+        },true,true,'1d100');
       });
     }
     addAction('❤️ Ajustar PV',function(){overlay.remove();abrirAjustePVToken(item.key);});
