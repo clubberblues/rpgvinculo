@@ -3072,8 +3072,8 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     var racialFavoredEnemyBonus=0;
     var targetTraits=String([target.nome,target.detalhe,target.creature_type,target.monsterStats&&target.monsterStats.tipo,target.monsterStats&&target.monsterStats.subtipo,target.monsterStats&&target.monsterStats.subtype,target.monsterStats&&target.monsterStats.subtypes,target.monsterStats&&target.monsterStats.type,target.monsterStats&&target.monsterStats.creature_type,target.monsterStats&&target.monsterStats.race_id].filter(Boolean).join(' ')).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
     var racialRace=String(own.sh&&own.sh.raca_id||'');
-    if(racialRace==='anao'&&/(orc|goblin|hobgoblin|bugbear|goblinoid)/.test(targetTraits))racialFavoredEnemyBonus=1;
-    if(racialRace==='gnomo'&&/(kobold|goblin|hobgoblin|bugbear|goblinoid)/.test(targetTraits))racialFavoredEnemyBonus=1;
+    if(racialRace==='anao'&&/(orc|goblin|hobgoblin|bugbear|goblinoid(e)?)/.test(targetTraits))racialFavoredEnemyBonus=1;
+    if(racialRace==='gnomo'&&/(kobold|goblin|hobgoblin|bugbear|goblinoid(e)?)/.test(targetTraits))racialFavoredEnemyBonus=1;
     if(racialRace==='halfling'&&type==='atk-dist'&&weapon&&(String(weapon.detalhes&&weapon.detalhes.weapon_ranged_type||'')==='thrown'||normalizeName(weapon.nome)==='funda'))racialFavoredEnemyBonus=1;
     baseAttackBonus=bab+baseAbility+weaponFocus-powerPenalty+sizeModifier-rangePenalty-proficiencyPenalty+racialFavoredEnemyBonus;
     bonus=baseAttackBonus+abilityEffectDelta+effectAttackModifier+armorNonproficiencyPenalty;
