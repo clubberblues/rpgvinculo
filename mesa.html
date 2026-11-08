@@ -6571,7 +6571,9 @@ async function abrirModalEquipamentos(){
       var linkedToken=linked[linkedIndex];
       var linkedInventory=await sb.rpc('consultar_inventario_npc_vinculado_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(linkedToken.id)});
       if(linkedInventory.error){console.warn('Equipamento da ficha NPC vinculada indisponível para exibição de CA:',linkedInventory.error.message);continue;}
-      equipamentoTokens[String(linkedToken.id)]=(linkedInventory.data&&Array.isArray(linkedInventory.data.items)?linkedInventory.data.items:[]).map(function(row){return Object.assign({},row.equipment||{},{equipment_id:row.equipment_id,quantidade:row.quantidade,equipado:!!row.equipado});});
+      var linkedData=linkedInventory.data||{};
+      linkedToken.monsterStats=Object.assign({},linkedToken.monsterStats||{},{attributes:linkedData.attributes||{}});
+      equipamentoTokens[String(linkedToken.id)]=(Array.isArray(linkedData.items)?linkedData.items:[]).map(function(row){return Object.assign({},row.equipment||{},{equipment_id:row.equipment_id,quantidade:row.quantidade,equipado:!!row.equipado});});
     }
     renderCards();
   }
