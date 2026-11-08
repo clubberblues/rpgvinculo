@@ -6581,6 +6581,7 @@ async function abrirModalEquipamentos(){
   async function carregarEquipamentosTokens(){
     var r=await sb.from('srd_cba_token_equipment').select('token_id,equipment_id,quantidade,equipado,equipment:srd_equipment(*)').eq('campaign_id',Number(MESA_ID));
     equipamentoTokens=Object.create(null);
+    linkedNpcSheetAttributes=Object.create(null);
     if(r.error){if(!/relation .* does not exist|schema cache/i.test(r.error.message||''))console.warn('Inventário dos tokens indisponível; continuando a carga das fichas NPC vinculadas:',r.error.message);}
     else (r.data||[]).forEach(function(row){(equipamentoTokens[String(row.token_id)]||(equipamentoTokens[String(row.token_id)]=[])).push(Object.assign({},row.equipment||{},{equipment_id:row.equipment_id,quantidade:row.quantidade,equipado:!!row.equipado}));});
     var scene=cbaPublishedState||normalizarCBAData(campanha&&campanha.cba_data),linked=scene&&Array.isArray(scene.tokens)?scene.tokens.filter(function(token){return token.tipo==='npc'&&token.sourceCharacterId;}):[];
