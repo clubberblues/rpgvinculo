@@ -1894,8 +1894,9 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       for(const movement of pending){
         const section=document.createElement('section');section.className='player-action-groups';
         const mover=(cbaPublishedState&&cbaPublishedState.tokens||[]).find(function(t){return String(t.id)===String(movement.mover_token_id)||String(t.key)===String(movement.mover_token_id);});
-        addText(section,(mover&&mover.nome||movement.mover_token_id)+' · rodada '+movement.round+' · '+(movement.movement_controller==='gm'?'movimento do Mestre':'movimento do jogador'),'feature-detail');
-        addText(section,'Origem ('+(movement.origin||[]).join(', ')+') → destino ('+(movement.destination||[]).join(', ')+')','skill-roll-hint');
+        const isTripManeuver=Array.isArray(movement.threats)&&movement.threats.some(function(t){return t&&t.maneuver_event==='trip';});
+        addText(section,(isTripManeuver?'⚔️ Derrubar · reação de oportunidade · ':'')+(mover&&mover.nome||movement.mover_token_id)+' · rodada '+movement.round+(isTripManeuver?'':' · '+(movement.movement_controller==='gm'?'movimento do Mestre':'movimento do jogador')),'feature-detail');
+        if(!isTripManeuver)addText(section,'Origem ('+(movement.origin||[]).join(', ')+') → destino ('+(movement.destination||[]).join(', ')+')','skill-roll-hint');
         const reactions=Array.isArray(movement.pending_reactions)?movement.pending_reactions:[];
         for(const reaction of reactions){
           const reactor=(cbaPublishedState&&cbaPublishedState.tokens||[]).find(function(t){return String(t.id)===String(reaction.reactor_token_id)||String(t.key)===String(reaction.reactor_token_id);});
@@ -1994,20 +1995,53 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
           }
           section.appendChild(row);
         }
-        addButton(section,'Concluir movimento interrompido',async function(){
-          var done=await sb.rpc('srd_finalizar_movimento_aoo_pendente_srd',{p_campaign_id:Number(MESA_ID),p_pending_id:String(movement.pending_id)});
-          if(done.error)throw new Error(done.error.message);
-          await atualizarCenaAOO();
-          await registrarEventoAOO('👣 O movimento de '+(mover&&mover.nome||movement.mover_token_id)+' foi retomado após a resolução das reações.',{pending_id:movement.pending_id,mover_token_id:movement.mover_token_id,destination:movement.destination});
-          await renderQueue();
-        },reactions.some(function(r){return ['waiting','reserved','attack_started','hit_pending_damage'].includes(String(r.status));}));
-        addButton(section,'Cancelar movimento interrompido',async function(){
-          if(!window.confirm('Cancelar este movimento? Reações já reservadas continuarão consumidas nesta rodada.'))return;
-          var cancelled=await sb.rpc('srd_cancelar_movimento_aoo_pendente_srd',{p_campaign_id:Number(MESA_ID),p_pending_id:String(movement.pending_id)});
-          if(cancelled.error)throw new Error(cancelled.error.message);
-          await registrarEventoAOO('⛔ O Mestre cancelou o movimento interrompido de '+(mover&&mover.nome||movement.mover_token_id)+'.',{pending_id:movement.pending_id,mover_token_id:movement.mover_token_id});
-          await renderQueue();
-        });
+        if(isTripManeuver){
+          addButton(section,'🎲 Resolver Derrubar após a reação',async function(){
+            var defenderId=reactions[0]&&reactions[0].reactor_token_id;
+            if(!defenderId)throw new Error('Defensor da manobra não foi localizado.');
+            abrirDado('Derrubar · teste de FOR do atacante · D20',async function(attackerRoll){
+              abrirDado('Derrubar · resistência do defensor · D20',async function(defenderRoll){
+                try{
+                  var resolved=await sb.rpc('srd_resolver_derrubar_apos_aoo_srd',{
+                    p_campaign_id:Number(MESA_ID),p_pending_id:String(movement.pending_id),
+                    p_attacker_d20:Number(attackerRoll),p_defender_d20:Number(defenderRoll),
+                    p_defender_firm_ground:!!(movement.threats[0]&&movement.threats[0].defender_firm_ground)
+                  });
+                  if(resolved.error)throw new Error(resolved.error.message||'Não foi possível resolver Derrubar.');
+                  var outcome=resolved.data||{};
+                  var defenderToken=(cbaPublishedState.tokens||[]).find(function(t){return String(t.id)===String(defenderId)||String(t.key)===String(defenderId);});
+                  await registrarEventoAOO((outcome.success?'⚔️ Derrubar bem-sucedido: ':'🛡️ Derrubar resistido: ')+
+                    (mover&&mover.nome||movement.mover_token_id)+' contra '+(defenderToken&&defenderToken.nome||defenderId)+'. '+
+                    outcome.attacker_total+' contra '+outcome.defender_total+'. '+(outcome.success?'O alvo ficou Caído.':'O alvo permaneceu de pé.'),
+                    {pending_id:movement.pending_id,maneuver:'trip',success:outcome.success,attacker_total:outcome.attacker_total,defender_total:outcome.defender_total});
+                  await atualizarCenaAOO();await renderQueue();
+                }catch(error){alert('Falha ao resolver Derrubar: '+String(error&&error.message||error));}
+              },true,true,'1d20');
+            },true,true,'1d20');
+          },reactions.some(function(r){return ['waiting','reserved','attack_started','hit_pending_damage'].includes(String(r.status));}));
+          addButton(section,'Cancelar tentativa de Derrubar',async function(){
+            if(!window.confirm('Cancelar esta tentativa? Reações já reservadas continuarão consumidas.'))return;
+            var cancelled=await sb.rpc('srd_cancelar_movimento_aoo_pendente_srd',{p_campaign_id:Number(MESA_ID),p_pending_id:String(movement.pending_id)});
+            if(cancelled.error)throw new Error(cancelled.error.message);
+            await registrarEventoAOO('⛔ O Mestre cancelou a tentativa de Derrubar.',{pending_id:movement.pending_id,maneuver:'trip'});
+            await renderQueue();
+          });
+        }else{
+          addButton(section,'Concluir movimento interrompido',async function(){
+            var done=await sb.rpc('srd_finalizar_movimento_aoo_pendente_srd',{p_campaign_id:Number(MESA_ID),p_pending_id:String(movement.pending_id)});
+            if(done.error)throw new Error(done.error.message);
+            await atualizarCenaAOO();
+            await registrarEventoAOO('👣 O movimento de '+(mover&&mover.nome||movement.mover_token_id)+' foi retomado após a resolução das reações.',{pending_id:movement.pending_id,mover_token_id:movement.mover_token_id,destination:movement.destination});
+            await renderQueue();
+          },reactions.some(function(r){return ['waiting','reserved','attack_started','hit_pending_damage'].includes(String(r.status));}));
+          addButton(section,'Cancelar movimento interrompido',async function(){
+            if(!window.confirm('Cancelar este movimento? Reações já reservadas continuarão consumidas nesta rodada.'))return;
+            var cancelled=await sb.rpc('srd_cancelar_movimento_aoo_pendente_srd',{p_campaign_id:Number(MESA_ID),p_pending_id:String(movement.pending_id)});
+            if(cancelled.error)throw new Error(cancelled.error.message);
+            await registrarEventoAOO('⛔ O Mestre cancelou o movimento interrompido de '+(mover&&mover.nome||movement.mover_token_id)+'.',{pending_id:movement.pending_id,mover_token_id:movement.mover_token_id});
+            await renderQueue();
+          });
+        }
         body.appendChild(section);
       }
     }
@@ -3726,7 +3760,21 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var lastManeuverData=null;
     resolveTrip.onclick=function(){
       if(!lastManeuverData||maneuver.value!=='trip')return;
-      if(['provokes','requires_weapon_context'].indexOf(lastManeuverData.aoo_status)>=0){result.textContent='A tentativa provoca ataque de oportunidade. Resolva a reação antes; esta integração ainda não executa AOO de manobra.';return;}
+      if(lastManeuverData.aoo_status==='provokes'){
+        resolveTrip.disabled=true;
+        try{
+          var pendingAoo=await sb.rpc('srd_iniciar_derrubar_com_aoo_srd',{
+            p_campaign_id:Number(MESA_ID),p_attacker_token_id:attacker.value,p_defender_token_id:defender.value,
+            p_defender_firm_ground:ground.checked,p_trip_using_weapon:weapon.checked
+          });
+          if(pendingAoo.error)throw new Error(pendingAoo.error.message||'Não foi possível preparar a reação de oportunidade.');
+          result.textContent='Derrubar interrompido: o defensor precisa resolver o Ataque de Oportunidade antes dos testes resistidos.';
+          overlay.remove();abrirPainelFilaAOO();
+        }catch(error){result.textContent='Falha ao preparar a reação: '+String(error&&error.message||error);}
+        finally{resolveTrip.disabled=false;}
+        return;
+      }
+      if(lastManeuverData.aoo_status==='requires_weapon_context'){result.textContent='Informe se o ataque usa arma apropriada e consulte novamente.';return;}
       resolveTrip.disabled=true;
       abrirDado('Derrubar · teste de FOR do atacante · D20',async function(attackerRoll){
         var attackerD20=Number(attackerRoll);
