@@ -2081,7 +2081,7 @@ function dnd35LanguageNormalize(value){
     var spent=Object.keys(lu.skills||{}).reduce(function(total,id){return total+(Number(lu.skills[id])||0)*skillCost(id);},0);
     var skillsHtml=skillRows.map(function(skill){
       var id=String(skill.id),rank=Number(dnd35Objeto(state.sheet.pericias)[id]||0),isClass=!!classMap[id],language=id==='srd35_skill_speak_language';
-      var step=(isClass||language)?1:0.5,maxRank=language?budget:(isClass?nextLevel+3:(nextLevel+3)/2),maxAdd=Math.max(0,maxRank-rank),selected=Number(lu.skills[id]||0);
+      var step=(isClass||language)?1:0.5,maxRank=language?rank+budget:(isClass?nextLevel+3:(nextLevel+3)/2),maxAdd=Math.max(0,maxRank-rank),selected=Number(lu.skills[id]||0);
       var usedOthers=spent-selected*skillCost(id),affordable=Math.max(0,(budget-usedOthers)/skillCost(id));
       maxAdd=language?Math.min(maxAdd,affordable):Math.min(maxAdd,affordable);
       maxAdd=Math.floor((maxAdd+0.00001)/step)*step;
