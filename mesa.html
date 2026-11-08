@@ -5866,13 +5866,14 @@ async function abrirModalEquipamentos(){
     var status=document.getElementById('iniciativa-status');
     if(!painel || !fila || !status) return;
     combatDataState=combatData||null;
+    var previousSurpriseButton=document.getElementById('btn-configurar-rodada-surpresa');if(previousSurpriseButton)previousSurpriseButton.remove();
     var ordem=combatDataState && Array.isArray(combatDataState.turn_order)?combatDataState.turn_order:[];
     var esperados=combatDataState && Array.isArray(combatDataState.expected_character_ids)?combatDataState.expected_character_ids:[];
     var ativo=!!(combatDataState && combatDataState.active && ordem.length),painelVisivel=String(campanha&&campanha.state||'').toUpperCase()==='COMBATE'&&!!(ordem.length||esperados.length),mesaRoot=document.querySelector('.mesa');if(mesaRoot)mesaRoot.classList.toggle('mesa-com-iniciativa',painelVisivel);
     var gmActions=document.getElementById('iniciativa-acoes-mestre');if(!gmActions){gmActions=document.createElement('div');gmActions.id='iniciativa-acoes-mestre';var controlsHost=document.getElementById('painel-combate-acoes');if(controlsHost)controlsHost.appendChild(gmActions);else fila.parentNode.insertBefore(gmActions,fila.nextSibling);}gmActions.replaceChildren();
     ordem.forEach(function(entry){if(entry&&!entry.is_monster&&entry.id!=null)removerPedidosIniciativaDaFicha(entry.id);});
     if(ehGM&&ativo&&!String((combatDataState.surprise||{}).phase||'')){
-      var surpriseBtn=document.createElement('button');surpriseBtn.type='button';surpriseBtn.textContent='⚔️ Configurar rodada surpresa';
+      var surpriseBtn=document.createElement('button');surpriseBtn.id='btn-configurar-rodada-surpresa';surpriseBtn.type='button';surpriseBtn.textContent='⚔️ Configurar rodada surpresa';
       surpriseBtn.title='O Mestre determina quem percebeu a ameaça antes do primeiro turno normal.';
       surpriseBtn.onclick=configurarRodadaSurpresa;surpriseBtn.style.pointerEvents='auto';painel.appendChild(surpriseBtn);
     }
