@@ -2353,7 +2353,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   function modificadorEfeitoTokenMesa35(token,stat){
     if(!token||!Array.isArray(efeitosCampanhaMesa.effects))return 0;
     var buckets=Object.create(null);
-    efeitosCampanhaMesa.effects.filter(function(effect){return effect.target_kind==='token'&&String(effect.target_id)===String(token.id);}).forEach(function(effect){
+    efeitosCampanhaMesa.effects.filter(function(effect){return effect.target_kind==='token'&&(String(effect.target_id)===String(token.id)||String(effect.target_id)===String(token.key));}).forEach(function(effect){
       var modifiers=effect.effect_data&&Array.isArray(effect.effect_data.modifiers)?effect.effect_data.modifiers:[];
       modifiers.forEach(function(modifier){
         if(String(modifier.stat||'').toLowerCase()!==String(stat).toLowerCase())return;
