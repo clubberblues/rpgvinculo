@@ -1696,6 +1696,30 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(item.sourceCharacterId&&String(campanha&&campanha.state||'').toUpperCase()!=='COMBATE'&&!(combatDataState&&combatDataState.active)){
       addAction('🌙 Descanso longo',function(){executarDescansoLongoNpcVinculado35(item);});
     }
+    if(item.sourceCharacterId&&Number.isFinite(Number(item.hp))&&Number(item.hp)<0&&Number(item.hp)>-10){
+      addAction('🩸 Estabilizar · rolar D100',function(){
+        overlay.remove();
+        abrirDado('Estabilização · '+String(item.nome||'NPC')+' · D100',async function(resultado){
+          var d100=Number(resultado);
+          if(!Number.isInteger(d100)||d100<1||d100>100)throw new Error('O resultado precisa ser um D100 entre 1 e 100.');
+          var resolved=await sb.rpc('srd_resolve_npc_dying_round',{p_campaign_id:Number(MESA_ID),p_token_id:String(item.id),p_d100:d100});
+          if(resolved.error)throw new Error(resolved.error.message);
+          var outcome=resolved.data||{},message='';
+          if(outcome.stabilized)message='🩸 '+String(item.nome||'O NPC')+' estabilizou com D100 '+d100+'. PV: '+outcome.pv_atual+'.';
+          else if(outcome.dead)message='☠️ '+String(item.nome||'O NPC')+' morreu ao atingir -10 PV (D100 '+d100+').';
+          else message='🩸 '+String(item.nome||'O NPC')+' não estabilizou (D100 '+d100+') e perdeu 1 PV. PV atual: '+outcome.pv_atual+'.';
+          var sent=await enviarMensagemChat(message,'sistema',{evento:'npc_stabilization',token_id:String(item.id),source_character_id:String(item.sourceCharacterId),d100:d100,pv_atual:outcome.pv_atual,condition:outcome.condition});
+          if(sent&&sent.error)console.warn('Estabilização aplicada, mas o evento não foi publicado no chat:',sent.error.message);
+          var fresh=await sb.from('campaigns').select('cba_data').eq('id',MESA_ID).single();
+          if(fresh.error)throw new Error('A estabilização foi aplicada, mas não foi possível atualizar o tabuleiro: '+fresh.error.message);
+          campanha.cba_data=fresh.data.cba_data;
+          aplicarCBAnaMesa(campanha.cba_data,false);
+          var refreshed=normalizarCBAData(campanha.cba_data);
+          var updated=(refreshed&&Array.isArray(refreshed.tokens)?refreshed.tokens:[]).find(function(token){return String(token.id)===String(item.id);});
+          if(updated)abrirPainelControleNPC35(updated);
+        });
+      });
+    }
     addAction('❤️ Ajustar PV',function(){overlay.remove();abrirAjustePVToken(item.key);});
     addAction('🎒 Inventário',function(){overlay.remove();abrirInventarioTokenSRD(item);});
     if(item.sourceCharacterId)addAction('⚔️ Características da classe',function(){overlay.remove();abrirHabilidadesClasse(item.id);});
