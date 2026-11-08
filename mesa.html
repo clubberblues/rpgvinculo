@@ -1250,6 +1250,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   var itemEquipamentoSelecionado = null;
   var catalogoEquipamentosSRD = [];
   var equipamentoTokens = Object.create(null);
+  var linkedNpcSheetAttributes = Object.create(null);
   var cbaNpcCatalog = [];
   var cbaPlayerCatalog = [];
   var srdRaceCatalog = [];
@@ -2365,8 +2366,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   function caToken35(token){
     if(!token)return 10;
     var record=token.tipo==='player'?acharPersonagemDoToken(token):null;if(record)return caFichaMesa(record);
-    var stats=token.monsterStats||{},gear=equipamentoToken35(token),worn=gear.filter(function(it){return it.equipado&&['armadura','escudo','acessorio'].indexOf(slotEquipamento35(it))>=0;}),isGenerated=token.tipo==='npc'&&stats.attributes&&typeof stats.attributes==='object';
-    var direct=valorCA35(token.ac),base=valorCA35(token.baseAc),full=valorCA35(stats.ca),dex=token.dexMod!=null?Number(token.dexMod):modifier35(isGenerated?stats.attributes.DES:(stats.destreza==null?10:stats.destreza)),natural=Number(stats.armadura_natural||stats.natural_armor||stats.bonus_armadura_natural||0);
+    var stats=token.monsterStats||{},sheetAttrs=linkedNpcSheetAttributes[String(token.id)]||(stats.attributes&&typeof stats.attributes==='object'?stats.attributes:null),gear=equipamentoToken35(token),worn=gear.filter(function(it){return it.equipado&&['armadura','escudo','acessorio'].indexOf(slotEquipamento35(it))>=0;}),isGenerated=token.tipo==='npc'&&!!sheetAttrs;
+    var direct=valorCA35(token.ac),base=valorCA35(token.baseAc),full=valorCA35(stats.ca),dex=token.dexMod!=null?Number(token.dexMod):modifier35(isGenerated?sheetAttrs.DES:(stats.destreza==null?10:stats.destreza)),natural=Number(stats.armadura_natural||stats.natural_armor||stats.bonus_armadura_natural||0);
     if(!Number.isFinite(dex))dex=0;if(!Number.isFinite(natural))natural=0;
     if(isGenerated){base=10+natural+(Number(stats.size_modifier)||0);}
     else if(token.tipo==='monstro'&&base!=null){dex=0;natural=0;}
@@ -6588,7 +6589,7 @@ async function abrirModalEquipamentos(){
       var linkedInventory=await sb.rpc('consultar_inventario_npc_vinculado_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(linkedToken.id)});
       if(linkedInventory.error){console.warn('Equipamento da ficha NPC vinculada indisponível para exibição de CA:',linkedInventory.error.message);continue;}
       var linkedData=linkedInventory.data||{};
-      linkedToken.monsterStats=Object.assign({},linkedToken.monsterStats||{},{attributes:linkedData.attributes||{}});
+      linkedNpcSheetAttributes[String(linkedToken.id)]=linkedData.attributes||{};
       equipamentoTokens[String(linkedToken.id)]=(Array.isArray(linkedData.items)?linkedData.items:[]).map(function(row){return Object.assign({},row.equipment||{},{equipment_id:row.equipment_id,quantidade:row.quantidade,equipado:!!row.equipado});});
     }
     renderCards();
