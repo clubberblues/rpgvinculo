@@ -2358,11 +2358,13 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       modifiers.forEach(function(modifier){
         if(String(modifier.stat||'').toLowerCase()!==String(stat).toLowerCase())return;
         var value=Number(modifier.value);if(!Number.isFinite(value))return;
-        var type=String(modifier.bonus_type||'untyped').toLowerCase(),bucket=buckets[type]||(buckets[type]={sum:0,max:null});
-        bucket.sum+=value;bucket.max=bucket.max===null?value:Math.max(bucket.max,value);
+        var type=String(modifier.bonus_type||'untyped').toLowerCase(),bucket=buckets[type]||(buckets[type]={stack:0,negative:0,positiveMax:null});
+        if(['untyped','dodge','circumstance'].indexOf(type)>=0)bucket.stack+=value;
+        else if(value<0)bucket.negative+=value;
+        else bucket.positiveMax=bucket.positiveMax===null?value:Math.max(bucket.positiveMax,value);
       });
     });
-    return Object.keys(buckets).reduce(function(total,type){var bucket=buckets[type];return total+(['untyped','dodge','circumstance'].indexOf(type)>=0?bucket.sum:bucket.max);},0);
+    return Object.keys(buckets).reduce(function(total,type){var bucket=buckets[type];return total+(['untyped','dodge','circumstance'].indexOf(type)>=0?bucket.stack:bucket.negative+(bucket.positiveMax===null?0:bucket.positiveMax));},0);
   }
   function caToken35(token){
     if(!token)return 10;
@@ -6646,13 +6648,15 @@ async function abrirModalEquipamentos(){
         if(String(modifier.stat||'').toLowerCase()!==String(stat).toLowerCase())return;
         var value=Number(modifier.value);if(!Number.isFinite(value))return;
         var type=String(modifier.bonus_type||'untyped').toLowerCase();
-        var bucket=buckets[type]||(buckets[type]={sum:0,max:null});
-        bucket.sum+=value;bucket.max=bucket.max===null?value:Math.max(bucket.max,value);
+        var bucket=buckets[type]||(buckets[type]={stack:0,negative:0,positiveMax:null});
+        if(['untyped','dodge','circumstance'].indexOf(type)>=0)bucket.stack+=value;
+        else if(value<0)bucket.negative+=value;
+        else bucket.positiveMax=bucket.positiveMax===null?value:Math.max(bucket.positiveMax,value);
       });
     });
     return Object.keys(buckets).reduce(function(total,type){
       var bucket=buckets[type];
-      return total+(['untyped','dodge','circumstance'].indexOf(type)>=0?bucket.sum:bucket.max);
+      return total+(['untyped','dodge','circumstance'].indexOf(type)>=0?bucket.stack:bucket.negative+(bucket.positiveMax===null?0:bucket.positiveMax));
     },0);
   }
   var nomesCondicoesMesa={
