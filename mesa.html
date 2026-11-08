@@ -1915,6 +1915,19 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
               if(weapons.error)throw new Error(weapons.error.message);
               var list=Array.isArray(weapons.data&&weapons.data.weapons)?weapons.data.weapons:[];
               if(!list.length){
+                if(weapons.data&&weapons.data.character_id!=null){
+                  var unarmed=await sb.rpc('srd_iniciar_ataque_oportunidade_desarmado_srd',{
+                    p_campaign_id:Number(MESA_ID),p_pending_id:String(movement.pending_id),
+                    p_reactor_token_id:String(reaction.reactor_token_id),p_reaction_id:String(reaction.reservation_id)
+                  });
+                  if(unarmed.error)throw new Error(unarmed.error.message);
+                  await registrarEventoAOO('👊 '+name+' iniciou um Ataque de Oportunidade desarmado.',{
+                    pending_id:movement.pending_id,attack_id:unarmed.data.attack_id,
+                    reactor_token_id:reaction.reactor_token_id,weapon:'Ataque desarmado'
+                  });
+                  await executarEtapasAtaqueAOO(String(unarmed.data.attack_id),name,'Ataque desarmado');
+                  await renderQueue();return;
+                }
                 if(weapons.data&&weapons.data.reason==='unlinked_creature_requires_gm_adjudication'){
                   var natural=await sb.rpc('srd_iniciar_ataque_oportunidade_monstro_srd',{
                     p_campaign_id:Number(MESA_ID),p_pending_id:String(movement.pending_id),
