@@ -3804,6 +3804,35 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var result=document.createElement('pre');result.style.whiteSpace='pre-wrap';result.style.overflowWrap='anywhere';result.style.marginTop='14px';result.style.padding='12px';result.style.borderRadius='8px';result.style.background='rgba(0,0,0,.18)';result.textContent='Selecione os participantes e consulte os modificadores.';panel.appendChild(result);
     var resolveTrip=document.createElement('button');resolveTrip.type='button';resolveTrip.className='feature-use-btn';resolveTrip.textContent='🎲 Resolver Derrubar · consumir ação padrão';resolveTrip.style.display='none';resolveTrip.style.marginTop='10px';panel.appendChild(resolveTrip);
     var lastManeuverData=null;
+    var resolveBullRush=document.createElement('button');resolveBullRush.type='button';resolveBullRush.className='feature-use-btn';resolveBullRush.textContent='🎲 Iniciar Encontrão · ação padrão';resolveBullRush.style.display='none';resolveBullRush.style.marginTop='10px';panel.appendChild(resolveBullRush);
+    resolveBullRush.onclick=async function(){
+      if(!lastManeuverData||maneuver.value!=='bull_rush')return;
+      resolveBullRush.disabled=true;
+      try{
+        var pending=await sb.rpc('srd_iniciar_encontrao_srd',{p_campaign_id:Number(MESA_ID),p_attacker_token_id:attacker.value,p_defender_token_id:defender.value});
+        if(pending.error)throw new Error(pending.error.message||'Não foi possível iniciar Encontrão.');
+        var pd=pending.data||{};
+        if(pd.aoo_status==='provokes'){
+          result.textContent='Encontrão interrompido: o defensor precisa resolver o Ataque de Oportunidade antes dos testes resistidos.';
+          overlay.remove();abrirPainelFilaAOO();return;
+        }
+        abrirDado('Encontrão · teste de FOR do atacante · D20',async function(ar){
+          var ad=Number(ar);if(!Number.isInteger(ad)||ad<1||ad>20)throw new Error('D20 físico inválido para o atacante.');
+          abrirDado('Encontrão · resistência de FOR do defensor · D20',async function(dr){
+            try{
+              var dd=Number(dr);if(!Number.isInteger(dd)||dd<1||dd>20)throw new Error('D20 físico inválido para o defensor.');
+              var done=await sb.rpc('srd_resolver_encontrao_srd',{p_campaign_id:Number(MESA_ID),p_pending_id:pd.pending_id,p_attacker_d20:ad,p_defender_d20:dd,p_follow:false});
+              if(done.error)throw new Error(done.error.message||'Não foi possível resolver Encontrão.');
+              var out=done.data||{};
+              result.textContent='ENCONTRÃO · '+(out.success?'SUCESSO':'FALHA')+'\nAtacante: '+out.attacker_total+' · Defensor: '+out.defender_total+'\nDeslocamento forçado: '+out.squares_pushed+' quadrado(s)'+(out.blocked?' · interrompido por obstáculo/limite':'')+'\nAção padrão consumida.';
+              await enviarMensagemChat((out.success?'💥 ':'🛡️ ')+attacker.options[attacker.selectedIndex].textContent+' tentou Encontrão contra '+defender.options[defender.selectedIndex].textContent+': '+out.attacker_total+' contra '+out.defender_total+'. '+(out.success?'Deslocou '+out.squares_pushed+' quadrado(s).':'A manobra falhou.'),'sistema',{evento:'combat_maneuver_resolved',maneuver:'bull_rush',success:out.success,attacker_token_id:attacker.value,defender_token_id:defender.value,squares_pushed:out.squares_pushed});
+              resolveBullRush.style.display='none';
+            }catch(error){result.textContent='Falha ao resolver Encontrão: '+String(error&&error.message||error);}
+          },true,true,'1d20');
+        },true,true,'1d20');
+      }catch(error){result.textContent='Falha ao iniciar Encontrão: '+String(error&&error.message||error);}
+      finally{resolveBullRush.disabled=false;}
+    };
     resolveTrip.onclick=async function(){
       if(!lastManeuverData||maneuver.value!=='trip')return;
       if(lastManeuverData.aoo_status==='provokes'){
@@ -3855,6 +3884,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         if(response.error)throw new Error(response.error.message||'Não foi possível calcular os modificadores.');
         var data=response.data||{};lastManeuverData=data;
         resolveTrip.style.display=(data.maneuver==='trip'&&['not_provoked_by_armed_trip','suppressed_by_feat','provokes'].indexOf(data.aoo_status)>=0)?'block':'none';
+        resolveBullRush.style.display=data.maneuver==='bull_rush'?'block':'none';
         result.textContent='Manobra: '+(data.maneuver==='trip'?'Derrubar / Rasteira':'Encontrão')+'\n'+
           'Atacante — teste de FOR: '+(Number(data.attacker_modifier)>=0?'+':'')+data.attacker_modifier+'\n'+
           'Defensor — '+(data.defender_check==='strength_or_dexterity'?'melhor entre FOR/DES':'teste de FOR')+': '+(Number(data.defender_modifier)>=0?'+':'')+data.defender_modifier+'\n'+
