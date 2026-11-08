@@ -3070,8 +3070,13 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     var armorNonproficiencyPenalty=penalidadeArmaduraNaoProficiente35(own);
     var sizeModifier=modifierTamanho35(own.tamanho),bonus=0,baseAttackBonus=0;
     var racialFavoredEnemyBonus=0;
-    var targetTraits=String([target.nome,target.detalhe,target.creature_type,target.monsterStats&&target.monsterStats.tipo,target.monsterStats&&target.monsterStats.subtipo,target.monsterStats&&target.monsterStats.subtype,target.monsterStats&&target.monsterStats.subtypes,target.monsterStats&&target.monsterStats.type,target.monsterStats&&target.monsterStats.creature_type,target.monsterStats&&target.monsterStats.race_id].filter(Boolean).join(' ')).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-    var racialRace=String(own.sh&&own.sh.raca_id||'');
+    var racialRace=String(own.sh&&own.sh.raca_id||''),targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&target.monsterStats.race_id||'');
+    if(['anao','gnomo'].indexOf(racialRace)>=0&&!targetRaceId&&target.tipo==='npc'&&target.sourceCharacterId){
+      var targetRaceResult=await sb.from('srd_character_sheets').select('raca_id').eq('character_id',String(target.sourceCharacterId)).maybeSingle();
+      if(targetRaceResult.error)throw new Error('Não foi possível confirmar a raça do alvo para aplicar o bônus racial: '+targetRaceResult.error.message);
+      targetRaceId=String(targetRaceResult.data&&targetRaceResult.data.raca_id||'');
+    }
+    var targetTraits=String([target.nome,target.detalhe,target.creature_type,target.monsterStats&&target.monsterStats.tipo,target.monsterStats&&target.monsterStats.subtipo,target.monsterStats&&target.monsterStats.subtype,target.monsterStats&&target.monsterStats.subtypes,target.monsterStats&&target.monsterStats.type,target.monsterStats&&target.monsterStats.creature_type,targetRaceId].filter(Boolean).join(' ')).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
     if(racialRace==='anao'&&/(orc|goblin|hobgoblin|bugbear|goblinoid(e)?)/.test(targetTraits))racialFavoredEnemyBonus=1;
     if(racialRace==='gnomo'&&/(kobold|goblin|hobgoblin|bugbear|goblinoid(e)?)/.test(targetTraits))racialFavoredEnemyBonus=1;
     if(racialRace==='halfling'&&type==='atk-dist'&&weapon&&(String(weapon.detalhes&&weapon.detalhes.weapon_ranged_type||'')==='thrown'||normalizeName(weapon.nome)==='funda'))racialFavoredEnemyBonus=1;
