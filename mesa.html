@@ -1986,7 +1986,11 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
               await renderQueue();
             });
           }else{
-            addText(row,'Reação encerrada: '+String(reaction.status)+(reaction.reason?' · '+String(reaction.reason):''),'skill-roll-hint');
+            var reactionStatus=String(reaction.status||'');
+            var reactionReason=String(reaction.reason||'');
+            var reasonLabel=reactionReason==='flat_footed_without_combat_reflexes'?'Desprevenido sem Reflexos de Combate':reactionReason==='reactor_cannot_take_actions'?'Condição impede agir':reactionReason==='movement_cancelled'?'movimento cancelado':reactionReason==='combat_ended'?'combate encerrado':reactionReason;
+            var statusLabel=reactionStatus==='ineligible'?'não elegível':reactionStatus==='skipped'?'ignorada':reactionStatus==='miss'?'erro':reactionStatus;
+            addText(row,'Reação: '+statusLabel+(reasonLabel?' · '+reasonLabel:''),'skill-roll-hint');
           }
           section.appendChild(row);
         }
