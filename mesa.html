@@ -3452,10 +3452,13 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
           'Atacante — teste de FOR: '+(Number(data.attacker_modifier)>=0?'+':'')+data.attacker_modifier+'\n'+
           'Defensor — '+(data.defender_check==='strength_or_dexterity'?'melhor entre FOR/DES':'teste de FOR')+': '+(Number(data.defender_modifier)>=0?'+':'')+data.defender_modifier+'\n'+
           'Diferença de tamanho (atacante): '+(Number(data.size_difference_modifier)>=0?'+':'')+data.size_difference_modifier+'\n'+
-          'Estabilidade Anã: +'+Number(data.dwarf_stability_bonus||0)+'\n\n'+
+          'Estabilidade Anã: +'+Number(data.dwarf_stability_bonus||0)+'\n'+
+          'Bônus de talento do atacante: +'+Number(data.attacker_feat_bonus||0)+'\n'+
+          'Talento aplicável: '+(data.improved_trip?'Derrubar Aprimorado':data.improved_bull_rush?'Encontrão Aprimorado':'nenhum identificado')+'\n'+
+          'Ataque de oportunidade: '+(data.aoo_status==='provokes'?'provocado pelo defensor':data.aoo_status==='suppressed_by_feat'?'dispensado por Encontrão Aprimorado':'depende de confirmar se a tentativa de Derrubar é desarmada')+'\n\n'+
           'FOR atacante: '+data.attacker.strength_score+' ('+(data.attacker.strength_modifier>=0?'+':'')+data.attacker.strength_modifier+') · tamanho '+data.attacker.size+'\n'+
           'FOR defensor: '+data.defender.strength_score+' ('+(data.defender.strength_modifier>=0?'+':'')+data.defender.strength_modifier+') · DES '+data.defender.dexterity_score+' ('+(data.defender.dexterity_modifier>=0?'+':'')+data.defender.dexterity_modifier+') · tamanho '+data.defender.size+'\n\n'+
-          'Consulta apenas: nenhuma rolagem, ação ou condição foi aplicada.';
+          String(data.note||'')+'\n\nConsulta apenas: nenhuma rolagem, ação ou condição foi aplicada.';
       }catch(error){result.textContent='Falha: '+String(error&&error.message||error);}
       finally{run.disabled=false;run.textContent='Calcular modificadores';}
     };
