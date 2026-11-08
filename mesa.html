@@ -2019,6 +2019,137 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       return attackType==='atk-dist'?details.weapon_ranged===true:details.weapon_melee!==false;
     }).map(function(item){return {weapon:item,instances:(item.weapon_instances||[]).filter(function(instance){return instance.equipado===true&&['main_hand','off_hand'].indexOf(instance.hand_slot)>=0;})};}).filter(function(entry){return entry.instances.length>0;});
     if(!candidates.length){alert('Ataque Total exige uma arma compatível equipada em uma mão e uma instância sincronizada. Abra o inventário e confira a arma.');return;}
+    // Recupera a sequência existente antes de permitir uma nova ação.
+    var pendingCheck=await sb.rpc('consultar_sequencia_ataque_iterativo_pendente_srd',{
+      p_campaign_id:Number(MESA_ID),p_character_id:String(own.ch.id)
+    });
+    if(pendingCheck.error)throw new Error('Não foi possível consultar a sequência anterior; novo ataque bloqueado. '+pendingCheck.error.message);
+    if(pendingCheck.data&&pendingCheck.data.active){
+      var saved=pendingCheck.data;
+      if(String(saved.target_token_id)!==String(target.id)){
+        alert('Existe um Ataque Total interrompido contra outro alvo. Selecione '+String(target.nome||saved.target_token_id)+' para retomar a sequência, sem iniciar outro ataque.');
+        return;
+      }
+      var savedEntry=null,savedInstance=null;
+      candidates.some(function(entry){
+        var found=entry.instances.find(function(instance){return String(instance.instance_id)===String(saved.weapon_instance_id)&&String(instance.hand_slot)===String(saved.weapon_hand_slot);});
+        if(found){savedEntry=entry;savedInstance=found;return true;}
+        return false;
+      });
+      if(!savedEntry||!savedInstance){
+        alert('A sequência interrompida está vinculada à arma e à mão originais. Reequipe essa mesma instância para retomar; nenhuma nova ação foi consumida.');
+        return;
+      }
+      var savedWeapon=savedEntry.weapon,savedDetails=savedWeapon.detalhes||{};
+      var savedEnd=saved.weapon_end==='off'?(savedDetails.weapon_end_off||{}):(saved.weapon_end==='main'?(savedDetails.weapon_end_main||{}):{});
+      var savedSmall=String(own.tamanho||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase()==='pequeno';
+      var savedExpr=String(savedEnd[savedSmall?'damage_small':'damage_medium']||savedDetails[savedSmall?'damage_small':'damage_medium']||savedWeapon.dano||'').trim();
+      var savedMatch=savedExpr.match(/^(\\d+)d(\\d+)$/i);
+      if(!savedMatch)throw new Error('A arma vinculada à sequência não possui dano normalizado. Peça ao Mestre para revisar a arma antes de retomar.');
+      var savedDice=Number(savedMatch[1]),savedFaces=Number(savedMatch[2]);
+      if(savedDice<1||savedDice>10||[2,3,4,6,8,10,12,20,100].indexOf(savedFaces)<0)throw new Error('Expressão de dano da arma vinculada não suportada pelo dado 3D.');
+      var savedAttackName=saved.attack_type==='atk-corpo'?'Ataque Total corpo a corpo':'Ataque Total à distância';
+      function resumeRollArray(label,count,faces,callback){
+        if(count<1){callback([]);return;}
+        if(count>30)throw new Error('Quantidade de dados excede o limite seguro do motor.');
+        var mappedFaces=faces===2?4:faces===3?6:faces,collected=[];
+        function rollChunk(offset){
+          var chunkCount=Math.min(20,count-offset),expression=chunkCount+'d'+mappedFaces;
+          abrirDado(label+(count>20?' · lote '+(Math.floor(offset/20)+1):''),async function(total,values){
+            if(!Array.isArray(values)||values.length!==chunkCount)throw new Error('O dado 3D não retornou resultados individuais.');
+            var mapped=values.map(function(value){var n=Number(value);if(!Number.isInteger(n)||n<1||n>mappedFaces)throw new Error('Resultado de dado inválido.');return faces===2||faces===3?Math.ceil(n/2):n;});
+            collected=collected.concat(mapped);
+            if(offset+chunkCount<count)rollChunk(offset+chunkCount);else await callback(collected);
+          },true,true,expression);
+        }
+        rollChunk(0);
+      }
+      async function resumeNext(index){
+        if(index>Number(saved.attacks_total)){
+          document.getElementById('iniciativa-status').textContent='Ataque Total retomado e concluído · '+own.ch.nome+'.';
+          return;
+        }
+        abrirDado(savedAttackName+' · retomada · ataque '+index+'/'+saved.attacks_total,async function(d20){
+          var reg=await sb.rpc('registrar_rolagem_ataque_iterativo_srd',{
+            p_campaign_id:Number(MESA_ID),p_sequence_id:String(saved.sequence_id),p_manual_d20:Number(d20),p_idempotency_key:uuidAtaqueIterativo35()
+          });
+          if(reg.error)throw new Error(reg.error.message);
+          var aid=String((reg.data||{}).attempt_id||'');
+          if(!aid)throw new Error('O banco não confirmou a rolagem retomada.');
+          var res=await sb.rpc('resolver_ataque_iterativo_srd',{p_campaign_id:Number(MESA_ID),p_attempt_id:aid});
+          if(res.error)throw new Error(res.error.message);
+          await resumeProcessAttempt(aid,index,res.data||{});
+        },true,true,'1d20');
+      }
+      async function resumeProcessAttempt(attemptId,index,result){
+        var state=String(result.status||'');
+        if(state==='miss'){
+          await enviarMensagemChat('⚔️ '+savedWeapon.nome+' · Ataque Total retomado · ataque '+index+'/'+saved.attacks_total+': erro.','rolagem',{
+            evento:'ataque_iterativo',sequence_id:saved.sequence_id,attempt_id:attemptId,atacante:String(own.ch.id),alvo:String(target.id),resultado:'miss',retomado:true
+          });
+          if(index<Number(saved.attacks_total))resumeNext(index+1);
+          else document.getElementById('iniciativa-status').textContent='Ataque Total concluído · '+own.ch.nome+'.';
+          return;
+        }
+        if(state==='critical_confirmation_pending'){
+          abrirDado('Confirmação de crítico · retomada · '+savedWeapon.nome,async function(confirmD20){
+            var confirmed=await sb.rpc('confirmar_critico_ataque_iterativo_srd',{p_campaign_id:Number(MESA_ID),p_attempt_id:attemptId,p_confirmation_d20:Number(confirmD20)});
+            if(confirmed.error)throw new Error(confirmed.error.message);
+            await resumeApplyDamage(attemptId,index,result,!!(confirmed.data&&confirmed.data.is_critical));
+          },true,true,'1d20');
+          return;
+        }
+        if(state==='hit_pending_damage'){await resumeApplyDamage(attemptId,index,result,!!(result.is_critical||(result.resolution_data&&result.resolution_data.is_critical)));return;}
+        throw new Error('Estado inesperado ao retomar Ataque Total: '+state);
+      }
+      async function resumeApplyDamage(attemptId,index,result,isCritical){
+        var rd=result.resolution_data||{},multiplier=isCritical?Math.max(2,Number(rd.critical_multiplier||2)):1;
+        var sneakCount=Math.max(0,Number(rd.sneak_attack_dice||0));
+        resumeRollArray('Dano · retomada · '+savedWeapon.nome+' · ataque '+index,savedDice*multiplier,savedFaces,async function(damageRolls){
+          async function commit(sneakRolls){
+            var applied=await sb.rpc('aplicar_dano_ataque_iterativo_srd',{
+              p_campaign_id:Number(MESA_ID),p_attempt_id:attemptId,p_damage_rolls:damageRolls,
+              p_idempotency_key:uuidAtaqueIterativo35(),p_sneak_damage_rolls:sneakRolls
+            });
+            if(applied.error)throw new Error(applied.error.message);
+            var data=applied.data||{};
+            var fresh=await sb.from('campaigns').select('cba_data').eq('id',Number(MESA_ID)).single();
+            if(fresh.error)console.warn('Dano foi confirmado, mas a cena não pôde ser recarregada:',fresh.error.message);
+            else{campanha.cba_data=fresh.data.cba_data;aplicarCBAnaMesa(fresh.data.cba_data,false);}
+            await enviarMensagemChat('💥 Ataque Total retomado · '+savedWeapon.nome+' contra '+target.nome+': '+Number(data.damage_applied||0)+' de dano aplicado.','rolagem',{
+              evento:'dano_ataque_iterativo_aplicado',sequence_id:saved.sequence_id,attempt_id:attemptId,atacante:String(own.ch.id),alvo:String(target.id),
+              rolagens_dano:damageRolls,rolagens_furtivas:sneakRolls,dano_aplicado:Number(data.damage_applied||0),retomado:true
+            });
+            var next=Number(saved.next_attack_index||index+1);
+            if(index<Number(saved.attacks_total))resumeNext(Math.max(index+1,next));
+            else document.getElementById('iniciativa-status').textContent='Ataque Total concluído · '+own.ch.nome+'.';
+          }
+          if(sneakCount>0)resumeRollArray('Ataque Furtivo · retomada · '+sneakCount+'d6',sneakCount,6,commit);
+          else await commit([]);
+        });
+      }
+      var attempts=Array.isArray(saved.attempts)?saved.attempts:[],last=attempts.length?attempts[attempts.length-1]:null;
+      document.getElementById('iniciativa-status').textContent='Retomando '+savedAttackName+' · '+own.ch.nome+'.';
+      if(!last){resumeNext(Number(saved.next_attack_index||1));return;}
+      if(last.status==='pending_resolution'){
+        var replay=await sb.rpc('resolver_ataque_iterativo_srd',{p_campaign_id:Number(MESA_ID),p_attempt_id:String(last.attempt_id)});
+        if(replay.error)throw new Error('Não foi possível resolver a rolagem já registrada: '+replay.error.message);
+        await resumeProcessAttempt(String(last.attempt_id),Number(last.attempt_index),replay.data||{});
+        return;
+      }
+      if(last.status==='critical_confirmation_pending'||last.status==='hit_pending_damage'){
+        await resumeProcessAttempt(String(last.attempt_id),Number(last.attempt_index),{
+          status:last.status,resolution_data:last.resolution_data,is_critical:last.is_critical
+        });
+        return;
+      }
+      if(last.status==='miss'||last.status==='damage_applied'){
+        var following=Number(saved.next_attack_index||Number(last.attempt_index)+1);
+        resumeNext(following);
+        return;
+      }
+      throw new Error('A sequência foi encontrada, mas seu último estado ('+String(last.status)+') não permite retomada automática. Avise o Mestre.');
+    }
     var selectedWeaponEntry=candidates[0];
     if(candidates.length>1){
       var weaponChoice=await window.vttUI.ask({title:'Escolha a arma · Ataque Total',label:'Qual arma equipada será usada em todos os ataques desta sequência?',kind:'select',options:candidates.map(function(entry,index){return {value:String(index),label:entry.weapon.nome+' · '+entry.instances.map(function(x){return x.hand_slot==='main_hand'?'mão principal':'mão secundária';}).join(' / ')};})});
