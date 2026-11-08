@@ -3758,7 +3758,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var result=document.createElement('pre');result.style.whiteSpace='pre-wrap';result.style.overflowWrap='anywhere';result.style.marginTop='14px';result.style.padding='12px';result.style.borderRadius='8px';result.style.background='rgba(0,0,0,.18)';result.textContent='Selecione os participantes e consulte os modificadores.';panel.appendChild(result);
     var resolveTrip=document.createElement('button');resolveTrip.type='button';resolveTrip.className='feature-use-btn';resolveTrip.textContent='🎲 Resolver Derrubar · consumir ação padrão';resolveTrip.style.display='none';resolveTrip.style.marginTop='10px';panel.appendChild(resolveTrip);
     var lastManeuverData=null;
-    resolveTrip.onclick=function(){
+    resolveTrip.onclick=async function(){
       if(!lastManeuverData||maneuver.value!=='trip')return;
       if(lastManeuverData.aoo_status==='provokes'){
         resolveTrip.disabled=true;
