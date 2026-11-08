@@ -1538,6 +1538,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     fecharMenuContextualToken(false);menu.replaceChildren();ctxTokenAtualKey=String(item.key);ctxFocusTokenKey=String(item.key);
     if(ehGM){
       adicionarBotaoContextual(menu,'combat-profile','⚙️ Configurar facção e alcance');
+      adicionarBotaoContextual(menu,'aoo-queue','⚔️ Ataques de oportunidade pendentes');
       if(item.tipo==='player'){
         adicionarBotaoContextual(menu,'gm-character-sheet','📜 Ficha e controles do personagem');
         var playerTurn=combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
@@ -1842,11 +1843,204 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     }catch(err){alert('Falha ao configurar o perfil: '+err.message);}
   }
 
+
+  async function atualizarCenaAOO(){
+    var fresh=await sb.from('campaigns').select('cba_data,combat_data').eq('id',Number(MESA_ID)).single();
+    if(fresh.error)throw new Error('Não foi possível atualizar a cena após a reação: '+fresh.error.message);
+    campanha.cba_data=fresh.data.cba_data;
+    cbaPublishedState=normalizarCBAData(fresh.data.cba_data);
+    if(fresh.data.combat_data)combatDataState=fresh.data.combat_data;
+    aplicarCBAnaMesa(fresh.data.cba_data,false);
+    renderizarIniciativa(combatDataState);
+    await carregarPersonagens();
+  }
+
+  async function registrarEventoAOO(texto,extra){
+    var sent=await enviarMensagemChat(texto,'rolagem',Object.assign({evento:'ataque_oportunidade'},extra||{}));
+    if(sent&&sent.error)console.warn('Ação de oportunidade concluída; falha ao publicar no log:',sent.error.message);
+  }
+
+  function abrirPainelFilaAOO(){
+    if(!ehGM)return;
+    var old=document.getElementById('modal-fila-aoo');if(old)old.remove();
+    var overlay=document.createElement('div');overlay.id='modal-fila-aoo';overlay.className='skill-roll-overlay';overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');
+    var panel=document.createElement('section');panel.className='skill-roll-panel';
+    var head=document.createElement('header');head.className='skill-roll-head';
+    var title=document.createElement('h2');title.textContent='⚔️ Ataques de oportunidade';
+    var close=document.createElement('button');close.type='button';close.className='skill-roll-close';close.textContent='✕';close.onclick=function(){overlay.remove();};
+    head.append(title,close);panel.appendChild(head);
+    var hint=document.createElement('p');hint.className='skill-roll-hint';hint.textContent='Movimentos interrompidos aguardam as reações. O Mestre conduz cada reação; todos os dados são rolados manualmente no dado 3D.';panel.appendChild(hint);
+    var body=document.createElement('div');body.className='player-action-groups';body.textContent='Consultando movimentos pendentes…';panel.appendChild(body);
+    var footer=document.createElement('div');footer.className='player-action-grid';
+    var refresh=document.createElement('button');refresh.type='button';refresh.className='btn-acao';refresh.textContent='↻ Atualizar fila';refresh.onclick=function(){renderQueue();};
+    footer.appendChild(refresh);panel.appendChild(footer);
+    overlay.appendChild(panel);overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});document.body.appendChild(overlay);
+
+    function addText(host,text,className){
+      var p=document.createElement('p');p.className=className||'feature-detail';p.textContent=text;host.appendChild(p);return p;
+    }
+    function addButton(host,label,handler,disabled){
+      var b=document.createElement('button');b.type='button';b.className='btn-acao';b.textContent=label;b.disabled=!!disabled;
+      b.addEventListener('click',async function(){b.disabled=true;try{await handler();}catch(err){console.error('Fluxo de Ataque de Oportunidade:',err);alert('Não foi possível concluir esta etapa: '+(err.message||err));b.disabled=false;}});
+      host.appendChild(b);return b;
+    }
+    async function renderQueue(){
+      if(!document.body.contains(overlay))return;
+      body.replaceChildren();
+      var response=await sb.rpc('srd_listar_movimentos_aoo_pendentes_srd',{p_campaign_id:Number(MESA_ID)});
+      if(response.error)throw new Error(response.error.message);
+      var pending=Array.isArray(response.data&&response.data.pending_movements)?response.data.pending_movements:[];
+      if(!pending.length){addText(body,'Não há movimentos aguardando ataques de oportunidade.','skill-roll-hint');return;}
+      for(const movement of pending){
+        const section=document.createElement('section');section.className='player-action-groups';
+        const mover=(cbaPublishedState&&cbaPublishedState.tokens||[]).find(function(t){return String(t.id)===String(movement.mover_token_id)||String(t.key)===String(movement.mover_token_id);});
+        addText(section,(mover&&mover.nome||movement.mover_token_id)+' · rodada '+movement.round+' · '+(movement.movement_controller==='gm'?'movimento do Mestre':'movimento do jogador'),'feature-detail');
+        addText(section,'Origem ('+(movement.origin||[]).join(', ')+') → destino ('+(movement.destination||[]).join(', ')+')','skill-roll-hint');
+        const reactions=Array.isArray(movement.pending_reactions)?movement.pending_reactions:[];
+        for(const reaction of reactions){
+          const reactor=(cbaPublishedState&&cbaPublishedState.tokens||[]).find(function(t){return String(t.id)===String(reaction.reactor_token_id)||String(t.key)===String(reaction.reactor_token_id);});
+          const name=reactor&&reactor.nome||reaction.name||reaction.reactor_token_id;
+          const row=document.createElement('div');row.className='player-action-groups';
+          addText(row,name+' · '+String(reaction.status||'waiting'),'feature-detail');
+          if(reaction.status==='waiting'){
+            addButton(row,'Reservar reação',async function(){
+              var reserve=await sb.rpc('srd_reservar_reacao_movimento_aoo_srd',{p_campaign_id:Number(MESA_ID),p_pending_id:String(movement.pending_id),p_reactor_token_id:String(reaction.reactor_token_id)});
+              if(reserve.error)throw new Error(reserve.error.message);
+              await registrarEventoAOO((reserve.data&&reserve.data.ineligible?'⛔ ':'🛡️ ')+name+(reserve.data&&reserve.data.ineligible?' não pode reagir devido às suas condições.':' reservou um Ataque de Oportunidade.'),{pending_id:movement.pending_id,reactor_token_id:reaction.reactor_token_id,reserved:!!(reserve.data&&reserve.data.reserved)});
+              await renderQueue();
+            });
+          }else if(reaction.status==='reserved'){
+            addButton(row,'Escolher arma e atacar',async function(){
+              var weapons=await sb.rpc('srd_consultar_armas_aoo_srd',{p_campaign_id:Number(MESA_ID),p_pending_id:String(movement.pending_id),p_reactor_token_id:String(reaction.reactor_token_id)});
+              if(weapons.error)throw new Error(weapons.error.message);
+              var list=Array.isArray(weapons.data&&weapons.data.weapons)?weapons.data.weapons:[];
+              if(!list.length){
+                var reason=weapons.data&&weapons.data.reason==='unlinked_creature_requires_gm_adjudication'
+                  ?'Esta criatura não possui ficha SRD vinculada. O Mestre precisa resolver manualmente o ataque e encerrar a reação.'
+                  :'Não há arma corpo a corpo equipada e sincronizada. O Mestre precisa adjudicar a reação.';
+                alert(reason);return;
+              }
+              var chosen=list[0];
+              if(list.length>1){
+                var choice=window.prompt('Escolha a arma pelo número:\n'+list.map(function(w,i){return (i+1)+'. '+w.name+' · '+w.hand_slot+' · '+w.damage;}).join('\n'),'1');
+                if(choice===null)return;
+                var index=Number(choice)-1;if(!Number.isInteger(index)||index<0||index>=list.length)throw new Error('Seleção de arma inválida.');
+                chosen=list[index];
+              }
+              var end=null;
+              if(chosen.weapon_double){
+                var endChoice=window.prompt('Arma dupla: escolha a extremidade main ou off.','main');
+                if(endChoice===null)return;
+                end=String(endChoice).trim().toLowerCase();
+                if(end!=='main'&&end!=='off')throw new Error('Extremidade inválida.');
+              }
+              var started=await sb.rpc('srd_iniciar_ataque_oportunidade_srd',{
+                p_campaign_id:Number(MESA_ID),p_pending_id:String(movement.pending_id),
+                p_reactor_token_id:String(reaction.reactor_token_id),p_reaction_id:String(reaction.reservation_id),
+                p_weapon_instance_id:String(chosen.instance_id),p_weapon_hand_slot:String(chosen.hand_slot),p_weapon_end:end
+              });
+              if(started.error)throw new Error(started.error.message);
+              await registrarEventoAOO('⚔️ '+name+' iniciou um Ataque de Oportunidade com '+chosen.name+'.',{pending_id:movement.pending_id,attack_id:started.data.attack_id,reactor_token_id:reaction.reactor_token_id,weapon:chosen.name});
+              await executarEtapasAtaqueAOO(String(started.data.attack_id),name,chosen.name);
+              await renderQueue();
+            });
+            addButton(row,'Encerrar sem ataque',async function(){
+              var closed=await sb.rpc('srd_encerrar_reacao_aoo_pendente_srd',{p_campaign_id:Number(MESA_ID),p_pending_id:String(movement.pending_id),p_reactor_token_id:String(reaction.reactor_token_id),p_cancel_attack:false});
+              if(closed.error)throw new Error(closed.error.message);
+              await registrarEventoAOO('↩️ '+name+' não realizou o Ataque de Oportunidade; a reação foi encerrada.',{pending_id:movement.pending_id,reactor_token_id:reaction.reactor_token_id});
+              await renderQueue();
+            });
+          }else if(reaction.status==='attack_started'){
+            addButton(row,'Retomar ataque',async function(){
+              await executarEtapasAtaqueAOO(String(reaction.attack_id),name,'arma equipada');
+              await renderQueue();
+            });
+            addButton(row,'Cancelar ataque',async function(){
+              if(!window.confirm('Cancelar o ataque pendente? A reação reservada continuará consumida.'))return;
+              var closed=await sb.rpc('srd_encerrar_reacao_aoo_pendente_srd',{p_campaign_id:Number(MESA_ID),p_pending_id:String(movement.pending_id),p_reactor_token_id:String(reaction.reactor_token_id),p_cancel_attack:true});
+              if(closed.error)throw new Error(closed.error.message);
+              await registrarEventoAOO('↩️ O Mestre cancelou o ataque de oportunidade de '+name+'. A reação permaneceu consumida.',{pending_id:movement.pending_id,reactor_token_id:reaction.reactor_token_id});
+              await renderQueue();
+            });
+          }else{
+            addText(row,'Reação encerrada: '+String(reaction.status)+(reaction.reason?' · '+String(reaction.reason):''),'skill-roll-hint');
+          }
+          section.appendChild(row);
+        }
+        addButton(section,'Concluir movimento interrompido',async function(){
+          var done=await sb.rpc('srd_finalizar_movimento_aoo_pendente_srd',{p_campaign_id:Number(MESA_ID),p_pending_id:String(movement.pending_id)});
+          if(done.error)throw new Error(done.error.message);
+          await atualizarCenaAOO();
+          await registrarEventoAOO('👣 O movimento de '+(mover&&mover.nome||movement.mover_token_id)+' foi retomado após a resolução das reações.',{pending_id:movement.pending_id,mover_token_id:movement.mover_token_id,destination:movement.destination});
+          await renderQueue();
+        },reactions.some(function(r){return ['waiting','reserved','attack_started','hit_pending_damage'].includes(String(r.status));}));
+        body.appendChild(section);
+      }
+    }
+    renderQueue().catch(function(err){body.replaceChildren();addText(body,'Falha ao carregar a fila: '+err.message,'skill-roll-hint');});
+  }
+
+  async function executarEtapasAtaqueAOO(attackId,attackerName,weaponName){
+    var consult=await sb.rpc('srd_consultar_ataque_oportunidade_srd',{p_campaign_id:Number(MESA_ID),p_attack_id:attackId});
+    if(consult.error)throw new Error(consult.error.message);
+    var attack=consult.data||{};
+    if(attack.status==='awaiting_attack_roll'){
+      abrirDado('Ataque de Oportunidade · '+attackerName+' · d20',async function(d20){
+        var registered=await sb.rpc('srd_registrar_rolagem_ataque_oportunidade_srd',{
+          p_campaign_id:Number(MESA_ID),p_attack_id:attackId,p_manual_d20:Number(d20),p_idempotency_key:uuidAtaqueIterativo35()
+        });
+        if(registered.error)throw new Error(registered.error.message);
+        var resolved=await sb.rpc('srd_resolver_ataque_oportunidade_srd',{p_campaign_id:Number(MESA_ID),p_attack_id:attackId});
+        if(resolved.error)throw new Error(resolved.error.message);
+        var result=resolved.data||{};
+        if(result.status==='miss'){
+          await registrarEventoAOO('⚔️ Ataque de Oportunidade de '+attackerName+': d20 '+d20+' + bônus '+(Number(result.attack_total)-Number(d20))+' contra CA '+result.target_ac+' — ERRO.',{attack_id:attackId,status:'miss',d20:Number(d20),attack_total:result.attack_total,target_ac:result.target_ac});
+          return;
+        }
+        await registrarEventoAOO('⚔️ Ataque de Oportunidade de '+attackerName+': d20 '+d20+' + bônus '+(Number(result.attack_total)-Number(d20))+' contra CA '+result.target_ac+' — ACERTO'+(result.critical_threat?' · ameaça de crítico':'')+'.',{attack_id:attackId,status:result.status,d20:Number(d20),attack_total:result.attack_total,target_ac:result.target_ac,critical_threat:!!result.critical_threat});
+        await executarEtapasAtaqueAOO(attackId,attackerName,weaponName);
+      },true,true,'1d20');
+      return;
+    }
+    if(attack.status==='awaiting_critical_confirmation'){
+      abrirDado('Confirmação de crítico · '+weaponName,async function(d20){
+        var confirmed=await sb.rpc('srd_confirmar_critico_ataque_oportunidade_srd',{p_campaign_id:Number(MESA_ID),p_attack_id:attackId,p_confirmation_d20:Number(d20)});
+        if(confirmed.error)throw new Error(confirmed.error.message);
+        await registrarEventoAOO('🎯 Confirmação de crítico de '+attackerName+': d20 '+d20+' — '+(confirmed.data&&confirmed.data.is_critical?'CRÍTICO CONFIRMADO':'crítico não confirmado')+'.',{attack_id:attackId,confirmation_d20:Number(d20),critical:!!(confirmed.data&&confirmed.data.is_critical)});
+        await executarEtapasAtaqueAOO(attackId,attackerName,weaponName);
+      },true,true,'1d20');
+      return;
+    }
+    if(attack.status==='awaiting_damage'){
+      var rd=attack.resolution_data||{},expr=String(rd.damage_expression||rd.weapon_damage||'').trim();
+      var match=expr.match(/^(\d+)d(\d+)$/i);
+      if(!match)throw new Error('A expressão de dano da arma não está normalizada: '+(expr||'vazia')+'. O Mestre deve revisar a arma antes de aplicar o dano.');
+      var diceCount=Number(match[1])*(attack.is_critical?Math.max(1,Number(rd.critical_multiplier||2)):1),faces=Number(match[2]);
+      if(diceCount<1||diceCount>30||[2,3,4,6,8,10,12,20,100].indexOf(faces)<0)throw new Error('Expressão de dano fora dos limites do dado 3D.');
+      var mappedFaces=faces===2?4:faces===3?6:faces,expression=diceCount+'d'+mappedFaces;
+      abrirDado('Dano do Ataque de Oportunidade · '+weaponName,async function(total,values){
+        if(!Array.isArray(values)||values.length!==diceCount)throw new Error('O dado 3D não retornou os resultados individuais de dano.');
+        var rolls=values.map(function(v){var n=Number(v);if(!Number.isInteger(n)||n<1||n>mappedFaces)throw new Error('Resultado de dano inválido.');return faces===2||faces===3?Math.ceil(n/2):n;});
+        var applied=await sb.rpc('srd_aplicar_dano_ataque_oportunidade_srd',{
+          p_campaign_id:Number(MESA_ID),p_attack_id:attackId,p_damage_rolls:rolls,p_idempotency_key:uuidAtaqueIterativo35()
+        });
+        if(applied.error)throw new Error(applied.error.message);
+        var data=applied.data||{};
+        await atualizarCenaAOO();
+        await registrarEventoAOO('💥 '+attackerName+' causou '+data.damage_applied+' de dano com '+weaponName+'. PV do alvo: '+data.target_hp+' / '+data.target_max_hp+'.',{attack_id:attackId,status:'damage_applied',damage_applied:data.damage_applied,target_hp:data.target_hp,critical:!!data.critical,damage_rolls:rolls});
+      },true,true,expression);
+      return;
+    }
+    if(attack.status==='miss'||attack.status==='damage_applied'||attack.status==='cancelled')return;
+    throw new Error('Estado inesperado do Ataque de Oportunidade: '+String(attack.status));
+  }
+
   function executarAcaoMenuToken(acao){
     var item=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key)===String(ctxTokenAtualKey);});if(!item){fecharMenuContextualToken(false);return;}
     fecharMenuContextualToken(false);
     if(acao==='fechar')return;
     if(acao==='combat-profile'){configurarPerfilCombateToken(item);return;}
+    if(acao==='aoo-queue'){abrirPainelFilaAOO();return;}
     if(acao==='token-image'){selecionarImagemToken(item);return;}
     if(acao==='pv-personagem'){var owner=acharPersonagemDoToken(item);if(!ehGM&&item.tipo==='player'&&owner&&owner.ch.user_id===eu.id)abrirAjustePV(owner.ch.id);return;}
     if(acao==='pv-token'){if(ehGM&&item.tipo!=='player')abrirAjustePVToken(item.key);return;}
@@ -1920,9 +2114,23 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     try{
       var p=personagens.find(function(x){return String(x.ch.id)===String(token.id)&&x.ch.user_id===eu.id;});
       if(!p) throw new Error('Este token não pertence a uma ficha sua.');
+      if(String(campanha&&campanha.state||'').toUpperCase()==='COMBATE'&&combatDataState&&combatDataState.active){
+        var request=await sb.rpc('srd_solicitar_movimento_com_aoo_srd',{
+          p_campaign_id:Number(MESA_ID),p_mover_token_id:String(token.id),
+          p_destination_x:Number(token.gridX),p_destination_y:Number(token.gridY),p_controller:'player'
+        });
+        if(request.error)throw new Error(request.error.message);
+        if(request.data&&request.data.pending){
+          var freshPending=await sb.from('campaigns').select('cba_data').eq('id',Number(MESA_ID)).single();
+          if(freshPending.error)throw new Error(freshPending.error.message);
+          campanha.cba_data=freshPending.data.cba_data;cbaPublishedState=normalizarCBAData(freshPending.data.cba_data);aplicarCBAnaMesa(freshPending.data.cba_data,false);
+          document.getElementById('iniciativa-status').textContent='Movimento interrompido: o Mestre precisa resolver os ataques de oportunidade antes da conclusão.';
+          return;
+        }
+      }
       var result=await sb.rpc('mover_token_player_cba',{p_campaign_id:Number(MESA_ID),p_character_id:String(token.id),p_grid_x:Number(token.gridX),p_grid_y:Number(token.gridY)});
       if(result.error) throw new Error(result.error.message);
-      campanha.cba_data=result.data.cba_data; cbaPublishedState=normalizarCBAData(result.data.cba_data);
+      campanha.cba_data=result.data.cba_data;cbaPublishedState=normalizarCBAData(result.data.cba_data);
       aplicarCBAnaMesa(result.data.cba_data,false);
       var remain=result.data.movement_remaining_m;
       document.getElementById('iniciativa-status').textContent=remain==null?'Posição atualizada no Grid. Movimento livre durante a exploração.':'Movimento restante neste turno: '+Number(remain).toLocaleString('pt-BR')+' m.';
@@ -1932,6 +2140,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       if(campanha&&campanha.cba_data) aplicarCBAnaMesa(campanha.cba_data,false);
     }
   }
+
   function atualizarZoomCBA(){ var world=document.getElementById('cba-live-world'); if(world) world.style.setProperty('--cba-zoom',String(cbaZoom)); }
   function ligarGestosCBA(){
     var board=document.getElementById('area-tabuleiro'); if(!board) return;
@@ -4810,7 +5019,22 @@ async function abrirModalEquipamentos(){
       if(String(campanha.state||'').toUpperCase()==='COMBATE'&&movedToken){
         var gmMoveTurnMatches=!!(current&&String(current.id)===String(movedToken.id)&&(movedToken.tipo==='player'?!current.is_monster:!!current.is_monster));
         if(!combatDataState||!combatDataState.active||!gmMoveTurnMatches)throw new Error('O Mestre só pode mover o token correspondente ao turno ativo da iniciativa.');
-        var moved=await sb.rpc('mover_token_gm_cba_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(movedToken.id),p_grid_x:Number(movedToken.gridX),p_grid_y:Number(movedToken.gridY)});if(moved.error)throw new Error(moved.error.message||'A movimentação do token não foi permitida.');campanha.cba_data=moved.data.cba_data;cbaPublishedState=normalizarCBAData(moved.data.cba_data);combatDataState=moved.data.combat_data||combatDataState;aplicarCBAnaMesa(moved.data.cba_data,false);renderizarIniciativa(combatDataState);document.getElementById('iniciativa-status').textContent='Movimento de '+movedToken.nome+' aplicado · '+Number(moved.data.movement_remaining_m||0).toLocaleString('pt-BR')+' m restantes.';return;
+        var request=await sb.rpc('srd_solicitar_movimento_com_aoo_srd',{
+          p_campaign_id:Number(MESA_ID),p_mover_token_id:String(movedToken.id),
+          p_destination_x:Number(movedToken.gridX),p_destination_y:Number(movedToken.gridY),p_controller:'gm'
+        });
+        if(request.error)throw new Error(request.error.message||'A movimentação não foi permitida.');
+        if(request.data&&request.data.pending){
+          var freshPending=await sb.from('campaigns').select('cba_data').eq('id',Number(MESA_ID)).single();
+          if(freshPending.error)throw new Error(freshPending.error.message);
+          campanha.cba_data=freshPending.data.cba_data;cbaPublishedState=normalizarCBAData(freshPending.data.cba_data);aplicarCBAnaMesa(freshPending.data.cba_data,false);
+          document.getElementById('iniciativa-status').textContent='Movimento interrompido por ameaça: resolva a fila de Ataques de Oportunidade.';
+          abrirPainelFilaAOO();return;
+        }
+        var moved=await sb.rpc('mover_token_gm_cba_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(movedToken.id),p_grid_x:Number(movedToken.gridX),p_grid_y:Number(movedToken.gridY)});
+        if(moved.error)throw new Error(moved.error.message||'A movimentação do token não foi permitida.');
+        campanha.cba_data=moved.data.cba_data;cbaPublishedState=normalizarCBAData(moved.data.cba_data);combatDataState=moved.data.combat_data||combatDataState;aplicarCBAnaMesa(moved.data.cba_data,false);renderizarIniciativa(combatDataState);
+        document.getElementById('iniciativa-status').textContent='Movimento de '+movedToken.nome+' aplicado · '+Number(moved.data.movement_remaining_m||0).toLocaleString('pt-BR')+' m restantes.';return;
       }
       var data=serializarEstadoCBA(cbaPublishedState),salvo=await gravarCBAnaCampanha(data);if(salvo)aplicarCBAnaMesa(salvo,false);
     }catch(e){console.error('Falha ao sincronizar posição do token:',e);if(campanha&&campanha.cba_data)aplicarCBAnaMesa(campanha.cba_data,false);if(document.getElementById('modal-cba').classList.contains('ativo'))setStatusCBA('A posição não foi sincronizada: '+e.message);else alert('Movimento não permitido: '+e.message);}
