@@ -5841,6 +5841,25 @@ async function abrirModalEquipamentos(){
     var used=all[String(atual.id)]||{},movement=combatDataState.movement_usage||{},moveUsed=String(movement.character_id)===String(atual.id)&&Number(movement.round)===round&&Number(movement.current_turn)===Number(currentIndex)&&Number(movement.moved_squares)>0;
     panel.hidden=false;[['padrao',!!used.padrao],['movimento',!!used.movimento||moveUsed],['rapida',!!used.rapida]].forEach(function(pair){var box=panel.querySelector('.acao-box[data-acao="'+pair[0]+'"]');if(box){box.classList.toggle('usada',pair[1]);box.setAttribute('aria-label',box.textContent.replace(/\s+/g,' ').trim()+(pair[1]?' usada neste turno':' disponível neste turno'));}});
   }
+  async function configurarRodadaSurpresa(){
+    if(!ehGM||!combatDataState||!Array.isArray(combatDataState.turn_order)||!combatDataState.turn_order.length)return;
+    var phase=String((combatDataState.surprise||{}).phase||'');
+    if(phase&&phase!=='not_started'){alert('A rodada surpresa já foi configurada.');return;}
+    var aware=[];
+    for(var i=0;i<combatDataState.turn_order.length;i++){
+      var entry=combatDataState.turn_order[i];if(!entry||!entry.id)continue;
+      var perceived=window.confirm('RODADA SURPRESA\n\n'+String(entry.nome||'Participante')+' percebeu a ameaça?\n\nOK = percebeu e poderá agir.\nCancelar = foi surpreendido.');
+      if(perceived)aware.push(String(entry.id));
+    }
+    try{
+      var result=await sb.rpc('srd_configurar_rodada_surpresa_srd',{p_campaign_id:Number(MESA_ID),p_aware_ids:aware});
+      if(result.error)throw new Error(result.error.message);
+      combatDataState=result.data||combatDataState;renderizarIniciativa(combatDataState);
+      var names=aware.map(function(id){var e=combatDataState.turn_order.find(function(x){return String(x.id)===id;});return e?e.nome:id;});
+      await enviarMensagemChat(aware.length?'⚔️ Rodada surpresa: participantes conscientes — '+names.join(', ')+'.':'⚔️ Ninguém percebeu a ameaça. A rodada surpresa foi ignorada.','sistema',{evento:'rodada_surpresa_configurada',aware_ids:aware});
+    }catch(error){alert('Não foi possível configurar a rodada surpresa: '+(error.message||error));}
+  }
+
   function renderizarIniciativa(combatData){
     var painel=document.getElementById('painel-iniciativa');
     var fila=document.getElementById('fila-iniciativa');
@@ -5852,6 +5871,12 @@ async function abrirModalEquipamentos(){
     var ativo=!!(combatDataState && combatDataState.active && ordem.length),painelVisivel=String(campanha&&campanha.state||'').toUpperCase()==='COMBATE'&&!!(ordem.length||esperados.length),mesaRoot=document.querySelector('.mesa');if(mesaRoot)mesaRoot.classList.toggle('mesa-com-iniciativa',painelVisivel);
     var gmActions=document.getElementById('iniciativa-acoes-mestre');if(!gmActions){gmActions=document.createElement('div');gmActions.id='iniciativa-acoes-mestre';var controlsHost=document.getElementById('painel-combate-acoes');if(controlsHost)controlsHost.appendChild(gmActions);else fila.parentNode.insertBefore(gmActions,fila.nextSibling);}gmActions.replaceChildren();
     ordem.forEach(function(entry){if(entry&&!entry.is_monster&&entry.id!=null)removerPedidosIniciativaDaFicha(entry.id);});
+    if(ehGM&&ativo&&!String((combatDataState.surprise||{}).phase||'')){
+      var surpriseBtn=document.createElement('button');surpriseBtn.type='button';surpriseBtn.textContent='⚔️ Configurar rodada surpresa';
+      surpriseBtn.title='O Mestre determina quem percebeu a ameaça antes do primeiro turno normal.';
+      surpriseBtn.onclick=configurarRodadaSurpresa;gmActions.appendChild(surpriseBtn);
+    }
+
     if((campanha && String(campanha.state||'').toUpperCase()!=='COMBATE') || (!ordem.length && !esperados.length)){
       renderizarPainelEconomiaAcoes(false,null,null);
       painel.classList.remove('ativo');
@@ -5865,7 +5890,7 @@ async function abrirModalEquipamentos(){
     painel.classList.add('ativo');
     var controlsPanel=document.getElementById('painel-combate-acoes');
     var round=Math.max(1,Number(combatDataState.round)||1);
-    if(ativo) status.textContent='Rodada '+round+' · Turno '+(Number(combatDataState.current_turn||0)+1)+' de '+ordem.length;
+    if(ativo){var surprisePhase=String((combatDataState.surprise||{}).phase||'');status.textContent=surprisePhase==='surprise_round'?'RODADA SURPRESA · Turno '+(Number(combatDataState.current_turn||0)+1)+' · somente participantes conscientes':('Rodada '+round+' · Turno '+(Number(combatDataState.current_turn||0)+1)+' de '+ordem.length);}
     else{var recebidos=Object.create(null);ordem.forEach(function(entry){if(entry&&!entry.is_monster)recebidos[String(entry.id)]=true;});var faltantes=esperados.map(String).filter(function(id){return !recebidos[id];});var nomes=faltantes.map(function(id){var p=personagens.find(function(item){return String(item.ch.id)===id;});return p?p.ch.nome:'Aventureiro';});status.textContent='Rolagens recebidas: '+(esperados.length-faltantes.length)+' de '+esperados.length+(nomes.length?' · aguardando '+nomes.join(', '):' · preparando a ordem');}
     fila.replaceChildren();
     var currentIndex=Math.max(0,Math.min(ordem.length-1,Number(combatDataState.current_turn)||0));
