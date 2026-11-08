@@ -1523,6 +1523,14 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var p=personagemDoTurnoDoJogador(); return !!(p&&String(p.ch.id)===String(token.id));
   }
   function acharPersonagemDoToken(item){return item&&item.tipo==='player'?personagens.find(function(p){return String(p.ch.id)===String(item.id);}):null;}
+  function tokenEstaCaidoMesa(item){
+    if(!item)return false;
+    var conditions=efeitosCampanhaMesa&&Array.isArray(efeitosCampanhaMesa.conditions)?efeitosCampanhaMesa.conditions:[];
+    return conditions.some(function(condition){
+      return condition.condition_id==='prone'&&condition.target_kind==='token'&&
+        (String(condition.target_id)===String(item.id)||String(condition.target_id)===String(item.key));
+    });
+  }
   function fecharMenuContextualToken(restaurarFoco){
     var menu=document.getElementById('token-context-menu');if(!menu)return;menu.classList.remove('ativo');menu.setAttribute('aria-hidden','true');
     if(ctxFocusTokenKey){var el=Array.from(document.querySelectorAll('#cba-token-layer .token-cba')).find(function(t){return String(t.dataset.cbaTokenKey)===String(ctxFocusTokenKey);});if(el)el.setAttribute('aria-expanded','false');if(restaurarFoco&&el)el.focus();}
@@ -1540,7 +1548,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       adicionarBotaoContextual(menu,'combat-profile','⚙️ Configurar facção e alcance');
       adicionarBotaoContextual(menu,'aoo-queue','⚔️ Ataques de oportunidade pendentes');
       var currentStandingTurn=combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
-      if(currentStandingTurn&&String(currentStandingTurn.id)===String(item.id))adicionarBotaoContextual(menu,'stand-up','🧍 Levantar-se (ação de movimento)');
+      if(currentStandingTurn&&String(currentStandingTurn.id)===String(item.id)&&tokenEstaCaidoMesa(item))adicionarBotaoContextual(menu,'stand-up','🧍 Levantar-se (ação de movimento)');
       if(item.tipo==='player'){
         adicionarBotaoContextual(menu,'gm-character-sheet','📜 Ficha e controles do personagem');
         var playerTurn=combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
@@ -1555,7 +1563,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       }
     }else{
       var playerStandingTurn=combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
-      if(playerStandingTurn&&!playerStandingTurn.is_monster&&String(playerStandingTurn.id)===String(item.id))adicionarBotaoContextual(menu,'stand-up','🧍 Levantar-se (ação de movimento)');
+      if(playerStandingTurn&&!playerStandingTurn.is_monster&&String(playerStandingTurn.id)===String(item.id)&&tokenEstaCaidoMesa(item))adicionarBotaoContextual(menu,'stand-up','🧍 Levantar-se (ação de movimento)');
       adicionarBotaoContextual(menu,'pv-personagem','❤️ Ajustar meus PV');adicionarBotaoContextual(menu,'atk-corpo','⚔️ Ataque corpo a corpo');adicionarBotaoContextual(menu,'atk-dist','🏹 Ataque à distância');adicionarBotaoContextual(menu,'atk-total-corpo','⚔️ Ataque Total corpo a corpo');adicionarBotaoContextual(menu,'atk-total-dist','🏹 Ataque Total à distância');adicionarBotaoContextual(menu,'atk-mag','✨ Conjurar magia');adicionarBotaoContextual(menu,'habilidades','⚔️ Habilidades da classe');adicionarBotaoContextual(menu,'inventario','🎒 Inventário');
     }
     var close=adicionarBotaoContextual(menu,'fechar','✕ Fechar',true);
