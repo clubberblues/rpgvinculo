@@ -2150,6 +2150,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       }
       throw new Error('A sequência foi encontrada, mas seu último estado ('+String(last.status)+') não permite retomada automática. Avise o Mestre.');
     }
+      return;
+    }
     var selectedWeaponEntry=candidates[0];
     if(candidates.length>1){
       var weaponChoice=await window.vttUI.ask({title:'Escolha a arma · Ataque Total',label:'Qual arma equipada será usada em todos os ataques desta sequência?',kind:'select',options:candidates.map(function(entry,index){return {value:String(index),label:entry.weapon.nome+' · '+entry.instances.map(function(x){return x.hand_slot==='main_hand'?'mão principal':'mão secundária';}).join(' / ')};})});
