@@ -1667,10 +1667,10 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     addAction('❤️ Ajustar PV',function(){overlay.remove();abrirAjustePVToken(item.key);});
     addAction('🎒 Inventário',function(){overlay.remove();abrirInventarioTokenSRD(item);});
     if(item.sourceCharacterId)addAction('⚔️ Características da classe',function(){overlay.remove();abrirHabilidadesClasse(item.id);});
-    if(item.tipo==='npc'&&item.sourceCharacterId)addAction('⚔️ Ataque Total',function(){overlay.remove();iniciarAtaqueTotalNpcMestre(item).catch(function(err){alert('Ataque Total indisponível: '+err.message);});});
     addAction('📣 Publicar ficha no chat',function(){publicarFichaNPC35(item).catch(function(err){alert('Não foi possível publicar a ficha do NPC: '+err.message);});});
     if(tokenEhTurnoMestre35(item)){
       addAction('⚔️ Atacar',function(){overlay.remove();iniciarAtaqueMestre(item);});
+      if(item.tipo==='npc'&&item.sourceCharacterId)addAction('⚔️ Ataque Total',function(){overlay.remove();iniciarAtaqueTotalNpcMestre(item).catch(function(err){alert('Ataque Total indisponível: '+err.message);});});
       addAction('📜 Registrar ação',function(){overlay.remove();registrarOutraAcaoMestre(item);});
       addAction('↔️ Mover token',function(){overlay.remove();document.getElementById('iniciativa-status').textContent='Mova '+item.nome+' arrastando seu token no tabuleiro.';});
       if(tokenTemMagiaPreparada35(item))addAction('✨ Magias',function(){overlay.remove();abrirMagiasTokenMestre(item);});
