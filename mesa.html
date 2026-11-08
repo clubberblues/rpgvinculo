@@ -1621,6 +1621,35 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     panel.appendChild(note);
     overlay.appendChild(panel);overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});document.body.appendChild(overlay);
   }
+  async function executarDescansoLongoNpcVinculado35(item){
+    if(!ehGM||!item||item.tipo!=='npc'||!item.sourceCharacterId)return;
+    if(String(campanha&&campanha.state||'').toUpperCase()==='COMBATE'||(combatDataState&&combatDataState.active)){
+      alert('O descanso longo não pode ser realizado durante combate.');return;
+    }
+    var confirmed=await window.vttUI.confirm({title:'Descanso longo · '+String(item.nome||'NPC'),message:'O Mestre confirma 8 horas de descanso para este NPC? Recupera 1 PV por nível, repõe magias e recursos diários e remove fadiga/exaustão. A Fúria ativa será encerrada antes da recuperação.',okLabel:'Confirmar descanso'});
+    if(!confirmed)return;
+    try{
+      var response=await sb.rpc('descanso_longo_npc_vinculado_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(item.id)});
+      if(response.error)throw new Error(response.error.message);
+      var result=response.data||{};
+      if(result.cba_data){
+        campanha.cba_data=result.cba_data;
+        try{aplicarCBAnaMesa(result.cba_data,false);}catch(sceneError){console.warn('Descanso concluído; falha ao redesenhar a cena local:',sceneError);}
+      }
+      await carregarPersonagens();
+      var message='🌙 '+String(result.character_name||item.nome)+' concluiu um descanso longo: +'+Number(result.cura||0)+' PV ('+result.pv_atual+'/'+result.pv_max+'), magias e recursos diários recuperados.';
+      if(result.furia_encerrada)message+=' Fúria encerrada.';
+      if(Number(result.condicoes_removidas||0)>0)message+=' Fadiga/exaustão removida.';
+      var sent=await enviarMensagemChat(message,'sistema',{evento:'npc_long_rest',token_id:String(item.id),character_id:String(result.character_id||item.sourceCharacterId)});
+      if(sent&&sent.error)console.warn('Descanso aplicado, mas não foi possível publicar evento no chat:',sent.error.message);
+      var modal=document.getElementById('modal-controle-npc-gm');if(modal)modal.remove();
+      if(typeof abrirPainelControleNPC35==='function'){
+        var updatedTokens=normalizarCBAData(campanha&&campanha.cba_data);
+        var updatedToken=(updatedTokens&&Array.isArray(updatedTokens.tokens)?updatedTokens.tokens:[]).find(function(token){return String(token.id)===String(item.id);});
+        if(updatedToken)abrirPainelControleNPC35(updatedToken);
+      }
+    }catch(error){alert('Não foi possível concluir o descanso longo: '+(error.message||String(error)));}
+  }
   function abrirPainelControleNPC35(item){
     if(!ehGM||!item||item.tipo!=='npc')return;
     var stats=item.monsterStats&&typeof item.monsterStats==='object'?item.monsterStats:{},attrs=stats.attributes&&typeof stats.attributes==='object'?stats.attributes:{};
@@ -1664,6 +1693,9 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(known||prepared)addField('Magias',known+' conhecida(s) · '+prepared+' preparada(s)');
     var actions=document.createElement('div');actions.className='player-action-grid';
     function addAction(label,callback){var button=document.createElement('button');button.type='button';button.className='btn-acao';button.textContent=label;button.addEventListener('click',callback);actions.appendChild(button);}
+    if(item.sourceCharacterId&&String(campanha&&campanha.state||'').toUpperCase()!=='COMBATE'&&!(combatDataState&&combatDataState.active)){
+      addAction('🌙 Descanso longo',function(){executarDescansoLongoNpcVinculado35(item);});
+    }
     addAction('❤️ Ajustar PV',function(){overlay.remove();abrirAjustePVToken(item.key);});
     addAction('🎒 Inventário',function(){overlay.remove();abrirInventarioTokenSRD(item);});
     if(item.sourceCharacterId)addAction('⚔️ Características da classe',function(){overlay.remove();abrirHabilidadesClasse(item.id);});
