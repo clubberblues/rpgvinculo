@@ -1537,6 +1537,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(menu.classList.contains('ativo')&&String(ctxTokenAtualKey)===String(item.key))return;
     fecharMenuContextualToken(false);menu.replaceChildren();ctxTokenAtualKey=String(item.key);ctxFocusTokenKey=String(item.key);
     if(ehGM){
+      adicionarBotaoContextual(menu,'combat-profile','⚙️ Configurar facção e alcance');
       if(item.tipo==='player'){
         adicionarBotaoContextual(menu,'gm-character-sheet','📜 Ficha e controles do personagem');
         var playerTurn=combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
@@ -1816,10 +1817,36 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(item.tipo==='monstro'&&item.monsterStats){publicarInfoMonstro({id:item.monsterId||item.id,nome:item.nome,nd:item.monsterStats.nd,ca:item.ac,pv:item.maxHp,ataques:item.monsterStats.ataques,srd_source_url:item.srdSourceUrl});return;}
     enviarMensagemChat('📜 '+item.nome+' · '+(item.tipo==='npc'?'NPC':'criatura')+' · PV '+(item.hp==null?'?':item.hp)+' / '+(item.maxHp==null?'?':item.maxHp)+'.','sistema',{evento:'cba_token_info',token_id:String(item.id)});
   }
+  async function configurarPerfilCombateToken(item){
+    if(!ehGM||!item)return;
+    var factionAtual=String(item.combat_faction||'neutral');
+    var factionPrompt=window.prompt('Facção: ally (aliado), hostile (inimigo) ou neutral (neutro).',factionAtual);
+    if(factionPrompt===null)return;
+    var faction=String(factionPrompt).trim().toLowerCase();
+    var reachAtual=Number.isFinite(Number(item.melee_reach_ft))?Number(item.melee_reach_ft):5;
+    var reachPrompt=window.prompt('Alcance ameaçado corpo a corpo em pés (0 se não ameaçar). Ex.: 5 = alcance padrão.',String(reachAtual));
+    if(reachPrompt===null)return;
+    var reach=Number(reachPrompt);
+    if(!Number.isInteger(reach)||reach<0||reach>100){alert('Informe um alcance inteiro entre 0 e 100 pés.');return;}
+    try{
+      var saved=await sb.rpc('srd_configurar_perfil_combate_token_srd',{
+        p_campaign_id:Number(MESA_ID),p_token_id:String(item.id),
+        p_combat_faction:faction,p_melee_reach_ft:reach
+      });
+      if(saved.error)throw new Error(saved.error.message||'Não foi possível salvar o perfil.');
+      campanha.cba_data=saved.data.cba_data;
+      cbaPublishedState=normalizarCBAData(saved.data.cba_data);
+      aplicarCBAnaMesa(saved.data.cba_data,false);
+      try{await enviarMensagemChat('⚙️ O Mestre configurou o perfil de combate de '+String(item.nome||'um token')+': facção '+faction+' · alcance '+reach+' pés.','sistema',{evento:'perfil_combate_token',token_id:String(item.id),faction:faction,reach_ft:reach});}catch(logError){}
+      alert('Perfil de combate salvo.');
+    }catch(err){alert('Falha ao configurar o perfil: '+err.message);}
+  }
+
   function executarAcaoMenuToken(acao){
     var item=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key)===String(ctxTokenAtualKey);});if(!item){fecharMenuContextualToken(false);return;}
     fecharMenuContextualToken(false);
     if(acao==='fechar')return;
+    if(acao==='combat-profile'){configurarPerfilCombateToken(item);return;}
     if(acao==='token-image'){selecionarImagemToken(item);return;}
     if(acao==='pv-personagem'){var owner=acharPersonagemDoToken(item);if(!ehGM&&item.tipo==='player'&&owner&&owner.ch.user_id===eu.id)abrirAjustePV(owner.ch.id);return;}
     if(acao==='pv-token'){if(ehGM&&item.tipo!=='player')abrirAjustePVToken(item.key);return;}
