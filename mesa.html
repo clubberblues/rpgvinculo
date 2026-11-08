@@ -2619,7 +2619,20 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
 
   async function abrirHabilidadesClasse(characterId){
     var p=characterId&&ehGM?personagens.find(function(x){return String(x.ch.id)===String(characterId);}):personagemAtivoDaInterface();
-
+    var rageNpcToken=null;
+    if(!p&&ehGM&&characterId){
+      var sceneForNpc=normalizarCBAData(campanha&&campanha.cba_data);
+      var npcTokens=sceneForNpc&&Array.isArray(sceneForNpc.tokens)?sceneForNpc.tokens:[];
+      rageNpcToken=npcTokens.find(function(t){return t&&t.tipo==='npc'&&(String(t.id)===String(characterId)||String(t.sourceCharacterId)===String(characterId));})||null;
+      if(rageNpcToken&&rageNpcToken.sourceCharacterId){
+        var npcCharacterResult=await sb.from('characters').select('*').eq('id',String(rageNpcToken.sourceCharacterId)).maybeSingle();
+        var npcSheetResult=await sb.from('srd_character_sheets').select('*').eq('character_id',String(rageNpcToken.sourceCharacterId)).maybeSingle();
+        if(!npcCharacterResult.error&&npcCharacterResult.data&&!npcSheetResult.error&&npcSheetResult.data){
+          var npcClassResult=await sb.from('srd_classes').select('*').eq('id',npcSheetResult.data.classe_id).maybeSingle();
+          p={ch:npcCharacterResult.data,sh:npcSheetResult.data,cl:npcClassResult.data||{},_rageNpcToken:rageNpcToken};
+        }
+      }
+    }
     if(!p){alert('Não foi possível identificar sua ficha ativa.');return;}
     var modal=document.getElementById('modal-habilidades-classe'),summary=document.getElementById('habilidades-classe-resumo'),list=document.getElementById('habilidades-classe-lista');
     modal.hidden=false;modal.classList.add('ativo');list.replaceChildren();summary.textContent='Carregando habilidades registradas para '+String(p.ch.nome||'personagem')+'…';
@@ -2667,7 +2680,9 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         use.addEventListener('click',async function(){
           use.disabled=true;use.textContent='Verificando disponibilidade…';
           try{
-            var statusResult=await sb.rpc('consultar_furia_barbaro_srd',{p_character_id:String(p.ch.id)});
+            var statusResult=p._rageNpcToken
+              ?await sb.rpc('consultar_furia_barbaro_npc_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(p._rageNpcToken.id)})
+              :await sb.rpc('consultar_furia_barbaro_srd',{p_character_id:String(p.ch.id)});
             if(statusResult.error)throw new Error(statusResult.error.message);
             var state=statusResult.data||{};
             if(!state.eligible)throw new Error('Esta ficha não possui nível efetivo de Bárbaro.');
@@ -2677,9 +2692,12 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
               throw new Error(reason);
             }
             if(action==='end'&&!state.can_end)throw new Error('A Fúria só pode ser encerrada no turno do personagem durante o combate.');
-            var used=await sb.rpc('usar_furia_barbaro_srd',{p_character_id:String(p.ch.id),p_action:action});
+            var used=p._rageNpcToken
+              ?await sb.rpc('usar_furia_barbaro_npc_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(p._rageNpcToken.id),p_action:action})
+              :await sb.rpc('usar_furia_barbaro_srd',{p_character_id:String(p.ch.id),p_action:action});
             if(used.error)throw new Error(used.error.message);
             var data=used.data||{};
+            if(data.cba_data){campanha.cba_data=data.cba_data;try{aplicarCBAnaMesa(data.cba_data,false);}catch(sceneError){console.warn('Fúria aplicada; falha ao atualizar a cena local:',sceneError);}}
             var message=action==='start'
               ?'🔥 '+p.ch.nome+' entra em Fúria: +'+data.strength_bonus+' FOR, +'+data.constitution_bonus+' CON, +'+data.will_bonus+' Vontade, −2 CA. Duração: '+data.duration_rounds+' rodada(s). Usos restantes: '+data.uses_remaining+'.'
               :'🛡️ '+p.ch.nome+' encerra a Fúria. PV temporários removidos: '+Number(data.rage_hp_removed||0)+'. '+(data.fatigue_applied?'Fadiga aplicada.':'Sem fadiga adicional.');
