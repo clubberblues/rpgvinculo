@@ -1869,7 +1869,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var title=document.createElement('h2');title.textContent='⚔️ Ataques de oportunidade';
     var close=document.createElement('button');close.type='button';close.className='skill-roll-close';close.textContent='✕';close.onclick=function(){overlay.remove();};
     head.append(title,close);panel.appendChild(head);
-    var hint=document.createElement('p');hint.className='skill-roll-hint';hint.textContent='Movimentos interrompidos aguardam as reações. O Mestre conduz cada reação; todos os dados são rolados manualmente no dado 3D.';panel.appendChild(hint);
+    var hint=document.createElement('p');hint.className='skill-roll-hint';hint.textContent='Movimentos interrompidos e manobras que provocam ataques aguardam as reações. O Mestre conduz cada reação; todos os dados são rolados manualmente no dado 3D.';panel.appendChild(hint);
     var body=document.createElement('div');body.className='player-action-groups';body.textContent='Consultando movimentos pendentes…';panel.appendChild(body);
     var footer=document.createElement('div');footer.className='player-action-grid';
     var refresh=document.createElement('button');refresh.type='button';refresh.className='btn-acao';refresh.textContent='↻ Atualizar fila';refresh.onclick=function(){renderQueue();};
@@ -1890,7 +1890,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       var response=await sb.rpc('srd_listar_movimentos_aoo_pendentes_srd',{p_campaign_id:Number(MESA_ID)});
       if(response.error)throw new Error(response.error.message);
       var pending=Array.isArray(response.data&&response.data.pending_movements)?response.data.pending_movements:[];
-      if(!pending.length){addText(body,'Não há movimentos aguardando ataques de oportunidade.','skill-roll-hint');return;}
+      if(!pending.length){addText(body,'Não há movimentos ou manobras aguardando ataques de oportunidade.','skill-roll-hint');return;}
       for(const movement of pending){
         const section=document.createElement('section');section.className='player-action-groups';
         const mover=(cbaPublishedState&&cbaPublishedState.tokens||[]).find(function(t){return String(t.id)===String(movement.mover_token_id)||String(t.key)===String(movement.mover_token_id);});
@@ -3727,7 +3727,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var title=document.createElement('h2');title.textContent='Consultar manobra · D&D 3.5';
     var close=document.createElement('button');close.type='button';close.className='skill-roll-close';close.textContent='✕';close.onclick=function(){overlay.remove();};
     head.append(title,close);panel.appendChild(head);
-    var hint=document.createElement('p');hint.className='skill-roll-hint';hint.textContent='Esta ferramenta calcula os modificadores de FOR, DES, tamanho e Estabilidade Anã. Ainda não consome ações nem resolve dados ou efeitos.';panel.appendChild(hint);
+    var hint=document.createElement('p');hint.className='skill-roll-hint';hint.textContent='Consulte FOR, DES, tamanho e Estabilidade Anã. Derrubar pode ser resolvido com dados físicos e reações de oportunidade; Encontrão ainda está em fase de consulta.';panel.appendChild(hint);
     function makeSelect(labelText){
       var wrap=document.createElement('label');wrap.style.display='grid';wrap.style.gap='6px';wrap.style.margin='12px 0';
       var label=document.createElement('span');label.textContent=labelText;
@@ -3808,7 +3808,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         var response=await sb.rpc('srd_consultar_modificadores_manobra_srd',{p_campaign_id:Number(MESA_ID),p_attacker_token_id:attacker.value,p_defender_token_id:defender.value,p_maneuver:maneuver.value,p_defender_firm_ground:ground.checked,p_trip_using_weapon:weapon.checked});
         if(response.error)throw new Error(response.error.message||'Não foi possível calcular os modificadores.');
         var data=response.data||{};lastManeuverData=data;
-        resolveTrip.style.display=(data.maneuver==='trip'&&['not_provoked_by_armed_trip','suppressed_by_feat'].indexOf(data.aoo_status)>=0)?'block':'none';
+        resolveTrip.style.display=(data.maneuver==='trip'&&['not_provoked_by_armed_trip','suppressed_by_feat','provokes'].indexOf(data.aoo_status)>=0)?'block':'none';
         result.textContent='Manobra: '+(data.maneuver==='trip'?'Derrubar / Rasteira':'Encontrão')+'\n'+
           'Atacante — teste de FOR: '+(Number(data.attacker_modifier)>=0?'+':'')+data.attacker_modifier+'\n'+
           'Defensor — '+(data.defender_check==='strength_or_dexterity'?'melhor entre FOR/DES':'teste de FOR')+': '+(Number(data.defender_modifier)>=0?'+':'')+data.defender_modifier+'\n'+
