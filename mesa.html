@@ -1554,6 +1554,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         adicionarBotaoContextual(menu,'pv-token','❤️ Ajustar PV da criatura');if(item.tipo==='monstro'){adicionarBotaoContextual(menu,'monster-sheet','🐉 Ficha tática do monstro');adicionarBotaoContextual(menu,'monster-info','📣 Publicar ficha no chat');}
       }
     }else{
+      var playerStandingTurn=combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
+      if(playerStandingTurn&&!playerStandingTurn.is_monster&&String(playerStandingTurn.id)===String(item.id))adicionarBotaoContextual(menu,'stand-up','🧍 Levantar-se (ação de movimento)');
       adicionarBotaoContextual(menu,'pv-personagem','❤️ Ajustar meus PV');adicionarBotaoContextual(menu,'atk-corpo','⚔️ Ataque corpo a corpo');adicionarBotaoContextual(menu,'atk-dist','🏹 Ataque à distância');adicionarBotaoContextual(menu,'atk-total-corpo','⚔️ Ataque Total corpo a corpo');adicionarBotaoContextual(menu,'atk-total-dist','🏹 Ataque Total à distância');adicionarBotaoContextual(menu,'atk-mag','✨ Conjurar magia');adicionarBotaoContextual(menu,'habilidades','⚔️ Habilidades da classe');adicionarBotaoContextual(menu,'inventario','🎒 Inventário');
     }
     var close=adicionarBotaoContextual(menu,'fechar','✕ Fechar',true);
@@ -2125,12 +2127,18 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   }
 
   async function iniciarLevantarTokenCaido35(item){
-    if(!ehGM||!item||!combatDataState||!combatDataState.active)throw new Error('Ação disponível somente ao Mestre durante o combate.');
+    if(!item||!combatDataState||!combatDataState.active)throw new Error('Ação disponível somente durante o combate.');
+    var standingOwner=acharPersonagemDoToken(item);
+    if(!ehGM&&(!standingOwner||standingOwner.ch.user_id!==eu.id||item.tipo!=='player'))throw new Error('Você só pode levantar seu próprio personagem.');
     var started=await sb.rpc('srd_iniciar_levantar_caido_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(item.id)});
     if(started.error)throw new Error(started.error.message||'Não foi possível iniciar o levantamento.');
     var data=started.data||{};
     await enviarMensagemChat('🧍 '+String(item.nome||'Combatente')+' tenta levantar-se. '+(data.requires_reactions?'Ataques de oportunidade pendentes.':'Nenhum inimigo ameaçador detectado.'),'sistema',{evento:'stand_up_started',pending_id:data.pending_id,token_id:String(item.id),threats:data.threats||[]});
-    if(data.requires_reactions){abrirPainelFilaAOO();return;}
+    if(data.requires_reactions){
+      if(ehGM)abrirPainelFilaAOO();
+      else await enviarMensagemChat('⚔️ O levantamento de '+String(item.nome||'personagem')+' aguarda ataques de oportunidade. Mestre, resolva as reações na fila da mesa.', 'sistema',{evento:'stand_up_waiting_reactions',pending_id:data.pending_id,token_id:String(item.id)});
+      return;
+    }
     var resolved=await sb.rpc('srd_resolver_levantar_caido_apos_aoo_srd',{p_campaign_id:Number(MESA_ID),p_pending_id:String(data.pending_id)});
     if(resolved.error)throw new Error(resolved.error.message||'Não foi possível concluir o levantamento.');
     await carregarEfeitosCampanha();renderCards();await enviarMensagemChat('🧍 '+String(item.nome||'Combatente')+' levantou-se. Ação de movimento consumida.','sistema',{evento:'stand_up_completed',token_id:String(item.id),pending_id:data.pending_id});
