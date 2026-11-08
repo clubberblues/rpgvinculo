@@ -2211,6 +2211,24 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     document.getElementById('magia-alvo').addEventListener('change',function(){if(magiaSelecionada)popularSlotsMagia();});
     document.addEventListener('keydown',function(e){if(!mag.classList.contains('ativo'))return;if(e.key==='Escape'){fecharModalMagias();return;}if(e.key==='Tab'){var f=Array.from(mag.querySelectorAll('button:not(:disabled),select,input,[tabindex="0"]')).filter(function(x){return !x.hidden;});if(!f.length)return;var i=f.indexOf(document.activeElement);if(e.shiftKey&&i<=0){e.preventDefault();f[f.length-1].focus();}else if(!e.shiftKey&&i===f.length-1){e.preventDefault();f[0].focus();}}if(e.key==='Enter'&&document.activeElement&&document.activeElement.classList.contains('magia-opcao')){e.preventDefault();}});
   }
+  function renderizarBotoesInstanciasArma35(instances,scope){
+    if(!Array.isArray(instances)||!instances.length)return '<p style="color:#e6b96b;font-size:12px">Inventário sem instâncias de arma sincronizadas. Avise o Mestre.</p>';
+    return '<div style="display:grid;gap:7px;margin-top:9px">'+instances.map(function(instance,index){
+      var hand=instance.hand_slot||'',main=instance.equipado&&hand==='main_hand',off=instance.equipado&&hand==='off_hand',id=esc(instance.instance_id);
+      return '<div style="padding:8px;border:1px solid #51462f;border-radius:5px"><small style="color:#c7b98e">Instância '+(index+1)+' · '+(main?'Mão principal':off?'Mão secundária':'Não equipada')+'</small><div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button type="button" class="btn-acao" data-weapon-instance="'+id+'" data-weapon-scope="'+scope+'" data-weapon-hand="main_hand" data-weapon-equipped="'+(main?'true':'false')+'">'+(main?'Desequipar mão principal':'Equipar na mão principal')+'</button><button type="button" class="btn-acao" data-weapon-instance="'+id+'" data-weapon-scope="'+scope+'" data-weapon-hand="off_hand" data-weapon-equipped="'+(off?'true':'false')+'">'+(off?'Desequipar mão secundária':'Equipar na mão secundária')+'</button></div></div>';
+    }).join('')+'</div>';
+  }
+  function ligarBotoesInstanciaArma35(list,scope,entity,onDone){
+    list.querySelectorAll('[data-weapon-instance]').forEach(function(button){button.addEventListener('click',async function(){
+      button.disabled=true;
+      var equipped=button.dataset.weaponEquipped==='true',args=scope==='character'
+        ?{p_character_id:String(entity.id),p_instance_id:button.dataset.weaponInstance,p_hand_slot:button.dataset.weaponHand,p_equipado:!equipped}
+        :{p_campaign_id:Number(MESA_ID),p_token_id:String(entity.id),p_instance_id:button.dataset.weaponInstance,p_hand_slot:button.dataset.weaponHand,p_equipado:!equipped};
+      var result=await sb.rpc(scope==='character'?'equipar_arma_instancia_personagem':'equipar_arma_instancia_token',args);
+      if(result.error){alert('Não foi possível atualizar a instância da arma: '+result.error.message);button.disabled=false;return;}
+      await onDone();
+    });});
+  }
   async function abrirInventarioSRD(characterId){
     var p=characterId?personagens.find(function(x){return String(x.ch.id)===String(characterId)&&(ehGM||x.ch.user_id===eu.id);}):(personagemDoTurnoDoJogador()||personagens.find(function(x){return x.ch.user_id===eu.id;}));if(!p){alert('Nenhuma ficha acessível está disponível nesta mesa.');return;}inventarioPersonagemAtivo=p;
     var gmControlandoFichaAlheia=!!(ehGM&&p.ch.user_id!==eu.id);
@@ -2218,8 +2236,20 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var r=await sb.from('srd_character_equipment').select('equipment_id,quantidade,equipado,equipment:srd_equipment(*)').eq('character_id',String(p.ch.id));
     if(r.error){status.textContent='Inventário SRD indisponível. Aplique vtt_dnd35_final_migration.sql. Detalhe: '+r.error.message;return;}
     var rows=r.data||[]; if(!rows.length){status.textContent='A mochila está vazia. Peça ao Mestre para entregar equipamento pela mesa.';return;}
-    status.textContent=gmControlandoFichaAlheia?'O Mestre pode equipar e desequipar itens. Consumíveis continuam sendo usados pelo próprio jogador no turno dele.':'Atributos calculados com o equipamento atualmente equipado.';
-    list.innerHTML=rows.map(function(row){var it=row.equipment||{},usable=it.categoria==='consumivel'&&!gmControlandoFichaAlheia,equipable=!!slotEquipamento35(it);return '<article style="padding:10px;margin:8px 0;border:1px solid #75613d;border-radius:6px"><strong>'+esc(it.nome||row.equipment_id)+'</strong><div style="color:#9eabc0;font-size:13px">'+esc(nomeCategoriaEquipamento35(it.categoria||'item'))+' · x'+row.quantidade+(it.dano?' · dano '+esc(it.dano):'')+(bonusCAEquipamento35(it)?' · CA +'+bonusCAEquipamento35(it):'')+(row.equipado?' · Equipado':'')+(it.categoria==='consumivel'&&gmControlandoFichaAlheia?' · uso pelo jogador':'')+'</div>'+(usable||equipable?'<button type="button" class="btn-acao" data-equip-id="'+esc(row.equipment_id)+'" data-equip-action="'+(usable?'consume':'equip')+'" data-equipped="'+(!row.equipado)+'" style="margin-top:8px">'+(usable?'Usar':(row.equipado?'Desequipar':'Equipar'))+'</button>':'')+'</article>';}).join('');
+    var weaponIds=rows.filter(function(row){return slotEquipamento35(row.equipment||{})==='arma';}).map(function(row){return String(row.equipment_id);});
+    var weaponInstancesByItem=Object.create(null);
+    if(weaponIds.length){
+      var wi=await sb.from('srd_character_weapon_instances').select('instance_id,equipment_id,equipado,hand_slot').eq('character_id',String(p.ch.id));
+      if(wi.error){status.textContent='Não foi possível carregar as instâncias individuais das armas: '+wi.error.message;return;}
+      (wi.data||[]).forEach(function(instance){(weaponInstancesByItem[String(instance.equipment_id)]||(weaponInstancesByItem[String(instance.equipment_id)]=[])).push(instance);});
+    }
+    status.textContent=gmControlandoFichaAlheia?'O Mestre administra armas por instância e demais equipamentos. Consumíveis continuam sendo usados pelo próprio jogador no turno dele.':'Armas podem ser atribuídas individualmente às mãos; demais equipamentos são administrados pelo inventário.';
+    list.innerHTML=rows.map(function(row){
+      var it=row.equipment||{},usable=it.categoria==='consumivel'&&!gmControlandoFichaAlheia,slot=slotEquipamento35(it),equipable=!!slot&&slot!=='arma';
+      var weaponControls=slot==='arma'?renderizarBotoesInstanciasArma35(weaponInstancesByItem[String(row.equipment_id)]||[],'character'):'';
+      return '<article style="padding:10px;margin:8px 0;border:1px solid #75613d;border-radius:6px"><strong>'+esc(it.nome||row.equipment_id)+'</strong><div style="color:#9eabc0;font-size:13px">'+esc(nomeCategoriaEquipamento35(it.categoria||'item'))+' · x'+row.quantidade+(it.dano?' · dano '+esc(it.dano):'')+(bonusCAEquipamento35(it)?' · CA +'+bonusCAEquipamento35(it):'')+(row.equipado?' · Equipado':'')+(it.categoria==='consumivel'&&gmControlandoFichaAlheia?' · uso pelo jogador':'')+'</div>'+weaponControls+(usable||equipable?'<button type="button" class="btn-acao" data-equip-id="'+esc(row.equipment_id)+'" data-equip-action="'+(usable?'consume':'equip')+'" data-equipped="'+(!row.equipado)+'" style="margin-top:8px">'+(usable?'Usar':(row.equipado?'Desequipar':'Equipar'))+'</button>':'')+'</article>';
+    }).join('');
+    ligarBotoesInstanciaArma35(list,'character',p.ch,async function(){await carregarPersonagens();abrirInventarioSRD(p.ch.id);});
     list.querySelectorAll('[data-equip-id]').forEach(function(button){button.addEventListener('click',async function(){button.disabled=true;if(button.dataset.equipAction==='consume'){
         var potionDice={pocao_cura_lig:1,pocao_cura_mod:2,pocao_cura_grav:3},diceCount=potionDice[button.dataset.equipId];
         if(!diceCount){button.disabled=false;alert('Esta poção não possui uma rolagem manual configurada.');return;}
@@ -2240,8 +2270,20 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var r=await sb.from('srd_cba_token_equipment').select('equipment_id,quantidade,equipado,equipment:srd_equipment(*)').eq('campaign_id',Number(MESA_ID)).eq('token_id',String(token.id));
     if(r.error){status.textContent='Inventário de tokens indisponível. Aplique srd35_token_equipment_migration.sql. '+r.error.message;return;}
     if(!(r.data||[]).length){status.textContent='Este token ainda não carrega equipamento.';return;}
-    status.textContent='Equipar ou desequipar atualiza automaticamente a CA do token.';
-    list.innerHTML=r.data.map(function(row){var it=row.equipment||{},canEquip=!!slotEquipamento35(it);return '<article style="padding:10px;margin:8px 0;border:1px solid #75613d;border-radius:6px"><strong>'+esc(it.nome||row.equipment_id)+'</strong><div style="color:#9eabc0;font-size:13px">'+esc(it.categoria||'item')+' · x'+row.quantidade+(it.dano?' · dano '+esc(it.dano):'')+(bonusCAEquipamento35(it)?' · CA +'+bonusCAEquipamento35(it):'')+'</div>'+(canEquip?'<button type="button" class="btn-acao" data-token-equip-id="'+esc(row.equipment_id)+'" data-equipped="'+(!row.equipado)+'" style="margin-top:8px">'+(row.equipado?'Desequipar':'Equipar')+'</button>':'')+'</article>';}).join('');
+    var weaponIds=r.data.filter(function(row){return slotEquipamento35(row.equipment||{})==='arma';}).map(function(row){return String(row.equipment_id);});
+    var weaponInstancesByItem=Object.create(null);
+    if(weaponIds.length){
+      var wi=await sb.from('srd_cba_token_weapon_instances').select('instance_id,equipment_id,equipado,hand_slot').eq('campaign_id',Number(MESA_ID)).eq('token_id',String(token.id));
+      if(wi.error){status.textContent='Não foi possível carregar as instâncias das armas deste token: '+wi.error.message;return;}
+      (wi.data||[]).forEach(function(instance){(weaponInstancesByItem[String(instance.equipment_id)]||(weaponInstancesByItem[String(instance.equipment_id)]=[])).push(instance);});
+    }
+    status.textContent='O Mestre administra cada arma por instância e mão; a CA é atualizada pelos equipamentos defensivos.';
+    list.innerHTML=r.data.map(function(row){
+      var it=row.equipment||{},slot=slotEquipamento35(it),canEquip=!!slot&&slot!=='arma';
+      var weaponControls=slot==='arma'?renderizarBotoesInstanciasArma35(weaponInstancesByItem[String(row.equipment_id)]||[],'token'):'';
+      return '<article style="padding:10px;margin:8px 0;border:1px solid #75613d;border-radius:6px"><strong>'+esc(it.nome||row.equipment_id)+'</strong><div style="color:#9eabc0;font-size:13px">'+esc(it.categoria||'item')+' · x'+row.quantidade+(it.dano?' · dano '+esc(it.dano):'')+(bonusCAEquipamento35(it)?' · CA +'+bonusCAEquipamento35(it):'')+'</div>'+weaponControls+(canEquip?'<button type="button" class="btn-acao" data-token-equip-id="'+esc(row.equipment_id)+'" data-equipped="'+(!row.equipado)+'" style="margin-top:8px">'+(row.equipado?'Desequipar':'Equipar')+'</button>':'')+'</article>';
+    }).join('');
+    ligarBotoesInstanciaArma35(list,'token',token,async function(){await carregarEquipamentosTokens();abrirInventarioTokenSRD(token);});
     list.querySelectorAll('[data-token-equip-id]').forEach(function(button){button.addEventListener('click',async function(){button.disabled=true;var q=await sb.rpc('equipar_item_token_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(token.id),p_equipment_id:String(button.dataset.tokenEquipId),p_equipado:button.dataset.equipped==='true'});if(q.error){alert('Não foi possível atualizar o equipamento: '+q.error.message);button.disabled=false;return;}campanha.cba_data=q.data.cba_data;aplicarCBAnaMesa(q.data.cba_data,false);await carregarEquipamentosTokens();abrirInventarioTokenSRD(token);});});
   }
   function bonusRacialPericia35(racaId,skillId){
