@@ -3311,7 +3311,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
         var weaponControls=slot==='arma'?renderizarBotoesInstanciasArma35(linkedInstancesByItem[String(row.equipment_id)]||[],'linked_npc',twoHanded):'';
         return '<article style="padding:10px;margin:8px 0;border:1px solid #75613d;border-radius:6px"><strong>'+esc(it.nome||row.equipment_id)+'</strong><div style="color:#9eabc0;font-size:13px">'+esc(it.categoria||'item')+' · x'+row.quantidade+(it.dano?' · dano '+esc(it.dano):'')+(bonusCAEquipamento35(it)?' · CA +'+bonusCAEquipamento35(it):'')+(row.equipado?' · Equipado':'')+'</div>'+weaponControls+(canEquip?'<button type="button" class="btn-acao" data-linked-npc-equip-id="'+esc(row.equipment_id)+'" data-equipped="'+(!row.equipado)+'" style="margin-top:8px">'+(row.equipado?'Desequipar':'Equipar')+'</button>':'')+'</article>';
       }).join('');
-      ligarBotoesInstanciaArma35(list,'linked_npc',token,function(){abrirInventarioTokenSRD(token);});
+      ligarBotoesInstanciaArma35(list,'linked_npc',token,async function(){await carregarPersonagens();abrirInventarioTokenSRD(token);});
       list.querySelectorAll('[data-linked-npc-equip-id]').forEach(function(button){button.addEventListener('click',async function(){
         button.disabled=true;
         var q=await sb.rpc('equipar_item_npc_vinculado_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(token.id),p_equipment_id:String(button.dataset.linkedNpcEquipId),p_equipado:button.dataset.equipped==='true'});
