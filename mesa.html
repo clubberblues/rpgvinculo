@@ -1908,7 +1908,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var bonus,formula,raw=item.monsterStats&&item.monsterStats.ataques||item.detalhe||'',equipped=equipamentoToken35(item).find(function(it){return it.equipado&&slotEquipamento35(it)==='arma';});
     if(item.tipo==='player'){
       var p=acharPersonagemDoToken(item);if(!p||p.ch.user_id!==eu.id){alert('Essa ficha não pertence ao Mestre.');return;}
-      var level=Math.max(1,Number(p.sh.nivel)||1),weapon=(p.equipamento||[]).find(function(it){return it.equipado&&it.categoria==='arma';});
+      var level=Math.max(1,Number(p.sh.nivel)||1),weapon=(p.equipamento||[]).find(function(it){return it.equipado&&slotEquipamento35(it)==='arma';});
       var strengthScore=Number((p.sh.atributos||{}).FOR||10)+modificadorEfeitoPersonagemMesa35(p,'strength');
       var strengthModifier=modifier35(strengthScore);
       bonus=bab35(p.cl,level)+strengthModifier+modificadorEfeitoPersonagemMesa35(p,'attack_roll');
@@ -1983,7 +1983,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       if(squares>reachSquares){alert('Alvo fora de alcance: distância entre as áreas ocupadas excede o alcance corporal da criatura.');return;}
     }
     var level=Math.max(1,Number(own.sh.nivel)||1), attrs=own.sh.atributos||{}, bab=bab35(own.cl,level);
-    var weapons=(own.equipamento||[]).filter(function(it){return it.equipado&&it.categoria==='arma';});
+    var weapons=(own.equipamento||[]).filter(function(it){return it.equipado&&slotEquipamento35(it)==='arma';});
     var weapon=weapons.find(function(it){var d=it.detalhes||{};return type==='atk-dist'?d.weapon_ranged===true:d.weapon_melee!==false;});
     if(type==='atk-dist'&&!weapon){alert('Equipe uma arma à distância antes de atacar.');return;}
     var finesseWeapon=type==='atk-corpo'&&personagemTemTalento(own.sh,'srd35_feat_weapon_finesse')&&(!weapon||!!(weapon.detalhes&&weapon.detalhes.weapon_finesse_eligible===true));
