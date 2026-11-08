@@ -5874,7 +5874,7 @@ async function abrirModalEquipamentos(){
     if(ehGM&&ativo&&!String((combatDataState.surprise||{}).phase||'')){
       var surpriseBtn=document.createElement('button');surpriseBtn.type='button';surpriseBtn.textContent='⚔️ Configurar rodada surpresa';
       surpriseBtn.title='O Mestre determina quem percebeu a ameaça antes do primeiro turno normal.';
-      surpriseBtn.onclick=configurarRodadaSurpresa;gmActions.appendChild(surpriseBtn);
+      surpriseBtn.onclick=configurarRodadaSurpresa;surpriseBtn.style.pointerEvents='auto';painel.appendChild(surpriseBtn);
     }
 
     if((campanha && String(campanha.state||'').toUpperCase()!=='COMBATE') || (!ordem.length && !esperados.length)){
