@@ -2347,6 +2347,20 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   }
   function modifier35(score){return Math.floor((Number(score||10)-10)/2);}function modifierTamanho35(tamanho){var n=String(tamanho||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();return n==='pequeno'||n==='small'?1:0;}
   function valorCA35(value){if(value==null||value==='')return null;var direct=Number(value);if(Number.isFinite(direct))return direct;var match=String(value).trim().match(/^(-?\d+)/);return match?Number(match[1]):null;}function equipamentoToken35(token){var merged=Object.create(null),embedded=token&&token.monsterStats&&Array.isArray(token.monsterStats.loadout)?token.monsterStats.loadout:[],stored=equipamentoTokens[String(token&&token.id)]||[];embedded.concat(stored).forEach(function(item){if(!item)return;var id=String(item.equipment_id||item.id||item.nome||Math.random());merged[id]=Object.assign({},merged[id]||{},item);});return Object.keys(merged).map(function(id){return merged[id];});}
+  function modificadorEfeitoTokenMesa35(token,stat){
+    if(!token||!Array.isArray(efeitosCampanhaMesa.effects))return 0;
+    var buckets=Object.create(null);
+    efeitosCampanhaMesa.effects.filter(function(effect){return effect.target_kind==='token'&&String(effect.target_id)===String(token.id);}).forEach(function(effect){
+      var modifiers=effect.effect_data&&Array.isArray(effect.effect_data.modifiers)?effect.effect_data.modifiers:[];
+      modifiers.forEach(function(modifier){
+        if(String(modifier.stat||'').toLowerCase()!==String(stat).toLowerCase())return;
+        var value=Number(modifier.value);if(!Number.isFinite(value))return;
+        var type=String(modifier.bonus_type||'untyped').toLowerCase(),bucket=buckets[type]||(buckets[type]={sum:0,max:null});
+        bucket.sum+=value;bucket.max=bucket.max===null?value:Math.max(bucket.max,value);
+      });
+    });
+    return Object.keys(buckets).reduce(function(total,type){var bucket=buckets[type];return total+(['untyped','dodge','circumstance'].indexOf(type)>=0?bucket.sum:bucket.max);},0);
+  }
   function caToken35(token){
     if(!token)return 10;
     var record=token.tipo==='player'?acharPersonagemDoToken(token):null;if(record)return caFichaMesa(record);
@@ -2360,7 +2374,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(base==null)base=10+dex+natural;
     if(!isGenerated&&!worn.length&&direct!=null)return Math.max(1,direct);
     var bonus=worn.reduce(function(sum,it){return sum+bonusCAEquipamento35(it);},0),cap=worn.reduce(function(value,it){var max=slotEquipamento35(it)==='armadura'?maxDexEquipamento35(it):null;return max==null?value:Math.min(value,max);},99);
-    return Math.max(1,Math.floor(base+Math.min(dex,cap)+bonus));
+    var effectModifier=token.tipo==='npc'&&token.sourceCharacterId?modificadorEfeitoTokenMesa35(token,'ac'):0;
+    return Math.max(1,Math.floor(base+Math.min(dex,cap)+bonus+effectModifier));
   }
   function slotEquipamento35(item){var cat=String(item&&item.categoria||'').toLowerCase().trim(),name=String(item&&item.nome||'').toLowerCase();if(cat==='arma'||cat.indexOf('weapon')>=0||cat==='specific_weapons')return 'arma';if(cat==='armadura'||cat==='light armor'||cat==='medium armor'||cat==='heavy armor'||cat==='specific_armors'||cat==='armor_and_shields'&&name.indexOf('shield')<0)return 'armadura';if(cat==='escudo'||cat==='shields'||cat==='specific_shields'||cat==='armor_and_shields'&&name.indexOf('shield')>=0)return 'escudo';if(cat==='acessorio'||['rings','rods','staffs','wands','wondrous_items'].indexOf(cat)>=0)return 'acessorio';return '';}
   function bonusCAEquipamento35(item){var value=Number(item&&item.bonus_ca)||Number(item&&item.ca_bonus)||0;if(value)return value;if(String(item&&(item.categoria_original||item.categoria)||'').toLowerCase()==='armor_and_shields'){var match=String(item.nome||'').match(/\+(\d+)/);if(match)return Number(match[1]);}return 0;}
