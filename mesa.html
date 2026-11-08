@@ -2506,13 +2506,12 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         var damage=Math.max(1,Math.trunc(damageValue)),applied=await sb.rpc('aplicar_dano_ataque_npc_gm_srd',{p_campaign_id:Number(MESA_ID),p_actor_token_id:String(selected.attacker.id),p_target_token_id:String(target.id),p_raw_damage:damage,p_damage_type:selected.damage_type||'untyped'});
         if(applied.error)throw new Error('Não foi possível aplicar o dano: '+applied.error.message);
         if(!applied.data)throw new Error('O servidor não retornou os pontos de vida atualizados.');
+        if(!applied.data.cba_data)throw new Error('O servidor não retornou o estado atualizado do campo de batalha.');
+        campanha.cba_data=applied.data.cba_data;aplicarCBAnaMesa(applied.data.cba_data,false);
         if(target.tipo==='player'){
           var targetChar=personagens.find(function(p){return String(p.ch.id)===String(target.id);});
           if(targetChar&&applied.data.pv_atual!=null)targetChar.sh.pv_atual=Number(applied.data.pv_atual);
           renderCards();
-        }else{
-          if(!applied.data.cba_data)throw new Error('O servidor não retornou o estado atualizado do campo de batalha.');
-          campanha.cba_data=applied.data.cba_data;aplicarCBAnaMesa(applied.data.cba_data,false);
         }
         var remaining=applied.data.pv_atual==null?applied.data.hp:applied.data.pv_atual;
         var maximum=applied.data.pv_max==null?applied.data.max_hp:applied.data.pv_max;
