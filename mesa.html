@@ -2342,7 +2342,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(!personagemDoTurnoDoJogador()){alert('Apenas o personagem do jogador no turno atual pode atacar.');return;}
     if(!cbaPublishedState){alert('O Mestre ainda não publicou um campo de batalha.');return;}
     ataqueSelecionado=tipo; suppressTokenClickUntil=0; var board=document.getElementById('area-tabuleiro'); board.classList.add('selecionando-alvo');
-    document.getElementById('iniciativa-status').textContent='Mira ativa: selecione um token inimigo no tabuleiro.';
+    document.getElementById('iniciativa-status').textContent='Mira ativa: selecione um alvo no tabuleiro. Ataque Total também aceita personagens jogadores; ataques simples ainda exigem NPC ou monstro.';
   }
   function modifier35(score){return Math.floor((Number(score||10)-10)/2);}function modifierTamanho35(tamanho){var n=String(tamanho||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();return n==='pequeno'||n==='small'?1:0;}
   function valorCA35(value){if(value==null||value==='')return null;var direct=Number(value);if(Number.isFinite(direct))return direct;var match=String(value).trim().match(/^(-?\d+)/);return match?Number(match[1]):null;}function equipamentoToken35(token){var merged=Object.create(null),embedded=token&&token.monsterStats&&Array.isArray(token.monsterStats.loadout)?token.monsterStats.loadout:[],stored=equipamentoTokens[String(token&&token.id)]||[];embedded.concat(stored).forEach(function(item){if(!item)return;var id=String(item.equipment_id||item.id||item.nome||Math.random());merged[id]=Object.assign({},merged[id]||{},item);});return Object.keys(merged).map(function(id){return merged[id];});}
