@@ -1944,16 +1944,39 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
                   await renderQueue();return;
                 }
                 if(weapons.data&&weapons.data.reason==='unlinked_creature_requires_gm_adjudication'){
+                  var catalog=await sb.rpc('srd_listar_ataques_naturais_oportunidade_srd',{
+                    p_campaign_id:Number(MESA_ID),p_reactor_token_id:String(reaction.reactor_token_id)
+                  });
+                  if(catalog.error)throw new Error(catalog.error.message);
+                  var naturalGroups=(catalog.data&&Array.isArray(catalog.data.attacks))?catalog.data.attacks:[];
+                  if(!naturalGroups.length){
+                    alert('Este NPC/monstro não possui um ataque natural corpo a corpo reconhecido. A reação permanece reservada.');
+                    return;
+                  }
+                  var naturalChoice=0;
+                  if(naturalGroups.length>1){
+                    var naturalPrompt=window.prompt('Escolha o ataque natural para esta reação:\n'+naturalGroups.map(function(a){
+                      return a.index+'. '+a.name+' ×'+a.count+' · '+(a.attack_bonus>=0?'+':'')+a.attack_bonus+' · '+a.damage_expression+(a.additional_effect?' · '+a.additional_effect:'');
+                    }).join('\n'),'1');
+                    if(naturalPrompt===null)return;
+                    naturalChoice=Number(naturalPrompt);
+                    if(!Number.isInteger(naturalChoice)||!naturalGroups.some(function(a){return Number(a.index)===naturalChoice;}))
+                      throw new Error('Seleção de ataque natural inválida.');
+                  }else naturalChoice=Number(naturalGroups[0].index);
+                  var selectedNatural=naturalGroups.find(function(a){return Number(a.index)===naturalChoice;});
                   var natural=await sb.rpc('srd_iniciar_ataque_oportunidade_monstro_srd',{
                     p_campaign_id:Number(MESA_ID),p_pending_id:String(movement.pending_id),
-                    p_reactor_token_id:String(reaction.reactor_token_id),p_reaction_id:String(reaction.reservation_id)
+                    p_reactor_token_id:String(reaction.reactor_token_id),p_reaction_id:String(reaction.reservation_id),
+                    p_natural_attack_index:naturalChoice
                   });
                   if(natural.error)throw new Error(natural.error.message);
-                  await registrarEventoAOO('🐾 '+name+' iniciou um Ataque de Oportunidade com seu ataque natural.',{
+                  var naturalName=String(selectedNatural.name||'Ataque natural');
+                  await registrarEventoAOO('🐾 '+name+' iniciou um Ataque de Oportunidade com '+naturalName+'.',{
                     pending_id:movement.pending_id,attack_id:natural.data.attack_id,
-                    reactor_token_id:reaction.reactor_token_id,weapon:'Ataque natural'
+                    reactor_token_id:reaction.reactor_token_id,weapon:naturalName,
+                    natural_attack_index:naturalChoice,damage_expression:natural.data.damage_expression
                   });
-                  await executarEtapasAtaqueAOO(String(natural.data.attack_id),name,'Ataque natural');
+                  await executarEtapasAtaqueAOO(String(natural.data.attack_id),name,naturalName);
                   await renderQueue();return;
                 }
                 alert('Não há arma corpo a corpo equipada e sincronizada. A reação permanece reservada; equipe uma arma ou encerre a reação manualmente.');return;
