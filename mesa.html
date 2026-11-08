@@ -2028,7 +2028,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
           addButton(section,'🎲 Resolver Encontrão após a reação',async function(){
             var defenderId=movement.threats[0]&&movement.threats[0].defender_token_id;
             if(!defenderId)throw new Error('Defensor do Encontrão não foi localizado.');
-            var follow=window.confirm('O atacante deseja acompanhar o defensor para o espaço que ele ocupava?');
+            var follow=window.confirm('O atacante deseja acompanhar o defensor até onde seu deslocamento restante e o espaço livre permitirem?');
             abrirDado('Encontrão · teste de FOR do atacante · D20',async function(attackerRoll){
               abrirDado('Encontrão · resistência de FOR do defensor · D20',async function(defenderRoll){
                 try{
@@ -2042,8 +2042,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
                   await registrarEventoAOO((outcome.success?'💥 Encontrão bem-sucedido: ':'🛡️ Encontrão resistido: ')+
                     (mover&&mover.nome||movement.mover_token_id)+' contra '+(defenderToken&&defenderToken.nome||defenderId)+'. '+
                     outcome.attacker_total+' contra '+outcome.defender_total+'. '+
-                    (outcome.success?'O alvo foi deslocado '+outcome.squares_pushed+' quadrado(s).'+(outcome.attacker_followed?' O atacante acompanhou.':''):'A manobra falhou.'),
-                    {pending_id:movement.pending_id,maneuver:'bull_rush',success:outcome.success,squares_pushed:outcome.squares_pushed,attacker_followed:outcome.attacker_followed});
+                    (outcome.success?'O alvo foi deslocado '+outcome.squares_pushed+' quadrado(s).'+(outcome.attacker_followed?' O atacante acompanhou '+outcome.attacker_follow_squares+' quadrado(s) ('+outcome.attacker_follow_ft+' ft).':(outcome.follow_blocked?' O atacante não conseguiu acompanhar por falta de deslocamento ou espaço livre.':'')):'A manobra falhou.'),
+                    {pending_id:movement.pending_id,maneuver:'bull_rush',success:outcome.success,squares_pushed:outcome.squares_pushed,attacker_followed:outcome.attacker_followed,attacker_follow_squares:outcome.attacker_follow_squares,attacker_follow_ft:outcome.attacker_follow_ft,follow_blocked:outcome.follow_blocked});
                   await atualizarCenaAOO();await renderQueue();
                 }catch(error){alert('Falha ao resolver Encontrão: '+String(error&&error.message||error));}
               },true,true,'1d20');
@@ -3838,7 +3838,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var resolveTrip=document.createElement('button');resolveTrip.type='button';resolveTrip.className='feature-use-btn';resolveTrip.textContent='🎲 Resolver Derrubar · consumir ação padrão';resolveTrip.style.display='none';resolveTrip.style.marginTop='10px';panel.appendChild(resolveTrip);
     var followWrap=document.createElement('label');followWrap.style.display='flex';followWrap.style.alignItems='center';followWrap.style.gap='8px';followWrap.style.margin='12px 0';
     var followCheck=document.createElement('input');followCheck.type='checkbox';followCheck.checked=true;
-    var followText=document.createElement('span');followText.textContent='Encontrão: atacante acompanha o defensor se o espaço permitir';
+    var followText=document.createElement('span');followText.textContent='Encontrão: acompanhar o defensor até onde o deslocamento restante e o espaço livre permitirem';
     followWrap.append(followCheck,followText);panel.appendChild(followWrap);
     var lastManeuverData=null;
     var resolveBullRush=document.createElement('button');resolveBullRush.type='button';resolveBullRush.className='feature-use-btn';resolveBullRush.textContent='🎲 Iniciar Encontrão · ação padrão';resolveBullRush.style.display='none';resolveBullRush.style.marginTop='10px';panel.appendChild(resolveBullRush);
@@ -3861,8 +3861,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
               var done=await sb.rpc('srd_resolver_encontrao_srd',{p_campaign_id:Number(MESA_ID),p_pending_id:pd.pending_id,p_attacker_d20:ad,p_defender_d20:dd,p_follow:followCheck.checked});
               if(done.error)throw new Error(done.error.message||'Não foi possível resolver Encontrão.');
               var out=done.data||{};
-              result.textContent='ENCONTRÃO · '+(out.success?'SUCESSO':'FALHA')+'\nAtacante: '+out.attacker_total+' · Defensor: '+out.defender_total+'\nDeslocamento forçado: '+out.squares_pushed+' quadrado(s)'+(out.blocked?' · interrompido por obstáculo/limite':'')+'\nAção padrão consumida.';
-              await enviarMensagemChat((out.success?'💥 ':'🛡️ ')+attacker.options[attacker.selectedIndex].textContent+' tentou Encontrão contra '+defender.options[defender.selectedIndex].textContent+': '+out.attacker_total+' contra '+out.defender_total+'. '+(out.success?'Deslocou '+out.squares_pushed+' quadrado(s).':'A manobra falhou.'),'sistema',{evento:'combat_maneuver_resolved',maneuver:'bull_rush',success:out.success,attacker_token_id:attacker.value,defender_token_id:defender.value,squares_pushed:out.squares_pushed});
+              result.textContent='ENCONTRÃO · '+(out.success?'SUCESSO':'FALHA')+'\nAtacante: '+out.attacker_total+' · Defensor: '+out.defender_total+'\nDeslocamento forçado: '+out.squares_pushed+' quadrado(s)'+(out.blocked?' · interrompido por obstáculo/limite':'')+'\nAcompanhamento: '+(out.attacker_followed?out.attacker_follow_squares+' quadrado(s) · '+out.attacker_follow_ft+' ft':(out.follow_blocked?'não realizado · deslocamento/espaço insuficiente':'não solicitado'))+'\nAção padrão consumida.';
+              await enviarMensagemChat((out.success?'💥 ':'🛡️ ')+attacker.options[attacker.selectedIndex].textContent+' tentou Encontrão contra '+defender.options[defender.selectedIndex].textContent+': '+out.attacker_total+' contra '+out.defender_total+'. '+(out.success?'Deslocou '+out.squares_pushed+' quadrado(s).'+(out.attacker_followed?' O atacante acompanhou '+out.attacker_follow_squares+' quadrado(s) ('+out.attacker_follow_ft+' ft).':(out.follow_blocked?' O atacante não conseguiu acompanhar.':'')):'A manobra falhou.'),'sistema',{evento:'combat_maneuver_resolved',maneuver:'bull_rush',success:out.success,attacker_token_id:attacker.value,defender_token_id:defender.value,squares_pushed:out.squares_pushed,attacker_followed:out.attacker_followed,attacker_follow_squares:out.attacker_follow_squares,attacker_follow_ft:out.attacker_follow_ft});
               resolveBullRush.style.display='none';
             }catch(error){result.textContent='Falha ao resolver Encontrão: '+String(error&&error.message||error);}
           },true,true,'1d20');
