@@ -2199,7 +2199,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       var pendingAttempts=Array.isArray(pendingSequence.attempts)?pendingSequence.attempts:[];
       var pendingLast=pendingAttempts.length?pendingAttempts[pendingAttempts.length-1]:null;
       var pendingState=pendingLast?String(pendingLast.status||'estado desconhecido'):'aguardando a primeira rolagem';
-      throw new Error('Existe um Ataque Total anterior ainda aberto (sequência '+String(pendingSequence.sequence_id)+'). Última tentativa: '+pendingState+'. A ação de rodada completa já pode ter sido consumida. Não role novamente nem inicie outra sequência. A retomada assistida será disponibilizada; preserve esta mesa e informe o Mestre.');
+      throw new Error('Existe um Ataque Total anterior ainda aberto (sequência '+String(pendingSequence.sequence_id)+'). Última tentativa: '+pendingState+'. A ação de rodada completa já pode ter sido consumida. Não role novamente nem inicie outra sequência. a sequência agora pode ser retomada: selecione novamente o alvo original para continuar do estado salvo; não repita rolagens.');
     }
     var started=await sb.rpc('iniciar_sequencia_ataque_iterativo_srd',{
       p_campaign_id:Number(MESA_ID),p_character_id:String(own.ch.id),p_target_token_id:String(target.id),
