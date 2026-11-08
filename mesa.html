@@ -2163,6 +2163,22 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       },true,true,'1d20');
       return;
     }
+    if(attack.status==='awaiting_miss_chance'){
+      abrirDado('Ocultação total · '+attackerName+' · D100 (50%)',async function(d100){
+        var concealment=await sb.rpc('srd_registrar_ocultacao_ataque_oportunidade_srd',{
+          p_campaign_id:Number(MESA_ID),p_attack_id:attackId,p_manual_d100:Number(d100)
+        });
+        if(concealment.error)throw new Error(concealment.error.message);
+        var result=concealment.data||{};
+        if(result.missed){
+          await registrarEventoAOO('🌫️ Ataque de Oportunidade de '+attackerName+' falhou por ocultação total: D100 '+d100+' — chance de falha de 50%.',{attack_id:attackId,status:'miss',concealment_d100:Number(d100),miss_chance:50,concealment_missed:true});
+          return;
+        }
+        await registrarEventoAOO('👁️ '+attackerName+' superou a ocultação total: D100 '+d100+' — o ataque pode causar dano.',{attack_id:attackId,status:'awaiting_damage',concealment_d100:Number(d100),miss_chance:50,concealment_missed:false});
+        await executarEtapasAtaqueAOO(attackId,attackerName,weaponName);
+      },true,true,'1d100');
+      return;
+    }
     if(attack.status==='awaiting_damage'){
       var rd=attack.resolution_data||{},expr=String(rd.damage_expression||rd.weapon_damage||'').trim();
       var match=expr.match(/^(\d+)d(\d+)(?:[+-]\d+)?$/i);
