@@ -1937,7 +1937,28 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       if(!formula)return;
       var linkedNpc=item.tipo==='npc'&&item.sourceCharacterId;
       if(linkedNpc){
-        var statsForRage=item.monsterStats||{},baseStrength=Number(statsForRage.forca||((statsForRage.attributes||{}).FOR)||10);
+        // NPC vinculado usa o inventário SRD da ficha de origem, não apenas o equipamento legado do token.
+        var sourceId=String(item.sourceCharacterId),sourceSheetResult=await sb.from('srd_character_sheets').select('nivel,classe_id,atributos').eq('character_id',sourceId).maybeSingle();
+        if(sourceSheetResult.error)throw new Error('Não foi possível consultar a ficha SRD do NPC: '+sourceSheetResult.error.message);
+        if(!sourceSheetResult.data)throw new Error('A ficha de origem do NPC não existe mais.');
+        var sourceGearResult=await sb.from('srd_character_equipment').select('equipment_id,equipado,equipment:srd_equipment(*)').eq('character_id',sourceId).eq('equipado',true);
+        if(sourceGearResult.error)throw new Error('Não foi possível consultar o equipamento da ficha do NPC: '+sourceGearResult.error.message);
+        var sourceWeaponRows=(sourceGearResult.data||[]).filter(function(row){return slotEquipamento35(row.equipment||{})==='arma';});
+        var sourceWeaponInstancesResult=await sb.from('srd_character_weapon_instances').select('instance_id,equipment_id,equipado,hand_slot').eq('character_id',sourceId).eq('equipado',true);
+        if(sourceWeaponInstancesResult.error)throw new Error('Não foi possível consultar as instâncias de armas da ficha do NPC: '+sourceWeaponInstancesResult.error.message);
+        var validSourceWeapons=sourceWeaponRows.map(function(row){var instance=(sourceWeaponInstancesResult.data||[]).find(function(entry){return String(entry.equipment_id)===String(row.equipment_id)&&['main_hand','off_hand'].indexOf(entry.hand_slot)>=0;});return instance?{weapon:row.equipment||{},instance:instance}:null;}).filter(Boolean);
+        if(validSourceWeapons.length>1)throw new Error('A ficha do NPC possui mais de uma arma equipada. Selecione uma única arma principal antes de atacar.');
+        if(validSourceWeapons.length===1){
+          equipped=Object.assign({},validSourceWeapons[0].weapon,{weapon_instance_id:validSourceWeapons[0].instance.instance_id,hand_slot:validSourceWeapons[0].instance.hand_slot});
+          formula=equipped.dano||formula;
+          var sourceClassResult=await sb.from('srd_classes').select('*').eq('id',sourceSheetResult.data.classe_id).maybeSingle();
+          if(sourceClassResult.error)throw new Error('Não foi possível consultar a classe da ficha NPC: '+sourceClassResult.error.message);
+          if(!sourceClassResult.data)throw new Error('A classe da ficha NPC não foi encontrada.');
+          var sourceLevel=Math.max(1,Number(sourceSheetResult.data.nivel)||1);
+          var sourceBaseStrength=Number((sourceSheetResult.data.atributos||{}).FOR||10);
+          bonus=bab35(sourceClassResult.data,sourceLevel)+modifier35(sourceBaseStrength);
+        }
+        var statsForRage=item.monsterStats||{},baseStrength=Number(statsForRage.forca||((statsForRage.attributes||{}).FOR)||Number((sourceSheetResult.data.atributos||{}).FOR)||10);
         var strengthEffect=await sb.rpc('srd_effective_modifier',{p_campaign_id:Number(MESA_ID),p_target_kind:'token',p_target_id:String(item.id),p_stat:'strength'});
         if(strengthEffect.error)throw new Error('Não foi possível calcular a Força efetiva do NPC: '+strengthEffect.error.message);
         var attackEffect=await sb.rpc('srd_effective_modifier',{p_campaign_id:Number(MESA_ID),p_target_kind:'token',p_target_id:String(item.id),p_stat:'attack_roll'});
