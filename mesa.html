@@ -6685,6 +6685,7 @@ async function abrirModalEquipamentos(){
     };
     if(results[0].error)console.warn('Não foi possível carregar condições ativas:',results[0].error.message);
     if(results[1].error)console.warn('Não foi possível carregar efeitos ativos:',results[1].error.message);
+    renderCards();
   }
   function statusAtivoDoAlvo(kind,ids){
     ids=(Array.isArray(ids)?ids:[ids]).filter(function(id){return id!=null;}).map(String);
