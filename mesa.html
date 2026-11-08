@@ -1997,6 +1997,13 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
           await registrarEventoAOO('👣 O movimento de '+(mover&&mover.nome||movement.mover_token_id)+' foi retomado após a resolução das reações.',{pending_id:movement.pending_id,mover_token_id:movement.mover_token_id,destination:movement.destination});
           await renderQueue();
         },reactions.some(function(r){return ['waiting','reserved','attack_started','hit_pending_damage'].includes(String(r.status));}));
+        addButton(section,'Cancelar movimento interrompido',async function(){
+          if(!window.confirm('Cancelar este movimento? Reações já reservadas continuarão consumidas nesta rodada.'))return;
+          var cancelled=await sb.rpc('srd_cancelar_movimento_aoo_pendente_srd',{p_campaign_id:Number(MESA_ID),p_pending_id:String(movement.pending_id)});
+          if(cancelled.error)throw new Error(cancelled.error.message);
+          await registrarEventoAOO('⛔ O Mestre cancelou o movimento interrompido de '+(mover&&mover.nome||movement.mover_token_id)+'.',{pending_id:movement.pending_id,mover_token_id:movement.mover_token_id});
+          await renderQueue();
+        });
         body.appendChild(section);
       }
     }
