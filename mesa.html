@@ -2353,8 +2353,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var match=expr.match(/^(\d+)d(\d+)$/i);if(!match)throw new Error('Expressão de dano da arma não está normalizada (XdY).');
     var diceCount=Number(match[1]),faces=Number(match[2]);if(diceCount<1||diceCount>10||faces<2||faces>100)throw new Error('Expressão de dano fora dos limites.');
     var busy=false;
-    function roll(title,formula,callback){abrirDado(title,function(total,values){if(!Array.isArray(values)||!values.length)throw new Error('O dado não retornou os resultados individuais.');callback(total,values.map(Number));},true,true,formula);}
-    async function refreshScene(){var result=await sb.from('campaigns').select('cba_data').eq('id',campaignId).single();if(result.error)throw new Error('Falha ao atualizar a cena: '+result.error.message);campanha.cba_data=result.data.cba_data;aplicarCBAnaMesa(result.data.cba_data,false);}
+    function roll(title,formula,callback){abrirDado(title,async function(total,values){if(!Array.isArray(values)||!values.length)throw new Error('O dado não retornou os resultados individuais.');return await callback(total,values.map(Number));},true,true,formula);}
+    async function refreshScene(){var result=await sb.from('campaigns').select('cba_data').eq('id',campaignId).single();if(result.error)throw new Error('Falha ao atualizar a cena: '+result.error.message);campanha.cba_data=result.data.cba_data;aplicarCBAnaMesa(result.data.cba_data,false);if(target.tipo==='player')renderCards();}
     async function run(){
       if(busy)return;busy=true;
       try{
