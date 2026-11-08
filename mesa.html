@@ -1539,6 +1539,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(ehGM){
       adicionarBotaoContextual(menu,'combat-profile','⚙️ Configurar facção e alcance');
       adicionarBotaoContextual(menu,'aoo-queue','⚔️ Ataques de oportunidade pendentes');
+      var currentStandingTurn=combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
+      if(currentStandingTurn&&String(currentStandingTurn.id)===String(item.id))adicionarBotaoContextual(menu,'stand-up','🧍 Levantar-se (ação de movimento)');
       if(item.tipo==='player'){
         adicionarBotaoContextual(menu,'gm-character-sheet','📜 Ficha e controles do personagem');
         var playerTurn=combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
@@ -1895,8 +1897,9 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         const section=document.createElement('section');section.className='player-action-groups';
         const mover=(cbaPublishedState&&cbaPublishedState.tokens||[]).find(function(t){return String(t.id)===String(movement.mover_token_id)||String(t.key)===String(movement.mover_token_id);});
         const isTripManeuver=Array.isArray(movement.threats)&&movement.threats.some(function(t){return t&&t.maneuver_event==='trip';});
-        addText(section,(isTripManeuver?'⚔️ Derrubar · reação de oportunidade · ':'')+(mover&&mover.nome||movement.mover_token_id)+' · rodada '+movement.round+(isTripManeuver?'':' · '+(movement.movement_controller==='gm'?'movimento do Mestre':'movimento do jogador')),'feature-detail');
-        if(!isTripManeuver)addText(section,'Origem ('+(movement.origin||[]).join(', ')+') → destino ('+(movement.destination||[]).join(', ')+')','skill-roll-hint');
+        const isStandUpEvent=Array.isArray(movement.threats)&&movement.threats.some(function(t){return t&&t.standing_event==='stand_up';});
+        addText(section,(isTripManeuver?'⚔️ Derrubar · reação de oportunidade · ':isStandUpEvent?'🧍 Levantar-se · reação de oportunidade · ':'')+(mover&&mover.nome||movement.mover_token_id)+' · rodada '+movement.round+((isTripManeuver||isStandUpEvent)?'':' · '+(movement.movement_controller==='gm'?'movimento do Mestre':'movimento do jogador')),'feature-detail');
+        if(!isTripManeuver&&!isStandUpEvent)addText(section,'Origem ('+(movement.origin||[]).join(', ')+') → destino ('+(movement.destination||[]).join(', ')+')','skill-roll-hint');
         const reactions=Array.isArray(movement.pending_reactions)?movement.pending_reactions:[];
         for(const reaction of reactions){
           const reactor=(cbaPublishedState&&cbaPublishedState.tokens||[]).find(function(t){return String(t.id)===String(reaction.reactor_token_id)||String(t.key)===String(reaction.reactor_token_id);});
@@ -1995,7 +1998,22 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
           }
           section.appendChild(row);
         }
-        if(isTripManeuver){
+        if(isStandUpEvent){
+          addButton(section,'🧍 Concluir levantamento após as reações',async function(){
+            var done=await sb.rpc('srd_resolver_levantar_caido_apos_aoo_srd',{p_campaign_id:Number(MESA_ID),p_pending_id:String(movement.pending_id)});
+            if(done.error)throw new Error(done.error.message||'Não foi possível concluir o levantamento.');
+            await carregarEfeitosCampanha();await atualizarCenaAOO();
+            await registrarEventoAOO('🧍 '+(mover&&mover.nome||movement.mover_token_id)+' levantou-se após resolver as reações. Ação de movimento consumida.',{pending_id:movement.pending_id,event:'stand_up',token_id:movement.mover_token_id});
+            await renderQueue();
+          },reactions.some(function(r){return ['waiting','reserved','attack_started','hit_pending_damage'].includes(String(r.status));}));
+          addButton(section,'Cancelar tentativa de levantar-se',async function(){
+            if(!window.confirm('Cancelar o levantamento? Reações já reservadas continuarão consumidas nesta rodada.'))return;
+            var cancelled=await sb.rpc('srd_cancelar_movimento_aoo_pendente_srd',{p_campaign_id:Number(MESA_ID),p_pending_id:String(movement.pending_id)});
+            if(cancelled.error)throw new Error(cancelled.error.message);
+            await registrarEventoAOO('⛔ O Mestre cancelou a tentativa de levantar-se.',{pending_id:movement.pending_id,event:'stand_up'});
+            await renderQueue();
+          });
+        }else if(isTripManeuver){
           addButton(section,'🎲 Resolver Derrubar após a reação',async function(){
             var defenderId=reactions[0]&&reactions[0].reactor_token_id;
             if(!defenderId)throw new Error('Defensor da manobra não foi localizado.');
@@ -2106,12 +2124,24 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     throw new Error('Estado inesperado do Ataque de Oportunidade: '+String(attack.status));
   }
 
+  async function iniciarLevantarTokenCaido35(item){
+    if(!ehGM||!item||!combatDataState||!combatDataState.active)throw new Error('Ação disponível somente ao Mestre durante o combate.');
+    var started=await sb.rpc('srd_iniciar_levantar_caido_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(item.id)});
+    if(started.error)throw new Error(started.error.message||'Não foi possível iniciar o levantamento.');
+    var data=started.data||{};
+    await enviarMensagemChat('🧍 '+String(item.nome||'Combatente')+' tenta levantar-se. '+(data.requires_reactions?'Ataques de oportunidade pendentes.':'Nenhum inimigo ameaçador detectado.'),'sistema',{evento:'stand_up_started',pending_id:data.pending_id,token_id:String(item.id),threats:data.threats||[]});
+    if(data.requires_reactions){abrirPainelFilaAOO();return;}
+    var resolved=await sb.rpc('srd_resolver_levantar_caido_apos_aoo_srd',{p_campaign_id:Number(MESA_ID),p_pending_id:String(data.pending_id)});
+    if(resolved.error)throw new Error(resolved.error.message||'Não foi possível concluir o levantamento.');
+    await carregarEfeitosCampanha();renderCards();await enviarMensagemChat('🧍 '+String(item.nome||'Combatente')+' levantou-se. Ação de movimento consumida.','sistema',{evento:'stand_up_completed',token_id:String(item.id),pending_id:data.pending_id});
+  }
   function executarAcaoMenuToken(acao){
     var item=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key)===String(ctxTokenAtualKey);});if(!item){fecharMenuContextualToken(false);return;}
     fecharMenuContextualToken(false);
     if(acao==='fechar')return;
     if(acao==='combat-profile'){configurarPerfilCombateToken(item);return;}
     if(acao==='aoo-queue'){abrirPainelFilaAOO();return;}
+    if(acao==='stand-up'){iniciarLevantarTokenCaido35(item).catch(function(error){alert('Não foi possível levantar: '+String(error&&error.message||error));});return;}
     if(acao==='token-image'){selecionarImagemToken(item);return;}
     if(acao==='pv-personagem'){var owner=acharPersonagemDoToken(item);if(!ehGM&&item.tipo==='player'&&owner&&owner.ch.user_id===eu.id)abrirAjustePV(owner.ch.id);return;}
     if(acao==='pv-token'){if(ehGM&&item.tipo!=='player')abrirAjustePVToken(item.key);return;}
