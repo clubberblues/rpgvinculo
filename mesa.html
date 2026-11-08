@@ -5810,13 +5810,13 @@ async function abrirModalEquipamentos(){
     if(btn.dataset.isInitiative==='true')Array.from(container.querySelectorAll('.btn-rolar-teste')).forEach(function(existing){if(existing.dataset.isInitiative==='true'&&existing.dataset.characterId===String(personagemId))existing.remove();});
     var nomePersonagem=personagem&&personagem.ch?String(personagem.ch.nome||'Personagem'):'Personagem';
     btn.textContent=isConfusion?'🎲 Rolar comportamento aleatório D100 · '+nomePersonagem:(isDyingSave?'🩸 Rolar estabilização · '+nomePersonagem:(isSpellSave||isSavingThrow?'🛡️ Rolar resistência · '+nomePersonagem:(isSpellResistance?'✨ Rolar penetração · '+nomePersonagem:'⚡ Rolar '+tipoTeste+' · '+nomePersonagem)))
-    btn.setAttribute('aria-label',isDyingSave?'Rolar d100 de estabilização para '+nomePersonagem:'Rolar '+tipoTeste+' para '+nomePersonagem+' com o dado manual');
+    btn.setAttribute('aria-label',isConfusion?'Rolar D100 de comportamento aleatório para '+nomePersonagem:(isDyingSave?'Rolar d100 de estabilização para '+nomePersonagem:'Rolar '+tipoTeste+' para '+nomePersonagem+' com o dado manual'));
     btn.onclick=function(){
       if(btn.disabled)return;
       if(pedidoTesteAtivo){alert('Conclua ou feche a rolagem atual antes de iniciar outra.');return;}
       btn.disabled=true;
       pedidoTesteAtivo={tipo:tipoTeste,personagemId:String(personagemId),requestKey:String(requestKey),responseKey:responseKey,button:btn};
-      abrirDado(isDyingSave?'Estabilização · '+nomePersonagem+' · D100':(isSavingThrow?'Resistência · '+nomePersonagem+' · D20':tipoTeste+' · '+nomePersonagem+' · D20'),async function(resultado){
+      abrirDado(isConfusion?'Confusão · '+nomePersonagem+' · D100':(isDyingSave?'Estabilização · '+nomePersonagem+' · D100':(isSavingThrow?'Resistência · '+nomePersonagem+' · D20':tipoTeste+' · '+nomePersonagem+' · D20')),async function(resultado){
         try{
           var ficha=personajesById(personagemId);
           if(!ficha){btn.disabled=false;throw new Error('Não foi possível localizar sua ficha para concluir a rolagem.');}
