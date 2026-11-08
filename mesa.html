@@ -2023,7 +2023,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     }
     if(attack.status==='awaiting_damage'){
       var rd=attack.resolution_data||{},expr=String(rd.damage_expression||rd.weapon_damage||'').trim();
-      var match=expr.match(/^(\d+)d(\d+)$/i);
+      var match=expr.match(/^(\d+)d(\d+)(?:[+-]\d+)?$/i);
       if(!match)throw new Error('A expressão de dano da arma não está normalizada: '+(expr||'vazia')+'. O Mestre deve revisar a arma antes de aplicar o dano.');
       var diceCount=Number(match[1])*(attack.is_critical?Math.max(1,Number(rd.critical_multiplier||2)):1),faces=Number(match[2]);
       if(diceCount<1||diceCount>30||[2,3,4,6,8,10,12,20,100].indexOf(faces)<0)throw new Error('Expressão de dano fora dos limites do dado 3D.');
