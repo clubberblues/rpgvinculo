@@ -5828,7 +5828,7 @@ async function abrirModalEquipamentos(){
     var dwarfFamiliarity=String(personagem&&personagem.sh&&personagem.sh.raca_id)==='anao'&&['machado de guerra anao','urgrosh anao'].indexOf(nome)>=0;
     if(tipo==='simple')return exact||allSimple||allSimpleMartial||hasFeat('srd35_feat_simple_weapon_proficiency');
     if(tipo==='martial')return exact||allSimpleMartial||hasParamFeat('srd35_feat_martial_weapon_proficiency');
-    if(tipo==='exotic')return exact||dwarfFamiliarity&&allSimpleMartial||hasParamFeat('srd35_feat_exotic_weapon_proficiency');
+    if(tipo==='exotic')return exact||dwarfFamiliarity&&(allSimpleMartial||hasParamFeat('srd35_feat_martial_weapon_proficiency'))||hasParamFeat('srd35_feat_exotic_weapon_proficiency');
     return false;
   }
   function personagemProficienteArmadura35(personagem,item){
