@@ -2411,7 +2411,7 @@ function dnd35LanguageNormalize(value){
     if(domainActive)activeHtml+=domainActive;
     if(!activeHtml)activeHtml='<div class="dnd35-spell-empty">'+(isSpontaneous?'Nenhuma magia conhecida selecionada.':'Nenhuma magia preparada selecionada.')+'</div>';
     var spellGuide=avail.key==='wizard'?'<strong>Mago:</strong> marque “No grimório” para registrar uma magia no livro. Depois marque “Preparar” para deixá-la pronta; cada preparação ocupa um espaço diário.':(isSpontaneous?'<strong>Feiticeiro/Bardo:</strong> escolha magias conhecidas. Você conjura qualquer uma delas sem preparar cada espaço; o círculo da magia e os usos por dia são recursos diferentes.':'<strong>Conjurador preparado:</strong> escolha as magias que deixa prontas após o descanso. O círculo é o nível da magia; o espaço diário é gasto ao conjurar.');
-    var section='<section class="dnd35-grimoire"><div class="dnd35-grimoire-head"><div><span class="dnd35-grimoire-kicker">D&amp;D 3.5 · Livro de fórmulas</span><h2>'+bookTitle+' <button type="button" class="dnd35-help" data-dnd35-help="spell">?</button></h2><p>'+(classNames[avail.key]||esc(state.classe.nome||'Classe'))+' · Nível '+charLevel+' · Atributo-chave '+esc(avail.ability||'—')+(avail.key?' ('+(avail.mod>=0?'+':'')+avail.mod+')':'')+'</p></div><button type="button" class="dnd35-grimoire-btn" data-grimoire-open>'+(avail.key==='wizard'?'Abrir Grimório':'Escolher magias')+'</button></div>'+(message?'<p class="dnd35-note">'+esc(message)+'</p>':'')+(creating&&avail.key?'<p class="dnd35-grimoire-guide" data-grimoire-quota>'+esc(dnd35GrimoireQuotaSummary(state,attrs))+'</p>':'')+'<div class="dnd35-grimoire-guide">'+spellGuide+'</div><div class="dnd35-grimoire-ledger">'+(ledger||'<article><b>Progressão</b><span>Sem espaços disponíveis registrados.</span></article>')+'</div><div style="margin-top:12px"><b style="font-family:Cinzel,serif;font-size:11px">'+(isSpontaneous?'MAGIAS CONHECIDAS ('+knownCount+') E CONJURAÇÕES':'MAGIAS PREPARADAS ('+preparedCount+')')+'</b><div>'+activeHtml+'</div></div><div class="dnd35-grimoire-status" data-grimoire-status role="status" aria-live="polite">'+(creating?'As seleções serão salvas ao criar a ficha.':'')+'</div>'+(creating||!URL_PARAMS.get('mesa')?'':'<button type="button" class="dnd35-grimoire-action" data-grimoire-rest>Descanso longo · recuperar PV e magias</button>')+'</section>';
+    var section='<section class="dnd35-grimoire"><div class="dnd35-grimoire-head"><div><span class="dnd35-grimoire-kicker">D&amp;D 3.5 · Livro de fórmulas</span><h2>'+bookTitle+' <button type="button" class="dnd35-help" data-dnd35-help="spell">?</button></h2><p>'+(classNames[avail.key]||esc(state.classe.nome||'Classe'))+' · Nível '+charLevel+' · Atributo-chave '+esc(avail.ability||'—')+(avail.key?' ('+(avail.mod>=0?'+':'')+avail.mod+')':'')+'</p></div><button type="button" class="dnd35-grimoire-btn" data-grimoire-open>'+(avail.key==='wizard'?'Abrir Grimório':'Escolher magias')+'</button></div>'+(message?'<p class="dnd35-note">'+esc(message)+'</p>':'')+(creating&&avail.key?'<p class="dnd35-grimoire-guide" data-grimoire-quota>'+esc(dnd35GrimoireQuotaSummary(state,attrs))+'</p>':'')+'<div class="dnd35-grimoire-guide">'+spellGuide+'</div><div class="dnd35-grimoire-ledger">'+(ledger||'<article><b>Progressão</b><span>Sem espaços disponíveis registrados.</span></article>')+'</div><div style="margin-top:12px"><b style="font-family:Cinzel,serif;font-size:11px">'+(isSpontaneous?'MAGIAS CONHECIDAS ('+knownCount+') E CONJURAÇÕES':'MAGIAS PREPARADAS ('+preparedCount+')')+'</b><div>'+activeHtml+'</div></div><div class="dnd35-grimoire-status" data-grimoire-status role="status" aria-live="polite">'+(creating?'As seleções serão salvas ao criar a ficha.':'')+'</div>'+(creating||!URL_PARAMS.get('mesa')?'':'<button type="button" class="dnd35-grimoire-action" data-grimoire-rest>Descanso longo · recuperar PV e recursos</button>')+'</section>';
     var catalog='';
     if(!spells.length)catalog='<div class="dnd35-spell-empty">'+esc(state.spellCatalogError||'Nenhuma magia disponível neste nível/classe.')+'</div>';
     else catalog='<div class="dnd35-spell-list">'+spells.map(function(sp){
@@ -2453,17 +2453,35 @@ function dnd35LanguageNormalize(value){
     var save=document.querySelector('[data-grimoire-save]');if(save)save.addEventListener('click',function(){if(state.criacao){state.grimoireOpen=false;renderizarFichaSRD35();return;}dnd35GrimoirePersist(state);});
     var rest=document.querySelector('[data-grimoire-rest]');
     if(rest) rest.addEventListener('click', async function(){
-      if(!await window.vttUI.confirm({title:'Descanso longo',message:'Recupera 1 PV por nível e as magias diárias. Não pode ser feito durante combate.',okLabel:'Descansar'})) return;
+      if(!await window.vttUI.confirm({title:'Descanso longo',message:'Recupera PV, recursos de classe e magias diárias. Exige 8 horas desde o último descanso e não pode ser feito durante combate.',okLabel:'Descansar'})) return;
       rest.disabled=true;
       var status=document.querySelector('[data-grimoire-status]');
       try {
-        var result=await sb.rpc('descanso_longo_personagem_srd',{p_campaign_id:Number(URL_PARAMS.get('mesa')),p_character_id:String(CHAR_ID)});
+        var campaignId=Number(URL_PARAMS.get('mesa')||(state.character&&state.character.campaign_id)||0),linkedNpcToken=null;
+        if(campaignId&&!state.character.campaign_id){
+          var campaignResult=await sb.from('campaigns').select('cba_data').eq('id',campaignId).single();
+          if(campaignResult.error)throw campaignResult.error;
+          var campaignTokens=campaignResult.data&&campaignResult.data.cba_data&&Array.isArray(campaignResult.data.cba_data.tokens)?campaignResult.data.cba_data.tokens:[];
+          var linkedNpcTokens=campaignTokens.filter(function(token){return token&&token.tipo==='npc'&&String(token.sourceCharacterId||'')===String(CHAR_ID);});
+          if(linkedNpcTokens.length>1)throw new Error('Mais de um token NPC está vinculado a esta ficha; não é seguro escolher qual descansar.');
+          linkedNpcToken=linkedNpcTokens[0]||null;
+          if(!linkedNpcToken)throw new Error('Token NPC vinculado não encontrado nesta campanha.');
+        }
+        var result=linkedNpcToken
+          ? await sb.rpc('descanso_longo_npc_vinculado_srd',{p_campaign_id:campaignId,p_token_id:String(linkedNpcToken.id)})
+          : await sb.rpc('descanso_longo_personagem_srd',{p_campaign_id:campaignId,p_character_id:String(CHAR_ID)});
         if(result.error) throw result.error;
         state.sheet.pv_atual=result.data.pv_atual;
         var refreshed=await sb.from('srd_character_sheets').select('*').eq('character_id',CHAR_ID).maybeSingle();
         if(refreshed.error) throw refreshed.error;
         if(refreshed.data) state.sheet=Object.assign({},state.sheet,refreshed.data);
         state.grimoireState=dnd35SpellState(state);
+        if(campaignId){
+          var movementResult=await sb.rpc('srd35_deslocamento_personagem',{p_character_id:String(CHAR_ID),p_base_speed_m:Number(state.raca.deslocamento)});
+          state.deslocamentoEfetivo=!movementResult.error&&Number.isFinite(Number(movementResult.data))?Number(movementResult.data):null;
+          var caResult=await sb.rpc('srd_calcular_ca_personagem_srd',{p_campaign_id:campaignId,p_character_id:String(CHAR_ID),p_attack_context:'normal',p_attacker_is_giant:false});
+          state.caData=!caResult.error&&caResult.data&&Number.isFinite(Number(caResult.data.final_ac))?caResult.data:null;
+        }
         renderizarFichaSRD35();
         var restedStatus=document.querySelector('[data-grimoire-status]');
         if(restedStatus) restedStatus.textContent='Descanso concluído: '+result.data.cura+' PV recuperados; magias e recursos diários repostos.'+(Number(result.data.condicoes_removidas||0)>0?' Fadiga/exaustão removida.':'');
