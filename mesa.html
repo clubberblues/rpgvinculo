@@ -1925,7 +1925,38 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         }
       }
     }
-    else{if(typeof raw!=='string')raw=JSON.stringify(raw);var bonusMatch=raw.match(/[+\-]\d+\s+(?:melee|ranged|corpo a corpo|à distância|ataque básico)/i),damageMatch=raw.match(/\((\d+d(?:3|4|6|8|10|12|20|100)(?:[+\-]\d+)?)\)/i);bonus=bonusMatch?Number(bonusMatch[0].match(/[+\-]\d+/)[0]):Number(await window.vttUI.ask({title:'Bônus de ataque',label:'Bônus de ataque de '+item.nome+' conforme a ficha',defaultValue:'0',inputMode:'numeric'}));if(!Number.isFinite(bonus))return;formula=damageMatch?damageMatch[1]:(item.damageDice||'');if(equipped&&equipped.dano)formula=equipped.dano;if(!formula)formula=await window.vttUI.ask({title:'Dano do token',label:'Fórmula de dano de '+item.nome+' (por exemplo, 1d8+3)',defaultValue:'1d6'});if(!formula)return;if(equipped&&equipped.dano){var strength=modifier35((item.monsterStats||{}).forca);if(strength&&!/[+\-]\d+$/.test(formula))formula+=strength>0?'+'+strength:String(strength);}}
+    else{
+      if(typeof raw!=='string')raw=JSON.stringify(raw);
+      var bonusMatch=raw.match(/[+\-]\d+\s+(?:melee|ranged|corpo a corpo|à distância|ataque básico)/i),damageMatch=raw.match(/\((\d+d(?:3|4|6|8|10|12|20|100)(?:[+\-]\d+)?)\)/i);
+      bonus=bonusMatch?Number(bonusMatch[0].match(/[+\-]\d+/)[0]):Number(await window.vttUI.ask({title:'Bônus de ataque',label:'Bônus de ataque de '+item.nome+' conforme a ficha',defaultValue:'0',inputMode:'numeric'}));
+      if(!Number.isFinite(bonus))return;
+      formula=damageMatch?damageMatch[1]:(item.damageDice||'');
+      if(equipped&&equipped.dano)formula=equipped.dano;
+      if(!formula)formula=await window.vttUI.ask({title:'Dano do token',label:'Fórmula de dano de '+item.nome+' (por exemplo, 1d8+3)',defaultValue:'1d6'});
+      if(!formula)return;
+      var linkedNpc=item.tipo==='npc'&&item.sourceCharacterId;
+      if(linkedNpc){
+        var statsForRage=item.monsterStats||{},baseStrength=Number(statsForRage.forca||((statsForRage.attributes||{}).FOR)||10);
+        var strengthEffect=await sb.rpc('srd_effective_modifier',{p_campaign_id:Number(MESA_ID),p_target_kind:'token',p_target_id:String(item.id),p_stat:'strength'});
+        if(strengthEffect.error)throw new Error('Não foi possível calcular a Força efetiva do NPC: '+strengthEffect.error.message);
+        var attackEffect=await sb.rpc('srd_effective_modifier',{p_campaign_id:Number(MESA_ID),p_target_kind:'token',p_target_id:String(item.id),p_stat:'attack_roll'});
+        if(attackEffect.error)throw new Error('Não foi possível calcular os bônus de ataque do NPC: '+attackEffect.error.message);
+        var effectiveStrength=baseStrength+Number(strengthEffect.data||0),baseStrengthMod=modifier35(baseStrength),effectiveStrengthMod=modifier35(effectiveStrength);
+        var rangedNpc=equipped&&equipped.detalhes?equipped.detalhes.weapon_ranged===true:/ranged|à distância/i.test(raw);
+        if(!rangedNpc){
+          bonus+=effectiveStrengthMod-baseStrengthMod;
+          var damagePartsNpc=String(formula).match(/^(\d+d(?:3|4|6|8|10|12|20|100))([+\-]\d+)?$/i);
+          if(damagePartsNpc){
+            var flatNpc=Number(damagePartsNpc[2]||0)+(damagePartsNpc[2]?effectiveStrengthMod-baseStrengthMod:effectiveStrengthMod);
+            formula=damagePartsNpc[1]+(flatNpc>0?'+'+flatNpc:flatNpc<0?String(flatNpc):'');
+          }
+        }
+        bonus+=Number(attackEffect.data||0);
+      }else if(equipped&&equipped.dano){
+        var strength=modifier35((item.monsterStats||{}).forca);
+        if(strength&&!/[+\-]\d+$/.test(formula))formula+=strength>0?'+'+strength:String(strength);
+      }
+    }
     formula=String(formula).replace(/\s+/g,'');if(!/^\d{1,2}d(?:3|4|6|8|10|12|20|100)(?:[+\-]\d{1,3})?$/i.test(formula)){alert('Fórmula de dano inválida.');return;}var resolvedAttackContext=attackContext||((item.monsterStats&&item.monsterStats.invisible===true)?'invisible':'normal');ataqueMestreSelecionado={attacker:item,bonus:bonus,formula:formula,attack_context:resolvedAttackContext};document.getElementById('iniciativa-status').textContent='Turno do Mestre · '+item.nome+': selecione um alvo no tabuleiro.';document.getElementById('area-tabuleiro').classList.add('selecionando-alvo');
   }
   function selecionarAlvoAtaqueMestre(target){
@@ -1933,6 +1964,11 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var attackContext=selected.attack_context|| (selected.attacker&&selected.attacker.monsterStats&&selected.attacker.monsterStats.invisible===true?'invisible':'normal');
     abrirDado('Ataque · '+selected.attacker.nome+' contra '+target.nome,async function(d20){
       var acDetails=null;
+      if(target.tipo!=='player'){
+        var targetAcEffect=await sb.rpc('srd_effective_modifier',{p_campaign_id:Number(MESA_ID),p_target_kind:'token',p_target_id:String(target.id),p_stat:'ac'});
+        if(targetAcEffect.error)throw new Error('Não foi possível calcular os modificadores de CA do alvo: '+targetAcEffect.error.message);
+        ac+=Number(targetAcEffect.data||0);
+      }
       if(target.tipo==='player'){
         var acResponse=await sb.rpc('srd_calcular_ca_personagem_srd',{p_campaign_id:Number(MESA_ID),p_character_id:String(target.id),p_attack_context:attackContext});
         if(acResponse.error)throw new Error('Não foi possível calcular a CA atual da ficha: '+acResponse.error.message);
