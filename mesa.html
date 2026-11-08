@@ -5179,8 +5179,9 @@ async function abrirModalEquipamentos(){
     var container=document.getElementById('botoes-rolagem-pendente');
     if(!container) return;
     var responseKey=String(requestKey)+'|'+String(personagemId);
+    var npcResponseKey=String(requestKey)+'|npc|'+String(personagemId);
     Array.from(container.querySelectorAll('.btn-rolar-teste')).forEach(function(btn){
-      if(btn.dataset.responseKey===responseKey) btn.remove();
+      if(btn.dataset.responseKey===responseKey||btn.dataset.responseKey===npcResponseKey) btn.remove();
     });
     if(!container.querySelector('.btn-rolar-teste')) container.remove();
   }
