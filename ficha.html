@@ -2597,7 +2597,19 @@ function dnd35LanguageNormalize(value){
     panel.hidden=false;
     panel.innerHTML='<h2>Fúria do Bárbaro</h2><p class="dnd35-note">Consultando recursos…</p>';
     try {
-      var response=await sb.rpc('consultar_furia_barbaro_srd',{p_character_id:String(CHAR_ID)});
+      var campaignId=Number(URL_PARAMS.get('mesa')||(state.character&&state.character.campaign_id)||0),linkedNpcToken=null;
+      if(campaignId&&!state.character.campaign_id){
+        var campaignResult=await sb.from('campaigns').select('cba_data').eq('id',campaignId).single();
+        if(campaignResult.error)throw campaignResult.error;
+        var campaignTokens=campaignResult.data&&campaignResult.data.cba_data&&Array.isArray(campaignResult.data.cba_data.tokens)?campaignResult.data.cba_data.tokens:[];
+        var linkedNpcTokens=campaignTokens.filter(function(token){return token&&token.tipo==='npc'&&String(token.sourceCharacterId||'')===String(CHAR_ID);});
+        if(linkedNpcTokens.length>1)throw new Error('Mais de um token NPC está vinculado a esta ficha; não é seguro escolher qual Fúria controlar.');
+        linkedNpcToken=linkedNpcTokens[0]||null;
+        if(!linkedNpcToken)throw new Error('Token NPC vinculado não encontrado nesta campanha.');
+      }
+      var response=linkedNpcToken
+        ? await sb.rpc('consultar_furia_barbaro_npc_srd',{p_campaign_id:campaignId,p_token_id:String(linkedNpcToken.id)})
+        : await sb.rpc('consultar_furia_barbaro_srd',{p_character_id:String(CHAR_ID)});
       if(response.error)throw response.error;
       var status=response.data||{};
       if(!status.eligible){panel.hidden=true;return;}
@@ -2626,14 +2638,17 @@ function dnd35LanguageNormalize(value){
         var message=panel.querySelector('[data-barbarian-rage-message]');
         if(message)message.textContent='Aplicando a Fúria no motor de regras…';
         try {
-          var result=await sb.rpc('usar_furia_barbaro_srd',{
-            p_character_id:String(CHAR_ID),
-            p_action:action
-          });
+          var result=linkedNpcToken
+            ? await sb.rpc('usar_furia_barbaro_npc_srd',{p_campaign_id:campaignId,p_token_id:String(linkedNpcToken.id),p_action:action})
+            : await sb.rpc('usar_furia_barbaro_srd',{p_character_id:String(CHAR_ID),p_action:action});
           if(result.error)throw result.error;
           var refreshed=await sb.from('srd_character_sheets').select('*').eq('character_id',String(CHAR_ID)).single();
           if(refreshed.error)throw refreshed.error;
           state.sheet=Object.assign({},state.sheet,refreshed.data||{});
+          if(campaignId){
+            var caResult=await sb.rpc('srd_calcular_ca_personagem_srd',{p_campaign_id:campaignId,p_character_id:String(CHAR_ID),p_attack_context:'normal',p_attacker_is_giant:false});
+            state.caData=!caResult.error&&caResult.data&&Number.isFinite(Number(caResult.data.final_ac))?caResult.data:null;
+          }
           renderizarFichaSRD35();
         } catch(error) {
           if(message)message.textContent='Não foi possível executar: '+(error.message||String(error));
