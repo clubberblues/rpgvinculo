@@ -2874,7 +2874,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     var response=await sb.rpc('consultar_ataque_iterativo_npc_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(item.id),p_attack_type:'atk-corpo'});
     if(response.error)throw new Error(response.error.message);
     var profile=response.data||{};
-    if(!profile.eligible){alert('Ataque Total indisponível: '+(profile.reason==='bab_below_6'?'BBA '+profile.base_attack_bonus+'; é necessário BBA +6.':'Nenhuma arma compatível equipada ou ficha inválida.'));return;}
+    if(!profile.eligible){alert('Ataque Total indisponível: '+(profile.reason==='bab_below_1'?'BBA '+profile.base_attack_bonus+'; é necessário BBA +1 para realizar um ataque.':'Nenhuma arma compatível equipada ou ficha inválida.'));return;}
     var weapons=Array.isArray(profile.weapons)?profile.weapons:[];
     if(!weapons.length){alert('Nenhuma arma compatível foi encontrada.');return;}
     var labels=weapons.map(function(w,i){return (i+1)+'. '+String(w.name||'Arma')+' · '+String(w.hand_slot||'mão')+' · '+String(w.damage||'dano não cadastrado');}).join('\n');
