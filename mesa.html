@@ -2012,7 +2012,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
               await renderQueue();
             });
           }else if(reaction.status==='attack_started'||reaction.status==='hit_pending_damage'){
-            addButton(row,reaction.status==='hit_pending_damage'?'Retomar ocultação/dano':'Retomar ataque',async function(){
+            addButton(row,reaction.status==='hit_pending_damage'?'Retomar resolução':'Retomar ataque',async function(){
               await executarEtapasAtaqueAOO(String(reaction.attack_id),name,'arma equipada');
               await renderQueue();
             });
