@@ -2487,7 +2487,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   }
   function selecionarAlvoAtaqueMestre(target){
     var selected=ataqueMestreSelecionado;ataqueMestreSelecionado=null;document.getElementById('area-tabuleiro').classList.remove('selecionando-alvo');if(!selected||String(target.id)===String(selected.attacker.id)){alert('Selecione outro token como alvo.');return;}var ac=target.tipo==='player'?null:caToken35(target);
-    if(selected&&selected.npc_iterative){executarAtaqueIterativoNpcMestre(selected.attacker,target,selected.weapon,selected.weapon_end).catch(function(err){console.error('Ataque Total NPC:',err);alert('Ataque Total interrompido: '+err.message+'. Se a rolagem já foi registrada, selecione o mesmo alvo para retomar sem repetir dados.');});return;}if(target.tipo!=='player'&&ac==null){alert('O alvo precisa ter uma CA numérica.');return;}
+    if(selected&&selected.npc_iterative){executarAtaqueIterativoNpcMestre(selected.attacker,target,selected.weapon,selected.weapon_end,selected.power_attack_penalty).catch(function(err){console.error('Ataque Total NPC:',err);alert('Ataque Total interrompido: '+err.message+'. Se a rolagem já foi registrada, selecione o mesmo alvo para retomar sem repetir dados.');});return;}if(target.tipo!=='player'&&ac==null){alert('O alvo precisa ter uma CA numérica.');return;}
     var attackContext=selected.attack_context|| (selected.attacker&&selected.attacker.monsterStats&&selected.attacker.monsterStats.invisible===true?'invisible':'normal');
     abrirDado('Ataque · '+selected.attacker.nome+' contra '+target.nome,async function(d20){
       var acDetails=null;
@@ -2885,12 +2885,19 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
       var end=await window.vttUI.ask({title:'Arma dupla',label:'Digite main ou off para escolher a extremidade.',defaultValue:'main'});
       weaponEnd=String(end||'').trim().toLowerCase();if(['main','off'].indexOf(weaponEnd)<0)return;
     }
-    ataqueMestreSelecionado={npc_iterative:true,attacker:item,profile:profile,weapon:weapon,weapon_end:weaponEnd};
+    var powerAttackPenalty=0;
+    if(profile.power_attack_available){
+      var powerChoice=await window.vttUI.ask({title:'Ataque Poderoso',label:'Escolha a penalidade aplicada ao ataque e o bônus de dano correspondente. Digite 0 para não usar. Máximo: '+Number(profile.base_attack_bonus||0)+'.',defaultValue:'0',inputMode:'numeric'});
+      if(powerChoice===null||powerChoice===undefined)return;
+      powerAttackPenalty=String(powerChoice).trim()===''?0:Number(powerChoice);
+      if(!Number.isInteger(powerAttackPenalty)||powerAttackPenalty<0||powerAttackPenalty>Number(profile.base_attack_bonus||0)){alert('Penalidade de Ataque Poderoso inválida para o BBA atual.');return;}
+    }
+    ataqueMestreSelecionado={npc_iterative:true,attacker:item,profile:profile,weapon:weapon,weapon_end:weaponEnd,power_attack_penalty:powerAttackPenalty};
     document.getElementById('iniciativa-status').textContent='Ataque Total · '+item.nome+': selecione um alvo no tabuleiro.';
     document.getElementById('area-tabuleiro').classList.add('selecionando-alvo');
   }
 
-  async function executarAtaqueIterativoNpcMestre(attacker,target,weapon,weaponEnd){
+  async function executarAtaqueIterativoNpcMestre(attacker,target,weapon,weaponEnd,powerAttackPenalty){
     var campaignId=Number(MESA_ID),actorId=String(attacker.id),targetId=String(target.id);
     if(!ehGM||!combatDataState||!combatDataState.active)throw new Error('Ataque Total exige Mestre e iniciativa ativa.');
     if(targetId===actorId)throw new Error('O NPC não pode selecionar a si mesmo.');
@@ -2904,10 +2911,11 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     if(saved.active){
       if(String(saved.target_token_id)!==targetId){alert('Existe sequência interrompida contra '+String(saved.target_token_id)+'. Selecione o alvo original.');return;}
       if(String(saved.weapon_instance_id)!==String(weapon.instance_id)||String(saved.weapon_hand_slot)!==String(weapon.hand_slot)){alert('A sequência exige a mesma instância de arma e mão originais.');return;}
+      if(Number(saved.power_attack_penalty||0)!==Number(powerAttackPenalty||0)){alert('A sequência exige a mesma penalidade de Ataque Poderoso original.');return;}
       sequenceId=saved.sequence_id;
     }else{
       if(profile.full_round_action_already_used)throw new Error('A ação de rodada completa deste NPC já foi consumida.');
-      var started=await sb.rpc('iniciar_ataque_iterativo_npc_srd',{p_campaign_id:campaignId,p_actor_token_id:actorId,p_target_token_id:targetId,p_attack_type:'atk-corpo',p_weapon_instance_id:weapon.instance_id,p_weapon_hand_slot:weapon.hand_slot,p_weapon_end:weaponEnd});
+      var started=await sb.rpc('iniciar_ataque_iterativo_npc_srd',{p_campaign_id:campaignId,p_actor_token_id:actorId,p_target_token_id:targetId,p_attack_type:'atk-corpo',p_weapon_instance_id:weapon.instance_id,p_weapon_hand_slot:weapon.hand_slot,p_weapon_end:weaponEnd,p_power_attack_penalty:Number(powerAttackPenalty||0)});
       if(started.error)throw new Error('Início da sequência: '+started.error.message);
       sequenceId=started.data.sequence_id;
       await enviarMensagemChat('⚔️ '+attacker.nome+' iniciou Ataque Total contra '+target.nome+'.','rolagem',{evento:'ataque_total_npc_iniciado',token_id:actorId,alvo_token_id:targetId,sequence_id:sequenceId});
