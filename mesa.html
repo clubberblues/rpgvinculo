@@ -3833,6 +3833,17 @@ async function abrirModalEquipamentos(){
       var salvo=await sb.rpc('adicionar_token_cba_completo',{p_campaign_id:Number(MESA_ID),p_token:token});
       if(salvo.error) throw new Error(salvo.error.message);
       if(!salvo.data || typeof salvo.data!=='object') throw new Error('O Supabase não retornou a cena atualizada.');
+      if(token.tipo==='npc' && token.sourceCharacterId){
+        var inventoryCopy=await sb.rpc('clonar_equipamento_ficha_para_token',{
+          p_campaign_id:Number(MESA_ID),
+          p_token_id:String(token.id),
+          p_character_id:String(token.sourceCharacterId)
+        });
+        if(inventoryCopy.error){
+          console.error('Token criado, mas a cópia inicial do inventário falhou:',inventoryCopy.error);
+          alert('O token foi criado, mas o equipamento da ficha de origem não foi copiado: '+inventoryCopy.error.message+'. O Mestre poderá tentar novamente após corrigirmos a sincronização.');
+        }
+      }
       campanha.cba_data=salvo.data;
       aplicarCBAnaMesa(salvo.data,false);
       try{ await enviarMensagemChat('✨ O Mestre adicionou '+token.nome+' ao campo de batalha.','sistema',{evento:'reforco_adicionado',token_id:id}); }catch(e){ console.warn('Token salvo; aviso do chat não enviado.',e); }
