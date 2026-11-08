@@ -3448,13 +3448,13 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         var response=await sb.rpc('srd_consultar_modificadores_manobra_srd',{p_campaign_id:Number(MESA_ID),p_attacker_token_id:attacker.value,p_defender_token_id:defender.value,p_maneuver:maneuver.value,p_defender_firm_ground:ground.checked});
         if(response.error)throw new Error(response.error.message||'Não foi possível calcular os modificadores.');
         var data=response.data||{};
-        result.textContent='Manobra: '+(data.maneuver==='trip'?'Derrubar / Rasteira':'Encontrão')+'\\n'+
-          'Atacante — teste de FOR: '+(Number(data.attacker_modifier)>=0?'+':'')+data.attacker_modifier+'\\n'+
-          'Defensor — '+(data.defender_check==='strength_or_dexterity'?'melhor entre FOR/DES':'teste de FOR')+': '+(Number(data.defender_modifier)>=0?'+':'')+data.defender_modifier+'\\n'+
-          'Diferença de tamanho (atacante): '+(Number(data.size_difference_modifier)>=0?'+':'')+data.size_difference_modifier+'\\n'+
-          'Estabilidade Anã: +'+Number(data.dwarf_stability_bonus||0)+'\\n\\n'+
-          'FOR atacante: '+data.attacker.strength_score+' ('+(data.attacker.strength_modifier>=0?'+':'')+data.attacker.strength_modifier+') · tamanho '+data.attacker.size+'\\n'+
-          'FOR defensor: '+data.defender.strength_score+' ('+(data.defender.strength_modifier>=0?'+':'')+data.defender.strength_modifier+') · DES '+data.defender.dexterity_score+' ('+(data.defender.dexterity_modifier>=0?'+':'')+data.defender.dexterity_modifier+') · tamanho '+data.defender.size+'\\n\\n'+
+        result.textContent='Manobra: '+(data.maneuver==='trip'?'Derrubar / Rasteira':'Encontrão')+'\n'+
+          'Atacante — teste de FOR: '+(Number(data.attacker_modifier)>=0?'+':'')+data.attacker_modifier+'\n'+
+          'Defensor — '+(data.defender_check==='strength_or_dexterity'?'melhor entre FOR/DES':'teste de FOR')+': '+(Number(data.defender_modifier)>=0?'+':'')+data.defender_modifier+'\n'+
+          'Diferença de tamanho (atacante): '+(Number(data.size_difference_modifier)>=0?'+':'')+data.size_difference_modifier+'\n'+
+          'Estabilidade Anã: +'+Number(data.dwarf_stability_bonus||0)+'\n\n'+
+          'FOR atacante: '+data.attacker.strength_score+' ('+(data.attacker.strength_modifier>=0?'+':'')+data.attacker.strength_modifier+') · tamanho '+data.attacker.size+'\n'+
+          'FOR defensor: '+data.defender.strength_score+' ('+(data.defender.strength_modifier>=0?'+':'')+data.defender.strength_modifier+') · DES '+data.defender.dexterity_score+' ('+(data.defender.dexterity_modifier>=0?'+':'')+data.defender.dexterity_modifier+') · tamanho '+data.defender.size+'\n\n'+
           'Consulta apenas: nenhuma rolagem, ação ou condição foi aplicada.';
       }catch(error){result.textContent='Falha: '+String(error&&error.message||error);}
       finally{run.disabled=false;run.textContent='Calcular modificadores';}
