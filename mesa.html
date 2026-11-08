@@ -2626,6 +2626,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       }
       async function resumeApplyDamage(attemptId,index,result,isCritical){
         var rd=result.resolution_data||{},multiplier=isCritical?Math.max(2,Number(rd.critical_multiplier||2)):1;
+        if(rd.critical_immune)await enviarMensagemChat('🛡️ '+target.nome+' é imune a acertos críticos; este ataque causa somente dano normal.','sistema',{evento:'imunidade_critico_ataque_total',alvo_token_id:String(target.id),attempt_id:attemptId,retomado:true});
         var sneakCount=Math.max(0,Number(rd.sneak_attack_dice||0));
         resumeRollArray('Dano · retomada · '+savedWeapon.nome+' · ataque '+index,savedDice*multiplier,savedFaces,async function(damageRolls){
           async function commit(sneakRolls){
@@ -2792,6 +2793,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     }
     async function resolveDamage(attemptId,attemptIndex,resolution,isCritical){
       var resolutionData=resolution.resolution_data||{},criticalMultiplier=isCritical?Math.max(2,Number(resolutionData.critical_multiplier||2)):1;
+      if(resolutionData.critical_immune)await enviarMensagemChat('🛡️ '+target.nome+' é imune a acertos críticos; este ataque causa somente dano normal.','sistema',{evento:'imunidade_critico_ataque_total',alvo_token_id:String(target.id),attempt_id:attemptId});
       var expectedDice=damageDice*criticalMultiplier,sneakDice=Math.max(0,Number(resolutionData.sneak_attack_dice||0));
       rolarArrayManual('Dano · '+weapon.nome+' · ataque '+attemptIndex+'/'+attacksTotal,expectedDice,damageFaces,async function(damageRolls){
         function applyDamage(sneakRolls){
@@ -2908,6 +2910,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
             });});continue;
           }
           if(last.status==='hit_pending_damage'){
+            if(last.resolution_data&&last.resolution_data.critical_immune)await enviarMensagemChat('🛡️ '+target.nome+' é imune a acertos críticos; o Ataque Total do NPC causa somente dano normal.','sistema',{evento:'imunidade_critico_ataque_total_npc',alvo_token_id:targetId,attempt_id:last.id});
             var mult=last.is_critical?Math.max(2,Math.min(5,Number(last.resolution_data&&last.resolution_data.critical_multiplier)||2)):1;
             var expression=(diceCount*mult)+'d'+faces;
             await new Promise(function(resolve,reject){roll('Dano · '+attacker.nome+' → '+target.nome+' · '+expression,expression,async function(total,rolls){
