@@ -1626,7 +1626,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(String(campanha&&campanha.state||'').toUpperCase()==='COMBATE'||(combatDataState&&combatDataState.active)){
       alert('O descanso longo não pode ser realizado durante combate.');return;
     }
-    var confirmed=await window.vttUI.confirm({title:'Descanso longo · '+String(item.nome||'NPC'),message:'O Mestre confirma 8 horas de descanso para este NPC? Recupera 1 PV por nível, repõe magias e recursos diários e remove fadiga/exaustão. A Fúria ativa será encerrada antes da recuperação.',okLabel:'Confirmar descanso'});
+    var confirmed=window.confirm('Confirmar 8 horas de descanso longo para '+String(item.nome||'NPC')+'?\n\nRecupera 1 PV por nível, repõe magias e recursos diários, remove fadiga/exaustão e encerra eventual Fúria ativa.');
     if(!confirmed)return;
     try{
       var response=await sb.rpc('descanso_longo_npc_vinculado_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(item.id)});
