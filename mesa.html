@@ -1473,7 +1473,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   function renderBotoesAcao(){
     var el=document.getElementById('acoes-dir'),tokenMenu=document.getElementById('token-context-menu'),diceOverlay=document.getElementById('dado-iframe-overlay');if(!el)return;if(tokenMenu&&tokenMenu.parentNode)tokenMenu.parentNode.removeChild(tokenMenu);
     var estado=campanha?(campanha.state||'EXPLORACAO'):'EXPLORACAO';
-    if(ehGM){var gm=[{id:'alternar-combate',ic:'⚔️',txt:estado==='COMBATE'?'Encerrar combate':'Iniciar combate'},{id:'cba',ic:'🗺️',txt:'Campo de batalha'},{id:'npc',ic:'👤',txt:'Adicionar NPC'},{id:'monstros',ic:'🐉',txt:'Bestiário'},{id:'testes',ic:'📜',txt:'Solicitar teste'},{id:'avancar-turno',ic:'⏭️',txt:'Avançar turno'},{id:'equipamentos',ic:'🛡️',txt:'Distribuir equipamento'},{id:'xp',ic:'⭐',txt:'Experiência'},{id:'dados',ic:'🎲',txt:'Dados'},{id:'token-image-manager',ic:'🖼️',txt:'Imagens dos tokens'}];if(estado==='COMBATE')gm.splice(1,0,{id:'iniciativa',ic:'🎲',txt:'Solicitar iniciativa'});var wrap=document.createElement('div');wrap.className='player-action-grid';gm.forEach(function(x){wrap.appendChild(criarBotaoAcaoUI(x));});el.replaceChildren(wrap);
+    if(ehGM){var gm=[{id:'alternar-combate',ic:'⚔️',txt:estado==='COMBATE'?'Encerrar combate':'Iniciar combate'},{id:'cba',ic:'🗺️',txt:'Campo de batalha'},{id:'npc',ic:'👤',txt:'Adicionar NPC'},{id:'monstros',ic:'🐉',txt:'Bestiário'},{id:'testes',ic:'📜',txt:'Solicitar teste'},{id:'manobras-mestre',ic:'🛡️',txt:'Consultar manobras'},{id:'avancar-turno',ic:'⏭️',txt:'Avançar turno'},{id:'equipamentos',ic:'🛡️',txt:'Distribuir equipamento'},{id:'xp',ic:'⭐',txt:'Experiência'},{id:'dados',ic:'🎲',txt:'Dados'},{id:'token-image-manager',ic:'🖼️',txt:'Imagens dos tokens'}];if(estado==='COMBATE')gm.splice(1,0,{id:'iniciativa',ic:'🎲',txt:'Solicitar iniciativa'});var wrap=document.createElement('div');wrap.className='player-action-grid';gm.forEach(function(x){wrap.appendChild(criarBotaoAcaoUI(x));});el.replaceChildren(wrap);
     }else{var p=personagemAtivoDaInterface(),magic=possuiMagiasUI(p),combat=estado==='COMBATE';var groups=combat?[
       {title:'Ataque',actions:[{id:'atk-corpo',ic:'⚔️',txt:'Ataque corpo a corpo'},{id:'atk-dist',ic:'🏹',txt:'Ataque à distância'},{id:'atk-total-corpo',ic:'⚔️',txt:'Ataque Total corpo a corpo'},{id:'atk-total-dist',ic:'🏹',txt:'Ataque Total à distância'}].concat(magic?[{id:'atk-mag',ic:'✨',txt:'Conjurar magia'}]:[])}
       {title:'Tática e defesa',actions:[{id:'manobras-ui',ic:'🛡️',txt:'Manobras de combate'},{id:'defesa-ui',ic:'🧱',txt:'Ações defensivas'},{id:'movimento-ui',ic:'👣',txt:'Movimentação'}]},
@@ -3409,6 +3409,58 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     entries.forEach(function(entry){var card=document.createElement('article');card.className='feature-action-card';var name=document.createElement('h3');name.textContent=entry[1];var desc=document.createElement('p');desc.textContent=entry[2];var button=document.createElement('button');button.type='button';button.className='feature-use-btn';button.textContent='Solicitar ao Mestre';button.onclick=function(){registrarIntencaoTaticaUI(entry[0],entry[1],entry[2]);overlay.remove();};card.append(name,desc,button);panel.appendChild(card);});
     overlay.appendChild(panel);overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});document.body.appendChild(overlay);
   }
+  function abrirConsultaManobrasMestre35(){
+    if(!ehGM){alert('Somente o Mestre pode consultar os modificadores.');return;}
+    var tokens=(cbaPublishedState&&Array.isArray(cbaPublishedState.tokens)?cbaPublishedState.tokens:[]).filter(function(t){return t&&['player','npc','monstro'].indexOf(String(t.tipo||''))>=0&&t.id!=null;});
+    if(tokens.length<2){alert('A cena precisa ter pelo menos dois tokens válidos.');return;}
+    var old=document.getElementById('modal-consulta-manobras-mestre');if(old)old.remove();
+    var overlay=document.createElement('div');overlay.id='modal-consulta-manobras-mestre';overlay.className='skill-roll-overlay';overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');
+    var panel=document.createElement('section');panel.className='skill-roll-panel';
+    var head=document.createElement('header');head.className='skill-roll-head';
+    var title=document.createElement('h2');title.textContent='Consultar manobra · D&D 3.5';
+    var close=document.createElement('button');close.type='button';close.className='skill-roll-close';close.textContent='✕';close.onclick=function(){overlay.remove();};
+    head.append(title,close);panel.appendChild(head);
+    var hint=document.createElement('p');hint.className='skill-roll-hint';hint.textContent='Esta ferramenta calcula os modificadores de FOR, DES, tamanho e Estabilidade Anã. Ainda não consome ações nem resolve dados ou efeitos.';panel.appendChild(hint);
+    function makeSelect(labelText){
+      var wrap=document.createElement('label');wrap.style.display='grid';wrap.style.gap='6px';wrap.style.margin='12px 0';
+      var label=document.createElement('span');label.textContent=labelText;
+      var select=document.createElement('select');select.style.width='100%';select.style.padding='10px';select.style.borderRadius='8px';
+      tokens.forEach(function(t){var option=document.createElement('option');option.value=String(t.id);option.textContent=String(t.nome||t.name||t.id)+' · '+String(t.tipo||'token');select.appendChild(option);});
+      wrap.append(label,select);panel.appendChild(wrap);return select;
+    }
+    var attacker=makeSelect('Quem realiza a manobra');
+    var defender=makeSelect('Quem resiste à manobra');if(defender.options.length>1)defender.selectedIndex=1;
+    var maneuverWrap=document.createElement('label');maneuverWrap.style.display='grid';maneuverWrap.style.gap='6px';maneuverWrap.style.margin='12px 0';
+    var maneuverLabel=document.createElement('span');maneuverLabel.textContent='Manobra';
+    var maneuver=document.createElement('select');maneuver.style.width='100%';maneuver.style.padding='10px';maneuver.style.borderRadius='8px';
+    [['bull_rush','Encontrão'],['trip','Derrubar / Rasteira']].forEach(function(row){var o=document.createElement('option');o.value=row[0];o.textContent=row[1];maneuver.appendChild(o);});
+    maneuverWrap.append(maneuverLabel,maneuver);panel.appendChild(maneuverWrap);
+    var groundWrap=document.createElement('label');groundWrap.style.display='flex';groundWrap.style.alignItems='center';groundWrap.style.gap='8px';groundWrap.style.margin='12px 0';
+    var ground=document.createElement('input');ground.type='checkbox';
+    var groundText=document.createElement('span');groundText.textContent='Defensor está firmemente apoiado no chão (necessário para Estabilidade Anã)';
+    groundWrap.append(ground,groundText);panel.appendChild(groundWrap);
+    var run=document.createElement('button');run.type='button';run.className='feature-use-btn';run.textContent='Calcular modificadores';panel.appendChild(run);
+    var result=document.createElement('pre');result.style.whiteSpace='pre-wrap';result.style.overflowWrap='anywhere';result.style.marginTop='14px';result.style.padding='12px';result.style.borderRadius='8px';result.style.background='rgba(0,0,0,.18)';result.textContent='Selecione os participantes e consulte os modificadores.';panel.appendChild(result);
+    run.onclick=async function(){
+      if(attacker.value===defender.value){result.textContent='Escolha dois tokens diferentes.';return;}
+      run.disabled=true;run.textContent='Calculando…';
+      try{
+        var response=await sb.rpc('srd_consultar_modificadores_manobra_srd',{p_campaign_id:Number(MESA_ID),p_attacker_token_id:attacker.value,p_defender_token_id:defender.value,p_maneuver:maneuver.value,p_defender_firm_ground:ground.checked});
+        if(response.error)throw new Error(response.error.message||'Não foi possível calcular os modificadores.');
+        var data=response.data||{};
+        result.textContent='Manobra: '+(data.maneuver==='trip'?'Derrubar / Rasteira':'Encontrão')+'\\n'+
+          'Atacante — teste de FOR: '+(Number(data.attacker_modifier)>=0?'+':'')+data.attacker_modifier+'\\n'+
+          'Defensor — '+(data.defender_check==='strength_or_dexterity'?'melhor entre FOR/DES':'teste de FOR')+': '+(Number(data.defender_modifier)>=0?'+':'')+data.defender_modifier+'\\n'+
+          'Diferença de tamanho (atacante): '+(Number(data.size_difference_modifier)>=0?'+':'')+data.size_difference_modifier+'\\n'+
+          'Estabilidade Anã: +'+Number(data.dwarf_stability_bonus||0)+'\\n\\n'+
+          'FOR atacante: '+data.attacker.strength_score+' ('+(data.attacker.strength_modifier>=0?'+':'')+data.attacker.strength_modifier+') · tamanho '+data.attacker.size+'\\n'+
+          'FOR defensor: '+data.defender.strength_score+' ('+(data.defender.strength_modifier>=0?'+':'')+data.defender.strength_modifier+') · DES '+data.defender.dexterity_score+' ('+(data.defender.dexterity_modifier>=0?'+':'')+data.defender.dexterity_modifier+') · tamanho '+data.defender.size+'\\n\\n'+
+          'Consulta apenas: nenhuma rolagem, ação ou condição foi aplicada.';
+      }catch(error){result.textContent='Falha: '+String(error&&error.message||error);}
+      finally{run.disabled=false;run.textContent='Calcular modificadores';}
+    };
+    overlay.appendChild(panel);overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});document.body.appendChild(overlay);
+  }
   function acao(id){
     if(id === 'alternar-combate'){
       alternarEstadoMesa();
@@ -3444,6 +3496,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       avancarTurno();
       return;
     }
+    if(id === 'manobras-mestre'){abrirConsultaManobrasMestre35();return;}
     if(id === 'testes'){
       if(!ehGM) return;
       document.getElementById('modal-testes').style.display = 'flex';
