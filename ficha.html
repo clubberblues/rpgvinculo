@@ -2466,7 +2466,7 @@ function dnd35LanguageNormalize(value){
         state.grimoireState=dnd35SpellState(state);
         renderizarFichaSRD35();
         var restedStatus=document.querySelector('[data-grimoire-status]');
-        if(restedStatus) restedStatus.textContent='Descanso concluído: '+result.data.cura+' PV recuperados; magias diárias repostas.';
+        if(restedStatus) restedStatus.textContent='Descanso concluído: '+result.data.cura+' PV recuperados; magias e recursos diários repostos.'+(Number(result.data.condicoes_removidas||0)>0?' Fadiga/exaustão removida.':'');
       } catch(e) {
         if(status) status.textContent='Não foi possível concluir o descanso: '+(e.message||e);
         rest.disabled=false;
