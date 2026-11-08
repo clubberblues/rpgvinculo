@@ -2932,10 +2932,10 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var state=cbaPublishedState||normalizarCBAData(campanha.cba_data), target=state&&state.tokens.find(function(t){return String(t.key)===String(tokenKey);});
     var own=personagemDoTurnoDoJogador(), ownToken=own&&state&&state.tokens.find(function(t){return t.tipo==='player'&&String(t.id)===String(own.ch.id);});
     if(!target||!ownToken){alert('Não foi possível localizar seu token e o alvo publicado.');return;}
-    if(target.tipo==='player'){alert('Escolha um NPC ou monstro como alvo.');return;}
+    if(target.tipo==='player'&&!iterativeAttack){alert('Ataques simples contra outros jogadores ainda não estão habilitados neste fluxo. Use Ataque Total quando a regra permitir.');return;}
     await carregarEfeitosCampanha();
     var targetAC=caToken35(target);
-    if(targetAC==null){alert('Este alvo está sem CA cadastrada. Peça ao Mestre para atualizar os dados da criatura antes de atacar.');return;}
+    if(target.tipo!=='player'&&targetAC==null){alert('Este alvo está sem CA cadastrada. Peça ao Mestre para atualizar os dados da criatura antes de atacar.');return;}
     if(iterativeAttack){
       try{await executarAtaqueTotalIterativo35(own,target,ownToken,type);}
       catch(error){console.error('Falha ao iniciar Ataque Total:',error);alert('Ataque Total não iniciado/concluído: '+(error.message||error));}
