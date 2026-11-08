@@ -1947,7 +1947,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
           bonus+=effectiveStrengthMod-baseStrengthMod;
           var damagePartsNpc=String(formula).match(/^(\d+d(?:3|4|6|8|10|12|20|100))([+\-]\d+)?$/i);
           if(damagePartsNpc){
-            var flatNpc=Number(damagePartsNpc[2]||0)+(damagePartsNpc[2]?effectiveStrengthMod-baseStrengthMod:effectiveStrengthMod);
+            var flatNpc=Number(damagePartsNpc[2]||0)+(equipped?effectiveStrengthMod:(damagePartsNpc[2]?effectiveStrengthMod-baseStrengthMod:effectiveStrengthMod));
             formula=damagePartsNpc[1]+(flatNpc>0?'+'+flatNpc:flatNpc<0?String(flatNpc):'');
           }
         }
