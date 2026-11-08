@@ -1251,6 +1251,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   var catalogoEquipamentosSRD = [];
   var equipamentoTokens = Object.create(null);
   var linkedNpcSheetAttributes = Object.create(null);
+  var linkedNpcSheetLoadErrors = Object.create(null);
   var cbaNpcCatalog = [];
   var cbaPlayerCatalog = [];
   var srdRaceCatalog = [];
@@ -2365,6 +2366,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   }
   function caToken35(token){
     if(!token)return 10;
+    if(token.tipo==='npc'&&token.sourceCharacterId&&linkedNpcSheetLoadErrors[String(token.id)])return null;
     var record=token.tipo==='player'?acharPersonagemDoToken(token):null;if(record)return caFichaMesa(record);
     var stats=token.monsterStats||{},sheetAttrs=linkedNpcSheetAttributes[String(token.id)]||(stats.attributes&&typeof stats.attributes==='object'?stats.attributes:null),gear=equipamentoToken35(token),worn=gear.filter(function(it){return it.equipado&&['armadura','escudo','acessorio'].indexOf(slotEquipamento35(it))>=0;}),isGenerated=token.tipo==='npc'&&!!sheetAttrs;
     var direct=valorCA35(token.ac),base=valorCA35(token.baseAc),full=valorCA35(stats.ca),dex=token.dexMod!=null?Number(token.dexMod):modifier35(isGenerated?sheetAttrs.DES:(stats.destreza==null?10:stats.destreza)),natural=Number(stats.armadura_natural||stats.natural_armor||stats.bonus_armadura_natural||0);
@@ -6587,15 +6589,17 @@ async function abrirModalEquipamentos(){
     var r=await sb.from('srd_cba_token_equipment').select('token_id,equipment_id,quantidade,equipado,equipment:srd_equipment(*)').eq('campaign_id',Number(MESA_ID));
     equipamentoTokens=Object.create(null);
     linkedNpcSheetAttributes=Object.create(null);
+    linkedNpcSheetLoadErrors=Object.create(null);
     if(r.error){if(!/relation .* does not exist|schema cache/i.test(r.error.message||''))console.warn('Inventário dos tokens indisponível; continuando a carga das fichas NPC vinculadas:',r.error.message);}
     else (r.data||[]).forEach(function(row){(equipamentoTokens[String(row.token_id)]||(equipamentoTokens[String(row.token_id)]=[])).push(Object.assign({},row.equipment||{},{equipment_id:row.equipment_id,quantidade:row.quantidade,equipado:!!row.equipado}));});
     var scene=cbaPublishedState||normalizarCBAData(campanha&&campanha.cba_data),linked=scene&&Array.isArray(scene.tokens)?scene.tokens.filter(function(token){return token.tipo==='npc'&&token.sourceCharacterId;}):[];
     for(var linkedIndex=0;linkedIndex<linked.length;linkedIndex++){
       var linkedToken=linked[linkedIndex];
       var linkedInventory=await sb.rpc('consultar_inventario_npc_vinculado_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(linkedToken.id)});
-      if(linkedInventory.error){console.warn('Equipamento da ficha NPC vinculada indisponível para exibição de CA:',linkedInventory.error.message);continue;}
+      if(linkedInventory.error){linkedNpcSheetLoadErrors[String(linkedToken.id)]=linkedInventory.error.message||'Falha na leitura da ficha';equipamentoTokens[String(linkedToken.id)]=[];console.warn('Equipamento da ficha NPC vinculada indisponível para exibição de CA:',linkedInventory.error.message);continue;}
       var linkedData=linkedInventory.data||{};
-      linkedNpcSheetAttributes[String(linkedToken.id)]=linkedData.attributes||{};
+      if(!linkedData.attributes||typeof linkedData.attributes!=='object'||!Object.keys(linkedData.attributes).length){linkedNpcSheetLoadErrors[String(linkedToken.id)]='A ficha vinculada não retornou atributos válidos.';equipamentoTokens[String(linkedToken.id)]=[];continue;}
+      linkedNpcSheetAttributes[String(linkedToken.id)]=linkedData.attributes;
       equipamentoTokens[String(linkedToken.id)]=(Array.isArray(linkedData.items)?linkedData.items:[]).map(function(row){return Object.assign({},row.equipment||{},{equipment_id:row.equipment_id,quantidade:row.quantidade,equipado:!!row.equipado});});
     }
     renderCards();
