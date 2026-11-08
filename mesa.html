@@ -1696,7 +1696,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(item.sourceCharacterId&&String(campanha&&campanha.state||'').toUpperCase()!=='COMBATE'&&!(combatDataState&&combatDataState.active)){
       addAction('🌙 Descanso longo',function(){executarDescansoLongoNpcVinculado35(item);});
     }
-    if(item.sourceCharacterId&&Number.isFinite(Number(item.hp))&&Number(item.hp)<0&&Number(item.hp)>-10){
+    if(item.sourceCharacterId&&Number.isFinite(Number(item.hp))&&Number(item.hp)<0&&Number(item.hp)>-10&&!(String(campanha&&campanha.state||'').toUpperCase()==='COMBATE'&&combatDataState&&combatDataState.active)){
       addAction('🩸 Estabilizar · rolar D100',function(){
         overlay.remove();
         abrirDado('Estabilização · '+String(item.nome||'NPC')+' · D100',async function(resultado){
