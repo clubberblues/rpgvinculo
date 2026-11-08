@@ -3827,7 +3827,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     groundWrap.append(ground,groundText);panel.appendChild(groundWrap);
     var weaponWrap=document.createElement('label');weaponWrap.style.display='flex';weaponWrap.style.alignItems='center';weaponWrap.style.gap='8px';weaponWrap.style.margin='12px 0';
     var weapon=document.createElement('input');weapon.type='checkbox';
-    var weaponText=document.createElement('span');weaponText.textContent='Derrubar: atacante usa arma apropriada (não está desarmado)';
+    var weaponText=document.createElement('span');weaponText.textContent='Derrubar: usa arma corpo a corpo equipada com a propriedade Derrubar (confirmação do Mestre)';
     weaponWrap.append(weapon,weaponText);panel.appendChild(weaponWrap);
     function syncTripWeapon(){weaponWrap.style.display=maneuver.value==='trip'?'flex':'none';}
     maneuver.addEventListener('change',syncTripWeapon);syncTripWeapon();
