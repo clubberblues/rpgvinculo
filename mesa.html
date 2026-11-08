@@ -4996,7 +4996,7 @@ async function abrirModalEquipamentos(){
     if(pedidosTesteVistos[key])return;
     pedidosTesteVistos[key]=true;
     if(ehGM){
-      if(((data.resolution_type==='spell_save'||data.resolution_type==='condition_break')&&Array.isArray(data.npc_alvos)&&data.npc_alvos.length)
+      if(((data.resolution_type==='spell_save'||data.resolution_type==='condition_break'||data.resolution_type==='npc_dying_save')&&Array.isArray(data.npc_alvos)&&data.npc_alvos.length)
         ||((data.resolution_type==='spell_resistance'||data.resolution_type==='saving_throw')&&Array.isArray(data.alvos)&&data.alvos.length)){
         ativarPedidoTeste(data,key);
       }
@@ -5017,7 +5017,7 @@ async function abrirModalEquipamentos(){
   function ativarPedidoTeste(data, requestKey){
     if(!data) return;
     if(ehGM){
-      if((data.resolution_type==='spell_save'||data.resolution_type==='condition_break')&&Array.isArray(data.npc_alvos)){
+      if((data.resolution_type==='spell_save'||data.resolution_type==='condition_break'||data.resolution_type==='npc_dying_save')&&Array.isArray(data.npc_alvos)){
         data.npc_alvos.forEach(function(tokenId){
           criarBotaoRolagemNpcTeste(String(data.tipo||'Resistência'),String(tokenId),requestKey,data);
         });
@@ -5317,6 +5317,7 @@ async function abrirModalEquipamentos(){
   function criarBotaoRolagemNpcTeste(tipoTeste,tokenId,requestKey,requestData){
     var responseKey=String(requestKey)+'|npc|'+String(tokenId);
     if(pedidosTesteRespondidos[responseKey])return;
+    var isNpcDying=requestData&&requestData.resolution_type==='npc_dying_save';
     var container=document.getElementById('botoes-rolagem-pendente');
     if(!container){
       container=document.createElement('div');container.id='botoes-rolagem-pendente';
@@ -5327,24 +5328,41 @@ async function abrirModalEquipamentos(){
     var token=(cbaState&&Array.isArray(cbaState.tokens)?cbaState.tokens:[]).find(function(t){return String(t.key||t.id)===String(tokenId);});
     var nome=token?String(token.nome||token.name||'Alvo NPC'):'Alvo NPC';
     var btn=document.createElement('button');btn.className='btn-rolar-teste';btn.type='button';btn.dataset.responseKey=responseKey;btn.dataset.characterId=String(tokenId);btn.dataset.requestKey=String(requestKey);
-    btn.textContent='🎲 Rolar resistência do NPC · '+nome;
+    btn.textContent=isNpcDying?'🩸 Rolar estabilização D100 · '+nome:'🎲 Rolar resistência do NPC · '+nome;
     btn.onclick=function(){
       if(btn.disabled)return;
       if(pedidoTesteAtivo){alert('Conclua ou feche a rolagem atual antes de iniciar outra.');return;}
       btn.disabled=true;pedidoTesteAtivo={tipo:tipoTeste,personagemId:String(tokenId),requestKey:String(requestKey),responseKey:responseKey,button:btn};
-      abrirDado(tipoTeste+' · '+nome+' · D20',async function(resultado){
+      abrirDado(tipoTeste+' · '+nome+' · '+(isNpcDying?'D100':'D20'),async function(resultado){
         try{
-          var d20=Number(resultado);
-          if(!Number.isInteger(d20)||d20<1||d20>20)throw new Error('O resultado precisa ser um d20 entre 1 e 20.');
-          var resolved=await sb.rpc('srd_resolve_pending_spell_save',{p_pending_id:String(requestData.pending_id),p_d20:d20});
-          if(resolved.error)throw new Error(resolved.error.message);
-          var outcome=resolved.data||{};pedidosTesteRespondidos[responseKey]=true;
-          removerBotaoRolagemTeste(requestKey,tokenId);
-          var texto=requestData.resolution_type==='condition_break'?(outcome.condition_ended?'🛡️ '+nome+' superou a resistência e encerrou a paralisia.':'🌀 '+nome+' não superou a resistência e permanece paralisado.'):(outcome.saved?'🛡️ '+nome+' resistiu à magia ('+d20+' + '+outcome.bonus+' = '+outcome.total+' contra CD '+outcome.dc+').':(outcome.requires_spell_resistance?'🌀 '+nome+' falhou na resistência; o conjurador agora deve superar RM '+outcome.spell_resistance+'.':'🌀 A resistência falhou; o efeito foi aplicado a '+nome+'.'));
-          await enviarMensagemChat(texto,'rolagem',{request_id:requestKey,pending_id:requestData.pending_id,token_id:tokenId,d20:d20,total:outcome.total,status:outcome.status});
-        }catch(err){btn.disabled=false;alert('Não foi possível concluir a resistência: '+(err.message||err));}
+          if(isNpcDying){
+            var d100=Number(resultado);
+            if(!Number.isInteger(d100)||d100<1||d100>100)throw new Error('O resultado precisa ser um D100 entre 1 e 100.');
+            var dyingResult=await sb.rpc('srd_resolve_npc_dying_round',{p_campaign_id:Number(MESA_ID),p_token_id:String(tokenId),p_d100:d100});
+            if(dyingResult.error)throw new Error(dyingResult.error.message);
+            var dyingOutcome=dyingResult.data||{};
+            pedidosTesteRespondidos[responseKey]=true;removerBotaoRolagemTeste(requestKey,tokenId);
+            var dyingText=dyingOutcome.stabilized?'🩸 '+nome+' estabilizou com D100 '+d100+'. PV: '+dyingOutcome.pv_atual+'.':
+              (dyingOutcome.dead?'☠️ '+nome+' morreu ao atingir -10 PV (D100 '+d100+').':
+              '🩸 '+nome+' não estabilizou (D100 '+d100+') e perdeu 1 PV. PV atual: '+dyingOutcome.pv_atual+'.');
+            await enviarMensagemChat(dyingText,'rolagem',{request_id:requestKey,token_id:tokenId,d100:d100,pv_atual:dyingOutcome.pv_atual,condition:dyingOutcome.condition,stabilization:true});
+            var freshCampaign=await sb.from('campaigns').select('cba_data').eq('id',MESA_ID).single();
+            if(freshCampaign.error)throw new Error('Rolagem aplicada, mas não foi possível atualizar o tabuleiro: '+freshCampaign.error.message);
+            campanha.cba_data=freshCampaign.data.cba_data;
+            aplicarCBAnaMesa(campanha.cba_data,false);
+          }else{
+            var d20=Number(resultado);
+            if(!Number.isInteger(d20)||d20<1||d20>20)throw new Error('O resultado precisa ser um d20 entre 1 e 20.');
+            var resolved=await sb.rpc('srd_resolve_pending_spell_save',{p_pending_id:String(requestData.pending_id),p_d20:d20});
+            if(resolved.error)throw new Error(resolved.error.message);
+            var outcome=resolved.data||{};pedidosTesteRespondidos[responseKey]=true;
+            removerBotaoRolagemTeste(requestKey,tokenId);
+            var texto=requestData.resolution_type==='condition_break'?(outcome.condition_ended?'🛡️ '+nome+' superou a resistência e encerrou a paralisia.':'🌀 '+nome+' não superou a resistência e permanece paralisado.'):(outcome.saved?'🛡️ '+nome+' resistiu à magia ('+d20+' + '+outcome.bonus+' = '+outcome.total+' contra CD '+outcome.dc+').':(outcome.requires_spell_resistance?'🌀 '+nome+' falhou na resistência; o conjurador agora deve superar RM '+outcome.spell_resistance+'.':'🌀 A resistência falhou; o efeito foi aplicado a '+nome+'.'));
+            await enviarMensagemChat(texto,'rolagem',{request_id:requestKey,pending_id:requestData.pending_id,token_id:tokenId,d20:d20,total:outcome.total,status:outcome.status});
+          }
+        }catch(err){btn.disabled=false;alert('Não foi possível concluir a rolagem: '+(err.message||err));}
         finally{if(pedidoTesteAtivo&&pedidoTesteAtivo.responseKey===responseKey)pedidoTesteAtivo=null;}
-      },true,true,'1d20');
+      },true,true,isNpcDying?'1d100':'1d20');
     };
     container.appendChild(btn);
   }
