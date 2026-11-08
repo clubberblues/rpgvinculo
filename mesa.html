@@ -2492,6 +2492,21 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     abrirDado('Ataque · '+selected.attacker.nome+' contra '+target.nome,async function(d20){
       var acDetails=null;
       if(target.tipo!=='player'){
+        if(target.tipo==='npc'&&target.sourceCharacterId){
+          var linkedNpcAttackerStats=selected.attacker&&selected.attacker.monsterStats||{},
+              linkedNpcAttackerType=String([selected.attacker&&selected.attacker.creature_type,linkedNpcAttackerStats.tipo,linkedNpcAttackerStats.subtipo,linkedNpcAttackerStats.subtype,linkedNpcAttackerStats.subtypes,linkedNpcAttackerStats.type,linkedNpcAttackerStats.creature_type].filter(Boolean).join(' ')).normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase(),
+              linkedNpcAttackerIsGiant=/(giant|gigante)/.test(linkedNpcAttackerType);
+          var linkedNpcAcResponse=await sb.rpc('srd_calcular_ca_personagem_srd',{
+            p_campaign_id:Number(MESA_ID),
+            p_character_id:String(target.sourceCharacterId),
+            p_attack_context:attackContext,
+            p_attacker_is_giant:linkedNpcAttackerIsGiant
+          });
+          if(linkedNpcAcResponse.error)throw new Error('Não foi possível calcular a CA atual da ficha SRD do NPC: '+linkedNpcAcResponse.error.message);
+          acDetails=linkedNpcAcResponse.data||{};
+          ac=Number(acDetails.final_ac);
+          if(!Number.isFinite(ac))throw new Error('O servidor não retornou uma CA válida para o NPC vinculado.');
+        }else{
         var targetAcEffect=await sb.rpc('srd_effective_modifier',{p_campaign_id:Number(MESA_ID),p_target_kind:'token',p_target_id:String(target.id),p_stat:'ac'});
         if(targetAcEffect.error)throw new Error('Não foi possível calcular os modificadores de CA do alvo: '+targetAcEffect.error.message);
         ac+=Number(targetAcEffect.data||0);
@@ -2503,6 +2518,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         }
         var defenderStatus=statusAtivoDoAlvo('token',[target.key,target.id]),defenderStatusText=(defenderStatus&&defenderStatus.conditions||[]).join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(),defenderLosesDex=!!(target.loses_dex_ac||target.flat_footed||target.monsterStats&&(target.monsterStats.loses_dex_ac||target.monsterStats.dexterity_lost||target.monsterStats.flat_footed)||/(morrendo|estabiliz|paralis|inconsciente|indefeso|surpres|atordo|imobiliz|petrific|morto|dying|stable|paralyz|unconscious|helpless|flatfooted|cowering|pinned|stunned)/.test(defenderStatusText));
         if(['anao','gnomo'].indexOf(defenderRace)>=0&&npcAttackerIsGiant&&!defenderLosesDex){ac+=4;acDetails={racial_giant_dodge_bonus:4,final_ac:ac};}
+        }
       }
       if(target.tipo==='player'){
         var acResponse=await sb.rpc('srd_calcular_ca_personagem_srd',{p_campaign_id:Number(MESA_ID),p_character_id:String(target.id),p_attack_context:attackContext});
