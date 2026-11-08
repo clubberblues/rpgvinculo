@@ -2018,7 +2018,10 @@ function dnd35LanguageNormalize(value){
     return {automatic:Array.from(new Set(automatic)),bonusOptions:bonusOptions,bonusCount:Math.min(intMod,bonusOptions.length),intBonus:intMod,allSelectable:allSelectable,anyBonus:anyBonus};
   }
   function dnd35LevelupLanguageData(state,attrs,lu){
-    var stored=state.sheet.idiomas_conhecidos||{},rules=dnd35LanguageRules(state,attrs);
+    var stored=state.sheet.idiomas_conhecidos||{},plannedAttrs=Object.assign({},attrs||{});
+    var nextLevel=Math.min(20,Math.max(1,Number(state.sheet.nivel)||1)+1);
+    if(nextLevel%4===0&&lu.attribute==='INT')plannedAttrs.INT=(Number(plannedAttrs.INT)||10)+1;
+    var rules=dnd35LanguageRules(state,plannedAttrs);
     var automatic=Array.isArray(stored.automaticos)?stored.automaticos.slice():[];
     rules.automatic.forEach(function(name){if(!automatic.some(function(x){return dnd35LanguageNormalize(x)===dnd35LanguageNormalize(name);}))automatic.push(name);});
     var bonus=Array.isArray(stored.bonus_inteligencia)?stored.bonus_inteligencia:[];
@@ -2026,14 +2029,23 @@ function dnd35LanguageNormalize(value){
     var currentRanks=Number(dnd35Objeto(state.sheet.pericias).srd35_skill_speak_language||0);
     var missingExisting=Math.max(0,currentRanks-purchased.length);
     var newRanks=Math.max(0,Math.floor(Number(lu.skills&&lu.skills.srd35_skill_speak_language)||0));
-    return {rules:rules,automatic:automatic,bonus:bonus,purchased:purchased,missingExisting:missingExisting,newRanks:newRanks,needed:missingExisting+newRanks,picks:Array.isArray(lu.idiomasNovos)?lu.idiomasNovos:[]};
+    var newBonusNeeded=Math.max(0,rules.bonusCount-bonus.length);
+    return {rules:rules,automatic:automatic,bonus:bonus,purchased:purchased,missingExisting:missingExisting,newRanks:newRanks,needed:missingExisting+newRanks,picks:Array.isArray(lu.idiomasNovos)?lu.idiomasNovos:[],newBonusNeeded:newBonusNeeded,bonusPicks:Array.isArray(lu.idiomasBonusNovos)?lu.idiomasBonusNovos:[]};
   }
   function dnd35LevelupLanguageMarkup(state,attrs,lu){
     var data=dnd35LevelupLanguageData(state,attrs,lu);
-    if(!data.needed)return '';
+    if(!data.needed&&!data.newBonusNeeded)return '';
     var html='<div class="dnd35-levelup-section"><h3>Idiomas</h3><p class="dnd35-note">Cada ponto em Falar Idioma compra um idioma. Se houver graduações antigas ainda não registradas, informe-as também para manter a ficha consistente.</p><div class="dnd35-language-list">';
+    for(var b=0;b<data.newBonusNeeded;b++){
+      var bonusSelected=data.bonusPicks[b]||'',bonusUsed=data.automatic.concat(data.bonus,data.purchased);
+      data.picks.forEach(function(value){if(value)bonusUsed.push(value);});
+      data.bonusPicks.forEach(function(value,index){if(value&&index!==b)bonusUsed.push(value);});
+      html+='<label class="dnd35-language-choice">Novo idioma bônus por Inteligência '+(b+1)+'<select data-lu-bonus-language data-lu-bonus-language-index="'+b+'"><option value="">Selecione um idioma…</option>';
+      data.rules.bonusOptions.forEach(function(name){if(name===bonusSelected||!bonusUsed.some(function(x){return dnd35LanguageNormalize(x)===dnd35LanguageNormalize(name);}))html+='<option value="'+esc(name)+'"'+(name===bonusSelected?' selected':'')+'>'+esc(name)+'</option>';});
+      html+='</select></label>';
+    }
     for(var i=0;i<data.needed;i++){
-      var selected=data.picks[i]||'',used=data.automatic.concat(data.bonus,data.purchased);
+      var selected=data.picks[i]||'',used=data.automatic.concat(data.bonus,data.purchased,data.bonusPicks);
       data.picks.forEach(function(value,index){if(value&&index!==i)used.push(value);});
       var label=i<data.missingExisting?'Registrar idioma já conhecido '+(i+1):'Novo idioma '+(i-data.missingExisting+1);
       html+='<label class="dnd35-language-choice">'+label+'<select data-lu-language data-lu-language-index="'+i+'"><option value="">Selecione um idioma…</option>';
@@ -2063,8 +2075,9 @@ function dnd35LanguageNormalize(value){
     var tempAttrs=Object.assign({},attrs);if(nextLevel%4===0&&lu.attribute)tempAttrs[lu.attribute]=(Number(tempAttrs[lu.attribute])||10)+1;
     var tempState=Object.assign({},state,{sheet:Object.assign({},state.sheet,{nivel:nextLevel,pericias:tempSkills}),featPicks:feats});
     var prereqsReady=featsReady&&feats.every(function(pick,index){var feat=(state.feats||[]).find(function(item){return String(item.id)===String(pick.id);});return feat&&(specs[index].type==='monk'||dnd35FeatWarnings(feat,tempAttrs,tempState,index,pick.parametro||'').length===0);});
-    var languageData=dnd35LevelupLanguageData(state,attrs,lu),languageChoices=Array.from({length:languageData.needed},function(_,i){return languageData.picks[i]||'';}),knownLanguages=languageData.automatic.concat(languageData.bonus,languageData.purchased).map(dnd35LanguageNormalize),newLanguageNames=languageChoices.map(dnd35LanguageNormalize);
-    var languagesReady=languageChoices.length===languageData.needed&&languageChoices.every(function(name){return !!String(name||'').trim()&&languageData.rules.allSelectable.some(function(option){return dnd35LanguageNormalize(option)===dnd35LanguageNormalize(name);});})&&new Set(knownLanguages.concat(newLanguageNames)).size===knownLanguages.length+newLanguageNames.length;
+    var languageData=dnd35LevelupLanguageData(state,attrs,lu),languageChoices=Array.from({length:languageData.needed},function(_,i){return languageData.picks[i]||'';}),bonusLanguageChoices=Array.from({length:languageData.newBonusNeeded},function(_,i){return languageData.bonusPicks[i]||'';}),knownLanguages=languageData.automatic.concat(languageData.bonus,languageData.purchased).map(dnd35LanguageNormalize),newLanguageNames=languageChoices.map(dnd35LanguageNormalize),newBonusLanguageNames=bonusLanguageChoices.map(dnd35LanguageNormalize);
+    var bonusLanguagesReady=bonusLanguageChoices.length===languageData.newBonusNeeded&&bonusLanguageChoices.every(function(name){return !!String(name||'').trim()&&languageData.rules.bonusOptions.some(function(option){return dnd35LanguageNormalize(option)===dnd35LanguageNormalize(name);});});
+    var languagesReady=languageChoices.length===languageData.needed&&languageChoices.every(function(name){return !!String(name||'').trim()&&languageData.rules.allSelectable.some(function(option){return dnd35LanguageNormalize(option)===dnd35LanguageNormalize(name);});})&&bonusLanguagesReady&&new Set(knownLanguages.concat(newLanguageNames,newBonusLanguageNames)).size===knownLanguages.length+newLanguageNames.length+newBonusLanguageNames.length;
     var hitDieRoll=Number(lu.hitDieRoll),hitDieReady=Number.isInteger(hitDieRoll)&&hitDieRoll>=1&&hitDieRoll<=die;
     return hitDieReady&&prereqsReady&&(nextLevel%4!==0||!!lu.attribute)&&spent<=budget&&languagesReady;
   }
@@ -2072,7 +2085,7 @@ function dnd35LanguageNormalize(value){
     var pending=Math.max(0,Number(state.sheet.niveis_pendentes)||0);
     if(!pending)return '';
     var currentLevel=Math.max(1,Number(state.sheet.nivel)||1),nextLevel=Math.min(20,currentLevel+1),die=Math.max(1,Number(state.classe.dado_vida)||8);
-    if(!state.levelUp||state.levelUp.level!==nextLevel)state.levelUp={level:nextLevel,rollRequested:false,hitDieRoll:null,skills:{},feats:[],attribute:'',idiomasNovos:[],status:''};
+    if(!state.levelUp||state.levelUp.level!==nextLevel)state.levelUp={level:nextLevel,rollRequested:false,hitDieRoll:null,skills:{},feats:[],attribute:'',idiomasNovos:[],idiomasBonusNovos:[],status:''};
     var lu=state.levelUp,classMap=dnd35SkillMap(state),oldInt=dnd35Modificador(attrs.INT),plannedInt=oldInt;
     if(nextLevel%4===0&&lu.attribute==='INT')plannedInt=dnd35Modificador(Number(attrs.INT)+1);
     var human=dnd35IsHuman(state.raca),budget=Math.max(1,Number(state.classe.pericias_por_nivel||0)+plannedInt)+(human?1:0)+Math.max(0,plannedInt-oldInt)*currentLevel;
@@ -2125,6 +2138,7 @@ function dnd35LanguageNormalize(value){
     panel.addEventListener('change',function(event){
       var skill=event.target.closest('[data-lu-skill]');if(skill){state.levelUp.skills[skill.dataset.luSkill]=Number(skill.value)||0;state.levelUp.status='';renderizarFichaSRD35();return;}
       var language=event.target.closest('[data-lu-language]');if(language){var languageIndex=Number(language.dataset.luLanguageIndex);state.levelUp.idiomasNovos=state.levelUp.idiomasNovos||[];state.levelUp.idiomasNovos[languageIndex]=language.value;state.levelUp.status='';renderizarFichaSRD35();return;}
+      var bonusLanguage=event.target.closest('[data-lu-bonus-language]');if(bonusLanguage){var bonusLanguageIndex=Number(bonusLanguage.dataset.luBonusLanguageIndex);state.levelUp.idiomasBonusNovos=state.levelUp.idiomasBonusNovos||[];state.levelUp.idiomasBonusNovos[bonusLanguageIndex]=bonusLanguage.value;state.levelUp.status='';renderizarFichaSRD35();return;}
       var feat=event.target.closest('[data-lu-feat]');if(feat){var i=Number(feat.dataset.luFeat);state.levelUp.feats[i]={id:feat.value,parametro:'',choice_type:feat.dataset.luFeatType};state.levelUp.status='';renderizarFichaSRD35();return;}
       var attribute=event.target.closest('[data-lu-attribute]');if(attribute){state.levelUp.attribute=attribute.value;state.levelUp.status='';renderizarFichaSRD35();}
     });
@@ -2140,7 +2154,8 @@ function dnd35LanguageNormalize(value){
       try{
         var languageData=dnd35LevelupLanguageData(state,dnd35Objeto(state.sheet.atributos),state.levelUp);
         var newLanguageChoices=Array.from({length:languageData.needed},function(_,i){return languageData.picks[i]||'';});
-        var languagePayload={automaticos:languageData.automatic,bonus_inteligencia:languageData.bonus,comprados_falar_idioma:languageData.purchased.concat(newLanguageChoices)};
+        var newBonusLanguageChoices=Array.from({length:languageData.newBonusNeeded},function(_,i){return languageData.bonusPicks[i]||'';});
+        var languagePayload={automaticos:languageData.automatic,bonus_inteligencia:languageData.bonus.concat(newBonusLanguageChoices),comprados_falar_idioma:languageData.purchased.concat(newLanguageChoices)};
         var result=await sb.rpc('concluir_avanco_nivel_personagem_srd_v2',{
           p_campaign_id:campaignId,p_character_id:String(CHAR_ID),p_hit_die_roll:Number(state.levelUp.hitDieRoll),
           p_skill_ranks:skills,p_feats:state.levelUp.feats||[],p_attribute:state.levelUp.attribute||null,p_idiomas:languagePayload
