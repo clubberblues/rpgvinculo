@@ -3845,9 +3845,9 @@ async function abrirModalEquipamentos(){
       var hpValue=null,maxHpValue=null;
       if(item.tipo==='player'){
         var playerRecord=personagens.find(function(p){return String(p.ch.id)===String(item.id);});
-        if(playerRecord){maxHpValue=Math.max(1,pvMax(playerRecord.sh,playerRecord.cl));hpValue=Math.max(0,Math.min(maxHpValue,Number(playerRecord.sh.pv_atual==null?maxHpValue:playerRecord.sh.pv_atual)));}
-      }else if(item.maxHp!=null){maxHpValue=Math.max(1,Number(item.maxHp));hpValue=Math.max(0,Math.min(maxHpValue,Number(item.hp==null?maxHpValue:item.hp)));}
-      var hpPct=maxHpValue?hpValue/maxHpValue*100:null,hp=document.createElement('div'),hpFill=document.createElement('span');hp.className='token-hp';
+        if(playerRecord){maxHpValue=Math.max(1,pvMax(playerRecord.sh,playerRecord.cl));hpValue=Math.max(-10,Math.min(maxHpValue,Number(playerRecord.sh.pv_atual==null?maxHpValue:playerRecord.sh.pv_atual)));}
+      }else if(item.maxHp!=null){maxHpValue=Math.max(1,Number(item.maxHp));hpValue=Math.max(-10,Math.min(maxHpValue,Number(item.hp==null?maxHpValue:item.hp)));}
+      var hpPct=maxHpValue?Math.max(0,Math.min(100,hpValue/maxHpValue*100)):null,hp=document.createElement('div'),hpFill=document.createElement('span');hp.className='token-hp';
       if(hpPct==null){hp.classList.add('unknown');hpFill.style.width='100%';token.title=item.nome+' · PV não configurado (duplo clique do Mestre para definir)';}
       else{hpFill.style.width=hpPct+'%';if(hpPct<20)hpFill.className='critical';else if(hpPct<50)hpFill.className='warn';token.title=item.nome+' · '+hpValue+'/'+maxHpValue+' PV';}
       hp.appendChild(hpFill);token.appendChild(hp);
@@ -3860,7 +3860,7 @@ async function abrirModalEquipamentos(){
         badge.title=(statusToken.conditions.length?'Condições: '+statusToken.conditions.join(', '):'')+(statusToken.effects.length?' · Efeitos: '+statusToken.effects.join(', '):'');
         token.appendChild(badge);
       }
-      token.title=item.nome+' · '+(caValue==null?'CA não definida':'CA '+caValue)+(hpValue==null?' · PV não definido':' · '+hpValue+'/'+maxHpValue+' PV');
+      token.title=item.nome+' · '+(caValue==null?'CA não definida':'CA '+caValue)+(hpValue==null?' · PV não definido':' · '+hpValue+'/'+maxHpValue+' PV')+(statusToken.conditions.length?' · '+statusToken.conditions.join(', '):'');
       // O ajuste de PV do Mestre fica no menu contextual para não bloquear toque/clique no token. 
       layer.appendChild(token);
     });
@@ -5953,7 +5953,7 @@ async function abrirModalEquipamentos(){
       var max=p?pvMax(p.sh,p.cl):(token.maxHp==null?null:Number(token.maxHp)),hp=p?Number(p.sh.pv_atual==null?max:p.sh.pv_atual):(token.hp==null?max:Number(token.hp)),ac=p?caFichaMesa(p):caToken35(token);
       var url=String(token.imagem||(p&&((p.perfil&&p.perfil.avatar_url)||p.ch.retrato_url||p.ch.arte_url))||'').trim(),img=/^https?:\/\/[^\s"'<>]+$/i.test(url);
       var portrait=img?'<img class="portrait-only-image" src="'+esc(url)+'" alt="" draggable="false">':'<span class="portrait-placeholder" aria-hidden="true">'+(token.tipo==='monstro'?'🐉':token.tipo==='npc'?'👤':'✦')+'</span>';
-      var initiative=entry?'Iniciativa '+String(entry.valor==null?'—':entry.valor):'Aguardando iniciativa',hpText=hp==null?'PV não definido':Math.max(0,hp)+' / '+(max==null?'—':max)+' PV';
+      var initiative=entry?'Iniciativa '+String(entry.valor==null?'—':entry.valor):'Aguardando iniciativa',hpText=hp==null?'PV não definido':Math.max(-10,hp)+' / '+(max==null?'—':max)+' PV';
       var ms=token.monsterStats||{},attrs=p?(p.sh.atributos||{}):(ms.attributes||{}),attributeText=p?['FOR','DES','CON','INT','SAB','CAR'].map(function(k){return k+' '+Number(attrs[k]||10);}).join(' · '):['Fort '+(ms.fortitude==null?'—':ms.fortitude),'Ref '+(ms.reflexos==null?'—':ms.reflexos),'Von '+(ms.vontade==null?'—':ms.vontade)].join(' · ');
       var selected=p&&alvosSelecionados.indexOf(String(p.ch.id))!==-1?' selecionado-para-teste':'',controls=ehGM&&initIndex>=0?'<div class="portrait-order-controls"><button type="button" data-initiative-move="'+initIndex+'" data-direction="-1" '+(initIndex===0?'disabled':'')+' aria-label="Mover para a esquerda">←</button><button type="button" data-initiative-move="'+initIndex+'" data-direction="1" '+(initIndex===ordem.length-1?'disabled':'')+' aria-label="Mover para a direita">→</button></div>':'';
       var statusActor=statusAtivoDoAlvo(token.tipo==='player'?'character':'token',token.tipo==='player'?[token.id]:(token.key||token.id));
