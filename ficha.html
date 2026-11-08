@@ -2743,7 +2743,7 @@ function dnd35LanguageNormalize(value){
     async function run(button,request,label) {
       button.disabled=true;var old=button.textContent;button.textContent='Salvando…';
       try{
-        var resolvedArgs=await request.args();var rpcName=request.name;if(request.rpcName&&resolvedArgs.p_campaign_id)rpcName=rpcName==='equipar_arma_instancia_personagem'?'equipar_arma_instancia_npc_vinculado_srd':rpcName==='equipar_item_srd'?'equipar_item_npc_vinculado_srd':rpcName;var response=await sb.rpc(rpcName,resolvedArgs);
+        var resolvedArgs=await request.args();var rpcName=request.name;if(resolvedArgs.p_campaign_id){if(request.name==='equipar_arma_instancia_personagem')rpcName='equipar_arma_instancia_npc_vinculado_srd';else if(request.name==='equipar_item_srd')rpcName='equipar_item_npc_vinculado_srd';}var response=await sb.rpc(rpcName,resolvedArgs);
         if(response.error)throw new Error(response.error.message);
         state.equipment=await dnd35CarregarEquipamento(state.character.id);
         var movementResult=await sb.rpc('srd35_deslocamento_personagem',{p_character_id:String(state.character.id),p_base_speed_m:Number(state.raca.deslocamento)});
