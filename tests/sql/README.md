@@ -39,3 +39,5 @@ These tests run against a disposable PostgreSQL service inside a standard GitHub
 - The AFTER INSERT pending-movement preview trigger invokes the movement RPC inside a caught sentinel-exception subtransaction. Current pending writers already hold the campaign lock before INSERT; do not count the preview trigger as an independent pending → campaign edge.
 
 - Resource-lock refinement: class-feature and undead-touch RPCs lock the character feature-resource row before campaign, while linked-NPC rage/rest paths lock campaign → character → sheet → feature resource. The campaign/resource fixture covers the lock pattern only; the real cycle depends on the token and operation referring to the same linked character.
+
+- New active NPC iterative-attack case: mesa.html calls NPC roll registration, resolution, and damage RPCs. Registration locks the NPC sequence before campaign; resolution/damage lock campaign → attempt → sequence. A synthetic sequence/campaign/attempt lock inversion was added to the PostgreSQL fixture; it does not execute the Supabase RPCs.
