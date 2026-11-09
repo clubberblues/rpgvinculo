@@ -173,3 +173,9 @@ Portanto, o teste de CA 10 executado para Thorgar (681) **não valida nem invali
 - Consulta atual a pg_proc confirmou assinaturas de avancar_turno, conjurar_magia_com_acao_srd_manual, conjurar_missil_magico_srd_manual, registrar_iniciativa_d20 e iniciar_iniciativa_com_dados; diferenças de idempotência estão documentadas no novo contrato.
 - get_project confirmou projeto ACTIVE_HEALTHY em PostgreSQL 17.6. Consulta a pg_settings não retornou parâmetros PGRST/schema, portanto a exposição REST de priv/private continua exigindo conferência no Dashboard.
 - A prioridade permanece Fase 1; validação funcional em personagens reais continua bloqueada pela divergência documentada entre Thorgar 681 e Thunga Mestre 682.
+
+
+## Verificação de RPCs — 2026-11-09
+- Nova varredura estática de `mesa.html`, `ficha.html` e `lobby.html` encontrou 100 nomes literais distintos de `.rpc()` (87/12/10 por página, com sobreposição).
+- Consulta somente de leitura a `pg_proc` confirmou 100/100 nomes no schema `public`; nenhum nome literal ausente. Essa verificação é apenas por nome e não comprova argumentos, sobrecargas, autorização ou execução.
+- A conferência detalhada JS ↔ PostgreSQL continua pendente por fluxo; não marcar os contratos RPC como concluídos com base nessa correspondência nominal.
