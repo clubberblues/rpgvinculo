@@ -308,3 +308,15 @@ Os wrappers dinâmicos de arma são SECURITY INVOKER e encaminham a helpers priv
 - O backend mantém pendências, consome recursos e aplica efeitos; o iframe apenas gera e devolve resultados após clique.
 
 Este contrato está confirmado por inspeção do frontend e das funções SQL. Ainda falta teste de integração com duas sessões autenticadas e uma fixture descartável para validar a sequência completa sem tocar em dados reais.
+
+
+## Inicialização do cliente Supabase
+
+- index.html carrega @supabase/supabase-js@2 via jsDelivr e cria supabaseClient.
+- lobby.html, ficha.html e mesa.html carregam a mesma linha de CDN e criam uma instância própria do cliente em cada documento (variável sb).
+- As quatro páginas usam o mesmo projeto Supabase e a mesma chave pública anon; a chave no navegador não é uma chave privilegiada.
+- index.html consulta getSession e oferece signIn/signUp; lobby consulta getUser e oferece signOut; ficha consulta getUser; mesa consulta getSession.
+- dice.html e vinculo-ui.js não inicializam cliente Supabase.
+- Não existe hoje um módulo compartilhado de configuração, autenticação ou RPC; vinculo-ui.js é apenas utilitário de interface.
+
+**Consequência arquitetural:** a futura centralização de cliente/auth deve preservar as opções padrão de persistência/refresh, o ciclo de sessão e os fluxos específicos de cada página. Primeiro comparar todos os guards e chamadas de auth; depois extrair em fatia pequena, sem alterar o contrato de sessão.
