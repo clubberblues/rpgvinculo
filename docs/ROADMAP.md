@@ -19,8 +19,8 @@ Nenhuma fase deve ser repetida integralmente sem evidência de mudança ou lacun
 
 ## Fase 1 — Arquitetura e contratos
 **Objetivo:** fechar responsabilidades e contratos entre módulos.
-- [ ] Confirmar módulos e limites reais.
-- [ ] Definir fonte canônica para atributos e valores derivados.
+- [ ] Confirmar módulos e limites reais (proposta inicial de organização em ARCHITECTURE.md; ainda não implementada).
+- [ ] Definir fonte canônica para atributos e valores derivados (DATA_MODEL.md registra fontes atuais e campos pendentes).
 - [ ] Definir contratos de ações, resultados, eventos e erros.
 - [ ] Definir política de transações, idempotência e concorrência.
 - [ ] Definir limites SRD/Vínculo e regras habilitadas por campanha.
