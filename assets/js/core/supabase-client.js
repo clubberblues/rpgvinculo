@@ -6,7 +6,6 @@
 
   if (!window.supabase || typeof window.supabase.createClient !== 'function') {
     window.VINCULO_SUPABASE_CLIENT = null;
-    window.VINCULO_SUPABASE_ERROR = 'Biblioteca Supabase indisponível.';
     return;
   }
 
@@ -17,6 +16,4 @@
     );
   }
 
-  window.VINCULO_SUPABASE_URL = SUPABASE_URL;
-  window.VINCULO_SUPABASE_ERROR = null;
 })(window);
