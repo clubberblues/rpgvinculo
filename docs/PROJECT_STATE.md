@@ -221,3 +221,12 @@ Portanto, o teste de CA 10 executado para Thorgar (681) **não valida nem invali
 ## Concorrência — risco estático priorizado — 2026-11-09
 - Análise de ordem de locks no fluxo AOO encontrou inversão entre cancelamento (pending → attacks) e resolução/aplicação de dano (attack → pending). Há risco potencial de deadlock quando as ações concorrem sobre o mesmo ataque/movimento.
 - Ainda não reproduzido; nenhuma função alterada. Priorizar teste concorrente em fixture descartável e definir ordem global determinística antes de corrigir.
+
+
+## Divergência crítica de versionamento de migrations — 2026-11-09
+- Repositório main: 681 arquivos SQL em `supabase/migrations/`; arquivo mais recente `20261108135111_block_movement_when_no_actions.sql`.
+- Supabase conectado: 966 registros em `supabase_migrations.schema_migrations`; última versão aplicada `20261109005941`.
+- Diferença de contagem: 285 registros aplicados a mais no histórico remoto do que arquivos atualmente versionados nesse diretório. Distribuição por dia (repo/remoto): 31/10 8/8; 01/11 25/25; 02/11 422/422; 03/11 72/72; 04/11 140/146; 05/11 12/42; 08/11 2/234; 09/11 0/17.
+- Isso demonstra divergência entre histórico de implantação e migrations versionadas, mas a correspondência exata por versão ainda precisa ser reconciliada; diferença de contagem não prova sozinha quais arquivos estão ausentes nem autoriza recriar migrations.
+- Risco: outro ambiente não pode ser reconstruído com segurança apenas pelo diretório atual; deploy automatizado ou reset local seria inseguro até reconciliação. Não aplicar migration de reparo nem alterar banco nesta etapa.
+- Nova prioridade de Fase 1: obter snapshot do schema remoto (DDL, funções, policies, grants, triggers, enums e extensões), comparar por versão com os arquivos locais e classificar cada migration como aplicada/versionada, aplicada/sem arquivo, arquivo/não aplicada ou divergente. Só então consolidar histórico e definir fluxo de deploy/rollback.
