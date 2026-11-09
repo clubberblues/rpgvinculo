@@ -20,6 +20,12 @@ CREATE TABLE lock_fixture.characters (
 );
 INSERT INTO lock_fixture.characters VALUES (1, 1);
 
+CREATE TABLE lock_fixture.weapon_instances (
+  id integer PRIMARY KEY,
+  campaign_id integer NOT NULL REFERENCES lock_fixture.campaigns(id)
+);
+INSERT INTO lock_fixture.weapon_instances VALUES (1,1);
+
 CREATE TABLE lock_fixture.pending_movements (
   id integer PRIMARY KEY,
   campaign_id integer NOT NULL REFERENCES lock_fixture.campaigns(id),
