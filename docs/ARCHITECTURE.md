@@ -315,3 +315,13 @@ As migrations locais 20261108134918 e 20261108135111 fazem patch textual nos cor
 ## Arquitetura de qualidade e entrega
 
 O diagnóstico dos quatro workflows e a arquitetura-alvo de CI/testes estão em [CI_TEST_ARCHITECTURE.md](CI_TEST_ARCHITECTURE.md). A prioridade é adicionar validação SQL/RPC/RLS em ambiente descartável após a reconciliação do baseline, preservando os testes existentes de dado manual e smoke test Pages.
+
+
+## Exportação integral das funções/procedures remotas — 2026-11-09
+
+As 327 definições atuais retornadas por `pg_get_functiondef` foram exportadas em arquivos SQL separados por schema:
+- `docs/snapshots/remote_public_functions.sql` — 225 definições.
+- `docs/snapshots/remote_priv_functions.sql` — 94 definições.
+- `docs/snapshots/remote_private_functions.sql` — 8 definições.
+
+Total exportado: 1.215.018 caracteres de definições (sem cabeçalhos). Isso fecha a captura dos corpos das rotinas atuais, mas **não** transforma o conjunto em dump restaurável: tabelas, tipos, extensões, owners, ACLs, policies, triggers, constraints, índices e ordem de dependência continuam sendo reconciliados em separado. Os arquivos são snapshots de referência; não executar diretamente como migration.
