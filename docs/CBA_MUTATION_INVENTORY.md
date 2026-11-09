@@ -149,3 +149,18 @@ A consulta encontrou **mais escritores de `cba_data` do que os endpoints inicial
 ### Próxima etapa derivada
 
 Classificar as 32 assinaturas de `cba_data` em: movimento; spawn/remoção; PV/dano/condições; equipamento/inventário; magia/efeitos; estado auxiliar; e writer genérico. Em seguida, rastrear os wrappers e chamadas transitivas para produzir a matriz completa de bloqueio durante pending AOO. Só então definir quais mutações devem ser pausadas, quais são seguras e quais são parte autorizada da própria resolução.
+
+
+### Leitura preliminar dos 32 escritores diretos de `cba_data`
+
+Uma segunda consulta classificatória examinou os corpos das 32 assinaturas identificadas acima:
+
+- As **32/32** contêm aquisição explícita de lock `FOR UPDATE` em seu fluxo.
+- Apenas **3/32** mencionam lexicalmente `srd_aoo_pending_movements` ou `srd_aoo_attacks`: `priv.srd_resolver_encontrao_srd` e as duas RPCs públicas de aplicação de dano AOO. A primeira também pode usar estruturas de pending próprias da manobra; a simples ocorrência do nome não prova que respeite a fila global de movimento.
+- Apenas **1/32** chama lexicalmente `priv.srd_token_grid_footprint`: `priv.srd_resolver_encontrao_srd`.
+- Os dois escritores de movimento continuam sem chamada ao detector AOO, sem referência direta à fila global e sem uso do helper canônico, conforme a inspeção específica já registrada.
+- Os escritores de PV/dano, magia, equipamento, descanso, fúria e habilidades também bloqueiam a linha da campanha, mas isso por si só **não significa que consultem ou respeitem uma movimentação pendente**.
+
+**Interpretação:** o lock de campanha oferece serialização entre transações que o adquirem, mas não substitui a regra de negócio que deve rejeitar ou adiar mutações incompatíveis enquanto uma reação AOO está pendente. O ponto de decisão precisa ocorrer dentro da mesma transação e depois do lock compartilhado; checar pending antes de adquirir o lock mantém uma janela de corrida.
+
+**Limite:** estes números vêm de sinais lexicais em `pg_get_functiondef`, não de análise completa de fluxo ou dependências transitivas. Não usar os totais como prova de autorização correta ou de ausência de chamadas indiretas.
