@@ -554,10 +554,10 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2938
   var LOGO_VINCULO_URL = 'logo.png';
 
   var sb = window.VINCULO_SUPABASE_CLIENT;
-if (!sb) {
-  document.getElementById('root').innerHTML = '<div class="erro">Biblioteca Supabase nao carregou.</div>';
-  return;
-}
+  if (!sb) {
+    document.getElementById('root').innerHTML = '<div class="erro">Biblioteca Supabase nao carregou.</div>';
+    return;
+  }
 
   var ATR = ['FOR','DES','CON','INT','SAB','CAR'];
   var ROT = {FOR:'For',DES:'Des',CON:'Con',INT:'Int',SAB:'Sab',CAR:'Car'};
