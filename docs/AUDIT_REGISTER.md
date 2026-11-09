@@ -159,3 +159,10 @@ Consulta aos advisors de segurança e desempenho:
 - A linha Armadura de Couro existe no inventário com bônus de CA +2 e máximo de Destreza +6, mas equipado=false. Portanto, CA 10 é coerente com o estado persistido atual; CA 12 seria o resultado esperado depois de equipar a armadura.
 - A consulta simulou apenas o claim de identidade para executar a função em modo somente leitura. Nenhum registro foi alterado.
 - **Reclassificação:** a pendência histórica “CA 10 quando deveria ser 12” não comprova defeito no resolver. O código atual possui o caminho de CA vinculada; a validação visual final deve ser feita depois que o item estiver equipado por uma ação normal de jogo/fixture descartável, sem alterar os dados atuais.
+
+
+### Revisão estática adicional dos 99 RPCs SECURITY DEFINER públicos
+- Os 99 avisos do advisor foram cruzados com as definições atuais. Todos os 99 possuem ao menos um marcador explícito de guarda no corpo: 96 usam auth.uid(), 40 usam my_role(), 5 usam priv.need_gm(), 37 consultam public.members e 66 chamam helpers priv.* (categorias sobrepostas).
+- Nenhum dos 99 ficou sem os marcadores heurísticos pesquisados. Isso reduz o risco de funções completamente desprotegidas, mas não substitui revisão semântica: é necessário verificar se cada guarda valida o usuário, campanha, papel e alvo corretos e se a operação é transacional.
+- Os 7 objetos RLS sem policies foram reconsultados: anon e authenticated não têm SELECT/INSERT/UPDATE/DELETE direto nessas tabelas. Portanto, não criar policies apenas para remover o aviso INFO.
+- O alerta de 99 SECURITY DEFINER continua registrado para revisão por fluxo; não houve revogação em lote nem alteração de permissões.
