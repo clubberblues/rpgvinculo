@@ -356,3 +356,10 @@ A inspeção de `pg_default_acl` identificou privilégios padrão permissivos pa
 As relações internas existentes foram individualmente configuradas sem privilégios diretos para anon/authenticated, e as funções existentes passaram por revisão de search_path; portanto, o achado é **risco preventivo para novos objetos**, não evidência de acesso direto atual. Se `priv` estiver exposto no PostgREST, o risco é maior. A configuração Exposed schemas ainda precisa ser confirmada.
 
 **Ação proposta, não executada:** restringir default privileges de authenticated em `priv` (tabelas/sequences/funções) e conceder EXECUTE explicitamente apenas aos helpers internos chamados por wrappers SECURITY INVOKER. Não aplicar antes de reconciliar o histórico e mapear todas as dependências; a alteração de defaults sem grants pontuais pode quebrar chamadas legítimas. Nenhuma ACL foi alterada.
+
+
+## Exportação remota de AOO e movimento — 2026-11-09
+
+As definições atuais de 37 funções AOO e 41 funções de movimento/ações/iniciativa/turnos foram exportadas em documentos próprios, com SECURITY DEFINER/INVOKER, search_path, grants anon/authenticated e fingerprints. No conjunto AOO, 0 funções concedem EXECUTE a anon; no conjunto movimento/turnos, também 0. Isso não confirma a configuração PostgREST Exposed schemas nem substitui revisão de autorização por caminho de chamada.
+
+A reconciliação focal identificou 51 migrations remotas com nomes AOO/movimento pendente sem arquivo local de mesmo nome. A inversão de lock entre cancelamento e resolução/dano segue como risco de deadlock não reproduzido em ambiente concorrente.
