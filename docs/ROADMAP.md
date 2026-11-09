@@ -207,3 +207,7 @@ Inventário detalhado da divergência de migrations (listas de todas as versões
 - [ ] Comparar a ordem de locks transitiva de todas as RPCs de combate e movimento, incluindo helpers privados.
 - [ ] Fechar matriz de autorização por papel e fluxo frontend→RPC para as funções com authenticated EXECUTE.
 - [ ] Reproduzir concorrência cancelamento AOO × resolução/dano em ambiente descartável após baseline.
+
+
+### Bloqueio P1 descoberto — autoridade do movimento/AOO
+Unificar detecção AOO e persistência de movimento na mesma RPC/transação. O frontend hoje chama pré-check AOO e depois RPC de movimento separada; a RPC de movimento autenticada pode ser chamada diretamente e não reexecuta o detector. Não corrigir até ter fixture descartável e testes de regressão; tratar como prioridade antes de ampliar testes de combate.
