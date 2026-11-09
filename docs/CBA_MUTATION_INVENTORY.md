@@ -164,3 +164,55 @@ Uma segunda consulta classificatória examinou os corpos das 32 assinaturas iden
 **Interpretação:** o lock de campanha oferece serialização entre transações que o adquirem, mas não substitui a regra de negócio que deve rejeitar ou adiar mutações incompatíveis enquanto uma reação AOO está pendente. O ponto de decisão precisa ocorrer dentro da mesma transação e depois do lock compartilhado; checar pending antes de adquirir o lock mantém uma janela de corrida.
 
 **Limite:** estes números vêm de sinais lexicais em `pg_get_functiondef`, não de análise completa de fluxo ou dependências transitivas. Não usar os totais como prova de autorização correta ou de ausência de chamadas indiretas.
+
+
+## Verificação do guard de pending e dos dois caminhos de movimento — 2026-11-09
+
+Os corpos remotos atuais foram lidos diretamente com `pg_get_functiondef` (somente leitura). A verificação confirma o seguinte comportamento:
+
+### O que o trigger realmente protege
+
+`priv.srd_guard_pending_aoo_movement` é um `BEFORE UPDATE OF cba_data` (conforme trigger já inventariado) e, havendo pending em `waiting_reactions` ou `ready_to_commit`, ele:
+
+1. Localiza o pending ativo mais recente da campanha.
+2. Extrai o token mover em OLD e NEW.
+3. Bloqueia a remoção **do token mover**.
+4. Bloqueia mudança de `gridX/gridY` **do token mover**.
+5. Permite essas duas operações quando `app.srd_aoo_pending_commit` corresponde ao `pending_id` ativo.
+
+O trigger **não compara nem protege**:
+- coordenadas de qualquer outro token;
+- inserção/spawn de tokens;
+- remoção de tokens diferentes do mover;
+- mudança de `combatFaction`, alcance corpo a corpo ou outros metadados que alterem a ameaça;
+- mudanças de outros campos de `cba_data` enquanto a reação está pendente.
+
+Isso é uma lacuna concreta no limite atual do guard: a lista de ameaças e a geometria usada para criar o pending podem ficar obsoletas antes do commit. A consequência depende do tipo de mutação: reposicionar/remover um ameaçador ou inserir nova criatura pode invalidar o conjunto de reações calculado na solicitação. Não foi executada uma transação de teste contra produção; o achado decorre do corpo SQL efetivamente instalado.
+
+### Movimento do jogador e do Mestre
+
+- `priv.mover_token_player_cba_impl`: bloqueia a linha `campaigns` com `FOR UPDATE`, lê `cba_data/combat_data`, depois bloqueia personagem e ficha. Não chama o detector AOO nem consulta diretamente a fila pending. O guard de trigger só barra a alteração se o token modificado for o mover pendente.
+- `priv.mover_token_gm_cba_srd_impl`: também bloqueia a campanha com `FOR UPDATE`, valida o turno e atualiza `cba_data/combat_data`. Não chama detector AOO nem consulta diretamente a fila pending. O guard de trigger também só barra alteração/remoção do próprio mover pendente.
+- Ambos mantêm footprint Colossal = **5** em seus cálculos locais, divergindo do helper canônico que retorna **6**. O caminho GM calcula footprint de tokens vizinhos com CASE local; o caminho jogador também calcula tamanhos com CASE local.
+- Ambos fazem update da mesma linha de campanha, portanto serializam com outras rotinas que respeitam o mesmo lock de linha. Isso não corrige a ausência de validação de pending para mudanças de outros tokens nem garante uma ordem consistente entre a linha da campanha e a linha pending.
+
+### Ordem de locks observada no fluxo AOO
+
+- Solicitação: campanha `FOR UPDATE` → lê estado de cena/detecção → verifica pending → insere pending.
+- Finalização: pending `FOR UPDATE` → valida ataques/reação → campanha `FOR UPDATE` → chama movimento autorizado → trigger consulta pending.
+
+A ordem pending → campanha na finalização é inversa à campanha → pending em rotinas de solicitação/cancelamento/encerramento já inventariadas. Isso mantém o ciclo de deadlock possível, não apenas teórico na documentação. A reprodução concorrente ainda não foi executada.
+
+### Implicações para o desenho da correção
+
+Não aplicar simplesmente um bloqueio total de `cba_data`: o commit legítimo do mover precisa passar e operações de dano/condição podem ser necessárias para resolver a reação. O desenho precisa separar:
+- **geometria e ameaça:** posição de qualquer token, spawn/remoção e perfil de combate devem ser bloqueados ou revalidados enquanto houver pending;
+- **resolução da reação:** rolagem, dano e estado da reação devem continuar permitidos pelos endpoints próprios;
+- **commit do movimento:** somente a transação que detém o pending correto pode alterar a posição do mover;
+- **estado não relacionado:** metadados independentes devem usar comandos parciais e não substituir snapshots inteiros.
+
+Antes de escolher a implementação, mapear triggers adicionais sobre `campaigns`, escritores de perfil/spawn/remoção e todas as transições de pending. A ordem global de locks deve ser padronizada em todas essas rotinas, incluindo chamadas transitivas.
+
+### Limites da análise de dependências
+
+Foi construída uma exploração estática de chamadas por nomes qualificados a partir das 32 raízes de escrita em `cba_data`. O resultado bruto é apenas exploratório: regex por nome pode associar sobrecargas incorretamente, não resolve chamadas não qualificadas/SQL dinâmico e não determina a ordem de locks transitiva. Nenhuma contagem dessa exploração deve ser tratada como grafo de chamadas validado. A análise de fluxo e locks deve usar OIDs/assinaturas e corpos individuais, com triggers e DML explícitos mapeados separadamente.
