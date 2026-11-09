@@ -283,3 +283,9 @@ Este contrato está confirmado por inspeção do frontend e das funções SQL. A
 - lobby_atualizado.html existe (1.761 linhas), mas não é referenciada por index.html nem pelas páginas ativas. Tem somente 4 RPCs literais e ainda consulta os catálogos antigos public.spells/public.talents; sua navegação interna aponta para lobby.html.
 - dex.html não existe no HEAD atual do repositório (404).
 - Classificação: lobby_atualizado.html é candidato a arquivo legado/backup; dex.html é referência histórica ausente. Não apagar nem recriar nesta etapa.
+
+
+## Segunda execução CI — 2026-11-08
+- [GitHub Actions run #2](https://github.com/clubberblues/rpgvinculo/actions/runs/42548214654) — **success**.
+- Além da sintaxe, protege os contratos de iniciativa manual (registrar_iniciativa_d20 e iniciar_iniciativa_com_dados), registro de ataque manual e proíbe chamadas literais a roll_dice nas páginas ativas.
+- Nenhuma alteração de dados de jogo foi necessária.
