@@ -1,0 +1,104 @@
+# Vínculo RPG — Mapa de integração
+
+> Inventário estático inicial do HEAD observado em 2026-11-08, cruzado com o catálogo do Supabase. Não é teste de execução nem inventário exaustivo de cada coluna.
+
+## Fluxo geral
+
+**index/autenticação → lobby/campanhas → ficha/personagem → mesa/sessão → dados/rolagens → RPCs/estado persistido → Realtime/log para os clientes.**
+
+O fluxo é distribuído entre páginas independentes. Cada página inicializa seu próprio cliente Supabase; não foi identificado um módulo compartilhado único de cliente/API entre os arquivos principais nesta varredura.
+
+## Entradas e responsabilidades por arquivo
+
+| Arquivo | Responsabilidade observada | Integrações observadas |
+|---|---|---|
+| index.html | Entrada/autenticação e encaminhamento ao lobby | Inicializa cliente Supabase e consulta sessão |
+| lobby.html | Listagem, criação/entrada em campanha e escolha/vínculo de ficha | 10 RPCs distintas e 10 referências .from() |
+| lobby_atualizado.html | Cópia/espelho legado do lobby segundo README | Inicializa cliente Supabase; requer comparação antes de qualquer alteração |
+| ficha.html | Visualização e edição de personagem, progressão, equipamento, grimório e recursos | 12 RPCs distintas e 31 referências .from(); comunica-se com o iframe de dados |
+| mesa.html | Orquestração da sessão: cena, tokens, turnos, combate, inventário, magias, condições, chat e log | 87 RPCs distintas, 27 referências .from(), 9 chamadas channel()/on() |
+| dice.html | Interface visual de dados e retorno dos resultados ao documento pai | Sem chamadas .rpc() ou .from() detectadas; usa postMessage |
+| dex.html | Não encontrado no caminho consultado na branch main | Confirmar se é arquivo local/antigo ou se foi descontinuado |
+
+## Integração de dados e RPC
+
+A varredura identificou 100 nomes distintos de RPC chamados por mesa.html, ficha.html e lobby.html. Uma consulta ao catálogo PostgreSQL encontrou os 100 nomes no schema public.
+
+**O que isso confirma:** os nomes chamados pelo frontend têm função correspondente no schema public.
+
+**O que isso não confirma:** assinatura/argumentos corretos, grants, autorização por papel, comportamento da função, atomicidade ou sucesso ponta a ponta. Funções sobrecarregadas precisam ser conferidas pela assinatura exata usada em cada chamada.
+
+### Grupos funcionais visíveis na mesa
+
+- Campanha e cena: estado da campanha, salvar cena e dados de mídia.
+- Tokens e personagens: inclusão, movimento, PV, equipamento e fichas vinculadas.
+- Iniciativa e turno: abertura, registro de rolagens, ordenação e avanço.
+- Combate: ataques, ataques iterativos, crítico, dano, manobras e reações/AOO.
+- Magias e recursos: conjuração, salvamentos, condições, fúria e habilidades de classe.
+- Apoio ao mestre: bestiário, NPCs, XP, descanso e inventário.
+
+### Grupos funcionais visíveis na ficha
+
+- Criação/finalização de personagem.
+- Avanço de nível.
+- Grimório e escolhas de domínio.
+- CA e deslocamento.
+- Fúria de Bárbaro e descanso.
+- Leitura/escrita de catálogos e dados de personagem.
+
+### Grupos funcionais visíveis no lobby
+
+- Listagem de campanhas.
+- Criação e entrada em campanha.
+- Entrada por código.
+- Associação de ficha própria à mesa.
+- Atualização de configurações e exclusão protegida.
+
+## Dados e estado
+
+O snapshot do banco observado possui 76 relações em public e 7 em priv. Os domínios identificáveis incluem:
+
+- Campanhas e sessão: campaigns, members, campaign_log, scenes, tokens, combat_state e roll_requests/roll_log.
+- Personagens: characters, srd_character_sheets e vinculo_character_sheets.
+- Regras D&D 3.5: tabelas srd_* de classes, raças, perícias, talentos, equipamentos, magias, efeitos, progressões, condições, domínios e monstros.
+- Regras Vínculo: tabelas vinculo_* de classes, habilidades, talentos, magias, itens, fichas e inventário.
+- Estado interno: tabelas priv.* para operações pendentes, sequências e controles internos.
+
+A separação srd_* / vinculo_* é uma fronteira de domínio. Não misturar regras ou catálogos entre elas.
+
+## Realtime e sincronização
+
+A mesa contém subscriptions Realtime para atualizações de chat/log e estado de personagens, membros, equipamentos, condições e efeitos. A contagem estática identificou 9 chamadas channel()/on(); o filtro e o escopo de cada subscription devem ser revisados no diagnóstico de segurança e sincronização.
+
+O estado de jogo deve ser validado e persistido no servidor antes de ser tratado como definitivo pelo cliente. Realtime distribui mudanças; não substitui autorização nem a fonte canônica.
+
+## Integração do dado 3D
+
+- mesa.html e ficha.html incorporam dice.html em iframe.
+- A comunicação usa postMessage, requestId de sessão e validação da origem/janela remetente.
+- mesa.html prepara expressões de dados e recebe resultados individuais do iframe.
+- Na varredura de mesa.html, os 38 callsites que passam os dois parâmetros booleanos usam true,true; não foi encontrado callsite explícito true,false. Nesse contrato, true,true envia prepareRoll, que configura a expressão e aguarda o clique do usuário.
+- dice.html só envia rollResult depois da interação de rolagem. O modo prepareRoll apresenta “ROLAR AGORA”; não executa triggerNativeThrow automaticamente.
+- A iniciativa coletiva do Mestre distribui resultados físicos individuais aos tokens selecionados, conforme a regra de produto registrada.
+
+Essa evidência estática é consistente com a decisão de não gerar automaticamente rolagens dos jogadores. Mudanças futuras devem preservar esse contrato e incluir teste de regressão.
+
+## Pontos de atenção arquitetural
+
+1. Arquivos HTML grandes com scripts inline concentram muitas responsabilidades e chamadas diretas ao Supabase.
+2. A inicialização do cliente Supabase é repetida entre páginas.
+3. A mesa concentra 87 RPCs e subscriptions; precisa de mapa de dependências mais detalhado antes de refatoração.
+4. A correspondência nominal das 100 RPCs ainda não verifica argumentos, overloads ou permissões.
+5. Subscriptions Realtime devem ser verificadas quanto a filtros de campanha, payloads e atualização de estado.
+6. A página de dados deve continuar sem autoridade de persistência; a mesa/ficha e o backend controlam o contexto da ação.
+7. Não criar uma camada de API ou mover scripts até mapear consumidores, testes e contratos atuais.
+
+## Próximas verificações
+
+- Conferir assinaturas e argumentos das RPCs por fluxo crítico.
+- Relacionar cada RPC às tabelas que lê/escreve e aos papéis autorizados.
+- Mapear as 9 subscriptions Realtime com evento, tabela, filtro e handler.
+- Identificar todas as fontes canônicas de CA, PV, ataque, dano, iniciativa e estado de turno.
+- Comparar lobby.html e lobby_atualizado.html para confirmar o papel do espelho.
+- Confirmar se dex.html é obsoleto ou apenas local.
+- Completar o grafo de dependências antes de propor extração de módulos.
