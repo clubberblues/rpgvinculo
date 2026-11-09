@@ -156,3 +156,11 @@ Fixture descartável com campanha em combate, movimento pendente ativo, reação
 4. Injetar repetição/ordem invertida de eventos quando possível; confirmar dedupe e rejeição de estado antigo.
 
 **Estado:** não executado. Depende do contrato de state_version e resync a definir.
+
+
+## Infraestrutura de testes e ambiente descartável — atualização 2026-11-09
+
+- O projeto Supabase conectado possui somente a branch `main`; não há branch de desenvolvimento descartável ativa.
+- O repositório não contém `supabase/config.toml`, `package.json` ou diretório `tests/`. Os workflows existentes são estáticos e o smoke test usa Playwright instalado no próprio job.
+- Não criar branch Supabase sem confirmar custo e necessidade; não usar main para testes que alterem dados.
+- A reconciliação de migrations está bloqueando reset/deploy e qualquer tentativa de reconstrução. Primeiro gerar baseline a partir do schema remoto e validar em ambiente descartável.
