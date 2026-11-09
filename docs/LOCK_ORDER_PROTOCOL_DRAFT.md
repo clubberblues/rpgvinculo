@@ -85,3 +85,22 @@ A ordem só será considerada implementada quando:
 - migrations e estado remoto estiverem reconciliados.
 
 **Decisão atual:** manter como proposta de arquitetura e continuar a auditoria. Nenhuma alteração no Supabase remoto está autorizada por este documento.
+
+
+## Atualização da matriz — conjuração e recursos de classe (2026-11-09)
+
+A ordem candidata anterior ainda não está apta para aprovação. A inspeção remota identificou dois pares adicionais que a contradizem:
+
+1. **Campanha ↔ ficha SRD**
+   - Resolução pendente: `priv.srd_apply_pending_spell_resolution` → pending → campaign → `srd_character_sheets`.
+   - Conjuração multialvo: `public.conjurar_magia_efeitos_multialvo` → character → sheet → `public.consumir_acao_turno_srd` → campaign.
+   - Mesmo personagem/campanha pode produzir ciclo campaign ↔ sheet se uma magia pendente for resolvida enquanto o personagem-alvo tenta conjurar.
+
+2. **Campanha ↔ recurso de classe**
+   - `public.usar_furia_barbaro_npc_srd` / descanso de NPC: campaign → character → sheet → feature resource.
+   - `public.usar_habilidade_classe_srd`: character → sheet → feature resource → campaign, em caminhos com campanha/alvo.
+   - A alcançabilidade no estado atual não foi demonstrada: consulta agregada encontrou 3 tokens NPC vinculados e todos os respectivos source characters estão com `campaign_id IS NULL`. Manter como risco preventivo para futuras combinações de dados, não como deadlock operacional confirmado.
+
+**Consequência para o protocolo:** não basta ordenar campanha → personagem → ficha → recursos. A ordem precisa ser reconciliada por fluxo de domínio e pode exigir separar locks de campanha para consumo de ação de locks de persistência da ficha, ou mover o lock de campanha para antes do lock de ficha nos entrypoints que atualmente fazem o contrário. Nenhuma alternativa deve ser aplicada até revisar todas as sobrecargas, wrappers, chamadas transitivas e semântica de autorização.
+
+Os cenários campaign ↔ sheet e campaign ↔ feature resource foram acrescentados ao harness sintético. Eles verificam somente a detecção de deadlock pelo PostgreSQL em tabelas descartáveis, não executam RPCs remotas.
