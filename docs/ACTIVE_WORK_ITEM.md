@@ -193,3 +193,8 @@ Consulta direta aos corpos de `priv.mover_token_player_cba_impl` e `priv.mover_t
 
 ### Exemplo concreto de drift validado
 As migrations locais de economia de movimento alteram corpos de funções públicas, mas o remoto atual tem wrappers INVOKER que delegam a implementações priv.*. As migrations remotas que fizeram essa extração para priv não existem localmente (20261108194444, 20261108195245, 20261108214901). Este caso está documentado em MIGRATION_RECONCILIATION.md e impede considerar o conjunto local reproduzível.
+
+
+## Diagnóstico de CI — 2026-11-09
+
+Quatro workflows existentes foram revisados. Há cobertura estática e smoke HTTP, mas nenhuma validação de SQL, grants/RLS, RPC autenticado ou concorrência. O plano de evolução está em [CI_TEST_ARCHITECTURE.md](CI_TEST_ARCHITECTURE.md). Não foram alterados workflows nem código de aplicação.
