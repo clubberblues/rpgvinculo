@@ -199,3 +199,24 @@ As RPCs `conjurar_magia_efeitos_multialvo` (OID 25109) e `conjurar_magia_dano_mu
 O helper de consumo de ação também chama `priv.srd_sync_character_vital_condition` apenas no ramo de ação extenuante a PV 0. Esse helper atualiza condições vitais e depois faz SELECT sem lock na campanha. A leitura posterior não é uma aquisição de lock campanha e, isoladamente, não cria uma aresta de lock condição → campanha.
 
 **Ajuste de conclusão:** manter a conjuração multialvo como risco de lock order personagem/ficha → campanha contra rotinas campaign-first → ficha, mas não atribuir o risco a uma ordem interna invertida do helper de consumo de ação. A resolução de magia pendente permanece pending spell → campanha → ficha/estado conforme ramo; a aresta que fecha um ciclo depende de qual fluxo concorrente bloqueia a mesma ficha. Ainda não há deadlock reproduzido com as RPCs.
+
+
+## Validação do caminho frontend de conjuração e remoção (2026-11-09)
+
+Foi feita leitura integral dos sete arquivos de interface/scripts da branch principal (`mesa.html`, `ficha.html`, `lobby.html`, `lobby_atualizado.html`, `index.html`, `dice.html` e `vinculo-ui.js`) e busca pelos nomes exatos das RPCs auditadas.
+
+### Chamadas de conjuração observadas em `mesa.html`
+
+- Para magia multialvo de dano, a interface chama diretamente `conjurar_magia_dano_multialvo_srd` (OID 25246), que bloqueia personagem → ficha e, durante combate, chama `consumir_acao_turno_srd` (OID 20405), que bloqueia campanha. Esta é uma rota frontend confirmada para o prefixo personagem/ficha → campanha.
+- Para magia multialvo de efeitos, a interface chama diretamente `conjurar_magia_efeitos_multialvo` (OID 25109), que também bloqueia personagem → ficha antes de consumir ação e obter o lock da campanha.
+- Para Míssil Mágico, a interface chama `conjurar_missil_magico_srd_manual` (OID 25191), que bloqueia personagem → ficha e delega para `conjurar_missil_magico_srd` (OID 24356), que chama `conjurar_magia_com_acao_srd` e depois bloqueia campanha. A rota também apresenta prefixo personagem/ficha → campanha.
+- Para magia de alvo único não Míssil Mágico, a interface chama `conjurar_magia_com_acao_srd_manual` (OID 24658), wrapper que bloqueia personagem → campanha antes de delegar para a resolução manual.
+- A interface usa `srd_resolve_pending_spell_save` e `srd_resolve_pending_spell_resistance` para os pedidos de resistência/penetração. Os dois resolvers bloqueiam primeiro o registro pending; o de resistência à magia pode delegar para `priv.srd_apply_pending_spell_resolution` após sucesso.
+
+### Remoção direta de condições/efeitos
+
+Nos sete arquivos de interface/scripts atuais, não foram encontradas chamadas com os nomes exatos `srd_remove_campaign_condition` ou `srd_remove_campaign_effect`. Isso **não prova ausência de consumidores externos**, scripts não versionados, chamadas administrativas ou uso indireto por outra RPC. O achado reduz a evidência de que essas rotas sejam acionadas pelo frontend principal atual, mas não autoriza removê-las nem alterar seu contrato.
+
+### Consequência para priorização
+
+A inversão personagem/ficha → campanha não é apenas um padrão lexical isolado: há rotas de conjuração que a interface principal chama diretamente. Deve ser tratada como prioridade de teste junto com campaign → ficha/efeito em resolução e encerramento. Ainda é necessário demonstrar um par concorrente que alcance a mesma linha de ficha/personagem e reproduzir o ciclo em fixture; não há deadlock de produção confirmado.
