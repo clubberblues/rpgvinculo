@@ -37,3 +37,5 @@ These tests run against a disposable PostgreSQL service inside a standard GitHub
 
 - Expanded AOO reachability review: the current mesa.html also calls opportunity-attack damage application, concealment resolution, trip-after-AOO, stand-up-after-AOO, and grapple/overrun-style encounter resolution. Their production bodies include attack → pending → campaign or pending → campaign prefixes. The existing AOO synthetic cases cover these shared lock-order patterns, not the individual RPC semantics.
 - The AFTER INSERT pending-movement preview trigger invokes the movement RPC inside a caught sentinel-exception subtransaction. Current pending writers already hold the campaign lock before INSERT; do not count the preview trigger as an independent pending → campaign edge.
+
+- Resource-lock refinement: class-feature and undead-touch RPCs lock the character feature-resource row before campaign, while linked-NPC rage/rest paths lock campaign → character → sheet → feature resource. The campaign/resource fixture covers the lock pattern only; the real cycle depends on the token and operation referring to the same linked character.
