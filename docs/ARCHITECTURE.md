@@ -116,3 +116,29 @@ As camadas são limites de responsabilidade, não uma ordem para criar serviços
 - [Arquitetura do motor D&D 3.5](../DND35_RULE_ENGINE_ARCHITECTURE.md)
 - [Plano Mestre da Mesa Virtual](../PLANO_MESTRE_MESA.md)
 - [README e instruções de implantação](../README.md)
+
+
+## Fotografia da implementação observada — 2026-11-08
+
+Varredura estática dos arquivos principais no HEAD observado:
+
+| Arquivo | Tamanho aproximado | Blocos script | RPCs distintas | Referências .from() | Realtime channel/on |
+|---|---:|---:|---:|---:|---:|
+| mesa.html | 692 mil caracteres | 5 | 87 | 27 | 9 |
+| ficha.html | 362 mil caracteres | 4 | 12 | 31 | 0 |
+| lobby.html | 139 mil caracteres | 4 | 10 | 10 | 0 |
+| dice.html | 214 mil caracteres | 5 | 0 | 0 | 0 |
+
+As referências .from() são chamadas de acesso a dados/serviços detectadas estaticamente e podem incluir recursos que não são tabelas relacionais. A contagem não substitui análise de cada chamada.
+
+### Consequências arquiteturais observadas
+- A mesa concentra a maior quantidade de integrações de RPC e subscriptions Realtime; é o principal ponto de orquestração da sessão de jogo.
+- Ficha e lobby também acessam diretamente múltiplos recursos Supabase.
+- Os arquivos principais são páginas HTML grandes com scripts inline; portanto, a separação lógica por domínio ainda precisa ser mapeada e não deve ser presumida a partir da arquitetura-alvo.
+- A primeira refatoração, se necessária, deve extrair responsabilidades com testes e contratos, sem alterar a experiência ou migrar toda a stack de uma vez.
+- dice.html não mostrou chamadas diretas de RPC/tabela na varredura; isso não prova ausência de comunicação indireta por iframe, eventos ou postMessage.
+
+### Banco observado
+O snapshot atual mostra 76 relações em public e 7 em priv, com funções distribuídas entre public, priv e private. As tabelas públicas estão todas com RLS habilitado no momento da consulta. A contagem de SECURITY DEFINER é registrada em PROJECT_STATE.md e AUDIT_REGISTER.md; cada função precisa ser avaliada pelo contrato de autorização, não apenas pela classificação.
+
+Esses números são fotografia de implementação, não arquitetura final nem critério de qualidade isolado.
