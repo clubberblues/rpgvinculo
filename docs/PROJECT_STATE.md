@@ -209,3 +209,10 @@ Portanto, o teste de CA 10 executado para Thorgar (681) **não valida nem invali
 - Nenhuma ação mutável foi executada.
 
 - Escopo do legado Vínculo refinado por consulta agregada: 5 personagens existentes, 5 com ficha SRD, 0 sem ficha SRD e 0 com ficha Vínculo; o lobby atual inicia criação com ruleset=dnd35. A divergência em ficha.html é rota legada latente, sem impacto demonstrado no fluxo ativo atual.
+
+
+## Realtime — primeira fotografia da mesa — 2026-11-09
+- mapeados 9 canais Postgres Changes em mesa.html: chat, characters, SRD sheets, character equipment, token equipment, members, conditions, campaign effects e campaign updates.
+- Dois canais SRD (srd_character_sheets e srd_character_equipment) não têm filtro de campaign_id; callbacks filtram IDs em memória. Sem status callback de subscribe ou resync explícito pós-reconexão identificado no método atual.
+- Riscos documentados: eventos perdidos em desconexão, duplicação de chat sem dedupe explícito e ausência de state_version nos snapshots. São riscos de arquitetura a testar, não falhas reproduzidas.
+- Próximo contrato necessário: state_version/ordem de eventos, resync snapshot e deduplicação antes de refatorar Realtime.
