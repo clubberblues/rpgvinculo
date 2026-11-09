@@ -1,3 +1,12 @@
+## Atualização consolidada — 2026-11-09 (18:24 UTC)
+
+- Matriz AOO ampliada: campanha → pending versus pending → campanha; pending → attack versus attack → pending.
+- Inventário ampliado: trigger de equipamento/quantidade → instâncias de arma versus equipar instância → resumo do inventário.
+- Testes sintéticos adicionados para os padrões acima, além de footprint, campaign/effect, campaign/weapon e campaign/character. Total: 6 famílias de inversão sintética, além da fixture de footprint.
+- Workflow `PostgreSQL fixture tests` agora não cancela execuções por pushes sucessivos. A execução atual para commit `502b47bc28b61ed7ed5c3dab181fee62c9f433ec` está **queued**: https://github.com/clubberblues/rpgvinculo/actions/runs/42673548023. Resultado ainda não verificado.
+- A execução anterior `42673083206` encerrou como failure sem jobs/logs retornados; não é evidência de falha de asserção SQL. A execução seguinte foi cancelada por concorrência e a política foi removida.
+- Nenhuma mutação no Supabase remoto; nenhum teste foi direcionado à campanha TESTE 2.
+
 ## CI reliability — 2026-11-09
 
 O workflow PostgreSQL fixture tests não precisa cancelar execuções anteriores por push na mesma branch. A configuração de concorrência com `cancel-in-progress: true` cancelou a execução anterior quando outro commit chegou, antes de confirmar todos os testes. Ela foi removida para que cada alteração de fixture tenha sua própria execução observável. Os runners permanecem `ubuntu-latest` gratuitos para repositório público; não há dependência de serviços pagos.

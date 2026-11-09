@@ -471,3 +471,9 @@ A auditoria read-only foi ampliada para recursos de classe, descanso, arma equip
 
 ### CI de extensão AOO — diagnóstico pendente
 A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24` terminou com `failure`, porém o endpoint de jobs retornou zero jobs e não há logs de etapas. O GitHub recusou retry. Não classificar como falha dos testes SQL sem job/log que a comprove. Uma nova execução será gerada após a alteração de testes em `tests/sql`.
+
+
+### Estado consolidado dos testes AOO/inventário — 2026-11-09
+- Novos modelos sintéticos incluídos: campaign/pending, pending/attack e equipment/weapon instance, além dos pares anteriores.
+- A execução do workflow para commit `502b47bc28b61ed7ed5c3dab181fee62c9f433ec` está queued (run 42673548023); aguardar resultado antes de declarar aprovação.
+- A tentativa anterior (run 42673083206) falhou sem check jobs ou logs de etapas. Foi classificada como falha sem diagnóstico, não como erro confirmado dos testes SQL. A concorrência que cancelava execuções foi removida.
