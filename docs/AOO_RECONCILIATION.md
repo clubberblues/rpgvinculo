@@ -270,3 +270,25 @@ A revisão de mutações correlatas encontrou:
 - `public.adicionar_token_cba` e o wrapper completo podem inserir token sem bloquear pending.
 
 Nem toda alteração de PV/metadado precisa ser proibida em qualquer cenário, mas mudanças de geometria, facção, alcance, spawn e iniciativa durante uma reação devem ser congeladas ou explicitamente autorizadas pelo Mestre com evento auditável. A política deve distinguir as mutações necessárias para resolver o próprio AOO (ataque/dano) das mutações externas concorrentes.
+
+
+## Matriz de locks AOO — confirmação por definições atuais — 2026-11-09
+
+A comparação das definições remotas completas confirmou uma inversão concreta de locks:
+
+| RPC/implementação | Ordem observada |
+|---|---|
+| `priv.srd_cancelar_movimento_aoo_pendente_impl` | pending `FOR UPDATE` → atualiza ataques associados → atualiza pending |
+| `priv.srd_encerrar_reacao_aoo_pendente_impl` | pending `FOR UPDATE` → attack `FOR UPDATE` → atualiza attack/pending |
+| `public.srd_resolver_ataque_oportunidade_srd` | attack `FOR UPDATE` → pending `FOR UPDATE` → campaign `FOR UPDATE` |
+| `public.srd_aplicar_dano_ataque_oportunidade_srd` | attack `FOR UPDATE` → pending `FOR UPDATE` → campaign `FOR UPDATE` |
+| `public.srd_aplicar_dano_ataque_oportunidade_monstro_srd` | attack `FOR UPDATE` → pending `FOR UPDATE` → campaign `FOR UPDATE` |
+| `public.srd_finalizar_movimento_aoo_pendente_srd` | pending `FOR UPDATE` → campaign `FOR UPDATE` |
+| `priv.srd_reservar_reacao_movimento_aoo_impl` | pending `FOR UPDATE` → campaign `FOR UPDATE` |
+| `public.srd_iniciar_ataque_oportunidade_srd` | pending `FOR UPDATE` → campaign `FOR UPDATE` → ledger `FOR UPDATE` |
+
+**Ciclo de deadlock possível:** cancelamento/encerramento segura pending e aguarda attack; resolução/dano segura attack e aguarda pending. O PostgreSQL detectaria o deadlock e abortaria uma das transações. A análise estática confirma a ordem conflitante; ainda não houve reprodução concorrente.
+
+### Direção de correção
+
+Adotar ordem única documentada e aplicada em todas as rotinas do subsistema. A opção menos disruptiva aparente é obter o pending ID sem lock, depois bloquear pending → attack → campaign, relendo e validando cada registro após adquirir o lock. Antes de escolher definitivamente, concluir a matriz transitiva de todas as 37 rotinas e dependências chamadas, incluindo ledger, sequences, character sheets e campanhas. Não reordenar apenas duas funções sem revisar as demais.
