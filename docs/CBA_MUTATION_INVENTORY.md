@@ -324,3 +324,17 @@ Execução: https://github.com/clubberblues/rpgvinculo/actions/runs/42642696293
 4. Testar sincronização de PV e descanso longo concorrentes com resolução de combate, respeitando locks de personagem, ficha e campanha.
 5. Definir um protocolo global de locks por campanha e por entidade. O lock da campanha pode ser a primeira barreira para operações de estado de combate, mas os fluxos que precisam bloquear personagem/ficha antes da campanha devem ser redesenhados como um todo; inserir um lock isolado pode apenas transferir o deadlock.
 6. Não alterar essas RPCs no banco remoto até reconciliar versões/migrations e cobrir chamadas transitivas. A auditoria continua read-only.
+
+
+### Revisão adicional: locks de personagem, ficha e efeitos na Fúria
+
+A inspeção dos corpos completos confirmou uma segunda dimensão da ordem global:
+
+- `public.usar_furia_barbaro_srd(character_id, action)` bloqueia `characters` → `srd_character_sheets` → `campaigns`. No encerramento, chama `priv.srd_end_barbarian_rage`, que bloqueia `srd_campaign_effects` e depois a ficha (lock reentrante quando o chamador já a possui), podendo acionar sincronização de condições.
+- `priv.srd_end_barbarian_rage` bloqueia `srd_campaign_effects` → `srd_character_sheets` → condições; a aplicação de fadiga chama `priv.srd_apply_campaign_condition`, que adquire `campaigns FOR UPDATE` e pode também alterar efeitos/condições.
+- `priv.srd_end_barbarian_rage_token` bloqueia `srd_campaign_effects` → `campaigns` → ficha/condições. É chamado por fluxos que já podem ter campanha bloqueada (trigger de rodada, descanso longo NPC, expiração).
+- `public.usar_furia_barbaro_srd` mantém personagem e ficha bloqueados antes de adquirir campanha. Isso precisa ser considerado junto de qualquer caminho campanha → personagem/ficha; padronizar somente o par campanha/efeito não basta.
+- `public.usar_pocao_cura_srd` bloqueia equipamento → ficha e depois sincroniza condições, sem bloquear previamente a campanha. Também precisa ser incluído na matriz de recursos/PV para não criar uma ordem incompatível ao se adicionar locks de campanha.
+- `public.descanso_longo_personagem_srd` bloqueia personagem → ficha e chama sincronização de condição; não bloqueia campanha com `FOR UPDATE`. Não é seguro inserir um lock de campanha de forma isolada sem verificar os fluxos que já entram campanha → personagem/ficha.
+
+**Decisão de desenho:** o protocolo futuro precisa declarar a ordem entre pelo menos `campaigns`, `characters`, `srd_character_sheets`, `srd_campaign_effects`, `srd_campaign_conditions`, `srd_character_feature_resources`, `srd_character_equipment`, tabelas de sequência de ataque, ledger AOO e log. O inventário lexical atual ainda não é um grafo de chamadas transitivas validado; cada endpoint e overload deve ser analisado individualmente antes de qualquer mudança.
