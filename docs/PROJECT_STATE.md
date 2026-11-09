@@ -56,6 +56,7 @@ Este registro começou como consolidação da documentação existente. A fotogr
 ## Documentos permanentes
 - [Arquitetura geral](ARCHITECTURE.md)
 - [Snapshot estrutural remoto do Supabase](REMOTE_SCHEMA_SNAPSHOT.md)
+- [Inventário exato de divergência de migrations](MIGRATION_RECONCILIATION.md)
 - [Mapa de integração](INTEGRATION_MAP.md)
 - [Inventário de RPCs](RPC_INVENTORY.md)
 - [Modelo de dados](DATA_MODEL.md)
@@ -297,3 +298,6 @@ As relações internas existentes foram individualmente configuradas sem privil�
 
 ### Arquivos locais sem contraparte remota nominal — análise preliminar
 Os dois arquivos locais sem nome remoto correspondente foram inspecionados. `20261104190000_dwarf_barbarian_n1_racial_movement_fixes.sql` declara quatro funções; `20261104194500_dwarf_armor_load_classification.sql` declara uma função de deslocamento. As definições atuais dessas funções no banco não são idênticas aos corpos encontrados nesses arquivos. Há migrations remotas com nomes relacionados (por exemplo, correções de movimento/armadura e resistências raciais), mas ainda não foi demonstrada equivalência completa nem ordem de substituição. Manter os arquivos como evidência histórica; não renomear, excluir ou marcar como aplicados sem reconstruir o efeito por função.
+
+
+O inventário completo dos 326 registros remotos e 41 arquivos locais sem correspondência exata está em [MIGRATION_RECONCILIATION.md](MIGRATION_RECONCILIATION.md), com versões, nomes, candidatos por nome e duplicidades.
