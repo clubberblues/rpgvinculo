@@ -338,3 +338,24 @@ A inspeção dos corpos completos confirmou uma segunda dimensão da ordem globa
 - `public.descanso_longo_personagem_srd` bloqueia personagem → ficha e chama sincronização de condição; não bloqueia campanha com `FOR UPDATE`. Não é seguro inserir um lock de campanha de forma isolada sem verificar os fluxos que já entram campanha → personagem/ficha.
 
 **Decisão de desenho:** o protocolo futuro precisa declarar a ordem entre pelo menos `campaigns`, `characters`, `srd_character_sheets`, `srd_campaign_effects`, `srd_campaign_conditions`, `srd_character_feature_resources`, `srd_character_equipment`, tabelas de sequência de ataque, ledger AOO e log. O inventário lexical atual ainda não é um grafo de chamadas transitivas validado; cada endpoint e overload deve ser analisado individualmente antes de qualquer mudança.
+
+
+### Sequências de ataque e equipamento: ordens distintas de aquisição
+
+A revisão individual de overloads de ataques iterativos encontrou mais uma diferença relevante:
+
+- `priv.iniciar_sequencia_ataque_iterativo_srd_5_impl` bloqueia `campaigns FOR UPDATE` antes de criar a sequência de ataque. É campanha-primeiro.
+- `priv.iniciar_sequencia_ataque_iterativo_srd_7_impl` bloqueia `srd_character_weapon_instances FOR UPDATE` antes de delegar para a função de início da sequência, que chega ao lock de `campaigns`. Ordem: instância de arma → campanha.
+- `priv.iniciar_sequencia_ataque_iterativo_srd_8_impl` lê ficha/arma para validar Ataque Poderoso e delega à sobrecarga anterior; a aquisição bloqueante relevante ocorre no wrapper 7, antes da campanha.
+- `private.equipar_arma_instancia_personagem_impl` bloqueia `characters` → instância de arma → atualiza instâncias e inventário. Não adquire lock de campanha.
+- `private.equipar_arma_instancia_npc_vinculado_impl` bloqueia `campaigns` → instância de arma → atualiza instâncias/inventário. É campanha-primeiro.
+- `priv.srd_reservar_ataque_oportunidade_impl` bloqueia `campaigns` antes de consultar/inserir no ledger de reações AOO. Mantém a campanha como barreira serializadora para a reserva.
+
+A coexistência de overloads com ordens diferentes não prova isoladamente um deadlock, mas impede declarar a cadeia de ataque/equipamento uniforme. A matriz final precisa registrar cada wrapper e a função delegada; olhar apenas a implementação mais nova ou apenas a função pública mascara locks já adquiridos pelo chamador.
+
+### Próximos testes dirigidos
+
+1. Concorrência entre início de ataque iterativo (overloads 7/8) e equipar/desequipar a mesma instância.
+2. Concorrência entre ataque iterativo e alteração de inventário/equipamento do NPC vinculado.
+3. Concorrência entre reservar reação AOO e encerrar combate, cobrindo campanha → ledger/attack/pending.
+4. Verificar se os overloads antigos ainda têm EXECUTE concedido e são alcançáveis pela UI; não removê-los sem inventário de grants e callsites.
