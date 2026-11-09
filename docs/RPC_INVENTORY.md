@@ -4,7 +4,7 @@
 
 ## Resumo
 
-- 100 nomes literais distintos extraídos diretamente de lobby.html, ficha.html e mesa.html; 3 call sites dinâmicos com 7 destinos possíveis (um destino também aparece literalmente), totalizando 106 nomes de função distintos resolvidos.
+- 100 nomes literais distintos extraídos diretamente de lobby.html, ficha.html e mesa.html; 4 call sites dinâmicos com 11 alternativas de dispatch e 9 alvos únicos (3 também aparecem literalmente), totalizando 106 nomes de função distintos resolvidos.
 - mesa.html: 87; ficha.html: 12; lobby.html: 10.
 - 0 nomes sem função pública correspondente (esperado: 0).
 - 114 assinaturas públicas correspondentes aos 106 nomes distintos, incluindo sobrecargas.
@@ -119,7 +119,7 @@
 - Uma RPC pode ter várias sobrecargas. O frontend pode escolher a sobrecarga errada se o conjunto de chaves/tipos enviado não corresponder à assinatura esperada; esse cruzamento ainda está pendente.
 - A coluna Guarda estática indica apenas a presença de marcadores textuais (auth.uid, my_role, need_gm, public.members). Não prova que a validação esteja correta, nem que cubra campanha, papel, alvo e estado.
 - EXECUTE para authenticated é esperado em RPCs de aplicação, mas cada função SECURITY DEFINER precisa de validação semântica e testes por papel.
-- Os 100 nomes literais e todos os destinos possíveis dos 3 call sites dinâmicos têm correspondência em public. Nenhuma permissão foi alterada nesta inspeção.
+- Os 100 nomes literais e todos os destinos possíveis dos 4 call sites dinâmicos têm correspondência em public. Nenhuma permissão foi alterada nesta inspeção.
 - Próximo recorte recomendado: comparar argumentos/assinaturas para fluxos críticos em ordem: lobby/campanha, criação e edição de personagem, equipamento/CA, iniciativa, movimento, ataques/dano, magias e progressão.
 
 ## Arquivos de origem
@@ -163,10 +163,10 @@ Os três destinos da tabela acima são selecionados por dispatch dinâmico confo
 ## Verificação adicional de nomes literais — 2026-11-09
 Varredura estática do HEAD atual em `mesa.html`, `ficha.html` e `lobby.html` extraiu 100 nomes literais distintos de chamadas `.rpc()`: 87 na mesa, 12 na ficha e 10 no lobby (há sobreposição entre páginas). Consulta somente de leitura ao catálogo `pg_proc` confirmou correspondência de **100/100 nomes no schema public**, sem nome literal ausente.
 
-**Limite da evidência:** a correspondência por nome não comprova correspondência de argumentos/tipos, seleção correta de sobrecarga, autorização, semântica ou comportamento em runtime. Os 3 call sites dinâmicos e todos os 7 alvos possíveis foram rastreados estaticamente; suas assinaturas e grants precisam ser conferidos por fluxo.
+**Limite da evidência:** a correspondência por nome não comprova correspondência de argumentos/tipos, seleção correta de sobrecarga, autorização, semântica ou comportamento em runtime. Os 4 call sites dinâmicos e todas as 11 alternativas de dispatch (9 alvos únicos) foram rastreados estaticamente; suas assinaturas e grants precisam ser conferidos por fluxo.
 
 
-## Rastreamento dos três call sites dinâmicos — 2026-11-09
+## Rastreamento dos quatro call sites dinâmicos — 2026-11-09
 
 A inspeção atual de `mesa.html` encontrou exatamente três chamadas `.rpc(variável, ...)`:
 
@@ -178,3 +178,7 @@ A inspeção atual de `mesa.html` encontrou exatamente três chamadas `.rpc(vari
 
 Os sete alvos possíveis correspondem a seis nomes adicionais únicos além dos 100 nomes literais; um deles já está incluído no conjunto literal. A união contém **106 nomes distintos e 114 assinaturas públicas**, sem nome ausente na consulta atual. A consulta de assinatura/grants dos quatro alvos não relacionados a equipamento foi somente de leitura.
 
+
+
+### Quarto call site dinâmico — ficha.html
+A função de aplicação do inventário recebe `request.name` e resolve argumentos antes da chamada. Os nomes-base aceitos pelo dispatcher são `equipar_item_srd` e `equipar_arma_instancia_personagem`; quando os argumentos contêm `p_campaign_id`, o dispatcher troca para `equipar_item_npc_vinculado_srd` ou `equipar_arma_instancia_npc_vinculado_srd`. Esses quatro alvos já pertencem ao conjunto de 106 nomes (dois são nomes literais em mesa.html e dois já aparecem como destinos dinâmicos do dispatcher de armas). O call site não adiciona novo nome único, mas deve ser incluído na contagem de dispatches.
