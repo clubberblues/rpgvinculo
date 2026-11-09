@@ -312,3 +312,36 @@ A interface atual chama diretamente as quatro rotas centrais listadas acima. As 
 O lock da campanha deve ser adquirido antes de personagem, ficha, recursos e inventário em toda RPC que consome ação de combate. Para evitar uma corrida entre validação de ownership e locks, pode-se fazer leitura inicial não bloqueante dos IDs de campanha/character, adquirir campanha, depois bloquear personagem/ficha e revalidar ownership, campanha e estado do turno. A função consumir_acao_turno_srd deve ganhar uma variante interna que recebe a campanha já bloqueada ou ser reorganizada para não reacquirir uma ordem diferente. Não duplicar consumo/validação em cada RPC.
 
 Essa direção é proposta de arquitetura, não alteração aplicada. Antes da implementação, revisar triggers de ficha/recursos, condição strenuous_action_cost_1hp, writes de equipamento e o restante dos callers de consumir_acao_turno_srd.
+
+
+## Expansão do grafo AOO — dano, ocultação e manobras com movimento pendente (2026-11-09)
+
+A leitura dos writers por OID e das chamadas atuais em mesa.html amplia o domínio AOO para além de ataque/reserva:
+
+### Caminhos attack → pending → campaign
+
+- public.srd_aplicar_dano_ataque_oportunidade_srd (OID 27036, authenticated EXECUTE): ataque FOR UPDATE (linha 48) → pending FOR UPDATE (57) → campanha FOR UPDATE (59) → ficha do alvo (142), depois atualiza cena, ataque e pending.
+- public.srd_aplicar_dano_ataque_oportunidade_monstro_srd (OID 27058, authenticated EXECUTE): ataque (37) → pending (46) → campanha (48) → ficha do alvo (81).
+- priv.srd_registrar_ocultacao_ataque_oportunidade_impl (OID 27254), exposta pela RPC usada em mesa.html: ataque (21) → pending (40) → campanha (44).
+- public.srd_resolver_ataque_oportunidade_srd (OID 27025): ataque → pending → campanha.
+- public.srd_iniciar_ataque_oportunidade_srd (OID 27022), variante desarmada (27065) e variantes monstro (27055/27231): pending → campanha → ledger; depois criam ataque e atualizam pending.
+
+### Caminhos pending → campaign nas manobras
+
+- priv.srd_resolver_encontrao_srd (OID 27169): pending FOR UPDATE (66) → campanha FOR UPDATE (76). A interface chama tanto início quanto resolução do encontrão.
+- priv.srd_resolver_levantar_caido_apos_aoo_srd (OID 27152): pending (16) → campanha (25); a interface chama as RPCs de início e resolução.
+- priv.srd_resolver_derrubar_apos_aoo_srd (OID 27136): bloqueia pending (13) e delega a resolução de derrubar, cujo caminho adquire campanha.
+- priv.srd_reservar_reacao_movimento_aoo_impl (OID 27256): pending (28) → campanha (30).
+- priv.srd_finalizar_movimento_aoo_pendente_srd (OID 27038): pending (16) → campanha (39).
+
+Os writers de início das manobras (derrubar, encontrão e levantar caído) adquirem campanha antes de inserir pending. Os resolvers/canceladores, porém, nem todos preservam essa ordem. A interface atual chama as rotas de dano AOO, ocultação, derrubar, encontrão e levantar caído em mesa.html; não são apenas funções órfãs.
+
+### Triggers das tabelas AOO
+
+As tabelas têm triggers BEFORE UPDATE/INSERT que consultam flags de condição para impedir ataques inválidos ou exigir rolagem de ocultação. Essas consultas não fazem FOR UPDATE nas condições e não adicionam, por si, uma nova aresta de lock de linha.
+
+O trigger AFTER INSERT de priv.srd_aoo_pending_movements (OID 27033) executa uma prévia de movimento chamando mover_token_player_cba ou mover_token_gm_cba_srd dentro de um bloco PL/pgSQL cuja exceção sentinela desfaz a prévia. Os writers atuais de pending identificados já bloqueiam a campanha antes do INSERT; a prévia reentra no caminho de movimento na mesma transação/campanha. Não classificar o trigger isoladamente como pending → campaign sem considerar o lock de campanha já mantido pelo caller e o rollback da subtransação.
+
+### Implicação para a ordem candidata
+
+A proposta campanha → pending → attack continua sendo a base para os fluxos de resolução/cancelamento, mas não fecha sozinha a cadeia. Início de ataque também bloqueia ledger de reação e instância de arma; dano bloqueia ficha do alvo e sincroniza condições vitais; ocultação e tentativas/idempotência usam registros auxiliares. Antes de fixar a ordem global, mapear ledger, attempts, weapon instances, equipment e triggers de sincronização. Não implementar uma reordenação parcial que apenas mova o lock de campaign para o início e deixe ledger/arma/ficha em ordens incompatíveis.
