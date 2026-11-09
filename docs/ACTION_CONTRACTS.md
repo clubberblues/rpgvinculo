@@ -345,3 +345,7 @@ A função pública é SECURITY INVOKER, EXECUTE authenticated, sem anon, e cham
 - Consultar/usar Fúria tem RPCs separadas para personagem e NPC vinculado. A ação enviada é `start` ou `end`; a UI consulta estado e permissão antes de habilitar o botão, mas o servidor permanece autoridade. Não há request_id explícito; confirmar comportamento de retry e concorrência exige teste isolado.
 
 Nenhuma criação, avanço, descanso, conjuração, alteração de grimório/domínio ou ativação de Fúria foi executada nesta auditoria.
+
+
+### Alcance atual do ramo legado — conferência de dados
+A leitura agregada do banco conectado encontrou 5 personagens, todos com ficha em `srd_character_sheets`, nenhum sem ficha SRD e nenhum com linha em `vinculo_character_sheets`. O fluxo de criação atualmente ligado pelo lobby é `ruleset=dnd35`. Portanto, a incompatibilidade descrita acima é uma rota legada/latente no código de `ficha.html`, não uma falha reproduzida no caminho normal atual de criação ou abertura dos cinco personagens existentes. Não foi consultado nem exibido conteúdo de ficha individual nesta contagem.
