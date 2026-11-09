@@ -211,3 +211,8 @@ Inventário detalhado da divergência de migrations (listas de todas as versões
 
 ### Bloqueio P1 descoberto — autoridade do movimento/AOO
 Unificar detecção AOO e persistência de movimento na mesma RPC/transação. O frontend hoje chama pré-check AOO e depois RPC de movimento separada; a RPC de movimento autenticada pode ser chamada diretamente e não reexecuta o detector. Não corrigir até ter fixture descartável e testes de regressão; tratar como prioridade antes de ampliar testes de combate.
+
+
+## Segurança — triagem SECURITY DEFINER — 2026-11-09
+
+O advisor sinaliza 99 funções públicas SECURITY DEFINER executáveis por authenticated. A triagem está em [SECURITY_DEFINER_REVIEW.md](SECURITY_DEFINER_REVIEW.md): 0 EXECUTE para anon, 99/99 com search_path explícito e pg_temp, e padrões diretos/delegados de autenticação/autorização presentes nos corpos. A revisão semântica de autorização segue pendente; não revogar nem converter em lote.
