@@ -333,3 +333,14 @@ Fixture descartável com campanha em combate, movimento pendente ativo, reação
 - [Run 42678898017](https://github.com/clubberblues/rpgvinculo/actions/runs/42678898017) — **success**; fixture campaign ↔ feature resource.
 - [Run 42679102920](https://github.com/clubberblues/rpgvinculo/actions/runs/42679102920) — **success**; fixture campaign ↔ sheet, junto com todos os cenários anteriores.
 - Os oito pares de lock sintéticos passaram. Nenhum deles executa as RPCs remotas ou comprova que a combinação de chamadas é alcançável em produção; os testes de integração real permanecem pendentes.
+
+
+### Novas regressões — resolução de magia, efeitos vitais e encerramento de combate
+
+43. Duas sessões na mesma campanha: resolver dano pendente sobre personagem enquanto o personagem conjura magia multialvo; preservar atomicidade de PV, condição vital, slot e ação. O teste atual campaign ↔ sheet é sintético; fixture realista deve incluir pending resolution e os dois entrypoints/helper paths.
+44. Encerrar combate enquanto a trigger de avanço de rodada expira Fúria no mesmo token; verificar a disputa efeito ↔ campanha e garantir que a Fúria/PV/condição termine exatamente uma vez, sem deadlock nem estado parcial.
+45. Encerrar combate concorrente com cancelamento/resolução AOO na mesma campanha; verificar ordem attack ↔ pending, status terminal único e ausência de dano aplicado depois de cancelamento.
+46. Na fixture de vitalidade, copiar o comportamento de `priv.srd_sync_character_vital_condition`: atualizações de condição vital devem ser atômicas com PV, sem assumir que a leitura MVCC de campaigns adquira lock de linha.
+47. Validar `priv.srd_sync_linked_npc_token_vitals` em fixture com campanha, ficha, efeitos e condições; a ordem esperada é campanha → ficha → atualizações de condições, preservando o estado de Fúria e PV-base.
+
+**Estado:** casos adicionados à estratégia; ainda não executados. Nenhum deles deve ser executado contra o Supabase conectado ou TESTE 2.

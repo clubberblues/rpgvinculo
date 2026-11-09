@@ -545,3 +545,37 @@ A expansão da matriz de conjuração confirmou outros entrypoints com o mesmo p
 - `public.conjurar_magia_srd_manual`: character → sheet; nos caminhos de cura com alvo/cena, também pode bloquear a campanha depois da ficha.
 
 Esses caminhos ampliam a superfície da inversão campaign → sheet observada no aplicador de resolução pendente. A fixture sintética continua sendo uma única família de lock, mas os casos funcionais devem cobrir cada entrypoint e overload efetivamente utilizado.
+
+
+## Rastreamento transitivo de magia, efeitos e condições — 2026-11-09
+
+Nova leitura read-only dos corpos instalados por assinatura/OID, incluindo helpers internos chamados pelos caminhos de conjuração e resolução pendente. O objetivo foi separar locks efetivos de simples leituras e não tratar uma chamada transitiva como lock sem verificar o corpo.
+
+### Caminho de resolução pendente de dano
+
+- `priv.srd_apply_pending_spell_resolution(uuid)` adquire primeiro `priv.srd_pending_spell_resolutions FOR UPDATE`, valida o status, e no ramo de dano bloqueia `public.campaigns FOR UPDATE`; para alvo character, bloqueia depois `srd_character_sheets`.
+- Para dano de personagem, o helper `priv.srd_sync_character_vital_condition` atualiza condições vitais do personagem e só depois lê a rodada em `campaigns` sem `FOR UPDATE`. Portanto, esse helper adquire locks de condição, mas a leitura posterior da campanha não cria por si só um lock de linha inverso.
+- Para NPC vinculado, `priv.srd_sync_linked_npc_token_vitals` bloqueia campanha primeiro e depois ficha; atualiza token/cba_data, ficha e condições. Quando chamado pelo aplicador de magia, o lock da campanha já foi obtido pelo chamador.
+- `priv.srd_apply_campaign_condition` e `priv.srd_apply_campaign_effect` também bloqueiam campanha antes de atualizar efeitos/condições. Os wrappers públicos delegam a essas implementações internas.
+- `priv.srd_adjust_damage_components`/ `priv.srd_adjust_damage` são helpers de leitura STABLE; consultam efeitos, campanha e fichas, sem `FOR UPDATE` ou DML em seus corpos.
+
+### Conjuradores
+
+Os corpos de `public.conjurar_magia_dano_multialvo_srd`, `public.conjurar_magia_efeitos_multialvo`, `public.conjurar_missil_magico_srd` e `public.conjurar_magia_srd_manual` foram revistos individualmente. Os caminhos multialvo e alguns caminhos manuais bloqueiam personagem/ficha antes de delegar o consumo da ação, que bloqueia campanha. O aplicador de resolução pendente, em contraste, bloqueia campanha antes da ficha-alvo. A inversão campanha ↔ ficha continua sendo uma possibilidade real entre transações concorrentes; a fixture atual modela apenas o par de linhas e não executa esses corpos.
+
+### Encerramento de combate: dois caminhos transitivos confirmados
+
+O corpo instalado de `public.end_combat(bigint)` foi lido integralmente. Ele percorre efeitos de Fúria com `FOR UPDATE` antes de chamar os encerradores de Fúria; depois atualiza condições, ataques AOO e pendências AOO, nesta ordem, antes de atualizar `campaigns.state`.
+
+Isso confirma no entrypoint de encerramento duas superfícies de inversão já observadas isoladamente:
+
+1. **Efeito → campanha:** `priv.srd_end_barbarian_rage_token` bloqueia o efeito de Fúria antes de bloquear campanha. A trigger `trg_expire_barbarian_rage_on_round_change` parte do UPDATE da campanha e bloqueia efeitos durante a mudança de rodada. A disputa pelo mesmo efeito pode formar ciclo; ainda não reproduzido com os corpos reais em duas sessões.
+2. **Ataque → pending:** `end_combat` atualiza registros de ataque AOO antes das pendências ativas. Isso é incompatível com rotinas que bloqueiam pending antes de attack (cancelamento/encerramento). A transação de encerramento pode, portanto, participar do ciclo attack ↔ pending, além de campaign ↔ pending já documentado.
+
+O encerramento não começa com `campaigns FOR UPDATE` explícito no corpo; não inferir que seu UPDATE final protege retroativamente os locks adquiridos antes. A trigger e chamadas transitivas precisam permanecer no grafo de dependências.
+
+### Classificação e limites
+
+- Confirmado nos corpos instalados: ordem de locks dos entrypoints e helpers descritos acima.
+- Não confirmado: deadlock real reproduzido entre RPCs de produção; alcance simultâneo de cada combinação sob todas as regras de ownership/turno; ausência de outros locks indiretos via SQL dinâmico ou triggers não inventariados.
+- Nenhuma RPC, trigger, ACL, policy, migration ou dado remoto foi alterado.
