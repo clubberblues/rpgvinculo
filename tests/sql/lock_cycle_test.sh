@@ -10,12 +10,8 @@ export PGHOST PGPORT PGUSER PGDATABASE PGPASSWORD
 
 psql -v ON_ERROR_STOP=1 -f tests/sql/lock_cycle_setup.sql
 
-tmpdir="$(mktemp -d)"
-trap 'rm -rf "$tmpdir"' EXIT
-
-# Additional synthetic lock-order regressions. Each pair deliberately models
-# the exact conflicting prefixes found in remote function bodies; it does not
-# execute those RPCs or prove a production deadlock occurred.
+# Synthetic lock-order regressions. Each pair models a documented reachable
+# prefix or an explicitly conditional future path; none executes production RPCs.
 run_expected_deadlock() {
   local label="$1"
   local session_a="$2"
