@@ -38,6 +38,23 @@ run_expected_deadlock() {
   rm -rf "$tmp"
 }
 
+
+run_expected_deadlock "campaign -> weapon instance versus weapon instance -> campaign (iterative attack start versus resolution)" "
+SET deadlock_timeout='100ms'; SET lock_timeout='5s';
+BEGIN;
+UPDATE lock_fixture.campaigns SET round_number=round_number+1 WHERE id=1;
+SELECT pg_sleep(0.6);
+SELECT id FROM lock_fixture.weapon_instances WHERE id=1 FOR SHARE;
+COMMIT;
+" "
+SET deadlock_timeout='100ms'; SET lock_timeout='5s';
+BEGIN;
+SELECT id FROM lock_fixture.weapon_instances WHERE id=1 FOR UPDATE;
+SELECT pg_sleep(0.3);
+UPDATE lock_fixture.campaigns SET round_number=round_number+1 WHERE id=1;
+COMMIT;
+"
+
 run_expected_deadlock "campaign -> character versus character -> campaign" "
 SET deadlock_timeout='100ms'; SET lock_timeout='5s';
 BEGIN;
