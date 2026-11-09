@@ -345,3 +345,20 @@ O trigger AFTER INSERT de priv.srd_aoo_pending_movements (OID 27033) executa uma
 ### Implicação para a ordem candidata
 
 A proposta campanha → pending → attack continua sendo a base para os fluxos de resolução/cancelamento, mas não fecha sozinha a cadeia. Início de ataque também bloqueia ledger de reação e instância de arma; dano bloqueia ficha do alvo e sincroniza condições vitais; ocultação e tentativas/idempotência usam registros auxiliares. Antes de fixar a ordem global, mapear ledger, attempts, weapon instances, equipment e triggers de sincronização. Não implementar uma reordenação parcial que apenas mova o lock de campaign para o início e deixe ledger/arma/ficha em ordens incompatíveis.
+
+
+## Recursos de habilidades — ordem de lock e vínculo com NPCs (2026-11-09)
+
+A revisão por corpo completo das funções que acessam public.srd_character_feature_resources refinou o ciclo:
+
+- public.usar_habilidade_classe_srd (OID 25236): personagem → ficha → INSERT/lock do recurso da habilidade (linhas 66/73) → campanha (87 ou 133), conforme o branch. É chamada pela interface para Imposição das Mãos.
+- public.usar_imposicao_maos_mortos_vivos_srd (OID 25509): personagem (56) → ficha (61) → recurso da habilidade (84/89) → campanha (97) → consumir ação (204). É chamada pela interface para o ataque de toque contra mortos-vivos.
+- public.usar_furia_barbaro_srd (OID 25341): personagem → ficha → campanha (74) → recurso de Fúria (149/156). O prefixo campaign-first é respeitado para o recurso, mas não para character/sheet.
+- public.usar_furia_barbaro_npc_srd (OID 26656): campanha (40) → personagem (52) → ficha (57) → recurso de Fúria (124/127/170).
+- priv.descanso_longo_npc_vinculado_srd_impl (OID 26808): campanha (18) → personagem (28) → ficha (33) → recursos (65).
+- public.descanso_longo_personagem_srd (OID 24366): personagem (22) → ficha (36) → recursos (52); a leitura do estado da campanha na linha 29 não é FOR UPDATE e não cria lock campanha.
+
+**Conclusão:** as RPCs de classe chamadas pelo frontend seguram o recurso antes de adquirir campanha, enquanto as rotas de Fúria/descanso de NPC adquirem campanha antes de personagem/ficha/recurso. Se o token NPC estiver vinculado ao mesmo character_id que uma operação de habilidade de personagem, o ciclo pode envolver personagem/ficha/recurso ↔ campanha. A identidade comum precisa ser validada na regra de vinculação dos tokens; não afirmar que qualquer personagem e qualquer NPC disputam a mesma linha.
+
+O fixture campaign ↔ feature resource cobre somente a forma de lock, não a semântica da vinculação. A correção deve usar uma ordem única campanha → personagem → ficha → recurso, revalidando que o token e o personagem ainda estão vinculados. Não basta mover apenas o SELECT de campanha para o início sem rever os ramos de autorização e os locks de ficha/recurso.
+
