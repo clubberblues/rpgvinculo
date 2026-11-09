@@ -88,3 +88,16 @@ Os itens abaixo não são decisões tomadas; precisam ser definidos após o diag
 - **Decisão:** iniciar validação automatizada com Node.js e recursos nativos, verificando scripts inline/compartilhados e invariantes críticos do Dice.
 - **Motivo:** estabelecer feedback reproduzível sem introduzir framework ou dependências antes de conhecer a aplicação.
 - **Consequência:** ampliar gradualmente para testes SQL, domínio, integração e E2E quando houver ambiente de teste seguro e reproduzível.
+
+
+### DEC-015 — Mudanças de implementação por branch e PR
+- **Data:** 2026-11-08
+- **Decisão:** manter main como linha estável; alterações de código, schema ou configuração que afetem comportamento serão feitas em branch de trabalho e integradas por Pull Request após CI e revisão do diff. A documentação-base inicial foi consolidada diretamente na linha principal; novas alterações funcionais seguem o fluxo branch/PR.
+- **Motivo:** permitir revisão, testes, rollback e separação clara entre trabalho em andamento e versão estável.
+- **Consequência:** não usar uma branch de conversa como substituto de branch Git; nomear branches por tarefa técnica, não por sessão.
+
+### DEC-016 — Proteção de dados reais durante auditorias
+- **Data:** 2026-11-08
+- **Decisão:** auditorias e testes iniciais são somente de leitura. Dados de personagens, campanhas, tokens e progresso não serão alterados para facilitar testes; cenários mutáveis devem usar fixture/campanha descartável.
+- **Motivo:** preservar o estado de jogo e impedir que validações técnicas alterem dados do usuário.
+- **Consequência:** testes que exigem mutação ficam bloqueados até existir ambiente/fixture isolado e procedimento de limpeza/rollback.
