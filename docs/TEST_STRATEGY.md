@@ -102,3 +102,13 @@ Para cada rodada de testes, registrar data e commit; ambiente e versão; fixture
 - **Ponta a ponta multiplayer:** prova integração entre clientes, servidor e estado compartilhado.
 
 Não usar uma categoria como substituta de outra.
+
+
+## Inventário de automação existente — 2026-11-08
+
+O README registra que foram executados localmente parse de HTML/JavaScript, parse PostgreSQL com pglast e smoke tests Playwright com Supabase simulado. Esses registros são evidência histórica de execução, mas não comprovam que a suíte está disponível ou reproduzível no repositório atual.
+
+Foram procurados os caminhos convencionais package.json, playwright.config.js/ts, tests/mesa.spec.js, tests/ficha.spec.js, tests/e2e.spec.js, .github/workflows/ci.yml e supabase/config.toml; esses arquivos não foram encontrados nesses caminhos. Buscas de código por Playwright, Vitest, Jest, pglast e test.describe também não retornaram resultados. Como não foi possível listar toda a árvore do repositório por essa inspeção, a conclusão é **“harness automatizado não localizado nos caminhos convencionais”**, e não “não existem testes em nenhum lugar”.
+
+### Próxima ação
+Localizar/reconstituir os testes históricos e torná-los reproduzíveis no repositório, começando por parse estático e testes de regras sem escrita; depois criar testes transacionais e E2E em ambiente descartável.
