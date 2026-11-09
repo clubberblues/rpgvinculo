@@ -389,3 +389,16 @@ A análise de `priv.srd_encerrar_reacao_aoo_pendente_impl` confirmou que o cance
 Consulta direta aos corpos de `priv.mover_token_player_cba_impl` e `priv.mover_token_gm_cba_srd_impl` confirmou que ambos não referenciam `priv.srd_aoo_pending_movements`, não chamam o detector AOO e não chamam o pré-check. O trigger `priv.srd_guard_pending_aoo_movement` busca um pending ativo, mas só impede alteração/removal do token que é o próprio `mover_token_id`; ele não bloqueia alterações de outros tokens. Assim, uma chamada direta ao RPC de movimento de outro token pode contornar também a serialização global que `srd_solicitar_movimento_com_aoo_srd` tenta impor (a função de pré-check rejeita qualquer pending ativo). Isso pode alterar a posição de ameaças enquanto uma reação está sendo resolvida.
 
 **Impacto adicional:** quebra da invariável “uma única movimentação pendente por campanha” e mutação da cena durante a resolução AOO, além do bypass do detector e da janela TOCTOU. Mantida classificação P1.
+
+
+## Achado P2 — footprint Colossal inconsistente (5×5 vs 6×6) — 2026-11-09
+
+A consulta de todas as funções com classificação de tamanho encontrou divergência no tamanho de espaço Colossal:
+- Correto no banco: `priv.srd_token_grid_footprint` retorna 6 para Colossal; `public.srd_detectar_saida_alcance_ameacado_srd` também usa footprint 6.
+- Incorreto: `priv.mover_token_player_cba_impl` e `priv.mover_token_gm_cba_srd_impl` usam 5; as duas sobrecargas de `public.aplicar_dano_token_ataque_srd_v2` usam 5 para atacante e alvo; `public.usar_imposicao_maos_mortos_vivos_srd` também usa 5 para atacante/alvo em cálculo de distância.
+
+Em D&D 3.5, Colossal ocupa 30 ft (6 quadrados). A inconsistência pode permitir ocupação/colisão incorreta e calcular distância/alcance de ataque ou habilidade de forma divergente em tokens Colossais. As outras categorias consultadas usam Fine/Diminuto 1, Pequeno/Médio 1, Grande 2, Enorme 3 e Imenso/Gargantuan 4, sem divergência semelhante nesta busca.
+
+**Classificação:** P2 — regra de borda, mas afeta ocupação, distância e alcance de tokens Colossais. Confirmado por comparação estática dos corpos remotos; não reproduzido em fixture. Não alterado.
+
+**Correção candidata:** substituir as classificações duplicadas por chamada ao helper canônico `priv.srd_token_grid_footprint` ou alinhar explicitamente para 6, e centralizar toda geometria de footprint nesse helper. Testar limite de 5/6 quadrados, sobreposição, alcance, AOO, ataques e imposição de mãos contra mortos-vivos.
