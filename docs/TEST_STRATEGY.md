@@ -128,3 +128,10 @@ Localizar/reconstituir os testes históricos e torná-los reproduzíveis no repo
 - [GitHub Actions run #2](https://github.com/clubberblues/rpgvinculo/actions/runs/42548214654) — **success**.
 - Além da sintaxe, protege os contratos de iniciativa manual (registrar_iniciativa_d20 e iniciar_iniciativa_com_dados), registro de ataque manual e proíbe chamadas literais a roll_dice nas páginas ativas.
 - Nenhuma alteração de dados de jogo foi necessária.
+
+
+### Cenários de idempotência a adicionar
+- Enviar duas vezes o mesmo request_id de conjuração deve retornar o mesmo resultado e consumir espaço/ação uma única vez.
+- Enviar duas vezes o mesmo request_id de avanço de turno deve avançar apenas um ator.
+- Repetir registrar_iniciativa_d20 com mesma ficha deve retornar a ordem atual sem alterar resultado.
+- Repetir registrar_rolagem_ataque_iterativo_srd/aplicar_dano_ataque_iterativo_srd com a mesma idempotency_key deve retornar o resultado persistido sem duplicar dano.
