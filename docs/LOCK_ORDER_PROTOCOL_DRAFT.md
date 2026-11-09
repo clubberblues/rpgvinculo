@@ -14,23 +14,28 @@ Quando a campanha ainda não é conhecida, ler o `campaign_id` sem lock apenas p
 
 Uma transação não pode adquirir um lock de categoria anterior depois de já manter um lock de categoria posterior. Os triggers devem respeitar a ordem herdada do chamador e não criar caminhos reversos.
 
-## 2. Ordem candidata dentro de uma campanha
+## 2. Ordem parcial candidata por domínio
 
-A sequência abaixo é uma hipótese inicial, não uma ordem final validada:
+A auditoria ainda não sustenta uma ordem total entre todas as tabelas. A regra de maior confiança é **campaign-first** para qualquer operação que altere ou coordene o agregado da campanha. Abaixo estão restrições parciais observadas/propostas; elas não devem ser combinadas em uma sequência única sem validar as interseções:
 
-1. `campaigns` — lock do agregado/serialização de combate e cena.
-2. `characters` — todos os IDs necessários em ordem crescente e estável.
-3. `srd_character_sheets` — mesma ordem estável de character_id.
-4. `srd_character_feature_resources` — por character_id e feature_key.
-5. `srd_character_equipment` — por character_id/equipment_id.
-6. `srd_character_weapon_instances` — por character_id/instance_id.
-7. `srd_campaign_effects` — por campaign_id/target_kind/target_id/effect_instance_id.
-8. `srd_campaign_conditions` — por campaign_id/target_kind/target_id/condition_instance_id.
-9. Estado pendente de ação: `priv.srd_aoo_pending_movements` e `priv.srd_pending_spell_resolutions`, com ordem determinística por pending_id quando houver mais de uma.
-10. Registros de reação/ataque: `priv.srd_aoo_attacks`, `priv.srd_aoo_reaction_ledger`, `public.srd_attack_sequences`, `public.srd_attack_sequence_attempts`, `public.srd_npc_attack_sequences` e `public.srd_npc_attack_attempts`. A relação entre essas tabelas ainda precisa de revisão de todas as transições; ordenar por chave estável e não misturar a ordem entre wrappers.
-11. `campaign_log` e demais registros append-only, ao final.
+- **Personagem/ficha:** `campaigns → characters → srd_character_sheets` para operações que também alteram campanha; operações puras de ficha podem manter `characters → sheet`, desde que não chamem campanha depois.
+- **Recursos de classe:** depois de personagem/ficha; o writer de classe atual precisa ser reordenado porque hoje adquire recurso antes de campanha.
+- **Inventário/equipamento:** quando uma operação precisar bloquear equipamento e instância, a direção preventiva é `srd_character_equipment → srd_character_weapon_instances`. O trigger de inventário cria novas instâncias em delta positivo; remoção/redução de arma ainda não tem writer atual identificado.
+- **Ataques iterativos PC/NPC:** `campaigns → sequence → attempt → weapon instance` é a ordem recomendada para normalizar registro/resolução/dano. No snapshot atual, o início PC bloqueia arma antes de campanha e o registro NPC bloqueia sequência antes de campanha.
+- **AOO — iniciar reação:** a cadeia candidata é `campaigns → pending movement → reaction ledger → weapon instance (se aplicável) → insert attack`.
+- **AOO — resolver/cancelar:** a cadeia candidata é `campaigns → pending movement → attack`. Quando o ramo também precisa bloquear ficha do alvo, ainda falta decidir se deve ser `campaigns → sheet → pending → attack` (lendo IDs por MVCC antes) ou se a ficha pode ser atualizada por um helper que não adquira lock próprio; não presumir que `pending → attack → sheet` seja compatível com a ordem personagem/ficha.
+- **Magia pendente:** os resolvers atuais bloqueiam pending antes da campanha; harmonizar para localizar campanha por leitura MVCC, bloquear campanha e depois adquirir os locks do alvo/pending na ordem validada para o ramo. Não há ciclo pending↔campaign isolado comprovado, mas há bypass de serialização.
+- **Efeitos/condições:** escritores de combate devem herdar campaign-first. A ordem relativa entre efeitos, condições e recursos ainda precisa de revisão por OID e de todos os triggers; remoções públicas e alguns resolvers atualizam essas tabelas sem lock explícito da campanha.
+- **Logs:** inserts append-only ficam ao final da transação quando não houver FK/trigger que exija outra ordem; validar os locks referenciais antes de fixar a regra.
 
-A posição relativa entre efeitos/condições, recursos/inventário e os diferentes ledgers ainda deve ser validada contra todos os triggers e funções. A lista não autoriza aplicar locks indiscriminadamente: cada endpoint deve bloquear apenas os registros necessários, mas sempre respeitar a ordem global. Os resolvers de magia também precisam ser harmonizados: `public.srd_resolve_pending_spell_save` (OID 25072) e `public.srd_resolve_pending_spell_resistance` (OID 25073) bloqueiam o pending primeiro; a resistência pode delegar a `priv.srd_apply_pending_spell_resolution` (OID 25071), que depois bloqueia campanha. O resolver de salvamento ainda atualiza `srd_campaign_conditions` diretamente sem lock explícito da campanha. Para aderir à proposta, os entrypoints devem localizar a campanha sem lock, bloquear campanha → pending → condição/efeito e revalidar vínculo/status. Não foi identificada uma rota campaign-first que bloqueie o mesmo pending existente, portanto pending-spell-first é hoje um bypass de serialização e uma ordem incompatível com a proposta, mas não um ciclo simétrico de deadlock comprovado.
+### Interseções ainda não resolvidas
+
+1. AOO damage pode bloquear ficha do alvo depois de pending/attack, enquanto outras rotas seguram ficha antes de entrar em campanha. A solução deve adquirir campaign primeiro e decidir a ordem ficha/pending/attack a partir de uma leitura inicial sem lock, seguida de revalidação.
+2. O ataque iterativo e AOO podem disputar a mesma instância de arma; ambos precisam campaign-first, e a ordem sequence/ledger/weapon deve ser estável quando uma transação realmente tocar mais de uma dessas tabelas.
+3. Recursos de classe e NPCs vinculados podem disputar o mesmo character_id somente quando a ficha de origem e o token tiverem vínculo/ownership compatível. A ordem deve ser validada contra os vínculos reais.
+4. Efeitos e condições têm helpers sem lock próprio que herdam a campanha do chamador, além de writers públicos que não adquirem campanha. Não adicionar locks em helpers isolados sem mapear todos os callers.
+
+**Conclusão:** o invariante campaign-first é a base da refatoração; a ordem secundária é um grafo parcial, não um total order já aprovado. Toda implementação deverá documentar quais linhas cada endpoint adquire, em que ordem e quais triggers/helpers herda.
 
 
 ### Operações de ficha sem lock de campanha — classificação (2026-11-09)
