@@ -237,3 +237,12 @@ Fixture descartável com campanha em combate, movimento pendente ativo, reação
    - Esperado após correção: conflito explícito ou merge server-side que preserve o estado mais recente; PV e coordenadas não podem regredir.
 15. Repetir com dois clientes GM e com atualização simultânea de metadados do mapa.
    - Esperado: nenhuma atualização não relacionada deve substituir estado de token atualizado por RPC de combate.
+
+
+### Regressões adicionais — spawn e footprint
+
+16. Com pending AOO ativo, chamar diretamente `adicionar_token_cba_completo` e `salvar_cena_cba` para inserir um token novo.
+   - Esperado: rejeição enquanto pending ativa; cena e fila permanecem inalteradas.
+17. Sem pending, tentar inserir token Grande/Enorme/Imenso/Colossal em posição cuja origem esteja livre, mas cujo footprint sobreponha outro token.
+   - Esperado: rejeição ou busca de outra célula que respeite todos os quadrados ocupados pelo footprint.
+18. Confirmar que spawn válido em célula livre continua funcionando durante combate quando não existe pending AOO, e que o token entra na iniciativa pelo fluxo de rolagem manual do Mestre.
