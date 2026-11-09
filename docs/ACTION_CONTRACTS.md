@@ -375,3 +375,18 @@ A função `ligarRealtime()` em `mesa.html` abre nove canais independentes, todo
 - Os canais não são fonte canônica: após desconexão, a arquitetura deve recarregar snapshots autorizados (campanha, tokens, personagens, iniciativa, condições, equipamentos e log) antes de voltar a aceitar ações.
 
 **Recomendação arquitetural:** criar um coordenador único de sessão Realtime por campanha com status explícito, backoff/recuperação, deduplicação por ID de evento/log, invalidação de consultas e resync de snapshot ao reconectar. Não implementar antes de definir contratos de versão/ordem e testes com duas sessões autenticadas.
+
+
+### RLS e escopo dos eventos — consulta de catálogo
+
+Políticas SELECT atuais consultadas em `pg_policies`:
+- `characters`: proprietário ou membro da campanha.
+- `srd_character_sheets`: proprietário, membro ou proprietário da campanha.
+- `srd_character_equipment`: proprietário da ficha ou Mestre da campanha; outros jogadores não recebem leitura direta de equipamento de colegas.
+- `srd_cba_token_equipment`: membro da campanha.
+- `members`: próprio usuário ou membro da mesma campanha.
+- `srd_campaign_conditions` e `srd_campaign_effects`: proprietário da campanha ou membro.
+- `campaigns`: membro da campanha.
+- `campaign_log`: Mestre lê tudo; jogador/observador lê somente PUBLIC.
+
+As políticas confirmam que os canais sem filtro de campaign_id continuam sujeitos a RLS, mas isso não elimina o custo de subscrever globalmente todos os registros visíveis ao usuário. Nenhuma política foi alterada.
