@@ -147,3 +147,6 @@ Esta pauta deixou de ser a tarefa ativa imediata. O diagnóstico identificou Tho
 5. Somente após a reconciliação, gerar baseline reproduzível e CI de drift; não resetar, deployar ou squashear o histórico remoto.
 
 **Restrições:** somente leitura nesta fase; não alterar dados de jogo, ACLs, policies, funções, schema ou comportamento de produção. Não executar testes mutáveis em TESTE 2; Thorgar (681) e Thunga Mestre (682) são registros distintos.
+
+
+Inventário completo dos conjuntos divergentes: [MIGRATION_RECONCILIATION.md](MIGRATION_RECONCILIATION.md). Snapshot estrutural atual: [REMOTE_SCHEMA_SNAPSHOT.md](REMOTE_SCHEMA_SNAPSHOT.md).
