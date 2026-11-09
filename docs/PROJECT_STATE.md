@@ -51,7 +51,15 @@ Este registro consolida documentação já existente, não reinicia auditorias. 
 4. Organizar roadmap por dependências e critérios de aceite.
 5. Retomar execução na prioridade mais alta do plano aprovado.
 
-## Documentos permanentes\n- [Arquitetura geral](ARCHITECTURE.md)\n- [Mapa de integração](INTEGRATION_MAP.md)\n- [Roadmap](ROADMAP.md)\n- [Decisões](DECISIONS.md)\n- [Registro de auditorias](AUDIT_REGISTER.md)\n- [Estratégia de testes](TEST_STRATEGY.md)\n\n## Protocolo de continuidade entre sessões
+## Documentos permanentes
+- [Arquitetura geral](ARCHITECTURE.md)
+- [Mapa de integração](INTEGRATION_MAP.md)
+- [Roadmap](ROADMAP.md)
+- [Decisões](DECISIONS.md)
+- [Registro de auditorias](AUDIT_REGISTER.md)
+- [Estratégia de testes](TEST_STRATEGY.md)
+
+## Protocolo de continuidade entre sessões
 Ao iniciar uma sessão:
 - Ler este documento, ARCHITECTURE.md, INTEGRATION_MAP.md, ROADMAP.md, DECISIONS.md, AUDIT_REGISTER.md e TEST_STRATEGY.md.
 - Conferir branch/HEAD e alterações recentes.
@@ -101,4 +109,10 @@ Levantamento somente de leitura realizado durante a implantação do método:
 - Os 607 efeitos tipados não estão todos resolvidos: 582 permanecem needs_review.
 - Os totais históricos de 49/50/59 perícias e os diferentes snapshots de funções/migrations não devem ser usados sem indicar data, tabela e critério de contagem.
 
-A varredura encontrou 100 nomes distintos de RPC chamados por mesa.html, ficha.html e lobby.html; os 100 nomes existem no schema public do Supabase. Isso confirma correspondência nominal, não assinatura, autorização ou execução ponta a ponta. index.html e lobby_atualizado.html existem no repositório; dex.html não foi encontrado em main no caminho consultado. A comparação revelou que lobby_atualizado.html não está sincronizado com lobby.html (4 RPCs contra 10 e referências a catálogos legados); tratá-lo como legado até decisão sobre seu destino.\n\nO README registra testes locais anteriores (parse HTML/JS, pglast e smoke tests Playwright com Supabase simulado), mas não foram encontrados package.json, configuração Playwright, testes em tests/ ou workflow CI nos caminhos convencionais. A localização/reconstituição dos testes é pendência; a busca não prova que não existam scripts em outros diretórios.\n\nO mapa relacional inicial identificou 100 FKs em public e 10 em priv. As tabelas srd_character_equipment e srd_character_weapon_instances mantêm character_id como text sem FK para characters.id; as 48 linhas atuais conferidas correspondem a personagens existentes, sem órfãos. Isso fica registrado como ponto estrutural para análise futura, sem alteração de schema.\n\nNenhuma linha de personagem, ficha, campanha, token ou progresso foi alterada nesta fotografia.
+A varredura encontrou 100 nomes distintos de RPC chamados por mesa.html, ficha.html e lobby.html; os 100 nomes existem no schema public do Supabase. Isso confirma correspondência nominal, não assinatura, autorização ou execução ponta a ponta. A mesa atual opera sobre campaigns.cba_data (JSONB), enquanto public.tokens/monster_instances permanecem como caminho relacional compatível com RPCs antigas e alguns resolvers. index.html e lobby_atualizado.html existem no repositório; dex.html não foi encontrado em main no caminho consultado. A comparação revelou que lobby_atualizado.html não está sincronizado com lobby.html (4 RPCs contra 10 e referências a catálogos legados); tratá-lo como legado até decisão sobre seu destino.
+
+O README registra testes locais anteriores (parse HTML/JS, pglast e smoke tests Playwright com Supabase simulado), mas não foram encontrados package.json, configuração Playwright, testes em tests/ ou workflow CI nos caminhos convencionais. A localização/reconstituição dos testes é pendência; a busca não prova que não existam scripts em outros diretórios.
+
+O mapa relacional inicial identificou 100 FKs em public e 10 em priv. As tabelas srd_character_equipment e srd_character_weapon_instances mantêm character_id como text sem FK para characters.id; as 48 linhas atuais conferidas correspondem a personagens existentes, sem órfãos. Isso fica registrado como ponto estrutural para análise futura, sem alteração de schema.
+
+Nenhuma linha de personagem, ficha, campanha, token ou progresso foi alterada nesta fotografia.
