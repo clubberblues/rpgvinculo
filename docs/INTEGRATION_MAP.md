@@ -317,7 +317,7 @@ Este contrato está confirmado por inspeção do frontend e das funções SQL. A
 - As quatro páginas usam o mesmo projeto Supabase e a mesma chave pública anon; a chave no navegador não é uma chave privilegiada.
 - index.html consulta getSession e oferece signIn/signUp; lobby consulta getUser e oferece signOut; ficha consulta getUser; mesa consulta getSession.
 - dice.html e vinculo-ui.js não inicializam cliente Supabase.
-- Não existe hoje um módulo compartilhado de configuração, autenticação ou RPC; vinculo-ui.js é apenas utilitário de interface.
+- A inicialização do cliente foi centralizada em assets/js/core/supabase-client.js; vinculo-ui.js continua sendo apenas utilitário de interface. Contexto de auth e chamadas RPC ainda são orquestrados em cada página.
 
 **Consequência arquitetural:** a futura centralização de cliente/auth deve preservar as opções padrão de persistência/refresh, o ciclo de sessão e os fluxos específicos de cada página. Primeiro comparar todos os guards e chamadas de auth; depois extrair em fatia pequena, sem alterar o contrato de sessão.
 
@@ -367,3 +367,6 @@ Não alterar bucket, políticas ou objetos nesta fase. Antes de aplicar limites,
 
 ### Regra arquitetural proposta
 Ações com efeitos não reversíveis ou consumo de recursos devem aceitar um request_id/idempotency_key gerado pelo cliente, armazenar resultado por escopo de usuário/campanha/ação e devolver o mesmo resultado em retries. Locks continuam necessários para concorrência; idempotência não os substitui.
+
+
+A centralização está em revisão na branch `refactor/shared-supabase-client`; a instância por página e os defaults do SDK foram preservados. A extração de auth-context e rpc-client permanece futura.
