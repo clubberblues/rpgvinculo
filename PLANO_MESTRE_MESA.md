@@ -298,3 +298,27 @@ O servidor mantém `avancar_turno` autenticado e limitado a membros da campanha:
 4. Automatização dos efeitos de classe/nível, condições, visão/fog of war, armadilhas, sobrecarga e economia/saque conforme a especificação.
 5. Validação visual ponta a ponta em navegador desktop/celular e com menu autenticado de jogador.
 6. Observar índices não usados com carga real antes de qualquer remoção. Proteção contra senhas vazadas segue descartada por escolha do proprietário/plano Free.
+
+
+## Atualização de governança e fotografia técnica — 2026-11-08
+
+A continuidade do desenvolvimento foi formalizada em documentação versionada:
+- [Estado do projeto](docs/PROJECT_STATE.md)
+- [Arquitetura geral](docs/ARCHITECTURE.md)
+- [Mapa de integração](docs/INTEGRATION_MAP.md)
+- [Roadmap](docs/ROADMAP.md)
+- [Registro de decisões](docs/DECISIONS.md)
+- [Registro de auditorias](docs/AUDIT_REGISTER.md)
+- [Estratégia de testes](docs/TEST_STRATEGY.md)
+
+### Fotografia técnica
+- O Supabase registra 966 migrations aplicadas no histórico de migração.
+- O schema contém 76 relações public e 7 priv; as 76 tabelas public estão com RLS habilitado.
+- O inventário de funções atual é public 225 (150 SECURITY DEFINER), priv 94 (88 SECURITY DEFINER) e private 8 (8 SECURITY DEFINER). Esses totais não substituem revisão individual de autorização.
+- A mesa contém 87 nomes distintos de RPC, a ficha 12 e o lobby 10. Entre as três páginas foram identificados 100 nomes distintos; todos existem no schema public por nome. Assinaturas, grants, autorização e execução ponta a ponta ainda exigem validação.
+- A mesa contém 9 subscriptions Realtime identificadas estaticamente.
+- A interface de dados usa iframe e postMessage; o modo prepareRoll prepara a expressão e aguarda clique do usuário em “ROLAR AGORA”. A varredura não encontrou chamadas explícitas true,false que acionem a rolagem automaticamente.
+- lobby_atualizado.html diverge de lobby.html (4 RPCs contra 10 e catálogos legados); não é um espelho sincronizado no estado observado. dex.html não foi encontrado em main.
+
+### Diretriz de continuidade
+Não repetir auditorias já concluídas sem evidência de mudança. A próxima fase é reconciliar documentos históricos e completar o mapa de dependências, depois executar o roadmap por dependências e critérios de aceite. As correções funcionais seguem sujeitas a testes e não devem alterar dados reais de personagens/campanhas durante auditorias.
