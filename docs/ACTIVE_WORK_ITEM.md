@@ -84,10 +84,27 @@ Um caso só passa quando:
 
 A existência de uma RPC, botão ou campo na interface não é evidência suficiente de funcionamento.
 
+## Pré-verificação somente de leitura — 2026-11-08
+
+Consulta ao projeto Supabase conectado, sem escrita:
+
+- A campanha chamada **TESTE 2** foi encontrada com ID interno 131.
+- O personagem retornado nessa campanha é **Thunga Mestre** (ID interno 682), Anão Bárbaro de nível 1; PV 15/15; atributos registrados: FOR 14, DES 14, CON 16, INT 10, SAB 11 e CAR 8.
+- A busca por nome não encontrou personagem chamado **Thorgar**. A ficha encontrada não contém esse nome no campo de identidade consultado. Portanto, não está confirmado que Thunga Mestre seja o personagem anteriormente chamado Thorgar.
+- Não há token publicado para o personagem 682 na campanha TESTE 2.
+- A Armadura de Couro consta como equipada; o Machado Grande consta no inventário, mas não equipado.
+- A ficha registra o talento Iniciativa Aprimorada e identidade com alfabetizado=false.
+- O inventário inicial registrado inclui Machado Grande e Armadura de Couro, entre outros itens.
+
+**Consequência:** a pauta histórica “Thorgar” não pode ser aplicada automaticamente a Thunga Mestre. A identidade precisa ser reconciliada antes de qualquer teste funcional. A antiga expectativa de CA 12 também não foi confirmada: como a ficha tem DES 14 e a Armadura de Couro está equipada, o cálculo esperado precisa ser refeito a partir da fonte canônica e dos modificadores reais; não reutilizar CA 12 como valor de referência.
+
+Nenhum personagem, ficha, campanha, token, inventário, equipamento ou progresso foi alterado nesta consulta.
+
 ## Próxima ação concreta
 
-Executar somente a pré-verificação de leitura de Thorgar e do estado da campanha; reconciliar os resultados com os commits/migrations já existentes. Depois, iniciar os casos em fixture isolada, começando por CA/equipamento e Machado Grande. Não avançar para correções de código até confirmar o estado atual e as dependências.
+Resolver a divergência de identidade: confirmar se **Thunga Mestre** é o personagem de TESTE 2 que deve receber a continuidade anteriormente chamada “Thorgar”, ou se Thorgar é outro personagem/campanha. Até essa confirmação, não executar testes funcionais sobre o personagem real. Em paralelo, é seguro inspecionar estaticamente os commits e RPCs relevantes e preparar fixtures isoladas.
 
 ## Histórico
 
 - 2026-11-08: item criado a partir da continuidade das sessões. Os casos são uma pauta de validação recuperada, não resultados de testes executados nesta data.
+- 2026-11-08: pré-verificação somente de leitura encontrou Thunga Mestre em TESTE 2, não Thorgar; Armadura de Couro equipada, Machado Grande não equipado e ausência de token. Nenhum dado foi modificado.
