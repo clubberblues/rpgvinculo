@@ -154,3 +154,9 @@ A revisão do corpo atual de `priv.srd_encerrar_reacao_aoo_pendente_impl` confir
 **Classificação:** P1 — integridade das regras/autoridade do servidor. Confirmado por leitura de frontend, ACL, wrapper, implementação e trigger; não foi executado um exploit nem alterado estado de jogo.
 
 **Correção arquitetural recomendada:** tornar o RPC de persistência de movimento a autoridade única: dentro da mesma transação/lock de campanha, validar identidade/turno/ação, recalcular ameaças, criar o registro pending e retornar sem mover quando houver AOO; somente mover e consumir deslocamento quando não houver ameaça. Adaptar o frontend para um único resultado (`pending` ou `moved`) e retirar a confiança no pré-check separado. Aplicar ao caminho de jogador e, após confirmar a política de autoridade do Mestre, ao caminho GM. Não aplicar patch isolado sem fixture e teste de regressão.
+
+
+### Extensão do bypass — fila pending pode ser contornada por outro token
+Consulta direta aos corpos de `priv.mover_token_player_cba_impl` e `priv.mover_token_gm_cba_srd_impl` confirmou que ambos não referenciam `priv.srd_aoo_pending_movements`, não chamam o detector AOO e não chamam o pré-check. O trigger `priv.srd_guard_pending_aoo_movement` busca um pending ativo, mas só impede alteração/removal do token que é o próprio `mover_token_id`; ele não bloqueia alterações de outros tokens. Assim, uma chamada direta ao RPC de movimento de outro token pode contornar também a serialização global que `srd_solicitar_movimento_com_aoo_srd` tenta impor (a função de pré-check rejeita qualquer pending ativo). Isso pode alterar a posição de ameaças enquanto uma reação está sendo resolvida.
+
+**Impacto adicional:** quebra da invariável “uma única movimentação pendente por campanha” e mutação da cena durante a resolução AOO, além do bypass do detector e da janela TOCTOU. Mantida classificação P1.
