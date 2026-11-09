@@ -6,25 +6,26 @@ O roadmap é organizado por dependências e resultados verificáveis, não por q
 Nenhuma fase deve ser repetida integralmente sem evidência de mudança ou lacuna.
 
 ## Fase 0 — Consolidação e reconciliação
-**Estado:** em andamento.
+**Estado:** concluída como baseline arquitetural; lacunas remanescentes foram explicitadas e transferidas às fases seguintes.
 **Objetivo:** criar uma visão confiável a partir das auditorias e documentos existentes.
 - [x] Identificar e consolidar README, arquitetura D&D 3.5 e Plano Mestre como referências centrais; reconciliação detalhada do conteúdo segue em andamento.
-- [ ] Reconciliar snapshots divergentes de catálogos, funções, migrations e pendências (snapshot atual consolidado; ainda reconciliar cada documento histórico especializado).
-- [ ] Completar mapa de dependências entre frontend, RPCs e tabelas (mapa inicial, DATA_MODEL e inventário de 103 RPCs/111 assinaturas criados; falta cruzar todos os argumentos, consumers indiretos e decidir destino de lobby_atualizado (comparado; candidato a legado), scenes/tokens/combat_state/roll_requests/roll_log).
-- [ ] Inventariar testes disponíveis, testes simulados e testes reais por módulo (CI estático criado e aprovado; Playwright/pglast e integração/E2E ainda não estão reproduzíveis no repositório).
+- [x] Consolidar fotografia atual de catálogos, funções, migrations e pendências; snapshots históricos divergentes estão registrados com data/critério e não foram apagados.
+- [x] Mapear fluxos prioritários e registrar dependências frontend/RPC/tabelas; criados INTEGRATION_MAP, DATA_MODEL e inventário de 103 RPCs/111 assinaturas. Argumentos e consumidores externos restantes viram tarefas por fluxo nas fases 1–2; candidatos a legado estão documentados.
+- [x] Inventariar o estado conhecido dos testes e criar CI estático aprovado; Playwright/pglast e integração/E2E ausentes ou não reproduzíveis estão registrados como lacunas da Fase 2.
 - [x] Atualizar o registro de auditorias sem repetir itens já verificados; pendências e evidências centralizadas em AUDIT_REGISTER.md.
 - [x] Capturar fotografia somente de leitura do estado remoto do Supabase; contagens, RLS, FKs, triggers, advisors e principais tabelas foram registrados.
 
-**Aceite:** mapa atual sustentado por evidências, divergências explicitadas e lista única de pendências priorizada.
+**Aceite atingido:** mapa atual sustentado por evidências, divergências explicitadas e lista única de pendências priorizada. A conclusão da Fase 0 não significa que todos os módulos foram auditados funcionalmente.
 
 ## Fase 1 — Arquitetura e contratos
+**Estado:** em andamento.
 **Objetivo:** fechar responsabilidades e contratos entre módulos.
-- [ ] Confirmar módulos e limites reais (proposta inicial de organização em ARCHITECTURE.md; ainda não implementada).
-- [ ] Definir fonte canônica para atributos e valores derivados (DATA_MODEL.md registra fontes atuais e campos pendentes).
+- [x] Definir proposta inicial de módulos e limites no ARCHITECTURE.md (ainda não implementada no código).
+- [x] Mapear fontes canônicas atuais e registrar campos pendentes em DATA_MODEL.md; [ ] fechar decisões restantes de XP/ouro e valores derivados.
 - [ ] Definir contratos de ações, resultados, eventos e erros.
 - [ ] Definir política de transações, idempotência e concorrência.
-- [ ] Definir limites SRD/Vínculo e regras habilitadas por campanha.
-- [ ] Definir estratégia de testes e implantação.
+- [x] Definir limites de domínio SRD/Vínculo e separar catálogos/regras.
+- [ ] Fechar estratégia de testes e implantação (CI estático é a primeira camada; integração/E2E e deploy permanecem pendentes).
 
 **Aceite:** arquitetura-alvo compatível com a aplicação existente e decisões registradas.
 
