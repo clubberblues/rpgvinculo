@@ -30,7 +30,7 @@ Use os estados: **verificado**, **parcial**, **pendente**, **bloqueado**, **obso
 - **Pendente:** reconciliar cobertura e resolvers atuais com o código e banco no HEAD/ambiente atual.
 
 ### Ficha, mesa e integração
-- [RPC_INVENTORY.md](RPC_INVENTORY.md) lista 100 nomes literais de RPC usados por lobby/ficha/mesa, 108 assinaturas públicas correspondentes e marcadores de guarda. Chamadas dinâmicas e compatibilidade de argumentos ainda precisam ser verificadas.
+- [RPC_INVENTORY.md](RPC_INVENTORY.md) lista 103 RPCs resolvidas (100 nomes literais + 3 destinos dinâmicos), 111 assinaturas públicas correspondentes e marcadores de guarda. Chamadas dinâmicas e compatibilidade de argumentos ainda precisam ser verificadas.
 - **Mapa inicial criado:** [INTEGRATION_MAP.md](INTEGRATION_MAP.md) registra a varredura estática dos arquivos principais e a correspondência nominal das RPCs.
 - **Divergência encontrada:** lobby_atualizado.html não é espelho sincronizado de lobby.html (4 RPCs versus 10; consultas a catálogos legados). A publicação descrita no README usa lobby.html; não atualizar nem publicar o arquivo legado sem decisão explícita.
 - **Referência:** PLANO_MESTRE_MESA.md contém matriz de fluxos, decisões de iniciativa, tokens, movimento, combate, inventário e conjuração.
