@@ -299,3 +299,7 @@ O mapeamento exato de versões locais/remotas e todos os registros divergentes e
 ## Exportação de definições atuais
 
 As definições remotas atuais dos subsistemas AOO e movimento/turnos foram preservadas em [REMOTE_AOO_FUNCTIONS.sql.md](REMOTE_AOO_FUNCTIONS.sql.md) e [REMOTE_TURN_MOVEMENT_FUNCTIONS.md](REMOTE_TURN_MOVEMENT_FUNCTIONS.md). A reconciliação de histórico AOO está em [AOO_RECONCILIATION.md](AOO_RECONCILIATION.md). Estes documentos preservam o estado observável atual e fingerprints, mas não substituem o SQL original das migrations nem são um dump restaurável.
+
+
+## Invariante de movimento e AOO
+A detecção de ataques de oportunidade e a persistência do movimento devem ocorrer sob o mesmo lock/transação autoritativa. Um pré-check de frontend separado não é barreira de segurança: qualquer RPC autenticada que persista coordenadas precisa repetir a detecção/validar um ticket de movimento assinado e de uso único. A RPC direta de movimento atual não integra o detector, criando bypass e janela TOCTOU. A correção deve unificar o fluxo ou introduzir protocolo transacional de reserva/commit, sem permitir consumo de ação ou movimento antes da resolução das reações.
