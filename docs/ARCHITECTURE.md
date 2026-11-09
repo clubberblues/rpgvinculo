@@ -112,6 +112,9 @@ As camadas são limites de responsabilidade, não uma ordem para criar serviços
 - Testes automatizados disponíveis e lacunas.
 - Estado de deploy e processo de publicação.
 
+## Mapa detalhado de integração
+Consulte [INTEGRATION_MAP.md](INTEGRATION_MAP.md) para o inventário inicial das páginas, RPCs, tabelas, Realtime e comunicação com o iframe de dados.
+
 ## Referências
 - [Arquitetura do motor D&D 3.5](../DND35_RULE_ENGINE_ARCHITECTURE.md)
 - [Plano Mestre da Mesa Virtual](../PLANO_MESTRE_MESA.md)
