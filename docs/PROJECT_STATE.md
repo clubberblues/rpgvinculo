@@ -115,7 +115,9 @@ O README registra testes locais anteriores (parse HTML/JS, pglast e smoke tests 
 
 O mapa relacional inicial identificou 100 FKs em public e 10 em priv. As tabelas srd_character_equipment e srd_character_weapon_instances mantêm character_id como text sem FK para characters.id; as 48 linhas atuais conferidas correspondem a personagens existentes, sem órfãos. Isso fica registrado como ponto estrutural para análise futura, sem alteração de schema.
 
-Os advisors atuais reportaram 99 RPCs SECURITY DEFINER executáveis por authenticated (revisão individual necessária), 7 tabelas RLS sem policies (sem grants diretos históricos, confirmar), proteção de senha vazada desabilitada e 52 índices não utilizados. Também foi encontrada uma ACL PUBLIC EXECUTE em um helper do schema priv; anon não tem USAGE nesse schema, mas a exposição de priv no PostgREST ainda precisa ser confirmada. Nenhuma ACL, configuração Auth, índice ou policy foi alterada.\n\nNenhuma linha de personagem, ficha, campanha, token ou progresso foi alterada nesta fotografia.
+Os advisors atuais reportaram 99 RPCs SECURITY DEFINER executáveis por authenticated (revisão individual necessária), 7 tabelas RLS sem policies (sem grants diretos históricos, confirmar), proteção de senha vazada desabilitada e 52 índices não utilizados. Também foi encontrada uma ACL PUBLIC EXECUTE em um helper do schema priv; anon não tem USAGE nesse schema, mas a exposição de priv no PostgREST ainda precisa ser confirmada. Nenhuma ACL, configuração Auth, índice ou policy foi alterada.
+
+Nenhuma linha de personagem, ficha, campanha, token ou progresso foi alterada nesta fotografia.
 
 
 ## Item de trabalho ativo — 2026-11-08
