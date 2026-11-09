@@ -439,6 +439,7 @@ O overload de Ataque Total usado pelo frontend confirma outro ciclo ativo:
 - O wrapper delega a priv.iniciar_sequencia_ataque_iterativo_srd_8_impl (OID 27365), que valida ficha/arma e delega ao overload de sete argumentos.
 - priv.iniciar_sequencia_ataque_iterativo_srd_7_impl (OID 27364) bloqueia srd_character_weapon_instances FOR UPDATE (linha 26) e depois chama a implementação-base que bloqueia campaigns FOR UPDATE (OID 27360, linha 32). Ordem efetiva: instância de arma → campanha.
 - A resolução public.resolver_ataque_iterativo_srd (OID 26607), também chamada por mesa.html, bloqueia campanha (linha 75) → tentativa (84) → sequência (89) → instância de arma FOR SHARE (147).
+- O início de reação AOO public.srd_iniciar_ataque_oportunidade_srd (OID 27022) também adquire campanha antes de bloquear a instância de arma FOR SHARE (linha 106), depois de pending. Esse é outro caminho campaign-first que pode disputar a instância com o início de Ataque Total weapon-first.
 
 **Classificação:** inversão ativa, confirmada pelo caminho frontend e pelos OIDs. O início da sequência pode manter a instância enquanto aguarda campanha; a resolução pode manter campanha e sequência enquanto aguarda a mesma instância. Não foi reproduzido deadlock com as RPCs reais.
 
