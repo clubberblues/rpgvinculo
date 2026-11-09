@@ -30,3 +30,5 @@ These tests run against a disposable PostgreSQL service inside a standard GitHub
 
 
 - Validation for PR #74: PostgreSQL fixture run [42717932580](https://github.com/clubberblues/rpgvinculo/actions/runs/42717932580) completed successfully on the updated pull-request snapshot. It ran nine deliberately inverted synthetic lock patterns plus one positive control for consistent campaign → effect ordering. The run does not execute Supabase RPCs or test production data.
+
+- A new AOO regression models the active combat-state transition prefix `campaign → attack` against the exposed opportunity-attack resolver prefix `attack → pending movement → campaign`. The UI calls `alternar_estado_campanha` and the AOO cancellation/resolution RPCs; these are live authenticated paths. The test remains synthetic and does not execute the remote RPC bodies.
