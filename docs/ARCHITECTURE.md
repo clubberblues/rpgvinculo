@@ -179,3 +179,66 @@ Esse desenho deve ser tratado como coexistência/compatibilidade até que todos 
 | Testes | CI estático aprovado; Playwright/pglast e integração/E2E não reproduzíveis no repositório |
 | Deploy/publicação | Processo de publicação ainda precisa de confirmação e checklist |
 
+
+## Organização de código proposta — ainda não implementada
+
+Manter as páginas de entrada na raiz para preservar URLs e publicação estática:
+- index.html
+- lobby.html
+- ficha.html
+- mesa.html
+- dice.html
+
+Extrair responsabilidades gradualmente para módulos locais, sem mover as páginas de entrada:
+
+```text
+assets/js/
+  core/
+    supabase-client.js
+    auth-context.js
+    rpc-client.js
+    errors.js
+  application/
+    campaigns/
+    characters/
+    inventory/
+    combat/
+    movement/
+    spells/
+  domain/
+    shared/
+    srd35/
+    vinculo/
+  infrastructure/
+    supabase/
+      repositories/
+      realtime/
+      storage/
+  ui/
+    dialogs/
+    components/
+tests/
+  static/
+  domain/
+  integration/
+  e2e/
+```
+
+### Limites de responsabilidade
+- **pages:** montagem da tela, eventos de UI e apresentação.
+- **application:** casos de uso e orquestração entre módulos.
+- **domain/srd35:** regras D&D 3.5 puras/explicáveis, sem acesso direto ao DOM.
+- **domain/vinculo:** regras próprias Vínculo, sem importar regras SRD.
+- **infrastructure:** cliente Supabase, RPC adapters, queries, Realtime e Storage.
+- **core:** identidade, contexto de campanha, erros e contratos comuns.
+- **tests:** validação estática, regras isoladas, integração com banco e E2E.
+
+### Ordem de extração
+1. Centralizar inicialização/configuração Supabase e contexto de autenticação depois de mapear diferenças de sessão entre páginas.
+2. Criar adaptadores RPC tipados por fluxo, sem mudar as funções SQL.
+3. Extrair utilitários compartilhados e eventos do iframe Dice.
+4. Extrair casos de uso da mesa por fatias (iniciativa, movimento, ataque, magia).
+5. Extrair regras puras e adicionar testes antes de mover cálculos do cliente.
+6. Migrar cada página gradualmente para os adaptadores, mantendo fallback/compatibilidade até a validação.
+
+Não introduzir framework, TypeScript, bundler ou microserviços como pré-requisito. A decisão depende de benefício mensurável e de um caminho de deploy testável.
