@@ -7,7 +7,6 @@ These tests run against a disposable PostgreSQL service inside a standard GitHub
 - The footprint fixture copies the current remote definitions of `public.srd35_normalizar_parametro_talento` and `priv.srd_token_grid_footprint` (captured 2026-11-09).
 - Assertions cover D&D 3.5 grid footprint categories, Portuguese size aliases, linked player-race fallback, key lookup, unknown-size fallback, and duplicate-token rejection.
 - This validates the canonical footprint helper only. It does **not** yet prove that movement, attack, spawn, or AOO RPCs all call the helper; the audit has confirmed those call sites still contain divergent logic.
-- The lock-cycle fixture creates two synthetic tables and two concurrent PostgreSQL sessions to prove that the observed order campaign → effect versus effect → campaign is deadlock-prone. It tests the database lock pattern only; it does **not** execute production RPC bodies or claim a production deadlock was reproduced.
 - Fixture SQL is not a migration and must never be applied to the connected Supabase project.
 
 - The lock-cycle script now also models two additional inversions found during the read-only audit: campaign → weapon versus weapon → campaign, and campaign → character versus character → campaign. These are synthetic PostgreSQL lock-pattern tests, not executions of the remote RPG functions. A passing test proves PostgreSQL detects the deliberately constructed cycle; it does not prove that the corresponding production RPC pair deadlocked in use.
@@ -22,7 +21,6 @@ These tests run against a disposable PostgreSQL service inside a standard GitHub
 
 - A further synthetic pair models the spell-resolution order campaign → character sheet versus multi-target spell-casting order character sheet → campaign. The production bodies show these conflicting prefixes, but the fixture still models only PostgreSQL locks; it does not execute spell RPCs or establish a reproduced production deadlock.
 
-- The latest lock-cycle case models the compound barbarian-rage cleanup prefix (effect → character sheet → campaign) versus the round-change trigger (campaign → effect). It is still a synthetic lock-order test; it does not execute `end_combat`, the trigger, or the rage RPCs.
 
 
 - Added a positive-control concurrency case: two sessions both acquire campaign before effect and must complete without a deadlock. This guards against a harness that only proves deliberately inverted patterns fail; it still tests the PostgreSQL lock protocol in isolation, not production RPC bodies.
@@ -32,3 +30,5 @@ These tests run against a disposable PostgreSQL service inside a standard GitHub
 - Validation for PR #74: PostgreSQL fixture run [42718112010](https://github.com/clubberblues/rpgvinculo/actions/runs/42718112010) completed successfully. The updated harness ran ten deliberately inverted synthetic lock patterns plus one positive control for consistent campaign → effect ordering. The run does not execute Supabase RPCs or test production data.
 
 - A new AOO regression models the active combat-state transition prefix `campaign → attack` against the exposed opportunity-attack resolver prefix `attack → pending movement → campaign`. The UI calls `alternar_estado_campanha` and the AOO cancellation/resolution RPCs; these are live authenticated paths. The test remains synthetic and does not execute the remote RPC bodies.
+
+- Rage effect → campaign was removed from the active deadlock fixture after call-site reachability review: all authenticated/current callers acquire campaign before invoking the rage end helper; the only caller with effect-first order is the legacy `end_combat` entrypoint, which has no EXECUTE for authenticated/anon and no caller found in the current SQL or interface files. The dormant path remains documented for re-evaluation if re-exposed.
