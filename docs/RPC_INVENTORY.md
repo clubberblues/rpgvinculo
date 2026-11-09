@@ -4,10 +4,10 @@
 
 ## Resumo
 
-- 100 nomes literais distintos extraídos diretamente de lobby.html, ficha.html e mesa.html; mais 3 nomes dinâmicos resolvidos em rpcName/request.name, totalizando 103 RPCs chamadas.
+- 100 nomes literais distintos extraídos diretamente de lobby.html, ficha.html e mesa.html; 3 call sites dinâmicos com 7 destinos possíveis (um destino também aparece literalmente), totalizando 106 nomes de função distintos resolvidos.
 - mesa.html: 87; ficha.html: 12; lobby.html: 10.
 - 0 nomes sem função pública correspondente (esperado: 0).
-- 111 assinaturas públicas correspondentes, incluindo sobrecargas e as 3 chamadas dinâmicas.
+- 114 assinaturas públicas correspondentes aos 106 nomes distintos, incluindo sobrecargas.
 
 ## RPCs e assinaturas
 
@@ -119,7 +119,7 @@
 - Uma RPC pode ter várias sobrecargas. O frontend pode escolher a sobrecarga errada se o conjunto de chaves/tipos enviado não corresponder à assinatura esperada; esse cruzamento ainda está pendente.
 - A coluna Guarda estática indica apenas a presença de marcadores textuais (auth.uid, my_role, need_gm, public.members). Não prova que a validação esteja correta, nem que cubra campanha, papel, alvo e estado.
 - EXECUTE para authenticated é esperado em RPCs de aplicação, mas cada função SECURITY DEFINER precisa de validação semântica e testes por papel.
-- Os 100 nomes literais e os 3 destinos dinâmicos resolvidos têm correspondência em public. Nenhuma permissão foi alterada nesta inspeção.
+- Os 100 nomes literais e todos os destinos possíveis dos 3 call sites dinâmicos têm correspondência em public. Nenhuma permissão foi alterada nesta inspeção.
 - Próximo recorte recomendado: comparar argumentos/assinaturas para fluxos críticos em ordem: lobby/campanha, criação e edição de personagem, equipamento/CA, iniciativa, movimento, ataques/dano, magias e progressão.
 
 ## Arquivos de origem
@@ -153,10 +153,24 @@ As chaves e quantidades observadas correspondem às assinaturas existentes. Isso
 | equipar_arma_instancia_npc_vinculado_srd | ficha, mesa | p_campaign_id bigint, p_token_id text, p_instance_id uuid, p_hand_slot text, p_equipado boolean | não | sim | não | Wrapper INVOKER → private.equipar_arma_instancia_npc_vinculado_impl; helper exige auth.uid, GM e vínculo NPC válido |
 | equipar_arma_instancia_token | mesa | p_campaign_id bigint, p_token_id text, p_instance_id uuid, p_hand_slot text, p_equipado boolean | não | sim | não | Wrapper INVOKER → private.equipar_arma_instancia_token_impl; helper exige auth.uid, papel GM e token NPC/monstro |
 
-Esses três nomes são selecionados por dispatch dinâmico conforme o escopo character/linked_npc/token. Os helpers privados são SECURITY DEFINER com search_path pg_catalog,public,pg_temp e guardas de propriedade/papel. A contagem de 103 inclui as 100 chamadas literais mais esses três destinos dinâmicos observados.
+Os três destinos da tabela acima são selecionados por dispatch dinâmico conforme o escopo character/linked_npc/token. Além deles, há dois dispatches dinâmicos na mesa: dano de AOO (arma natural vs. arma equipada) e resolução pendente de magia (salvamento vs. resistência à magia). Esses dois dispatches têm quatro alvos possíveis; srd_resolve_pending_spell_save também aparece em chamada literal. No total, são 3 call sites dinâmicos, 7 alvos possíveis, 6 nomes adicionais únicos e 106 nomes distintos após deduplicação.
 
 
 ## Verificação adicional de nomes literais — 2026-11-09
 Varredura estática do HEAD atual em `mesa.html`, `ficha.html` e `lobby.html` extraiu 100 nomes literais distintos de chamadas `.rpc()`: 87 na mesa, 12 na ficha e 10 no lobby (há sobreposição entre páginas). Consulta somente de leitura ao catálogo `pg_proc` confirmou correspondência de **100/100 nomes no schema public**, sem nome literal ausente.
 
-**Limite da evidência:** a correspondência por nome não comprova correspondência de argumentos/tipos, seleção correta de sobrecarga, autorização, semântica ou comportamento em runtime. Os 3 destinos dinâmicos anteriormente mapeados permanecem uma categoria separada e exigem validação de cada valor possível.
+**Limite da evidência:** a correspondência por nome não comprova correspondência de argumentos/tipos, seleção correta de sobrecarga, autorização, semântica ou comportamento em runtime. Os 3 call sites dinâmicos e todos os 7 alvos possíveis foram rastreados estaticamente; suas assinaturas e grants precisam ser conferidos por fluxo.
+
+
+## Rastreamento dos três call sites dinâmicos — 2026-11-09
+
+A inspeção atual de `mesa.html` encontrou exatamente três chamadas `.rpc(variável, ...)`:
+
+| Variável/dispatch | Condição | Alvos possíveis | Resultado da conferência PostgreSQL |
+|---|---|---|---|
+| `damageRpc` | `weapon_hand_slot === 'natural'` | `srd_aplicar_dano_ataque_oportunidade_monstro_srd`; `srd_aplicar_dano_ataque_oportunidade_srd` | Ambos existem em public, uma assinatura cada, SECURITY DEFINER, EXECUTE authenticated, sem anon/PUBLIC e search_path pg_catalog, public, priv, pg_temp. |
+| `rpcName` do equipamento | scope character / linked_npc / token | `equipar_arma_instancia_personagem`; `equipar_arma_instancia_npc_vinculado_srd`; `equipar_arma_instancia_token` | Três alvos já documentados na tabela acima; cada um possui uma assinatura pública. |
+| `rpcName` de resolução pendente | salvamento / resistência à magia | `srd_resolve_pending_spell_save`; `srd_resolve_pending_spell_resistance` | Ambos existem em public, uma assinatura cada, SECURITY DEFINER, EXECUTE authenticated, sem anon/PUBLIC e search_path pg_catalog, public, priv, pg_temp. O alvo de salvamento também aparece em uma chamada literal em outra parte do código. |
+
+Os sete alvos possíveis correspondem a seis nomes adicionais únicos além dos 100 nomes literais; um deles já está incluído no conjunto literal. A união contém **106 nomes distintos e 114 assinaturas públicas**, sem nome ausente na consulta atual. A consulta de assinatura/grants dos quatro alvos não relacionados a equipamento foi somente de leitura.
+
