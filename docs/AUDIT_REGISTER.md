@@ -24,9 +24,9 @@ Use os estados: **verificado**, **parcial**, **pendente**, **bloqueado**, **obso
 
 ### Motor D&D 3.5 e catálogos
 - **Referência:** DND35_RULE_ENGINE_ARCHITECTURE.md registra auditorias de perícias, talentos, domínios, condições, características de classe, magias, monstros e equipamentos.
-- **Divergência:** snapshots citam 601 e 607 magias em datas diferentes; o número de registros não prova completude nem automatização.
+- **Divergência histórica:** snapshots citam 601 e 607 magias em datas diferentes; o número de registros não prova completude nem automatização.
 - **Parcial:** estrutura e metadados tipados de efeitos de magia existem, mas classificação/estruturação não equivale a resolução automática validada.
-- **Pendente:** reconciliar cobertura e resolvers atuais com o código e banco no HEAD/ambiente atual.
+- **Perícias:** 59 linhas no catálogo (55 verified_srd, 4 excluded). A cobertura de 50 linhas-base corresponde a 46 verified_srd e 4 excluded; nove linhas adicionais são especializações de Atuação. A cobertura continua pending por validação mecânica/integração, não por nove perícias-base ausentes.\n- **Pendente:** reconciliar cobertura e resolvers atuais com o código e banco no HEAD/ambiente atual.
 
 ### Ficha, mesa e integração
 - **Referência:** PLANO_MESTRE_MESA.md contém matriz de fluxos, decisões de iniciativa, tokens, movimento, combate, inventário e conjuração.
@@ -98,6 +98,6 @@ A auditoria manual de entradas, a verificação da fonte SRD e a implementação
 - ficha.html: 12 RPCs distintas, 31 referências .from().
 - lobby.html: 10 RPCs distintas, 10 referências .from().
 - dice.html: nenhuma chamada .rpc() ou .from() detectada.
-- Os quatro arquivos são páginas grandes com scripts inline; a varredura não representa grafo completo de chamadas nem teste de execução.
+- Os quatro arquivos são páginas grandes com scripts inline; a varredura não representa grafo completo de chamadas nem teste de execução.\n- Foram identificados 100 nomes distintos de RPC nas três páginas com chamadas; todos os 100 nomes existem em public no Supabase. Ainda falta conferir assinatura/argumentos, grants, autorização e resultado em execução.\n- index.html e lobby_atualizado.html existem em main; dex.html não foi encontrado no caminho consultado.
 
 Nenhum dado de personagem, ficha, campanha, token ou progresso foi modificado nesta fotografia. Nenhuma migration foi aplicada nesta etapa.
