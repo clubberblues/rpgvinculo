@@ -334,3 +334,24 @@ O inventário de buckets, allowlists MIME, policies e funções de caminho está
 
 ## Invariante de geometria de tokens
 Toda regra de ocupação, colisão, distância, alcance, ataque e AOO deve usar um único cálculo canônico de footprint (`priv.srd_token_grid_footprint`). Para Colossal, o footprint é 6×6 (30 ft); não manter CASEs locais divergentes nas RPCs. A auditoria encontrou implementações que usam 5×5 em movimento/ataque enquanto o helper e o detector AOO usam 6×6.
+
+
+## Autoridade de escrita do CBA — decisão arquitetural 2026-11-09
+
+`campaigns.cba_data` é estado autoritativo da cena, mas não deve ser tratado como documento substituível livremente pelo cliente durante combate. As RPCs de movimento/combate atualizam tokens no servidor; um snapshot completo enviado depois pode sobrescrever essas alterações.
+
+### Separação obrigatória de comandos
+
+- **Metadados de cena:** fundo, escala, grade, opacidade e layout. Não podem alterar coordenadas nem estado de combate dos tokens.
+- **Spawn/remoção:** operações explícitas, com papel GM, identidade única, limites, footprint e ocupação validados no servidor.
+- **Metadados de ficha/token:** operações explícitas com allowlist de campos; não podem sobrescrever PV, posição, equipamento ou estado autoritativo mais recente por snapshot obsoleto.
+- **Movimento:** somente RPCs server-authoritative, com turno, ação, deslocamento, condições, ocupação, footprint e AOO verificados na mesma transação.
+- **Resolução AOO:** a pendência é global por campanha; enquanto ativa, nenhum outro movimento ou escrita genérica pode alterar posições relevantes. O commit usa apenas o pending ID e o destino validados pelo fluxo interno.
+
+### Estado legado e transição
+
+`public.salvar_cena_cba` atualmente aceita snapshot de tokens, substitui objetos existentes e não valida mudança de coordenadas, ocupação, pending AOO ou versão do estado. O frontend usa a função em fluxos legítimos durante combate, então não pode ser removida/bloqueada isoladamente. A transição precisa migrar os call sites para comandos específicos antes de restringir o endpoint legado.
+
+A gravação deve usar versão gerada no servidor (cena/token) ou comandos por intenção com merge de campos autorizados. Um lock `FOR UPDATE` sozinho não impede lost update quando o payload já chega obsoleto.
+
+**Status:** contrato arquitetural aprovado para orientar a correção; implementação pendente de fixtures e regressões gratuitas. Nenhuma mudança foi aplicada ao banco ou ao frontend nesta etapa.
