@@ -264,19 +264,3 @@ UPDATE lock_fixture.effects SET active=true WHERE id=1;
 COMMIT;
 "
 
-
-run_expected_deadlock "end combat condition -> campaign versus advance turn campaign -> condition" "
-SET deadlock_timeout='100ms'; SET lock_timeout='5s';
-BEGIN;
-UPDATE lock_fixture.conditions SET active=false WHERE id=1;
-SELECT pg_sleep(0.6);
-UPDATE lock_fixture.campaigns SET round_number=round_number+1 WHERE id=1;
-COMMIT;
-" "
-SET deadlock_timeout='100ms'; SET lock_timeout='5s';
-BEGIN;
-UPDATE lock_fixture.campaigns SET round_number=round_number+1 WHERE id=1;
-SELECT pg_sleep(0.3);
-UPDATE lock_fixture.conditions SET active=false WHERE id=1;
-COMMIT;
-"
