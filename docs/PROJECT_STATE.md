@@ -354,3 +354,11 @@ A auditoria estática encontrou footprint Colossal inconsistente: o helper canô
 - Performance: 52 índices marcados como não utilizados (INFO). Nenhum grant, policy, índice ou configuração foi alterado; todos exigem análise contextual.
 - O deploy do GitHub Pages para o HEAD `89590799209d1c86395a65eb9ebe968087120d5d` concluiu com sucesso; isso não equivale aos testes de aplicação.
 - Achado P1 vigente: RPCs diretos de movimento podem contornar o pré-check AOO e a serialização de movimento pendente. Correção permanece bloqueada até existir teste de regressão seguro; não usar a campanha de produção nem TESTE 2.
+
+
+## P1 — autoridade e concorrência do CBA durante combate — ampliação 2026-11-09
+- Além do bypass pelos RPCs de movimento diretos, `public.salvar_cena_cba` aceita snapshot completo do Mestre e substitui objetos de tokens existentes sem validar mudanças de coordenadas, ocupação, footprint ou pending AOO.
+- O endpoint é usado por fluxos legítimos durante combate (NPCs, metadados de iniciativa e enriquecimento de tokens); a correção precisa preservar esses usos, separando campos/metadados e movimento.
+- O snapshot completo também pode causar lost update: uma gravação tardia com cena obsoleta pode restaurar PV/posição de token após RPC de combate concorrente.
+- Contrato proposto e testes adicionados em [AOO_RECONCILIATION.md](AOO_RECONCILIATION.md) e [TEST_STRATEGY.md](TEST_STRATEGY.md). Nenhuma alteração de código ou banco aplicada.
+- Execução de testes seguirá caminho sem custo adicional: PostgreSQL efêmero em GitHub Actions com fixtures mínimas; testes específicos Supabase permanecem bloqueados se não houver caminho gratuito seguro.
