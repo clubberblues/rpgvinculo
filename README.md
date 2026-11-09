@@ -1,5 +1,19 @@
 # Vínculo — entrega D&D 3.5 SRD
 
+## Engenharia e continuidade do projeto
+
+A documentação de engenharia e o estado contínuo do desenvolvimento estão em [docs/PROJECT_STATE.md](docs/PROJECT_STATE.md). Consulte também:
+
+- [Arquitetura geral](docs/ARCHITECTURE.md)
+- [Roadmap de execução](docs/ROADMAP.md)
+- [Registro de decisões](docs/DECISIONS.md)
+- [Registro de auditorias](docs/AUDIT_REGISTER.md)
+- [Estratégia de testes](docs/TEST_STRATEGY.md)
+- [Arquitetura especializada do motor D&D 3.5](DND35_RULE_ENGINE_ARCHITECTURE.md)
+- [Plano Mestre da Mesa Virtual](PLANO_MESTRE_MESA.md)
+
+Os documentos novos consolidam e conectam as referências existentes; não substituem os documentos especializados nem significam que todos os estados históricos já foram reconciliados. O estado atual deve ser atualizado com evidências do código, banco e testes.
+
 ## Arquivos e publicação
 
 Publique `index.html`, `lobby.html`, `ficha.html` e `mesa.html` na raiz do site. O pacote preserva `lobby_atualizado.html` como espelho, `dice.html`, `fundo-livro.png` e as capas `capa-mestre.png`, `capa-jogador.png`, `capa-monstros.png` e `capa-mundo.png`.
