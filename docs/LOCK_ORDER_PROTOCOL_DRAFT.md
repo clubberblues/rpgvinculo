@@ -12,7 +12,7 @@ Para qualquer operação que altere o agregado da campanha (`cba_data`, `combat_
 
 Quando a campanha ainda não é conhecida, ler o `campaign_id` sem lock apenas para localizar o agregado; depois bloquear a campanha e revalidar, sob lock, que o personagem/token ainda pertence à campanha e que o chamador mantém autorização.
 
-Uma transação não pode adquirir um lock de categoria anterior depois de já manter um lock de categoria posterior. Os triggers devem respeitar a ordem herdada do chamador e não criar caminhos reversos.
+Cada endpoint deve respeitar a ordem parcial definida para os recursos que realmente bloqueia. Um helper ou trigger não pode reintroduzir, de forma transitiva, uma aresta para um recurso anterior que a transação ainda precise adquirir. Quando dois domínios se cruzarem, a ordem entre eles deve ser explicitada antes da implementação; não presumir uma hierarquia universal entre categorias.
 
 ## 2. Ordem parcial candidata por domínio
 
