@@ -215,3 +215,7 @@ Em D&D 3.5, Colossal ocupa 30 ft (6 quadrados). A inconsistência pode permitir 
 **Classificação:** P2 — regra de borda, mas afeta ocupação, distância e alcance de tokens Colossais. Confirmado por comparação estática dos corpos remotos; não reproduzido em fixture. Não alterado.
 
 **Correção candidata:** substituir as classificações duplicadas por chamada ao helper canônico `priv.srd_token_grid_footprint` ou alinhar explicitamente para 6, e centralizar toda geometria de footprint nesse helper. Testar limite de 5/6 quadrados, sobreposição, alcance, AOO, ataques e imposição de mãos contra mortos-vivos.
+
+
+## Achado P1 adicional — endpoint genérico de cena
+A leitura do corpo de `public.salvar_cena_cba` confirmou que a função substitui os objetos dos tokens enviados sem validar mudanças de coordenadas, footprint, ocupação, ação, deslocamento ou AOO. É usada por fluxos legítimos durante combate; portanto, a correção deve separar metadados de cena, inserção de tokens e movimentação, preservando os fluxos válidos. A regressão direta e os casos de compatibilidade foram adicionados a TEST_STRATEGY.md. Nenhuma alteração de código/banco foi aplicada.
