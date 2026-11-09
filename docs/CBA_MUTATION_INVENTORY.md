@@ -359,3 +359,39 @@ A coexistência de overloads com ordens diferentes não prova isoladamente um de
 2. Concorrência entre ataque iterativo e alteração de inventário/equipamento do NPC vinculado.
 3. Concorrência entre reservar reação AOO e encerrar combate, cobrindo campanha → ledger/attack/pending.
 4. Verificar se os overloads antigos ainda têm EXECUTE concedido e são alcançáveis pela UI; não removê-los sem inventário de grants e callsites.
+
+
+
+## Expansão da ordem transitiva: recursos de ficha e equipamento — 2026-11-09
+
+Consulta read-only dos corpos atuais de `public.usar_imposicao_maos_mortos_vivos_srd`, `priv.descanso_longo_npc_vinculado_srd_impl`, `priv.iniciar_sequencia_ataque_iterativo_srd_7_impl`, `private.equipar_arma_instancia_npc_vinculado_impl`, `private.equipar_arma_instancia_personagem_impl`, `public.usar_pocao_cura_srd`, `public.usar_pocao_cura_srd_manual`, `priv.srd_sync_character_vital_condition` e `priv.srd_apply_campaign_condition`.
+
+### Ordem personagem/ficha/recurso/campanha
+
+- `public.usar_imposicao_maos_mortos_vivos_srd` bloqueia `characters` → `srd_character_sheets` → `srd_character_feature_resources` → `campaigns`. A ordem é explícita no corpo: personagem e ficha são bloqueados, o recurso é criado/selecionado com `FOR UPDATE`, e só depois a campanha é bloqueada.
+- `priv.descanso_longo_npc_vinculado_srd_impl` começa pela ordem inversa para as duas primeiras entidades: `campaigns` → `characters` → `srd_character_sheets`; depois repõe recursos e condições.
+- Se uma mesma ficha de propriedade do Mestre estiver vinculada a um token NPC e também for alvo de uma ação de classe executada pelo próprio proprietário, há uma inversão potencial `characters/sheet → campaigns` versus `campaigns → characters/sheet`. A concorrência depende da identidade real da ficha e do usuário; não foi reproduzida. Não generalizar o risco para personagens distintos.
+- `priv.srd_apply_campaign_condition` bloqueia campanha antes de alterar efeitos/condições. Já `priv.srd_sync_character_vital_condition` atualiza condições sem adquirir primeiro lock de campanha; sua ordem efetiva depende do chamador. Isso reforça que os helpers de condição não podem ser classificados isoladamente sem a cadeia de chamada.
+
+### Ordem arma/campanha
+
+- `priv.iniciar_sequencia_ataque_iterativo_srd_7_impl` bloqueia a instância de arma com `FOR UPDATE` e então delega à função de sequência, que bloqueia `campaigns`: arma → campanha.
+- `private.equipar_arma_instancia_npc_vinculado_impl` bloqueia primeiro `campaigns` e depois a instância de arma: campanha → arma.
+- Essa inversão pode formar ciclo se os dois caminhos concorrerem sobre a mesma instância de arma e campanha. A possibilidade depende do vínculo entre token NPC, ficha e instância; ainda não foi demonstrada uma execução concorrente real. O endpoint de equipamento de personagem tem outra ordem: `characters` → instância de arma, sem lock explícito de campanha.
+- O overload 8 de ataque iterativo valida ficha/arma e delega ao overload 7; portanto, não elimina o lock da instância adquirido pelo wrapper 7 antes da campanha.
+
+### Cura, equipamento e condições
+
+- `public.usar_pocao_cura_srd` bloqueia primeiro a linha de inventário da poção, depois a ficha; atualiza PV e chama `priv.srd_sync_character_vital_condition`, que altera condições sem lock inicial de campanha.
+- `public.usar_pocao_cura_srd_manual` pode consumir a ação do turno antes de bloquear inventário e ficha. Durante combate, a ordem inclui o fluxo de campanha/economia de ações antes de equipamento → ficha; fora de combate, começa pelo equipamento. Não é correto atribuir uma única ordem fixa a ambas as variantes.
+- A rotina de sincronização de condição atualiza condições e só consulta a rodada da campanha quando precisa inserir um novo estado; não faz `campaigns FOR UPDATE`. Um chamador que já mantém ficha/equipamento pode, portanto, adquirir locks de condição nessa ordem.
+- Esses caminhos precisam de testes de concorrência de cura, PV, condição e combate antes de qualquer padronização por lock de campanha.
+
+### Novos testes dirigidos
+
+1. Descanso longo de NPC vinculado concorrente com uso de habilidade que consome recurso na mesma ficha, incluindo Imposição das Mãos quando aplicável.
+2. Ataque iterativo (overloads 7/8) concorrente com equipar/desequipar a mesma instância vinculada a NPC na mesma campanha.
+3. Uso automático e manual de poção concorrentes com sincronização de PV/condições e avanço de rodada.
+4. Repetição concorrente das operações acima com duas sessões PostgreSQL efêmeras, usando fixtures isoladas e identificando os cenários condicionais; não executar concorrência de teste no banco remoto.
+
+**Limite:** estes são caminhos de lock diretamente confirmados nos corpos instalados. As inversões são riscos estruturais condicionais, não incidentes reproduzidos. Não foi construído ainda um grafo transitivo completo por OID/assinatura e triggers. Nenhuma função, ACL, policy, migration ou dado remoto foi alterado.
