@@ -183,3 +183,9 @@ A análise de `priv.srd_encerrar_reacao_aoo_pendente_impl` confirmou que o cance
 
 ### Próximo teste isolado obrigatório — bypass AOO por RPC de movimento
 Antes de testar deadlocks, preparar o teste de regressão da seção “Regressão P1 — movimento direto não pode contornar AOO” em TEST_STRATEGY.md. O teste deve invocar o RPC de movimento diretamente, sem pré-check, e cobrir a janela TOCTOU entre pré-check e persistência. Não executar em produção nem em TESTE 2.
+
+
+### Extensão do bypass — fila pending pode ser contornada por outro token
+Consulta direta aos corpos de `priv.mover_token_player_cba_impl` e `priv.mover_token_gm_cba_srd_impl` confirmou que ambos não referenciam `priv.srd_aoo_pending_movements`, não chamam o detector AOO e não chamam o pré-check. O trigger `priv.srd_guard_pending_aoo_movement` busca um pending ativo, mas só impede alteração/removal do token que é o próprio `mover_token_id`; ele não bloqueia alterações de outros tokens. Assim, uma chamada direta ao RPC de movimento de outro token pode contornar também a serialização global que `srd_solicitar_movimento_com_aoo_srd` tenta impor (a função de pré-check rejeita qualquer pending ativo). Isso pode alterar a posição de ameaças enquanto uma reação está sendo resolvida.
+
+**Impacto adicional:** quebra da invariável “uma única movimentação pendente por campanha” e mutação da cena durante a resolução AOO, além do bypass do detector e da janela TOCTOU. Mantida classificação P1.
