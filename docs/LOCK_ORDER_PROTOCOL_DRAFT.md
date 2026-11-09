@@ -379,3 +379,18 @@ Foi acrescentado ao harness PostgreSQL um caso sintético com sequence → campa
 ### Direção de correção
 
 Padronizar os RPCs NPC e PC em campanha → sequência → tentativa (ou outra ordem única definida após revisar todas as variantes). O registro de rolagem NPC deve primeiro obter campaign FOR UPDATE, depois sequence FOR UPDATE e, por fim, attempt; resolução e aplicação de dano devem respeitar a mesma ordem. Revalidar campaign_id, actor token, sequência ativa, índice de ataque e idempotência depois dos locks. A variante PC já começa por campanha e não deve ser regressada para sequence-first.
+
+
+## Estabilização de personagem Morrendo — caminho ativo personagem → ficha → campanha (2026-11-09)
+
+A interface mesa.html chama public.srd_resolve_dying_round (OID 24914), executável por authenticated. O corpo bloqueia:
+1. characters FOR UPDATE (linha 24);
+2. srd_character_sheets FOR UPDATE (39);
+3. campaigns FOR UPDATE (49);
+4. srd_campaign_conditions FOR UPDATE (61).
+
+Esse é outro caminho operacional personagem → ficha → campanha. Ele concorre conceitualmente com a resolução de magia pendente (pending spell → campanha → ficha) e com transições campaign-first que atualizam a mesma ficha. A condição Morrendo só é bloqueada depois da campanha, portanto não cria por si só inversão condição → campanha.
+
+O registro de iniciativa, public.registrar_iniciativa_d20 (OID 25178), faz o inverso seguro nesse trecho: campanha FOR UPDATE (35) → ficha FOR UPDATE (51). Não deve ser agrupado com a função de estabilização.
+
+**Prioridade:** incluir srd_resolve_dying_round no grupo de RPCs que precisam começar por campanha e revalidar personagem/ficha/estado Morrendo após adquirir locks. A fixture campaign ↔ sheet já representa o padrão de lock, mas não executa a semântica da estabilização.
