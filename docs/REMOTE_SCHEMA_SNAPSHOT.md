@@ -7194,3 +7194,64 @@ permissive=PERMISSIVE; roles=anon,authenticated; cmd=SELECT; using=true; check=N
 
 ### Duplicidade de nomes no histórico remoto
 A comparação também identificou dois nomes de migration repetidos em versões remotas distintas: `srd35_sneak_attack_damage_validation` e `srd35_rogue_uncanny_dodge_catalog_status` (duas ocorrências cada). Portanto, os 41 registros remotos que compartilham nome com arquivos locais correspondem a 39 nomes únicos, não a 41 pares um-para-um. Isso reforça que nome não é chave de equivalência; a reconciliação precisa considerar versão, conteúdo/efeito e ordem de aplicação.
+
+
+## Ownership, sequences e privilégios padrão
+
+- As 83 relações e 327 rotinas/procedures consultadas pertencem a `postgres`.
+- 16 sequences foram encontradas no schema public; nenhum domínio foi encontrado em public/priv/private.
+- Todos os 327 corpos de rotina têm search_path configurado; todas as SECURITY DEFINER verificadas incluem `pg_temp` no search_path (checagem de catálogo, não validação semântica de cada função).
+- Foram encontrados privilégios padrão personalizados em public e priv; nenhum em private. Esses privilégios se aplicam a objetos futuros criados pelo owner postgres e não são retroativos.
+
+| Schema | Tipo de objeto futuro | Grantee | Privilégio | Grantable |
+|---|---|---|---|---:|
+| priv | S | authenticated | SELECT | não |
+| priv | S | authenticated | UPDATE | não |
+| priv | S | authenticated | USAGE | não |
+| priv | S | service_role | SELECT | não |
+| priv | S | service_role | UPDATE | não |
+| priv | S | service_role | USAGE | não |
+| priv | f | authenticated | EXECUTE | não |
+| priv | f | service_role | EXECUTE | não |
+| priv | r | authenticated | DELETE | não |
+| priv | r | authenticated | INSERT | não |
+| priv | r | authenticated | MAINTAIN | não |
+| priv | r | authenticated | REFERENCES | não |
+| priv | r | authenticated | SELECT | não |
+| priv | r | authenticated | TRIGGER | não |
+| priv | r | authenticated | TRUNCATE | não |
+| priv | r | authenticated | UPDATE | não |
+| priv | r | service_role | DELETE | não |
+| priv | r | service_role | INSERT | não |
+| priv | r | service_role | MAINTAIN | não |
+| priv | r | service_role | REFERENCES | não |
+| priv | r | service_role | SELECT | não |
+| priv | r | service_role | TRIGGER | não |
+| priv | r | service_role | TRUNCATE | não |
+| priv | r | service_role | UPDATE | não |
+| public | S | authenticated | SELECT | não |
+| public | S | authenticated | UPDATE | não |
+| public | S | authenticated | USAGE | não |
+| public | S | service_role | SELECT | não |
+| public | S | service_role | UPDATE | não |
+| public | S | service_role | USAGE | não |
+| public | f | authenticated | EXECUTE | não |
+| public | f | service_role | EXECUTE | não |
+| public | r | authenticated | DELETE | não |
+| public | r | authenticated | INSERT | não |
+| public | r | authenticated | MAINTAIN | não |
+| public | r | authenticated | REFERENCES | não |
+| public | r | authenticated | SELECT | não |
+| public | r | authenticated | TRIGGER | não |
+| public | r | authenticated | TRUNCATE | não |
+| public | r | authenticated | UPDATE | não |
+| public | r | service_role | DELETE | não |
+| public | r | service_role | INSERT | não |
+| public | r | service_role | MAINTAIN | não |
+| public | r | service_role | REFERENCES | não |
+| public | r | service_role | SELECT | não |
+| public | r | service_role | TRIGGER | não |
+| public | r | service_role | TRUNCATE | não |
+| public | r | service_role | UPDATE | não |
+
+**Atenção arquitetural:** os privilégios padrão do schema `priv` concedem a `authenticated` privilégios amplos sobre futuras tabelas (DML/DDL operacional listado nas ACLs) e EXECUTE sobre futuras funções, além de privilégios de sequences. As tabelas internas existentes têm ACLs individuais que negam acesso direto a anon/authenticated, mas o default permissivo pode reabrir acesso em novos objetos se a migration não aplicar REVOKE explícito. Isso é risco preventivo de configuração, não evidência de exposição atual. Não alterado; qualquer hardening exige inventariar dependências dos wrappers SECURITY INVOKER e conceder EXECUTE pontualmente aos helpers necessários.
