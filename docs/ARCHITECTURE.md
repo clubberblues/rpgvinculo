@@ -310,3 +310,8 @@ A existência de qualquer movimento AOO em estado ativo deve serializar a movime
 
 ## Drift de implementação: movimento
 As migrations locais 20261108134918 e 20261108135111 fazem patch textual nos corpos de `public.mover_token_player_cba` e `public.mover_token_gm_cba_srd`. O remoto atual usa wrappers SECURITY INVOKER que delegam para `priv.mover_token_player_cba_impl` e `priv.mover_token_gm_cba_srd_impl`; a extração foi registrada em migrations remotas sem arquivo local (20261108194444, 20261108195245, 20261108214901). A baseline precisa refletir a arquitetura final, não apenas reaplicar os patches locais.
+
+
+## Arquitetura de qualidade e entrega
+
+O diagnóstico dos quatro workflows e a arquitetura-alvo de CI/testes estão em [CI_TEST_ARCHITECTURE.md](CI_TEST_ARCHITECTURE.md). A prioridade é adicionar validação SQL/RPC/RLS em ambiente descartável após a reconciliação do baseline, preservando os testes existentes de dado manual e smoke test Pages.
