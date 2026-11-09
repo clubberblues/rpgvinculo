@@ -182,3 +182,9 @@ Os nove alvos dinâmicos únicos incluem três nomes que também aparecem em cha
 
 ### Quarto call site dinâmico — ficha.html
 A função de aplicação do inventário recebe `request.name` e resolve argumentos antes da chamada. Os nomes-base aceitos pelo dispatcher são `equipar_item_srd` e `equipar_arma_instancia_personagem`; quando os argumentos contêm `p_campaign_id`, o dispatcher troca para `equipar_item_npc_vinculado_srd` ou `equipar_arma_instancia_npc_vinculado_srd`. Esses quatro alvos já pertencem ao conjunto de 106 nomes (dois são nomes literais em mesa.html e dois já aparecem como destinos dinâmicos do dispatcher de armas). O call site não adiciona novo nome único, mas deve ser incluído na contagem de dispatches.
+
+
+## Conferência de lobby/campanha — 2026-11-09
+- 10 RPCs de lobby/ciclo de vida foram conferidas por assinatura, SECURITY DEFINER, EXECUTE authenticated/anon/PUBLIC e search_path: lobby_list_v2, create_campaign, join_campaign, entrar_campanha_aberta, entrar_campanha_com_codigo, sentar_personagem_na_mesa, atualizar_configuracoes_campanha, excluir_ficha_propria, preparar_exclusao_campanha_propria e finalizar_exclusao_campanha_propria (as duas últimas são wrappers INVOKER com implementação privada DEFINER).
+- A exclusão de campanha foi rastreada como saga Storage + preparação/finalização. Ver ACTION_CONTRACTS.md para sequência, limites e riscos observados.
+- Limite: grants e busca de marcadores no código não substituem teste autenticado por papel; nenhuma RPC mutável foi executada.
