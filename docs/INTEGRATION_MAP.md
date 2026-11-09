@@ -229,3 +229,27 @@ O sistema atual tem dois modelos de estado de combate/rolagem coexistentes no ba
 public.roll_dice(p_expr,p_visibilidade) continua no banco como SECURITY DEFINER e delega a priv.roll_dice_expr, que gera o resultado no servidor e grava ROLL em campaign_log quando encontra uma campanha do usuário. A busca literal nas páginas ativas index.html, lobby.html, ficha.html, mesa.html e dice.html não encontrou chamada a esse RPC.
 
 Portanto, classificar roll_dice como caminho legado/alternativo não conectado ao fluxo ativo de Dice iframe no snapshot atual. Não conectar esse RPC às ações de personagem: os fluxos de ataque, salvamento, iniciativa e dano devem continuar recebendo os resultados gerados após a interação do usuário no Dice UI. A remoção do RPC exige confirmar ausência de clientes externos/antigos.
+
+
+## Contrato do fluxo Lobby → Campanha → Personagem
+
+| Etapa | RPC | Contrato observado |
+|---|---|---|
+| Listar mesas | lobby_list_v2() | Exige auth.uid; retorna campanhas ativas e só revela código de convite ao proprietário |
+| Entrar em mesa aberta | entrar_campanha_aberta(p_campaign_id) | Exige autenticação; rejeita campanha com código; cria membership PLAYER |
+| Entrar por código da mesa | entrar_campanha_com_codigo(p_campaign_id,p_code) | Código de quatro dígitos; rate limit por usuário; cria membership PLAYER |
+| Entrar por código global | join_campaign(p_code) | Procura campanha ativa pelo código; rate limit; cria membership PLAYER e registra entrada |
+| Sentar com ficha | sentar_personagem_na_mesa(p_campaign_id,p_character_id) | Exige papel PLAYER e propriedade da ficha; atualiza characters.campaign_id |
+| Criar campanha | create_campaign(p_name,p_code,p_location) | Exige autenticação; valida nome/código/local; rate limit; cria campaign, code, registro scenes e evento MESA_CRIADA |
+| Alterar configurações | atualizar_configuracoes_campanha(p_campaign_id,p_name,p_require_code,p_code) | Somente owner_id da campanha; atualiza nome e código |
+| Preparar exclusão | preparar_exclusao_campanha_propria(p_campaign_id) | Wrapper SECURITY INVOKER para helper privado; valida autorização e prepara a remoção de mídia |
+| Finalizar exclusão | finalizar_exclusao_campanha_propria(p_campaign_id) | Wrapper SECURITY INVOKER para helper privado; finaliza remoção transacional após Storage |
+| Excluir ficha própria | excluir_ficha_propria(p_character_id) | Exige propriedade da ficha; ajusta estado de combate e exclui dados associados |
+
+As RPCs públicas com mutação são SECURITY DEFINER e têm auth.uid() no corpo, ou delegam a helper privado que valida autorização. Os wrappers de exclusão são SECURITY INVOKER e encaminham a lógica a private.*. A listagem e as rotas de entrada também têm EXECUTE autenticado e anon negado.
+
+### Riscos e decisões ainda em aberto
+- Há dois caminhos de entrada por código (global join_campaign e por campanha entrar_campanha_com_codigo); ambos são usados por controles diferentes do lobby, então não remover sem consolidar a UX.
+- sentar_personagem_na_mesa atualiza characters.campaign_id; a constraint UNIQUE(campaign_id,user_id) limita um personagem por usuário por campanha. Esse comportamento precisa ser confirmado como regra de produto.
+- create_campaign continua criando scenes, embora a mesa atual use campaigns.cba_data; preservar até resolver o destino da tabela scenes.
+- O fluxo de exclusão da campanha remove arquivos do Storage entre preparação e finalização no banco; testar recuperação de falha parcial em ambiente descartável.
