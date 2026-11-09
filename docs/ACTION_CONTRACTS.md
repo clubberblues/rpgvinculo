@@ -303,3 +303,21 @@ O fluxo de criação legado tenta inserir em `characters` e depois fazer upsert 
 - `vinculo_character_sheets`: leitura por membros da campanha, INSERT pelo proprietário e UPDATE pelo proprietário ou Mestre.
 
 **Classificação:** incompatibilidade frontend ↔ schema confirmada, não apenas hipótese. Não foi feita substituição de nomes nem alteração de RLS nesta fase, porque precisamos decidir se o caminho legado Vínculo será reativado, adaptado ao novo schema ou descontinuado em favor do novo modelo. Não houve escrita em personagem, inventário, notas, talento, magia ou catálogo.
+
+
+## Fronteira de escrita observada nas páginas ativas — 2026-11-09
+
+Varredura estática de chamadas Supabase em `lobby.html`, `ficha.html` e `mesa.html`:
+
+- `mesa.html`: as três chamadas diretas de INSERT encontradas gravam somente em `campaign_log` (pedido de teste, chat e mensagem). Não foram encontradas chamadas diretas de INSERT/UPDATE/DELETE nas tabelas de estado de personagem, combate ou token; esses caminhos passam pelas RPCs mapeadas. A política de INSERT de `campaign_log` restringe GM ou, para PLAYER/OBSERVER, tipos permitidos, visibilidade PUBLIC e `data.autor_id = auth.uid()`.
+- `lobby.html`: as escritas funcionais passam por RPCs de campanha/associação; há upload Storage de avatar/capa e atualização direta de `campaigns.capa_url` para a capa. A atualização da capa depende da política RLS da campanha e ocorre após o upload.
+- `ficha.html`: o ramo D&D 3.5 é predominantemente leitura + RPCs para operações mecânicas críticas (ex.: avanço de nível). O ramo legado Vínculo faz INSERT/UPDATE/DELETE diretamente em relações antigas ou compartilhadas; o inventário/notas/catalogação antiga está incompatível com o schema atual, conforme seção anterior.
+
+### Escritas diretas do ramo legado Vínculo
+- Criação: INSERT em `characters`, seguido de UPSERT em `vinculo_character_sheets` — duas transações separadas; se o segundo passo falhar, a ficha-base pode ficar órfã/incompleta.
+- Aprender talento/magia: INSERT em `character_talents`/`character_spells`, com nível enviado pelo cliente. As políticas verificam proprietário ou Mestre, mas não validam pré-requisitos, orçamento de pontos, classe/escola ou nível no servidor. Os catálogos antigos `talents`/`spells` não existem no schema atual, então o fluxo está quebrado antes mesmo dessa validação.
+- Atualizar PV e dados da ficha: UPDATE direto em `vinculo_character_sheets`; RLS verifica proprietário/Mestre, não a regra de negócio de cada campo. É necessário definir quais campos podem ser editados pelo jogador e quais devem ser derivados/aplicados por RPC.
+- Inventário e notas: frontend usa `inventory`/`character_notes`, mas as relações atuais são `vinculo_inventory`/`vinculo_character_notes`. O carregamento do inventário converte erro em lista vazia; o carregamento das notas também não propaga erro.
+- Consumo de item: código legado decrementa quantidade e, ao chegar a zero, apaga a linha; cura é gravada em chamada separada. Mesmo após corrigir nomes, a política atual de DELETE de `vinculo_inventory` só permite GM, e a sequência não é atômica (item pode ser consumido sem aplicar cura ou vice-versa).
+
+**Decisão arquitetural necessária:** a fronteira de domínio deve ser uniforme para ambos os rulesets: leitura pode ser direta quando RLS e visibilidade forem adequadas; qualquer ação que consuma recurso, aplique cura/dano, conceda talento/magia ou altere estado mecânico deve validar regras e persistir atomicamente no servidor. O caminho legado Vínculo precisa ser adaptado a esse padrão ou formalmente aposentado; não corrigir apenas os nomes das tabelas sem resolver as lacunas de regra e transação.
