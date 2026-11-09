@@ -189,3 +189,7 @@ Antes de testar deadlocks, preparar o teste de regressão da seção “Regress�
 Consulta direta aos corpos de `priv.mover_token_player_cba_impl` e `priv.mover_token_gm_cba_srd_impl` confirmou que ambos não referenciam `priv.srd_aoo_pending_movements`, não chamam o detector AOO e não chamam o pré-check. O trigger `priv.srd_guard_pending_aoo_movement` busca um pending ativo, mas só impede alteração/removal do token que é o próprio `mover_token_id`; ele não bloqueia alterações de outros tokens. Assim, uma chamada direta ao RPC de movimento de outro token pode contornar também a serialização global que `srd_solicitar_movimento_com_aoo_srd` tenta impor (a função de pré-check rejeita qualquer pending ativo). Isso pode alterar a posição de ameaças enquanto uma reação está sendo resolvida.
 
 **Impacto adicional:** quebra da invariável “uma única movimentação pendente por campanha” e mutação da cena durante a resolução AOO, além do bypass do detector e da janela TOCTOU. Mantida classificação P1.
+
+
+### Exemplo concreto de drift validado
+As migrations locais de economia de movimento alteram corpos de funções públicas, mas o remoto atual tem wrappers INVOKER que delegam a implementações priv.*. As migrations remotas que fizeram essa extração para priv não existem localmente (20261108194444, 20261108195245, 20261108214901). Este caso está documentado em MIGRATION_RECONCILIATION.md e impede considerar o conjunto local reproduzível.
