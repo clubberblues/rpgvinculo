@@ -320,3 +320,11 @@ Este contrato está confirmado por inspeção do frontend e das funções SQL. A
 - Não existe hoje um módulo compartilhado de configuração, autenticação ou RPC; vinculo-ui.js é apenas utilitário de interface.
 
 **Consequência arquitetural:** a futura centralização de cliente/auth deve preservar as opções padrão de persistência/refresh, o ciclo de sessão e os fluxos específicos de cada página. Primeiro comparar todos os guards e chamadas de auth; depois extrair em fatia pequena, sem alterar o contrato de sessão.
+
+
+## Rotas e páginas candidatas a legado
+- index.html autentica e redireciona explicitamente para lobby.html.
+- lobby.html é a página ativa observada: 10 RPCs literais, incluindo entrada, seleção de ficha, configuração e exclusão de campanha.
+- lobby_atualizado.html existe (1.761 linhas), mas não é referenciada por index.html nem pelas páginas ativas. Tem somente 4 RPCs literais e ainda consulta os catálogos antigos public.spells/public.talents; sua navegação interna aponta para lobby.html.
+- dex.html não existe no HEAD atual do repositório (404).
+- Classificação: lobby_atualizado.html é candidato a arquivo legado/backup; dex.html é referência histórica ausente. Não apagar nem recriar nesta etapa.
