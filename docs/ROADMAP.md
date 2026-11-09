@@ -122,3 +122,7 @@ Uma descoberta só interrompe a tarefa atual se for P0, P1, dependência direta 
 - A proposta de contratos comuns foi registrada em ACTION_CONTRACTS.md. O documento distingue proposta arquitetural de implementação e proíbe migração especulativa.
 - Próximo bloqueio externo: confirmar no Dashboard a lista de Exposed schemas da API; o conector e pg_settings não forneceram esse dado.
 - Próxima execução técnica: completar análise estática dos contratos JS ↔ RPC e mapear divergências de idempotência; nenhuma alteração de comportamento até concluir essa etapa.
+
+
+## Escopo e prioridade do caminho legado Vínculo — 2026-11-09
+A divergência de nomes em ficha.html foi classificada como rota latente: o banco tem 5 personagens, todos SRD, nenhum com ficha Vínculo; o lobby atual cria fichas com ruleset=dnd35. Não alterar o ramo legado sem decisão de produto e sem fixture Vínculo descartável. A prioridade da Fase 1 permanece concluir arquitetura/contratos do fluxo ativo D&D 3.5 + mesa; manter o domínio Vínculo documentado como separado, sem misturar catálogos.
