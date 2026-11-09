@@ -1,8 +1,12 @@
-# Vínculo RPG — Item de trabalho ativo
+# Vínculo RPG — Validação de personagem (bloqueada)
 
-> Estado inicial registrado em 2026-11-08. Este documento transforma a prioridade recuperada da continuidade entre sessões em uma sequência verificável. Não substitui o [Plano Mestre da Mesa](../PLANO_MESTRE_MESA.md), o [Roadmap](ROADMAP.md) ou o [Registro de Auditorias](AUDIT_REGISTER.md).
+> Pauta de validação recuperada do histórico. **Não é a tarefa ativa da Fase 1** e permanece bloqueada até confirmação inequívoca do personagem-alvo. Não substitui o [Plano Mestre da Mesa](../PLANO_MESTRE_MESA.md), o [Roadmap](ROADMAP.md) ou o [Registro de Auditorias](AUDIT_REGISTER.md).
 
-## Objetivo imediato
+## Estado
+
+**Bloqueado — identidade de teste não confirmada.** A prioridade atual do projeto é concluir a Fase 1 (arquitetura e contratos), conforme PROJECT_STATE.md e ROADMAP.md. Esta pauta será retomada após confirmação do alvo e disponibilidade de fixture descartável.
+
+## Objetivo quando desbloqueado
 
 Retomar a validação de integração do personagem **Thorgar, Anão Bárbaro**, no contexto da campanha de teste **TESTE 2**, sem alterar o estado persistido dessa campanha.
 
@@ -117,3 +121,7 @@ Consulta somente de leitura confirmou dois registros distintos:
 - **Thunga Mestre (ID 682):** campaign_id=131; não possui token vinculado em cba_data; Armadura de Couro está equipada e Machado Grande não está equipado.
 
 Portanto, o teste de CA 10 executado para Thorgar (681) **não valida nem invalida** a CA de Thunga Mestre (682). São registros diferentes; a identidade do personagem que deve ser alvo da pauta histórica precisa ser confirmada antes de qualquer teste funcional. Nenhum dado foi alterado.
+
+
+## Atualização de prioridade — 2026-11-09
+Esta pauta deixou de ser a tarefa ativa imediata. O diagnóstico identificou Thorgar (681) e Thunga Mestre (682) como registros distintos; não inferir que um substitui o outro. A Fase 1 — arquitetura e contratos — tem precedência até fechar os contratos e preparar testes isolados. Nenhum dado de jogo foi alterado.
