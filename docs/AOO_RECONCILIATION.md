@@ -292,3 +292,6 @@ A comparação das definições remotas completas confirmou uma inversão concre
 ### Direção de correção
 
 Adotar ordem única documentada e aplicada em todas as rotinas do subsistema. A opção menos disruptiva aparente é obter o pending ID sem lock, depois bloquear pending → attack → campaign, relendo e validando cada registro após adquirir o lock. Antes de escolher definitivamente, concluir a matriz transitiva de todas as 37 rotinas e dependências chamadas, incluindo ledger, sequences, character sheets e campanhas. Não reordenar apenas duas funções sem revisar as demais.
+
+
+A varredura das 37 definições exportadas identificou 18 rotinas com `FOR UPDATE` explícito. Além das linhas da matriz acima, `priv.srd_registrar_ocultacao_ataque_oportunidade_impl` também adquire attack → pending → campaign, confirmando que ocultação/rolagem de chance de falha participa da mesma inversão. As demais 19 definições não exibem `FOR UPDATE` diretamente, mas podem adquirir locks por `UPDATE`, triggers ou chamadas transitivas; não são consideradas livres de concorrência sem revisão adicional.
