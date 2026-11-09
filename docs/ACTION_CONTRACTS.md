@@ -123,6 +123,17 @@ Assinaturas atuais confirmadas em `pg_proc`:
 
 Essa fotografia registra apenas assinaturas e observações documentadas sobre implementação. Não comprova comportamento de retry em teste ponta a ponta.
 
+### Chamadas observadas no frontend — mesa.html
+
+Inspeção estática do HEAD atual encontrou:
+- `avancarTurno()` chama `avancar_turno({p_campaign_id})`, sem request_id. Após a resposta, atualiza `combatDataState`, redesenha a iniciativa e publica mensagem de chat. O botão é desabilitado durante a chamada, mas isso protege apenas aquela instância da interface; não torna a RPC idempotente entre abas, retries ou chamadas concorrentes.
+- O fluxo de conjuração escolhe entre as RPCs manuais e envia os resultados produzidos pelo Dice UI em `p_roll_results` ou `p_damage_rolls`. A chamada não contém request_id no contrato atual.
+- `salvarIniciativa()` envia o d20 recebido do Dice UI a `registrar_iniciativa_d20`; o backend valida o valor e retorna o estado atual se a ficha já consta na ordem.
+- `iniciar_iniciativa_com_dados` recebe `request_id`. O frontend gera `crypto.randomUUID()` quando disponível, mas mantém fallback textual baseado em timestamp + aleatoriedade. O contrato SQL é `text`, e a função atual exige apenas valor não vazio quando há fichas esperadas. Portanto, não presumir que todos os request_id existentes sejam UUIDs.
+- A mensagem de chat é publicada depois da RPC de avanço do turno. Uma falha de rede entre o commit do turno e o envio da mensagem pode deixar o estado atualizado sem o anúncio correspondente; a estratégia futura deve distinguir evento transacional/outbox de mensagem narrativa enviada pelo cliente.
+
+**Implicação:** o envelope-alvo pode padronizar UUID para novas ações, mas a migração de `iniciar_iniciativa_com_dados` deve aceitar os identificadores legados durante a compatibilidade ou introduzir um wrapper versionado. Não converter nem restringir o parâmetro atual sem avaliar consumidores e retries históricos.
+
 ## Plano de adoção sem quebra
 
 1. Definir a tabela/estrutura de idempotência e o helper transacional comum, após revisar grants, RLS e exposição de schemas.
@@ -151,3 +162,10 @@ Nenhum desses itens deve ser resolvido por migração especulativa. Primeiro com
 3. Definir ActionRequest/ActionResult por fluxo, com catálogo de erros e eventos.
 4. Definir desenho de persistência/idempotência e ordem de locks sem aplicar alterações ainda.
 5. Preparar uma primeira fatia vertical em branch e PR, com fixture descartável e testes automatizados.
+
+
+## Evidência adicional — 2026-11-09
+- A assinatura de `avancar_turno` e seu corpo foram consultados diretamente no catálogo PostgreSQL: a função autentica membro GM/PLAYER, bloqueia a linha da campanha com FOR UPDATE, verifica turno/propriedade e atualiza combat_data, mas não recebe chave de idempotência.
+- `registrar_iniciativa_d20` bloqueia a campanha e a ficha; se a ficha já aparece na ordem atual, retorna o estado existente antes de inserir novo resultado.
+- `iniciar_iniciativa_com_dados` exige request_id não vazio quando há participantes esperados, mas o tipo permanece text e não há evidência de tabela comum de idempotência no contrato inspecionado.
+- A inspeção foi somente de leitura. Nenhuma função, tabela ou dado de jogo foi alterado.
