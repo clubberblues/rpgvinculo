@@ -331,3 +331,13 @@ O histórico remoto registra as migrations posteriores que efetuaram essa mudan�
 - `20261108214901_secure_character_movement_speed_rpc_access`
 
 Nenhuma dessas três tem arquivo local de mesmo nome. Portanto, o conjunto local não representa a transformação de arquitetura remota. Os arquivos locais de economia de ações não devem ser reaplicados sobre o schema remoto atual: os pontos de patch textual já não existem nos wrappers. Isso é evidência concreta de que igualar apenas o número ou o nome das migrations não restaura a arquitetura. Não foi feita alteração no banco.
+
+
+## Exportação integral das funções/procedures remotas — 2026-11-09
+
+As 327 definições atuais retornadas por `pg_get_functiondef` foram exportadas em arquivos SQL separados por schema:
+- `docs/snapshots/remote_public_functions.sql` — 225 definições.
+- `docs/snapshots/remote_priv_functions.sql` — 94 definições.
+- `docs/snapshots/remote_private_functions.sql` — 8 definições.
+
+Total exportado: 1.215.018 caracteres de definições (sem cabeçalhos). Isso fecha a captura dos corpos das rotinas atuais, mas **não** transforma o conjunto em dump restaurável: tabelas, tipos, extensões, owners, ACLs, policies, triggers, constraints, índices e ordem de dependência continuam sendo reconciliados em separado. Os arquivos são snapshots de referência; não executar diretamente como migration.
