@@ -60,7 +60,7 @@ A varredura identificou 100 nomes distintos de RPC chamados por mesa.html, ficha
 - Associação de ficha própria à mesa.
 - Atualização de configurações e exclusão protegida.
 
-## Dados e estado
+## Dados e estado\nO [DATA_MODEL.md](DATA_MODEL.md) registra as relações verificadas, fontes canônicas e estruturas de compatibilidade.
 
 O snapshot do banco observado possui 76 relações em public e 7 em priv. Os domínios identificáveis incluem:
 
