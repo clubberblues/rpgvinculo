@@ -184,3 +184,23 @@ Amostra dos fluxos críticos inspecionados estaticamente em `mesa.html` e compar
 | Iniciar iniciativa | campaign_id, expected_character_ids, request_id, gm_d20_results | bigint, text[], text, jsonb | Chaves e estrutura compatíveis; request_id é text e tem fallback não UUID no frontend. |
 
 **Classificação:** correspondência estática preliminar. Não comprova coerção de tipos em runtime pelo PostgREST, autorização com sessões reais, semântica completa, retries ou sincronização entre dois clientes. A validação desses pontos requer ambiente descartável e sessões autenticadas.
+
+
+## Cruzamento inicial — movimento e Ataques de Oportunidade — 2026-11-09
+
+Inspeção estática de `mesa.html` comparada às assinaturas atuais de `pg_proc`:
+
+| Etapa | RPC | Argumentos enviados / assinatura PostgreSQL | Resultado |
+|---|---|---|---|
+| Solicitar movimento do jogador ou Mestre | `srd_solicitar_movimento_com_aoo_srd` | campaign_id bigint, mover_token_id text, destination_x integer, destination_y integer, controller text | Chaves e tipos aparentes correspondem; frontend envia controller player/gm. |
+| Concluir movimento sem reação pendente | `mover_token_player_cba` / `mover_token_gm_cba_srd` | player: campaign_id bigint, character_id text, grid_x integer, grid_y integer; GM: campaign_id bigint, token_id text, grid_x integer, grid_y integer | Chaves e tipos aparentes correspondem; atualização do snapshot CBA ocorre após resposta. |
+| Reservar reação | `srd_reservar_reacao_movimento_aoo_srd` | campaign_id bigint, pending_id uuid, reactor_token_id text | Correspondência estática. |
+| Iniciar ataque armado | `srd_iniciar_ataque_oportunidade_srd` | campaign_id bigint, pending_id uuid, reactor_token_id text, reaction_id uuid, weapon_instance_id uuid, weapon_hand_slot text, weapon_end text | Correspondência estática; weapon_end aceita null quando não há arma dupla. |
+| Registrar d20 manual | `srd_registrar_rolagem_ataque_oportunidade_srd` | campaign_id bigint, attack_id uuid, manual_d20 integer, idempotency_key uuid | Correspondência estática; d20 vem do Dice UI e chave é gerada pelo helper de UUID. |
+| Resolver ataque | `srd_resolver_ataque_oportunidade_srd` | campaign_id bigint, attack_id uuid | Correspondência estática. |
+| Aplicar dano | `srd_aplicar_dano_ataque_oportunidade_srd` ou variante monstro | campaign_id bigint, attack_id uuid, damage_rolls integer[], idempotency_key uuid | Ambos os alvos dinâmicos têm assinatura compatível e grants/search_path seguros conforme verificação anterior. |
+| Concluir ou cancelar movimento pendente | `srd_finalizar_movimento_aoo_pendente_srd` / `srd_cancelar_movimento_aoo_pendente_srd` | campaign_id bigint, pending_id uuid | Correspondência estática. |
+
+**Observações de arquitetura:** o frontend separa a solicitação de movimento da efetiva gravação de posição; quando há reação pendente, atualiza o snapshot e aguarda a fila do Mestre. O ataque de oportunidade mantém d20 manual e chave de idempotência tanto no registro da rolagem quanto na aplicação de dano. O fluxo depende de múltiplas RPCs e estados persistidos; sua correção não pode ser inferida apenas pelo pareamento de argumentos.
+
+**Ainda não testado:** concorrência entre dois clientes, desconexão entre reserva/início/rolagem/dano, retry com mesma chave, retry com payload divergente, cancelamento durante reação e sincronização após reconexão. Não foi feita qualquer mutação de campanha ou token.
