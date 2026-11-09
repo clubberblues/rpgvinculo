@@ -220,3 +220,14 @@ Nos sete arquivos de interface/scripts atuais, não foram encontradas chamadas c
 ### Consequência para priorização
 
 A inversão personagem/ficha → campanha não é apenas um padrão lexical isolado: há rotas de conjuração que a interface principal chama diretamente. Deve ser tratada como prioridade de teste junto com campaign → ficha/efeito em resolução e encerramento. Ainda é necessário demonstrar um par concorrente que alcance a mesma linha de ficha/personagem e reproduzir o ciclo em fixture; não há deadlock de produção confirmado.
+
+
+## Correção de precisão — wrappers single-target e caminho de Míssil Mágico (2026-11-09)
+
+A análise do fluxo efetivamente chamado por `mesa.html` separa duas famílias:
+
+- **Multialvo de dano/efeitos:** chamadas diretas a OIDs 25246 e 25109. Ambas bloqueiam personagem e ficha antes de consumir ação/obter o lock da campanha. Permanecem os caminhos frontend confirmados personagem/ficha → campanha.
+- **Alvo único comum:** `mesa.html` chama `public.conjurar_magia_com_acao_srd_manual` (OID 24658), que bloqueia personagem e campanha antes de delegar para `public.conjurar_magia_srd_manual` (OID 24656), que então bloqueia ficha. Para esta rota, o prefixo é personagem → campanha → ficha; não classificá-la como ficha → campanha.
+- **Míssil Mágico:** `mesa.html` chama `public.conjurar_missil_magico_srd_manual` (OID 25191), que bloqueia personagem → ficha e delega para `public.conjurar_missil_magico_srd` (OID 24356). A função interna chama `public.conjurar_magia_com_acao_srd` (OID 20410), que bloqueia personagem/campanha para consumir a ação; portanto, a rota composta volta a apresentar personagem/ficha → campanha.
+
+A existência de ambos os prefixos em rotas usadas pela mesma interface reforça a necessidade de harmonizar os wrappers, mas a prova de deadlock exige um segundo fluxo que retenha a campanha e tente bloquear a mesma ficha/personagem. A resolução pending spell fornece um caminho campaign-first → ficha em alvos personagem; isso sustenta a hipótese de ciclo para o mesmo personagem, ainda pendente de fixture baseada em corpos e teste de concorrência. Nenhuma função foi executada remotamente.
