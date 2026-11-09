@@ -26,10 +26,12 @@ Use os estados: **verificado**, **parcial**, **pendente**, **bloqueado**, **obso
 - **Referência:** DND35_RULE_ENGINE_ARCHITECTURE.md registra auditorias de perícias, talentos, domínios, condições, características de classe, magias, monstros e equipamentos.
 - **Divergência histórica:** snapshots citam 601 e 607 magias em datas diferentes; o número de registros não prova completude nem automatização.
 - **Parcial:** estrutura e metadados tipados de efeitos de magia existem, mas classificação/estruturação não equivale a resolução automática validada.
-- **Perícias:** 59 linhas no catálogo (55 verified_srd, 4 excluded). A cobertura de 50 linhas-base corresponde a 46 verified_srd e 4 excluded; nove linhas adicionais são especializações de Atuação. A cobertura continua pending por validação mecânica/integração, não por nove perícias-base ausentes. A auditoria de fonte manual tem 50 linhas (46 verified_srd + 4 excluded); as nove especializações de Atuação não têm linha própria nessa tabela e devem ser tratadas conforme a modelagem da perícia Atuação, sem criar automaticamente nove perícias independentes.\n- **Pendente:** reconciliar cobertura e resolvers atuais com o código e banco no HEAD/ambiente atual.
+- **Perícias:** 59 linhas no catálogo (55 verified_srd, 4 excluded). A cobertura de 50 linhas-base corresponde a 46 verified_srd e 4 excluded; nove linhas adicionais são especializações de Atuação. A cobertura continua pending por validação mecânica/integração, não por nove perícias-base ausentes. A auditoria de fonte manual tem 50 linhas (46 verified_srd + 4 excluded); as nove especializações de Atuação não têm linha própria nessa tabela e devem ser tratadas conforme a modelagem da perícia Atuação, sem criar automaticamente nove perícias independentes.
+- **Pendente:** reconciliar cobertura e resolvers atuais com o código e banco no HEAD/ambiente atual.
 
 ### Ficha, mesa e integração
-- **Mapa inicial criado:** [INTEGRATION_MAP.md](INTEGRATION_MAP.md) registra a varredura estática dos arquivos principais e a correspondência nominal das RPCs.\n- **Divergência encontrada:** lobby_atualizado.html não é espelho sincronizado de lobby.html (4 RPCs versus 10; consultas a catálogos legados). A publicação descrita no README usa lobby.html; não atualizar nem publicar o arquivo legado sem decisão explícita.
+- **Mapa inicial criado:** [INTEGRATION_MAP.md](INTEGRATION_MAP.md) registra a varredura estática dos arquivos principais e a correspondência nominal das RPCs.
+- **Divergência encontrada:** lobby_atualizado.html não é espelho sincronizado de lobby.html (4 RPCs versus 10; consultas a catálogos legados). A publicação descrita no README usa lobby.html; não atualizar nem publicar o arquivo legado sem decisão explícita.
 - **Referência:** PLANO_MESTRE_MESA.md contém matriz de fluxos, decisões de iniciativa, tokens, movimento, combate, inventário e conjuração.
 - **Parcial:** há fluxos implementados e testes transacionais revertidos documentados.
 - **Pendente:** aceite ponta a ponta com sessões autenticadas simultâneas de Mestre e Jogador em campanha descartável.
@@ -53,7 +55,17 @@ O histórico de continuidade registra correções em:
 
 Essas correções não devem ser refeitas automaticamente. Antes, conferir os commits/migrations correspondentes e validar se o estado atual as contém.
 
-## Relacionamentos e integridade referencial\n- Snapshot PostgreSQL: public 100 FKs, 76 PKs, 20 UNIQUE e 133 CHECKs; priv 10 FKs, 7 PKs, 4 UNIQUE e 28 CHECKs; 14 triggers de usuário (11 public, 3 priv).\n- srd_character_equipment.character_id e srd_character_weapon_instances.character_id são text sem FK para characters.id bigint. Os 42 registros de equipamento e 6 de instância de arma consultados correspondem a characters existentes; não há órfãos no snapshot. Registrar como oportunidade de integridade, sem alterar antes de auditar consumidores e planejar migração.\n- Identificadores de token em tabelas CBA são text e não têm FK direta para tokens.id; confirmar contrato antes de normalizar.\n\n## Testes — inventário inicial\n- O README descreve parse local, pglast e smoke tests Playwright com Supabase simulado.\n- package.json, configuração Playwright, arquivos de teste convencionais e workflow CI não foram encontrados nos caminhos consultados.\n- Classificação: harness automatizado não localizado nos caminhos convencionais; localizar ou reconstituir os testes e torná-los reproduzíveis.\n\n## Pendências consolidadas a reconciliar
+## Relacionamentos e integridade referencial
+- Snapshot PostgreSQL: public 100 FKs, 76 PKs, 20 UNIQUE e 133 CHECKs; priv 10 FKs, 7 PKs, 4 UNIQUE e 28 CHECKs; 14 triggers de usuário (11 public, 3 priv).
+- srd_character_equipment.character_id e srd_character_weapon_instances.character_id são text sem FK para characters.id bigint. Os 42 registros de equipamento e 6 de instância de arma consultados correspondem a characters existentes; não há órfãos no snapshot. Registrar como oportunidade de integridade, sem alterar antes de auditar consumidores e planejar migração.
+- Identificadores de token em tabelas CBA são text e não têm FK direta para tokens.id; confirmar contrato antes de normalizar.
+
+## Testes — inventário inicial
+- O README descreve parse local, pglast e smoke tests Playwright com Supabase simulado.
+- package.json, configuração Playwright, arquivos de teste convencionais e workflow CI não foram encontrados nos caminhos consultados.
+- Classificação: harness automatizado não localizado nos caminhos convencionais; localizar ou reconstituir os testes e torná-los reproduzíveis.
+
+## Pendências consolidadas a reconciliar
 1. Estado real de cada fluxo da ficha e mesa no HEAD atual.
 2. Fonte canônica de CA, ataques, dano, PV e atributos derivados em fichas e tokens.
 3. Matriz de ações e capacidades por classe/nível.
@@ -99,6 +111,14 @@ A auditoria manual de entradas, a verificação da fonte SRD e a implementação
 - ficha.html: 12 RPCs distintas, 31 referências .from().
 - lobby.html: 10 RPCs distintas, 10 referências .from().
 - dice.html: nenhuma chamada .rpc() ou .from() detectada.
-- Os quatro arquivos são páginas grandes com scripts inline; a varredura não representa grafo completo de chamadas nem teste de execução.\n- Foram identificados 100 nomes distintos de RPC nas três páginas com chamadas; todos os 100 nomes existem em public no Supabase. Ainda falta conferir assinatura/argumentos, grants, autorização e resultado em execução.\n- index.html e lobby_atualizado.html existem em main; dex.html não foi encontrado no caminho consultado.
+- Os quatro arquivos são páginas grandes com scripts inline; a varredura não representa grafo completo de chamadas nem teste de execução.
+- Foram identificados 100 nomes distintos de RPC nas três páginas com chamadas; todos os 100 nomes existem em public no Supabase. Ainda falta conferir assinatura/argumentos, grants, autorização e resultado em execução.
+- index.html e lobby_atualizado.html existem em main; dex.html não foi encontrado no caminho consultado.
 
 Nenhum dado de personagem, ficha, campanha, token ou progresso foi modificado nesta fotografia. Nenhuma migration foi aplicada nesta etapa.
+
+
+## Persistência de cena e tokens
+- Foram confirmados dois caminhos coexistentes: CBA em campaigns.cba_data (JSONB) e modelo relacional public.tokens/monster_instances usado por RPCs antigas. Resolvedores de condição/efeito aceitam alvos em ambos os caminhos.
+- A mesa atual usa RPCs CBA; RPCs antigas como move_token, attack e start_combat não aparecem na varredura direta do frontend atual. create_campaign ainda cria registro em scenes, mas não foi identificada leitura direta por mesa.html.
+- Classificação: compatibilidade/legado a reconciliar; não remover nem migrar antes de mapear todos os consumidores e dados.
