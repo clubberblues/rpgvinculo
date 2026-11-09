@@ -244,3 +244,18 @@ A separação de comandos deve manter esses fluxos funcionando, mas nenhum deles
 - O GUC `app.srd_aoo_pending_commit` é comparado ao pending ID para liberar o token movido. O futuro contrato deve validar também campanha, token, destino e status do pending no caminho interno de commit, sem confiar apenas em um valor de sessão fornecido pelo cliente.
 
 A evidência confirma que o banco já impede duplicidade de pendências, mas ainda não garante imutabilidade da cena relevante durante a resolução.
+
+
+## Achado adicional — spawn de token não respeita pending global nem footprint — 2026-11-09
+
+A revisão de `public.adicionar_token_cba` e wrapper `public.adicionar_token_cba_completo` encontrou outro caminho de mutação:
+
+- `adicionar_token_cba` exige GM, identidade, campanha e célula de origem; bloqueia IDs/keys duplicados e tenta encontrar uma célula livre.
+- A função não consulta `priv.srd_aoo_pending_movements`; portanto, não bloqueia spawn enquanto uma reação AOO está pendente.
+- A busca de célula livre compara somente `gridX` e `gridY` dos tokens existentes. Não consulta `priv.srd_token_grid_footprint` nem verifica todos os quadrados ocupados por tokens Grandes/Enormes/Imensos/Colossais.
+- `adicionar_token_cba_completo` delega para essa função e depois acrescenta atributos; mantém o mesmo limite de validação espacial.
+- `salvar_cena_cba` é ainda mais amplo: pode inserir novos tokens sem passar pela validação acima.
+
+**Impacto:** spawn durante uma pending pode alterar a cena e a geometria/ameaças enquanto as reações estão sendo resolvidas. Fora de pending, um token com footprint maior que 1 pode ser colocado sobre outro token se os pontos de origem forem diferentes, mas as áreas ocupadas se cruzarem.
+
+**Classificação:** P1 para mutação durante pending; P2 para sobreposição por footprint incompleto. Correção: bloquear spawn/removal/alterações estruturais enquanto pending ativa (salvo fluxo explicitamente autorizado) e centralizar validação de ocupação em helper canônico que considera footprint completo. Não corrigido.
