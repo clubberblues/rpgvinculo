@@ -169,3 +169,18 @@ Nenhum desses itens deve ser resolvido por migração especulativa. Primeiro com
 - `registrar_iniciativa_d20` bloqueia a campanha e a ficha; se a ficha já aparece na ordem atual, retorna o estado existente antes de inserir novo resultado.
 - `iniciar_iniciativa_com_dados` exige request_id não vazio quando há participantes esperados, mas o tipo permanece text e não há evidência de tabela comum de idempotência no contrato inspecionado.
 - A inspeção foi somente de leitura. Nenhuma função, tabela ou dado de jogo foi alterado.
+
+
+## Cruzamento inicial frontend ↔ PostgreSQL — 2026-11-09
+
+Amostra dos fluxos críticos inspecionados estaticamente em `mesa.html` e comparados às assinaturas atuais em `pg_proc`:
+
+| Fluxo | Argumentos enviados pelo frontend | Assinatura PostgreSQL | Situação estática |
+|---|---|---|---|
+| Avançar turno | `p_campaign_id: Number(MESA_ID)` | `p_campaign_id bigint` | Chave e tipo de contexto compatíveis. Sem request_id no contrato. |
+| Conjuração manual | character_id, spell_id, slot_level, target_token_key, roll_results | text, text, smallint, text, integer[] | Nomes e estrutura compatíveis; slot é convertido para Number e dados são arrays numéricos do Dice UI. Sem request_id. |
+| Míssil Mágico manual | character_id, spell_id, slot_level, target_token_key, damage_rolls | text, text, smallint, text, integer[] | Nomes e estrutura compatíveis; sem request_id. |
+| Registrar iniciativa do jogador | campaign_id, personagem_id, d20 | bigint, text, integer | Compatível; d20 validado no servidor entre 1 e 20. Idempotência atual é pelo estado da ordem/ficha. |
+| Iniciar iniciativa | campaign_id, expected_character_ids, request_id, gm_d20_results | bigint, text[], text, jsonb | Chaves e estrutura compatíveis; request_id é text e tem fallback não UUID no frontend. |
+
+**Classificação:** correspondência estática preliminar. Não comprova coerção de tipos em runtime pelo PostgREST, autorização com sessões reais, semântica completa, retries ou sincronização entre dois clientes. A validação desses pontos requer ambiente descartável e sessões autenticadas.
