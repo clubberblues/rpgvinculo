@@ -115,13 +115,22 @@ O README registra testes locais anteriores (parse HTML/JS, pglast e smoke tests 
 
 O mapa relacional inicial identificou 100 FKs em public e 10 em priv. As tabelas srd_character_equipment e srd_character_weapon_instances mantêm character_id como text sem FK para characters.id; as 48 linhas atuais conferidas correspondem a personagens existentes, sem órfãos. Isso fica registrado como ponto estrutural para análise futura, sem alteração de schema.
 
-Os advisors atuais reportaram 99 RPCs SECURITY DEFINER executáveis por authenticated (revisão individual necessária), 7 tabelas RLS sem policies (sem grants diretos históricos, confirmar), proteção de senha vazada desabilitada e 52 índices não utilizados. Também foi encontrada uma ACL PUBLIC EXECUTE em um helper do schema priv; anon não tem USAGE nesse schema, mas a exposição de priv no PostgREST ainda precisa ser confirmada. Nenhuma ACL, configuração Auth, índice ou policy foi alterada. O primeiro workflow estático do GitHub Actions concluiu com sucesso (run 42546411046), validando 9 blocos JavaScript em 5 páginas e o contrato de rolagem manual.
+Os advisors atuais reportaram 99 RPCs SECURITY DEFINER executáveis por authenticated (todos possuem marcadores de guarda na varredura estática: 96 auth.uid, 40 my_role, 5 need_gm, 37 consultam members; revisão semântica individual continua necessária), 7 tabelas RLS sem policies (grants diretos anon/authenticated reconsultados e todos negados), proteção de senha vazada desabilitada e 52 índices não utilizados. Também foi encontrada uma ACL PUBLIC EXECUTE em um helper do schema priv; anon não tem USAGE nesse schema, mas a exposição de priv no PostgREST ainda precisa ser confirmada. Nenhuma ACL, configuração Auth, índice ou policy foi alterada. O primeiro workflow estático do GitHub Actions concluiu com sucesso (run 42546411046), validando 9 blocos JavaScript em 5 páginas e o contrato de rolagem manual.
 
 Nenhuma linha de personagem, ficha, campanha, token ou progresso foi alterada nesta fotografia.
 
 
 ## Item de trabalho ativo — 2026-11-08
 
-A pauta operacional recuperada para a próxima fatia está em [ACTIVE_WORK_ITEM.md](ACTIVE_WORK_ITEM.md). A pré-verificação somente de leitura encontrou a campanha TESTE 2 e o personagem **Thunga Mestre**, Anão Bárbaro N1, mas não encontrou personagem chamado Thorgar. A ficha encontrada tem Armadura de Couro equipada, Machado Grande não equipado e não possui token publicado. A identidade entre Thunga Mestre e o personagem historicamente chamado Thorgar permanece **não confirmada**; não iniciar testes funcionais ou alterações até reconciliar essa identidade.
+A pauta operacional recuperada para a próxima fatia está em [ACTIVE_WORK_ITEM.md](ACTIVE_WORK_ITEM.md). A consulta confirmou dois registros distintos na campanha/contexto TESTE 2: **Thunga Mestre (ID 682)** pertence à campanha 131, tem Armadura de Couro equipada, Machado Grande não equipado e não possui token vinculado; **Thorgar (ID 681)** é um personagem do Mestre fora da associação direta à campanha, mas tem um token NPC vinculado em cba_data. O teste de CA 10 realizado para Thorgar não se aplica a Thunga. A identidade do alvo da pauta histórica permanece **não confirmada**; não iniciar testes funcionais nem alterar dados reais até confirmação.
 
 A consulta não modificou personagens, fichas, campanhas, tokens, inventário, equipamento ou progresso.
+
+
+## Reconciliação adicional de identidade — 2026-11-08
+
+Consulta somente de leitura confirmou dois registros distintos:
+- **Thorgar (ID 681):** campaign_id NULL; pertence ao Mestre da campanha 131 e está vinculado a um token do tipo NPC nessa campanha (sourceCharacterId=681). A Armadura de Couro e os demais itens consultados estão com equipado=false. A sobrecarga de CA para NPC vinculado retornou CA 10, coerente com esse estado.
+- **Thunga Mestre (ID 682):** campaign_id=131; não possui token vinculado em cba_data; Armadura de Couro está equipada e Machado Grande não está equipado.
+
+Portanto, o teste de CA 10 executado para Thorgar (681) **não valida nem invalida** a CA de Thunga Mestre (682). São registros diferentes; a identidade do personagem que deve ser alvo da pauta histórica precisa ser confirmada antes de qualquer teste funcional. Nenhum dado foi alterado.
