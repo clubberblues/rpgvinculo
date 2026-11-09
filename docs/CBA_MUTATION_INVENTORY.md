@@ -277,3 +277,8 @@ Não classificar como corrigido apenas por adicionar outro FOR UPDATE na campanh
 5. Verificação de timeout/deadlock com duas sessões no PostgreSQL efêmero do CI, usando cópias isoladas da ordem de locks e identificando claramente que o teste reproduz o padrão, não executa o código remoto em produção.
 
 Nenhuma função ou dado remoto foi alterado. A análise não autoriza ainda uma migration: a reconciliação entre 966 versões remotas e 681 arquivos locais continua sendo pré-condição para mudanças no banco.
+
+
+### Ciclo adicional envolvendo o encerramento manual da Fúria de personagem
+
+A RPC public.usar_furia_barbaro_srd também começa bloqueando a linha de public.characters e depois public.srd_character_sheets com FOR UPDATE; somente depois bloqueia campaigns. No caminho de encerramento, ela chama priv.srd_end_barbarian_rage, que bloqueia srd_campaign_effects antes de retornar ao fluxo de campanha/condições. Em concorrência com a trigger de avanço de rodada, a sessão manual pode reter ficha/efeito e aguardar campaigns, enquanto a trigger retém campaigns e, após bloquear o efeito, pode aguardar a mesma ficha. Portanto, a revisão da ordem não pode limitar-se a mover o lock de campaigns para dentro de priv.srd_end_barbarian_rage: o chamador público também precisa ser analisado para que não mantenha characters/srd_character_sheets antes da campanha. A correção deve padronizar a ordem no ponto de entrada e em todas as rotinas transitivas, não apenas no helper interno.
