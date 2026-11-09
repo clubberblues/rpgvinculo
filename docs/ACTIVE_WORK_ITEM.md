@@ -1,4 +1,33 @@
-# Vínculo RPG — Validação de personagem (bloqueada)
+# Vínculo RPG — Item de trabalho ativo
+
+## Atividade vigente — Fase 1: arquitetura, contratos e concorrência
+
+**Esta é a pauta ativa.** A validação de personagem que aparece abaixo permanece bloqueada e histórica; não deve interromper a auditoria de infraestrutura.
+
+### Estado confirmado em 2026-11-09
+- Auditoria Supabase remota read-only: 83 relações, 229 índices, 378 constraints, 114 policies, 14 triggers e 327 funções/procedures com fingerprints/ACLs.
+- Reconciliação de migrations ainda bloqueia qualquer alteração SQL de produção: 681 arquivos locais versus 966 registros remotos, com divergências documentadas em [MIGRATION_RECONCILIATION.md](MIGRATION_RECONCILIATION.md).
+- Inventário de mutações CBA e ordem transitiva de locks em [CBA_MUTATION_INVENTORY.md](CBA_MUTATION_INVENTORY.md).
+- Proposta de protocolo global em [LOCK_ORDER_PROTOCOL_DRAFT.md](LOCK_ORDER_PROTOCOL_DRAFT.md); é rascunho, não migration nem ordem aprovada.
+- Harness PostgreSQL 17 efêmero gratuito no GitHub Actions. A execução [42670106095](https://github.com/clubberblues/rpgvinculo/actions/runs/42670106095) passou em footprint e três padrões sintéticos de deadlock (campaign/effect, campaign/weapon, campaign/character). Esses testes não executam RPCs reais.
+- Advisors atuais: 99 SECURITY DEFINER executáveis por authenticated, 7 tabelas RLS sem policy, proteção contra senha vazada desativada, 52 índices não utilizados; nenhum hardening foi aplicado automaticamente.
+
+### Próximas ações
+1. Continuar revisão de entrypoints, overloads, helpers e triggers por assinatura/OID, especialmente recursos de classe, conjuração, AOO, ataques e inventário.
+2. Fechar a matriz transitiva de locks e validar quais inversões são realmente alcançáveis com a mesma campanha/entidade.
+3. Expandir fixtures PostgreSQL para representar os fluxos críticos sem conectar ao Supabase remoto.
+4. Só depois consolidar protocolo e correções; reconciliar migrations antes de qualquer migration nova ou alteração remota.
+
+### Restrições permanentes
+- Nenhuma despesa adicional, branch/projeto Supabase pago ou serviço externo pago.
+- Não alterar Supabase remoto, ACL, policy, função, migration ou dado de campanha nesta fase.
+- Não executar testes mutáveis em TESTE 2; Thorgar (681) e Thunga Mestre (682) são fichas distintas.
+- Não declarar E2E/Auth/RLS/PostgREST validado por fixtures SQL.
+- Avançar trabalho continuamente; não interromper com relatórios por etapa nem exigir confirmação repetida.
+
+---
+
+# Pauta histórica — Validação de personagem (bloqueada)
 
 > Pauta de validação recuperada do histórico. **Não é a tarefa ativa da Fase 1** e permanece bloqueada até confirmação inequívoca do personagem-alvo. Não substitui o [Plano Mestre da Mesa](../PLANO_MESTRE_MESA.md), o [Roadmap](ROADMAP.md) ou o [Registro de Auditorias](AUDIT_REGISTER.md).
 

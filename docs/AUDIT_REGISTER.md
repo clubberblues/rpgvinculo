@@ -455,3 +455,8 @@ A auditoria read-only foi ampliada para recursos de classe, descanso, arma equip
 - Isso amplia a família personagem/ficha → campanha que pode concorrer com o descanso longo de NPC vinculado (campanha → personagem → ficha) quando as duas operações incidem sobre a mesma ficha de propriedade do Mestre.
 - Resolução de pendência de magia: aplicador interno bloqueia pendência → campanha; resolvers de salvamento/RM bloqueiam pendência sem lock posterior de campanha no corpo observado. Não há evidência suficiente para classificar a relação como ciclo.
 - Regressão de descanso × conjuração na mesma ficha vinculada incluída no escopo de concorrência. Não executada contra produção.
+
+
+### Protocolo global de locks — proposta
+- [LOCK_ORDER_PROTOCOL_DRAFT.md](LOCK_ORDER_PROTOCOL_DRAFT.md) consolida a ordem candidata de aquisição de locks, evidências de inversões, critérios de aceite e bloqueios antes de qualquer migration.
+- Status: rascunho não aprovado. A ordem ainda depende do mapeamento de todas as chamadas transitivas por OID/assinatura e testes de concorrência; não autoriza alteração no Supabase.
