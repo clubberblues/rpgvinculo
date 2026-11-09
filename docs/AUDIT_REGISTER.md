@@ -275,3 +275,11 @@ Os wrappers dinâmicos de arma são SECURITY INVOKER e encaminham a helpers priv
 - O backend mantém pendências, consome recursos e aplica efeitos; o iframe apenas gera e devolve resultados após clique.
 
 Este contrato está confirmado por inspeção do frontend e das funções SQL. Ainda falta teste de integração com duas sessões autenticadas e uma fixture descartável para validar a sequência completa sem tocar em dados reais.
+
+
+## Rotas e páginas candidatas a legado
+- index.html autentica e redireciona explicitamente para lobby.html.
+- lobby.html é a página ativa observada: 10 RPCs literais, incluindo entrada, seleção de ficha, configuração e exclusão de campanha.
+- lobby_atualizado.html existe (1.761 linhas), mas não é referenciada por index.html nem pelas páginas ativas. Tem somente 4 RPCs literais e ainda consulta os catálogos antigos public.spells/public.talents; sua navegação interna aponta para lobby.html.
+- dex.html não existe no HEAD atual do repositório (404).
+- Classificação: lobby_atualizado.html é candidato a arquivo legado/backup; dex.html é referência histórica ausente. Não apagar nem recriar nesta etapa.
