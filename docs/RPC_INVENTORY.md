@@ -1,6 +1,6 @@
 # Vínculo RPG — Inventário de RPCs chamadas pelo frontend
 
-> Snapshot estático de 2026-11-08. A extração considera chamadas com nome literal (chamadas construídas dinamicamente podem não aparecer). A correspondência é por nome e catálogo PostgreSQL; ainda não valida se cada objeto de argumentos enviado pelo JavaScript corresponde à assinatura selecionada em runtime.
+> Snapshot-base de 2026-11-08, revalidado em 2026-11-09. A extração separa nomes literais de call sites dinâmicos e rastreia todos os alvos possíveis. A correspondência por nome e catálogo PostgreSQL não valida, por si só, argumentos em runtime.
 
 ## Resumo
 
@@ -152,8 +152,12 @@ As chaves e quantidades observadas correspondem às assinaturas existentes. Isso
 | equipar_arma_instancia_personagem | ficha, mesa | p_character_id text, p_instance_id uuid, p_hand_slot text, p_equipado boolean | não | sim | não | Wrapper INVOKER → private.equipar_arma_instancia_personagem_impl; helper exige auth.uid e propriedade da ficha ou papel GM |
 | equipar_arma_instancia_npc_vinculado_srd | ficha, mesa | p_campaign_id bigint, p_token_id text, p_instance_id uuid, p_hand_slot text, p_equipado boolean | não | sim | não | Wrapper INVOKER → private.equipar_arma_instancia_npc_vinculado_impl; helper exige auth.uid, GM e vínculo NPC válido |
 | equipar_arma_instancia_token | mesa | p_campaign_id bigint, p_token_id text, p_instance_id uuid, p_hand_slot text, p_equipado boolean | não | sim | não | Wrapper INVOKER → private.equipar_arma_instancia_token_impl; helper exige auth.uid, papel GM e token NPC/monstro |
+| srd_aplicar_dano_ataque_oportunidade_srd | mesa | p_campaign_id bigint, p_attack_id uuid, p_damage_rolls integer[], p_idempotency_key uuid | sim | sim | não | search_path pg_catalog, public, priv, pg_temp; chave idempotente |
+| srd_aplicar_dano_ataque_oportunidade_monstro_srd | mesa | p_campaign_id bigint, p_attack_id uuid, p_damage_rolls integer[], p_idempotency_key uuid | sim | sim | não | search_path pg_catalog, public, priv, pg_temp; chave idempotente |
+| srd_resolve_pending_spell_save | mesa | p_pending_id uuid, p_d20 integer | sim | sim | não | search_path pg_catalog, public, priv, pg_temp; também aparece em chamada literal |
+| srd_resolve_pending_spell_resistance | mesa | p_pending_id uuid, p_d20 integer | sim | sim | não | search_path pg_catalog, public, priv, pg_temp |
 
-Os três destinos da tabela acima são selecionados por dispatch dinâmico conforme o escopo character/linked_npc/token. Além deles, há dois dispatches dinâmicos na mesa: dano de AOO (arma natural vs. arma equipada) e resolução pendente de magia (salvamento vs. resistência à magia). Esses dois dispatches têm quatro alvos possíveis; srd_resolve_pending_spell_save também aparece em chamada literal. No total, são 3 call sites dinâmicos, 7 alvos possíveis, 6 nomes adicionais únicos e 106 nomes distintos após deduplicação.
+Os três destinos da tabela acima são selecionados por dispatch dinâmico conforme o escopo character/linked_npc/token. Além deles, há dois dispatches dinâmicos na mesa: dano de AOO (arma natural vs. arma equipada) e resolução pendente de magia (salvamento vs. resistência à magia). Esses dispatches têm sete alvos possíveis no total; um alvo de salvamento também aparece em chamada literal. A união contém 106 nomes distintos (100 literais + 6 nomes adicionais únicos), com 114 assinaturas públicas.
 
 
 ## Verificação adicional de nomes literais — 2026-11-09
