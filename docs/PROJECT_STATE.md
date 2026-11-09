@@ -54,6 +54,7 @@ Este registro consolida documentação já existente, não reinicia auditorias. 
 ## Documentos permanentes
 - [Arquitetura geral](ARCHITECTURE.md)
 - [Mapa de integração](INTEGRATION_MAP.md)
+- [Inventário de RPCs](RPC_INVENTORY.md)
 - [Roadmap](ROADMAP.md)
 - [Decisões](DECISIONS.md)
 - [Registro de auditorias](AUDIT_REGISTER.md)
