@@ -1,3 +1,7 @@
+## CI reliability — 2026-11-09
+
+O workflow PostgreSQL fixture tests não precisa cancelar execuções anteriores por push na mesma branch. A configuração de concorrência com `cancel-in-progress: true` cancelou a execução anterior quando outro commit chegou, antes de confirmar todos os testes. Ela foi removida para que cada alteração de fixture tenha sua própria execução observável. Os runners permanecem `ubuntu-latest` gratuitos para repositório público; não há dependência de serviços pagos.
+
 ## Atualização da auditoria — 2026-11-09 (continuação)
 
 - AOO: novas inversões campaign/pending e pending/attack documentadas; testes sintéticos adicionados.

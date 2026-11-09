@@ -15,10 +15,6 @@ on:
 permissions:
   contents: read
 
-concurrency:
-  group: postgres-fixture-tests-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   postgres-fixtures:
     runs-on: ubuntu-latest
