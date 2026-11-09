@@ -234,3 +234,13 @@ A separação de comandos deve manter esses fluxos funcionando, mas nenhum deles
 Os usos em `mesa.html` foram localizados nas linhas atuais 2294, 3626, 4974, 5116, 5431, 5468, 6154 e 6633. As intenções são, respectivamente: retrato, spellState, spawn de NPC, bônus de iniciativa de reforço, fallback fora de combate, publicação de mapa/grade, preparação da iniciativa e enriquecimento de dados de monstro. A linha 5325 contém a chamada central a `sb.rpc('salvar_cena_cba',...)`.
 
 A separação de comandos deve manter esses fluxos funcionando, mas nenhum deles pode reescrever coordenadas/PV/equipamentos de tokens por snapshot obsoleto. O spawn deve passar por validação server-side de célula livre; mapa/grade deve atualizar somente metadados; movimento deve passar pelos RPCs de movimento.
+
+
+### Controles existentes confirmados e limite do trigger
+
+- O índice único parcial `srd_aoo_one_pending_movement_per_campaign` garante no banco no máximo uma linha com status `waiting_reactions` ou `ready_to_commit` por campanha. A invariável de unicidade da fila já tem proteção estrutural.
+- O trigger `trg_srd_guard_pending_aoo_movement` em `public.campaigns` compara apenas o token indicado em `pending.mover_token_id`: impede remover esse token ou alterar suas coordenadas sem o GUC do commit autorizado.
+- O trigger **não** bloqueia mudança de coordenadas de outros tokens, mesmo enquanto há pending ativo, nem valida snapshot genérico, footprint, ocupação ou estado/PV de tokens. Assim, não fecha o bypass por `salvar_cena_cba` nem a alteração de ameaças durante a reação.
+- O GUC `app.srd_aoo_pending_commit` é comparado ao pending ID para liberar o token movido. O futuro contrato deve validar também campanha, token, destino e status do pending no caminho interno de commit, sem confiar apenas em um valor de sessão fornecido pelo cliente.
+
+A evidência confirma que o banco já impede duplicidade de pendências, mas ainda não garante imutabilidade da cena relevante durante a resolução.
