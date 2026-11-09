@@ -328,3 +328,11 @@ Não alterar bucket, políticas ou objetos nesta fase. Antes de aplicar limites,
 
 ### Regra arquitetural proposta
 Ações com efeitos não reversíveis ou consumo de recursos devem aceitar um request_id/idempotency_key gerado pelo cliente, armazenar resultado por escopo de usuário/campanha/ação e devolver o mesmo resultado em retries. Locks continuam necessários para concorrência; idempotência não os substitui.
+
+
+### Exposição de schemas internos — verificação parcial
+- authenticated possui USAGE em priv e private; anon não possui USAGE em nenhum dos dois; CREATE é negado para ambos.
+- Há 40 funções priv com EXECUTE para authenticated e 6 funções private com EXECUTE para authenticated. Uma função priv.srd_feat_saving_throw_modifier também conserva EXECUTE para PUBLIC; ela é SECURITY DEFINER, STABLE e consulta apenas o catálogo público de talentos, sem acessar dados de campanha/personagem.
+- As cinco funções public executáveis por anon são utilitários/trigger SECURITY INVOKER, não SECURITY DEFINER.
+- A configuração PostgREST de schemas expostos não está disponível via pg_settings nem pelo endpoint de metadados get_project do conector. Portanto, ainda não foi possível confirmar se priv/private estão ou não expostos à API REST.
+- **Ação necessária:** conferir manualmente Supabase Dashboard → Project Settings → API → Exposed schemas. Se priv/private estiverem expostos, revisar imediatamente o conjunto de funções com EXECUTE para authenticated antes de qualquer revogação. Não remover USAGE/EXECUTE agora, pois wrappers SECURITY INVOKER dependem desses grants para chamar helpers internos.
