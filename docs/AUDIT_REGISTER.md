@@ -128,3 +128,9 @@ Nenhum dado de personagem, ficha, campanha, token ou progresso foi modificado ne
 No snapshot consultado: campaigns=3, scenes=3, tokens=0 e monster_instances=0. create_campaign insere uma linha em scenes por campanha. A mesa atual lê/grava campanhas.cba_data e não consulta scenes/tokens diretamente na varredura; os RPCs relacionais antigos continuam no banco, mas as tabelas tokens e monster_instances estão vazias neste snapshot.
 
 A tabela scenes contém parâmetros de mídia/grid (imagem, vídeo, áudio, GIF, tile, offsets, escala e limites). Seu destino deve ser decidido após confirmar se esses campos foram migrados para campaigns.cba_data, media ou outro fluxo. Não apagar a tabela nem o INSERT de create_campaign nesta etapa.
+
+
+### Realtime e visibilidade
+- Foram mapeadas 9 subscriptions na mesa: campaign_log, characters, srd_character_sheets, srd_character_equipment, srd_cba_token_equipment, members, srd_campaign_conditions, srd_campaign_effects e campaigns.
+- srd_character_sheets e srd_character_equipment não usam filtro Realtime por campaign_id (essas tabelas não possuem essa coluna); as políticas RLS consultadas restringem leitura por vínculo do personagem/campanha. srd_character_equipment é visível ao proprietário/Mestre, enquanto srd_character_sheets é visível também aos membros da campanha.
+- Não houve alteração de policies ou subscriptions. Revisar impacto de performance e confirmar comportamento real de Realtime em duas sessões autenticadas continua pendente.
