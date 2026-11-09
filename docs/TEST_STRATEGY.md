@@ -219,3 +219,15 @@ Fixture descartável com campanha em combate, movimento pendente ativo, reação
    - Esperado: somente o commit associado ao pending ID correspondente pode prosseguir; a exceção sentinela do preview continua revertendo a validação simulada.
 8. Tentar usar um pending ID de outra campanha, de outro token, com destino diferente ou status terminal.
    - Esperado: rejeição sem mover token nem consumir deslocamento.
+
+
+### Regressão P1 adicional — mutação genérica da cena durante combate
+
+9. Em fixture descartável com combate ativo, chamar diretamente `salvar_cena_cba` enviando coordenadas diferentes para um token existente.
+   - Esperado: rejeição ou preservação das coordenadas originais; nunca permitir teleporte por publicação genérica.
+10. Repetir alterando a posição de um token ameaçador enquanto outro token possui pending AOO ativo.
+   - Esperado: rejeição integral e nenhuma alteração de `cba_data`.
+11. Enviar um token novo sobreposto a token existente via `salvar_cena_cba`.
+   - Esperado: rejeição por validação server-side de footprint/ocupação.
+12. Confirmar que os usos legítimos de `salvar_cena_cba` durante combate continuam funcionando sem alterar coordenadas: adicionar NPC em célula livre, persistir bônus de iniciativa e enriquecer metadados de monstro.
+13. Confirmar que publicação de fundo/grade fora de combate continua funcionando e que a nova separação de RPCs não perde tokens nem metadados.
