@@ -1,0 +1,124 @@
+# Reconciliação focal — AOO e interrupção de movimento — 2026-11-09
+
+## Escopo
+
+Histórico remoto de migrations com nomes contendo `aoo`, `oportunidade` ou `pending_movement`, comparado com os nomes dos arquivos SQL em `supabase/migrations/` no branch main.
+
+## Resultado
+
+- Migrations remotas encontradas no escopo: 51.
+- Migrations cujo nome não existe em arquivo local: 51.
+- Funções atuais no subsistema: 37 (exportadas integralmente em [REMOTE_AOO_FUNCTIONS.sql.md](REMOTE_AOO_FUNCTIONS.sql.md)).
+- A comparação por nome é apenas um indicador de lacuna documental; não prova que uma migration tenha ou não efeito equivalente por outro nome.
+
+## Histórico remoto do subsistema
+
+| Versão | Nome | Arquivo local com mesmo nome |
+|---|---|---|
+| `20261108160529` | `maneuver_aoo_and_improved_feat_classification` | **não** |
+| `20261108161435` | `srd_aoo_reaction_ledger_and_reservation` | **não** |
+| `20261108163620` | `srd_pending_movement_aoo_interruption` | **não** |
+| `20261108163708` | `srd_pending_movement_aoo_reaction_reservation` | **não** |
+| `20261108163758` | `derive_aoo_footprints_from_linked_character_races` | **não** |
+| `20261108164305` | `srd_aoo_damage_and_pending_movement_finalization` | **não** |
+| `20261108164328` | `harden_aoo_roll_idempotency` | **não** |
+| `20261108164412` | `srd_aoo_gm_queue_and_weapon_inspection` | **não** |
+| `20261108164441` | `refine_aoo_weapon_reach_and_dwarf_defense` | **não** |
+| `20261108164658` | `allow_gm_finalize_player_aoo_movement` | **não** |
+| `20261108165025` | `srd_aoo_unlinked_monster_natural_attacks` | **não** |
+| `20261108165246` | `srd_aoo_linked_character_unarmed_strikes` | **não** |
+| `20261108165307` | `avoid_duplicate_dynamic_bonus_on_unarmed_aoo` | **não** |
+| `20261108165650` | `srd_aoo_5_10_5_footprint_distance` | **não** |
+| `20261108165806` | `srd_aoo_reach_validation_uses_token_footprints` | **não** |
+| `20261108170021` | `srd_aoo_pending_movement_lifecycle_guards` | **não** |
+| `20261108170548` | `srd_aoo_distinguish_flatfooted_from_dex_loss` | **não** |
+| `20261108170655` | `srd_aoo_reactor_conditions_and_flatfooted_feedback` | **não** |
+| `20261108171828` | `separate_surprise_and_normal_aoo_reaction_ledgers` | **não** |
+| `20261108172218` | `index_aoo_attacks_campaign_fk` | **não** |
+| `20261108173533` | `maneuver_trip_weapon_aoo_context` | **não** |
+| `20261108174844` | `integrate_trip_maneuver_aoo_reactions` | **não** |
+| `20261108174944` | `harden_trip_aoo_resolution_wrapper` | **não** |
+| `20261108174958` | `validate_trip_aoo_reach_against_selected_weapon` | **não** |
+| `20261108175022` | `move_trip_aoo_definers_to_private_schema` | **não** |
+| `20261108175045` | `derive_trip_aoo_reach_from_equipped_weapon` | **não** |
+| `20261108175504` | `srd_stand_up_with_aoo_reactions` | **não** |
+| `20261108175759` | `validate_stand_up_move_action_before_aoo` | **não** |
+| `20261108182845` | `handle_flat_footed_aoo_reactor_without_combat_reflexes` | **não** |
+| `20261108184220` | `validate_trip_aoo_weapon_threatened_squares` | **não** |
+| `20261108184327` | `enforce_weapon_threatened_range_for_aoo` | **não** |
+| `20261108184716` | `require_improved_unarmed_strike_for_unarmed_aoo` | **não** |
+| `20261108184746` | `filter_non_threatening_weapons_from_aoo_picker` | **não** |
+| `20261108185137` | `derive_movement_aoo_from_equipped_and_natural_threat_ranges` | **não** |
+| `20261108185259` | `scale_trip_aoo_reach_by_creature_size` | **não** |
+| `20261108185301` | `harden_aoo_movement_finalization_terminal_ledger` | **não** |
+| `20261108185350` | `prevent_mover_token_removal_during_pending_aoo` | **não** |
+| `20261108185611` | `scale_aoo_attack_weapon_reach_by_creature_size` | **não** |
+| `20261108192342` | `support_monster_combat_reflexes_for_aoo` | **não** |
+| `20261108192451` | `enforce_nauseated_no_attack_for_aoo` | **não** |
+| `20261108192806` | `resolve_blinded_aoo_concealment_miss_chance` | **não** |
+| `20261108192836` | `harden_aoo_blind_concealment_state` | **não** |
+| `20261108192911` | `allow_aoo_awaiting_miss_chance_status` | **não** |
+| `20261108193015` | `wrap_aoo_concealment_rpc_as_invoker` | **não** |
+| `20261108193056` | `wrap_aoo_reaction_reservation_as_invoker` | **não** |
+| `20261108193106` | `wrap_aoo_ledger_reservation_as_invoker` | **não** |
+| `20261108193147` | `support_cancelling_resumable_aoo_states` | **não** |
+| `20261108214751` | `apply_dwarf_attack_bonus_to_linked_orc_targets_in_aoo` | **não** |
+| `20261108214942` | `apply_dwarf_weapon_familiarity_and_goblinoid_bonus_to_aoo` | **não** |
+| `20261108215040` | `recognize_portuguese_goblinoids_in_player_and_aoo_attacks` | **não** |
+| `20261108215251` | `include_linked_target_race_in_unarmed_aoo` | **não** |
+
+## Funções e fronteira de execução atuais
+
+| Assinatura | SECURITY DEFINER | anon EXECUTE | authenticated EXECUTE | MD5 |
+|---|---:|---:|---:|---|
+| `priv.srd_aoo_require_blind_concealment_roll()` | sim | não | não | `1669bd6e269520fa5e2dcb7499b4057e` |
+| `priv.srd_cancelar_movimento_aoo_pendente_impl(p_campaign_id bigint, p_pending_id uuid)` | sim | não | sim | `ee1753fd8f8ad3e6c968942f42816125` |
+| `priv.srd_confusion_aoo_engaged(p_campaign_id bigint, p_actor_token_id text, p_actor_character_id text, p_mover_token_id text)` | sim | não | não | `94e8a45d2e8ca3745420a1f12f937f8c` |
+| `priv.srd_encerrar_reacao_aoo_pendente_impl(p_campaign_id bigint, p_pending_id uuid, p_reactor_token_id text, p_cancel_attack boolean)` | sim | não | sim | `5cae44f8906a5b12952720e39d76f6cb` |
+| `priv.srd_guard_aoo_cannot_attack()` | sim | não | não | `0ff70ee88e3cc734581db3df022f0409` |
+| `priv.srd_guard_pending_aoo_movement()` | sim | não | não | `9a9a41aa24a8ee42393daaa1ecc1ec37` |
+| `priv.srd_iniciar_derrubar_com_aoo_srd(p_campaign_id bigint, p_attacker_token_id text, p_defender_token_id text, p_defender_firm_ground boolean, p_trip_using_weapon boolean)` | sim | não | sim | `2ab33685b041ef930b6ae7e2b48e3991` |
+| `priv.srd_registrar_ocultacao_ataque_oportunidade_impl(p_campaign_id bigint, p_attack_id uuid, p_manual_d100 integer)` | sim | não | sim | `43cb67bd4552bd98181d8d367850ff90` |
+| `priv.srd_reservar_ataque_oportunidade_impl(p_campaign_id bigint, p_actor_token_id text, p_trigger_key text, p_actor_flat_footed boolean)` | sim | não | sim | `4c9a7d64f8d098ae43a7bfc42beffce4` |
+| `priv.srd_reservar_reacao_movimento_aoo_impl(p_campaign_id bigint, p_pending_id uuid, p_reactor_token_id text)` | sim | não | sim | `3775a7763a3ed392bacb2250504a9a24` |
+| `priv.srd_resolver_derrubar_apos_aoo_srd(p_campaign_id bigint, p_pending_id uuid, p_attacker_d20 integer, p_defender_d20 integer, p_defender_firm_ground boolean)` | sim | não | sim | `5bf3be6185cbd49939f07ff35c540afc` |
+| `priv.srd_resolver_levantar_caido_apos_aoo_srd(p_campaign_id bigint, p_pending_id uuid)` | sim | não | sim | `fa34c68e20bb6b03fb13b1d11c09c523` |
+| `priv.srd_validate_aoo_pending_movement_preview()` | sim | não | não | `aca15b8ef5fd809cbd20b69adf8f01be` |
+| `public.srd_aplicar_dano_ataque_oportunidade_monstro_srd(p_campaign_id bigint, p_attack_id uuid, p_damage_rolls integer[], p_idempotency_key uuid)` | sim | não | sim | `e2673e828af60a967204f327bd6e3f28` |
+| `public.srd_aplicar_dano_ataque_oportunidade_srd(p_campaign_id bigint, p_attack_id uuid, p_damage_rolls integer[], p_idempotency_key uuid)` | sim | não | sim | `7a2e372249a04ccb3230aaec95ed89ef` |
+| `public.srd_cancelar_movimento_aoo_pendente_srd(p_campaign_id bigint, p_pending_id uuid)` | não | não | sim | `2a9aa9d725069c8b19f7afab96f3b17a` |
+| `public.srd_confirmar_critico_ataque_oportunidade_srd(p_campaign_id bigint, p_attack_id uuid, p_confirmation_d20 integer)` | sim | não | sim | `84f2806567a32d263acaa9a820b1696c` |
+| `public.srd_consultar_armas_aoo_srd(p_campaign_id bigint, p_pending_id uuid, p_reactor_token_id text)` | sim | não | sim | `c7270f541fe8293592d933cf9ed753a3` |
+| `public.srd_consultar_ataque_oportunidade_srd(p_campaign_id bigint, p_attack_id uuid)` | sim | não | sim | `f1ddcca1cda00b5b060045fab96d21f5` |
+| `public.srd_consultar_movimento_aoo_pendente_srd(p_campaign_id bigint, p_pending_id uuid)` | sim | não | sim | `b3e6ea933e228678ee6dd6f1aca089e5` |
+| `public.srd_encerrar_reacao_aoo_pendente_srd(p_campaign_id bigint, p_pending_id uuid, p_reactor_token_id text, p_cancel_attack boolean)` | não | não | sim | `0c1cd6771a68caf6d49e69af7dd45978` |
+| `public.srd_finalizar_movimento_aoo_pendente_srd(p_campaign_id bigint, p_pending_id uuid)` | sim | não | sim | `17fb9a9259675bf9d1c2278135ff2394` |
+| `public.srd_iniciar_ataque_oportunidade_desarmado_srd(p_campaign_id bigint, p_pending_id uuid, p_reactor_token_id text, p_reaction_id uuid)` | sim | não | sim | `b891864a3d8c80653feeafb54d9a4dfe` |
+| `public.srd_iniciar_ataque_oportunidade_monstro_srd(p_campaign_id bigint, p_pending_id uuid, p_reactor_token_id text, p_reaction_id uuid)` | sim | não | sim | `44c3145a7e5dc696e5e5643fb0a6b1ce` |
+| `public.srd_iniciar_ataque_oportunidade_monstro_srd(p_campaign_id bigint, p_pending_id uuid, p_reactor_token_id text, p_reaction_id uuid, p_natural_attack_index integer)` | sim | não | sim | `b12188da9c009734f31a553849756ccf` |
+| `public.srd_iniciar_ataque_oportunidade_srd(p_campaign_id bigint, p_pending_id uuid, p_reactor_token_id text, p_reaction_id uuid, p_weapon_instance_id uuid, p_weapon_hand_slot text, p_weapon_end text)` | sim | não | sim | `a641aab6e59793b2bf5b09cc290746db` |
+| `public.srd_iniciar_derrubar_com_aoo_srd(p_campaign_id bigint, p_attacker_token_id text, p_defender_token_id text, p_defender_firm_ground boolean, p_trip_using_weapon boolean)` | não | não | sim | `bfced6e0a1cec2ec606ff65dc64e9a2c` |
+| `public.srd_listar_ataques_naturais_oportunidade_srd(p_campaign_id bigint, p_reactor_token_id text)` | não | não | sim | `f9399cd730c4cfea4c66706207d2ffea` |
+| `public.srd_listar_movimentos_aoo_pendentes_srd(p_campaign_id bigint)` | sim | não | sim | `5ab451a12deb204eea23de23bca1d8cf` |
+| `public.srd_registrar_ocultacao_ataque_oportunidade_srd(p_campaign_id bigint, p_attack_id uuid, p_manual_d100 integer)` | não | não | sim | `a2b55e84b7c44ed4b1b703254c4cc229` |
+| `public.srd_registrar_rolagem_ataque_oportunidade_srd(p_campaign_id bigint, p_attack_id uuid, p_manual_d20 integer, p_idempotency_key uuid)` | sim | não | sim | `950703066647366f6336bffb82e7f7d4` |
+| `public.srd_reservar_ataque_oportunidade_srd(p_campaign_id bigint, p_actor_token_id text, p_trigger_key text, p_actor_flat_footed boolean)` | não | não | sim | `55f3d2fded1997d551aea8f163409603` |
+| `public.srd_reservar_reacao_movimento_aoo_srd(p_campaign_id bigint, p_pending_id uuid, p_reactor_token_id text)` | não | não | sim | `c72562f95bbe3da5134f29a383011e77` |
+| `public.srd_resolver_ataque_oportunidade_srd(p_campaign_id bigint, p_attack_id uuid)` | sim | não | sim | `80a04e98b926307fe74bcbc34c963e7f` |
+| `public.srd_resolver_derrubar_apos_aoo_srd(p_campaign_id bigint, p_pending_id uuid, p_attacker_d20 integer, p_defender_d20 integer, p_defender_firm_ground boolean)` | não | não | sim | `14034f46a624a140d274163c2da73e37` |
+| `public.srd_resolver_levantar_caido_apos_aoo_srd(p_campaign_id bigint, p_pending_id uuid)` | não | não | sim | `a43d163405b49ee3ca459241c0177a43` |
+| `public.srd_solicitar_movimento_com_aoo_srd(p_campaign_id bigint, p_mover_token_id text, p_destination_x integer, p_destination_y integer, p_controller text)` | sim | não | sim | `38c1ffad22be8fe01381770a2bdb06b3` |
+
+## Conclusões estáticas e riscos conhecidos
+
+1. Nenhuma função do subsistema consultado concede EXECUTE a anon; authenticated possui EXECUTE nos wrappers públicos e nos helpers internos explicitamente usados por wrappers INVOKER.
+2. Os wrappers INVOKER reduzem a superfície de execução privilegiada, mas dependem de grants em helpers internos; não revogar em lote sem rastrear dependências.
+3. A ordem de locks apresenta inversão confirmada em dois caminhos: cancelamento bloqueia primeiro `srd_aoo_pending_movements` e depois atualiza `srd_aoo_attacks`; resolução/aplicação de dano bloqueia primeiro `srd_aoo_attacks`, depois `srd_aoo_pending_movements`. Deadlock é possível sob concorrência, ainda não reproduzido.
+4. A correção não deve ser feita apenas por mudança textual. Definir ordem global e determinística para locks de ataque, movimento pendente e campanha, então reproduzir cancelamento × resolução/dano em ambiente descartável.
+5. A migração remota sem arquivo local precisa ser recuperada por Git history/artefatos de origem ou reconstruída com base nas definições atuais e efeitos observáveis; não criar migrations vazias para igualar histórico.
+
+## Próxima etapa
+
+- Exportar e comparar funções de movimento normal, ataque iterativo, economia de ações e turnos.
+- Formalizar matriz de lock order de todas as RPCs que alteram combate.
+- Criar teste concorrente de deadlock em banco descartável após baseline reproduzível.
