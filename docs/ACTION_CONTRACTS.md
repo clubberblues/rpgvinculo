@@ -321,3 +321,27 @@ Varredura estática de chamadas Supabase em `lobby.html`, `ficha.html` e `mesa.h
 - Consumo de item: código legado decrementa quantidade e, ao chegar a zero, apaga a linha; cura é gravada em chamada separada. Mesmo após corrigir nomes, a política atual de DELETE de `vinculo_inventory` só permite GM, e a sequência não é atômica (item pode ser consumido sem aplicar cura ou vice-versa).
 
 **Decisão arquitetural necessária:** a fronteira de domínio deve ser uniforme para ambos os rulesets: leitura pode ser direta quando RLS e visibilidade forem adequadas; qualquer ação que consuma recurso, aplique cura/dano, conceda talento/magia ou altere estado mecânico deve validar regras e persistir atomicamente no servidor. O caminho legado Vínculo precisa ser adaptado a esse padrão ou formalmente aposentado; não corrigir apenas os nomes das tabelas sem resolver as lacunas de regra e transação.
+
+
+## Cruzamento adicional — criação D&D 3.5, grimório, descanso e Fúria — 2026-11-09
+
+### Criação de personagem D&D 3.5
+
+Frontend `ficha.html` envia os 14 argumentos da assinatura atual de `finalizar_criacao_personagem_srd`:
+
+`p_nome text, p_raca_id text, p_classe_id text, p_atributos jsonb, p_pericias jsonb, p_talentos jsonb, p_identidade jsonb, p_idiomas jsonb, p_talentos_bonus jsonb, p_domain_ids text[], p_grimorio jsonb, p_equipamento_metodo text, p_equipamento_resultados jsonb, p_equipamento_itens jsonb`.
+
+A função pública é SECURITY INVOKER, EXECUTE authenticated, sem anon, e chama o core de criação e as rotinas de idiomas, talentos bônus, domínios, grimório e equipamento inicial na mesma transação PostgreSQL. O core `criar_personagem_srd_completo` é SECURITY DEFINER e valida autenticação, catálogo de raça/classe, identidade, tendência, idade, limites físicos, escolhas de classe e talentos; as rotinas auxiliares validam as escolhas específicas.
+
+**Conclusão estática:** contrato de criação completo tem nomes e formatos aparentes alinhados; atomicidade transacional é explicitada no corpo da função. **Risco restante:** não há `request_id` no contrato. Se o commit ocorrer e a resposta se perder, um retry pode criar uma segunda ficha, salvo se alguma restrição/guarda adicional impedir o caso. Não foi testado por não existir fixture descartável autenticada nesta etapa.
+
+### Grimório e domínios
+- `salvar_grimorio_srd(p_character_id text,p_estado jsonb)`: valida proprietário, bloqueia a ficha FOR UPDATE, valida formato, classe, nível de conjurador, atributo-chave, magias conhecidas/preparadas, círculos, escola proibida e limites de progressão antes de salvar. Repetir o mesmo documento tende a ser uma substituição idempotente de estado, mas isso não foi comprovado em teste concorrente.
+- `salvar_dominios_personagem_srd(p_character_id text,p_domain_ids text[])`: valida proprietário, classe, quantidade, duplicidade, domínio e coerência com identidade/divindade; apaga e reinsere escolhas na mesma transação. Não usa request_id; mesma lista produz estado final equivalente, mas concorrência/retry não foi testada.
+
+### Descanso e Fúria
+- Descanso de personagem exige propriedade, campanha correspondente, campanha fora de combate, ficha válida, intervalo de oito horas e personagem não morto; bloqueia personagem/ficha, repõe PV/recursos/magias e remove fadiga/exaustão na mesma transação. Não tem request_id; retry imediato é rejeitado pela janela de oito horas, mesmo que a primeira resposta tenha se perdido.
+- Descanso de NPC vinculado usa wrapper SECURITY INVOKER com implementação privada; a assinatura recebe campaign_id e token_id.
+- Consultar/usar Fúria tem RPCs separadas para personagem e NPC vinculado. A ação enviada é `start` ou `end`; a UI consulta estado e permissão antes de habilitar o botão, mas o servidor permanece autoridade. Não há request_id explícito; confirmar comportamento de retry e concorrência exige teste isolado.
+
+Nenhuma criação, avanço, descanso, conjuração, alteração de grimório/domínio ou ativação de Fúria foi executada nesta auditoria.
