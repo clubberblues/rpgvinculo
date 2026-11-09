@@ -536,3 +536,12 @@ A combinação é estruturalmente alcançável quando um personagem-alvo de uma 
 ### Fixture sintética adicional — conjuração
 
 O harness inclui o padrão campanha → ficha versus ficha → campanha. Ele verifica apenas o comportamento de locks do PostgreSQL em duas sessões; não executa conjuração, salvamento ou aplicação de magia no Supabase.
+
+
+A expansão da matriz de conjuração confirmou outros entrypoints com o mesmo prefixo ficha → campanha:
+- `public.conjurar_magia_dano_multialvo_srd`: character → sheet → consumo da ação/lock da campanha.
+- `public.conjurar_magia_efeitos_multialvo`: character → sheet → consumo da ação/lock da campanha.
+- `public.conjurar_missil_magico_srd`: character → sheet → delegação ao wrapper de ação e lock posterior da campanha.
+- `public.conjurar_magia_srd_manual`: character → sheet; nos caminhos de cura com alvo/cena, também pode bloquear a campanha depois da ficha.
+
+Esses caminhos ampliam a superfície da inversão campaign → sheet observada no aplicador de resolução pendente. A fixture sintética continua sendo uma única família de lock, mas os casos funcionais devem cobrir cada entrypoint e overload efetivamente utilizado.
