@@ -355,3 +355,18 @@ Toda regra de ocupação, colisão, distância, alcance, ataque e AOO deve usar 
 A gravação deve usar versão gerada no servidor (cena/token) ou comandos por intenção com merge de campos autorizados. Um lock `FOR UPDATE` sozinho não impede lost update quando o payload já chega obsoleto.
 
 **Status:** contrato arquitetural aprovado para orientar a correção; implementação pendente de fixtures e regressões gratuitas. Nenhuma mudança foi aplicada ao banco ou ao frontend nesta etapa.
+
+
+### Call sites atuais que dependem do writer genérico
+
+A extração de `mesa.html` encontrou oito usos operacionais de `gravarCBAnaCampanha` (além da própria definição), com intenções diferentes:
+- imagem/retrato de token;
+- estado de espaços/preparação de magia no token;
+- criação de NPC/arquetipo durante combate;
+- persistência de modificadores de iniciativa de reforços;
+- fallback de movimento fora de combate;
+- publicação de mapa/grade;
+- preparação de modificadores de iniciativa antes de iniciar combate;
+- enriquecimento/hidratação de estatísticas de monstros.
+
+Essas operações não devem continuar compartilhando uma substituição integral de cena. A migração deve mapear cada intenção para RPC específico e preservar a posição/estado atual dos demais tokens. O fallback de movimento fora de combate também deve usar comando próprio, em vez de depender de snapshot de cena.
