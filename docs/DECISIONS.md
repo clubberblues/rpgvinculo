@@ -101,3 +101,10 @@ Os itens abaixo não são decisões tomadas; precisam ser definidos após o diag
 - **Decisão:** auditorias e testes iniciais são somente de leitura. Dados de personagens, campanhas, tokens e progresso não serão alterados para facilitar testes; cenários mutáveis devem usar fixture/campanha descartável.
 - **Motivo:** preservar o estado de jogo e impedir que validações técnicas alterem dados do usuário.
 - **Consequência:** testes que exigem mutação ficam bloqueados até existir ambiente/fixture isolado e procedimento de limpeza/rollback.
+
+
+### DEC-017 — Idempotência para ações com consumo/efeitos
+- **Data:** 2026-11-08
+- **Decisão:** ações que consomem recursos ou produzem efeitos não reversíveis devem adotar request_id/idempotency_key persistido e escopado por usuário/campanha/ação, além de locks transacionais.
+- **Motivo:** locks serializam concorrência, mas não distinguem retry da mesma ação de uma nova ação intencional.
+- **Consequência:** primeiro padronizar ActionRequest/resultado; depois migrar fluxos em fatias e cobrir retries em testes descartáveis. Não alterar contratos existentes antes dessa definição.
