@@ -57,6 +57,9 @@ Este registro começou como consolidação da documentação existente. A fotogr
 - [Arquitetura geral](ARCHITECTURE.md)
 - [Snapshot estrutural remoto do Supabase](REMOTE_SCHEMA_SNAPSHOT.md)
 - [Inventário exato de divergência de migrations](MIGRATION_RECONCILIATION.md)
+- [Reconciliação focal de AOO](AOO_RECONCILIATION.md)
+- [Definições SQL remotas de AOO](REMOTE_AOO_FUNCTIONS.sql.md)
+- [Definições SQL remotas de movimento e turnos](REMOTE_TURN_MOVEMENT_FUNCTIONS.md)
 - [Mapa de integração](INTEGRATION_MAP.md)
 - [Inventário de RPCs](RPC_INVENTORY.md)
 - [Modelo de dados](DATA_MODEL.md)
@@ -301,3 +304,10 @@ Os dois arquivos locais sem nome remoto correspondente foram inspecionados. `202
 
 
 O inventário completo dos 326 registros remotos e 41 arquivos locais sem correspondência exata está em [MIGRATION_RECONCILIATION.md](MIGRATION_RECONCILIATION.md), com versões, nomes, candidatos por nome e duplicidades.
+
+
+## Exportação focal de funções de combate e turnos — 2026-11-09
+
+Além do snapshot estrutural, foram preservadas definições SQL remotas completas de 37 funções AOO e 41 funções relacionadas a movimento, economia de ações, iniciativa e turnos: [REMOTE_AOO_FUNCTIONS.sql.md](REMOTE_AOO_FUNCTIONS.sql.md), [REMOTE_TURN_MOVEMENT_FUNCTIONS.md](REMOTE_TURN_MOVEMENT_FUNCTIONS.md). As exportações incluem assinaturas, SECURITY DEFINER/INVOKER, grants anon/authenticated, search_path e fingerprints MD5. São artefatos de referência, não migrations restauráveis.
+
+A reconciliação focal AOO está em [AOO_RECONCILIATION.md](AOO_RECONCILIATION.md): 51 migrations remotas com nomes AOO/movimento pendente, nenhuma com arquivo local de mesmo nome. A ordem de locks inversa entre cancelamento e resolução/dano permanece risco estático não reproduzido.
