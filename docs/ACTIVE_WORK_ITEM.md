@@ -150,3 +150,12 @@ Esta pauta deixou de ser a tarefa ativa imediata. O diagnóstico identificou Tho
 
 
 Inventário completo dos conjuntos divergentes: [MIGRATION_RECONCILIATION.md](MIGRATION_RECONCILIATION.md). Snapshot estrutural atual: [REMOTE_SCHEMA_SNAPSHOT.md](REMOTE_SCHEMA_SNAPSHOT.md).
+
+
+## Atualização de execução — 2026-11-09
+
+- Exportadas as definições remotas de 37 funções AOO e 41 funções de movimento/ações/iniciativa/turnos.
+- No conjunto AOO: 51 migrations remotas sem arquivo local de mesmo nome; 0 funções com EXECUTE para anon; wrappers públicos e helpers internos usados por INVOKER mantêm EXECUTE para authenticated conforme ACL atual.
+- No conjunto movimento/turnos: 41 funções exportadas; 0 com EXECUTE para anon e 28 com EXECUTE para authenticated.
+- A análise de locks confirmou o risco de inversão AOO: cancelamento bloqueia movimento pendente e atualiza ataques; resolução/dano bloqueia ataque e depois movimento pendente. Não reproduzido.
+- Próxima etapa: matriz global de locks e chamadas transitivas; não alterar funções nem dados até existir ambiente descartável.
