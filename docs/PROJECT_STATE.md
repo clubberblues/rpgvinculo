@@ -63,6 +63,7 @@ Ao encerrar ou atingir limite:
 - Não registrar como concluído algo que não foi verificado.
 
 ## Histórico de atualização
+- 2026-11-08: mapa inicial de integração criado; 100 nomes distintos de RPC do frontend encontrados no schema public; fluxo de rolagem manual do iframe Dice conferido estaticamente.
 - 2026-11-08: criado como registro inicial de continuidade; conteúdo baseado nas referências existentes no repositório e no histórico de trabalho. Reconciliação do estado atual permanece como primeira tarefa.
 
 
