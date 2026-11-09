@@ -397,3 +397,17 @@ As versões coincidentes também têm o mesmo nome. A equivalência de conteúdo
 4. Arquivo local sem registro remoto não deve ser renomeado, apagado ou reaplicado sem comparar seus efeitos com o estado remoto.
 5. Registro remoto sem arquivo local não pode ser reconstruído a partir de seu nome. A fonte original SQL não está na tabela de histórico; recuperar por Git history ou reconstruir a partir dos objetos atuais, com revisão.
 6. Nenhum reset, deploy automático, squash ou reconstrução até a reconciliação ser aprovada.
+
+
+## Caso comprovado de drift — movimento e economia de ações — 2026-11-09
+
+Os arquivos locais `20261108134918_player_movement_action_economy.sql` e `20261108135111_block_movement_when_no_actions.sql` usam `pg_get_functiondef` e patch textual para alterar diretamente `public.mover_token_player_cba` e `public.mover_token_gm_cba_srd`. O SQL local procura declarações/blocos internos dessas funções públicas.
+
+No schema remoto atual, ambas as funções públicas são wrappers SQL SECURITY INVOKER de poucas linhas, delegando a implementação para `priv.mover_token_player_cba_impl` e `priv.mover_token_gm_cba_srd_impl` (SECURITY DEFINER). As implementações atuais têm os controles de economia de ações e movimento, mas estão em outro schema/função.
+
+O histórico remoto registra as migrations posteriores que efetuaram essa mudança:
+- `20261108194444_wrap_gm_token_movement_rpc_as_invoker`
+- `20261108195245_wrap_player_attack_and_movement_rpcs_as_invoker`
+- `20261108214901_secure_character_movement_speed_rpc_access`
+
+Nenhuma dessas três tem arquivo local de mesmo nome. Portanto, o conjunto local não representa a transformação de arquitetura remota. Os arquivos locais de economia de ações não devem ser reaplicados sobre o schema remoto atual: os pontos de patch textual já não existem nos wrappers. Isso é evidência concreta de que igualar apenas o número ou o nome das migrations não restaura a arquitetura. Não foi feita alteração no banco.
