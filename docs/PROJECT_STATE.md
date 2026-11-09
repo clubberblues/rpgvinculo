@@ -247,3 +247,15 @@ Distribuição dos 326 registros remotos sem versão local: 2026-11-04: 36; 2026
 **Interpretação:** a diferença líquida de 285 não representa, por si só, 285 arquivos simplesmente removidos. Há versões com timestamps reescritos, 285 migrações remotas sem arquivo de mesmo nome e dois arquivos locais sem contraparte remota. Os nomes coincidentes não provam equivalência do SQL; a comparação de conteúdo/efeitos ainda não foi realizada. O histórico remoto registra versão e nome, não o texto SQL original.
 
 **Decisão de segurança:** manter bloqueados reset, deploy automático, squash e reconstrução do banco. Próxima etapa: inventariar o schema remoto efetivo (DDL, funções, constraints, índices, triggers, policies, grants, enums, extensões e schemas), identificar quais objetos correspondem às migrações sem arquivo e elaborar um baseline reproduzível revisado. Nenhum DDL ou dado de jogo foi alterado nesta etapa.
+
+
+## Inventário estrutural inicial do schema remoto — 2026-11-09
+
+Consulta somente de leitura ao catálogo PostgreSQL, restrita às relações/funções dos schemas public, priv e private:
+- 83 relações: 76 public + 7 priv; 81 com RLS habilitado (76/76 public e 5/7 priv).
+- 327 funções: 225 public, 94 priv e 8 private; 246 SECURITY DEFINER no conjunto desses schemas.
+- 378 constraints, 14 triggers não internos e 114 policies nos três schemas consultados.
+- 5 extensões instaladas: pg_stat_statements, pgcrypto, plpgsql, supabase_vault e uuid-ossp. Nenhum enum foi encontrado nos três schemas consultados.
+- Privilégio USAGE: anon não tem USAGE em priv/private; authenticated tem USAGE em ambos. Isso não comprova se os schemas estão expostos no PostgREST; a configuração de Exposed schemas continua pendente de confirmação no Dashboard.
+
+Este é um inventário estrutural agregado, não um snapshot DDL nem uma revisão semântica. As 378 constraints, 14 triggers, 114 policies e 327 funções ainda precisam ser exportadas/classificadas por objeto e comparadas com os arquivos versionados. Não houve alteração de schema, ACL, policies, triggers ou dados.
