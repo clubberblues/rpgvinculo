@@ -258,3 +258,16 @@ A leitura dos corpos remotos e da chamada frontend confirma uma cadeia operacion
 **Ciclos ativos demonstrados nos prefixos:** campanha → ataque versus ataque → pending → campanha; e pending → ataque versus ataque → pending. Os entrypoints públicos relevantes têm EXECUTE para authenticated e são chamados pela interface atual. Isso torna AOO uma prioridade operacional, não apenas risco de função legada.
 
 Foi acrescentado ao harness um cenário sintético explícito campanha → ataque versus ataque → pending → campanha. O teste usa tabelas descartáveis e não executa as RPCs Supabase; deadlock real de produção continua não observado. A correção deve unificar o fluxo de cancelamento/encerramento/resolução sob uma ordem única e impedir que a troca de estado da campanha dispute a mesma cadeia em ordem reversa.
+
+
+### Detalhamento adicional das transições AOO
+
+A leitura por OID também confirma outros caminhos ativos:
+
+- `srd_iniciar_ataque_oportunidade_srd` (OID 27022), variante desarmada (OID 27065) e variante monstro (OID 27055) bloqueiam pending → campaign, consultam/atualizam a reação e criam o ataque, atualizando depois o pending.
+- `srd_finalizar_movimento_aoo_pendente_srd` (OID 27038) bloqueia pending → campaign e depois marca o pending como committed.
+- `srd_reservar_reacao_movimento_aoo_srd` (OID 26971) delega ao helper pending-first (OID 27256), que depois bloqueia campanha.
+- `srd_confirmar_critico_ataque_oportunidade_srd` (OID 27027) bloqueia ataque e atualiza o registro pending; `srd_registrar_rolagem_ataque_oportunidade_srd` (OID 27024) bloqueia ataque.
+- `srd_encerrar_reacao_aoo_pendente_srd` (OID 27035) delega ao helper (OID 27269), que bloqueia pending e, se cancelar ataque iniciado, bloqueia o ataque associado.
+
+Assim, a transição de estado da mesa campanha-first conflita com pelo menos dois caminhos expostos: pending-first → campaign e attack-first → pending → campaign. O cancelamento e encerramento de reação também mantêm a ordem pending → attack. A ordem candidata para o domínio AOO deve ser decidida em conjunto com a linha campaign; não basta ordenar apenas as duas tabelas AOO.
