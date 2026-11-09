@@ -41,3 +41,5 @@ These tests run against a disposable PostgreSQL service inside a standard GitHub
 - Resource-lock refinement: class-feature and undead-touch RPCs lock the character feature-resource row before campaign, while linked-NPC rage/rest paths lock campaign → character → sheet → feature resource. The campaign/resource fixture covers the lock pattern only; the real cycle depends on the token and operation referring to the same linked character.
 
 - New active NPC iterative-attack case: mesa.html calls NPC roll registration, resolution, and damage RPCs. Registration locks the NPC sequence before campaign; resolution/damage lock campaign → attempt → sequence. A synthetic sequence/campaign/attempt lock inversion was added to the PostgreSQL fixture; it does not execute the Supabase RPCs.
+
+- The current UI also calls srd_resolve_dying_round, which locks character → sheet → campaign → dying condition. The existing campaign/sheet synthetic case covers the lock shape; the function was added to the active sheet-first refactor list. Player initiative registration is campaign → sheet and is not part of this inversion.
