@@ -448,3 +448,10 @@ A auditoria read-only foi ampliada para recursos de classe, descanso, arma equip
 - Commits documentais/testes publicados em `main`: `773a96b` (recursos/equipamento), `158573b` (ciclo de arma no ataque iterativo), `7de4c03` (fixtures sintéticas).
 - Nenhuma função, trigger, ACL, policy, migration, setting de Auth ou dado de campanha foi alterado no Supabase remoto.
 - Próxima etapa: aguardar/validar CI; continuar análise de locks transitivos por assinaturas e triggers, e só então desenhar protocolo global. Reconciliação de migrations continua pré-condição para qualquer patch SQL remoto.
+
+
+### Conjuração e lock de ficha — 2026-11-09
+- Entry points de conjuração manual/dano/efeitos foram inspecionados por assinatura. Os caminhos atuais adquirem personagem e ficha antes da campanha; alguns bloqueiam também fichas-alvo.
+- Isso amplia a família personagem/ficha → campanha que pode concorrer com o descanso longo de NPC vinculado (campanha → personagem → ficha) quando as duas operações incidem sobre a mesma ficha de propriedade do Mestre.
+- Resolução de pendência de magia: aplicador interno bloqueia pendência → campanha; resolvers de salvamento/RM bloqueiam pendência sem lock posterior de campanha no corpo observado. Não há evidência suficiente para classificar a relação como ciclo.
+- Regressão de descanso × conjuração na mesma ficha vinculada incluída no escopo de concorrência. Não executada contra produção.

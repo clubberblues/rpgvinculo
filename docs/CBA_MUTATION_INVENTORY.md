@@ -431,3 +431,22 @@ O workflow PostgreSQL fixture tests executou o commit `7de4c031087c3a5084881c0f2
 Execução: https://github.com/clubberblues/rpgvinculo/actions/runs/42670106095
 
 A aprovação valida somente as fixtures/modelos sintéticos. Não executa RPCs remotas, não reproduz deadlock em produção e não representa aceite E2E. O PostgreSQL efêmero foi descartado ao fim do job.
+
+
+### Conjuração: ordem de locks de ficha e campanha — 2026-11-09
+
+Inspeção por assinatura dos entrypoints de conjuração ativos e do aplicador de pendências:
+
+- `public.conjurar_magia_efeitos_multialvo`: personagem `FOR UPDATE` → ficha `FOR UPDATE` → consumo de ação/lock de campanha → atualização de cena/efeitos.
+- `public.conjurar_magia_dano_multialvo_srd`: personagem → ficha → consumo de ação → campanha `FOR UPDATE` → estado de cena e recursos.
+- `public.conjurar_magia_srd_manual`: personagem → ficha → campanha `FOR UPDATE`; quando aplica dano a outro personagem, bloqueia também personagem/ficha-alvo.
+- `public.conjurar_missil_magico_srd`: personagem → ficha → campanha `FOR UPDATE`, com locks adicionais para alvos personagem.
+- `public.conjurar_magia_com_acao_srd_manual`: personagem `FOR UPDATE` antes de campanha/consumo de ação.
+- `public.conjurar_magia_srd_multialvo_v3`: personagem → ficha → campanha, depois pode bloquear ficha do alvo.
+- `priv.srd_apply_pending_spell_resolution`: pendência `FOR UPDATE` → atualiza status da pendência → campanha `FOR UPDATE` → ficha do alvo/condições e sincronização de PV.
+
+**Implicação:** os entrypoints de conjuração seguem a mesma família personagem/ficha → campanha já observada em Fúria e habilidades de classe. Em concorrência com `priv.descanso_longo_npc_vinculado_srd_impl` (campanha → personagem → ficha), há uma inversão potencial se o mesmo personagem-ficha for simultaneamente operado como NPC vinculado e como ficha do proprietário. A autorização e o vínculo tornam esse cenário condicional, mas o caminho de lock é confirmado. Deve entrar no teste de concorrência da mesma ficha.
+
+As rotinas de resolução de salvamento e resistência bloqueiam primeiro a linha da pendência. No corpo observado, não adquirem depois `campaigns FOR UPDATE`; não classificar automaticamente como ciclo pending → campaign. Já o aplicador interno de resolução pendente faz pending → campaign, mas não foi identificado nesta coleta um caminho oposto que bloqueie a mesma linha pending depois da campanha; manter como aresta da matriz, não como deadlock confirmado.
+
+**Limite:** a classificação é por leitura dos corpos e ordem lexical dos statements SQL, com helpers transitivos assinalados; não é um grafo completo de chamadas nem reprodução concorrente. Nenhuma função ou dado remoto foi alterado.
