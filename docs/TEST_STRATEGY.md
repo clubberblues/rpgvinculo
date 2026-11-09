@@ -181,3 +181,8 @@ Fixture descartável com campanha em combate, movimento pendente ativo, reação
 
 **Critérios:** sem movimento ou consumo de ação antes de resolver AOO; uma única pending por campanha; retries não duplicam movimento/reação; logs e UI refletem o resultado; testes concorrentes não produzem deadlock.
 
+
+
+5. Com um movimento AOO pendente ativo para o token A, invocar diretamente `mover_token_player_cba` para um token B cujo turno/autorizações estejam válidos e, separadamente, `mover_token_gm_cba_srd` para outro token sob controle GM.
+   - Esperado após correção: nenhuma movimentação de outro token enquanto existir pending AOO ativo, salvo operação explicitamente autorizada e modelada como parte da resolução.
+   - Estado atual: os helpers não consultam a tabela pending; o trigger existente só protege o token A.
