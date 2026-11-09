@@ -436,7 +436,7 @@ A auditoria read-only foi ampliada para recursos de classe, descanso, arma equip
 ### Testes sintéticos adicionados
 - `tests/sql/lock_cycle_test.sh` agora cobre três padrões deliberadamente invertidos: campaign/effect (existente), campaign/weapon e campaign/character.
 - Fixtures usam tabelas isoladas no PostgreSQL efêmero. Elas comprovam somente que o PostgreSQL detecta o padrão de lock montado; não executam RPCs reais, não medem incidência em produção e não simulam Auth/RLS.
-- O workflow gratuito `PostgreSQL fixture tests` foi acionado pelo commit de testes e estava em execução durante esta atualização. O resultado final precisa ser consultado antes de declarar aprovação.
+- O workflow gratuito `PostgreSQL fixture tests` para o commit `7de4c031087c3a5084881c0f2049c3596915d6c0` terminou em **success** (run 42670106095). Os logs confirmam a aprovação das fixtures de footprint e dos três padrões sintéticos campaign/effect, campaign/weapon e campaign/character. Não executa RPCs reais nem comprova deadlocks de produção.
 
 ### Advisors Supabase — nova coleta 2026-11-09 18:00 UTC
 - Security: 99 funções SECURITY DEFINER executáveis por authenticated (WARN), 7 tabelas com RLS e sem policy (INFO), proteção contra senha vazada desativada no Auth (WARN).

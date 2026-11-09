@@ -418,3 +418,16 @@ A leitura dos corpos completos de `public.registrar_rolagem_ataque_iterativo_srd
 - `public.consultar_sequencia_ataque_iterativo_pendente_srd` bloqueia a sequência, mas não tenta adquirir depois campanha ou outra linha bloqueante no corpo observado; por si só, não fecha um ciclo com a campanha.
 
 O achado reforça que a ordem do wrapper 7 deve ser corrigida em conjunto com a resolução, não isoladamente. Não alterar remoto antes da reconciliação de migrations e dos testes concorrentes.
+
+
+### Verificação CI das fixtures sintéticas — 2026-11-09
+
+O workflow PostgreSQL fixture tests executou o commit `7de4c031087c3a5084881c0f2049c3596915d6c0` e terminou em **success**. Os logs confirmam:
+- fixture de footprint: aprovada;
+- padrão sintético campaign → effect versus effect → campaign: PostgreSQL detectou deadlock e abortou um participante;
+- padrão sintético campaign → weapon versus weapon → campaign: detectado e abortado;
+- padrão sintético campaign → character versus character → campaign: detectado e abortado.
+
+Execução: https://github.com/clubberblues/rpgvinculo/actions/runs/42670106095
+
+A aprovação valida somente as fixtures/modelos sintéticos. Não executa RPCs remotas, não reproduz deadlock em produção e não representa aceite E2E. O PostgreSQL efêmero foi descartado ao fim do job.

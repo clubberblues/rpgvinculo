@@ -285,3 +285,10 @@ Fixture descartável com campanha em combate, movimento pendente ativo, reação
    - Estado observado: descanso NPC campanha → personagem → ficha; habilidade personagem → ficha → recurso → campanha.
    - Esperado após correção: ordem única, sem ciclo campanha → personagem → campanha.
 28. Manter fixtures sintéticas no PostgreSQL efêmero para os dois padrões acima. O teste deve reportar explicitamente que reproduz apenas a ordem de locks, não as RPCs remotas.
+
+
+### CI — três padrões sintéticos de deadlock
+
+- [Run 42670106095](https://github.com/clubberblues/rpgvinculo/actions/runs/42670106095) — **success**, commit `7de4c031087c3a5084881c0f2049c3596915d6c0`.
+- Passaram: footprint helper; campaign/effect; campaign/weapon; campaign/character.
+- Os três testes de concorrência provocam intencionalmente deadlock em tabelas sintéticas e verificam que PostgreSQL aborta exatamente um participante. Não executam RPCs reais.
