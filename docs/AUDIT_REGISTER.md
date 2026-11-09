@@ -411,3 +411,11 @@ Em D&D 3.5, Colossal ocupa 30 ft (6 quadrados). A inconsistência pode permitir 
 - Proteção de senha comprometida está desativada no Auth; depende de ajuste no Dashboard.
 - Deploy Pages do HEAD `89590799209d1c86395a65eb9ebe968087120d5d` passou. Execuções anteriores concorrentes foram canceladas; o resultado não valida os fluxos de jogo.
 - Reafirmado P1: movimento direto por RPC não integra o detector AOO e pode contornar a serialização de pendências. Nenhuma correção foi aplicada sem fixture/regressão segura.
+
+
+## 2026-11-09 — ampliação do P1 de movimento/CBA
+- Confirmado que `public.salvar_cena_cba` pode substituir coordenadas de tokens existentes e aceitar inserções sem validação de ocupação; a função é usada por fluxos legítimos durante combate.
+- Identificado risco de lost update por snapshot obsoleto, capaz de reverter estado de token gravado por RPC concorrente.
+- A correção deve separar escrita de metadados, mutações de ficha/token, spawn e movimento; preservar coordenadas e estado autoritativo de combate fora dos RPCs próprios.
+- Regressões 9–15 adicionadas em TEST_STRATEGY.md. Não executadas; nenhuma mudança de produção aplicada.
+- Restrição de custo: somente harness gratuito/efêmero em GitHub Actions; nenhum projeto/branch Supabase pago.
