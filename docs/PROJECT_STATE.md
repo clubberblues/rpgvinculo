@@ -201,3 +201,9 @@ Portanto, o teste de CA 10 executado para Thorgar (681) **não valida nem invali
 - lobby.html: operações de campanha via RPC; upload de capa/avatar em Storage e update direto de campaigns.capa_url.
 - ficha.html: ramo D&D 3.5 usa RPCs para operações mecânicas críticas; ramo legado Vínculo mantém escritas diretas e referências de schema antigas. Criação em duas transações, aquisição de talentos/magias sem validação de pré-requisitos no servidor, update direto de ficha e consumo de inventário não atômico foram registrados como riscos, não corrigidos.
 - Decisão de arquitetura: uniformizar a autoridade do servidor para ações mecânicas nos dois rulesets. Não misturar catálogos ou tabelas SRD e Vínculo.
+
+
+## Contratos adicionais D&D 3.5 — 2026-11-09
+- Cruzada a chamada de criação D&D 3.5 com a assinatura de 14 argumentos de finalizar_criacao_personagem_srd. O corpo é transacional e delega validações de personagem, idiomas, talentos bônus, domínios, grimório e equipamento inicial; não tem request_id explícito.
+- Leitura dos corpos de salvar_grimorio_srd, salvar_dominios_personagem_srd e descanso_longo_personagem_srd confirmou validações server-side e locks na ficha; descanso aplica intervalo de 8 horas. Fúria tem consultas e comandos separados para personagem/NPC; retry/concorrência não foram testados.
+- Nenhuma ação mutável foi executada.
