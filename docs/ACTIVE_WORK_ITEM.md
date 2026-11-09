@@ -234,3 +234,7 @@ A prioridade ativa deixa de ser qualquer patch isolado no movimento e passa a se
 7. **Validar e só então aplicar:** executar fixtures/concorrência; revisar ACL, RLS, search_path e advisors; preparar migration; nenhuma mutação no banco conectado antes de todas as verificações.
 
 **Restrição permanente:** nenhum gasto adicional, projeto/branch Supabase pago ou serviço externo pago. Se um teste depender de recursos Supabase não reproduzidos no PostgreSQL local, marcar como bloqueado/não verificado em vez de arriscar produção.
+
+
+### Extensão do P1/P2 — spawn de tokens
+A revisão de `adicionar_token_cba` confirmou que o endpoint não verifica pending AOO e valida apenas coincidência da célula de origem, não o footprint completo. O wrapper `adicionar_token_cba_completo` herda esse comportamento; `salvar_cena_cba` pode inserir sem essa validação. P1 para spawn durante pending; P2 para sobreposição de footprints grandes. Regressões 16–18 adicionadas. Não corrigido.
