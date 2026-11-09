@@ -264,3 +264,21 @@ UPDATE lock_fixture.effects SET active=true WHERE id=1;
 COMMIT;
 "
 
+
+
+run_expected_deadlock "campaign -> attack versus attack -> pending -> campaign (combat state change versus AOO resolution)" "
+SET deadlock_timeout='100ms'; SET lock_timeout='5s';
+BEGIN;
+UPDATE lock_fixture.campaigns SET round_number=round_number+1 WHERE id=1;
+SELECT pg_sleep(0.6);
+SELECT id FROM lock_fixture.aoo_attacks WHERE id=1 FOR UPDATE;
+COMMIT;
+" "
+SET deadlock_timeout='100ms'; SET lock_timeout='5s';
+BEGIN;
+SELECT id FROM lock_fixture.aoo_attacks WHERE id=1 FOR UPDATE;
+SELECT id FROM lock_fixture.pending_movements WHERE id=1 FOR UPDATE;
+SELECT pg_sleep(0.3);
+UPDATE lock_fixture.campaigns SET round_number=round_number+1 WHERE id=1;
+COMMIT;
+"
