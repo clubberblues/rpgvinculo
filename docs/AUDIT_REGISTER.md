@@ -419,3 +419,32 @@ Em D&D 3.5, Colossal ocupa 30 ft (6 quadrados). A inconsistência pode permitir 
 - A correção deve separar escrita de metadados, mutações de ficha/token, spawn e movimento; preservar coordenadas e estado autoritativo de combate fora dos RPCs próprios.
 - Regressões 9–15 adicionadas em TEST_STRATEGY.md. Não executadas; nenhuma mudança de produção aplicada.
 - Restrição de custo: somente harness gratuito/efêmero em GitHub Actions; nenhum projeto/branch Supabase pago.
+
+
+## 2026-11-09 — ordem transitiva de locks de combate, ficha e equipamento
+
+A auditoria read-only foi ampliada para recursos de classe, descanso, arma equipada e sequência iterativa. Corpos remotos consultados por assinatura completa; triggers também foram verificados.
+
+### Achados adicionados
+- **Ataque iterativo — ciclo instância de arma → campanha → instância:** wrapper 7 bloqueia instância antes de iniciar sequência/campanha; resolver bloqueia campanha, tentativa e sequência e depois solicita `FOR SHARE` na mesma instância. A janela é plausível quando a resolução de uma sequência anterior concorre com nova chamada de início usando a mesma arma. Não reproduzido em produção.
+- **Ficha — inversão campanha/personagem:** descanso longo de NPC vinculado bloqueia campanha → personagem → ficha; habilidades de classe/Imposição das Mãos bloqueiam personagem → ficha → recurso → campanha. O ciclo depende de ambas as operações incidirem na mesma ficha de NPC vinculada e de propriedade do Mestre. Não generalizar para personagens diferentes.
+- **Arma — inversão condicional campanha/instância:** equipamento de NPC vinculado bloqueia campanha → instância; início de ataque iterativo 7 bloqueia instância → campanha. Depende de compartilhar campanha e instância.
+- **Consistência parcial:** registro/resolução/aplicação de dano de ataques iterativos começam pela campanha antes de tentativa/sequência; o lock antecipado da instância está concentrado no wrapper 7. O caminho de consulta de sequência bloqueia apenas a sequência e não adquire depois campanha no corpo observado.
+- **Condições de PV:** `priv.srd_sync_character_vital_condition` altera condições sem lock inicial de campanha. A ordem depende do chamador; não deve ser tratada como helper campanha-primeiro.
+- **Trigger de inventário:** `srd_character_equipment` possui trigger AFTER INSERT/DELETE/UPDATE OF quantidade que cria/remove instâncias de armas. A função de trigger sincroniza instâncias e o estado agregado do inventário. A interação com operações concorrentes de equipamento exige análise de DML/row locks por endpoint; não foi classificada como ciclo confirmado nesta etapa.
+
+### Testes sintéticos adicionados
+- `tests/sql/lock_cycle_test.sh` agora cobre três padrões deliberadamente invertidos: campaign/effect (existente), campaign/weapon e campaign/character.
+- Fixtures usam tabelas isoladas no PostgreSQL efêmero. Elas comprovam somente que o PostgreSQL detecta o padrão de lock montado; não executam RPCs reais, não medem incidência em produção e não simulam Auth/RLS.
+- O workflow gratuito `PostgreSQL fixture tests` foi acionado pelo commit de testes e estava em execução durante esta atualização. O resultado final precisa ser consultado antes de declarar aprovação.
+
+### Advisors Supabase — nova coleta 2026-11-09 18:00 UTC
+- Security: 99 funções SECURITY DEFINER executáveis por authenticated (WARN), 7 tabelas com RLS e sem policy (INFO), proteção contra senha vazada desativada no Auth (WARN).
+- Performance: 52 índices sinalizados como não utilizados (INFO).
+- Health: nenhum lint retornado.
+- Estes resultados repetem os grupos já registrados. Não revogar grants, criar policies genéricas, remover índices ou alterar Auth automaticamente; cada medida exige avaliação funcional e operacional própria.
+
+### Estado das alterações
+- Commits documentais/testes publicados em `main`: `773a96b` (recursos/equipamento), `158573b` (ciclo de arma no ataque iterativo), `7de4c03` (fixtures sintéticas).
+- Nenhuma função, trigger, ACL, policy, migration, setting de Auth ou dado de campanha foi alterado no Supabase remoto.
+- Próxima etapa: aguardar/validar CI; continuar análise de locks transitivos por assinaturas e triggers, e só então desenhar protocolo global. Reconciliação de migrations continua pré-condição para qualquer patch SQL remoto.
