@@ -61,6 +61,8 @@ Essas correções não devem ser refeitas automaticamente. Antes, conferir os co
 - Identificadores de token em tabelas CBA são text e não têm FK direta para tokens.id; confirmar contrato antes de normalizar.
 
 ## Testes — inventário inicial
+- **Implementado e aprovado:** scripts/check-static.mjs e workflow .github/workflows/validate-static.yml. Execução #1 passou em 9 blocos JavaScript de 5 páginas ativas e validou o contrato manual do Dice ([run](https://github.com/clubberblues/rpgvinculo/actions/runs/42546411046)).
+- **Ainda pendente:** reconstituir Playwright/pglast, testes de regras, banco, autorização e E2E multiplayer.
 - O README descreve parse local, pglast e smoke tests Playwright com Supabase simulado.
 - package.json, configuração Playwright, arquivos de teste convencionais e workflow CI não foram encontrados nos caminhos consultados.
 - Classificação: harness automatizado não localizado nos caminhos convencionais; localizar ou reconstituir os testes e torná-los reproduzíveis.
