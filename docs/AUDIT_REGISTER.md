@@ -243,3 +243,35 @@ Os wrappers dinâmicos de arma são SECURITY INVOKER e encaminham a helpers priv
 ### Limites ainda não testados
 - Não foi executado fluxo ponta a ponta de criação, progressão, descanso ou equipamento nesta sessão.
 - A validação de ficha/mesa com Thunga Mestre (ID 682) permanece bloqueada até confirmar que esse é o personagem de teste pretendido; não confundir com Thorgar (ID 681), NPC-modelo do Mestre.
+
+
+## Contrato da mesa: iniciativa, turnos, ações e combate
+
+### Iniciativa coletiva
+1. O Mestre chama a iniciativa com a lista explícita de personagens jogadores esperados e os resultados individuais dos d20 rolados para seus próprios tokens.
+2. mesa.html prepara os dados no iframe; o Mestre clica para rolar. O backend verifica que o número de resultados corresponde ao número de tokens que o Mestre controla e os distribui aleatoriamente entre eles.
+3. iniciar_iniciativa_com_dados grava os combatentes do Mestre em campaigns.combat_data e, se houver jogadores esperados, deixa active=false e registra pedido público em campaign_log.
+4. Cada jogador rola o próprio d20 no Dice UI. registrar_iniciativa_d20 valida membership PLAYER, propriedade da ficha, presença na lista esperada e resultado 1–20; calcula Destreza + talentos passivos + efeitos e registra a iniciativa.
+5. registrar_iniciativa impede nova rolagem da mesma ficha e ativa a ordem somente quando todos os IDs esperados foram registrados.
+
+### Turno e economia de ações
+- avancar_turno bloqueia quando há movimento interrompido por AOO, valida o papel e, para jogador, a propriedade do personagem cujo turno está ativo.
+- Na passagem de rodada, o backend expira condições e cria pedidos de estabilização/encerramento de paralisia quando aplicável.
+- consumir_acao_turno_srd valida turno ativo, propriedade, condições impeditivas e limites de ação padrão/movimento/rápida; persiste action_economy em combat_data.
+
+### Movimento e reações
+- O movimento do jogador em combate solicita primeiro a validação AOO; se houver reação pendente, o movimento é interrompido até o Mestre concluir ou cancelar.
+- O movimento do Mestre usa mover_token_gm_cba_srd; o movimento do jogador usa mover_token_player_cba quando não há fila AOO pendente.
+- Estado de movimento e combate é atualizado em campaigns.cba_data/combat_data; a mesa reaplica o snapshot retornado.
+
+### Ataques e dano
+- Ataque iterativo: iniciar sequência → registrar d20 manual com chave de idempotência → resolver tentativa → se crítico, confirmar com outro d20 manual → rolar dano no Dice UI → aplicar dano com arrays de resultados e chave de idempotência.
+- O fluxo possui estados recuperáveis (pending_resolution, critical_confirmation_pending, hit_pending_damage, miss, damage_applied) e rotinas de retomada após reconexão.
+- NPCs possuem wrappers equivalentes para rolagens do Mestre, com validação de token e papel.
+
+### Magias
+- As RPCs de conjuração usadas pela mesa recebem resultados manuais: conjurar_magia_com_acao_srd_manual, conjurar_magia_dano_multialvo_srd, conjurar_magia_efeitos_multialvo e conjurar_missil_magico_srd_manual.
+- Salvamentos e Resistência à Magia pendentes são resolvidos com d20 informado pelo jogador/Mestre por srd_resolve_pending_spell_save e srd_resolve_pending_spell_resistance.
+- O backend mantém pendências, consome recursos e aplica efeitos; o iframe apenas gera e devolve resultados após clique.
+
+Este contrato está confirmado por inspeção do frontend e das funções SQL. Ainda falta teste de integração com duas sessões autenticadas e uma fixture descartável para validar a sequência completa sem tocar em dados reais.
