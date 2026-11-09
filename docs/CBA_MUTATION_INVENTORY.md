@@ -216,3 +216,21 @@ Antes de escolher a implementação, mapear triggers adicionais sobre `campaigns
 ### Limites da análise de dependências
 
 Foi construída uma exploração estática de chamadas por nomes qualificados a partir das 32 raízes de escrita em `cba_data`. O resultado bruto é apenas exploratório: regex por nome pode associar sobrecargas incorretamente, não resolve chamadas não qualificadas/SQL dinâmico e não determina a ordem de locks transitiva. Nenhuma contagem dessa exploração deve ser tratada como grafo de chamadas validado. A análise de fluxo e locks deve usar OIDs/assinaturas e corpos individuais, com triggers e DML explícitos mapeados separadamente.
+
+
+### Triggers adicionais da tabela `campaigns`
+
+A consulta a `pg_trigger` confirmou quatro triggers não internos:
+
+| Trigger | Evento | Efeito relevante |
+|---|---|---|
+| `trg_srd_guard_pending_aoo_movement` | BEFORE UPDATE OF `cba_data` | Guarda limitada ao mover pendente, detalhada acima |
+| `trg_expire_barbarian_rage_on_round_change` | AFTER UPDATE OF `combat_data` | Ao avançar rodada, bloqueia efeitos ativos `FOR UPDATE`, encerra fúria e registra log |
+| `trg_srd_request_confusion_turn_roll` | AFTER UPDATE OF `combat_data` | Ao mudar turno/rodada/fase surpresa, bloqueia condição de confusão, atualiza condição e insere pedido no log |
+| `on_campaign_created` | AFTER INSERT | Adiciona proprietário como GM |
+
+As duas triggers AFTER tornam o caminho de escrita de `combat_data` transitivo: um UPDATE de campanha pode adquirir locks em `srd_campaign_effects`, `srd_campaign_conditions` e `campaign_log` antes de a transação terminar. Isso precisa entrar na matriz global de locks; não basta comparar apenas os `FOR UPDATE` escritos no corpo da RPC chamadora. Não foi concluído ainda o rastreamento reverso de todas as rotinas que bloqueiam essas tabelas antes de bloquear `campaigns`.
+
+### Estado da execução de CI no momento do registro
+
+A consulta ao GitHub Actions foi feita após o commit `66fcf76f515842c1e234215f400eaf1c6157a3dd`. O estado retornado deve ser consultado no próprio histórico de Actions para distinguir workflows de Pages dos testes PostgreSQL; nenhum resultado de CI é inferido a partir do sucesso da gravação documental.
