@@ -87,6 +87,17 @@ A inspeção integral das funções que referenciam `priv.srd_aoo_reaction_ledge
 - Portanto, além do ciclo pending → campaign já identificado, existe uma cadeia de locks interna que deve ser preservada ao corrigir: campanha → pending → ledger → (weapon instance, se aplicável) → insert attack. O INSERT do ataque também verifica FKs para pending/ledger já retidos pela transação.
 - Não foi encontrado writer que bloqueie ledger e depois peça pending/campaign de forma independente; o conflito operacional confirmado permanece a entrada pending-first contra as rotas campaign-first/attack-first. A ordem exata entre arma e attack deve continuar explícita na revisão de todos os resolvers antes da migration.
 
+
+### Equipamento inicial × poção — revisão de falso positivo (2026-11-09)
+
+A varredura das funções que combinam `srd_character_equipment`, ficha e instâncias encontrou um par superficialmente invertido:
+
+- `public.finalizar_equipamento_inicial_srd` (OID 21704, authenticated EXECUTE) bloqueia personagem → ficha e depois faz UPSERT de itens, podendo acionar o trigger de criação de instâncias de arma.
+- `public.usar_pocao_cura_srd_manual` (OID 24655, authenticated EXECUTE) bloqueia a linha de equipamento da poção → ficha. À primeira vista isso sugere equipamento → ficha versus ficha → equipamento.
+- Porém, o finalizador rejeita explicitamente categorias de poções e óleos antes do UPSERT. Portanto, ele não disputa a mesma linha `(character_id,equipment_id)` bloqueada pelo uso da poção. Os demais writes de equipamento do finalizador são linhas distintas; não foi demonstrada uma aresta de espera inversa.
+
+**Classificação:** não adicionar como deadlock ativo. Reavaliar se itens consumíveis passarem a fazer parte dos pacotes iniciais ou se outro writer passar a atualizar a mesma linha de equipamento depois de bloquear a ficha. A corrida de estado de combate no uso da poção continua sendo um achado separado.
+
 ## 3. Evidências que motivam a proposta
 
 ### Ciclos já identificados nos corpos remotos
