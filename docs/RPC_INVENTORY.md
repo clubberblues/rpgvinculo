@@ -176,7 +176,7 @@ A inspeção atual de `mesa.html` encontrou exatamente três chamadas `.rpc(vari
 | `rpcName` do equipamento | scope character / linked_npc / token | `equipar_arma_instancia_personagem`; `equipar_arma_instancia_npc_vinculado_srd`; `equipar_arma_instancia_token` | Três alvos já documentados na tabela acima; cada um possui uma assinatura pública. |
 | `rpcName` de resolução pendente | salvamento / resistência à magia | `srd_resolve_pending_spell_save`; `srd_resolve_pending_spell_resistance` | Ambos existem em public, uma assinatura cada, SECURITY DEFINER, EXECUTE authenticated, sem anon/PUBLIC e search_path pg_catalog, public, priv, pg_temp. O alvo de salvamento também aparece em uma chamada literal em outra parte do código. |
 
-Os sete alvos possíveis correspondem a seis nomes adicionais únicos além dos 100 nomes literais; um deles já está incluído no conjunto literal. A união contém **106 nomes distintos e 114 assinaturas públicas**, sem nome ausente na consulta atual. A consulta de assinatura/grants dos quatro alvos não relacionados a equipamento foi somente de leitura.
+Os nove alvos dinâmicos únicos incluem três nomes que também aparecem em chamadas literais e seis nomes adicionais únicos além dos 100 nomes literais. Os quatro call sites dinâmicos somam onze alternativas de dispatch. A união contém **106 nomes distintos e 114 assinaturas públicas**, sem nome ausente na consulta atual. A consulta de assinatura/grants dos quatro alvos não relacionados a equipamento foi somente de leitura.
 
 
 
