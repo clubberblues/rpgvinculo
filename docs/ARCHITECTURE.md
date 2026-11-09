@@ -112,7 +112,10 @@ As camadas são limites de responsabilidade, não uma ordem para criar serviços
 - Testes automatizados disponíveis e lacunas.
 - Estado de deploy e processo de publicação.
 
-## Storage e mídia\nConsulte a seção Storage em [INTEGRATION_MAP.md](INTEGRATION_MAP.md): buckets midia público e mesa-media privado, políticas por caminho/campanha e risco P2 de limites MIME/tamanho no bucket público.\n\n## Modelo de dados
+## Storage e mídia
+Consulte a seção Storage em [INTEGRATION_MAP.md](INTEGRATION_MAP.md): buckets midia público e mesa-media privado, políticas por caminho/campanha e risco P2 de limites MIME/tamanho no bucket público.
+
+## Modelo de dados
 Consulte [DATA_MODEL.md](DATA_MODEL.md) para fontes canônicas, relações, estruturas JSONB, compatibilidade e tabelas sem uso atual identificado.
 
 ## Mapa detalhado de integração
