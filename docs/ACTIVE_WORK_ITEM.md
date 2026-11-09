@@ -219,3 +219,18 @@ Em D&D 3.5, Colossal ocupa 30 ft (6 quadrados). A inconsistência pode permitir 
 
 ## Achado P1 adicional — endpoint genérico de cena
 A leitura do corpo de `public.salvar_cena_cba` confirmou que a função substitui os objetos dos tokens enviados sem validar mudanças de coordenadas, footprint, ocupação, ação, deslocamento ou AOO. É usada por fluxos legítimos durante combate; portanto, a correção deve separar metadados de cena, inserção de tokens e movimentação, preservando os fluxos válidos. A regressão direta e os casos de compatibilidade foram adicionados a TEST_STRATEGY.md. Nenhuma alteração de código/banco foi aplicada.
+
+
+## Sequência de execução segura — atualização 2026-11-09
+
+A prioridade ativa deixa de ser qualquer patch isolado no movimento e passa a ser **fechar a autoridade de escrita da cena durante combate**. A ordem de trabalho é:
+
+1. **Concluir inventário de mutações:** listar todos os RPCs que escrevem `campaigns.cba_data`, classificando por movimento, spawn/remoção, metadados, PV/condições/equipamentos e resolução AOO. Confirmar ACL e chamadas do frontend.
+2. **Preparar harness sem custo:** PostgreSQL efêmero em GitHub Actions, fixtures mínimas e duas sessões/conexões para testes de concorrência. Não usar projeto Supabase remoto nem exigir branch paga.
+3. **Criar regressões antes do patch:** movimento direto sem pré-check; movimento de token B durante pending A; mutação de coordenadas por `salvar_cena_cba`; snapshot obsoleto que tenta reverter PV/posição; spawn sobreposto; preview/commit autorizado de AOO.
+4. **Desenhar contratos específicos:** metadados de mapa, metadados de token, spawn/remoção e movimento passam a ser comandos separados; movimento jogador/GM recalcula AOO e verifica pending global sob lock de campanha; versão de cena gerada no servidor ou merge parcial evita lost update.
+5. **Migrar os call sites de `mesa.html`:** retrato, spellState, spawn NPC, bônus de iniciativa, publicação de mapa, preparação de iniciativa e hidratação de monstros. Não alterar a UX do dado manual nem o fluxo de turnos.
+6. **Reconciliar baseline/migrations:** a diferença 681 local × 966 remotas impede criar migration de produção com segurança agora. O patch SQL só será preparado quando houver equivalência e rollback documentados.
+7. **Validar e só então aplicar:** executar fixtures/concorrência; revisar ACL, RLS, search_path e advisors; preparar migration; nenhuma mutação no banco conectado antes de todas as verificações.
+
+**Restrição permanente:** nenhum gasto adicional, projeto/branch Supabase pago ou serviço externo pago. Se um teste depender de recursos Supabase não reproduzidos no PostgreSQL local, marcar como bloqueado/não verificado em vez de arriscar produção.
