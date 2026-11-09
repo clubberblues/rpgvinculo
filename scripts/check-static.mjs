@@ -93,8 +93,12 @@ for (const required of ['registrar_iniciativa_d20', 'iniciar_iniciativa_com_dado
 const supabasePages = ['index.html', 'lobby.html', 'ficha.html', 'mesa.html'];
 for (const page of supabasePages) {
   const html = readFileSync(resolve(root, page), 'utf8');
-  if (!html.includes('<script src="assets/js/core/supabase-client.js"></script>')) {
-    reportFailure(page + ' must load the shared Supabase client after the CDN library.');
+  const cdnTag = html.indexOf('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>');
+  const sharedTag = html.indexOf('<script src="assets/js/core/supabase-client.js"></script>');
+  const sharedTagCount = (html.match(/assets\/js\/core\/supabase-client\.js/g) || []).length;
+  const nextInlineScript = html.indexOf('<script>', sharedTag + 1);
+  if (cdnTag < 0 || sharedTag <= cdnTag || sharedTagCount !== 1 || nextInlineScript < sharedTag) {
+    reportFailure(page + ' must load exactly one shared Supabase client after the CDN and before inline application code.');
   }
   if (/\bcreateClient\s*\(/.test(html)) {
     reportFailure(page + ' must not create its own Supabase client.');
@@ -102,6 +106,11 @@ for (const page of supabasePages) {
   if (!html.includes('window.VINCULO_SUPABASE_CLIENT')) {
     reportFailure(page + ' must consume window.VINCULO_SUPABASE_CLIENT.');
   }
+}
+
+const dicePage = readFileSync(resolve(root, 'dice.html'), 'utf8');
+if (dicePage.includes('assets/js/core/supabase-client.js')) {
+  reportFailure('dice.html must remain independent from the Supabase client.');
 }
 
 const sharedSupabaseClient = readFileSync(resolve(root, 'assets/js/core/supabase-client.js'), 'utf8');
