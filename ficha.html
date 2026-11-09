@@ -1927,7 +1927,8 @@ function dnd35TranslateCatalogText(value){
 
   
 function dnd35WeaponProficiencyType(weapon,state){
-    var details=dnd35Objeto(weapon&&weapon.detalhes),explicit=dnd35Norm(details.weapon_proficiency||''),group=dnd35Norm(details.weapon_group||''),name=String(weapon&&weapon.nome||''),text=dnd35FeatParamNorm(name+' '+String(dnd35Objeto(details.campos_catalogo).descricao_origem||''));
+    var details=dnd35Objeto(weapon&&weapon.detalhes),explicit=dnd35Norm(details.weapon_proficiency||''),group=dnd35Norm(details.weapon_group||''),name=String(weapon&&weapon.nome||''),normalizedName=dnd35FeatParamNorm(name),text=dnd35FeatParamNorm(name+' '+String(dnd35Objeto(details.campos_catalogo).descricao_origem||'')).replace(/\\s+/g,'');
+    if(String(state&&state.raca&&state.raca.id)==='anao'&&['machado de guerra anao','urgrosh anao'].indexOf(normalizedName)>=0)return 'martial';
     if(explicit.indexOf('exotic')>=0)return 'exotic';
     if(explicit.indexOf('martial')>=0)return 'martial';
     if(explicit.indexOf('simple')>=0)return 'simple';
