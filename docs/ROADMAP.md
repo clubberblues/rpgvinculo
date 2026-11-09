@@ -134,11 +134,27 @@ Antes da primeira refatoração, fechar a matriz de locks do combate. Achado pri
 
 ### Bloqueio de infraestrutura identificado — histórico de migrations
 **Prioridade:** P1 para confiabilidade de implantação / P0 se houver tentativa de reconstrução ou deploy cego.
-- [ ] Reconciliar 681 arquivos locais em supabase/migrations com 966 registros remotos em supabase_migrations.schema_migrations (diferença de contagem: 285).
-- [ ] Comparar versão por versão; não inferir arquivos ausentes somente pela diferença de contagem.
+- [x] Comparar exatamente as versões locais e remotas: 681 arquivos locais, 966 registros remotos, 640 versões coincidentes, 326 remotas sem versão local e 41 locais sem versão remota. Desses conjuntos, 41 pares têm o mesmo nome em timestamps diferentes; restam 285 nomes remotos sem arquivo local de mesmo nome e 2 nomes locais sem contraparte remota. Nomes coincidentes não comprovam equivalência do SQL.
 - [ ] Capturar DDL remoto completo e classificar drift de funções, tabelas, constraints, policies, grants, triggers, extensões e schemas.
 - [ ] Recuperar/gerar migrations reproduzíveis a partir do estado atual somente após revisão de segurança e dependências.
 - [ ] Estabelecer CI que detecte migration local ausente, versão duplicada e divergência de schema antes de qualquer deploy.
 - [ ] Definir procedimento de deploy/rollback e ambiente local descartável.
 
 **Regra temporária:** não executar `supabase db reset`, deploy automático de migrations, reconstrução de banco ou squash do histórico até o aceite desta reconciliação.
+
+
+## Reconciliação exata do histórico de migrations — 2026-11-09
+
+Comparação somente de leitura entre a árvore recursiva de `main` e `supabase_migrations.schema_migrations` no projeto remoto conectado:
+- Arquivos locais em `supabase/migrations/`: **681**.
+- Registros remotos aplicados: **966**.
+- Versões exatamente coincidentes: **640**; nos 640 casos, o nome também coincide.
+- Registros remotos sem arquivo local com a mesma versão: **326**.
+- Arquivos locais sem registro remoto com a mesma versão: **41**.
+- Entre esses dois conjuntos, **41 pares** compartilham o mesmo nome, mas têm timestamps diferentes. Assim, existem **285 nomes remotos sem arquivo local de mesmo nome** e **2 nomes locais sem registro remoto correspondente**.
+
+Distribuição dos 326 registros remotos sem versão local: 2026-11-04: 36; 2026-11-05: 41; 2026-11-08: 232; 2026-11-09: 17. Os 41 arquivos locais sem versão remota são 30 em 2026-11-04 e 11 em 2026-11-05. Os dois nomes locais sem qualquer nome remoto correspondente são `dwarf_barbarian_n1_racial_movement_fixes` e `dwarf_armor_load_classification`.
+
+**Interpretação:** a diferença líquida de 285 não representa, por si só, 285 arquivos simplesmente removidos. Há versões com timestamps reescritos, 285 migrações remotas sem arquivo de mesmo nome e dois arquivos locais sem contraparte remota. Os nomes coincidentes não provam equivalência do SQL; a comparação de conteúdo/efeitos ainda não foi realizada. O histórico remoto registra versão e nome, não o texto SQL original.
+
+**Decisão de segurança:** manter bloqueados reset, deploy automático, squash e reconstrução do banco. Próxima etapa: inventariar o schema remoto efetivo (DDL, funções, constraints, índices, triggers, policies, grants, enums, extensões e schemas), identificar quais objetos correspondem às migrações sem arquivo e elaborar um baseline reproduzível revisado. Nenhum DDL ou dado de jogo foi alterado nesta etapa.
