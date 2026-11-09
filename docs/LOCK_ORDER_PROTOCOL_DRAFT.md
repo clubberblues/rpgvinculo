@@ -424,3 +424,17 @@ A revisão completa dos writers e das permissões mudou a classificação anteri
 ### Qualificação de alcance — locks da mesma ficha
 
 O ciclo campanha ↔ ficha só se fecha quando as duas transações disputam a mesma linha de ficha/personagem na mesma campanha. Exemplo concreto alcançável: public.srd_resolve_dying_round (character → sheet → campaign) resolve a rolagem de um personagem Morrendo, enquanto o Mestre resolve uma magia pendente cujo alvo é esse mesmo personagem (pending spell → campaign → sheet). Não generalizar o ciclo para duas fichas diferentes apenas por pertencerem à mesma campanha; nesse caso há serialização na campanha, mas não a aresta inversa sobre a mesma ficha.
+
+
+## Ataque Total de personagem — inversão instância de arma ↔ campanha (2026-11-09)
+
+O overload de Ataque Total usado pelo frontend confirma outro ciclo ativo:
+
+- mesa.html chama a variante de oito argumentos de public.iniciar_sequencia_ataque_iterativo_srd (OID 26632).
+- O wrapper delega a priv.iniciar_sequencia_ataque_iterativo_srd_8_impl (OID 27365), que valida ficha/arma e delega ao overload de sete argumentos.
+- priv.iniciar_sequencia_ataque_iterativo_srd_7_impl (OID 27364) bloqueia srd_character_weapon_instances FOR UPDATE (linha 26) e depois chama a implementação-base que bloqueia campaigns FOR UPDATE (OID 27360, linha 32). Ordem efetiva: instância de arma → campanha.
+- A resolução public.resolver_ataque_iterativo_srd (OID 26607), também chamada por mesa.html, bloqueia campanha (linha 75) → tentativa (84) → sequência (89) → instância de arma FOR SHARE (147).
+
+**Classificação:** inversão ativa, confirmada pelo caminho frontend e pelos OIDs. O início da sequência pode manter a instância enquanto aguarda campanha; a resolução pode manter campanha e sequência enquanto aguarda a mesma instância. Não foi reproduzido deadlock com as RPCs reais.
+
+O harness PostgreSQL voltou a incluir o par sintético campanha → instância (FOR SHARE) versus instância → campanha (FOR UPDATE). A ordem candidata deve ser campaign → sequence/attempt → weapon instance, ou outra sequência única que preserve a revalidação da arma; o início não pode bloquear a instância antes de adquirir campanha.
