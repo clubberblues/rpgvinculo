@@ -234,3 +234,46 @@ As duas triggers AFTER tornam o caminho de escrita de `combat_data` transitivo: 
 ### Estado da execução de CI no momento do registro
 
 A consulta ao GitHub Actions foi feita após o commit `66fcf76f515842c1e234215f400eaf1c6157a3dd`. O estado retornado deve ser consultado no próprio histórico de Actions para distinguir workflows de Pages dos testes PostgreSQL; nenhum resultado de CI é inferido a partir do sucesso da gravação documental.
+
+
+## Nova análise: inversão de locks entre efeitos de Fúria e avanço de rodada
+
+Data da coleta: 2026-11-09. Fonte: corpos SQL atualmente instalados em priv.srd_expire_barbarian_rage_on_round_change, priv.srd_end_barbarian_rage, priv.srd_end_barbarian_rage_token, priv.srd_apply_campaign_condition e triggers de public.campaigns. Consultas somente leitura.
+
+### Ciclo de deadlock identificado
+
+Há um ciclo concreto de ordem de locks entre a trigger trg_expire_barbarian_rage_on_round_change (AFTER UPDATE OF combat_data) e encerramentos concorrentes de Fúria:
+
+1. A transação que avança a rodada já mantém lock exclusivo na linha campaigns devido ao próprio UPDATE.
+2. A trigger seleciona efeitos de Fúria ativos em srd_campaign_effects com FOR UPDATE, em ordem por effect_instance_id.
+3. A rotina priv.srd_end_barbarian_rage_token, chamada pela trigger para alvos token, primeiro bloqueia o efeito de Fúria (srd_campaign_effects FOR UPDATE) e depois tenta bloquear a campanha (campaigns FOR UPDATE).
+4. A rotina priv.srd_end_barbarian_rage, para alvos character, também bloqueia primeiro o efeito; ao aplicar fadiga chama priv.srd_apply_campaign_condition, que tenta bloquear a campanha (FOR UPDATE) antes de alterar condições.
+5. Assim, uma sessão que avança a rodada pode segurar campaigns e aguardar srd_campaign_effects, enquanto outra sessão que encerra Fúria segura srd_campaign_effects e aguarda campaigns.
+
+**Conclusão:** o ciclo campaigns → srd_campaign_effects → campaigns está demonstrado pelos corpos instalados. É uma condição estrutural de deadlock, embora ainda não tenha sido reproduzida com duas sessões concorrentes contra uma instância PostgreSQL de teste. Não executar reprodução concorrente no banco de produção.
+
+### Caminhos adicionais de lock
+
+- priv.srd_end_barbarian_rage_token: efeito → campanha → (possível) ficha de personagem → condições. Atualiza campaigns.cba_data enquanto ainda mantém locks anteriores.
+- priv.srd_end_barbarian_rage: efeito → ficha → (possível) campanha via priv.srd_apply_campaign_condition → condições. O caminho de fadiga também consulta/atualiza condições.
+- priv.srd_apply_campaign_condition: campanha FOR UPDATE → possíveis efeitos (ao aplicar slowed) → condições. Essa ordem é coerente com o lock inicial da campanha, mas pode conflitar com chamadores que já chegam segurando efeito/condição.
+- priv.srd_apply_campaign_effect: campanha FOR UPDATE → possíveis condições/efeitos → insere efeito.
+- priv.srd_request_confusion_turn_roll (trigger AFTER UPDATE de combat_data): a campanha já está bloqueada pela atualização; depois bloqueia condição FOR UPDATE e grava campaign_log.
+- priv.srd_expire_barbarian_rage_on_round_change: campanha já bloqueada pela atualização; bloqueia efeitos e, transitivamente, pode chegar a ficha, condições, campanha (reentrante na mesma transação) e log.
+- priv.srd_clear_combat_flatfooted_actor/all atualizam condições sem bloquear explicitamente campanha. Quando chamados após um update de campanha, herdam o lock da campanha; quando chamados isoladamente, podem criar ordem diferente dependendo do chamador.
+
+### Consequências para a matriz global
+
+O lock da linha campaigns é um ponto de serialização usado por múltiplos fluxos, mas não basta dizer que todas as rotinas “bloqueiam a campanha”: a ordem importa. Os fluxos de encerramento de Fúria podem entrar em srd_campaign_effects antes da campanha. A trigger de mudança de rodada faz o inverso.
+
+Não classificar como corrigido apenas por adicionar outro FOR UPDATE na campanha: a correção precisa garantir a ordem global antes de qualquer lock em efeitos/condições. Para o encerramento de Fúria, a direção mais segura a avaliar é adquirir primeiro o lock da campanha e só então localizar/bloquear o efeito; entretanto, isso deve ser feito em uma migration reconciliada, cobrindo chamadas internas e efeitos colaterais, sem alterar a produção nesta etapa.
+
+### Regressões obrigatórias antes de qualquer correção remota
+
+1. Avanço de rodada com Fúria ativa em personagem e em token NPC.
+2. Encerramento manual de Fúria concorrente com avanço de rodada.
+3. Aplicação de fadiga e transição fatigado → exausto, com verificação de integridade de PV, efeitos e condições.
+4. Dois encerramentos simultâneos do mesmo efeito (idempotência e ausência de dupla remoção de PV temporário).
+5. Verificação de timeout/deadlock com duas sessões no PostgreSQL efêmero do CI, usando cópias isoladas da ordem de locks e identificando claramente que o teste reproduz o padrão, não executa o código remoto em produção.
+
+Nenhuma função ou dado remoto foi alterado. A análise não autoriza ainda uma migration: a reconciliação entre 966 versões remotas e 681 arquivos locais continua sendo pré-condição para mudanças no banco.
