@@ -492,3 +492,10 @@ Foram inspecionados os corpos completos dos quatro triggers relevantes, além do
 33. Entrega de arma e equipamento simultâneos para a mesma ficha, verificando duplicidade/perda de instâncias.
 34. Finalização de equipamento inicial concorrente com alteração de inventário na mesma ficha.
 35. Exclusão de personagem e limpeza de inventário concorrentes com ação de equipamento; validar cascade/trigger e ownership.
+
+
+### Teste sintético do lock transitivo inventário/instância
+
+O harness recebeu um quinto padrão AOO/inventário (além dos pares campaign/effect, campaign/weapon, campaign/character, campaign/pending e pending/attack): **equipment → weapon instance versus weapon instance → equipment**. O padrão corresponde ao efeito AFTER trigger de inventário que cria/remove instâncias e atualiza a linha-resumo, versus a função de equipar instância que bloqueia a instância e depois atualiza o resumo.
+
+O teste não executa o trigger nem as RPCs de produção; verifica apenas se PostgreSQL detecta o ciclo deliberadamente construído. A confirmação funcional exige fixture que copie o trigger e os dois caminhos de escrita.

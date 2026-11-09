@@ -37,3 +37,9 @@ CREATE TABLE lock_fixture.aoo_attacks (
 );
 INSERT INTO lock_fixture.pending_movements VALUES (1,1,'waiting_reactions');
 INSERT INTO lock_fixture.aoo_attacks VALUES (1,1,'awaiting_damage');
+
+CREATE TABLE lock_fixture.equipment (
+  id integer PRIMARY KEY,
+  quantity integer NOT NULL
+);
+INSERT INTO lock_fixture.equipment VALUES (1, 1);

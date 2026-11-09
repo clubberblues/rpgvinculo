@@ -307,3 +307,6 @@ Fixture descartável com campanha em combate, movimento pendente ativo, reação
 33. Entrega de arma concorrente com equipar/desquipar instância na mesma ficha.
 34. Finalização do equipamento inicial concorrente com alteração de inventário.
 35. Exclusão de personagem concorrente com operações de equipamento; validar limpeza e ausência de instâncias órfãs.
+
+
+36. Concorrência de mudança de quantidade/remoção de item (equipment → weapon instance via trigger) com equipar a instância (weapon instance → equipment summary); após correção, não deve haver ciclo nem perda/duplicação de instâncias.

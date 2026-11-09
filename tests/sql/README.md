@@ -15,3 +15,5 @@ These tests run against a disposable PostgreSQL service inside a standard GitHub
 - The lock-cycle fixture additionally models two AOO-related inversions observed in installed function bodies: campaign → pending versus pending → campaign, and pending → attack versus attack → pending. As with the other cases, these are deliberately synthetic lock patterns, not production RPC executions.
 
 - CI follow-up: run 42673083206 ended with workflow conclusion `failure`, but GitHub returned zero jobs and no step logs; it is not evidence of an SQL assertion failure. A fresh run is required to diagnose the expanded fixture set.
+
+- The fixture now also models inventory-trigger order (equipment row → weapon instance) versus direct weapon-instance equip order (weapon instance → equipment summary). It remains a synthetic lock-pattern test, not an execution of the production inventory trigger or RPC.
