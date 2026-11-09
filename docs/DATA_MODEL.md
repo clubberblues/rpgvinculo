@@ -6,17 +6,18 @@
 
 ```mermaid
 erDiagram
+  campaigns {
+    bigint id PK
+    jsonb cba_data
+    jsonb combat_data
+  }
   campaigns ||--o{ members : contains
   campaigns ||--o{ characters : hosts
   characters ||--o| srd_character_sheets : has
   characters ||--o| vinculo_character_sheets : has
   characters ||--o{ srd_character_class_levels : progresses
-  characters ||--o{ srd_character_equipment : owns
-  characters ||--o{ srd_character_weapon_instances : equips
   characters ||--o{ srd_character_domain_choices : chooses
   campaigns ||--o{ campaign_log : records
-  campaigns ||--|| CBA_STATE : "cba_data JSONB"
-  campaigns ||--|| COMBAT_STATE_JSON : "combat_data JSONB"
 ```
 
 - `characters` é a identidade/posse do personagem e seu vínculo opcional à campanha.
@@ -24,7 +25,7 @@ erDiagram
 - `members` registra papel por campanha e usuário.
 - `srd_character_sheets` é a ficha D&D 3.5 vinculada a `characters`.
 - `vinculo_character_sheets` é a ficha do ruleset Vínculo, separada da ficha SRD.
-- O vínculo entre characters e cada ficha específica é por `character_id`; as tabelas de ficha usam chave única/primária e FK para characters.
+- O vínculo entre characters e cada ficha específica é por `character_id`; as tabelas de ficha usam chave única/primária e FK para characters. Equipamento e instâncias de arma usam `character_id` text sem FK; são referências lógicas, não relações garantidas pelo banco.
 - `characters.campaign_id` pode ser NULL. Isso permite fichas-modelo do Mestre/NPCs que são vinculadas a tokens CBA sem serem personagens de jogador associados diretamente à campanha.
 - A restrição única em (campaign_id,user_id) representa atualmente um personagem principal por usuário/campanha. O impacto disso em múltiplos personagens por jogador deve ser uma decisão explícita de produto.
 
