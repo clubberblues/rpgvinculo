@@ -418,3 +418,8 @@ A revisão dos callers frontend fecha a condição de alcance que faltava para o
 **Classificação:** o ciclo equipamento → instância versus instância → equipamento é alcançável por duas ações reais da interface: entrega de arma pelo Mestre e equipar/desequipar instância pelo jogador/Mestre. A entrega e o equipar podem incidir sobre a mesma ficha/arma. O harness já contém esse padrão sintético; nenhum deadlock de produção foi observado.
 
 **Direção de correção:** definir a ordem personagem → equipamento → instância (ou outra ordem única), e fazer tanto a entrega/remoção de quantidade quanto o equipar/desequipar respeitarem a mesma ordem. O trigger não deve inverter o par. Revalidar quantidade, instâncias equipadas e slot após os locks; não desativar o trigger sem substituir a sincronização de instâncias.
+
+
+### Qualificação de alcance — locks da mesma ficha
+
+O ciclo campanha ↔ ficha só se fecha quando as duas transações disputam a mesma linha de ficha/personagem na mesma campanha. Exemplo concreto alcançável: public.srd_resolve_dying_round (character → sheet → campaign) resolve a rolagem de um personagem Morrendo, enquanto o Mestre resolve uma magia pendente cujo alvo é esse mesmo personagem (pending spell → campaign → sheet). Não generalizar o ciclo para duas fichas diferentes apenas por pertencerem à mesma campanha; nesse caso há serialização na campanha, mas não a aresta inversa sobre a mesma ficha.
