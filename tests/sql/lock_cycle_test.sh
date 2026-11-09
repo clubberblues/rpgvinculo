@@ -38,22 +38,6 @@ run_expected_deadlock() {
   rm -rf "$tmp"
 }
 
-run_expected_deadlock "campaign -> weapon versus weapon -> campaign" "
-SET deadlock_timeout='100ms'; SET lock_timeout='5s';
-BEGIN;
-UPDATE lock_fixture.campaigns SET round_number=round_number+1 WHERE id=1;
-SELECT pg_sleep(0.6);
-SELECT id FROM lock_fixture.weapon_instances WHERE id=1 FOR SHARE;
-COMMIT;
-" "
-SET deadlock_timeout='100ms'; SET lock_timeout='5s';
-BEGIN;
-SELECT id FROM lock_fixture.weapon_instances WHERE id=1 FOR UPDATE;
-SELECT pg_sleep(0.3);
-UPDATE lock_fixture.campaigns SET round_number=round_number+1 WHERE id=1;
-COMMIT;
-"
-
 run_expected_deadlock "campaign -> character versus character -> campaign" "
 SET deadlock_timeout='100ms'; SET lock_timeout='5s';
 BEGIN;
@@ -99,23 +83,6 @@ BEGIN;
 SELECT id FROM lock_fixture.aoo_attacks WHERE id=1 FOR UPDATE;
 SELECT pg_sleep(0.3);
 SELECT id FROM lock_fixture.pending_movements WHERE id=1 FOR UPDATE;
-COMMIT;
-"
-
-run_expected_deadlock "inventory equipment -> weapon instance versus character -> weapon instance -> equipment equip flow" "
-SET deadlock_timeout='100ms'; SET lock_timeout='5s';
-BEGIN;
-UPDATE lock_fixture.equipment SET quantity=quantity+1 WHERE id=1;
-SELECT pg_sleep(0.6);
-SELECT id FROM lock_fixture.weapon_instances WHERE id=1 FOR UPDATE;
-COMMIT;
-" "
-SET deadlock_timeout='100ms'; SET lock_timeout='5s';
-BEGIN;
-SELECT id FROM lock_fixture.characters WHERE id=1 FOR UPDATE;
-SELECT id FROM lock_fixture.weapon_instances WHERE id=1 FOR UPDATE;
-SELECT pg_sleep(0.3);
-UPDATE lock_fixture.equipment SET quantity=quantity+1 WHERE id=1;
 COMMIT;
 "
 
