@@ -274,3 +274,7 @@ O inventário verbose do Supabase e a consulta direta a ACL identificaram duas r
 
 
 O inventário estrutural remoto inicial foi materializado em [REMOTE_SCHEMA_SNAPSHOT.md](REMOTE_SCHEMA_SNAPSHOT.md): 83 relações, 229 índices e 327 assinaturas de funções/procedures com fingerprint. O documento não é dump executável; definições completas, ACL, policies e triggers ainda exigem exportação/classificação própria.
+
+
+### Duplicidade de nomes no histórico remoto
+A comparação também identificou dois nomes de migration repetidos em versões remotas distintas: `srd35_sneak_attack_damage_validation` e `srd35_rogue_uncanny_dodge_catalog_status` (duas ocorrências cada). Portanto, os 41 registros remotos que compartilham nome com arquivos locais correspondem a 39 nomes únicos, não a 41 pares um-para-um. Isso reforça que nome não é chave de equivalência; a reconciliação precisa considerar versão, conteúdo/efeito e ordem de aplicação.
