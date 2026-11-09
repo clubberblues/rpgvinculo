@@ -128,3 +128,18 @@
 - [ficha.html](../ficha.html)
 - [lobby.html](../lobby.html)
 - [Mapa de integração](INTEGRATION_MAP.md)
+
+
+## Sobrecargas verificadas estaticamente em fluxos críticos
+
+| RPC | Argumentos enviados pelo frontend | Assinatura selecionada |
+|---|---:|---|
+| aplicar_dano_ataque_iterativo_srd | 5 | overload com p_sneak_damage_rolls |
+| aplicar_dano_token_ataque_srd_v2 | 11 | overload com p_sneak_attack_dice e p_sneak_attack_damage |
+| iniciar_ataque_iterativo_npc_srd | 8 | overload com p_power_attack_penalty |
+| iniciar_sequencia_ataque_iterativo_srd | 8 | overload com p_power_attack_penalty |
+| srd_calcular_ca_personagem_srd | 3 ou 4 | 3 para personagem; 4 para NPC vinculado/contexto de atacante gigante |
+| srd_consultar_modificadores_manobra_srd | 6 | overload com p_trip_using_weapon |
+| srd_iniciar_ataque_oportunidade_monstro_srd | 5 | overload com p_natural_attack_index |
+
+As chaves e quantidades observadas correspondem às assinaturas existentes. Isso reduz risco de resolução acidental para overload legado, mas ainda não prova compatibilidade de tipos em runtime nem resultado funcional. Os wrappers de ataque iterativo NPC são SECURITY INVOKER e delegam a implementações priv.*; os resolvers de dano e CA relevantes são SECURITY DEFINER com auth.uid e validação de campanha/papel no corpo.
