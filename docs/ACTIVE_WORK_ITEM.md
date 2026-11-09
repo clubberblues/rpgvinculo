@@ -198,3 +198,7 @@ As migrations locais de economia de movimento alteram corpos de funções públi
 ## Diagnóstico de CI — 2026-11-09
 
 Quatro workflows existentes foram revisados. Há cobertura estática e smoke HTTP, mas nenhuma validação de SQL, grants/RLS, RPC autenticado ou concorrência. O plano de evolução está em [CI_TEST_ARCHITECTURE.md](CI_TEST_ARCHITECTURE.md). Não foram alterados workflows nem código de aplicação.
+
+
+### Exportação integral de rotinas concluída
+As 327 funções/procedures atuais foram exportadas para `docs/snapshots/remote_{public,priv,private}_functions.sql`. Próxima etapa: validar o conjunto de objetos estruturais (tabelas, tipos, triggers, policies, ACLs e dependências) e comparar cada definição/fingerprint com o histórico local. Ainda não há baseline restaurável.
