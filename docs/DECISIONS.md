@@ -63,3 +63,28 @@ Os itens abaixo não são decisões tomadas; precisam ser definidos após o diag
 - Ferramenta e cobertura de testes automatizados.
 - Estratégia de deploy e rollback.
 - Política de versionamento de rulesets por campanha.
+
+
+### DEC-011 — Monólito modular antes de microserviços
+- **Data:** 2026-11-08
+- **Decisão:** manter a aplicação como monólito modular enquanto escala, equipe e requisitos não justificarem separação em serviços. Definir limites de domínio, contratos e testes antes de extrair módulos.
+- **Motivo:** reduzir complexidade operacional e preservar a stack atual; o problema principal é acoplamento, não falta de microserviços.
+- **Consequência:** refatorar por fatias verticais e extrair código compartilhado apenas quando consumidores e contratos estiverem mapeados.
+
+### DEC-012 — Preservar modelos de persistência coexistentes até reconciliação
+- **Data:** 2026-11-08
+- **Decisão:** campaigns.cba_data/combat_data e campaign_log são o caminho ativo observado; scenes/tokens/monster_instances/combat_state/roll_requests/roll_log permanecem como compatibilidade/legado até confirmar todos os consumidores.
+- **Motivo:** o banco e o frontend ainda contêm RPCs e estruturas de ambos os modelos; remover por aparência pode quebrar integrações externas ou dados históricos.
+- **Consequência:** nenhuma tabela, coluna ou RPC legada será removida sem mapa de consumidores, equivalência, backfill, testes e rollback.
+
+### DEC-013 — Documentação versionada como fonte de continuidade
+- **Data:** 2026-11-08
+- **Decisão:** PROJECT_STATE, ARCHITECTURE, DATA_MODEL, INTEGRATION_MAP, RPC_INVENTORY, ROADMAP, DECISIONS, AUDIT_REGISTER e TEST_STRATEGY são atualizados como parte do trabalho.
+- **Motivo:** o desenvolvimento atravessa várias sessões e não pode depender da memória da conversa.
+- **Consequência:** sessão é janela de execução, não marco do projeto; retomar do estado do repositório e validar o HEAD antes de continuar.
+
+### DEC-014 — CI estático incremental e sem dependências
+- **Data:** 2026-11-08
+- **Decisão:** iniciar validação automatizada com Node.js e recursos nativos, verificando scripts inline/compartilhados e invariantes críticos do Dice.
+- **Motivo:** estabelecer feedback reproduzível sem introduzir framework ou dependências antes de conhecer a aplicação.
+- **Consequência:** ampliar gradualmente para testes SQL, domínio, integração e E2E quando houver ambiente de teste seguro e reproduzível.
