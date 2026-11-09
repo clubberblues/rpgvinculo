@@ -194,3 +194,10 @@ Portanto, o teste de CA 10 executado para Thorgar (681) **não valida nem invali
 - Mapeado o fluxo de listagem, criação, entrada por código/mesa aberta, associação de ficha à mesa, configurações e exclusão de ficha/campanha. Definições SQL e argumentos frontend foram comparados estaticamente; grants de authenticated/anon/PUBLIC e search_path foram consultados para as RPCs do lobby.
 - Exclusão de campanha é uma saga cliente + Storage + duas RPCs, não uma transação única. Foram registrados riscos de entrada concorrente durante a pendência, retomada dependente do navegador, finalização não idempotente após resposta perdida e possível objeto de capa órfão. Nenhum desses riscos foi alterado nesta rodada.
 - Nenhuma ação mutável foi executada; dados de jogo e Storage permaneceram intactos.
+
+
+## Fronteira de escrita frontend — 2026-11-09
+- mesa.html: somente INSERT direto em campaign_log (chat/pedidos), com RLS de autoria/papel; mutações de combate/personagem/token seguem RPCs. Nenhuma mutação direta nessas entidades foi encontrada na varredura estática.
+- lobby.html: operações de campanha via RPC; upload de capa/avatar em Storage e update direto de campaigns.capa_url.
+- ficha.html: ramo D&D 3.5 usa RPCs para operações mecânicas críticas; ramo legado Vínculo mantém escritas diretas e referências de schema antigas. Criação em duas transações, aquisição de talentos/magias sem validação de pré-requisitos no servidor, update direto de ficha e consumo de inventário não atômico foram registrados como riscos, não corrigidos.
+- Decisão de arquitetura: uniformizar a autoridade do servidor para ações mecânicas nos dois rulesets. Não misturar catálogos ou tabelas SRD e Vínculo.
