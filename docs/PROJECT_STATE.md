@@ -55,6 +55,7 @@ Este registro começou como consolidação da documentação existente. A fotogr
 
 ## Documentos permanentes
 - [Arquitetura geral](ARCHITECTURE.md)
+- [Snapshot estrutural remoto do Supabase](REMOTE_SCHEMA_SNAPSHOT.md)
 - [Mapa de integração](INTEGRATION_MAP.md)
 - [Inventário de RPCs](RPC_INVENTORY.md)
 - [Modelo de dados](DATA_MODEL.md)
@@ -270,3 +271,6 @@ O inventário verbose do Supabase e a consulta direta a ACL identificaram duas r
 **Uso interno identificado:** `priv.throttle` é acessada por `priv.locked(text)`, `priv.fail(text,integer)` e `priv.clear(text)`, chamadas por `public.create_campaign`, `public.join_campaign` e `public.entrar_campanha_com_codigo` (SECURITY DEFINER). `priv.srd_aoo_reaction_ledger` é acessada por helpers SECURITY DEFINER de reserva/início de AOO; o helper de reserva exige autenticação e papel GM. Não foi alterado nenhum privilégio, policy ou estado de RLS.
 
 **Tratamento:** manter como hardening P2 condicionado à confirmação de Exposed schemas e revisão dos caminhos SECURITY DEFINER. Não aplicar automaticamente o SQL sugerido pelo advisor: habilitar RLS sem desenhar e testar as policies/semântica de bypass pode quebrar o acesso interno esperado ou criar falsa sensação de segurança. Nenhum dado foi alterado.
+
+
+O inventário estrutural remoto inicial foi materializado em [REMOTE_SCHEMA_SNAPSHOT.md](REMOTE_SCHEMA_SNAPSHOT.md): 83 relações, 229 índices e 327 assinaturas de funções/procedures com fingerprint. O documento não é dump executável; definições completas, ACL, policies e triggers ainda exigem exportação/classificação própria.
