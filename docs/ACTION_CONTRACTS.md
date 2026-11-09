@@ -414,3 +414,17 @@ O caminho de cancelamento bloqueia primeiro a linha de movimento pendente e depo
 **Classificação:** risco de deadlock sustentado pela ordem estática dos locks; ainda não reproduzido em concorrência. Deve ser prioridade no desenho de lock order e no teste concorrente descartável. A correção provável exige o cancelamento adquirir locks de ataques e pendência em uma ordem compatível e determinística, mas não foi aplicada sem fixture e teste transacional.
 
 A ordem completa de locks de todas as RPCs do combate ainda não está fechada. Não inferir que as demais rotas são livres de deadlock apenas por esta amostra.
+
+
+## Cruzamento complementar — ficha SRD: criação, grimório e Fúria — 2026-11-09
+
+| Fluxo | Observação confirmada |
+|---|---|
+| Criação SRD | `finalizar_criacao_personagem_srd` é uma função SQL SECURITY INVOKER que chama criação, idiomas, talentos bônus, domínios, grimório e equipamento inicial dentro de uma única transação PostgreSQL. Uma falha em qualquer etapa reverte o conjunto. O frontend envia os 14 argumentos correspondentes. |
+| Salvar grimório durante jogo | O frontend chama `salvar_dominios_personagem_srd` e depois `salvar_grimorio_srd` em duas RPCs sequenciais. Cada uma tem sua própria transação e lock; se a segunda falhar, os domínios já foram persistidos. O fluxo não é atômico como a criação inicial. |
+| Descanso longo | A RPC de personagem bloqueia personagem e ficha, valida campanha, proprietário, combate, intervalo de oito horas, morte e condições; cura PV, repõe magias/recursos e remove fadiga/exaustão na mesma transação. A variante de NPC vinculado é wrapper INVOKER para implementação privada. |
+| Fúria de personagem | Consulta e execução validam acesso por proprietário ou GM; execução bloqueia personagem, ficha e campanha, valida turno, condições, usos diários e grava efeito/recursos/log na mesma transação. |
+| Fúria de NPC vinculado | Consulta exige GM e token NPC único vinculado a ficha SRD. Execução também exige GM, bloqueia campanha/personagem/ficha, valida que a ficha de origem pertence ao próprio usuário GM, turno e recursos, e grava token/efeito/usos/log em uma transação. Se o token NPC estiver ligado a ficha pertencente a outro jogador, a consulta pode apresentar a habilidade como elegível, mas a execução será recusada por propriedade. Confirmar se esse cenário é permitido pelo modelo de NPC vinculado; não alterar autorização sem decisão de domínio. |
+
+### Risco de atomicidade em persistência de grimório
+A criação inicial já resolve atomicidade agregando escolhas num RPC transacional. Durante o jogo, a persistência de domínios e grimório permanece dividida. Próxima melhoria arquitetural candidata: um único RPC invoker que invoque ambos os validadores existentes dentro da mesma transação, mantendo as mesmas verificações de propriedade e pré-requisitos; testar em fixture descartável antes de trocar o frontend. Não foi criada essa RPC nem alterado o comportamento nesta rodada.
