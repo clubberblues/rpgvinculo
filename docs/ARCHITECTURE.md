@@ -249,3 +249,7 @@ Não introduzir framework, TypeScript, bundler ou microserviços como pré-requi
 
 ### Inicialização Supabase observada
 Cada página ativa cria sua própria instância do cliente; não há módulo compartilhado de auth/RPC. O CDN @supabase/supabase-js@2 e a configuração do projeto são repetidos. A extração de um cliente compartilhado é uma possível primeira refatoração, mas deve ocorrer somente após comparar auth options, guards e ciclo de sessão por página; não alterar a sessão em lote.
+
+
+## Versionamento e implantação — controle temporário
+O histórico remoto do projeto conectado contém 966 migrations aplicadas; o repositório main contém 681 arquivos em `supabase/migrations/`. A diferença de 285 exige reconciliação por versão e comparação do schema efetivo antes de considerar o diretório como fonte completa de reconstrução. Até lá, produção não deve ser resetada, reconstruída ou receber deploy automático baseado apenas no diretório atual. O snapshot remoto e a classificação de drift passam a ser entregáveis da Fase 1/2.
