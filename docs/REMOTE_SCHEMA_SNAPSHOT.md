@@ -7190,3 +7190,7 @@ permissive=PERMISSIVE; roles=anon,authenticated; cmd=SELECT; using=true; check=N
 | table | `public.vinculo_talents` | service_role | TRIGGER | não |
 | table | `public.vinculo_talents` | service_role | TRUNCATE | não |
 | table | `public.vinculo_talents` | service_role | UPDATE | não |
+
+
+### Duplicidade de nomes no histórico remoto
+A comparação também identificou dois nomes de migration repetidos em versões remotas distintas: `srd35_sneak_attack_damage_validation` e `srd35_rogue_uncanny_dodge_catalog_status` (duas ocorrências cada). Portanto, os 41 registros remotos que compartilham nome com arquivos locais correspondem a 39 nomes únicos, não a 41 pares um-para-um. Isso reforça que nome não é chave de equivalência; a reconciliação precisa considerar versão, conteúdo/efeito e ordem de aplicação.
