@@ -169,3 +169,22 @@ O trigger `private.sync_character_weapon_instances_from_inventory()` (OID 26446)
 3. Extrair para fixtures descartáveis as transições de Fúria character/token, remoção direta de efeito/condição, expiração de rodada e encerramento de combate.
 4. Testar duas sessões com barreiras determinísticas, rollback e retries; separar deadlock, race condition e perda de atualização.
 5. Só depois propor uma correção SQL e migration reconciliada. Nenhuma mudança de produção decorre desta auditoria.
+
+
+## Atualização — chamadas de conjuração e pendências de magia (2026-11-09, revisão por OID)
+
+A varredura de todas as funções cujo corpo referencia `priv.srd_pending_spell_resolutions` identificou os seguintes caminhos:
+
+| Função | Sequência observada | Leitura |
+|---|---|---|
+| `public.conjurar_missil_magico_srd` (OID 24356) | personagem → ficha → campanha → INSERT pending | Campanha é adquirida depois de locks de personagem/ficha; risco de inversão com fluxos campaign-first que bloqueiem ficha |
+| `public.conjurar_magia_efeitos_multialvo` (OID 25109) | personagem → ficha → consumir ação (helper de turno) → campanha → INSERT pending | Inversão campanha ↔ personagem/ficha permanece no fluxo ativo |
+| `public.conjurar_magia_dano_multialvo_srd` (OID 25246) | personagem → ficha → consumir ação → campanha → INSERT pending | Mesmo padrão de risco; confirmar o lock transitivo de consumir ação por OID na revisão de chamadas |
+| `public.conjurar_magia_srd_manual` (OID 24656) | ficha/personagem → campanha em mais de um ramo → updates de PV/cena e INSERT pending | Fluxo com múltiplos ramos e alvos; precisa de análise de cada branch antes de definir ordem única |
+| `public.avancar_turno` (OID 20074) | campanha → UPDATE combat_data (trigger de rodada) → INSERT pending quando necessário | Caminho campaign-first; o trigger pode encerrar Fúria e bloquear efeitos |
+| `public.srd_resolve_pending_spell_save` (OID 25072) e `public.srd_resolve_pending_spell_resistance` (OID 25073) | pending spell → atualização do próprio pending | Não foi encontrado lock explícito de campanha nesses dois resolvers; não constituem por si sós o caminho inverso pending ↔ campaign |
+| `priv.srd_apply_pending_spell_resolution` (OID 25071) | pending spell → campanha → ficha/efeitos/condições, conforme ramo | Mantém pending-first; não há evidência suficiente de um writer campaign-first que bloqueie o mesmo pending existente |
+
+**Conclusão refinada:** o ciclo campaign ↔ sheet/personagem continua sustentado por entrypoints de conjuração que bloqueiam ficha antes de chamar consumo de ação/lock da campanha, contra resolução de magia pendente e outros fluxos campaign-first. O risco é de ordem de locks, não prova de deadlock ocorrido em produção. Para a tabela de pendências de magia, não foi encontrada inversão simétrica completa: os resolvers de salvamento/resistência bloqueiam o pending e atualizam apenas seu status; os caminhos de conjuração inserem novos pendings depois de bloquear a campanha. Não misturar esse caso com o ciclo AOO pending ↔ attack.
+
+A busca foi feita nos corpos atuais por OID e assinatura. Dependências chamadas por outras funções precisam de inspeção individual; correspondência textual não é call graph. Nenhuma RPC foi executada durante esta análise.
