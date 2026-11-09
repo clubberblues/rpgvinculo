@@ -45,12 +45,13 @@ Este registro começou como consolidação da documentação existente. A fotogr
 8. Toda mudança funcional deve ter teste adequado e avaliação de regressão.
 
 ## Próxima atividade — estado atual
-**Concluir a consolidação da arquitetura e dos contratos antes da primeira refatoração funcional.**
-1. Completar o cruzamento de argumentos e tipos JavaScript ↔ PostgreSQL para os fluxos críticos restantes (movimento/AOO, magia, salvamentos, inventário e progressão).
-2. Confirmar na configuração da API Supabase quais schemas estão expostos; resolver a discrepância de ACL em priv/private sem revogação em lote.
-3. Reconciliar o item de teste: Thunga Mestre (ID 682) e Thorgar (ID 681) são registros distintos. Não executar teste funcional nem alterar dados até confirmar qual personagem é o alvo.
-4. Finalizar contratos de domínio, transação, erros, idempotência e testes; escolher a primeira fatia técnica para branch + PR.
-5. Iniciar a extração modular somente com critérios de aceite e CI aplicáveis.
+**Fase 1 — concluir contratos arquiteturais antes de qualquer refatoração funcional.**
+1. Conferir manualmente Supabase Dashboard → Project Settings → API → Exposed schemas; pg_settings e get_project não expõem essa configuração.
+2. Completar o cruzamento de argumentos e tipos JavaScript ↔ PostgreSQL para os fluxos críticos restantes (movimento/AOO, magia, salvamentos, inventário e progressão).
+3. Detalhar ActionRequest/ActionResult, códigos de erro, eventos, versionamento e ordem de locks em ACTION_CONTRACTS.md; a proposta inicial já foi criada, mas ainda não é contrato implementado.
+4. Definir o desenho de persistência/idempotência e os critérios de teste em ambiente descartável, sem aplicar migrações nesta etapa.
+5. Manter a validação de Thorgar/Thunga bloqueada até confirmação inequívoca do alvo; não alterar dados reais de campanha.
+6. Escolher a primeira fatia técnica somente após os contratos, o ambiente de teste e os critérios de aceite estarem definidos.
 
 ## Documentos permanentes
 - [Arquitetura geral](ARCHITECTURE.md)
@@ -61,6 +62,7 @@ Este registro começou como consolidação da documentação existente. A fotogr
 - [Decisões](DECISIONS.md)
 - [Registro de auditorias](AUDIT_REGISTER.md)
 - [Estratégia de testes](TEST_STRATEGY.md)
+- [Contratos de ações e resultados](ACTION_CONTRACTS.md)
 - [Item de trabalho ativo](ACTIVE_WORK_ITEM.md)
 
 ## Protocolo de continuidade entre sessões
@@ -164,3 +166,10 @@ Portanto, o teste de CA 10 executado para Thorgar (681) **não valida nem invali
 - As cinco funções public executáveis por anon são utilitários/trigger SECURITY INVOKER, não SECURITY DEFINER.
 - A configuração PostgREST de schemas expostos não está disponível via pg_settings nem pelo endpoint de metadados get_project do conector. Portanto, ainda não foi possível confirmar se priv/private estão ou não expostos à API REST.
 - **Ação necessária:** conferir manualmente Supabase Dashboard → Project Settings → API → Exposed schemas. Se priv/private estiverem expostos, revisar imediatamente o conjunto de funções com EXECUTE para authenticated antes de qualquer revogação. Não remover USAGE/EXECUTE agora, pois wrappers SECURITY INVOKER dependem desses grants para chamar helpers internos.
+
+
+## Continuidade — 2026-11-09
+- Criado ACTION_CONTRACTS.md com proposta não disruptiva de ActionRequest/ActionResult, idempotência, eventos, erros e plano de adoção. Nenhuma RPC ou tabela foi alterada.
+- Consulta atual a pg_proc confirmou assinaturas de avancar_turno, conjurar_magia_com_acao_srd_manual, conjurar_missil_magico_srd_manual, registrar_iniciativa_d20 e iniciar_iniciativa_com_dados; diferenças de idempotência estão documentadas no novo contrato.
+- get_project confirmou projeto ACTIVE_HEALTHY em PostgreSQL 17.6. Consulta a pg_settings não retornou parâmetros PGRST/schema, portanto a exposição REST de priv/private continua exigindo conferência no Dashboard.
+- A prioridade permanece Fase 1; validação funcional em personagens reais continua bloqueada pela divergência documentada entre Thorgar 681 e Thunga Mestre 682.
