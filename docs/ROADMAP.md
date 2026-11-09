@@ -11,7 +11,7 @@ Nenhuma fase deve ser repetida integralmente sem evidência de mudança ou lacun
 - [x] Identificar e consolidar README, arquitetura D&D 3.5 e Plano Mestre como referências centrais; reconciliação detalhada do conteúdo segue em andamento.
 - [ ] Reconciliar snapshots divergentes de catálogos, funções, migrations e pendências.
 - [ ] Completar mapa de dependências entre frontend, RPCs e tabelas (varredura inicial realizada; comparar/decidir destino do lobby_atualizado.html).
-- [ ] Inventariar testes disponíveis, testes simulados e testes reais por módulo (README descreve testes locais; harness não localizado nos caminhos convencionais).
+- [ ] Inventariar testes disponíveis, testes simulados e testes reais por módulo (primeiro CI estático criado e aprovado; Playwright/pglast e integração/E2E ainda não estão reproduzíveis no repositório).
 - [ ] Atualizar o registro de auditorias sem repetir itens já verificados.
 - [x] Capturar fotografia somente de leitura do estado remoto do Supabase; reconciliar divergências e dependências ainda em andamento.
 
