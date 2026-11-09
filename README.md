@@ -17,7 +17,7 @@ Os documentos novos consolidam e conectam as referências existentes; não subst
 
 ## Arquivos e publicação
 
-Publique `index.html`, `lobby.html`, `ficha.html` e `mesa.html` na raiz do site. O pacote preserva `lobby_atualizado.html` como espelho, `dice.html`, `fundo-livro.png` e as capas `capa-mestre.png`, `capa-jogador.png`, `capa-monstros.png` e `capa-mundo.png`.
+Publique `index.html`, `lobby.html`, `ficha.html` e `mesa.html` na raiz do site. O pacote também preserva `lobby_atualizado.html` como arquivo legado (não sincronizado com `lobby.html` no estado atual), `dice.html`, `fundo-livro.png` e as capas `capa-mestre.png`, `capa-jogador.png`, `capa-monstros.png` e `capa-mundo.png`.
 
 O modo D&D 3.5 usa `srd_character_sheets`; a compatibilidade arquivada usa `vinculo_character_sheets`. Não deve haver consulta direta à relação removida `public.character_sheets`.
 
