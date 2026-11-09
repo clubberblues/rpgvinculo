@@ -47,6 +47,13 @@ A revisão dos entrypoints usados pela interface distinguiu ausência de seriali
 
 **Conclusão:** não forçar lock de campanha em toda edição de ficha apenas por receber `p_campaign_id`. Manter operações puras de ficha fora do agregado, desde que permaneçam sem chamada transitiva de campanha. Se uma operação de ficha passar a modificar cena/combate/condições ou chamar um helper campaign-scoped, deverá adquirir campanha antes de personagem/ficha. Registrar separadamente esses endpoints para revisão de concorrência e autorização.
 
+
+### Descanso longo de personagem — verificação de combate sem serialização (2026-11-09)
+
+- `public.descanso_longo_personagem_srd` (OID 24366) é chamado por `ficha.html`. A função bloqueia `characters` → `srd_character_sheets`, consulta `campaigns.state` sem `FOR UPDATE`, e depois altera PV, magias, recursos de classe e condições de campanha. Também chama `priv.srd_sync_character_vital_condition`, que atualiza condições sem adquirir lock da campanha.
+- A rota de descanso longo de NPC vinculado já é campaign-first; a rota de personagem jogador não é. A checagem “não descansar durante combate” não é atômica com o início/alteração de combate: uma transação pode ler estado fora de combate, outra iniciar combate e confirmar, e a primeira continuar aplicando descanso depois.
+- Não classificar isso automaticamente como deadlock: a função de descanso não pede lock da campanha depois de manter personagem/ficha. É um bypass da serialização do agregado e uma corrida de regra/estado. A correção candidata é localizar campanha sem lock, bloquear `campaigns` primeiro, revalidar vínculo/ownership e estado, e só então bloquear personagem → ficha → recursos/condições.
+
 ## 3. Evidências que motivam a proposta
 
 ### Ciclos já identificados nos corpos remotos
@@ -54,7 +61,7 @@ A revisão dos entrypoints usados pela interface distinguiu ausência de seriali
 - Pending AOO ↔ ataque: cancelamento/encerramento bloqueia pending → attack; resolução/dano/ocultação bloqueia attack → pending.
 - Campanha ↔ arma: início de sequência iterativa overload 7 bloqueia arma antes da campanha; resolução bloqueia campanha e depois pede `FOR SHARE` na instância.
 - Campanha ↔ personagem/ficha: descanso longo de NPC vinculado bloqueia campanha → personagem → ficha; ações de classe e entrypoints de conjuração podem bloquear personagem → ficha → campanha.
-- Efeitos, condições e PV: helpers de sincronização de condição não bloqueiam sempre campanha primeiro; a ordem depende do chamador.
+- Efeitos, condições e PV: helpers de sincronização de condição não bloqueiam sempre campanha primeiro; a ordem depende do chamador. O descanso longo de personagem é uma rota ativa que altera condições sem serializar primeiro a campanha e ainda verifica o estado de combate por leitura não bloqueante.
 - Inventário/arma: o trigger possui ramo de remoção equipamento → instância, mas os writers atuais identificados só aumentam quantidade e authenticated não tem DML direto; manter como risco futuro, não ciclo operacional atual.
 
 ### O que já passou em teste
