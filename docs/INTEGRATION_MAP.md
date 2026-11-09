@@ -26,7 +26,10 @@ O arquivo vinculo-ui.js (3.944 caracteres no snapshot) é um utilitário de inte
 ## Divergência do lobby legado
 A comparação estática encontrou lobby.html com 10 RPCs distintas e lobby_atualizado.html com 4; seis RPCs do lobby atual não aparecem no arquivo legado. O arquivo legado consulta spells/talents, enquanto o lobby atual consulta vinculo_spells/vinculo_talents e recursos SRD. Os arquivos também diferem em cerca de 30 mil caracteres e na inclusão de vinculo-ui.js. Portanto, lobby_atualizado.html **não é um espelho sincronizado** do lobby atual no HEAD observado. Não publicar nem editar como se fosse equivalente; primeiro decidir se deve ser removido, arquivado ou atualizado.
 
-## Inventário de contratos RPC\nO [RPC_INVENTORY.md](RPC_INVENTORY.md) registra as 100 chamadas literais e 108 assinaturas públicas correspondentes, com flags de acesso e marcadores estáticos de guarda. A próxima etapa é cruzar argumentos/tipos do JavaScript com sobrecargas e validar os fluxos críticos.\n\n## Integração de dados e RPC
+## Inventário de contratos RPC
+O [RPC_INVENTORY.md](RPC_INVENTORY.md) registra as 100 chamadas literais e 108 assinaturas públicas correspondentes, com flags de acesso e marcadores estáticos de guarda. A próxima etapa é cruzar argumentos/tipos do JavaScript com sobrecargas e validar os fluxos críticos.
+
+## Integração de dados e RPC
 
 A varredura identificou 100 nomes distintos de RPC chamados por mesa.html, ficha.html e lobby.html. Uma consulta ao catálogo PostgreSQL encontrou os 100 nomes no schema public.
 
@@ -60,7 +63,8 @@ A varredura identificou 100 nomes distintos de RPC chamados por mesa.html, ficha
 - Associação de ficha própria à mesa.
 - Atualização de configurações e exclusão protegida.
 
-## Dados e estado\nO [DATA_MODEL.md](DATA_MODEL.md) registra as relações verificadas, fontes canônicas e estruturas de compatibilidade.
+## Dados e estado
+O [DATA_MODEL.md](DATA_MODEL.md) registra as relações verificadas, fontes canônicas e estruturas de compatibilidade.
 
 O snapshot do banco observado possui 76 relações em public e 7 em priv. Os domínios identificáveis incluem:
 
