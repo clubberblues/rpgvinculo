@@ -23,7 +23,7 @@ Este documento registra decisões que devem sobreviver às sessões. Decisões n
 - **Decisão:** ações de jogadores que exigem rolagem devem solicitar rolagem pela interface de dados; o sistema não gera automaticamente um d20 oculto para substituir a rolagem do jogador.
 - **Decisão complementar:** o fluxo de iniciativa convoca os jogadores a rolar seus próprios dados. O Mestre rola dados para NPCs/monstros sob seu controle; resultados múltiplos devem ser associados uma única vez aos tokens selecionados, não aos personagens dos jogadores.
 - **Motivo:** preservar a experiência de rolagem de mesa e a transparência.
-- **Consequência:** o fluxo aguarda as rolagens exigidas antes de avançar.
+- **Consequência:** o fluxo aguarda as rolagens exigidas antes de avançar. O Dice iframe gera o resultado após clique e devolve-o por postMessage; os resolvers de ação recebem os valores manuais. O RPC público roll_dice, que gera resultados no servidor, não está conectado às páginas ativas no snapshot e não deve ser usado para ações de personagem sem decisão explícita.
 
 ### DEC-005 — Controle de tokens
 - **Decisão:** jogador controla seu personagem; Mestre controla NPCs/monstros. O Mestre pode mover token de jogador nas condições já acordadas, sem assumir suas ações de combate, magia ou inventário.
