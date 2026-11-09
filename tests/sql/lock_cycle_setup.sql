@@ -50,3 +50,10 @@ CREATE TABLE lock_fixture.feature_resources (
   uses_spent integer NOT NULL
 );
 INSERT INTO lock_fixture.feature_resources VALUES (1, 1, 0);
+
+CREATE TABLE lock_fixture.sheets (
+  id integer PRIMARY KEY,
+  character_id integer NOT NULL REFERENCES lock_fixture.characters(id),
+  pv integer NOT NULL
+);
+INSERT INTO lock_fixture.sheets VALUES (1, 1, 10);

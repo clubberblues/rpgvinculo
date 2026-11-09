@@ -517,3 +517,22 @@ O ponto importante é que a ordem candidata global não pode ser definida apenas
 ### Fixture sintética adicional
 
 Foi acrescentado ao harness o par campanha → recurso de classe versus recurso de classe → campanha. O teste serve para verificar o comportamento de deadlock do PostgreSQL em uma sequência deliberadamente invertida; não reproduz as RPCs nem demonstra que o par é alcançável em produção.
+
+
+### Conjuração e resolução pendente: campanha versus ficha — 2026-11-09
+
+A revisão dos corpos remotos acrescentou uma inversão mais diretamente correlacionada com o mesmo alvo:
+
+- `priv.srd_apply_pending_spell_resolution` bloqueia a linha da resolução pendente e depois `campaigns FOR UPDATE`; para alvo do tipo `character`, em seguida bloqueia `srd_character_sheets FOR UPDATE OF sh`.
+- `public.srd_resolve_pending_spell_save` bloqueia a pendência e, em resultados que aplicam dano, delega ao aplicador acima. `public.srd_resolve_pending_spell_resistance` também pode delegar ao mesmo aplicador após a rolagem.
+- `public.conjurar_magia_efeitos_multialvo` bloqueia `characters FOR UPDATE`, depois `srd_character_sheets FOR UPDATE`, e chama `public.consumir_acao_turno_srd`, que bloqueia `campaigns FOR UPDATE`; depois volta a ler/bloquear a campanha para criar pendências ou efeitos.
+
+**Risco de deadlock potencial:** resolução de magia contra personagem (campanha → ficha) concorrente com conjuração multialvo pelo mesmo personagem (ficha → campanha). Se a resolução segura a campanha e espera a ficha enquanto a conjuração segura a ficha e espera a campanha, PostgreSQL pode detectar um ciclo. A pendência é uma linha adicional já bloqueada no caminho de resolução; o ciclo central envolve campanha e ficha.
+
+A combinação é estruturalmente alcançável quando um personagem-alvo de uma magia pendente tenta conjurar outra magia enquanto a resolução anterior é confirmada. A regra de jogo pode impedir algumas ações após a condição ser aplicada, mas a resolução concorrente ainda pode ocorrer antes de a condição entrar em vigor; portanto, não usar a regra de turno como substituto de serialização no banco.
+
+**Estado:** ordem conflitante confirmada nos corpos instalados; deadlock real entre as RPCs ainda não reproduzido. Nenhuma função remota foi alterada.
+
+### Fixture sintética adicional — conjuração
+
+O harness inclui o padrão campanha → ficha versus ficha → campanha. Ele verifica apenas o comportamento de locks do PostgreSQL em duas sessões; não executa conjuração, salvamento ou aplicação de magia no Supabase.

@@ -318,3 +318,11 @@ Fixture descartável com campanha em combate, movimento pendente ativo, reação
    - Esperado após correção: ordem global única ou serialização explícita; sem deadlock, consumo duplicado ou reset perdido.
 38. Confirmar primeiro que a mesma ficha pode ser alcançada pelos dois entrypoints na mesma campanha; se ownership/ligação impedir essa combinação, registrar o par como não alcançável em vez de tratá-lo como deadlock operacional.
 39. Expandir a fixture para copiar os caminhos/locks reais quando o mapa de chamadas e os contratos estiverem completos; manter o teste atual como modelo sintético.
+
+
+### Conjuração — concorrência entre resolução pendente e conjurador-alvo
+
+40. Duas sessões na mesma campanha: resolver uma magia pendente cujo alvo é personagem (pending → campaign → sheet) enquanto esse personagem tenta conjurar magia multialvo (character → sheet → campaign).
+   - Esperado após correção: serialização por ordem global única, sem deadlock, gasto duplicado de espaço ou efeito aplicado parcialmente.
+41. Repetir para resolução de dano com salvamento bem-sucedido, resistência à magia e efeito de condição; verificar se todos os caminhos transitivos usam a mesma ordem.
+42. A fixture atual modela apenas campaign ↔ sheet. Quando a reconciliação permitir, adicionar o corpo real dos wrappers e helpers a um banco efêmero sem Auth/produção.
