@@ -209,3 +209,13 @@ Fixture descartável com campanha em combate, movimento pendente ativo, reação
 - Testes que dependam especificamente de Supabase Auth, RLS/PostgREST, Realtime, Storage ou extensões ainda não reproduzidas devem permanecer como **bloqueados/não verificados**, nunca ser simulados como se fossem E2E Supabase.
 - Nenhum teste mutável será executado na base conectada, em campanhas reais ou em TESTE 2.
 - A prioridade do primeiro harness é a regressão P1: movimento direto sem pré-check, pending global, janela TOCTOU e lock order. A fixture deve provar atomicidade e concorrência antes de qualquer patch no banco real.
+
+
+### Complemento obrigatório da regressão P1 — fila global e commit autorizado
+
+6. Com pending A ativo, chamar o RPC direto para mover token B em um destino sem qualquer ameaça.
+   - Esperado: rejeição; a verificação da pending global ocorre antes do retorno antecipado de “sem AOO”.
+7. Finalizar a pending A pelo fluxo normal e confirmar que o trigger de preview valida o movimento sem criar uma nova pending nem persistir duas vezes.
+   - Esperado: somente o commit associado ao pending ID correspondente pode prosseguir; a exceção sentinela do preview continua revertendo a validação simulada.
+8. Tentar usar um pending ID de outra campanha, de outro token, com destino diferente ou status terminal.
+   - Esperado: rejeição sem mover token nem consumir deslocamento.
