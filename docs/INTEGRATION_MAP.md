@@ -14,13 +14,13 @@ O fluxo é distribuído entre páginas independentes. Cada página inicializa se
 |---|---|---|
 | index.html | Entrada/autenticação e encaminhamento ao lobby | Inicializa cliente Supabase e consulta sessão |
 | lobby.html | Listagem, criação/entrada em campanha e escolha/vínculo de ficha | 10 RPCs distintas e 10 referências .from() |
-| lobby_atualizado.html | Cópia/espelho legado do lobby segundo README | Inicializa cliente Supabase; requer comparação antes de qualquer alteração |
+| lobby_atualizado.html | Arquivo legado com nome de espelho, mas conteúdo divergente do lobby atual | 4 RPCs distintas; lê também os catálogos legados spells/talents; não inclui vinculo-ui.js |
 | ficha.html | Visualização e edição de personagem, progressão, equipamento, grimório e recursos | 12 RPCs distintas e 31 referências .from(); comunica-se com o iframe de dados |
 | mesa.html | Orquestração da sessão: cena, tokens, turnos, combate, inventário, magias, condições, chat e log | 87 RPCs distintas, 27 referências .from(), 9 chamadas channel()/on() |
 | dice.html | Interface visual de dados e retorno dos resultados ao documento pai | Sem chamadas .rpc() ou .from() detectadas; usa postMessage |
 | dex.html | Não encontrado no caminho consultado na branch main | Confirmar se é arquivo local/antigo ou se foi descontinuado |
 
-## Integração de dados e RPC
+## Divergência do lobby legado\nA comparação estática encontrou lobby.html com 10 RPCs distintas e lobby_atualizado.html com 4; seis RPCs do lobby atual não aparecem no arquivo legado. O arquivo legado consulta spells/talents, enquanto o lobby atual consulta vinculo_spells/vinculo_talents e recursos SRD. Os arquivos também diferem em cerca de 30 mil caracteres e na inclusão de vinculo-ui.js. Portanto, lobby_atualizado.html **não é um espelho sincronizado** do lobby atual no HEAD observado. Não publicar nem editar como se fosse equivalente; primeiro decidir se deve ser removido, arquivado ou atualizado.\n\n## Integração de dados e RPC
 
 A varredura identificou 100 nomes distintos de RPC chamados por mesa.html, ficha.html e lobby.html. Uma consulta ao catálogo PostgreSQL encontrou os 100 nomes no schema public.
 
