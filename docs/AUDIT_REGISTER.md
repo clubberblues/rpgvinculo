@@ -186,3 +186,9 @@ Snapshot de contagens no banco: campaign_log=70, combat_state=0, roll_requests=0
 - Não remover tabelas ou funções nesta fase: podem existir clientes antigos, integrações externas ou dados fora do recorte. Classificar como legado candidato e decidir após confirmar ausência de consumidores e plano de migração.
 
 O sistema atual tem dois modelos de estado de combate/rolagem coexistentes no banco. O caminho atual do produto é campaigns JSONB + campaign_log + iframe Dice; o caminho relacional permanece como compatibilidade/legado.
+
+
+### RPC server-side roll_dice
+public.roll_dice(p_expr,p_visibilidade) continua no banco como SECURITY DEFINER e delega a priv.roll_dice_expr, que gera o resultado no servidor e grava ROLL em campaign_log quando encontra uma campanha do usuário. A busca literal nas páginas ativas index.html, lobby.html, ficha.html, mesa.html e dice.html não encontrou chamada a esse RPC.
+
+Portanto, classificar roll_dice como caminho legado/alternativo não conectado ao fluxo ativo de Dice iframe no snapshot atual. Não conectar esse RPC às ações de personagem: os fluxos de ataque, salvamento, iniciativa e dano devem continuar recebendo os resultados gerados após a interação do usuário no Dice UI. A remoção do RPC exige confirmar ausência de clientes externos/antigos.
