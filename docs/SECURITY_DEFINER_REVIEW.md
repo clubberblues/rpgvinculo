@@ -154,3 +154,14 @@ As 25 assinaturas restantes não foram encontradas em chamadas literais nem ness
 
 ### Dependência interna de `srd_detectar_saida_alcance_ameacado_srd`
 Consulta aos corpos de funções em `public`, `priv` e `private` encontrou somente um chamador SQL: `public.srd_solicitar_movimento_com_aoo_srd`, que é SECURITY DEFINER. Não foi encontrado uso direto em `mesa.html`, `ficha.html` ou `lobby.html`. Assim, EXECUTE para authenticated na função detector parece dispensável para o fluxo atual; a opção de hardening de menor superfície é mover a implementação para `priv` ou revogar o grant direto a authenticated após verificar todos os artefatos externos e políticas. Não alterado nesta fase de reconciliação.
+
+
+## Revisão semântica focal — `salvar_cena_cba` — 2026-11-09
+
+A função está entre as 99 SECURITY DEFINER públicas executáveis por authenticated. A guarda de autenticação e papel GM está presente, e a consulta de campanha usa `FOR UPDATE`; portanto, a triagem de identidade/papel não é o achado principal.
+
+O problema é de **integridade do payload e autoridade do estado**: a função aceita um snapshot de cena do cliente, substitui os objetos de tokens correspondentes por inteiro e grava `cba_data`. Não verifica se coordenadas mudaram, se o token cabe na grade, se há sobreposição, se existe movimento AOO pendente, nem se o snapshot está desatualizado. O lock serializa as escritas, mas não impede que um snapshot obsoleto sobrescreva alterações concorrentes.
+
+Como o frontend usa essa RPC em fluxos legítimos durante combate, não revogar EXECUTE nem bloquear a função indiscriminadamente. A correção deve restringir campos mutáveis e dividir a operação em endpoints de metadados, spawn/remoção, estado de token e movimento. A posição e os valores autoritativos de combate devem ser preservados/mesclados no servidor. Casos de regressão 9–15 em `TEST_STRATEGY.md`.
+
+**Classificação:** P1 de integridade/autoridade do estado, confirmado por leitura estática do corpo remoto; exploração por chamada autenticada direta e concorrência ainda não reproduzidas. Não corrigido.
