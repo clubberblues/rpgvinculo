@@ -23,3 +23,7 @@ These tests run against a disposable PostgreSQL service inside a standard GitHub
 - A further synthetic pair models the spell-resolution order campaign → character sheet versus multi-target spell-casting order character sheet → campaign. The production bodies show these conflicting prefixes, but the fixture still models only PostgreSQL locks; it does not execute spell RPCs or establish a reproduced production deadlock.
 
 - The latest lock-cycle case models the compound barbarian-rage cleanup prefix (effect → character sheet → campaign) versus the round-change trigger (campaign → effect). It is still a synthetic lock-order test; it does not execute `end_combat`, the trigger, or the rage RPCs.
+
+
+- Added a positive-control concurrency case: two sessions both acquire campaign before effect and must complete without a deadlock. This guards against a harness that only proves deliberately inverted patterns fail; it still tests the PostgreSQL lock protocol in isolation, not production RPC bodies.
+- The latest read-only frontend scan confirmed that `mesa.html` directly invokes the multi-target damage/effect spell RPCs and the manual Magic Missile wrapper. The exact removal RPC names were not found in the seven tracked interface/script files; this is not proof that no external or indirect caller exists.
