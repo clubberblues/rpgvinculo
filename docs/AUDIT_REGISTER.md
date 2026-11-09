@@ -167,3 +167,22 @@ Consulta aos advisors de segurança e desempenho:
 - Nenhum dos 99 ficou sem os marcadores heurísticos pesquisados. Isso reduz o risco de funções completamente desprotegidas, mas não substitui revisão semântica: é necessário verificar se cada guarda valida o usuário, campanha, papel e alvo corretos e se a operação é transacional.
 - Os 7 objetos RLS sem policies foram reconsultados: anon e authenticated não têm SELECT/INSERT/UPDATE/DELETE direto nessas tabelas. Portanto, não criar policies apenas para remover o aviso INFO.
 - O alerta de 99 SECURITY DEFINER continua registrado para revisão por fluxo; não houve revogação em lote nem alteração de permissões.
+
+
+## Estado de combate, rolagens e log: caminho atual versus legado
+
+Snapshot de contagens no banco: campaign_log=70, combat_state=0, roll_requests=0 e roll_log=0.
+
+### Caminho atual observado
+- A mesa atual usa campaigns.combat_data e campaigns.cba_data para estado de combate/cena.
+- Iniciativa atual passa por iniciar_iniciativa_com_dados e/ou iniciar_iniciativa_com_pedido, que escrevem estado em campaigns e registram eventos em campaign_log.
+- Dados são preparados no iframe Dice; a mesa recebe o resultado e usa roll_dice/log ou RPC específica da ação. O iframe não persiste diretamente no banco.
+- Chat e eventos de jogo são registrados em campaign_log, com visibilidade aplicada por tipo de evento e policy.
+
+### Caminho relacional legado
+- combat_state está vazio no snapshot e é usado por start_combat, end_combat, combat_set_turn, end_turn e is_my_turn.
+- roll_requests e roll_log estão vazios e são usados por ask_roll/answer_roll e por resolvers antigos de ataque/dano.
+- Esses RPCs não aparecem na varredura de chamadas literais do frontend atual.
+- Não remover tabelas ou funções nesta fase: podem existir clientes antigos, integrações externas ou dados fora do recorte. Classificar como legado candidato e decidir após confirmar ausência de consumidores e plano de migração.
+
+O sistema atual tem dois modelos de estado de combate/rolagem coexistentes no banco. O caminho atual do produto é campaigns JSONB + campaign_log + iframe Dice; o caminho relacional permanece como compatibilidade/legado.
