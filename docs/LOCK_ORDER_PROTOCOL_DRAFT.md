@@ -115,3 +115,57 @@ O harness recebeu um caso nomeado para o caminho composto `effect → sheet → 
 A trigger de solicitação de rolagem por Confusão também adquire condição e log após o UPDATE de campanha. O helper de vitalidade de personagem atualiza condições e depois apenas lê campanha sem lock explícito; não confundir leitura MVCC com aquisição de lock de linha.
 
 **Decisão:** manter o protocolo global como rascunho. A correção precisa harmonizar a ordem no encerramento de combate, expiração de Fúria e transições AOO, incluindo efeitos de trigger, antes de aprovar qualquer migration.
+
+
+## Atualização — encerramento de Fúria e remoções diretas (2026-11-09, revisão adicional)
+
+Esta atualização foi feita após inspeção dos corpos remotos por OID/assinatura e dos triggers ativos. Ela refina, sem substituir, as evidências anteriores.
+
+### 1. Ciclo campanha ↔ efeito de Fúria — confirmado no fluxo de NPC/token
+
+- `priv.srd_end_barbarian_rage_token(bigint,text,boolean)` (OID 26653) adquire primeiro `srd_campaign_effects FOR UPDATE`, depois `campaigns FOR UPDATE`, e em seguida pode atualizar token JSONB, sincronizar ficha vinculada e gravar condições.
+- `public.alternar_estado_campanha(bigint,text)` (OID 20103) bloqueia a linha de campanha antes de percorrer os efeitos de Fúria com `FOR UPDATE` e chamar o encerrador.
+- `public.end_combat(bigint)` (OID 19091) percorre e bloqueia efeitos de Fúria antes do UPDATE final da campanha; se o encerrador de token for chamado, o caminho interno tenta bloquear a campanha depois do efeito.
+- `priv.srd_expire_barbarian_rage_on_round_change()` (OID 26292) é trigger AFTER UPDATE de `campaigns.combat_data`: a linha campanha já está bloqueada pela instrução que disparou o trigger, e a função percorre efeitos de Fúria com `FOR UPDATE` antes de chamar encerradores.
+
+**Conclusão:** existe inversão estrutural campanha → efeito versus efeito → campanha. É um ciclo de locks demonstrado pelos corpos e pelo contexto do trigger, mas não foi reproduzido com as RPCs remotas nem observado como deadlock real de produção.
+
+### 2. Fúria de personagem — caminho composto diferente
+
+`priv.srd_end_barbarian_rage(bigint,text,boolean)` (OID 25340) bloqueia efeito → ficha, atualiza PV, sincroniza condições vitais e pode chamar `priv.srd_apply_campaign_condition`, que bloqueia campanha antes de escrever efeitos/condições. Quando chamado por um fluxo que já segura campanha (por exemplo, expiração/encerramento), a campanha é lock herdado; quando chamado por caminho sem esse lock, a sequência pode tornar-se efeito → ficha → campanha. Não presumir que o helper de vitalidade cria lock reverso: ele atualiza condições e faz apenas leitura MVCC da campanha, sem `FOR UPDATE` na campanha.
+
+### 3. Remoções públicas de efeitos/condições — bypass do serializador
+
+- `public.srd_remove_campaign_condition(bigint,text,text,text)` (OID 24806) e `public.srd_remove_campaign_effect(bigint,bigint)` (OID 24897) são `SECURITY DEFINER`, têm EXECUTE para `authenticated` e não para `anon`.
+- Ambos exigem usuário autenticado e papel GM. Porém, atualizam diretamente a tabela-alvo sem bloquear primeiro `campaigns FOR UPDATE`.
+- Não verificam se existe movimento AOO pendente e não delegam aos helpers internos que serializam a campanha.
+- As tabelas-alvo têm RLS habilitado, mas o acesso privilegiado dessas funções SECURITY DEFINER faz com que a validação do corpo da RPC seja o limite efetivo.
+
+**Risco:** essas rotas permitem concorrência de remoção de efeito/condição com avanço de turno, dano, conjuração e resolução de AOO sem participar da mesma serialização de campanha. Isso pode produzir decisões baseadas em um estado que muda durante a resolução, mesmo que não resulte necessariamente em deadlock.
+
+**Ação futura:** consolidar remoção em helpers internos campaign-first, revalidar papel/pertencimento sob lock e definir política explícita para mudanças estruturais durante pending AOO/pendência de magia. Não alterar essas RPCs antes de mapear consumidores frontend e testar compatibilidade.
+
+### 4. Resolução de magia pendente — lock dedicado antes da campanha
+
+`priv.srd_apply_pending_spell_resolution(uuid)` (OID 25071) bloqueia `priv.srd_pending_spell_resolutions` antes de adquirir `campaigns FOR UPDATE`; depois pode bloquear ficha e chamar sincronização de vitalidade. O helper interno não tem EXECUTE direto para authenticated/anon. Ainda falta mapear todos os escritores e transições do registro pending para determinar se há algum caminho inverso campaign → spell-pending. Até isso ser verificado, a ordem pending-spell → campaign é uma dependência a preservar ou harmonizar, não uma inversão confirmada isoladamente.
+
+### 5. Equipamento e instâncias de armas — limite da evidência
+
+O trigger `private.sync_character_weapon_instances_from_inventory()` (OID 26446) é AFTER INSERT/DELETE/UPDATE de quantidade em `srd_character_equipment`; cria/remove instâncias e atualiza o resumo do equipamento. `private.equipar_arma_instancia_personagem_impl` (OID 26441) bloqueia personagem → instância de arma e depois atualiza instâncias/equipamento. A análise lexical anterior identificou caminhos de sequência iterativa que podem inverter campanha/arma, mas esta revisão não fecha o grafo transitivo completo desse domínio. Manter a hipótese como pendência, sem elevar para deadlock confirmado.
+
+### 6. Estado de verificação
+
+- Evidência de código/trigger: confirmada por OID e definição atual remota.
+- Deadlock real em produção: não observado.
+- Reprodução com RPCs Supabase reais: não executada.
+- Harness PostgreSQL existente: cobre padrões sintéticos, não executa os corpos dessas RPCs.
+- Nenhuma função, trigger, ACL, policy, migration ou dado foi alterado no Supabase remoto.
+- TESTE 2 permaneceu intocado.
+
+### Próximos critérios técnicos
+
+1. Completar o grafo de chamadas de todos os writers de `srd_pending_spell_resolutions`, efeitos e condições; não usar regex por nome como prova de call graph.
+2. Identificar consumidores reais das RPCs públicas de remoção e validar a autorização/contrato do frontend.
+3. Extrair para fixtures descartáveis as transições de Fúria character/token, remoção direta de efeito/condição, expiração de rodada e encerramento de combate.
+4. Testar duas sessões com barreiras determinísticas, rollback e retries; separar deadlock, race condition e perda de atualização.
+5. Só depois propor uma correção SQL e migration reconciliada. Nenhuma mudança de produção decorre desta auditoria.
