@@ -134,3 +134,16 @@ A tabela scenes contém parâmetros de mídia/grid (imagem, vídeo, áudio, GIF,
 - Foram mapeadas 9 subscriptions na mesa: campaign_log, characters, srd_character_sheets, srd_character_equipment, srd_cba_token_equipment, members, srd_campaign_conditions, srd_campaign_effects e campaigns.
 - srd_character_sheets e srd_character_equipment não usam filtro Realtime por campaign_id (essas tabelas não possuem essa coluna); as políticas RLS consultadas restringem leitura por vínculo do personagem/campanha. srd_character_equipment é visível ao proprietário/Mestre, enquanto srd_character_sheets é visível também aos membros da campanha.
 - Não houve alteração de policies ou subscriptions. Revisar impacto de performance e confirmar comportamento real de Realtime em duas sessões autenticadas continua pendente.
+
+
+## Advisories Supabase — fotografia de 2026-11-08
+Consulta aos advisors de segurança e desempenho:
+- **Segurança — WARN, 99 SECURITY DEFINER executáveis por authenticated:** corresponde ao conjunto de RPCs públicos acessíveis a usuários autenticados. O alerta é genérico; cada função deve ser validada quanto a identidade, papel, campanha, alvo, estado e consumo transacional. Não revogar em lote: isso quebraria fluxos legítimos.
+- **Segurança — INFO, 7 tabelas com RLS e sem policy:** duas tabelas internas em priv e cinco tabelas de ledger/recursos/ataques em public. O histórico anterior registrou ausência de grants diretos para anon/authenticated nesses objetos; confirmar grants atuais antes de qualquer alteração. Não criar policies permissivas só para silenciar o advisor.
+- **Segurança — WARN, proteção de senha vazada desabilitada:** melhoria de configuração do Auth a avaliar separadamente; nenhuma configuração foi alterada.
+- **Desempenho — INFO, 52 índices não utilizados:** muitos são índices de FKs/estruturas recentes ou tabelas ainda pouco usadas. Não remover com base apenas no advisor; avaliar tráfego representativo, planos de consulta e janela de observação.
+
+### Discrepância de ACL em schema interno
+- A consulta atual encontrou priv.srd_feat_saving_throw_modifier(jsonb,text) com EXECUTE concedido a PUBLIC (ACL inclui =X); anon não possui USAGE no schema priv, enquanto authenticated possui USAGE.
+- A contagem de funções SECURITY DEFINER também mostra 39 funções priv executáveis por authenticated e 6 funções private executáveis por authenticated; esses schemas não foram confirmados como expostos no PostgREST.
+- Isso diverge do registro histórico de revogação de EXECUTE para helpers. Classificar como **pendente de confirmar schemas expostos pela API e ACL efetiva**, sem declarar exploração possível e sem alterar ACL antes dessa confirmação.
