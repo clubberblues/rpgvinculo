@@ -9,11 +9,11 @@ Nenhuma fase deve ser repetida integralmente sem evidência de mudança ou lacun
 **Estado:** em andamento.
 **Objetivo:** criar uma visão confiável a partir das auditorias e documentos existentes.
 - [x] Identificar e consolidar README, arquitetura D&D 3.5 e Plano Mestre como referências centrais; reconciliação detalhada do conteúdo segue em andamento.
-- [ ] Reconciliar snapshots divergentes de catálogos, funções, migrations e pendências.
-- [ ] Completar mapa de dependências entre frontend, RPCs e tabelas (varredura inicial realizada; comparar/decidir destino do lobby_atualizado.html).
-- [ ] Inventariar testes disponíveis, testes simulados e testes reais por módulo (primeiro CI estático criado e aprovado; Playwright/pglast e integração/E2E ainda não estão reproduzíveis no repositório).
-- [ ] Atualizar o registro de auditorias sem repetir itens já verificados.
-- [x] Capturar fotografia somente de leitura do estado remoto do Supabase; reconciliar divergências e dependências ainda em andamento.
+- [ ] Reconciliar snapshots divergentes de catálogos, funções, migrations e pendências (snapshot atual consolidado; ainda reconciliar cada documento histórico especializado).
+- [ ] Completar mapa de dependências entre frontend, RPCs e tabelas (mapa inicial, DATA_MODEL e inventário de 103 RPCs/111 assinaturas criados; falta cruzar todos os argumentos, consumers indiretos e decidir destino de lobby_atualizado/scenes/tokens/combat_state/roll_log).
+- [ ] Inventariar testes disponíveis, testes simulados e testes reais por módulo (CI estático criado e aprovado; Playwright/pglast e integração/E2E ainda não estão reproduzíveis no repositório).
+- [x] Atualizar o registro de auditorias sem repetir itens já verificados; pendências e evidências centralizadas em AUDIT_REGISTER.md.
+- [x] Capturar fotografia somente de leitura do estado remoto do Supabase; contagens, RLS, FKs, triggers, advisors e principais tabelas foram registrados.
 
 **Aceite:** mapa atual sustentado por evidências, divergências explicitadas e lista única de pendências priorizada.
 
