@@ -363,3 +363,7 @@ As relações internas existentes foram individualmente configuradas sem privil�
 As definições atuais de 37 funções AOO e 41 funções de movimento/ações/iniciativa/turnos foram exportadas em documentos próprios, com SECURITY DEFINER/INVOKER, search_path, grants anon/authenticated e fingerprints. No conjunto AOO, 0 funções concedem EXECUTE a anon; no conjunto movimento/turnos, também 0. Isso não confirma a configuração PostgREST Exposed schemas nem substitui revisão de autorização por caminho de chamada.
 
 A reconciliação focal identificou 51 migrations remotas com nomes AOO/movimento pendente sem arquivo local de mesmo nome. A inversão de lock entre cancelamento e resolução/dano segue como risco de deadlock não reproduzido em ambiente concorrente.
+
+
+### Risco adicional de inversão AOO
+A análise de `priv.srd_encerrar_reacao_aoo_pendente_impl` confirmou que o cancelamento explícito de ataque também adquire pending → attack, enquanto ocultação/resolução/dano adquire attack → pending. O risco de deadlock inclui agora cancelamento de reação × ocultação/resolução/dano, além do cancelamento total do movimento.
