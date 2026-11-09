@@ -427,7 +427,7 @@ O trigger AFTER INSERT de priv.srd_aoo_pending_movements (OID 27033) executa uma
 
 ### Implicação para a ordem candidata
 
-A proposta campanha → pending → attack continua sendo a base para os fluxos de resolução/cancelamento, mas não fecha sozinha a cadeia. Início de ataque também bloqueia ledger de reação e instância de arma; dano bloqueia ficha do alvo e sincroniza condições vitais; ocultação e tentativas/idempotência usam registros auxiliares. Antes de fixar a ordem global, mapear ledger, attempts, weapon instances, equipment e triggers de sincronização. Não implementar uma reordenação parcial que apenas mova o lock de campaign para o início e deixe ledger/arma/ficha em ordens incompatíveis.
+A proposta campaign → pending → attack continua sendo a base para resolução/cancelamento. Para início de reação com reserva, a cadeia precisa incluir campaign → pending → ledger → weapon instance (quando aplicável) → insert attack; os resolvers que recebem attack_id precisam descobrir pending por leitura MVCC e então bloquear campaign → pending → attack. Dano bloqueia ficha do alvo e sincroniza condições vitais; ocultação e tentativas/idempotência usam registros auxiliares. Não implementar uma reordenação parcial que apenas mova o lock de campaign para o início e deixe ledger/arma/ficha em ordens incompatíveis.
 
 
 ## Recursos de habilidades — ordem de lock e vínculo com NPCs (2026-11-09)
