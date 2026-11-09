@@ -204,3 +204,23 @@ Inspeção estática de `mesa.html` comparada às assinaturas atuais de `pg_proc
 **Observações de arquitetura:** o frontend separa a solicitação de movimento da efetiva gravação de posição; quando há reação pendente, atualiza o snapshot e aguarda a fila do Mestre. O ataque de oportunidade mantém d20 manual e chave de idempotência tanto no registro da rolagem quanto na aplicação de dano. O fluxo depende de múltiplas RPCs e estados persistidos; sua correção não pode ser inferida apenas pelo pareamento de argumentos.
 
 **Ainda não testado:** concorrência entre dois clientes, desconexão entre reserva/início/rolagem/dano, retry com mesma chave, retry com payload divergente, cancelamento durante reação e sincronização após reconexão. Não foi feita qualquer mutação de campanha ou token.
+
+
+## Cruzamento inicial — inventário e equipamento — 2026-11-09
+
+Chamadas observadas em `mesa.html` e dispatcher de ações da ficha, comparadas às assinaturas PostgreSQL:
+
+| Operação | RPC / assinatura | Evidência estática |
+|---|---|---|
+| Entregar item à ficha | `entregar_item_srd(p_campaign_id bigint, p_character_id text, p_equipment_id text, p_quantidade integer)` | mesa envia campaign_id, character_id, item.id e quantidade 1. |
+| Entregar item a token | `entregar_item_token_srd(p_campaign_id bigint, p_token_id text, p_equipment_id text, p_quantidade integer)` | mesa envia campaign_id, token.id, item.id e quantidade 1. |
+| Equipar item de ficha | `equipar_item_srd(p_character_id text, p_equipment_id text, p_equipado boolean)` | ID e estado desejado são enviados a partir dos atributos data-* do botão. |
+| Equipar item de token | `equipar_item_token_srd(p_campaign_id bigint, p_token_id text, p_equipment_id text, p_equipado boolean)` | campanha/token/ID e estado desejado correspondem à assinatura. |
+| Equipar item de NPC vinculado | `equipar_item_npc_vinculado_srd(p_campaign_id bigint, p_token_id text, p_equipment_id text, p_equipado boolean)` | dispatcher da ficha remapeia o pedido para a RPC específica quando há p_campaign_id. |
+| Clonar inventário para token NPC | `clonar_equipamento_ficha_para_token(p_campaign_id bigint, p_token_id text, p_character_id text)` | chamado após adicionar NPC vinculado; erro é tratado como falha parcial e informado ao Mestre. |
+| Consultar inventário de NPC vinculado | `consultar_inventario_npc_vinculado_srd(p_campaign_id bigint, p_token_id text)` | consulta usa campanha e token; frontend separa ficha vinculada do inventário CBA genérico. |
+| Equipar instância de arma | três RPCs por escopo, com `p_instance_id uuid`, `p_hand_slot text` e `p_equipado boolean` | dispatcher escolhe personagem, NPC vinculado ou token; o estado enviado é o inverso do estado atual do botão. |
+
+O frontend prepara o estado desejado de equipamento nos atributos `data-equipped`; a leitura estática confirmou que os botões de item enviam esse valor desejado e os botões de instância de arma enviam `!equipped`. Não foi encontrado, nesta amostra, um erro de inversão do toggle.
+
+**Ainda não validado:** concorrência entre duas ações de equipamento, retry após resposta perdida, consistência entre ficha e token vinculado, duplicação/quantidade de itens, clonagem repetida do inventário e comportamento após desconexão. Não houve alteração de inventário, personagem, token ou campanha.
