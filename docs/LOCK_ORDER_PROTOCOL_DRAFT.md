@@ -35,22 +35,25 @@ A posição relativa entre efeitos/condições, recursos/inventário e os difere
 ## 3. Evidências que motivam a proposta
 
 ### Ciclos já identificados nos corpos remotos
-- Campanha ↔ efeito de Fúria: trigger de avanço de rodada e expiração campaign-first; encerramentos manuais/legados podem bloquear efeito antes da campanha.
+- Fúria: os callers autenticados atuais adquirem campanha antes de encerrar efeitos; o único caminho effect-first identificado está em end_combat, sem EXECUTE para authenticated/anon e sem caller encontrado. Classificado como legado/dormant.
 - Pending AOO ↔ ataque: cancelamento/encerramento bloqueia pending → attack; resolução/dano/ocultação bloqueia attack → pending.
 - Campanha ↔ arma: início de sequência iterativa overload 7 bloqueia arma antes da campanha; resolução bloqueia campanha e depois pede `FOR SHARE` na instância.
 - Campanha ↔ personagem/ficha: descanso longo de NPC vinculado bloqueia campanha → personagem → ficha; ações de classe e entrypoints de conjuração podem bloquear personagem → ficha → campanha.
 - Efeitos, condições e PV: helpers de sincronização de condição não bloqueiam sempre campanha primeiro; a ordem depende do chamador.
-- Inventário/arma: trigger AFTER INSERT/DELETE/UPDATE OF quantidade em `srd_character_equipment` cria/remove instâncias; operações de equipamento também alteram as duas tabelas e precisam ser harmonizadas.
+- Inventário/arma: o trigger possui ramo de remoção equipamento → instância, mas os writers atuais identificados só aumentam quantidade e authenticated não tem DML direto; manter como risco futuro, não ciclo operacional atual.
 
 ### O que já passou em teste
-O workflow PostgreSQL efêmero detectou deadlocks em três pares sintéticos:
-- campaign → effect versus effect → campaign;
-- campaign → weapon versus weapon → campaign;
-- campaign → character versus character → campaign.
+O workflow PostgreSQL efêmero cobre oito padrões sintéticos de inversão:
+- campanha ↔ instância de arma no Ataque Total de personagem;
+- campanha ↔ personagem;
+- campanha ↔ movimento pendente AOO;
+- pending AOO ↔ ataque AOO;
+- campanha ↔ personagem → ficha → recurso de classe (condicional ao mesmo character_id);
+- campanha ↔ personagem → ficha;
+- campanha → ataque versus ataque → pending → campanha no encerramento/resolução AOO;
+- sequência de Ataque Total NPC → campanha versus campanha → tentativa → sequência.
 
-Execução: https://github.com/clubberblues/rpgvinculo/actions/runs/42670106095
-
-Esses testes demonstram o comportamento do PostgreSQL para os padrões montados; não executam RPCs reais nem provam ocorrência em produção.
+Há também um controle positivo de ordem campaign → effect em ambas as sessões. Os testes demonstram o comportamento do PostgreSQL para os prefixos montados; não executam RPCs reais nem provam ocorrência em produção.
 
 ## 4. Regras de implementação que devem acompanhar a ordem
 
@@ -154,9 +157,11 @@ A rota de NPC, `public.usar_furia_barbaro_npc_srd` (OID 26656), é campaign-firs
 
 `priv.srd_apply_pending_spell_resolution(uuid)` (OID 25071) bloqueia `priv.srd_pending_spell_resolutions` antes de adquirir `campaigns FOR UPDATE`; depois pode bloquear ficha e chamar sincronização de vitalidade. O helper interno não tem EXECUTE direto para authenticated/anon. Ainda falta mapear todos os escritores e transições do registro pending para determinar se há algum caminho inverso campaign → spell-pending. Até isso ser verificado, a ordem pending-spell → campaign é uma dependência a preservar ou harmonizar, não uma inversão confirmada isoladamente.
 
-### 5. Equipamento e instâncias de armas — limite da evidência
+### 5. Armas e instâncias — duas conclusões distintas
 
-O trigger `private.sync_character_weapon_instances_from_inventory()` (OID 26446) é AFTER INSERT/DELETE/UPDATE de quantidade em `srd_character_equipment`; cria/remove instâncias e atualiza o resumo do equipamento. `private.equipar_arma_instancia_personagem_impl` (OID 26441) bloqueia personagem → instância de arma e depois atualiza instâncias/equipamento. A análise lexical anterior identificou caminhos de sequência iterativa que podem inverter campanha/arma, mas esta revisão não fecha o grafo transitivo completo desse domínio. Manter a hipótese como pendência, sem elevar para deadlock confirmado.
+O Ataque Total de personagem tem uma inversão ativa e confirmada: o overload de início bloqueia instância de arma → campanha; a resolução bloqueia campanha → tentativa → sequência → instância. A interface chama ambos os caminhos. O detalhamento por OID foi acrescentado na seção específica abaixo.
+
+O trigger `private.sync_character_weapon_instances_from_inventory()` (OID 26446) tem um ramo de delta negativo que remove instâncias; porém, a entrega atual de itens aumenta quantidade e insere instâncias novas, authenticated não tem DML direto em `srd_character_equipment`, e nenhum writer atual que reduza quantidade de arma foi encontrado. Não tratar equipamento → instância como inversão operacional atual; manter como risco futuro se remoção de armas for implementada.
 
 ### 6. Estado de verificação
 
