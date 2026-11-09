@@ -144,3 +144,9 @@ As rotinas priv.srd_apply_campaign_condition e priv.srd_apply_campaign_effect ac
 A mesa atual não chama diretamente os RPCs legados listados acima na varredura de 87 RPCs; usa os RPCs CBA. A função create_campaign ainda insere um registro em scenes, mas a interface atual não mostrou leitura direta dessa tabela na varredura. Antes de qualquer remoção/normalização, mapear consumidores indiretos, funções internas, triggers, histórico e dados existentes.
 
 **Decisão arquitetural provisória:** manter os dois modelos intactos até concluir o grafo de dependências e uma decisão formal de migração. Não migrar tokens JSONB para a tabela relacional nem apagar tabelas/RPCs apenas por parecerem legadas.
+
+
+### Estado dos objetos relacionais de cena/token
+No snapshot consultado: campaigns=3, scenes=3, tokens=0 e monster_instances=0. create_campaign insere uma linha em scenes por campanha. A mesa atual lê/grava campanhas.cba_data e não consulta scenes/tokens diretamente na varredura; os RPCs relacionais antigos continuam no banco, mas as tabelas tokens e monster_instances estão vazias neste snapshot.
+
+A tabela scenes contém parâmetros de mídia/grid (imagem, vídeo, áudio, GIF, tile, offsets, escala e limites). Seu destino deve ser decidido após confirmar se esses campos foram migrados para campaigns.cba_data, media ou outro fluxo. Não apagar a tabela nem o INSERT de create_campaign nesta etapa.
