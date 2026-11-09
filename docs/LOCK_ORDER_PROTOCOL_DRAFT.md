@@ -8,7 +8,7 @@ Este documento consolida uma direção candidata para eliminar inversões de loc
 
 ## 1. Invariante principal
 
-Para qualquer operação que altere estado de uma campanha, adquirir primeiro o lock da linha `public.campaigns` correspondente (`FOR UPDATE`), antes de bloquear personagens, fichas, recursos, efeitos, condições, inventário, armas, pendências, ataques ou logs relacionados.
+Para qualquer operação que altere o agregado da campanha (`cba_data`, `combat_data`, estado/turno, tokens, pendências ou efeitos de combate), ou que coordene uma mutação da campanha com personagens/fichas/recursos, adquirir primeiro o lock da linha `public.campaigns` correspondente (`FOR UPDATE`). Operações estritamente limitadas à ficha/personagem podem usar uma ordem própria de personagem → ficha, desde que não atualizem o agregado da campanha e não chamem depois helpers que adquiram campanha.
 
 Quando a campanha ainda não é conhecida, ler o `campaign_id` sem lock apenas para localizar o agregado; depois bloquear a campanha e revalidar, sob lock, que o personagem/token ainda pertence à campanha e que o chamador mantém autorização.
 
@@ -30,7 +30,20 @@ A sequência abaixo é uma hipótese inicial, não uma ordem final validada:
 10. Registros de reação/ataque: `priv.srd_aoo_attacks`, `priv.srd_aoo_reaction_ledger`, `public.srd_attack_sequences`, `public.srd_attack_sequence_attempts`, `public.srd_npc_attack_sequences` e `public.srd_npc_attack_attempts`. A relação entre essas tabelas ainda precisa de revisão de todas as transições; ordenar por chave estável e não misturar a ordem entre wrappers.
 11. `campaign_log` e demais registros append-only, ao final.
 
-A posição relativa entre efeitos/condições, recursos/inventário e os diferentes ledgers ainda deve ser validada contra todos os triggers e funções. A lista não autoriza aplicar locks indiscriminadamente: cada endpoint deve bloquear apenas os registros necessários, mas sempre respeitar a ordem global.
+A posição relativa entre efeitos/condições, recursos/inventário e os diferentes ledgers ainda deve ser validada contra todos os triggers e funções. A lista não autoriza aplicar locks indiscriminadamente: cada endpoint deve bloquear apenas os registros necessários, mas sempre respeitar a ordem global. O helper `priv.srd_apply_pending_spell_resolution` atualmente bloqueia `srd_pending_spell_resolutions` antes de `campaigns`; para aderir à proposta, deverá primeiro localizar a campanha sem lock, bloquear campanha → pending e revalidar vínculo/status. Isso é uma refatoração necessária, não uma ordem já observada.
+
+
+### Operações de ficha sem lock de campanha — classificação (2026-11-09)
+
+A revisão dos entrypoints usados pela interface distinguiu ausência de serialização da campanha de uma inversão de locks:
+
+- `public.alterar_pv_personagem` (OID 21687), chamado por `mesa.html`, bloqueia somente `srd_character_sheets` (`FOR UPDATE OF s`). Consulta ownership/papel da campanha depois, mas não adquire lock de campanha nem chama helper que o faça.
+- `public.conceder_xp_personagem_srd` (OID 24365), chamado por `mesa.html`, bloqueia `characters` → `srd_character_sheets` e atualiza XP; não bloqueia campanha depois.
+- `priv.concluir_avanco_nivel_personagem_srd` (OID 24372), alcançado pelo wrapper `public.concluir_avanco_nivel_personagem_srd_v2` (OID 24782) chamado por `ficha.html`, bloqueia `characters` → `srd_character_sheets`; o wrapper salva idiomas na mesma ficha, sem lock de campanha.
+- Esses caminhos não fecham, por si, ciclo com operações campaign-first, porque não pedem campanha depois de manter a ficha. O lock da própria ficha serializa alterações concorrentes à mesma linha.
+- `priv.gm_npc_apply_typed_damage_impl` (OID 26783) começa por campanha e depois bloqueia a ficha do alvo jogador; isso é campaign-first e compatível com a ordem candidata.
+
+**Conclusão:** não forçar lock de campanha em toda edição de ficha apenas por receber `p_campaign_id`. Manter operações puras de ficha fora do agregado, desde que permaneçam sem chamada transitiva de campanha. Se uma operação de ficha passar a modificar cena/combate/condições ou chamar um helper campaign-scoped, deverá adquirir campanha antes de personagem/ficha. Registrar separadamente esses endpoints para revisão de concorrência e autorização.
 
 ## 3. Evidências que motivam a proposta
 
