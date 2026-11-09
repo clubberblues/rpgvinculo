@@ -146,3 +146,13 @@ Portanto, o teste de CA 10 executado para Thorgar (681) **não valida nem invali
 - Aguardar confirmação do alvo de teste (Thunga Mestre 682 ou Thorgar 681) antes de testes funcionais mutáveis ou leituras funcionais adicionais.
 - Manter o código de jogo e os dados do Supabase intactos até a primeira tarefa de implementação estar especificada, isolada em branch e coberta por teste.
 - Última CI estática aprovada: [run #2](https://github.com/clubberblues/rpgvinculo/actions/runs/42548214654).
+
+
+## Riscos e bloqueios atuais
+- **P1 — validação funcional bloqueada:** há dois registros distintos de teste (Thunga Mestre 682 e Thorgar 681). A identidade do alvo deve ser confirmada antes de testes funcionais.
+- **P2 — idempotência:** avanço de turno e conjuração manual não recebem request_id explícito; risco potencial de repetição/retry ainda não reproduzido.
+- **P2 — Storage:** bucket público midia sem allowlist MIME e sem limite explícito de tamanho; validações atuais são majoritariamente no cliente.
+- **P2 — configuração de API:** exposição PostgREST de priv/private não foi confirmada; não alterar ACL até verificar.
+- **P2 — Auth:** proteção contra senhas vazadas está desabilitada no projeto; habilitação depende de decisão/configuração do proprietário.
+- **P3 — índices:** 52 índices aparecem como não utilizados no advisor; não remover sem análise de workload.
+- **P3 — legado:** lobby_atualizado, scenes/tokens/combat_state/roll_requests/roll_log e tabelas de magia normalizadas sem uso atual detectado devem permanecer até confirmar consumidores externos.
