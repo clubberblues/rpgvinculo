@@ -61,3 +61,64 @@ if ! grep -qi 'deadlock detected' "$tmpdir/session-a.log" "$tmpdir/session-b.log
 fi
 
 echo "lock inversion regression passed: PostgreSQL detected and aborted one participant"
+
+# Additional synthetic lock-order regressions. Each pair deliberately models
+# the exact conflicting prefixes found in remote function bodies; it does not
+# execute those RPCs or prove a production deadlock occurred.
+run_expected_deadlock() {
+  local label="$1"
+  local session_a="$2"
+  local session_b="$3"
+  local tmp
+  tmp="$(mktemp -d)"
+  psql -v ON_ERROR_STOP=1 >"$tmp/a.log" 2>&1 <<<"$session_a" &
+  local a=$!
+  sleep 0.2
+  psql -v ON_ERROR_STOP=1 >"$tmp/b.log" 2>&1 <<<"$session_b" &
+  local b=$!
+  set +e
+  wait "$a"; local sa=$?
+  wait "$b"; local sb=$?
+  set -e
+  if [[ "$sa" -eq 0 && "$sb" -eq 0 ]] || [[ "$sa" -ne 0 && "$sb" -ne 0 ]] ||
+     ! grep -qi 'deadlock detected' "$tmp/a.log" "$tmp/b.log"; then
+    echo "FAIL: $label did not produce exactly one PostgreSQL deadlock victim"
+    cat "$tmp/a.log" "$tmp/b.log"
+    rm -rf "$tmp"
+    exit 1
+  fi
+  echo "passed synthetic lock inversion: $label"
+  rm -rf "$tmp"
+}
+
+run_expected_deadlock "campaign -> weapon versus weapon -> campaign" "
+SET deadlock_timeout='100ms'; SET lock_timeout='5s';
+BEGIN;
+UPDATE lock_fixture.campaigns SET round_number=round_number+1 WHERE id=1;
+SELECT pg_sleep(0.6);
+SELECT id FROM lock_fixture.weapon_instances WHERE id=1 FOR SHARE;
+COMMIT;
+" "
+SET deadlock_timeout='100ms'; SET lock_timeout='5s';
+BEGIN;
+SELECT id FROM lock_fixture.weapon_instances WHERE id=1 FOR UPDATE;
+SELECT pg_sleep(0.3);
+UPDATE lock_fixture.campaigns SET round_number=round_number+1 WHERE id=1;
+COMMIT;
+"
+
+run_expected_deadlock "campaign -> character versus character -> campaign" "
+SET deadlock_timeout='100ms'; SET lock_timeout='5s';
+BEGIN;
+UPDATE lock_fixture.campaigns SET round_number=round_number+1 WHERE id=1;
+SELECT pg_sleep(0.6);
+SELECT id FROM lock_fixture.characters WHERE id=1 FOR UPDATE;
+COMMIT;
+" "
+SET deadlock_timeout='100ms'; SET lock_timeout='5s';
+BEGIN;
+SELECT id FROM lock_fixture.characters WHERE id=1 FOR UPDATE;
+SELECT pg_sleep(0.3);
+UPDATE lock_fixture.campaigns SET round_number=round_number+1 WHERE id=1;
+COMMIT;
+"

@@ -9,3 +9,5 @@ These tests run against a disposable PostgreSQL service inside a standard GitHub
 - This validates the canonical footprint helper only. It does **not** yet prove that movement, attack, spawn, or AOO RPCs all call the helper; the audit has confirmed those call sites still contain divergent logic.
 - The lock-cycle fixture creates two synthetic tables and two concurrent PostgreSQL sessions to prove that the observed order campaign → effect versus effect → campaign is deadlock-prone. It tests the database lock pattern only; it does **not** execute production RPC bodies or claim a production deadlock was reproduced.
 - Fixture SQL is not a migration and must never be applied to the connected Supabase project.
+
+- The lock-cycle script now also models two additional inversions found during the read-only audit: campaign → weapon versus weapon → campaign, and campaign → character versus character → campaign. These are synthetic PostgreSQL lock-pattern tests, not executions of the remote RPG functions. A passing test proves PostgreSQL detects the deliberately constructed cycle; it does not prove that the corresponding production RPC pair deadlocked in use.

@@ -274,3 +274,14 @@ Fixture descartável com campanha em combate, movimento pendente ativo, reação
 
 25. Para cada categoria Fine até Colossal, comparar o footprint retornado pelo helper com o footprint efetivamente usado por detector AOO, movimento jogador/GM, spawn, ataque corpo a corpo e Imposição de Mãos.
    - Esperado após correção: todos usam o helper/função canônica; Colossal = 6 quadrados em todos os caminhos; nenhuma classificação CASE divergente permanece.
+
+
+### Regressões de concorrência — personagem, arma e ataque iterativo
+
+26. Iniciar sequência iterativa concorrente com resolução de tentativa anterior usando a mesma instância de arma.
+   - Estado observado: wrapper de início bloqueia instância antes da campanha; resolução bloqueia campanha antes da instância (`FOR SHARE`).
+   - Esperado após correção: ordem única, sem ciclo instância → campanha → instância.
+27. Descanso longo de NPC vinculado concorrente com habilidade que consome recurso da mesma ficha.
+   - Estado observado: descanso NPC campanha → personagem → ficha; habilidade personagem → ficha → recurso → campanha.
+   - Esperado após correção: ordem única, sem ciclo campanha → personagem → campanha.
+28. Manter fixtures sintéticas no PostgreSQL efêmero para os dois padrões acima. O teste deve reportar explicitamente que reproduz apenas a ordem de locks, não as RPCs remotas.

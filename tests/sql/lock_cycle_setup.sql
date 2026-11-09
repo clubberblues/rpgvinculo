@@ -13,3 +13,14 @@ CREATE TABLE lock_fixture.effects (
 );
 INSERT INTO lock_fixture.campaigns VALUES (1, 1);
 INSERT INTO lock_fixture.effects VALUES (1, 1, true);
+
+CREATE TABLE lock_fixture.weapon_instances (
+  id integer PRIMARY KEY,
+  campaign_id integer NOT NULL REFERENCES lock_fixture.campaigns(id)
+);
+CREATE TABLE lock_fixture.characters (
+  id integer PRIMARY KEY,
+  campaign_id integer NOT NULL REFERENCES lock_fixture.campaigns(id)
+);
+INSERT INTO lock_fixture.weapon_instances VALUES (1, 1);
+INSERT INTO lock_fixture.characters VALUES (1, 1);
