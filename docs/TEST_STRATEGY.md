@@ -112,3 +112,13 @@ Foram procurados os caminhos convencionais package.json, playwright.config.js/ts
 
 ### Próxima ação
 Localizar/reconstituir os testes históricos e torná-los reproduzíveis no repositório, começando por parse estático e testes de regras sem escrita; depois criar testes transacionais e E2E em ambiente descartável.
+
+
+## Primeiro resultado de CI — 2026-11-08
+- Script: scripts/check-static.mjs.
+- Workflow: .github/workflows/validate-static.yml.
+- Execução: [GitHub Actions run #1](https://github.com/clubberblues/rpgvinculo/actions/runs/42546411046).
+- Commit testado: 0a27f50f07b3f8ad53a4600661e0e304d8c4afa7.
+- Resultado: **success**.
+- Verificação: 9 blocos JavaScript inline/compartilhados em 5 páginas ativas; referências locais de scripts; contrato de rolagem manual do Dice.
+- Limite: não testa DOM em navegador, chamadas Supabase, autorização, regras de domínio, transações ou multiplayer. É a primeira camada, não substitui testes de integração/E2E.
