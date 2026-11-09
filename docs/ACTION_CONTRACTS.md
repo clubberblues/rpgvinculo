@@ -242,3 +242,38 @@ O frontend prepara o estado desejado de equipamento nos atributos `data-equipped
 **Pontos arquiteturais:** concessão de XP em lote não é uma única transação; a interface registra quais personagens receberam XP e quais falharam. Avanço de nível é uma operação de alto impacto e não recebe request_id no contrato atual; sua proteção contra retry precisa ser examinada no corpo da função e validada em fixture descartável antes de qualquer alteração. Descanso e atualização de grimório também são operações mutáveis que precisam de casos de retry e autorização por papel.
 
 **Limite da verificação:** foram comparadas chaves/formatos enviados e assinaturas do catálogo. Não foram executadas RPCs mutáveis nem alterados XP, nível, PV, grimório, domínios ou campanha.
+
+
+## Cruzamento inicial — ciclo de vida de campanhas e lobby — 2026-11-09
+
+Inspeção estática de `lobby.html` e leitura de definições SQL em `pg_get_functiondef`, sem executar ações mutáveis:
+
+| Operação | RPC / contrato | Verificação |
+|---|---|---|
+| Listar mesas | `lobby_list_v2()` | Sem argumentos; frontend complementa com leitura de `campaigns(id, owner_id)` para distinguir o criador. |
+| Criar campanha | `create_campaign(p_name text, p_code text, p_location bigint)` | Valida autenticação, nome, código de quatro dígitos e cidade opcional; insere campanha/código/cena e registra log na mesma transação. Há rate limit por usuário via `priv.locked/fail/clear`. |
+| Entrar por código global | `join_campaign(p_code text)` | Resolve código para campanha ativa, registra membro PLAYER e log; código inválido consome tentativa do limitador. |
+| Entrar em mesa aberta | `entrar_campanha_aberta(p_campaign_id bigint)` | Bloqueia leitura da campanha com FOR SHARE, exige campanha ativa e ausência de código; insere membro com ON CONFLICT DO NOTHING. |
+| Entrar com código da mesa | `entrar_campanha_com_codigo(p_campaign_id bigint, p_code text)` | Valida autenticação, formato, rate limit, campanha ativa e código da campanha; cria membro idempotentemente por conflito. |
+| Sentar ficha | `sentar_personagem_na_mesa(p_campaign_id bigint, p_character_id text)` | Exige papel PLAYER na campanha e propriedade da ficha; bloqueia a ficha FOR UPDATE e atualiza campaign_id. Não verifica explicitamente se a campanha está ativa no corpo inspecionado. |
+| Alterar configurações | `atualizar_configuracoes_campanha(p_campaign_id bigint, p_name text, p_require_code boolean, p_code text)` | Exige auth.uid, owner_id e campanha ativa; valida nome/código e atualiza campanha/código sob lock da linha. |
+| Excluir ficha própria | `excluir_ficha_propria(p_character_id text)` | Exige propriedade, bloqueia ficha e campanha, remove dependências e ajusta ordem de combate na mesma transação. Operação destrutiva; não foi executada. |
+
+### Exclusão de campanha: saga com Storage externo
+
+A exclusão usa duas RPCs e operações Storage no cliente, não uma transação única:
+
+1. `preparar_exclusao_campanha_propria` bloqueia a campanha, confirma proprietário e grava/atualiza `priv.campaign_deletion_cleanup`.
+2. O cliente lista recursivamente `midia/campaigns/{id}` e pagina `midia/capas_mesas`, filtrando nomes `mesa-{id}-*`; remove os arquivos em lotes de até 1.000.
+3. `finalizar_exclusao_campanha_propria` confirma proprietário da pendência, bloqueia a campanha, apaga a campanha e remove a pendência. A RPC pública é wrapper SECURITY INVOKER para implementação privada SECURITY DEFINER.
+
+**Riscos/limites identificados, ainda sem correção:**
+- A preparação não marca a campanha como inativa nem grava estado de exclusão na própria linha `campaigns`; os fluxos de entrada continuam verificando `active`, que permanece inalterado. Assim, uma entrada pode ocorrer entre preparação e finalização. A exclusão final ainda remove a campanha, mas a experiência de membros concorrentes pode ser abrupta.
+- A saga depende de o navegador permanecer aberto e ter permissão Storage; falhas parciais podem deixar a pendência gravada e parte dos arquivos removida. A repetição da listagem/remoção é compatível com arquivos já ausentes, mas não existe worker de retomada documentado.
+- Se a finalização for confirmada no banco mas a resposta se perder, repetir a finalização falha porque a linha de pendência já foi removida e a campanha já não existe. O cliente pode resolver recarregando o lobby, mas o contrato não é idempotente para esse cenário.
+- O upload da capa ocorre antes da atualização de `campaigns.capa_url`; se o upload funcionar e a atualização da linha falhar, o objeto recém-enviado pode ficar órfão. A exclusão varre capas pelo prefixo `mesa-{id}-`, mas não há rotina de GC específica para uploads órfãos.
+- A varredura de exclusão cobre o bucket `midia` e os prefixos observados no código; não foi feita auditoria de todos os buckets/objetos históricos do projeto.
+
+**Segurança observada nas RPCs de lobby:** as funções públicas listadas têm EXECUTE para authenticated, sem EXECUTE para anon ou PUBLIC. As SECURITY DEFINER consultadas usam search_path com pg_temp por último. Isso é apenas a camada de grants/configuração; as guardas semânticas foram descritas por função acima e ainda precisam de testes com papéis reais.
+
+Não foram criadas/excluídas campanhas, membros, fichas, arquivos Storage ou registros de pendência durante esta análise.
