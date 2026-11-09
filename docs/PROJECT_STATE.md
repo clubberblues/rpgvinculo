@@ -116,3 +116,10 @@ O README registra testes locais anteriores (parse HTML/JS, pglast e smoke tests 
 O mapa relacional inicial identificou 100 FKs em public e 10 em priv. As tabelas srd_character_equipment e srd_character_weapon_instances mantêm character_id como text sem FK para characters.id; as 48 linhas atuais conferidas correspondem a personagens existentes, sem órfãos. Isso fica registrado como ponto estrutural para análise futura, sem alteração de schema.
 
 Nenhuma linha de personagem, ficha, campanha, token ou progresso foi alterada nesta fotografia.
+
+
+## Item de trabalho ativo — 2026-11-08
+
+A pauta operacional recuperada para a próxima fatia está em [ACTIVE_WORK_ITEM.md](ACTIVE_WORK_ITEM.md). A pré-verificação somente de leitura encontrou a campanha TESTE 2 e o personagem **Thunga Mestre**, Anão Bárbaro N1, mas não encontrou personagem chamado Thorgar. A ficha encontrada tem Armadura de Couro equipada, Machado Grande não equipado e não possui token publicado. A identidade entre Thunga Mestre e o personagem historicamente chamado Thorgar permanece **não confirmada**; não iniciar testes funcionais ou alterações até reconciliar essa identidade.
+
+A consulta não modificou personagens, fichas, campanhas, tokens, inventário, equipamento ou progresso.
