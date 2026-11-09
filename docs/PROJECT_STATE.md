@@ -4,6 +4,7 @@
 > **Regra:** este documento descreve evidências e incertezas; não transforma suposições em conclusão.
 
 ## Identificação
+- Fase atual: Fase 1 — Arquitetura e contratos (em andamento). Fase 0 — Consolidação/reconciliação concluída como baseline, com lacunas transferidas ao roadmap.
 - Repositório: clubberblues/rpgvinculo
 - Branch principal observada: main
 - Backend: Supabase / PostgreSQL
