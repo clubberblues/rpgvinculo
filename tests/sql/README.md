@@ -29,6 +29,6 @@ These tests run against a disposable PostgreSQL service inside a standard GitHub
 - The latest read-only frontend scan confirmed that `mesa.html` directly invokes the multi-target damage/effect spell RPCs and the manual Magic Missile wrapper. The exact removal RPC names were not found in the seven tracked interface/script files; this is not proof that no external or indirect caller exists.
 
 
-- Validation for PR #74: PostgreSQL fixture run [42717932580](https://github.com/clubberblues/rpgvinculo/actions/runs/42717932580) completed successfully on the updated pull-request snapshot. It ran nine deliberately inverted synthetic lock patterns plus one positive control for consistent campaign → effect ordering. The run does not execute Supabase RPCs or test production data.
+- Validation for PR #74: PostgreSQL fixture run [42718112010](https://github.com/clubberblues/rpgvinculo/actions/runs/42718112010) completed successfully. The updated harness ran ten deliberately inverted synthetic lock patterns plus one positive control for consistent campaign → effect ordering. The run does not execute Supabase RPCs or test production data.
 
 - A new AOO regression models the active combat-state transition prefix `campaign → attack` against the exposed opportunity-attack resolver prefix `attack → pending movement → campaign`. The UI calls `alternar_estado_campanha` and the AOO cancellation/resolution RPCs; these are live authenticated paths. The test remains synthetic and does not execute the remote RPC bodies.
