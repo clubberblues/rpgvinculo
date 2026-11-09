@@ -200,3 +200,22 @@ Os resolvedores de ataque iterativo de NPC e ataque de oportunidade também cham
 **Fonte canônica:** para personagem jogador e NPC vinculado, a ficha SRD e seu equipamento equipado são a base; o token fornece efeitos temporários/contextuais quando o fluxo os prevê. O inventário de token é um domínio separado e não deve substituir silenciosamente o equipamento da ficha vinculada.
 
 **Limite de validação:** a função foi inspecionada estaticamente e executada uma vez em leitura para o registro Thorgar (ID 681), cujo item Armadura de Couro está não equipado; retornou CA 10. Esse registro é distinto de Thunga Mestre (ID 682), que pertence à campanha 131 e tem Armadura de Couro equipada. Não transferir o resultado de um personagem ao outro. A validação funcional de Thunga permanece bloqueada até a confirmação do alvo e deve ocorrer em fixture/campanha descartável.
+
+
+## Estado de combate, rolagens e log: caminho atual versus legado
+
+Snapshot de contagens no banco: campaign_log=70, combat_state=0, roll_requests=0 e roll_log=0.
+
+### Caminho atual observado
+- A mesa atual usa campaigns.combat_data e campaigns.cba_data para estado de combate/cena.
+- Iniciativa atual passa por iniciar_iniciativa_com_dados e/ou iniciar_iniciativa_com_pedido, que escrevem estado em campaigns e registram eventos em campaign_log.
+- Dados são preparados no iframe Dice; a mesa recebe o resultado e usa roll_dice/log ou RPC específica da ação. O iframe não persiste diretamente no banco.
+- Chat e eventos de jogo são registrados em campaign_log, com visibilidade aplicada por tipo de evento e policy.
+
+### Caminho relacional legado
+- combat_state está vazio no snapshot e é usado por start_combat, end_combat, combat_set_turn, end_turn e is_my_turn.
+- roll_requests e roll_log estão vazios e são usados por ask_roll/answer_roll e por resolvers antigos de ataque/dano.
+- Esses RPCs não aparecem na varredura de chamadas literais do frontend atual.
+- Não remover tabelas ou funções nesta fase: podem existir clientes antigos, integrações externas ou dados fora do recorte. Classificar como legado candidato e decidir após confirmar ausência de consumidores e plano de migração.
+
+O sistema atual tem dois modelos de estado de combate/rolagem coexistentes no banco. O caminho atual do produto é campaigns JSONB + campaign_log + iframe Dice; o caminho relacional permanece como compatibilidade/legado.
