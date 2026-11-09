@@ -138,3 +138,19 @@ A revisão do corpo atual de `priv.srd_encerrar_reacao_aoo_pendente_impl` confir
 - Finalizar movimento: pending → campaign.
 
 **Classificação:** risco de deadlock por inversão de ordem de locks sustentado pela leitura dos corpos atuais; ainda não reproduzido. Correção proposta: padronizar uma ordem global, por exemplo campaign → pending → attack → ficha/ledger, e garantir que todas as rotas adquiram locks nessa ordem. A ordem final deve considerar locks transitivos de helpers e não deve ser aplicada até teste concorrente em ambiente descartável.
+
+
+## Achado P1 — movimento pode contornar o pré-check de AOO — 2026-11-09
+
+**Evidência estática confirmada no estado remoto:**
+1. `mesa.html` chama `srd_solicitar_movimento_com_aoo_srd` antes de mover o token. Se o RPC retorna `pending=false`, o frontend continua e chama `mover_token_player_cba` (jogador) ou `mover_token_gm_cba_srd` (Mestre).
+2. `public.mover_token_player_cba` é um wrapper SECURITY INVOKER com EXECUTE para authenticated e chama `priv.mover_token_player_cba_impl`.
+3. A implementação privada valida autenticação, propriedade, campanha, turno, ação, deslocamento, ocupação e condições, mas **não chama** `srd_detectar_saida_alcance_ameacado_srd` nem o fluxo AOO.
+4. `public.mover_token_gm_cba_srd` também é wrapper INVOKER autenticado; a implementação GM valida papel/turno/deslocamento, mas não integra o detector AOO.
+5. O trigger `trg_srd_guard_pending_aoo_movement` só bloqueia alteração/removal do token que já tenha um movimento pendente ativo; ele não detecta uma ameaça nova nem protege o caminho sem pending.
+
+**Impacto:** um cliente autenticado pode chamar diretamente `mover_token_player_cba` e mover seu personagem durante o combate sem executar o pré-check AOO. Também existe uma janela TOCTOU entre o RPC de pré-checagem (que bloqueia a campanha apenas durante sua transação) e o RPC que persiste o movimento: outra alteração de token pode ocorrer entre ambos, invalidando a detecção original. O movimento ainda respeita outras validações de servidor, mas o AOO pode ser ignorado.
+
+**Classificação:** P1 — integridade das regras/autoridade do servidor. Confirmado por leitura de frontend, ACL, wrapper, implementação e trigger; não foi executado um exploit nem alterado estado de jogo.
+
+**Correção arquitetural recomendada:** tornar o RPC de persistência de movimento a autoridade única: dentro da mesma transação/lock de campanha, validar identidade/turno/ação, recalcular ameaças, criar o registro pending e retornar sem mover quando houver AOO; somente mover e consumir deslocamento quando não houver ameaça. Adaptar o frontend para um único resultado (`pending` ou `moved`) e retirar a confiança no pré-check separado. Aplicar ao caminho de jogador e, após confirmar a política de autoridade do Mestre, ao caminho GM. Não aplicar patch isolado sem fixture e teste de regressão.
