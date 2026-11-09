@@ -373,3 +373,10 @@ Essas operações não devem continuar compartilhando uma substituição integra
 
 
 A inspeção de `public.campaigns` confirmou que há `cba_data` e `combat_data` como JSONB, mas não existe coluna dedicada de versão/controle de concorrência para a cena. O campo `version: 1` serializado dentro do JSON CBA identifica o formato, não uma revisão monotônica do estado. Portanto, a proteção contra snapshot obsoleto precisa introduzir versão server-side ou comandos de atualização parcial com merge autoritativo; não confiar no campo de formato existente.
+
+
+### Grafo atual de uso do footprint
+
+A inspeção de chamadas diretas encontrou 10 consumidores de `priv.srd_token_grid_footprint`, concentrados em manobras, confusão, levantar e três iniciadores de AOO. O detector `public.srd_detectar_saida_alcance_ameacado_srd` **não chama** esse helper: duplica a classificação de tamanho em três CASEs locais, embora hoje também retorne 6 para Colossal. As RPCs de movimento, ataque SRD v2 e Imposição de Mãos ainda têm CASEs locais que retornam 5 para Colossal. O spawn genérico verifica apenas a coordenada de origem.
+
+Assim, `priv.srd_token_grid_footprint` é um helper reutilizado, mas ainda não é a fonte canônica de toda a geometria. A arquitetura-alvo exige que detecção, movimento, spawn, alcance, ataque e habilidades consultem a mesma implementação, e que os testes cubram o caminho inteiro, não apenas o helper.

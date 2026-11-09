@@ -268,3 +268,9 @@ Fixture descartável com campanha em combate, movimento pendente ativo, reação
 
 24. Repetir o cenário de cancelamento concorrente com `priv.srd_registrar_ocultacao_ataque_oportunidade_impl` versus cancelamento/encerramento de reação.
    - Esperado: sem deadlock; uma transição consistente de status, mantendo a exigência de rolagem manual de ocultação.
+
+
+### Regressão de centralização de footprint
+
+25. Para cada categoria Fine até Colossal, comparar o footprint retornado pelo helper com o footprint efetivamente usado por detector AOO, movimento jogador/GM, spawn, ataque corpo a corpo e Imposição de Mãos.
+   - Esperado após correção: todos usam o helper/função canônica; Colossal = 6 quadrados em todos os caminhos; nenhuma classificação CASE divergente permanece.

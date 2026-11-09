@@ -295,3 +295,18 @@ Adotar ordem única documentada e aplicada em todas as rotinas do subsistema. A 
 
 
 A varredura das 37 definições exportadas identificou 18 rotinas com `FOR UPDATE` explícito. Além das linhas da matriz acima, `priv.srd_registrar_ocultacao_ataque_oportunidade_impl` também adquire attack → pending → campaign, confirmando que ocultação/rolagem de chance de falha participa da mesma inversão. As demais 19 definições não exibem `FOR UPDATE` diretamente, mas podem adquirir locks por `UPDATE`, triggers ou chamadas transitivas; não são consideradas livres de concorrência sem revisão adicional.
+
+
+## Correção do mapa de centralização do footprint — 2026-11-09
+
+Uma consulta de chamadas diretas a `priv.srd_token_grid_footprint` identificou 10 consumidores atuais: seis helpers privados de confusão/manobras/levantar, uma consulta pública de modificadores de manobra e três iniciadores de AOO (desarmado, monstro e arma). **O detector de saída de alcance não é um consumidor do helper.**
+
+`public.srd_detectar_saida_alcance_ameacado_srd` duplica a classificação de tamanho em três blocos CASE próprios (mover, tokens ameaçadores e alcance base de armas). Esses blocos atualmente atribuem 6 a Colossal, 4 a Gargantuan/Imenso, 3 a Huge/Enorme e 2 a Large/Grande; estão corretos nos valores consultados, mas duplicados. O cálculo geométrico posterior usa `priv.srd_grid_footprint_distance_ft` com os footprints calculados localmente.
+
+Portanto, a fotografia correta é:
+- helper canônico atual: 6 para Colossal;
+- detector AOO: cálculo duplicado, também 6 para Colossal;
+- movimento jogador/Mestre, duas sobrecargas de ataque SRD v2 e Imposição de Mãos contra mortos-vivos: 5 para Colossal;
+- spawn `adicionar_token_cba`: verifica apenas a célula de origem, sem helper/footprint completo.
+
+A centralização ainda não existe. O fixture PostgreSQL criado nesta etapa testa somente o helper atual; não deve ser interpretado como validação dos call sites divergentes. A correção futura deve fazer detector, movimento, spawn, ataques e habilidades consumirem a mesma fonte de footprint.

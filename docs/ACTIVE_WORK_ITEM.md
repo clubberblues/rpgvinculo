@@ -242,3 +242,7 @@ A revisão de `adicionar_token_cba` confirmou que o endpoint não verifica pendi
 
 ### Mutações paralelas durante pending
 Também foram identificados RPCs de configuração de facção/alcance, ajuste de PV e inclusão de combatente na iniciativa sem consulta explícita à fila pending. A política de pausa precisa distinguir resolução AOO autorizada de mutações externas concorrentes. Casos 19–21 adicionados à estratégia de testes; ainda sem reprodução autenticada.
+
+
+### Precisão adicional — centralização de footprint
+O helper `priv.srd_token_grid_footprint` tem 10 consumidores diretos, mas o detector AOO não o chama: mantém três CASEs próprios (atualmente corretos para Colossal = 6). Movimento jogador/Mestre, duas sobrecargas de ataque SRD v2 e Imposição de Mãos usam 5 para Colossal; spawn verifica somente a célula de origem. O fixture recém-criado testa apenas o helper, não esses consumidores. A centralização e os testes de integração continuam pendentes.
