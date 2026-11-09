@@ -20,7 +20,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  footprint:
+  postgres-fixtures:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     services:
@@ -46,9 +46,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y postgresql-client
 
-      - name: Run isolated SQL fixture
+      - name: Run isolated SQL fixtures
         env:
           PGPASSWORD: postgres
         run: |
           psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/footprint_fixture.sql
           psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/footprint_test.sql
+          bash tests/sql/lock_cycle_test.sh

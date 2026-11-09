@@ -4,7 +4,8 @@ These tests run against a disposable PostgreSQL service inside a standard GitHub
 
 ## Current scope
 
-- The fixture copies the current remote definitions of `public.srd35_normalizar_parametro_talento` and `priv.srd_token_grid_footprint` (captured 2026-11-09).
+- The footprint fixture copies the current remote definitions of `public.srd35_normalizar_parametro_talento` and `priv.srd_token_grid_footprint` (captured 2026-11-09).
 - Assertions cover D&D 3.5 grid footprint categories, Portuguese size aliases, linked player-race fallback, key lookup, unknown-size fallback, and duplicate-token rejection.
 - This validates the canonical footprint helper only. It does **not** yet prove that movement, attack, spawn, or AOO RPCs all call the helper; the audit has confirmed those call sites still contain divergent logic.
+- The lock-cycle fixture creates two synthetic tables and two concurrent PostgreSQL sessions to prove that the observed order campaign → effect versus effect → campaign is deadlock-prone. It tests the database lock pattern only; it does **not** execute production RPC bodies or claim a production deadlock was reproduced.
 - Fixture SQL is not a migration and must never be applied to the connected Supabase project.
