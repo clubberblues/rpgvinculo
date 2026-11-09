@@ -7274,3 +7274,32 @@ Total exportado: 1.216.018 caracteres de definições (sem cabeçalhos). Isso fe
 ## Storage
 
 As policies de `storage.objects` e configuração dos buckets gerenciados estão documentadas em [STORAGE_POLICIES_SNAPSHOT.md](STORAGE_POLICIES_SNAPSHOT.md), separadamente do inventário de relações de public/priv/private.
+
+
+## Extensões, sequences e flags RLS — complemento do snapshot
+
+### Extensões instaladas
+
+| Extensão | Versão | Schema |
+|---|---:|---|
+| `pg_stat_statements` | 1.11 | extensions |
+| `pgcrypto` | 1.3 | extensions |
+| `plpgsql` | 1.0 | pg_catalog |
+| `supabase_vault` | 0.3.1 | vault |
+| `uuid-ossp` | 1.1 | extensions |
+
+### Sequences
+
+As 16 sequences encontradas estão em `public`, todas pertencem a `postgres`, usam incremento 1, início/mínimo 1, cache 1 e não ciclam. A maioria é bigint; `skills_id_seq` é integer. Nomes: `campaign_log_id_seq`, `campaigns_id_seq`, `character_conditions_id_seq`, `character_notes_id_seq`, `characters_id_seq`, `layers_id_seq`, `locations_id_seq`, `media_id_seq`, `monster_instances_id_seq`, `roll_log_id_seq`, `roll_requests_id_seq`, `skills_id_seq`, `srd_campaign_conditions_condition_instance_id_seq`, `srd_campaign_effects_effect_instance_id_seq`, `srd_character_prepared_spells_preparation_id_seq`, `tokens_id_seq`. Valores correntes não foram consultados nem exportados para evitar capturar estado de dados.
+
+### RLS force
+
+- Relações consultadas: 83.
+- RLS habilitado: 81.
+- RLS desabilitado: `priv.throttle` e `priv.srd_aoo_reaction_ledger`.
+- `FORCE ROW LEVEL SECURITY`: nenhuma relação.
+- As duas relações com RLS desabilitado não concedem DML direto a anon/authenticated; ver revisão de RLS em PROJECT_STATE.md.
+
+### Tipos e views
+
+- Nenhum enum, domínio, range, tipo composto independente ou view/materialized view foi encontrado nos schemas `public`, `priv` e `private` consultados.
