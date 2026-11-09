@@ -7259,3 +7259,13 @@ A comparação também identificou dois nomes de migration repetidos em versões
 
 ### Arquivos locais sem contraparte remota nominal — análise preliminar
 Os dois arquivos locais sem nome remoto correspondente foram inspecionados. `20261104190000_dwarf_barbarian_n1_racial_movement_fixes.sql` declara quatro funções; `20261104194500_dwarf_armor_load_classification.sql` declara uma função de deslocamento. As definições atuais dessas funções no banco não são idênticas aos corpos encontrados nesses arquivos. Há migrations remotas com nomes relacionados (por exemplo, correções de movimento/armadura e resistências raciais), mas ainda não foi demonstrada equivalência completa nem ordem de substituição. Manter os arquivos como evidência histórica; não renomear, excluir ou marcar como aplicados sem reconstruir o efeito por função.
+
+
+## Exportação integral das funções/procedures remotas — 2026-11-09
+
+As 327 definições atuais retornadas por `pg_get_functiondef` foram exportadas em arquivos SQL separados por schema:
+- `docs/snapshots/remote_public_functions.sql` — 225 definições.
+- `docs/snapshots/remote_priv_functions.sql` — 94 definições.
+- `docs/snapshots/remote_private_functions.sql` — 8 definições.
+
+Total exportado: 1.215.018 caracteres de definições (sem cabeçalhos). Isso fecha a captura dos corpos das rotinas atuais, mas **não** transforma o conjunto em dump restaurável: tabelas, tipos, extensões, owners, ACLs, policies, triggers, constraints, índices e ordem de dependência continuam sendo reconciliados em separado. Os arquivos são snapshots de referência; não executar diretamente como migration.
