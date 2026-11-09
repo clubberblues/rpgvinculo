@@ -278,3 +278,9 @@ O inventário estrutural remoto inicial foi materializado em [REMOTE_SCHEMA_SNAP
 
 ### Duplicidade de nomes no histórico remoto
 A comparação também identificou dois nomes de migration repetidos em versões remotas distintas: `srd35_sneak_attack_damage_validation` e `srd35_rogue_uncanny_dodge_catalog_status` (duas ocorrências cada). Portanto, os 41 registros remotos que compartilham nome com arquivos locais correspondem a 39 nomes únicos, não a 41 pares um-para-um. Isso reforça que nome não é chave de equivalência; a reconciliação precisa considerar versão, conteúdo/efeito e ordem de aplicação.
+
+
+## Configuração local e higiene de migrations — 2026-11-09
+
+A árvore atual de `main` contém 681 arquivos SQL em `supabase/migrations/`, sem timestamps duplicados. Um arquivo foge ao padrão ASCII de nome por conter acento: `20261102052430_srd35_skill_natação_verification.sql`. Não foi renomeado para evitar alteração desnecessária durante a reconciliação. Também não há `supabase/config.toml`, `package.json`, diretório `tests/` ou configuração Playwright/Vitest/Jest no repositório. Existem quatro workflows GitHub Actions e scripts em `scripts/`; o smoke test instala Playwright explicitamente no workflow. A ausência de config local limita a reprodutibilidade por Supabase CLI, mas não prova ausência de scripts externos ou configuração em outro ambiente.
+
