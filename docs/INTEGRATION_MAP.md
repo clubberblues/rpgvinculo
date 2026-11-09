@@ -347,3 +347,23 @@ Uso observado:
 priv.can_write_midia valida o caminho e a propriedade, mas não MIME/tamanho. Os inputs do navegador usam accept=image/* em parte dos fluxos, o que não é validação de servidor; capa, retrato e fundo não têm limite de tamanho uniforme no cliente. Como midia é público e não tem allowlist/limite explícito, registrar como **P2 — endurecimento de upload**.
 
 Não alterar bucket, políticas ou objetos nesta fase. Antes de aplicar limites, definir tamanho máximo compatível com os arquivos atuais (o maior tem ~16,5 MB), tipos realmente suportados e mensagens de erro/validação em todos os fluxos. O bucket mesa-media já impõe 50 MiB e allowlist, mas o upload do fundo precisa validar o tamanho antes de enviar.
+
+
+## Transações, concorrência e idempotência
+
+### Padrões confirmados
+- Operações que alteram o agregado da campanha (iniciativa, avanço de turno, movimento GM, pedido de AOO e aplicação de dano iterativo) bloqueiam a linha de campaigns com FOR UPDATE antes de atualizar cba_data/combat_data.
+- Movimento de jogador e início de sequência de ataque usam wrappers SECURITY INVOKER que delegam a helpers priv SECURITY DEFINER; os helpers fazem o lock da campanha e validam usuário/estado.
+- Ataques iterativos usam idempotency_key em registro de rolagem e aplicação de dano; a sequência mantém estados recuperáveis e tentativas.
+- Iniciativa do jogador é idempotente por estado: se a ficha já foi registrada na ordem atual, a RPC retorna o estado existente em vez de aceitar outro d20.
+- Pending spell save/SR bloqueia a linha da pendência com FOR UPDATE e valida o status antes de resolver.
+- Fúria bloqueia personagem, ficha e campanha; o estado ativo e os usos/dia impedem iniciar duas Fúrias simultâneas.
+- Conjuração manual bloqueia personagem/ficha; durante combate também consome ação padrão sob lock da campanha. A atualização do grimório/slot ocorre na mesma transação.
+
+### Lacunas de idempotência para revisão
+- avancar_turno recebe apenas campaign_id e usa FOR UPDATE, mas não recebe uma chave de requisição. Jogador tende a ser barrado após o primeiro avanço porque o turno muda; um Mestre pode, em princípio, enviar dois avanços sequenciais e mover dois turnos.
+- conjurar_magia_com_acao_srd_manual e conjurar_missil_magico_srd_manual não recebem idempotency key. Locks e economia de ação protegem parte dos cenários, sobretudo em combate, mas uma repetição de requisição fora de combate pode consumir outro espaço e repetir o efeito quando houver recursos.
+- Esses pontos são **riscos potenciais de repetição/retry**, não defeitos funcionais reproduzidos. Não adicionar chaves ou alterar contratos antes de definir o padrão comum de ActionRequest/Idempotency e criar testes descartáveis.
+
+### Regra arquitetural proposta
+Ações com efeitos não reversíveis ou consumo de recursos devem aceitar um request_id/idempotency_key gerado pelo cliente, armazenar resultado por escopo de usuário/campanha/ação e devolver o mesmo resultado em retries. Locks continuam necessários para concorrência; idempotência não os substitui.
