@@ -188,3 +188,14 @@ A varredura de todas as funções cujo corpo referencia `priv.srd_pending_spell_
 **Conclusão refinada:** o ciclo campaign ↔ sheet/personagem continua sustentado por entrypoints de conjuração que bloqueiam ficha antes de chamar consumo de ação/lock da campanha, contra resolução de magia pendente e outros fluxos campaign-first. O risco é de ordem de locks, não prova de deadlock ocorrido em produção. Para a tabela de pendências de magia, não foi encontrada inversão simétrica completa: os resolvers de salvamento/resistência bloqueiam o pending e atualizam apenas seu status; os caminhos de conjuração inserem novos pendings depois de bloquear a campanha. Não misturar esse caso com o ciclo AOO pending ↔ attack.
 
 A busca foi feita nos corpos atuais por OID e assinatura. Dependências chamadas por outras funções precisam de inspeção individual; correspondência textual não é call graph. Nenhuma RPC foi executada durante esta análise.
+
+
+## Correção de precisão — consumo de ação dentro das RPCs de conjuração (2026-11-09)
+
+A leitura integral de `public.consumir_acao_turno_srd(bigint,text,text)` (OID 20405) esclarece a sequência: ela bloqueia `campaigns FOR UPDATE` no início e só depois pode atualizar `srd_character_sheets` em uma condição específica. Portanto, a chamada não adquire campanha depois de entrar no helper; ela adquire campanha quando é chamada.
+
+As RPCs `conjurar_magia_efeitos_multialvo` (OID 25109) e `conjurar_magia_dano_multialvo_srd` (OID 25246) já bloquearam personagem/ficha antes de chamar `consumir_acao_turno_srd`. A sequência composta observável é, portanto, **personagem/ficha → campanha**, seguida pelo restante da conjuração. Isso continua sendo uma inversão potencial contra fluxos campaign-first que depois bloqueiam ficha/personagem, mas não se deve descrever a inversão como se o helper de consumo de ação bloqueasse a campanha depois de adquirir locks de ficha dentro dele.
+
+O helper de consumo de ação também chama `priv.srd_sync_character_vital_condition` apenas no ramo de ação extenuante a PV 0. Esse helper atualiza condições vitais e depois faz SELECT sem lock na campanha. A leitura posterior não é uma aquisição de lock campanha e, isoladamente, não cria uma aresta de lock condição → campanha.
+
+**Ajuste de conclusão:** manter a conjuração multialvo como risco de lock order personagem/ficha → campanha contra rotinas campaign-first → ficha, mas não atribuir o risco a uma ordem interna invertida do helper de consumo de ação. A resolução de magia pendente permanece pending spell → campanha → ficha/estado conforme ramo; a aresta que fecha um ciclo depende de qual fluxo concorrente bloqueia a mesma ficha. Ainda não há deadlock reproduzido com as RPCs.
