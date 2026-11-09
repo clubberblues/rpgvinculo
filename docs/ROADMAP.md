@@ -22,10 +22,12 @@ Nenhuma fase deve ser repetida integralmente sem evidência de mudança ou lacun
 **Objetivo:** fechar responsabilidades e contratos entre módulos.
 - [x] Definir proposta inicial de módulos e limites no ARCHITECTURE.md (ainda não implementada no código).
 - [x] Mapear fontes canônicas atuais e registrar campos pendentes em DATA_MODEL.md; [ ] fechar decisões restantes de XP/ouro e valores derivados.
-- [ ] Definir contratos de ações, resultados, eventos e erros.
-- [ ] Definir política de transações, idempotência e concorrência (locks e idempotência de ataques/pending já mapeados; revisar turn advance e conjuração manual).
+- [x] Criar proposta inicial de ActionRequest/ActionResult, catálogo inicial de erros/eventos e estratégia de adoção em ACTION_CONTRACTS.md; ainda não implementada e decisões de persistência/versionamento permanecem abertas.
+- [ ] Fechar contratos por fluxo e cruzamento completo de argumentos/tipos JavaScript ↔ PostgreSQL.
+- [ ] Definir política implementável de transações, idempotência e concorrência (locks e idempotência de ataques/pending já mapeados; revisar avanço de turno e conjuração manual).
 - [x] Definir limites de domínio SRD/Vínculo e separar catálogos/regras.
 - [ ] Fechar estratégia de testes e implantação (CI estático é a primeira camada; integração/E2E e deploy permanecem pendentes).
+- [x] Registrar proposta inicial de contratos de ação e resultado em [ACTION_CONTRACTS.md](ACTION_CONTRACTS.md), sem alterar contratos RPC existentes.
 
 **Aceite:** arquitetura-alvo compatível com a aplicação existente e decisões registradas.
 
@@ -114,3 +116,9 @@ Uma descoberta só interrompe a tarefa atual se for P0, P1, dependência direta 
 - Uma correção deve ser classificada e ligada a um módulo/critério de aceite.
 - Replanejar quando nova evidência alterar dependências, riscos ou prioridade — não por curiosidade isolada.
 - Não marcar uma fase concluída enquanto houver critérios de aceite pendentes.
+
+
+## Continuidade de execução — 2026-11-09
+- A proposta de contratos comuns foi registrada em ACTION_CONTRACTS.md. O documento distingue proposta arquitetural de implementação e proíbe migração especulativa.
+- Próximo bloqueio externo: confirmar no Dashboard a lista de Exposed schemas da API; o conector e pg_settings não forneceram esse dado.
+- Próxima execução técnica: completar análise estática dos contratos JS ↔ RPC e mapear divergências de idempotência; nenhuma alteração de comportamento até concluir essa etapa.
