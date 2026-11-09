@@ -6,13 +6,14 @@ O roadmap é organizado por dependências e resultados verificáveis, não por q
 Nenhuma fase deve ser repetida integralmente sem evidência de mudança ou lacuna.
 
 ## Fase 0 — Consolidação e reconciliação
+**Estado:** em andamento.
 **Objetivo:** criar uma visão confiável a partir das auditorias e documentos existentes.
-- [ ] Confrontar README, arquitetura D&D 3.5 e Plano Mestre com o HEAD atual.
+- [x] Identificar e consolidar README, arquitetura D&D 3.5 e Plano Mestre como referências centrais; reconciliação detalhada do conteúdo segue em andamento.
 - [ ] Reconciliar snapshots divergentes de catálogos, funções, migrations e pendências.
-- [ ] Mapear arquivos, dependências entre frontend, RPCs e tabelas.
-- [ ] Identificar testes disponíveis, testes simulados e testes reais.
+- [ ] Completar mapa de dependências entre frontend, RPCs e tabelas (varredura inicial dos quatro HTMLs realizada).
+- [ ] Inventariar testes disponíveis, testes simulados e testes reais por módulo.
 - [ ] Atualizar o registro de auditorias sem repetir itens já verificados.
-- [ ] Confirmar o estado remoto do Supabase apenas nos pontos necessários.
+- [x] Capturar fotografia somente de leitura do estado remoto do Supabase; reconciliar divergências e dependências ainda em andamento.
 
 **Aceite:** mapa atual sustentado por evidências, divergências explicitadas e lista única de pendências priorizada.
 
