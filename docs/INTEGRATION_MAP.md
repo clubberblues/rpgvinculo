@@ -124,3 +124,17 @@ Consulta ao catálogo PostgreSQL identificou:
 - srd_cba_token_equipment e srd_cba_token_weapon_instances usam token_id text, sem FK direta para tokens.id bigint; revisar o contrato entre token persistido e identificador CBA antes de qualquer normalização.
 
 Nenhuma linha de jogo foi alterada durante esta consulta.
+
+
+## Persistência da cena e tokens: modelo atual e compatibilidade
+
+A inspeção dos RPCs confirmou dois caminhos coexistentes:
+
+1. **CBA atual:** o estado de cena/token é persistido em campaigns.cba_data (JSONB). RPCs CBA como adicionar_token_cba_completo e alterar_pv_token_cba operam nesse documento; mover_token_gm_cba_srd e mover_token_player_cba delegam a implementações privadas do fluxo CBA.
+2. **Modelo relacional legado/compatível:** public.tokens e public.monster_instances guardam tokens relacionais. RPCs antigas como add_monster_to_scene, move_token, attack, apply_damage, apply_heal, start_combat, combat_set_turn e end_turn usam public.tokens.
+
+As rotinas priv.srd_apply_campaign_condition e priv.srd_apply_campaign_effect aceitam a identidade de alvo quando ela existe no array campaigns.cba_data->tokens **ou** em public.tokens. Isso mostra compatibilidade explícita entre os dois modelos, não prova que ambos sejam usados pela interface atual.
+
+A mesa atual não chama diretamente os RPCs legados listados acima na varredura de 87 RPCs; usa os RPCs CBA. A função create_campaign ainda insere um registro em scenes, mas a interface atual não mostrou leitura direta dessa tabela na varredura. Antes de qualquer remoção/normalização, mapear consumidores indiretos, funções internas, triggers, histórico e dados existentes.
+
+**Decisão arquitetural provisória:** manter os dois modelos intactos até concluir o grafo de dependências e uma decisão formal de migração. Não migrar tokens JSONB para a tabela relacional nem apagar tabelas/RPCs apenas por parecerem legadas.
