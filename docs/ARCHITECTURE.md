@@ -156,7 +156,7 @@ As referências .from() são chamadas de acesso a dados/serviços detectadas est
 ### Banco observado
 O snapshot atual mostra 76 relações em public e 7 em priv, com funções distribuídas entre public, priv e private. As tabelas públicas estão todas com RLS habilitado no momento da consulta. A contagem de SECURITY DEFINER é registrada em PROJECT_STATE.md e AUDIT_REGISTER.md; cada função precisa ser avaliada pelo contrato de autorização, não apenas pela classificação.
 
-A varredura identificou 100 nomes literais distintos e 3 call sites dinâmicos em mesa.html, ficha.html e lobby.html. Os dispatches dinâmicos possuem 7 alvos possíveis (um também aparece literalmente), resultando em 106 nomes de função distintos e 114 assinaturas públicas correspondentes, incluindo sobrecargas. Isso é correspondência estática; não valida tipos em runtime, semântica, autorização por papel ou execução ponta a ponta.
+A varredura identificou 100 nomes literais distintos e 4 call sites dinâmicos em mesa.html, ficha.html e lobby.html. Os dispatches dinâmicos possuem 7 alvos possíveis (um também aparece literalmente), resultando em 106 nomes de função distintos e 114 assinaturas públicas correspondentes, incluindo sobrecargas. Isso é correspondência estática; não valida tipos em runtime, semântica, autorização por papel ou execução ponta a ponta.
 
 index.html e lobby_atualizado.html estão presentes no repositório; dex.html não foi encontrado em main no caminho consultado.
 
