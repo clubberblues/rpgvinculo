@@ -362,3 +362,10 @@ A auditoria estática encontrou footprint Colossal inconsistente: o helper canô
 - O snapshot completo também pode causar lost update: uma gravação tardia com cena obsoleta pode restaurar PV/posição de token após RPC de combate concorrente.
 - Contrato proposto e testes adicionados em [AOO_RECONCILIATION.md](AOO_RECONCILIATION.md) e [TEST_STRATEGY.md](TEST_STRATEGY.md). Nenhuma alteração de código ou banco aplicada.
 - Execução de testes seguirá caminho sem custo adicional: PostgreSQL efêmero em GitHub Actions com fixtures mínimas; testes específicos Supabase permanecem bloqueados se não houver caminho gratuito seguro.
+
+
+## Inventário consolidado de mutações CBA — 2026-11-09
+- Matriz de RPCs, ACLs, guardas AOO, footprint e call sites: [CBA_MUTATION_INVENTORY.md](CBA_MUTATION_INVENTORY.md).
+- P1 confirmados: movimento direto sem AOO; writer genérico de cena permite teleporte/spawn e lost update; spawn/configuração estrutural sem bloqueio de pending.
+- P2 confirmado: footprint Colossal 5×5 em movimento/ataque/habilidade e spawn sem ocupação completa.
+- Teste PostgreSQL efêmero do helper canônico passou; ainda não cobre RPCs Supabase nem call sites divergentes.

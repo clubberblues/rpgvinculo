@@ -60,6 +60,7 @@ AS $function$
     WHEN 'urgroshdwarven' THEN 'dwarvenurgrosh'
     WHEN 'dwarvenurgrosh' THEN 'dwarvenurgrosh'
     WHEN 'urgroshanao' THEN 'dwarvenurgrosh'
+    WHEN 'espada longa' THEN 'longsword'
     WHEN 'espadalonga' THEN 'longsword'
     WHEN 'longsword' THEN 'longsword'
     ELSE value

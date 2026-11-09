@@ -380,3 +380,7 @@ A inspeção de `public.campaigns` confirmou que há `cba_data` e `combat_data` 
 A inspeção de chamadas diretas encontrou 10 consumidores de `priv.srd_token_grid_footprint`, concentrados em manobras, confusão, levantar e três iniciadores de AOO. O detector `public.srd_detectar_saida_alcance_ameacado_srd` **não chama** esse helper: duplica a classificação de tamanho em três CASEs locais, embora hoje também retorne 6 para Colossal. As RPCs de movimento, ataque SRD v2 e Imposição de Mãos ainda têm CASEs locais que retornam 5 para Colossal. O spawn genérico verifica apenas a coordenada de origem.
 
 Assim, `priv.srd_token_grid_footprint` é um helper reutilizado, mas ainda não é a fonte canônica de toda a geometria. A arquitetura-alvo exige que detecção, movimento, spawn, alcance, ataque e habilidades consultem a mesma implementação, e que os testes cubram o caminho inteiro, não apenas o helper.
+
+
+## Inventário de mutações CBA
+A matriz detalhada de RPCs, ACLs, call sites, pending AOO, geometria e riscos de concorrência está em [CBA_MUTATION_INVENTORY.md](CBA_MUTATION_INVENTORY.md). Ela é a referência para decompor o writer genérico e definir os contratos server-authoritative antes de qualquer patch.

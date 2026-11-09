@@ -246,3 +246,7 @@ Também foram identificados RPCs de configuração de facção/alcance, ajuste d
 
 ### Precisão adicional — centralização de footprint
 O helper `priv.srd_token_grid_footprint` tem 10 consumidores diretos, mas o detector AOO não o chama: mantém três CASEs próprios (atualmente corretos para Colossal = 6). Movimento jogador/Mestre, duas sobrecargas de ataque SRD v2 e Imposição de Mãos usam 5 para Colossal; spawn verifica somente a célula de origem. O fixture recém-criado testa apenas o helper, não esses consumidores. A centralização e os testes de integração continuam pendentes.
+
+
+### Inventário consolidado de escrita CBA
+A matriz de contratos das RPCs que escrevem cena, tokens, PV, perfil de combate e iniciativa foi consolidada em [CBA_MUTATION_INVENTORY.md](CBA_MUTATION_INVENTORY.md). O próximo trabalho de implementação deve seguir essa matriz e as regressões 1–25 em TEST_STRATEGY.md, sem tocar produção antes do baseline/migration reconciliation.
