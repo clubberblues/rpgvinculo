@@ -226,3 +226,7 @@ Quatro workflows atuais cobrem sintaxe JavaScript, invariantes do dado manual e 
 ## Storage e mídia
 
 Snapshot de buckets/policies criado em [STORAGE_POLICIES_SNAPSHOT.md](STORAGE_POLICIES_SNAPSHOT.md). A revisão identificou bucket público `midia` sem limite/allowlist MIME configurados e bucket privado `mesa-media` com SVG/áudio/vídeo permitidos; alterações ficam pendentes de revisão de compatibilidade.
+
+
+### P2 — unificar footprint de criaturas Colossais
+A geometria atual diverge: helper canônico/AOO usam 6, mas os dois RPCs de movimento, duas sobrecargas de ataque e Imposição de Mãos contra mortos-vivos usam 5. Corrigir para 6 e centralizar no helper `priv.srd_token_grid_footprint` após baseline e fixture. Testes descritos em TEST_STRATEGY.md.
