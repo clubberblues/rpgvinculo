@@ -130,3 +130,15 @@ A divergência de nomes em ficha.html foi classificada como rota latente: o banc
 
 ## Prioridade técnica identificada — lock order de AOO — 2026-11-09
 Antes da primeira refatoração, fechar a matriz de locks do combate. Achado prioritário: potencial deadlock por inversão de ordem entre cancelamento de movimento AOO (pending → attacks) e aplicação de dano/resolução (attack → pending). Exige teste concorrente em fixture descartável; não alterar RPC de produção sem reproduzir e validar rollback.
+
+
+### Bloqueio de infraestrutura identificado — histórico de migrations
+**Prioridade:** P1 para confiabilidade de implantação / P0 se houver tentativa de reconstrução ou deploy cego.
+- [ ] Reconciliar 681 arquivos locais em supabase/migrations com 966 registros remotos em supabase_migrations.schema_migrations (diferença de contagem: 285).
+- [ ] Comparar versão por versão; não inferir arquivos ausentes somente pela diferença de contagem.
+- [ ] Capturar DDL remoto completo e classificar drift de funções, tabelas, constraints, policies, grants, triggers, extensões e schemas.
+- [ ] Recuperar/gerar migrations reproduzíveis a partir do estado atual somente após revisão de segurança e dependências.
+- [ ] Estabelecer CI que detecte migration local ausente, versão duplicada e divergência de schema antes de qualquer deploy.
+- [ ] Definir procedimento de deploy/rollback e ambiente local descartável.
+
+**Regra temporária:** não executar `supabase db reset`, deploy automático de migrations, reconstrução de banco ou squash do histórico até o aceite desta reconciliação.
