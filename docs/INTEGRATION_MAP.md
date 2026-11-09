@@ -186,3 +186,17 @@ Não foi feita alteração de política nem de subscription.
 - A linha Armadura de Couro existe no inventário com bônus de CA +2 e máximo de Destreza +6, mas equipado=false. Portanto, CA 10 é coerente com o estado persistido atual; CA 12 seria o resultado esperado depois de equipar a armadura.
 - A consulta simulou apenas o claim de identidade para executar a função em modo somente leitura. Nenhum registro foi alterado.
 - **Reclassificação:** a pendência histórica “CA 10 quando deveria ser 12” não comprova defeito no resolver. O código atual possui o caminho de CA vinculada; a validação visual final deve ser feita depois que o item estiver equipado por uma ação normal de jogo/fixture descartável, sem alterar os dados atuais.
+
+
+## Contrato de CA entre ficha e token
+
+O frontend e o backend possuem três caminhos de CA:
+1. **Personagem jogador:** mesa.html chama public.srd_calcular_ca_personagem_srd(campaign_id, character_id, attack_context). O resolvedor usa ficha SRD, equipamento marcado como equipado, Destreza, condições, tamanho e efeitos do personagem.
+2. **NPC vinculado a ficha:** mesa.html chama a sobrecarga de quatro argumentos (inclui attacker_is_giant). Quando o Mestre e o vínculo são válidos, ela delega a priv.srd_calcular_ca_alvo_campanha_srd. O helper usa equipamento da ficha vinculada, Destreza/efeitos do token CBA, condições associadas à ficha/token, tamanho, características de classe e bônus racial contra gigantes. Mais de um token vinculado à mesma ficha causa erro de ambiguidade.
+3. **NPC sem ficha vinculada:** a mesa usa os dados de CA presentes em monsterStats do próprio token, aplicando os modificadores de contexto suportados no cliente/fluxo.
+
+Os resolvedores de ataque iterativo de NPC e ataque de oportunidade também chamam o helper de CA vinculada. Portanto, o cálculo não é apenas decorativo: participa da resolução de combate.
+
+**Fonte canônica:** para personagem jogador e NPC vinculado, a ficha SRD e seu equipamento equipado são a base; o token fornece efeitos temporários/contextuais quando o fluxo os prevê. O inventário de token é um domínio separado e não deve substituir silenciosamente o equipamento da ficha vinculada.
+
+**Limite de validação:** a função foi inspecionada estaticamente e executada uma vez em leitura para o registro Thorgar (ID 681), cujo item Armadura de Couro está não equipado; retornou CA 10. Esse registro é distinto de Thunga Mestre (ID 682), que pertence à campanha 131 e tem Armadura de Couro equipada. Não transferir o resultado de um personagem ao outro. A validação funcional de Thunga permanece bloqueada até a confirmação do alvo e deve ocorrer em fixture/campanha descartável.
