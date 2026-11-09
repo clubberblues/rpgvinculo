@@ -51,9 +51,9 @@ Este registro consolida documentação já existente, não reinicia auditorias. 
 4. Organizar roadmap por dependências e critérios de aceite.
 5. Retomar execução na prioridade mais alta do plano aprovado.
 
-## Protocolo de continuidade entre sessões
+## Documentos permanentes\n- [Arquitetura geral](ARCHITECTURE.md)\n- [Mapa de integração](INTEGRATION_MAP.md)\n- [Roadmap](ROADMAP.md)\n- [Decisões](DECISIONS.md)\n- [Registro de auditorias](AUDIT_REGISTER.md)\n- [Estratégia de testes](TEST_STRATEGY.md)\n\n## Protocolo de continuidade entre sessões
 Ao iniciar uma sessão:
-- Ler este documento, ARCHITECTURE.md, ROADMAP.md, DECISIONS.md, AUDIT_REGISTER.md e TEST_STRATEGY.md.
+- Ler este documento, ARCHITECTURE.md, INTEGRATION_MAP.md, ROADMAP.md, DECISIONS.md, AUDIT_REGISTER.md e TEST_STRATEGY.md.
 - Conferir branch/HEAD e alterações recentes.
 - Retomar a próxima tarefa aberta; não recomeçar o projeto.
 
