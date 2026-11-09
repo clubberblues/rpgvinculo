@@ -135,7 +135,8 @@ Antes da primeira refatoração, fechar a matriz de locks do combate. Achado pri
 ### Bloqueio de infraestrutura identificado — histórico de migrations
 **Prioridade:** P1 para confiabilidade de implantação / P0 se houver tentativa de reconstrução ou deploy cego.
 - [x] Comparar exatamente as versões locais e remotas: 681 arquivos locais, 966 registros remotos, 640 versões coincidentes, 326 remotas sem versão local e 41 locais sem versão remota. Desses conjuntos, 41 pares têm o mesmo nome em timestamps diferentes; restam 285 nomes remotos sem arquivo local de mesmo nome e 2 nomes locais sem contraparte remota. Nomes coincidentes não comprovam equivalência do SQL.
-- [ ] Capturar DDL remoto completo e classificar drift de funções, tabelas, constraints, policies, grants, triggers, extensões e schemas.
+- [x] Capturar inventário estrutural remoto inicial (83 relações, 229 índices, 327 assinaturas/fingerprints) em REMOTE_SCHEMA_SNAPSHOT.md.
+- [ ] Exportar DDL executável completo e classificar drift de funções, tabelas, constraints, policies, grants, triggers, extensões e schemas.
 - [ ] Recuperar/gerar migrations reproduzíveis a partir do estado atual somente após revisão de segurança e dependências.
 - [ ] Estabelecer CI que detecte migration local ausente, versão duplicada e divergência de schema antes de qualquer deploy.
 - [ ] Definir procedimento de deploy/rollback e ambiente local descartável.
