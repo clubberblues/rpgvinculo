@@ -141,3 +141,12 @@ A triagem encontrou guardas diretas ou delegadas nos 99 corpos. Isto **não é a
 A triagem de padrões não encontrou `auth.uid()`, `my_role()` ou consulta direta a `members` no corpo de `gm_get_code` e `media_gc`. A abertura dos corpos confirmou que ambas chamam `priv.need_gm(cid)`. Essa helper chama `public.my_role(cid)` e exige papel GM; `priv.need_gm` não concede EXECUTE direto a authenticated ou anon. `can_read_media` delega a verificação para `public.my_role`.
 
 A consulta agregada confirmou para as 99 funções: 0 EXECUTE para anon, 99 EXECUTE para authenticated, 0 sem search_path explícito e 0 sem `pg_temp` no search_path. Isso fecha apenas a triagem de exposição/ambiente de execução; não substitui a validação semântica de cada parâmetro e recurso.
+
+
+## Cruzamento com chamadas RPC do frontend principal — 2026-11-09
+
+O cruzamento de assinaturas com chamadas literais `sb.rpc('nome', ...)` em `mesa.html`, `ficha.html` e `lobby.html` encontrou 70 assinaturas com nome em chamada literal. Outras 29 não apareceram como chamada literal nesses três arquivos. Quatro dessas 29 são chamadas por dispatch dinâmico confirmado:
+- `srd_aplicar_dano_ataque_oportunidade_srd` e variante monstro, selecionadas por `damageRpc` em `mesa.html`.
+- `srd_resolve_pending_spell_save` e `srd_resolve_pending_spell_resistance`, selecionadas por `rpcName` em `mesa.html`.
+
+As 25 assinaturas restantes não foram encontradas em chamadas literais nem nesses dispatchers dinâmicos. Isso **não significa que estejam sem uso**: podem ser chamadas por outras páginas/scripts, por Storage policies, triggers ou internamente por outras funções. São candidatas a revisão de superfície e legado, não a revogação imediata. Entre elas estão `srd_detectar_saida_alcance_ameacado_srd`, que é chamada internamente por `srd_solicitar_movimento_com_aoo_srd` e também conserva EXECUTE para authenticated; sua exposição direta merece revisão de necessidade mínima.
