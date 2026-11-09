@@ -332,3 +332,12 @@ Não repetir auditorias já concluídas sem evidência de mudança. A próxima f
 - A linha Armadura de Couro existe no inventário com bônus de CA +2 e máximo de Destreza +6, mas equipado=false. Portanto, CA 10 é coerente com o estado persistido atual; CA 12 seria o resultado esperado depois de equipar a armadura.
 - A consulta simulou apenas o claim de identidade para executar a função em modo somente leitura. Nenhum registro foi alterado.
 - **Reclassificação:** a pendência histórica “CA 10 quando deveria ser 12” não comprova defeito no resolver. O código atual possui o caminho de CA vinculada; a validação visual final deve ser feita depois que o item estiver equipado por uma ação normal de jogo/fixture descartável, sem alterar os dados atuais.
+
+
+### Reconciliação da identidade do personagem de teste — 2026-11-08
+
+Consulta somente de leitura confirmou dois registros diferentes no contexto de TESTE 2:
+- Thorgar (ID 681) tem campaign_id NULL, pertence ao Mestre e está ligado como NPC a um token em campaigns.cba_data da campanha 131. Armadura de Couro não equipada; cálculo de CA vinculado retornou 10.
+- Thunga Mestre (ID 682) pertence à campanha 131, tem Armadura de Couro equipada, Machado Grande não equipado e não possui token vinculado.
+
+O teste de CA 10 de Thorgar não se aplica a Thunga Mestre. Não tratar os registros como a mesma ficha sem confirmação do proprietário; a validação funcional do personagem real permanece bloqueada até essa identificação. Nenhum dado foi alterado.
