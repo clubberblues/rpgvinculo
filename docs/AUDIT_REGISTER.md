@@ -402,3 +402,12 @@ Em D&D 3.5, Colossal ocupa 30 ft (6 quadrados). A inconsistência pode permitir 
 **Classificação:** P2 — regra de borda, mas afeta ocupação, distância e alcance de tokens Colossais. Confirmado por comparação estática dos corpos remotos; não reproduzido em fixture. Não alterado.
 
 **Correção candidata:** substituir as classificações duplicadas por chamada ao helper canônico `priv.srd_token_grid_footprint` ou alinhar explicitamente para 6, e centralizar toda geometria de footprint nesse helper. Testar limite de 5/6 quadrados, sobreposição, alcance, AOO, ataques e imposição de mãos contra mortos-vivos.
+
+
+## 2026-11-09 — advisors remotos e integridade de movimento
+- Coletados advisors Supabase security/performance em modo read-only; baseline detalhado em [ADVISOR_SNAPSHOT_2026-11-09.md](ADVISOR_SNAPSHOT_2026-11-09.md).
+- 99 SECURITY DEFINER públicas executáveis por authenticated foram sinalizadas. Revisar autorização individualmente; não revogar EXECUTE em lote.
+- 7 tabelas com RLS ativo sem policy e 52 índices não utilizados foram sinalizados. Não são, por si só, evidência de exposição ou de índice descartável.
+- Proteção de senha comprometida está desativada no Auth; depende de ajuste no Dashboard.
+- Deploy Pages do HEAD `89590799209d1c86395a65eb9ebe968087120d5d` passou. Execuções anteriores concorrentes foram canceladas; o resultado não valida os fluxos de jogo.
+- Reafirmado P1: movimento direto por RPC não integra o detector AOO e pode contornar a serialização de pendências. Nenhuma correção foi aplicada sem fixture/regressão segura.
