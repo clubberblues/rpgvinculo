@@ -362,3 +362,20 @@ A revisão por corpo completo das funções que acessam public.srd_character_fea
 
 O fixture campaign ↔ feature resource cobre somente a forma de lock, não a semântica da vinculação. A correção deve usar uma ordem única campanha → personagem → ficha → recurso, revalidando que o token e o personagem ainda estão vinculados. Não basta mover apenas o SELECT de campanha para o início sem rever os ramos de autorização e os locks de ficha/recurso.
 
+
+## Ataque Total de NPC — inversão ativa sequência ↔ campanha (2026-11-09)
+
+A leitura do fluxo atual de mesa.html e das funções por OID confirmou outra inversão operacional:
+
+- A interface chama public.registrar_rolagem_ataque_iterativo_npc_srd (OID 26778). O wrapper delega a priv.npc_registrar_rolagem_ataque_iterativo_impl (OID 26730), que bloqueia srd_npc_attack_sequences FOR UPDATE (linha 22) e só depois bloqueia campaigns FOR UPDATE (24). Prefixo: sequência → campanha → tentativa.
+- A interface chama public.resolver_ataque_iterativo_npc_srd (OID 26779). O helper priv.npc_resolver_ataque_iterativo_impl (OID 26737) bloqueia campanha (linha 78) → tentativa (87) → sequência (92).
+- A interface também chama public.aplicar_dano_ataque_iterativo_npc_srd (OID 26781), que delega a priv.npc_aplicar_dano_ataque_iterativo_impl (OID 26743), com campanha (52) → tentativa (66) → sequência (69), depois ficha do alvo e atualizações de cena/estado.
+- A inicialização NPC (public.iniciar_ataque_iterativo_npc_srd, OID 27430) é campaign-first (helper OID 27428), assim como a sequência de ataque total de personagem.
+
+**Classificação:** ciclo alcançável sequência → campanha versus campanha → tentativa → sequência. Ao registrar a rolagem de um NPC, a interface mantém a linha da sequência enquanto pede o lock da campanha; a resolução/dano pode manter a campanha e tentativa enquanto pede a mesma sequência. A UI atual chama essas rotas em mesa.html, portanto não é caminho legado. Não foi reproduzido deadlock com RPCs reais.
+
+Foi acrescentado ao harness PostgreSQL um caso sintético com sequence → campaign contra campaign → attempt → sequence. Ele verifica o mecanismo de deadlock do PostgreSQL em tabelas descartáveis, sem executar as RPCs reais.
+
+### Direção de correção
+
+Padronizar os RPCs NPC e PC em campanha → sequência → tentativa (ou outra ordem única definida após revisar todas as variantes). O registro de rolagem NPC deve primeiro obter campaign FOR UPDATE, depois sequence FOR UPDATE e, por fim, attempt; resolução e aplicação de dano devem respeitar a mesma ordem. Revalidar campaign_id, actor token, sequência ativa, índice de ataque e idempotência depois dos locks. A variante PC já começa por campanha e não deve ser regressada para sequence-first.
