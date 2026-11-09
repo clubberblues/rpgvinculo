@@ -220,3 +220,46 @@ SELECT pg_sleep(0.3);
 UPDATE lock_fixture.effects SET active=false WHERE id=1;
 COMMIT;
 "
+
+
+# Positive control: a consistent campaign -> effect order must complete.
+run_expected_success() {
+  local label="$1"
+  local session_a="$2"
+  local session_b="$3"
+  local tmp
+  tmp="$(mktemp -d)"
+  psql -v ON_ERROR_STOP=1 >"$tmp/a.log" 2>&1 <<<"$session_a" &
+  local a=$!
+  sleep 0.1
+  psql -v ON_ERROR_STOP=1 >"$tmp/b.log" 2>&1 <<<"$session_b" &
+  local b=$!
+  set +e
+  wait "$a"; local sa=$?
+  wait "$b"; local sb=$?
+  set -e
+  if [[ "$sa" -ne 0 || "$sb" -ne 0 ]] ||
+     grep -qi 'deadlock detected' "$tmp/a.log" "$tmp/b.log"; then
+    echo "FAIL: $label should complete without a deadlock"
+    cat "$tmp/a.log" "$tmp/b.log"
+    rm -rf "$tmp"
+    exit 1
+  fi
+  echo "passed consistent lock order: $label"
+  rm -rf "$tmp"
+}
+
+run_expected_success "campaign -> effect in both sessions" "
+SET deadlock_timeout='100ms'; SET lock_timeout='5s';
+BEGIN;
+UPDATE lock_fixture.campaigns SET round_number=round_number+1 WHERE id=1;
+SELECT pg_sleep(0.4);
+UPDATE lock_fixture.effects SET active=false WHERE id=1;
+COMMIT;
+" "
+SET deadlock_timeout='100ms'; SET lock_timeout='5s';
+BEGIN;
+UPDATE lock_fixture.campaigns SET round_number=round_number+1 WHERE id=1;
+UPDATE lock_fixture.effects SET active=true WHERE id=1;
+COMMIT;
+"
