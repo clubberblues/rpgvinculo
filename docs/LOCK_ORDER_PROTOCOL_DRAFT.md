@@ -104,3 +104,14 @@ A ordem candidata anterior ainda não está apta para aprovação. A inspeção 
 **Consequência para o protocolo:** não basta ordenar campanha → personagem → ficha → recursos. A ordem precisa ser reconciliada por fluxo de domínio e pode exigir separar locks de campanha para consumo de ação de locks de persistência da ficha, ou mover o lock de campanha para antes do lock de ficha nos entrypoints que atualmente fazem o contrário. Nenhuma alternativa deve ser aplicada até revisar todas as sobrecargas, wrappers, chamadas transitivas e semântica de autorização.
 
 Os cenários campaign ↔ sheet e campaign ↔ feature resource foram acrescentados ao harness sintético. Eles verificam somente a detecção de deadlock pelo PostgreSQL em tabelas descartáveis, não executam RPCs remotas.
+
+
+## Atualização — Fúria, encerramento e triggers transitivas (2026-11-09)
+
+A revisão por OID refinou o caminho de Fúria: `public.end_combat(bigint)` (OID 19091) percorre efeitos com `FOR UPDATE` e chama os encerradores antes do UPDATE final de `campaigns`. O trigger `priv.srd_expire_barbarian_rage_on_round_change()` (OID 26292) é executado após UPDATE de `combat_data`, quando a linha campanha já está bloqueada, e então bloqueia os efeitos de Fúria. A ordem é conflitante: **end_combat: efeito → ficha/condições → campanha** versus **trigger de rodada: campanha → efeito → ficha/condições**. O ramo NPC do encerrador também adquire efeito → campanha diretamente. O mesmo `end_combat` encerra ataques AOO antes das pendências, mantendo o segundo conflito attack ↔ pending.
+
+O harness recebeu um caso nomeado para o caminho composto `effect → sheet → campaign` versus `campaign → effect`. Ele usa apenas tabelas e duas sessões PostgreSQL sintéticas. Resultado esperado é a detecção de um deadlock deliberadamente montado; isso não constitui reprodução das RPCs nem evidência de deadlock ocorrido em produção. Nenhuma função, trigger ou dado remoto foi alterado.
+
+A trigger de solicitação de rolagem por Confusão também adquire condição e log após o UPDATE de campanha. O helper de vitalidade de personagem atualiza condições e depois apenas lê campanha sem lock explícito; não confundir leitura MVCC com aquisição de lock de linha.
+
+**Decisão:** manter o protocolo global como rascunho. A correção precisa harmonizar a ordem no encerramento de combate, expiração de Fúria e transições AOO, incluindo efeitos de trigger, antes de aprovar qualquer migration.

@@ -579,3 +579,26 @@ O encerramento não começa com `campaigns FOR UPDATE` explícito no corpo; não
 - Confirmado nos corpos instalados: ordem de locks dos entrypoints e helpers descritos acima.
 - Não confirmado: deadlock real reproduzido entre RPCs de produção; alcance simultâneo de cada combinação sob todas as regras de ownership/turno; ausência de outros locks indiretos via SQL dinâmico ou triggers não inventariados.
 - Nenhuma RPC, trigger, ACL, policy, migration ou dado remoto foi alterado.
+
+
+### Encerramento de combate e expiração de Fúria — rastreamento por OID (2026-11-09)
+
+Consulta read-only aos corpos instalados, com assinaturas resolvidas por OID (não por proname):
+
+| Rotina/trigger | OID | Prefixo de lock relevante |
+|---|---:|---|
+| `public.end_combat(bigint)` | 19091 | efeitos de Fúria `FOR UPDATE` → chama encerradores → ataques AOO → pendências AOO → UPDATE final de `campaigns` |
+| `priv.srd_end_barbarian_rage(bigint,text,boolean)` | 25340 | efeito → ficha SRD; sincroniza condição vital; no fluxo normal com fadiga também pode chamar aplicador que bloqueia campanha |
+| `priv.srd_end_barbarian_rage_token(bigint,text,boolean)` | 26653 | efeito → campanha `FOR UPDATE` → sincronização de ficha/condições |
+| `priv.srd_expire_barbarian_rage_on_round_change()` | 26292 | trigger AFTER do UPDATE de `campaigns.combat_data`; a linha campanha já está bloqueada, depois percorre efeitos de Fúria `FOR UPDATE` |
+| `priv.srd_apply_campaign_condition(...)` | 24895 | campanha `FOR UPDATE` → atualiza/insere condição |
+| `priv.srd_apply_campaign_effect(...)` | 24893 | campanha `FOR UPDATE` → atualiza/insere efeito |
+| `priv.srd_sync_character_vital_condition(text,integer,boolean)` | 24908 | atualiza condições vitais; leitura posterior de campanha sem `FOR UPDATE` |
+
+A trigger de avanço de rodada mantém a ordem **campanha → efeito**. Já `end_combat` não adquire o lock da campanha no início: percorre efeitos de Fúria e chama os encerradores antes do UPDATE final de campanha. No ramo de Fúria de personagem, o helper bloqueia efeito e ficha antes de atualizar condições; no ramo NPC, o helper bloqueia efeito e depois campanha/ficha. Assim, o encerramento pode manter **efeito → campanha** enquanto a trigger mantém **campanha → efeito**. É uma inversão direta adicional no ciclo de vida da Fúria, além do padrão AOO **ataque → pending** executado pelo mesmo `end_combat`.
+
+A consulta de callers encontrou, entre outros, `priv.descanso_longo_npc_vinculado_srd_impl` (OID 26808), `public.alternar_estado_campanha(bigint,text)` (OID 20103), `public.usar_furia_barbaro_npc_srd(bigint,text,text)` (OID 26656) e `public.usar_furia_barbaro_srd(text,text)` (OID 25341). A função pública de Fúria de personagem já bloqueia personagem → ficha → campanha antes de delegar o encerramento; não deve ser confundida com a ordem do caminho de `end_combat`.
+
+**Classificação:** inversão estática confirmada nos corpos instalados; deadlock real entre trigger e encerramento não foi reproduzido com RPCs remotas. A fixture nova no GitHub modela o prefixo efeito → ficha → campanha versus campanha → efeito em tabelas descartáveis, sem executar esses corpos.
+
+A trigger `trg_srd_request_confusion_turn_roll` (OID 27271) também é transitiva de UPDATE de campanha: campanha → condição confundida → `campaign_log`. `priv.srd_condition_has_flag` (OID 24984) é helper SQL STABLE de leitura e não adquire locks explícitos. A função `priv.srd_sync_character_vital_condition` atualiza condições e apenas lê campanha por MVCC; essa leitura isolada não deve ser anotada como lock de campanha.

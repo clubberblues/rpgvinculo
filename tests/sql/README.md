@@ -21,3 +21,5 @@ These tests run against a disposable PostgreSQL service inside a standard GitHub
 - The lock-cycle fixture now models a class-resource inversion observed in the remote definitions: campaign → feature resource (NPC rage/rest paths) versus feature resource → campaign (class-feature path). This is a synthetic pattern only; the actual pair's reachability for the same linked character/campaign still requires confirmation, and no production RPC is executed.
 
 - A further synthetic pair models the spell-resolution order campaign → character sheet versus multi-target spell-casting order character sheet → campaign. The production bodies show these conflicting prefixes, but the fixture still models only PostgreSQL locks; it does not execute spell RPCs or establish a reproduced production deadlock.
+
+- The latest lock-cycle case models the compound barbarian-rage cleanup prefix (effect → character sheet → campaign) versus the round-change trigger (campaign → effect). It is still a synthetic lock-order test; it does not execute `end_combat`, the trigger, or the rage RPCs.
