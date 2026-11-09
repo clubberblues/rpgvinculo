@@ -90,6 +90,7 @@ run_expected_deadlock "campaign -> character -> sheet -> feature resource versus
 SET deadlock_timeout='100ms'; SET lock_timeout='5s';
 BEGIN;
 UPDATE lock_fixture.campaigns SET round_number=round_number+1 WHERE id=1;
+SELECT pg_sleep(0.6);
 SELECT id FROM lock_fixture.characters WHERE id=1 FOR UPDATE;
 SELECT id FROM lock_fixture.sheets WHERE id=1 FOR UPDATE;
 SELECT pg_sleep(0.6);
@@ -110,6 +111,7 @@ run_expected_deadlock "campaign -> character -> sheet versus character -> sheet 
 SET deadlock_timeout='100ms'; SET lock_timeout='5s';
 BEGIN;
 UPDATE lock_fixture.campaigns SET round_number=round_number+1 WHERE id=1;
+SELECT pg_sleep(0.6);
 SELECT id FROM lock_fixture.characters WHERE id=1 FOR UPDATE;
 SELECT pg_sleep(0.6);
 SELECT id FROM lock_fixture.sheets WHERE id=1 FOR UPDATE;
