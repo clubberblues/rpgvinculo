@@ -47,3 +47,5 @@ These tests run against a disposable PostgreSQL service inside a standard GitHub
 - Equipment/weapon was removed from the active fixture after reviewing the exact trigger branch and ACLs: current delivery increases quantity and inserts new instances; authenticated has no direct UPDATE/INSERT/DELETE grant on srd_character_equipment; no current writer reducing weapon quantity was found. The trigger's negative-delta branch remains a future risk if weapon removal is added.
 
 - Scope qualification: the campaign/sheet deadlock requires both transactions to touch the same character sheet in the same campaign. A concrete reachable overlap is dying-round resolution versus a pending spell whose target is that same dying character; different character sheets do not by themselves form the inverse edge.
+
+- Active PC iterative-attack lock cycle: mesa.html starts Ataque Total through the 8-argument RPC. Its 7-argument helper locks weapon instance FOR UPDATE before delegating to the base RPC that locks campaign; the resolver locks campaign → attempt → sequence → weapon instance FOR SHARE. A weapon/campaign synthetic test was restored to model this verified path.
