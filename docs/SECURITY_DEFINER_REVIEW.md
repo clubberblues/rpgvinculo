@@ -150,3 +150,7 @@ O cruzamento de assinaturas com chamadas literais `sb.rpc('nome', ...)` em `mesa
 - `srd_resolve_pending_spell_save` e `srd_resolve_pending_spell_resistance`, selecionadas por `rpcName` em `mesa.html`.
 
 As 25 assinaturas restantes não foram encontradas em chamadas literais nem nesses dispatchers dinâmicos. Isso **não significa que estejam sem uso**: podem ser chamadas por outras páginas/scripts, por Storage policies, triggers ou internamente por outras funções. São candidatas a revisão de superfície e legado, não a revogação imediata. Entre elas estão `srd_detectar_saida_alcance_ameacado_srd`, que é chamada internamente por `srd_solicitar_movimento_com_aoo_srd` e também conserva EXECUTE para authenticated; sua exposição direta merece revisão de necessidade mínima.
+
+
+### Dependência interna de `srd_detectar_saida_alcance_ameacado_srd`
+Consulta aos corpos de funções em `public`, `priv` e `private` encontrou somente um chamador SQL: `public.srd_solicitar_movimento_com_aoo_srd`, que é SECURITY DEFINER. Não foi encontrado uso direto em `mesa.html`, `ficha.html` ou `lobby.html`. Assim, EXECUTE para authenticated na função detector parece dispensável para o fluxo atual; a opção de hardening de menor superfície é mover a implementação para `priv` ou revogar o grant direto a authenticated após verificar todos os artefatos externos e políticas. Não alterado nesta fase de reconciliação.
