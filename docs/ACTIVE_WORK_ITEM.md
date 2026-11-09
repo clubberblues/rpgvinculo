@@ -238,3 +238,7 @@ A prioridade ativa deixa de ser qualquer patch isolado no movimento e passa a se
 
 ### Extensão do P1/P2 — spawn de tokens
 A revisão de `adicionar_token_cba` confirmou que o endpoint não verifica pending AOO e valida apenas coincidência da célula de origem, não o footprint completo. O wrapper `adicionar_token_cba_completo` herda esse comportamento; `salvar_cena_cba` pode inserir sem essa validação. P1 para spawn durante pending; P2 para sobreposição de footprints grandes. Regressões 16–18 adicionadas. Não corrigido.
+
+
+### Mutações paralelas durante pending
+Também foram identificados RPCs de configuração de facção/alcance, ajuste de PV e inclusão de combatente na iniciativa sem consulta explícita à fila pending. A política de pausa precisa distinguir resolução AOO autorizada de mutações externas concorrentes. Casos 19–21 adicionados à estratégia de testes; ainda sem reprodução autenticada.
