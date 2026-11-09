@@ -370,3 +370,6 @@ A extração de `mesa.html` encontrou oito usos operacionais de `gravarCBAnaCamp
 - enriquecimento/hidratação de estatísticas de monstros.
 
 Essas operações não devem continuar compartilhando uma substituição integral de cena. A migração deve mapear cada intenção para RPC específico e preservar a posição/estado atual dos demais tokens. O fallback de movimento fora de combate também deve usar comando próprio, em vez de depender de snapshot de cena.
+
+
+A inspeção de `public.campaigns` confirmou que há `cba_data` e `combat_data` como JSONB, mas não existe coluna dedicada de versão/controle de concorrência para a cena. O campo `version: 1` serializado dentro do JSON CBA identifica o formato, não uma revisão monotônica do estado. Portanto, a proteção contra snapshot obsoleto precisa introduzir versão server-side ou comandos de atualização parcial com merge autoritativo; não confiar no campo de formato existente.
