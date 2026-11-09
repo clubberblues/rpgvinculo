@@ -160,3 +160,24 @@ A revisão do corpo atual de `priv.srd_encerrar_reacao_aoo_pendente_impl` confir
 Consulta direta aos corpos de `priv.mover_token_player_cba_impl` e `priv.mover_token_gm_cba_srd_impl` confirmou que ambos não referenciam `priv.srd_aoo_pending_movements`, não chamam o detector AOO e não chamam o pré-check. O trigger `priv.srd_guard_pending_aoo_movement` busca um pending ativo, mas só impede alteração/removal do token que é o próprio `mover_token_id`; ele não bloqueia alterações de outros tokens. Assim, uma chamada direta ao RPC de movimento de outro token pode contornar também a serialização global que `srd_solicitar_movimento_com_aoo_srd` tenta impor (a função de pré-check rejeita qualquer pending ativo). Isso pode alterar a posição de ameaças enquanto uma reação está sendo resolvida.
 
 **Impacto adicional:** quebra da invariável “uma única movimentação pendente por campanha” e mutação da cena durante a resolução AOO, além do bypass do detector e da janela TOCTOU. Mantida classificação P1.
+
+
+## Contrato proposto para corrigir a autoridade do movimento — 2026-11-09
+
+Leitura do corpo completo de `public.srd_solicitar_movimento_com_aoo_srd` acrescentou duas condições importantes ao desenho da correção:
+
+1. O helper bloqueia outra pendência ativa **somente depois** de detectar uma nova ameaça. Se o destino não gerar AOO, ele retorna `pending=false` antes de consultar `priv.srd_aoo_pending_movements`. Portanto, chamar apenas esse helper dentro do RPC de movimento não basta para garantir a invariável global de uma única movimentação pendente.
+2. O trigger `priv.srd_validate_aoo_pending_movement_preview` define o GUC transacional `app.srd_aoo_pending_commit` com o ID da pendência e chama o RPC de movimento para validar o preview, forçando rollback por exceção sentinela. A integração no RPC de movimento precisa preservar esse caminho de validação; não pode tratar o próprio preview como uma nova solicitação AOO.
+
+### Invariantes obrigatórias do futuro RPC de persistência
+
+- Adquirir o lock da campanha antes de ler estado de combate, tokens, pending e ameaças.
+- Validar identidade, papel, controle do token, turno, ação, destino, deslocamento, ocupação e condições no servidor.
+- Se existir pending ativo da campanha, rejeitar movimento de qualquer outro token, mesmo quando o trajeto desse token não provocaria AOO.
+- Para movimento normal sem pending, recalcular ameaças e criar a pending na mesma transação do RPC que recebeu a solicitação; se houver ameaça, retornar pending sem mover nem consumir deslocamento.
+- Se não houver ameaça e não houver pending global, persistir movimento e consumo de deslocamento na mesma transação.
+- O commit de uma pending deve ser uma exceção estreita e verificável: aceitar apenas o ID de pending fornecido pelo fluxo interno, confirmar campanha, token, destino, status e controlador, e não abrir uma rota para o cliente ignorar o bloqueio.
+- O fluxo de preview do trigger deve continuar sem mutação persistida e sem criar uma segunda pending.
+- Aplicar a mesma autoridade aos caminhos de jogador e Mestre, mantendo as diferenças de autorização já existentes.
+
+**Não aplicado.** Este é o contrato de implementação e teste, não uma instrução para alterar produção isoladamente. A ordem de locks transitiva e o caminho de preview precisam ser preservados na implementação.
