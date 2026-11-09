@@ -150,3 +150,29 @@ A mesa atual não chama diretamente os RPCs legados listados acima na varredura 
 No snapshot consultado: campaigns=3, scenes=3, tokens=0 e monster_instances=0. create_campaign insere uma linha em scenes por campanha. A mesa atual lê/grava campanhas.cba_data e não consulta scenes/tokens diretamente na varredura; os RPCs relacionais antigos continuam no banco, mas as tabelas tokens e monster_instances estão vazias neste snapshot.
 
 A tabela scenes contém parâmetros de mídia/grid (imagem, vídeo, áudio, GIF, tile, offsets, escala e limites). Seu destino deve ser decidido após confirmar se esses campos foram migrados para campaigns.cba_data, media ou outro fluxo. Não apagar a tabela nem o INSERT de create_campaign nesta etapa.
+
+
+### Subscriptions Realtime detalhadas
+| Canal lógico | Tabela | Evento | Filtro Realtime |
+|---|---|---|---|
+| chat | campaign_log | INSERT | campaign_id=eq.{MESA_ID} |
+| chars | characters | * | campaign_id=eq.{MESA_ID} |
+| srd | srd_character_sheets | * | Sem filtro |
+| gear | srd_character_equipment | * | Sem filtro |
+| token-gear | srd_cba_token_equipment | * | campaign_id=eq.{MESA_ID} |
+| members | members | * | campaign_id=eq.{MESA_ID} |
+| conditions | srd_campaign_conditions | * | campaign_id=eq.{MESA_ID} |
+| effects | srd_campaign_effects | * | campaign_id=eq.{MESA_ID} |
+| camp | campaigns | UPDATE | id=eq.{MESA_ID} |
+
+As subscriptions sem filtro estão em tabelas sem coluna campaign_id. As políticas RLS atuais restringem srd_character_sheets a proprietário/membros da campanha e srd_character_equipment a proprietário/Mestre; o handler da mesa ainda verifica se o personagem afetado pertence ao conjunto carregado localmente. Realtime não deve ser tratado como canal privado por si só: a garantia de visibilidade vem das políticas e da autorização do banco.
+
+A fotografia de políticas também mostrou:
+- campaign_log: GM lê a campanha; jogadores/observadores leem apenas eventos PUBLIC.
+- characters: proprietário ou membro da campanha pode ler.
+- members/campaigns: leitura limitada ao próprio usuário ou membros da campanha.
+- srd_cba_token_equipment e srd_campaign_conditions/effects: leitura limitada a membros da campanha.
+- srd_character_equipment: leitura para proprietário ou Mestre, não para todos os jogadores.
+- srd_character_sheets: leitura para proprietário ou membros da campanha.
+
+Não foi feita alteração de política nem de subscription.
