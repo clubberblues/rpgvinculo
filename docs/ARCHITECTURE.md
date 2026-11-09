@@ -112,7 +112,7 @@ As camadas são limites de responsabilidade, não uma ordem para criar serviços
 - Testes automatizados disponíveis e lacunas.
 - Estado de deploy e processo de publicação.
 
-## Mapa detalhado de integração
+## Modelo de dados\nConsulte [DATA_MODEL.md](DATA_MODEL.md) para fontes canônicas, relações, estruturas JSONB, compatibilidade e tabelas sem uso atual identificado.\n\n## Mapa detalhado de integração
 Consulte [INTEGRATION_MAP.md](INTEGRATION_MAP.md) para o inventário inicial das páginas, RPCs, tabelas, Realtime e comunicação com o iframe de dados.
 
 ## Referências
