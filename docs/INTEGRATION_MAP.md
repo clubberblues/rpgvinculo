@@ -367,3 +367,7 @@ Não alterar bucket, políticas ou objetos nesta fase. Antes de aplicar limites,
 
 ### Regra arquitetural proposta
 Ações com efeitos não reversíveis ou consumo de recursos devem aceitar um request_id/idempotency_key gerado pelo cliente, armazenar resultado por escopo de usuário/campanha/ação e devolver o mesmo resultado em retries. Locks continuam necessários para concorrência; idempotência não os substitui.
+
+
+## Incompatibilidade de schema Vínculo — 2026-11-09
+A leitura de ficha.html mostra um ramo legado (fichas sem registro SRD e criação Vínculo) que ainda chama relações antigas sem prefixo. O banco atual contém as relações versionadas vinculo_classes, vinculo_abilities, vinculo_talents, vinculo_spells, vinculo_inventory, vinculo_items e vinculo_character_notes; os nomes antigos classes, abilities, talents, spells, inventory e character_notes não existem em public. O caminho D&D 3.5 é separado pelo registro srd_character_sheets. Ver ACTION_CONTRACTS.md e DATA_MODEL.md. Não corrigido ainda: decidir reativação/migração ou descontinuação do ramo legado.
