@@ -220,3 +220,26 @@ As RPCs públicas com mutação são SECURITY DEFINER e têm auth.uid() no corpo
 - sentar_personagem_na_mesa atualiza characters.campaign_id; a constraint UNIQUE(campaign_id,user_id) limita um personagem por usuário por campanha. Esse comportamento precisa ser confirmado como regra de produto.
 - create_campaign continua criando scenes, embora a mesa atual use campaigns.cba_data; preservar até resolver o destino da tabela scenes.
 - O fluxo de exclusão da campanha remove arquivos do Storage entre preparação e finalização no banco; testar recuperação de falha parcial em ambiente descartável.
+
+
+## Contrato da ficha (ficha.html)
+
+A página de ficha atende dois rulesets por estado de aplicação, sem unificar seus catálogos:
+- **Vínculo:** abilities, classes, character_notes, character_spells, character_talents, characters, inventory, items, spells, talents e vinculo_character_sheets.
+- **D&D 3.5 SRD:** srd_character_sheets, srd_character_equipment, srd_character_weapon_instances e catálogos srd_* de classes, raças, perícias, talentos, magias, equipamentos, domínios e progressões.
+
+A varredura encontrou 31 tabelas referenciadas diretamente na ficha. O caminho SRD usa JSONB em srd_character_sheets para atributos, perícias, talentos e estado de magias; equipamento e instâncias de armas são estruturas relacionais. O estado de magias conhecido/preparado é salvo em magias_preparadas via salvar_grimorio_srd; as tabelas srd_character_known_spells, srd_character_prepared_spells e srd_character_spell_slot_state não foram encontradas no call graph atual.
+
+### RPCs centrais da ficha
+- Criação: finalizar_criacao_personagem_srd (SECURITY INVOKER, auth.uid).
+- Domínios e grimório: salvar_dominios_personagem_srd e salvar_grimorio_srd (SECURITY DEFINER, auth.uid).
+- Progressão: concluir_avanco_nivel_personagem_srd_v2 (SECURITY INVOKER → núcleo priv).
+- Descanso e recursos: descanso_longo_personagem_srd, descanso_longo_npc_vinculado_srd, consultar_furia_barbaro_srd/npc e usar_furia_barbaro_srd/npc.
+- Derivados: srd_calcular_ca_personagem_srd e srd35_deslocamento_personagem.
+- Equipamento: equipar_item_srd, equipar_item_npc_vinculado_srd e os três wrappers dinâmicos equipar_arma_instancia_*.
+
+Os wrappers dinâmicos de arma são SECURITY INVOKER e encaminham a helpers private.* SECURITY DEFINER que verificam autenticação, propriedade da ficha ou papel GM, identidade do token e vínculo NPC. Isso é um padrão válido de separação entre endpoint público e implementação privilegiada.
+
+### Limites ainda não testados
+- Não foi executado fluxo ponta a ponta de criação, progressão, descanso ou equipamento nesta sessão.
+- A validação de ficha/mesa com Thunga Mestre (ID 682) permanece bloqueada até confirmar que esse é o personagem de teste pretendido; não confundir com Thorgar (ID 681), NPC-modelo do Mestre.
