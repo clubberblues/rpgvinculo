@@ -122,3 +122,9 @@ Nenhum dado de personagem, ficha, campanha, token ou progresso foi modificado ne
 - Foram confirmados dois caminhos coexistentes: CBA em campaigns.cba_data (JSONB) e modelo relacional public.tokens/monster_instances usado por RPCs antigas. Resolvedores de condição/efeito aceitam alvos em ambos os caminhos.
 - A mesa atual usa RPCs CBA; RPCs antigas como move_token, attack e start_combat não aparecem na varredura direta do frontend atual. create_campaign ainda cria registro em scenes, mas não foi identificada leitura direta por mesa.html.
 - Classificação: compatibilidade/legado a reconciliar; não remover nem migrar antes de mapear todos os consumidores e dados.
+
+
+### Estado dos objetos relacionais de cena/token
+No snapshot consultado: campaigns=3, scenes=3, tokens=0 e monster_instances=0. create_campaign insere uma linha em scenes por campanha. A mesa atual lê/grava campanhas.cba_data e não consulta scenes/tokens diretamente na varredura; os RPCs relacionais antigos continuam no banco, mas as tabelas tokens e monster_instances estão vazias neste snapshot.
+
+A tabela scenes contém parâmetros de mídia/grid (imagem, vídeo, áudio, GIF, tile, offsets, escala e limites). Seu destino deve ser decidido após confirmar se esses campos foram migrados para campaigns.cba_data, media ou outro fluxo. Não apagar a tabela nem o INSERT de create_campaign nesta etapa.
