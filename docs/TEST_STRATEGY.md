@@ -186,3 +186,16 @@ Fixture descartável com campanha em combate, movimento pendente ativo, reação
 5. Com um movimento AOO pendente ativo para o token A, invocar diretamente `mover_token_player_cba` para um token B cujo turno/autorizações estejam válidos e, separadamente, `mover_token_gm_cba_srd` para outro token sob controle GM.
    - Esperado após correção: nenhuma movimentação de outro token enquanto existir pending AOO ativo, salvo operação explicitamente autorizada e modelada como parte da resolução.
    - Estado atual: os helpers não consultam a tabela pending; o trigger existente só protege o token A.
+
+
+## Regressão P2 — footprint Colossal deve ser 6×6
+
+**Pré-condição:** fixture descartável com um token Colossal (espaço 30 ft) e alvos de tamanhos variados.
+
+1. Confirmar que movimento de jogador e GM reserva/valida área 6×6, não 5×5; um destino com apenas a sexta faixa de quadrados ocupada deve ser considerado sobreposição.
+2. Confirmar que a distância entre bordas para ataques e alcance de habilidade usa footprint 6×6 para atacante e alvo Colossal.
+3. Confirmar que detector AOO, manobras e ataque iterativo concordam na mesma geometria.
+4. Repetir com Grande (2), Enorme (3), Imenso/Gargantuan (4) e Médio/Pequeno (1) para evitar regressões nas categorias já corretas.
+5. Testar especificamente `aplicar_dano_token_ataque_srd_v2` (ambas sobrecargas) e `usar_imposicao_maos_mortos_vivos_srd` em distâncias exatamente no limite e uma casa além.
+
+**Critério:** todos os sistemas usam o mesmo helper canônico e o espaço Colossal corresponde a 6 quadrados em cada eixo.
