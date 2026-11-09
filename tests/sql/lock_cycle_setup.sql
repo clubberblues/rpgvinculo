@@ -57,10 +57,3 @@ CREATE TABLE lock_fixture.sheets (
   pv integer NOT NULL
 );
 INSERT INTO lock_fixture.sheets VALUES (1, 1, 10);
-
-CREATE TABLE lock_fixture.conditions (
-  id integer PRIMARY KEY,
-  campaign_id integer NOT NULL REFERENCES lock_fixture.campaigns(id),
-  active boolean NOT NULL
-);
-INSERT INTO lock_fixture.conditions VALUES (1, 1, true);
