@@ -92,7 +92,7 @@ Levantamento somente de leitura realizado durante a implantação do método:
 - Cobertura: 15 linhas em srd_catalog_coverage — 3 complete, 8 in_progress e 4 pending.
 - srd_spell_effects: 25 verification_status verified_srd e 582 needs_review.
 - Características de classe: 131/131 com verification_status verified_srd.
-- Perícias: 55 com source_status verified_srd e 4 excluded; a tabela de cobertura ainda declara 50 entradas. Essa divergência precisa ser reconciliada.
+- Perícias: 59 registros (55 verified_srd e 4 excluded). A cobertura/auditoria contém 50 entradas-base: 46 verified_srd e 4 excluded; os 9 registros adicionais são especializações de Atuação. A cobertura permanece pending porque a validação mecânica e de integração não foi concluída, não porque faltem nove perícias-base.
 - Vínculo: 16 classes; 160 habilidades; 95 magias; 191 itens; 72 talentos.
 
 ### Interpretação
@@ -100,4 +100,4 @@ Levantamento somente de leitura realizado durante a implantação do método:
 - Os 607 efeitos tipados não estão todos resolvidos: 582 permanecem needs_review.
 - Os totais históricos de 49/50/59 perícias e os diferentes snapshots de funções/migrations não devem ser usados sem indicar data, tabela e critério de contagem.
 
-Nenhuma linha de personagem, ficha, campanha, token ou progresso foi alterada nesta fotografia.
+A varredura encontrou 100 nomes distintos de RPC chamados por mesa.html, ficha.html e lobby.html; os 100 nomes existem no schema public do Supabase. Isso confirma correspondência nominal, não assinatura, autorização ou execução ponta a ponta. index.html e lobby_atualizado.html existem no repositório; dex.html não foi encontrado em main no caminho consultado.\n\nNenhuma linha de personagem, ficha, campanha, token ou progresso foi alterada nesta fotografia.
