@@ -349,3 +349,29 @@ Nenhuma criação, avanço, descanso, conjuração, alteração de grimório/dom
 
 ### Alcance atual do ramo legado — conferência de dados
 A leitura agregada do banco conectado encontrou 5 personagens, todos com ficha em `srd_character_sheets`, nenhum sem ficha SRD e nenhum com linha em `vinculo_character_sheets`. O fluxo de criação atualmente ligado pelo lobby é `ruleset=dnd35`. Portanto, a incompatibilidade descrita acima é uma rota legada/latente no código de `ficha.html`, não uma falha reproduzida no caminho normal atual de criação ou abertura dos cinco personagens existentes. Não foi consultado nem exibido conteúdo de ficha individual nesta contagem.
+
+
+## Mapa inicial de Realtime da mesa — 2026-11-09
+
+A função `ligarRealtime()` em `mesa.html` abre nove canais independentes, todos com `.subscribe()` sem callback de status explícito:
+
+| Canal | Tabela/evento | Filtro | Reação do cliente |
+|---|---|---|---|
+| `mesa-{id}-chat` | campaign_log INSERT | campaign_id | Acrescenta a mensagem ao chat. |
+| `mesa-{id}-chars` | characters * | campaign_id | Recarrega personagens. |
+| `mesa-{id}-srd` | srd_character_sheets * | sem filtro | Se o ID já estiver entre personagens da mesa, recarrega personagens; se corresponder a NPC vinculado, recarrega equipamento de tokens. |
+| `mesa-{id}-gear` | srd_character_equipment * | sem filtro | Mesma filtragem local por personagem/NPC vinculado e recarga. |
+| `mesa-{id}-token-gear` | srd_cba_token_equipment * | campaign_id | Recarrega equipamentos dos tokens. |
+| `mesa-{id}-members` | members * | campaign_id | Recarrega membros e personagens. |
+| `mesa-{id}-conditions` | srd_campaign_conditions * | campaign_id | Recarrega efeitos/condições e cards. |
+| `mesa-{id}-effects` | srd_campaign_effects * | campaign_id | Recarrega efeitos e cards. |
+| `mesa-{id}-camp` | campaigns UPDATE | id | Atualiza estado da campanha, snapshot CBA e ordem de iniciativa. |
+
+### Riscos e limites observados
+- As assinaturas de ficha SRD e equipamento de personagem não possuem filtro de campanha no servidor; a seleção do que atualizar é feita no callback por ID em memória. RLS continua sendo a barreira de acesso, mas esses canais podem receber mais eventos do que a mesa precisa e geram trabalho extra em clientes com muitas fichas acessíveis.
+- Nenhum dos nove `.subscribe()` registra callback de status (SUBSCRIBED, CHANNEL_ERROR, TIMED_OUT, CLOSED) nem há rotina explícita de ressincronização após reconexão. A carga inicial traz snapshot, mas eventos perdidos durante desconexão podem deixar a UI divergente até outro evento/recarga manual.
+- Chat é anexado por INSERT; não há deduplicação explícita de `campaign_log.id` no trecho observado. Se a camada Realtime repetir um evento, a mensagem pode aparecer duplicada no DOM. A consulta inicial e a lógica de renderização precisam ser comparadas antes de classificar como bug reproduzido.
+- O canal de campanha aplica `cba_data` e `combat_data` diretamente ao estado local quando recebe UPDATE; não há `state_version` monotônica visível nesse evento para rejeitar payload antigo ou fora de ordem.
+- Os canais não são fonte canônica: após desconexão, a arquitetura deve recarregar snapshots autorizados (campanha, tokens, personagens, iniciativa, condições, equipamentos e log) antes de voltar a aceitar ações.
+
+**Recomendação arquitetural:** criar um coordenador único de sessão Realtime por campanha com status explícito, backoff/recuperação, deduplicação por ID de evento/log, invalidação de consultas e resync de snapshot ao reconectar. Não implementar antes de definir contratos de versão/ordem e testes com duas sessões autenticadas.
