@@ -428,3 +428,7 @@ A ordem completa de locks de todas as RPCs do combate ainda não está fechada. 
 
 ### Risco de atomicidade em persistência de grimório
 A criação inicial já resolve atomicidade agregando escolhas num RPC transacional. Durante o jogo, a persistência de domínios e grimório permanece dividida. Próxima melhoria arquitetural candidata: um único RPC invoker que invoque ambos os validadores existentes dentro da mesma transação, mantendo as mesmas verificações de propriedade e pré-requisitos; testar em fixture descartável antes de trocar o frontend. Não foi criada essa RPC nem alterado o comportamento nesta rodada.
+
+
+### Risco adicional de inversão AOO
+A análise de `priv.srd_encerrar_reacao_aoo_pendente_impl` confirmou que o cancelamento explícito de ataque também adquire pending → attack, enquanto ocultação/resolução/dano adquire attack → pending. O risco de deadlock inclui agora cancelamento de reação × ocultação/resolução/dano, além do cancelamento total do movimento.
