@@ -525,11 +525,10 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2938
 <div id="dnd35-tutorial" role="dialog" aria-modal="true" aria-labelledby="dnd35-tutorial-title" aria-describedby="dnd35-tutorial-copy"><section class="dnd35-tutorial-card"><div class="dnd35-tutorial-kicker">GUIA DE CRIAÇÃO · DICA CONTEXTUAL</div><h2 id="dnd35-tutorial-title">Como preencher</h2><p id="dnd35-tutorial-copy"></p><div class="dnd35-tutorial-actions"><button type="button" data-tutorial-close="session">Fechar esta dica</button><button type="button" class="primary" data-tutorial-close="continue">Entendi, continuar</button></div></section></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/core/supabase-client.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.js"></script>
 <script>
 (function(){
-  var SUPABASE_URL = 'https://grrgwxcagvvafdmzsmro.supabase.co';
-  var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdycmd3eGNhZ3Z2YWZkbXpzbXJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyNTY4MTQsImV4cCI6MjEwNTgzMjgxNH0.hqLiYynGXHwyUtqcbGTTa2orSStm7ko2C5R03QNmqtQ';
 
   var URL_PARAMS = new URLSearchParams(location.search);
   var CHAR_ID = URL_PARAMS.get('char');
@@ -554,11 +553,11 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2938
 
   var LOGO_VINCULO_URL = 'logo.png';
 
-  if (typeof supabase === 'undefined') {
+  var sb = window.VINCULO_SUPABASE_CLIENT;
+  if (!sb) {
     document.getElementById('root').innerHTML = '<div class="erro">Biblioteca Supabase nao carregou.</div>';
     return;
   }
-  var sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   var ATR = ['FOR','DES','CON','INT','SAB','CAR'];
   var ROT = {FOR:'For',DES:'Des',CON:'Con',INT:'Int',SAB:'Sab',CAR:'Car'};

@@ -164,3 +164,11 @@ Portanto, o teste de CA 10 executado para Thorgar (681) **não valida nem invali
 - As cinco funções public executáveis por anon são utilitários/trigger SECURITY INVOKER, não SECURITY DEFINER.
 - A configuração PostgREST de schemas expostos não está disponível via pg_settings nem pelo endpoint de metadados get_project do conector. Portanto, ainda não foi possível confirmar se priv/private estão ou não expostos à API REST.
 - **Ação necessária:** conferir manualmente Supabase Dashboard → Project Settings → API → Exposed schemas. Se priv/private estiverem expostos, revisar imediatamente o conjunto de funções com EXECUTE para authenticated antes de qualquer revogação. Não remover USAGE/EXECUTE agora, pois wrappers SECURITY INVOKER dependem desses grants para chamar helpers internos.
+
+
+## Refatoração em revisão
+- Branch GitHub: `refactor/shared-supabase-client`.
+- PR draft #73: https://github.com/clubberblues/rpgvinculo/pull/73 (CI em execução; não mesclado).
+- Centraliza a inicialização do cliente Supabase em `assets/js/core/supabase-client.js` para index/lobby/ficha/mesa.
+- Mantém uma instância por documento e os defaults do SDK; não altera RPCs, banco ou dados de jogo.
+- CI ampliado para validar a centralização. Aguardar PR/CI antes de considerar concluído.

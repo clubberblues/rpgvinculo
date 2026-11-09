@@ -108,3 +108,9 @@ Os itens abaixo não são decisões tomadas; precisam ser definidos após o diag
 - **Decisão:** ações que consomem recursos ou produzem efeitos não reversíveis devem adotar request_id/idempotency_key persistido e escopado por usuário/campanha/ação, além de locks transacionais.
 - **Motivo:** locks serializam concorrência, mas não distinguem retry da mesma ação de uma nova ação intencional.
 - **Consequência:** primeiro padronizar ActionRequest/resultado; depois migrar fluxos em fatias e cobrir retries em testes descartáveis. Não alterar contratos existentes antes dessa definição.
+
+### DEC-018 — Cliente Supabase único por documento
+- **Data:** 2026-11-08
+- **Decisão:** centralizar URL, chave pública e createClient em assets/js/core/supabase-client.js; cada página ativa consome a instância global criada pelo script, sem alterar opções padrão de auth.
+- **Motivo:** remover duplicação de configuração e evitar inicializações divergentes, preparando adaptadores RPC e contexto de autenticação compartilhados.
+- **Consequência:** manter uma instância por documento (não compartilhar estado entre páginas/iframes); centralizar auth-context e RPCs em etapas futuras, após mapear contratos.

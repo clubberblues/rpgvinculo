@@ -248,4 +248,4 @@ Não introduzir framework, TypeScript, bundler ou microserviços como pré-requi
 
 
 ### Inicialização Supabase observada
-Cada página ativa cria sua própria instância do cliente; não há módulo compartilhado de auth/RPC. O CDN @supabase/supabase-js@2 e a configuração do projeto são repetidos. A extração de um cliente compartilhado é uma possível primeira refatoração, mas deve ocorrer somente após comparar auth options, guards e ciclo de sessão por página; não alterar a sessão em lote.
+A centralização foi implementada nesta branch: assets/js/core/supabase-client.js cria uma instância por documento depois do CDN; index, lobby, ficha e mesa consomem window.VINCULO_SUPABASE_CLIENT. As opções padrão de auth/persistência/refresh foram preservadas; não houve alteração de RPC, banco ou dados. Dice permanece sem cliente Supabase. O PR ainda aguarda CI e revisão.

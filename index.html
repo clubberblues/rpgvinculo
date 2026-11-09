@@ -63,12 +63,11 @@
   </main>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/core/supabase-client.js"></script>
   <script>
     (function(){
       'use strict';
 
-      var SUPABASE_URL = 'https://grrgwxcagvvafdmzsmro.supabase.co';
-      var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdycmd3eGNhZ3Z2YWZkbXpzbXJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyNTY4MTQsImV4cCI6MjEwNTgzMjgxNH0.hqLiYynGXHwyUtqcbGTTa2orSStm7ko2C5R03QNmqtQ';
       var form = document.getElementById('login-form');
       var emailInput = document.getElementById('email');
       var passwordInput = document.getElementById('password');
@@ -108,12 +107,11 @@
         window.location.replace('lobby.html');
       }
 
-      if(!window.supabase || typeof window.supabase.createClient !== 'function'){
+      if(!window.VINCULO_SUPABASE_CLIENT){
         showMessage('Não foi possível carregar o serviço de autenticação. Verifique sua conexão e recarregue a página.', 'error');
         return;
       }
-
-      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      supabaseClient = window.VINCULO_SUPABASE_CLIENT;
 
       supabaseClient.auth.getSession().then(function(result){
         if(result.error){

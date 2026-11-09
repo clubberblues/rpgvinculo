@@ -336,3 +336,6 @@ Ações com efeitos não reversíveis ou consumo de recursos devem aceitar um re
 - As cinco funções public executáveis por anon são utilitários/trigger SECURITY INVOKER, não SECURITY DEFINER.
 - A configuração PostgREST de schemas expostos não está disponível via pg_settings nem pelo endpoint de metadados get_project do conector. Portanto, ainda não foi possível confirmar se priv/private estão ou não expostos à API REST.
 - **Ação necessária:** conferir manualmente Supabase Dashboard → Project Settings → API → Exposed schemas. Se priv/private estiverem expostos, revisar imediatamente o conjunto de funções com EXECUTE para authenticated antes de qualquer revogação. Não remover USAGE/EXECUTE agora, pois wrappers SECURITY INVOKER dependem desses grants para chamar helpers internos.
+
+### Refatoração compartilhada de cliente Supabase — branch
+A branch refactor/shared-supabase-client (PR draft #73) extraiu a criação do cliente para assets/js/core/supabase-client.js e atualizou as quatro páginas ativas. A alteração preserva defaults do SDK e não modifica banco/dados. Aguardar CI e revisão do PR.
