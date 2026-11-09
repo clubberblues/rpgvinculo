@@ -179,3 +179,7 @@ A análise de `priv.srd_encerrar_reacao_aoo_pendente_impl` confirmou que o cance
 **Classificação:** P1 — integridade das regras/autoridade do servidor. Confirmado por leitura de frontend, ACL, wrapper, implementação e trigger; não foi executado um exploit nem alterado estado de jogo.
 
 **Correção arquitetural recomendada:** tornar o RPC de persistência de movimento a autoridade única: dentro da mesma transação/lock de campanha, validar identidade/turno/ação, recalcular ameaças, criar o registro pending e retornar sem mover quando houver AOO; somente mover e consumir deslocamento quando não houver ameaça. Adaptar o frontend para um único resultado (`pending` ou `moved`) e retirar a confiança no pré-check separado. Aplicar ao caminho de jogador e, após confirmar a política de autoridade do Mestre, ao caminho GM. Não aplicar patch isolado sem fixture e teste de regressão.
+
+
+### Próximo teste isolado obrigatório — bypass AOO por RPC de movimento
+Antes de testar deadlocks, preparar o teste de regressão da seção “Regressão P1 — movimento direto não pode contornar AOO” em TEST_STRATEGY.md. O teste deve invocar o RPC de movimento diretamente, sem pré-check, e cobrir a janela TOCTOU entre pré-check e persistência. Não executar em produção nem em TESTE 2.
