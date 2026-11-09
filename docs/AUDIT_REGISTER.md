@@ -289,3 +289,22 @@ Este contrato está confirmado por inspeção do frontend e das funções SQL. A
 - [GitHub Actions run #2](https://github.com/clubberblues/rpgvinculo/actions/runs/42548214654) — **success**.
 - Além da sintaxe, protege os contratos de iniciativa manual (registrar_iniciativa_d20 e iniciar_iniciativa_com_dados), registro de ataque manual e proíbe chamadas literais a roll_dice nas páginas ativas.
 - Nenhuma alteração de dados de jogo foi necessária.
+
+
+## Storage e mídia
+
+| Bucket | Acesso | Escrita/remoção | Configuração atual |
+|---|---|---|---|
+| midia | Público para leitura | Autenticado com validação de caminho/proprietário via priv.can_write_midia/can_delete_midia | Sem limite explícito de tamanho nem allowlist MIME |
+| mesa-media | Privado; leitura por can_read_media | Mestre, dentro da pasta da campanha | 50 MiB; allowlist de imagens, vídeo e áudio |
+
+Uso observado:
+- lobby.html: avatar de perfil (recorte JPEG 512×512) e capa de campanha.
+- ficha.html: retrato e fundo do cabeçalho do personagem.
+- mesa.html: fundo da cena e imagem de token no bucket privado mesa-media; usa signed URL de 24 h e caminho persistido em cba_data.
+- Snapshot: midia tem 135 objetos, todos image/png/jpeg/webp; maior objeto 16.530.626 bytes e total aproximado 200 MB. mesa-media tem 0 objetos.
+
+### Risco de configuração
+priv.can_write_midia valida o caminho e a propriedade, mas não MIME/tamanho. Os inputs do navegador usam accept=image/* em parte dos fluxos, o que não é validação de servidor; capa, retrato e fundo não têm limite de tamanho uniforme no cliente. Como midia é público e não tem allowlist/limite explícito, registrar como **P2 — endurecimento de upload**.
+
+Não alterar bucket, políticas ou objetos nesta fase. Antes de aplicar limites, definir tamanho máximo compatível com os arquivos atuais (o maior tem ~16,5 MB), tipos realmente suportados e mensagens de erro/validação em todos os fluxos. O bucket mesa-media já impõe 50 MiB e allowlist, mas o upload do fundo precisa validar o tamanho antes de enviar.
