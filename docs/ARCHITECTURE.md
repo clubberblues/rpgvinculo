@@ -303,3 +303,6 @@ As definições remotas atuais dos subsistemas AOO e movimento/turnos foram pres
 
 ## Invariante de movimento e AOO
 A detecção de ataques de oportunidade e a persistência do movimento devem ocorrer sob o mesmo lock/transação autoritativa. Um pré-check de frontend separado não é barreira de segurança: qualquer RPC autenticada que persista coordenadas precisa repetir a detecção/validar um ticket de movimento assinado e de uso único. A RPC direta de movimento atual não integra o detector, criando bypass e janela TOCTOU. A correção deve unificar o fluxo ou introduzir protocolo transacional de reserva/commit, sem permitir consumo de ação ou movimento antes da resolução das reações.
+
+
+A existência de qualquer movimento AOO em estado ativo deve serializar a movimentação da campanha, não apenas congelar o token que provocou o movimento. As RPCs de movimento precisam verificar a fila pending dentro do mesmo lock de campanha, impedir movimentos paralelos de outros tokens e executar a detecção AOO no caminho autoritativo.
