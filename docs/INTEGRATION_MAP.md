@@ -102,3 +102,25 @@ Essa evidência estática é consistente com a decisão de não gerar automatica
 - Comparar lobby.html e lobby_atualizado.html para confirmar o papel do espelho.
 - Confirmar se dex.html é obsoleto ou apenas local.
 - Completar o grafo de dependências antes de propor extração de módulos.
+
+
+## Relacionamentos do banco — fotografia de 2026-11-08
+
+Consulta ao catálogo PostgreSQL identificou:
+- public: 100 foreign keys, 76 primary keys, 20 constraints UNIQUE e 133 CHECK constraints.
+- priv: 10 foreign keys, 7 primary keys, 4 UNIQUE e 28 CHECK constraints.
+- Triggers de usuário: 11 em public e 3 em priv.
+
+### Grafo principal observado
+- campaigns é o agregado central da sessão: members, characters, tokens, scenes, campaign_log, combat_state, roll_requests/roll_log, layers, media e condições/efeitos de campanha se relacionam com campanha.
+- characters é a entidade-base de personagem; srd_character_sheets e vinculo_character_sheets mantêm os dados específicos de cada ruleset.
+- O domínio SRD relaciona trilhas e níveis a srd_classes; características de nível dependem da progressão; grimório, magias conhecidas/preparadas e slots relacionam personagens, classes e srd_spells.
+- Catálogos SRD referenciam srd_rule_sources; campanhas podem habilitar srd_rule_modules.
+- O domínio Vínculo mantém suas próprias classes, itens, magias, talentos e fichas.
+
+### Ponto estrutural para revisão futura
+- srd_character_equipment.character_id e srd_character_weapon_instances.character_id são text e não possuem FK para characters.id (bigint). No snapshot, 42/42 linhas de equipamento e 6/6 instâncias de arma continham IDs numéricos que correspondem a characters existentes; nenhum órfão foi observado.
+- Isso é uma oportunidade/risco de integridade referencial, não uma falha de dados comprovada. Não alterar tipos ou adicionar FKs antes de auditar todos os consumidores, RPCs, políticas, triggers e compatibilidade. Planejar migração futura somente com backfill e validação.
+- srd_cba_token_equipment e srd_cba_token_weapon_instances usam token_id text, sem FK direta para tokens.id bigint; revisar o contrato entre token persistido e identificador CBA antes de qualquer normalização.
+
+Nenhuma linha de jogo foi alterada durante esta consulta.
