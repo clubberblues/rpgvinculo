@@ -15,8 +15,8 @@ Construir um ambiente integrado para campanhas de RPG, com experiência de mestr
 
 O produto deve preservar a experiência de rolagem manual dos jogadores quando definida pelo fluxo, enquanto o servidor valida regras, permissões, recursos e persistência. O objetivo não é apenas ter páginas funcionais: os módulos precisam operar como um sistema coerente.
 
-## Estado documental inicial
-Este registro consolida documentação já existente, não reinicia auditorias. A primeira atividade de execução é reconciliar o estado descrito abaixo com o HEAD atual de main e com o projeto Supabase, apenas onde houver lacunas ou divergências.
+## Referências históricas e baseline
+Este registro começou como consolidação da documentação existente. A fotografia técnica e as atualizações posteriores neste arquivo são a referência atual; os parágrafos históricos abaixo não devem ser lidos como tarefas ainda não iniciadas.
 
 ### Evidências já existentes no repositório
 - Aplicação web organizada em páginas HTML existentes, incluindo lobby, ficha, mesa e dados.
@@ -43,13 +43,13 @@ Este registro consolida documentação já existente, não reinicia auditorias. 
 7. Toda alteração de banco deve ser versionada, revisada e verificada.
 8. Toda mudança funcional deve ter teste adequado e avaliação de regressão.
 
-## Próxima atividade
-**Consolidação arquitetural baseada no material existente.**
-1. Reconciliar os documentos atuais com o código e o banco, sem repetir verificações válidas.
-2. Identificar divergências e estado real das pendências.
-3. Confirmar arquitetura atual e arquitetura-alvo.
-4. Organizar roadmap por dependências e critérios de aceite.
-5. Retomar execução na prioridade mais alta do plano aprovado.
+## Próxima atividade — estado atual
+**Concluir a consolidação da arquitetura e dos contratos antes da primeira refatoração funcional.**
+1. Completar o cruzamento de argumentos e tipos JavaScript ↔ PostgreSQL para os fluxos críticos restantes (movimento/AOO, magia, salvamentos, inventário e progressão).
+2. Confirmar na configuração da API Supabase quais schemas estão expostos; resolver a discrepância de ACL em priv/private sem revogação em lote.
+3. Reconciliar o item de teste: Thunga Mestre (ID 682) e Thorgar (ID 681) são registros distintos. Não executar teste funcional nem alterar dados até confirmar qual personagem é o alvo.
+4. Finalizar contratos de domínio, transação, erros, idempotência e testes; escolher a primeira fatia técnica para branch + PR.
+5. Iniciar a extração modular somente com critérios de aceite e CI aplicáveis.
 
 ## Documentos permanentes
 - [Arquitetura geral](ARCHITECTURE.md)
@@ -60,10 +60,11 @@ Este registro consolida documentação já existente, não reinicia auditorias. 
 - [Decisões](DECISIONS.md)
 - [Registro de auditorias](AUDIT_REGISTER.md)
 - [Estratégia de testes](TEST_STRATEGY.md)
+- [Item de trabalho ativo](ACTIVE_WORK_ITEM.md)
 
 ## Protocolo de continuidade entre sessões
 Ao iniciar uma sessão:
-- Ler este documento, ARCHITECTURE.md, INTEGRATION_MAP.md, ROADMAP.md, DECISIONS.md, AUDIT_REGISTER.md e TEST_STRATEGY.md.
+- Ler este documento, ACTIVE_WORK_ITEM.md, ARCHITECTURE.md, DATA_MODEL.md, INTEGRATION_MAP.md, RPC_INVENTORY.md, ROADMAP.md, DECISIONS.md, AUDIT_REGISTER.md e TEST_STRATEGY.md.
 - Conferir branch/HEAD e alterações recentes.
 - Retomar a próxima tarefa aberta; não recomeçar o projeto.
 
@@ -73,7 +74,7 @@ Ao encerrar ou atingir limite:
 - Não registrar como concluído algo que não foi verificado.
 
 ## Histórico de atualização
-- 2026-11-08: mapa inicial de integração criado; 100 nomes distintos de RPC do frontend encontrados no schema public; fluxo de rolagem manual do iframe Dice conferido estaticamente.
+- 2026-11-08: mapa de integração ampliado; 103 RPCs resolvidas (100 nomes literais + 3 destinos dinâmicos) e 111 assinaturas públicas; fluxos de lobby, ficha, iniciativa, combate, Storage e Realtime mapeados.
 - 2026-11-08: criado como registro inicial de continuidade; conteúdo baseado nas referências existentes no repositório e no histórico de trabalho. Reconciliação do estado atual permanece como primeira tarefa.
 
 
@@ -136,3 +137,11 @@ Consulta somente de leitura confirmou dois registros distintos:
 - **Thunga Mestre (ID 682):** campaign_id=131; não possui token vinculado em cba_data; Armadura de Couro está equipada e Machado Grande não está equipado.
 
 Portanto, o teste de CA 10 executado para Thorgar (681) **não valida nem invalida** a CA de Thunga Mestre (682). São registros diferentes; a identidade do personagem que deve ser alvo da pauta histórica precisa ser confirmada antes de qualquer teste funcional. Nenhum dado foi alterado.
+
+
+## Próxima ação concreta — continuidade
+- Continuar a reconciliação de contratos RPC nos fluxos críticos ainda não cruzados; não refazer os sete grupos de sobrecargas já verificados.
+- Confirmar schemas expostos pelo PostgREST e ACL dos schemas internos antes de qualquer alteração de permissão.
+- Aguardar confirmação do alvo de teste (Thunga Mestre 682 ou Thorgar 681) antes de testes funcionais mutáveis ou leituras funcionais adicionais.
+- Manter o código de jogo e os dados do Supabase intactos até a primeira tarefa de implementação estar especificada, isolada em branch e coberta por teste.
+- Última CI estática aprovada: [run #2](https://github.com/clubberblues/rpgvinculo/actions/runs/42548214654).
