@@ -62,6 +62,7 @@ Este registro começou como consolidação da documentação existente. A fotogr
 - [Definições SQL remotas de movimento e turnos](REMOTE_TURN_MOVEMENT_FUNCTIONS.md)
 - [Triagem de funções SECURITY DEFINER](SECURITY_DEFINER_REVIEW.md)
 - [Arquitetura de CI e testes](CI_TEST_ARCHITECTURE.md)
+- [Snapshot de Storage e policies](STORAGE_POLICIES_SNAPSHOT.md)
 - [Mapa de integração](INTEGRATION_MAP.md)
 - [Inventário de RPCs](RPC_INVENTORY.md)
 - [Modelo de dados](DATA_MODEL.md)
