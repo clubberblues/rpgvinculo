@@ -45,3 +45,17 @@ Consulta de padrões no corpo das 99 funções públicas executáveis por `authe
 - nenhuma ficou sem qualquer referência aos padrões de autenticação/papel/propriedade pesquisados.
 
 Essas categorias se sobrepõem. O resultado reduz a hipótese de funções inteiramente sem guarda explícita, mas **não prova autorização correta**: `auth.uid()` pode significar apenas sessão autenticada; a validação de ownership/campanha/role pode ocorrer em helpers transitivos; funções podem validar o ator errado ou aceitar alvo arbitrário. Revisão semântica por função continua obrigatória.
+
+
+## Verificação dos 7 avisos RLS sem policy
+
+As sete tabelas sinalizadas são:
+- `priv.srd_aoo_attacks`
+- `priv.srd_aoo_pending_movements`
+- `public.srd_attack_sequence_attempts`
+- `public.srd_attack_sequences`
+- `public.srd_character_feature_resources`
+- `public.srd_npc_attack_attempts`
+- `public.srd_npc_attack_sequences`
+
+Todas estão com RLS habilitado e zero policies. A consulta de privilégios efetivos confirmou que `anon` não tem SELECT e `authenticated` não tem SELECT/INSERT/UPDATE/DELETE direto em nenhuma delas. O desenho parece intencional para tabelas de estado interno, acessadas por RPCs privilegiadas; o aviso INFO não indica exposição direta nas ACLs verificadas. A revisão deve preservar esse fail-closed e confirmar cada caminho SECURITY DEFINER que precisa acessar os dados.
