@@ -344,3 +344,12 @@ Fixture descartável com campanha em combate, movimento pendente ativo, reação
 47. Validar `priv.srd_sync_linked_npc_token_vitals` em fixture com campanha, ficha, efeitos e condições; a ordem esperada é campanha → ficha → atualizações de condições, preservando o estado de Fúria e PV-base.
 
 **Estado:** casos adicionados à estratégia; ainda não executados. Nenhum deles deve ser executado contra o Supabase conectado ou TESTE 2.
+
+
+### CI — encerramento de Fúria versus trigger de avanço de rodada
+
+48. Duas sessões sintéticas: cleanup de Fúria (efeito → ficha → campanha) concorrente com trigger de rodada (campanha → efeito). O caso representa os prefixos observados em `public.end_combat`, `priv.srd_end_barbarian_rage[_token]` e `priv.srd_expire_barbarian_rage_on_round_change`; não executa os corpos reais.
+
+- [Run 42714600496](https://github.com/clubberblues/rpgvinculo/actions/runs/42714600496) — **success**, commit `fb261e66a14bb5fed9a35976ea394afaddafb160`.
+- Log confirmou: footprint helper assertions passaram; padrão base campaign/effect e mais oito padrões sintéticos (incluindo o novo caso composto de Fúria) passaram, com PostgreSQL detectando e abortando um participante em cada ciclo deliberadamente montado.
+- O resultado não é teste das RPCs/trigger remotos, nem prova de deadlock em produção. PostgreSQL 17 foi executado em serviço efêmero no runner público e descartado ao final.
