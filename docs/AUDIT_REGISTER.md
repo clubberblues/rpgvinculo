@@ -336,3 +336,14 @@ Ações com efeitos não reversíveis ou consumo de recursos devem aceitar um re
 - As cinco funções public executáveis por anon são utilitários/trigger SECURITY INVOKER, não SECURITY DEFINER.
 - A configuração PostgREST de schemas expostos não está disponível via pg_settings nem pelo endpoint de metadados get_project do conector. Portanto, ainda não foi possível confirmar se priv/private estão ou não expostos à API REST.
 - **Ação necessária:** conferir manualmente Supabase Dashboard → Project Settings → API → Exposed schemas. Se priv/private estiverem expostos, revisar imediatamente o conjunto de funções com EXECUTE para authenticated antes de qualquer revogação. Não remover USAGE/EXECUTE agora, pois wrappers SECURITY INVOKER dependem desses grants para chamar helpers internos.
+
+
+## Revisão de tabelas internas com RLS desabilitado — 2026-11-09
+
+O inventário verbose do Supabase e a consulta direta a ACL identificaram duas relações em `priv` com RLS desabilitado: `priv.throttle` e `priv.srd_aoo_reaction_ledger`.
+
+**Permissões efetivas conferidas:** anon não tem USAGE no schema priv nem privilégios SELECT/INSERT/UPDATE/DELETE nessas relações; authenticated tem USAGE no schema, mas também não possui privilégios diretos nessas tabelas. A ACL de ambas lista somente postgres e service_role. Logo, o alerta do advisor (“RLS disabled”) é válido como hardening pendente, mas não demonstra, isoladamente, leitura/escrita direta por clientes PostgREST.
+
+**Uso interno identificado:** `priv.throttle` é acessada por `priv.locked(text)`, `priv.fail(text,integer)` e `priv.clear(text)`, chamadas por `public.create_campaign`, `public.join_campaign` e `public.entrar_campanha_com_codigo` (SECURITY DEFINER). `priv.srd_aoo_reaction_ledger` é acessada por helpers SECURITY DEFINER de reserva/início de AOO; o helper de reserva exige autenticação e papel GM. Não foi alterado nenhum privilégio, policy ou estado de RLS.
+
+**Tratamento:** manter como hardening P2 condicionado à confirmação de Exposed schemas e revisão dos caminhos SECURITY DEFINER. Não aplicar automaticamente o SQL sugerido pelo advisor: habilitar RLS sem desenhar e testar as policies/semântica de bypass pode quebrar o acesso interno esperado ou criar falsa sensação de segurança. Nenhum dado foi alterado.
