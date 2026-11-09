@@ -77,6 +77,16 @@ A inspeção de `pg_trigger`, `pg_get_triggerdef` e corpos dos handlers ativos a
 
 **Resultado:** nenhum novo ciclo autônomo foi acrescentado por esses triggers. A ordem campanha → efeitos/condições/log já descrita continua sendo herdada dos writers de campanha; os problemas remanescentes são os entrypoints que chegam a esses recursos em ordem diferente ou não participam da serialização.
 
+
+### Ledger de reação AOO — ordem transitiva (2026-11-09)
+
+A inspeção integral das funções que referenciam `priv.srd_aoo_reaction_ledger` confirmou:
+
+- `priv.srd_reservar_ataque_oportunidade_impl` (OID 27261), exposta também por `public.srd_reservar_ataque_oportunidade_srd` (OID 26917, authenticated EXECUTE), bloqueia `campaigns FOR UPDATE` antes de consultar/contar/inserir no ledger. A serialização da campanha protege o limite de reações concorrentes da mesma mesa.
+- Os três caminhos de início de AOO com arma equipada, desarmado ou ataque natural bloqueiam pending primeiro, depois campanha, depois o registro do ledger com `FOR UPDATE`; a variante de arma equipada também bloqueia a instância de arma com `FOR SHARE` antes de inserir o ataque AOO e atualizar pending.
+- Portanto, além do ciclo pending → campaign já identificado, existe uma cadeia de locks interna que deve ser preservada ao corrigir: campanha → pending → ledger → (weapon instance, se aplicável) → insert attack. O INSERT do ataque também verifica FKs para pending/ledger já retidos pela transação.
+- Não foi encontrado writer que bloqueie ledger e depois peça pending/campaign de forma independente; o conflito operacional confirmado permanece a entrada pending-first contra as rotas campaign-first/attack-first. A ordem exata entre arma e attack deve continuar explícita na revisão de todos os resolvers antes da migration.
+
 ## 3. Evidências que motivam a proposta
 
 ### Ciclos já identificados nos corpos remotos
@@ -325,7 +335,7 @@ A leitura por OID também confirma outros caminhos ativos:
 - `srd_confirmar_critico_ataque_oportunidade_srd` (OID 27027) bloqueia ataque e atualiza o registro pending; `srd_registrar_rolagem_ataque_oportunidade_srd` (OID 27024) bloqueia ataque.
 - `srd_encerrar_reacao_aoo_pendente_srd` (OID 27035) delega ao helper (OID 27269), que bloqueia pending e, se cancelar ataque iniciado, bloqueia o ataque associado.
 
-Assim, a transição de estado da mesa campanha-first conflita com pelo menos dois caminhos expostos: pending-first → campaign e attack-first → pending → campaign. O cancelamento e encerramento de reação também mantêm a ordem pending → attack. A ordem candidata para o domínio AOO deve ser decidida em conjunto com a linha campaign; não basta ordenar apenas as duas tabelas AOO.
+Assim, a transição de estado da mesa campanha-first conflita com pelo menos dois caminhos expostos: pending-first → campaign e attack-first → pending → campaign. O cancelamento e encerramento de reação também mantêm a ordem pending → attack. A ordem candidata para o domínio AOO deve ser decidida em conjunto com a linha campaign, ledger de reações e instância de arma; não basta ordenar apenas as duas tabelas AOO.
 
 
 ### Ordem candidata específica para AOO (ainda não implementada)
@@ -333,8 +343,10 @@ Assim, a transição de estado da mesa campanha-first conflita com pelo menos do
 A correção deve fazer todos os entrypoints AOO compartilharem o mesmo prefixo:
 1. `campaigns FOR UPDATE` — serializa a transição da mesa e revalida estado/rodada/turno.
 2. `srd_aoo_pending_movements` por `pending_id` crescente — bloqueia e revalida status/reação pendente.
-3. `srd_aoo_attacks` por `attack_id` crescente — bloqueia e revalida a etapa de ataque.
-4. Ledgers/attempts e logs, em ordem estável, depois das linhas principais.
+3. `srd_aoo_reaction_ledger` por `reaction_id` crescente — bloqueia e revalida a reserva/limite de reação.
+4. `srd_character_weapon_instances` por `instance_id` crescente, quando o AOO usa arma equipada — valida equipamento e mão sem inverter com Ataque Total.
+5. `srd_aoo_attacks` por `attack_id` crescente — bloqueia e revalida a etapa de ataque.
+6. Attempts, logs e demais registros auxiliares, em ordem estável, depois das linhas principais.
 
 Para APIs que recebem `attack_id`, pode-se fazer uma leitura MVCC inicial apenas para descobrir `pending_id`, sem manter lock; depois bloquear campanha → pending → attack e revalidar que o vínculo e o status continuam iguais. Para cancelamento/finalização, o `pending_id` já é conhecido. Para encerrar combate, bloquear primeiro todos os pendings da campanha em ordem estável e depois os ataques associados, em vez de atualizar ataques antes dos pendings.
 
