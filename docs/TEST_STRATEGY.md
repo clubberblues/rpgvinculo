@@ -246,3 +246,13 @@ Fixture descartável com campanha em combate, movimento pendente ativo, reação
 17. Sem pending, tentar inserir token Grande/Enorme/Imenso/Colossal em posição cuja origem esteja livre, mas cujo footprint sobreponha outro token.
    - Esperado: rejeição ou busca de outra célula que respeite todos os quadrados ocupados pelo footprint.
 18. Confirmar que spawn válido em célula livre continua funcionando durante combate quando não existe pending AOO, e que o token entra na iniciativa pelo fluxo de rolagem manual do Mestre.
+
+
+### Regressões de integridade durante pending
+
+19. Durante pending AOO, tentar alterar facção/alcance de um token com `srd_configurar_perfil_combate_token_srd`.
+   - Esperado: bloqueio ou autorização explícita auditada; a lista de ameaças não pode mudar silenciosamente.
+20. Durante pending, tentar adicionar combatente à iniciativa e inserir token novo.
+   - Esperado: operações estruturais bloqueadas/adiadas até concluir a pending.
+21. Durante pending, alterar PV de token envolvido por RPC genérico de GM.
+   - Esperado: seguir política explícita de pausa; nunca invalidar silenciosamente o snapshot de reação ou o commit do movimento.
