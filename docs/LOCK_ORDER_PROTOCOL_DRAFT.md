@@ -231,3 +231,16 @@ A análise do fluxo efetivamente chamado por `mesa.html` separa duas famílias:
 - **Míssil Mágico:** `mesa.html` chama `public.conjurar_missil_magico_srd_manual` (OID 25191), que bloqueia personagem → ficha e delega para `public.conjurar_missil_magico_srd` (OID 24356). A função interna chama `public.conjurar_magia_com_acao_srd` (OID 20410), que bloqueia personagem/campanha para consumir a ação; portanto, a rota composta volta a apresentar personagem/ficha → campanha.
 
 A existência de ambos os prefixos em rotas usadas pela mesma interface reforça a necessidade de harmonizar os wrappers, mas a prova de deadlock exige um segundo fluxo que retenha a campanha e tente bloquear a mesma ficha/personagem. A resolução pending spell fornece um caminho campaign-first → ficha em alvos personagem; isso sustenta a hipótese de ciclo para o mesmo personagem, ainda pendente de fixture baseada em corpos e teste de concorrência. Nenhuma função foi executada remotamente.
+
+
+## Novo ciclo identificado — condição flat-footed ↔ campanha (2026-11-09)
+
+A leitura integral de `public.end_combat(bigint)` (OID 19091), `public.avancar_turno(bigint)` (OID 20074) e dos helpers de condição confirmou outro prefixo conflitante:
+
+- `end_combat` chama `priv.srd_clear_combat_flatfooted_all` (OID 27085) antes de atualizar `public.campaigns`. O helper faz UPDATE direto em `srd_campaign_conditions`; portanto, quando existe uma condição flat-footed ativa correspondente, a transação adquire condição → campanha.
+- `avancar_turno` bloqueia `campaigns FOR UPDATE` no início e depois chama `priv.srd_clear_combat_flatfooted_actor` (OID 27083) para remover flat-footed do ator. Esse caminho adquire campanha → condição.
+- As duas rotinas podem atingir a mesma condição ativa do mesmo ator durante avanço/encerramento concorrentes.
+
+**Classificação:** inversão estrutural condição ↔ campanha sustentada pelos corpos atuais e pela chave de alvo/condição comum. Não é deadlock real observado em produção. Um cenário sintético adicional foi incluído no harness com uma linha de condição compartilhada para verificar que o PostgreSQL detecta o ciclo.
+
+A proposta de ordem global deve, portanto, tratar também os helpers de condição chamados por `end_combat`; não basta corrigir Fúria e AOO isoladamente.
