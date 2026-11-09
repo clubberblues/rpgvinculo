@@ -405,3 +405,16 @@ Consulta read-only a pg_stat_database no banco atual retornou PostgreSQL 17.6, s
 O projeto está em PostgreSQL 17.6. O changelog Supabase publicou em 25/09/2026 a atualização PostgreSQL 15.19/17.11 com correções de 44 CVEs e possíveis ações para ltree, pgcrypto, btree_gist e operadores customizados. O projeto tem pgcrypto 1.3 instalado, não tem ltree nem btree_gist instalados, e a varredura de funções public/priv/private não encontrou uso de pgcrypto nas rotinas da aplicação. O schema vault usa helpers de criptografia próprios. Antes de qualquer upgrade gerenciado, revisar a orientação atual do Supabase e confirmar se há dados criptografados fora das rotinas SQL inspecionadas; nenhuma atualização foi solicitada ou executada.
 
 Referência: https://supabase.com/changelog
+
+
+## Inventário e instâncias de armas — inversão ativa confirmada pelo frontend (2026-11-09)
+
+A revisão dos callers frontend fecha a condição de alcance que faltava para o padrão equipamento ↔ instância:
+
+- mesa.html chama public.entregar_item_srd (OID 20556) para entregar arma ao personagem. A RPC faz INSERT ... ON CONFLICT DO UPDATE na linha srd_character_equipment, alterando quantidade. O trigger AFTER INSERT/DELETE/UPDATE OF quantidade (private.sync_character_weapon_instances_from_inventory, OID 26446) cria/remove instâncias em srd_character_weapon_instances e atualiza o resumo em srd_character_equipment. Ordem efetiva: equipamento → instância.
+- mesa.html e ficha.html chamam public.equipar_arma_instancia_personagem (OID 26442). A implementação private.equipar_arma_instancia_personagem_impl (OID 26441) bloqueia characters FOR UPDATE, depois srd_character_weapon_instances FOR UPDATE, e atualiza srd_character_equipment no fim. Ordem efetiva: personagem → instância → equipamento.
+- ficha.html também redireciona fichas ligadas a token NPC para public.equipar_arma_instancia_npc_vinculado_srd (OID 27445), cuja implementação deve ser lida como caminho campaign/token → personagem vinculado → instância → resumo de equipamento; não altera o padrão personagem/instância/equipamento.
+
+**Classificação:** o ciclo equipamento → instância versus instância → equipamento é alcançável por duas ações reais da interface: entrega de arma pelo Mestre e equipar/desequipar instância pelo jogador/Mestre. A entrega e o equipar podem incidir sobre a mesma ficha/arma. O harness já contém esse padrão sintético; nenhum deadlock de produção foi observado.
+
+**Direção de correção:** definir a ordem personagem → equipamento → instância (ou outra ordem única), e fazer tanto a entrega/remoção de quantidade quanto o equipar/desequipar respeitarem a mesma ordem. O trigger não deve inverter o par. Revalidar quantidade, instâncias equipadas e slot após os locks; não desativar o trigger sem substituir a sincronização de instâncias.
