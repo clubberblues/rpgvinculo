@@ -216,3 +216,8 @@ Portanto, o teste de CA 10 executado para Thorgar (681) **não valida nem invali
 - Dois canais SRD (srd_character_sheets e srd_character_equipment) não têm filtro de campaign_id; callbacks filtram IDs em memória. Sem status callback de subscribe ou resync explícito pós-reconexão identificado no método atual.
 - Riscos documentados: eventos perdidos em desconexão, duplicação de chat sem dedupe explícito e ausência de state_version nos snapshots. São riscos de arquitetura a testar, não falhas reproduzidas.
 - Próximo contrato necessário: state_version/ordem de eventos, resync snapshot e deduplicação antes de refatorar Realtime.
+
+
+## Concorrência — risco estático priorizado — 2026-11-09
+- Análise de ordem de locks no fluxo AOO encontrou inversão entre cancelamento (pending → attacks) e resolução/aplicação de dano (attack → pending). Há risco potencial de deadlock quando as ações concorrem sobre o mesmo ataque/movimento.
+- Ainda não reproduzido; nenhuma função alterada. Priorizar teste concorrente em fixture descartável e definir ordem global determinística antes de corrigir.
