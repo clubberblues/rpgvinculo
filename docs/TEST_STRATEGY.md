@@ -231,3 +231,9 @@ Fixture descartável com campanha em combate, movimento pendente ativo, reação
    - Esperado: rejeição por validação server-side de footprint/ocupação.
 12. Confirmar que os usos legítimos de `salvar_cena_cba` durante combate continuam funcionando sem alterar coordenadas: adicionar NPC em célula livre, persistir bônus de iniciativa e enriquecer metadados de monstro.
 13. Confirmar que publicação de fundo/grade fora de combate continua funcionando e que a nova separação de RPCs não perde tokens nem metadados.
+
+
+14. Reproduzir lost update: capturar snapshot da cena, aplicar dano/movimento por RPC em outra sessão, depois salvar o snapshot antigo por `salvar_cena_cba`.
+   - Esperado após correção: conflito explícito ou merge server-side que preserve o estado mais recente; PV e coordenadas não podem regredir.
+15. Repetir com dois clientes GM e com atualização simultânea de metadados do mapa.
+   - Esperado: nenhuma atualização não relacionada deve substituir estado de token atualizado por RPC de combate.
