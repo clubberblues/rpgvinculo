@@ -181,3 +181,10 @@ Portanto, o teste de CA 10 executado para Thorgar (681) **não valida nem invali
 - A conferência detalhada JS ↔ PostgreSQL continua pendente por fluxo; não marcar os contratos RPC como concluídos com base nessa correspondência nominal.
 
 - 2026-11-09: rastreados os quatro call sites dinâmicos em mesa.html; identificados nove alvos dinâmicos únicos, três já presentes nas chamadas literais e seis nomes adicionais únicos; união validada com 106 nomes e 114 assinaturas públicas, sem nome ausente. Grants/search_path dos quatro alvos não relacionados a equipamento também conferidos.
+
+
+## Contratos frontend ↔ PostgreSQL — progresso em 2026-11-09
+- Nomes RPC: 100/100 nomes literais distintos em mesa.html, ficha.html e lobby.html encontrados no schema public; quatro call sites dinâmicos foram rastreados, com onze alternativas de dispatch e nove alvos únicos (três também aparecem em chamadas literais). A união contém 106 nomes distintos e 114 assinaturas públicas.
+- Amostras de cruzamento documentadas em ACTION_CONTRACTS.md: avanço de turno, iniciativa manual, conjuração e Míssil Mágico, movimento/AOO, inventário/equipamento, progressão, descanso, grimório, domínios, CA e deslocamento.
+- Foram identificadas operações sem request_id no contrato atual (avanço de turno, conjuração manual, XP, avanço de nível e algumas rotinas de descanso/equipamento); isso é inventário de risco para desenho de retry, não prova de falha reproduzida.
+- A compatibilidade integral de argumentos em todos os fluxos, testes com sessões autenticadas, exposição dos schemas internos e execução transacional/E2E continuam pendentes. Nenhuma função SQL, migration, personagem, ficha, campanha, token ou dado de jogo foi alterado nesta rodada.
