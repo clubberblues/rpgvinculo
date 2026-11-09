@@ -135,3 +135,10 @@ Localizar/reconstituir os testes históricos e torná-los reproduzíveis no repo
 - Enviar duas vezes o mesmo request_id de avanço de turno deve avançar apenas um ator.
 - Repetir registrar_iniciativa_d20 com mesma ficha deve retornar a ordem atual sem alterar resultado.
 - Repetir registrar_rolagem_ataque_iterativo_srd/aplicar_dano_ataque_iterativo_srd com a mesma idempotency_key deve retornar o resultado persistido sem duplicar dano.
+
+
+### Shared Supabase client
+- A validação estática agora exige que index/lobby/ficha/mesa carreguem assets/js/core/supabase-client.js depois do CDN.
+- Exige zero createClient nas páginas e exatamente um createClient no script compartilhado.
+- Verifica que cada página consome window.VINCULO_SUPABASE_CLIENT e não duplica SUPABASE_URL/SUPABASE_KEY.
+- A execução do CI via Pull Request ainda precisa confirmar esta alteração.
