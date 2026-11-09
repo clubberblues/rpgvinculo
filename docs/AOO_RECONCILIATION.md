@@ -259,3 +259,14 @@ A revisão de `public.adicionar_token_cba` e wrapper `public.adicionar_token_cba
 **Impacto:** spawn durante uma pending pode alterar a cena e a geometria/ameaças enquanto as reações estão sendo resolvidas. Fora de pending, um token com footprint maior que 1 pode ser colocado sobre outro token se os pontos de origem forem diferentes, mas as áreas ocupadas se cruzarem.
 
 **Classificação:** P1 para mutação durante pending; P2 para sobreposição por footprint incompleto. Correção: bloquear spawn/removal/alterações estruturais enquanto pending ativa (salvo fluxo explicitamente autorizado) e centralizar validação de ocupação em helper canônico que considera footprint completo. Não corrigido.
+
+
+### Outras mutações durante pending que precisam de política explícita
+
+A revisão de mutações correlatas encontrou:
+- `public.srd_configurar_perfil_combate_token_srd` atualiza facção e alcance corpo a corpo de token sem consultar pending AOO.
+- `public.alterar_pv_token_cba` altera PV de NPC/monstro sem consultar pending.
+- `public.adicionar_combatente_iniciativa` pode inserir/atualizar combatente em `combat_data` durante combate sem consultar pending; preserva o ator atual, mas altera a ordem da iniciativa.
+- `public.adicionar_token_cba` e o wrapper completo podem inserir token sem bloquear pending.
+
+Nem toda alteração de PV/metadado precisa ser proibida em qualquer cenário, mas mudanças de geometria, facção, alcance, spawn e iniciativa durante uma reação devem ser congeladas ou explicitamente autorizadas pelo Mestre com evento auditável. A política deve distinguir as mutações necessárias para resolver o próprio AOO (ataque/dano) das mutações externas concorrentes.
