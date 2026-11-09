@@ -289,3 +289,26 @@ A correção deve fazer todos os entrypoints AOO compartilharem o mesmo prefixo:
 Para APIs que recebem `attack_id`, pode-se fazer uma leitura MVCC inicial apenas para descobrir `pending_id`, sem manter lock; depois bloquear campanha → pending → attack e revalidar que o vínculo e o status continuam iguais. Para cancelamento/finalização, o `pending_id` já é conhecido. Para encerrar combate, bloquear primeiro todos os pendings da campanha em ordem estável e depois os ataques associados, em vez de atualizar ataques antes dos pendings.
 
 Essa é uma direção de refatoração, não uma autorização de alteração. Antes de codificar, ainda é necessário revisar todos os writers de attempts/ledgers, triggers e os fluxos de ataque iterativo para confirmar que nenhuma tabela anterior é adquirida depois. O harness atual testa apenas os padrões de locks, não a semântica transacional completa.
+
+## Economia de ações, conjuração e habilidades de classe — ciclo ficha/personagem ↔ campanha (2026-11-09)
+
+A função public.consumir_acao_turno_srd (OID 20405) adquire campaigns FOR UPDATE no início e depois pode atualizar a ficha em uma condição de custo de ação. Portanto, qualquer RPC chamadora que já tenha bloqueado personagem/ficha antes de chamar essa função inverte a ordem campanha → personagem/ficha.
+
+### Chamadas alcançáveis na interface atual
+
+- public.conjurar_magia_efeitos_multialvo (OID 25109, authenticated EXECUTE): characters FOR UPDATE (linha 25) → srd_character_sheets FOR UPDATE (35) → consumir_acao_turno_srd (80), que bloqueia campanha; depois a RPC ainda lê campaigns FOR UPDATE (83).
+- public.conjurar_magia_dano_multialvo_srd (OID 25246, authenticated EXECUTE): personagem (69) → ficha (80) → consumo de ação (220) → campanha (222).
+- public.usar_habilidade_classe_srd (OID 25236, authenticated EXECUTE): personagem (41) → ficha (47); em branches de habilidade, adquire campanha (87 ou 133) e consome ação (135). A UI chama a RPC para Imposição das Mãos (cura).
+- public.usar_imposicao_maos_mortos_vivos_srd (OID 25509, authenticated EXECUTE): personagem (56) → ficha (61) → recursos da habilidade (89) → campanha (97) → consumo de ação (204). A UI chama a RPC para a variante de toque contra mortos-vivos.
+- public.conjurar_magia_com_acao_srd_manual (OID 24658, authenticated EXECUTE) e public.conjurar_magia_com_acao_srd_multialvo_v3 (OID 24661, authenticated EXECUTE) bloqueiam personagem e campanha antes de chamar o consumo de ação; não reproduzem a mesma inversão sheet → campaign, mas participam da cadeia campaign ↔ character.
+- public.usar_pocao_cura_srd_manual (OID 24655) consome a ação antes de bloquear equipamento/ficha, alinhado com campaign-first nesse trecho.
+
+A interface atual chama diretamente as quatro rotas centrais listadas acima. As rotas de magia multialvo e habilidades de classe são, portanto, caminhos operacionais; não são apenas funções antigas.
+
+**Classificação:** inversão alcançável personagem/ficha → campanha versus campanha → ficha/personagem. O risco fica mais claro quando concorrente com resolução de magia pendente (priv.srd_apply_pending_spell_resolution, OID 25071), que bloqueia pending spell → campanha → ficha. O mesmo par de locks também pode competir com transições de turno/estado que começam pela campanha. Não foi reproduzido deadlock com RPCs reais.
+
+### Direção de correção
+
+O lock da campanha deve ser adquirido antes de personagem, ficha, recursos e inventário em toda RPC que consome ação de combate. Para evitar uma corrida entre validação de ownership e locks, pode-se fazer leitura inicial não bloqueante dos IDs de campanha/character, adquirir campanha, depois bloquear personagem/ficha e revalidar ownership, campanha e estado do turno. A função consumir_acao_turno_srd deve ganhar uma variante interna que recebe a campanha já bloqueada ou ser reorganizada para não reacquirir uma ordem diferente. Não duplicar consumo/validação em cada RPC.
+
+Essa direção é proposta de arquitetura, não alteração aplicada. Antes da implementação, revisar triggers de ficha/recursos, condição strenuous_action_cost_1hp, writes de equipamento e o restante dos callers de consumir_acao_turno_srd.
