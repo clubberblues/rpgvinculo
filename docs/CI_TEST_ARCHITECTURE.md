@@ -68,3 +68,18 @@
 - Não executar testes mutáveis em personagens reais nem em TESTE 2.
 - Não remover workflows sobrepostos antes de verificar todos os seus gatilhos e a cobertura que oferecem.
 - Não gerar baseline executável a partir apenas do snapshot descritivo: owners, ACLs, policies, funções, triggers, tipos, defaults e ordem de dependência devem ser reconciliados.
+
+
+## Execução sem custo adicional — decisão de arquitetura 2026-11-09
+
+A restrição financeira do projeto é **zero gasto adicional com infraestrutura**. Não criar projeto/branch Supabase pago, não ativar serviços externos pagos e não exigir contratação para continuar a auditoria.
+
+Caminho de testes adotado:
+1. **GitHub Actions público + serviço PostgreSQL efêmero:** usar container `postgres` fornecido pelo próprio runner para testes de SQL isolados, com descarte automático ao final do job. Não conectar o job ao banco real.
+2. **Fixtures mínimas e explícitas:** criar apenas tabelas, funções auxiliares e dados necessários ao caso testado; simular `auth.uid()`/papéis quando o caso não exigir o runtime Supabase completo.
+3. **Testes estáticos locais/CI:** parse de SQL/JS, análise de contratos, fingerprints e invariantes sem mutar o banco remoto.
+4. **Testes Supabase específicos:** quando dependerem de Auth, RLS/PostgREST, Realtime ou extensões Supabase, manter como bloqueados até existir um caminho gratuito e seguro; não substituir a evidência ausente por teste em produção.
+
+O PostgreSQL efêmero é adequado para testar lógica transacional/locks e fixtures controladas, mas não prova compatibilidade integral com Supabase Auth, PostgREST, Realtime, Storage ou configuração de projeto. Os testes devem declarar exatamente o que simulam.
+
+A sequência não depende de uma nova branch Supabase: primeiro montar fixtures mínimas para a regressão P1 AOO; depois expandir gradualmente o harness conforme cada dependência for compreendida. Qualquer operação destrutiva no banco conectado permanece proibida durante testes.
