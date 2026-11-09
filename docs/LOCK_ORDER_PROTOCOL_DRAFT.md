@@ -233,14 +233,14 @@ A análise do fluxo efetivamente chamado por `mesa.html` separa duas famílias:
 A existência de ambos os prefixos em rotas usadas pela mesma interface reforça a necessidade de harmonizar os wrappers, mas a prova de deadlock exige um segundo fluxo que retenha a campanha e tente bloquear a mesma ficha/personagem. A resolução pending spell fornece um caminho campaign-first → ficha em alvos personagem; isso sustenta a hipótese de ciclo para o mesmo personagem, ainda pendente de fixture baseada em corpos e teste de concorrência. Nenhuma função foi executada remotamente.
 
 
-## Novo ciclo identificado — condição flat-footed ↔ campanha (2026-11-09)
+## Revisão de alcance — caminho legado de condição flat-footed (2026-11-09)
 
-A leitura integral de `public.end_combat(bigint)` (OID 19091), `public.avancar_turno(bigint)` (OID 20074) e dos helpers de condição confirmou outro prefixo conflitante:
+Foi identificado um prefixo potencial no corpo de `public.end_combat(bigint)` (OID 19091): ele chama `priv.srd_clear_combat_flatfooted_all` (OID 27085), que atualiza condições antes do UPDATE final de campanha. Já `public.avancar_turno(bigint)` (OID 20074) bloqueia campanha no início e depois limpa flat-footed do ator via OID 27083.
 
-- `end_combat` chama `priv.srd_clear_combat_flatfooted_all` (OID 27085) antes de atualizar `public.campaigns`. O helper faz UPDATE direto em `srd_campaign_conditions`; portanto, quando existe uma condição flat-footed ativa correspondente, a transação adquire condição → campanha.
-- `avancar_turno` bloqueia `campaigns FOR UPDATE` no início e depois chama `priv.srd_clear_combat_flatfooted_actor` (OID 27083) para remover flat-footed do ator. Esse caminho adquire campanha → condição.
-- As duas rotinas podem atingir a mesma condição ativa do mesmo ator durante avanço/encerramento concorrentes.
+Entretanto, a verificação de alcance mudou a classificação:
+- `end_combat` não tem EXECUTE para `authenticated` nem `anon`.
+- Não foi encontrado caller SQL para `end_combat` nas funções `public`, `priv` ou `private`.
+- A varredura dos sete arquivos de interface/scripts não encontrou chamada de `end_combat`; a mesa atual usa `alternar_estado_campanha`, que já bloqueia campanha antes de limpar flat-footed.
+- `avancar_turno` e `alternar_estado_campanha` seguem campanha → condição no fluxo frontend atual.
 
-**Classificação:** inversão estrutural condição ↔ campanha sustentada pelos corpos atuais e pela chave de alvo/condição comum. Não é deadlock real observado em produção. Um cenário sintético adicional foi incluído no harness com uma linha de condição compartilhada para verificar que o PostgreSQL detecta o ciclo.
-
-A proposta de ordem global deve, portanto, tratar também os helpers de condição chamados por `end_combat`; não basta corrigir Fúria e AOO isoladamente.
+**Classificação:** manter o prefixo condição → campanha de `end_combat` como risco legado/dormant, não como ciclo operacional alcançável por authenticated no estado atual. O cenário sintético foi removido do harness para não atribuir cobertura de produção a uma rota sem alcance demonstrado. Reavaliar se o grant ou os consumidores de `end_combat` forem reativados.
