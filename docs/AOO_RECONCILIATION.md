@@ -181,3 +181,27 @@ Leitura do corpo completo de `public.srd_solicitar_movimento_com_aoo_srd` acresc
 - Aplicar a mesma autoridade aos caminhos de jogador e Mestre, mantendo as diferenças de autorização já existentes.
 
 **Não aplicado.** Este é o contrato de implementação e teste, não uma instrução para alterar produção isoladamente. A ordem de locks transitiva e o caminho de preview precisam ser preservados na implementação.
+
+
+## Achado P1 adicional — publicação genérica da cena contorna validações de movimento — 2026-11-09
+
+A leitura do corpo remoto de `public.salvar_cena_cba(p_campaign_id,p_scene)` identificou um caminho independente do RPC de movimento:
+
+- A função é `SECURITY DEFINER`, exige apenas autenticação e papel GM na campanha, bloqueia a linha da campanha com `FOR UPDATE` e substitui `campaigns.cba_data` pela cena recebida.
+- Para tokens, combina os tokens enviados com os atuais por `key`/`id`, mas usa integralmente o objeto enviado para cada token existente.
+- Não verifica se `gridX`/`gridY` de tokens existentes mudaram; não aplica deslocamento, turno, ação, ocupação, tamanho de footprint, pending AOO ou detector de ameaças.
+- Também não valida sobreposição/ocupação de tokens recém-inseridos na lista enviada.
+- O frontend chama esse RPC durante combate em fluxos legítimos, como adicionar NPC/arquetipo, persistir modificadores de iniciativa e completar dados de criaturas. Portanto, simplesmente bloquear a RPC durante combate quebraria operações válidas.
+
+**Impacto:** um Mestre autenticado pode chamar diretamente `salvar_cena_cba` e reposicionar qualquer token da campanha durante combate sem passar pelo motor de movimento, inclusive enquanto outra movimentação AOO está pendente. O endpoint também pode inserir token sobreposto. A autoridade do Mestre não substitui os contratos do motor: a movimentação ainda precisa ser validada pelo servidor.
+
+### Direção de correção
+
+1. Separar publicação de metadados de cena (fundo, escala, grade, opacidade) de mutações de tokens.
+2. No endpoint genérico legado, preservar coordenadas dos tokens existentes quando a campanha estiver em combate; rejeitar qualquer mudança de posição fora dos RPCs de movimento autorizados.
+3. Criar/usar operações específicas para inserir/remover token e atualizar metadados de ficha, com validação de identidade, unicidade, footprint e ocupação.
+4. Para inserção durante combate, permitir spawn apenas em célula livre validada no servidor, sem usar a operação como teleporte de token existente.
+5. Manter a fila global AOO: nenhuma escrita genérica pode mudar posição de ameaça ou do token movido enquanto existir pending ativo.
+6. Manter compatibilidade dos fluxos legítimos atuais do frontend, migrando cada chamada antes de restringir o endpoint legado.
+
+**Estado:** confirmado por leitura do corpo SQL remoto e dos call sites em `mesa.html`; ainda não testado por chamada autenticada direta. Não corrigido.
