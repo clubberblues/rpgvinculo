@@ -121,18 +121,23 @@ A trigger de solicitação de rolagem por Confusão também adquire condição e
 
 Esta atualização foi feita após inspeção dos corpos remotos por OID/assinatura e dos triggers ativos. Ela refina, sem substituir, as evidências anteriores.
 
-### 1. Ciclo campanha ↔ efeito de Fúria — confirmado no fluxo de NPC/token
+### 1. Fúria — efeito → campanha é um caminho legado, não ciclo ativo comprovado
 
-- `priv.srd_end_barbarian_rage_token(bigint,text,boolean)` (OID 26653) adquire primeiro `srd_campaign_effects FOR UPDATE`, depois `campaigns FOR UPDATE`, e em seguida pode atualizar token JSONB, sincronizar ficha vinculada e gravar condições.
-- `public.alternar_estado_campanha(bigint,text)` (OID 20103) bloqueia a linha de campanha antes de percorrer os efeitos de Fúria com `FOR UPDATE` e chamar o encerrador.
-- `public.end_combat(bigint)` (OID 19091) percorre e bloqueia efeitos de Fúria antes do UPDATE final da campanha; se o encerrador de token for chamado, o caminho interno tenta bloquear a campanha depois do efeito.
-- `priv.srd_expire_barbarian_rage_on_round_change()` (OID 26292) é trigger AFTER UPDATE de `campaigns.combat_data`: a linha campanha já está bloqueada pela instrução que disparou o trigger, e a função percorre efeitos de Fúria com `FOR UPDATE` antes de chamar encerradores.
+Os helpers internos têm prefixos que precisam ser lidos junto com seus callers:
+- `priv.srd_end_barbarian_rage` (OID 25340) bloqueia efeito → ficha e, ao aplicar fadiga, chama o helper de condição que adquire campanha.
+- `priv.srd_end_barbarian_rage_token` (OID 26653) bloqueia efeito → campanha quando chamado sem lock herdado.
+- Porém, os callers encontrados que têm EXECUTE para authenticated ou são triggers já chegam com campanha bloqueada: `public.alternar_estado_campanha` (OID 20103), `public.usar_furia_barbaro_srd` (OID 25341), `public.usar_furia_barbaro_npc_srd` (OID 26656), além do trigger de rodada (OID 26292). `public.srd_expire_campaign_conditions` (OID 24807) e o descanso longo de NPC também são campaign-first, embora não tenham EXECUTE para authenticated na função pública/implementação observada.
+- `public.end_combat` (OID 19091) percorre efeitos antes de atualizar campanha, mas não tem EXECUTE para authenticated/anon, não foi encontrado caller SQL e não é chamado pelos sete arquivos de interface/scripts atuais.
 
-**Conclusão:** existe inversão estrutural campanha → efeito versus efeito → campanha. É um ciclo de locks demonstrado pelos corpos e pelo contexto do trigger, mas não foi reproduzido com as RPCs remotas nem observado como deadlock real de produção.
+**Conclusão corrigida:** não classificar campaign ↔ effect como deadlock operacional ativo nas rotas autenticadas atuais. O prefixo efeito → campanha de `end_combat` permanece risco legado/dormant, sujeito a reavaliação se grants/callers forem reativados. As rotas atuais de Fúria adquirem campanha antes de processar efeitos, embora a rota de Fúria de personagem tenha outra inversão ativa: personagem/ficha → campanha, detalhada a seguir.
 
-### 2. Fúria de personagem — caminho composto diferente
+### 2. Fúria de personagem — inversão ativa personagem/ficha ↔ campanha
 
-`priv.srd_end_barbarian_rage(bigint,text,boolean)` (OID 25340) bloqueia efeito → ficha, atualiza PV, sincroniza condições vitais e pode chamar `priv.srd_apply_campaign_condition`, que bloqueia campanha antes de escrever efeitos/condições. Quando chamado por um fluxo que já segura campanha (por exemplo, expiração/encerramento), a campanha é lock herdado; quando chamado por caminho sem esse lock, a sequência pode tornar-se efeito → ficha → campanha. Não presumir que o helper de vitalidade cria lock reverso: ele atualiza condições e faz apenas leitura MVCC da campanha, sem `FOR UPDATE` na campanha.
+`public.usar_furia_barbaro_srd` (OID 25341), chamado diretamente por `mesa.html`, bloqueia personagem → ficha → campanha. Ao encerrar a Fúria, chama `priv.srd_end_barbarian_rage` com a campanha já bloqueada; o helper bloqueia efeito → ficha, ajusta PV e pode aplicar fadiga. Portanto, a ordem efetiva do entrypoint é personagem → ficha → campanha → efeito/ficha, não efeito → campanha.
+
+A rota de NPC, `public.usar_furia_barbaro_npc_srd` (OID 26656), é campaign-first → personagem → ficha e depois processa o efeito do token. O descanso longo de NPC também começa por campanha.
+
+**Risco operacional ativo:** a rota de Fúria de personagem mantém personagem/ficha antes de campanha, enquanto `priv.srd_apply_pending_spell_resolution` bloqueia pending spell → campanha → ficha quando o alvo é personagem. Uma resolução de magia pendente contra o mesmo personagem pode, portanto, competir com o uso/encerramento de Fúria. Isso é um ciclo de prefixos alcançáveis, ainda não reproduzido com as RPCs reais. O helper de vitalidade atualiza condições e depois apenas lê campanha por MVCC; essa leitura não é aquisição de lock e não cria por si só aresta condição → campanha.
 
 ### 3. Remoções públicas de efeitos/condições — bypass do serializador
 
