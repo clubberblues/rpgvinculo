@@ -467,3 +467,7 @@ A auditoria read-only foi ampliada para recursos de classe, descanso, arma equip
 - A função de equipar instância de personagem segue personagem → instância → resumo de inventário; caminhos de inventário podem adquirir locks na linha de equipamento antes de chegar às instâncias via trigger. Risco de inversão é condicional a operações de quantidade/remoção na mesma ficha/arma; ainda não reproduzido.
 - O trigger de preview AOO executa RPC de movimento em subtransação e força rollback para validar sem persistir movimento. Isso deve ser incluído na revisão dos locks transitivos dos requests de movimento.
 - Regressões de inventário/instâncias foram adicionadas à estratégia; nenhuma operação de inventário remota foi executada.
+
+
+### CI de extensão AOO — diagnóstico pendente
+A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24` terminou com `failure`, porém o endpoint de jobs retornou zero jobs e não há logs de etapas. O GitHub recusou retry. Não classificar como falha dos testes SQL sem job/log que a comprove. Uma nova execução será gerada após a alteração de testes em `tests/sql`.

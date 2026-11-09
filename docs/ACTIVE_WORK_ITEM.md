@@ -1,3 +1,10 @@
+## Atualização da auditoria — 2026-11-09 (continuação)
+
+- AOO: novas inversões campaign/pending e pending/attack documentadas; testes sintéticos adicionados.
+- Inventário: efeito transitivo do trigger que sincroniza equipamento e instâncias de armas documentado; cenários de concorrência adicionados.
+- CI: a execução 42673083206 terminou com conclusão `failure`, mas a API retornou zero jobs e nenhum log de etapa. O retry foi recusado pelo GitHub porque a execução não é retriável. Portanto, **não há evidência para classificar como falha de SQL/teste**; estado é falha de execução do workflow sem diagnóstico. Nova execução será disparada por alteração de teste, para separar falha de infraestrutura de falha no script.
+- Nenhuma alteração remota no Supabase.
+
 # Vínculo RPG — Item de trabalho ativo
 
 ## Atividade vigente — Fase 1: arquitetura, contratos e concorrência

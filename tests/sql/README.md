@@ -13,3 +13,5 @@ These tests run against a disposable PostgreSQL service inside a standard GitHub
 - The lock-cycle script now also models two additional inversions found during the read-only audit: campaign → weapon versus weapon → campaign, and campaign → character versus character → campaign. These are synthetic PostgreSQL lock-pattern tests, not executions of the remote RPG functions. A passing test proves PostgreSQL detects the deliberately constructed cycle; it does not prove that the corresponding production RPC pair deadlocked in use.
 
 - The lock-cycle fixture additionally models two AOO-related inversions observed in installed function bodies: campaign → pending versus pending → campaign, and pending → attack versus attack → pending. As with the other cases, these are deliberately synthetic lock patterns, not production RPC executions.
+
+- CI follow-up: run 42673083206 ended with workflow conclusion `failure`, but GitHub returned zero jobs and no step logs; it is not evidence of an SQL assertion failure. A fresh run is required to diagnose the expanded fixture set.
