@@ -9,6 +9,7 @@ A documentação de engenharia e o estado contínuo do desenvolvimento estão em
 - [Registro de decisões](docs/DECISIONS.md)
 - [Registro de auditorias](docs/AUDIT_REGISTER.md)
 - [Estratégia de testes](docs/TEST_STRATEGY.md)
+- [Mapa de integração frontend/backend](docs/INTEGRATION_MAP.md)
 - [Arquitetura especializada do motor D&D 3.5](DND35_RULE_ENGINE_ARCHITECTURE.md)
 - [Plano Mestre da Mesa Virtual](PLANO_MESTRE_MESA.md)
 
