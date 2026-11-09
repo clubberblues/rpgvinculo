@@ -347,3 +347,12 @@ O inventário verbose do Supabase e a consulta direta a ACL identificaram duas r
 **Uso interno identificado:** `priv.throttle` é acessada por `priv.locked(text)`, `priv.fail(text,integer)` e `priv.clear(text)`, chamadas por `public.create_campaign`, `public.join_campaign` e `public.entrar_campanha_com_codigo` (SECURITY DEFINER). `priv.srd_aoo_reaction_ledger` é acessada por helpers SECURITY DEFINER de reserva/início de AOO; o helper de reserva exige autenticação e papel GM. Não foi alterado nenhum privilégio, policy ou estado de RLS.
 
 **Tratamento:** manter como hardening P2 condicionado à confirmação de Exposed schemas e revisão dos caminhos SECURITY DEFINER. Não aplicar automaticamente o SQL sugerido pelo advisor: habilitar RLS sem desenhar e testar as policies/semântica de bypass pode quebrar o acesso interno esperado ou criar falsa sensação de segurança. Nenhum dado foi alterado.
+
+
+## Privilégios padrão do schema interno priv — 2026-11-09
+
+A inspeção de `pg_default_acl` identificou privilégios padrão permissivos para objetos futuros criados pelo owner postgres em `priv`: authenticated recebe SELECT/INSERT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER/MAINTAIN em futuras tabelas, SELECT/USAGE/UPDATE em sequences e EXECUTE em futuras funções. service_role também recebe privilégios administrativos. Não há default ACL personalizado em `private`.
+
+As relações internas existentes foram individualmente configuradas sem privilégios diretos para anon/authenticated, e as funções existentes passaram por revisão de search_path; portanto, o achado é **risco preventivo para novos objetos**, não evidência de acesso direto atual. Se `priv` estiver exposto no PostgREST, o risco é maior. A configuração Exposed schemas ainda precisa ser confirmada.
+
+**Ação proposta, não executada:** restringir default privileges de authenticated em `priv` (tabelas/sequences/funções) e conceder EXECUTE explicitamente apenas aos helpers internos chamados por wrappers SECURITY INVOKER. Não aplicar antes de reconciliar o histórico e mapear todas as dependências; a alteração de defaults sem grants pontuais pode quebrar chamadas legítimas. Nenhuma ACL foi alterada.
