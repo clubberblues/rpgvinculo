@@ -390,3 +390,27 @@ Políticas SELECT atuais consultadas em `pg_policies`:
 - `campaign_log`: Mestre lê tudo; jogador/observador lê somente PUBLIC.
 
 As políticas confirmam que os canais sem filtro de campaign_id continuam sujeitos a RLS, mas isso não elimina o custo de subscrever globalmente todos os registros visíveis ao usuário. Nenhuma política foi alterada.
+
+
+## Análise estática de ordem de locks — movimento/AOO — 2026-11-09
+
+Leitura dos corpos atuais em `pg_get_functiondef` (ordem abaixo é a ordem observada no código, não um teste concorrente):
+
+| RPC/implementação | Ordem relevante observada |
+|---|---|
+| `srd_solicitar_movimento_com_aoo_srd` | `campaigns FOR UPDATE` → insere movimento pendente. |
+| `srd_reservar_reacao_movimento_aoo_impl` | movimento pendente `FOR UPDATE` → `campaigns FOR UPDATE` → atualiza reação. |
+| `srd_iniciar_ataque_oportunidade_srd` | movimento pendente `FOR UPDATE` → `campaigns FOR UPDATE` → reação `FOR UPDATE` → lê arma `FOR SHARE` → insere ataque/atualiza movimento. |
+| `srd_resolver_ataque_oportunidade_srd` | ataque `FOR UPDATE` → movimento pendente `FOR UPDATE` → `campaigns FOR UPDATE`. |
+| `srd_aplicar_dano_ataque_oportunidade_srd` e variante monstro | ataque `FOR UPDATE` → movimento pendente `FOR UPDATE` → `campaigns FOR UPDATE` → ficha alvo `FOR UPDATE` quando aplicável. |
+| `srd_cancelar_movimento_aoo_pendente_impl` | movimento pendente `FOR UPDATE` → UPDATE de todos os ataques associados (bloqueia linhas de ataque). |
+| `srd_finalizar_movimento_aoo_pendente_srd` | movimento pendente `FOR UPDATE` → `campaigns FOR UPDATE`. |
+| `avancar_turno` | `campaigns FOR UPDATE` → consulta pendências sem lock explícito. |
+
+### Risco prioritário: inversão de lock no cancelamento AOO
+
+O caminho de cancelamento bloqueia primeiro a linha de movimento pendente e depois atualiza ataques associados. Os caminhos de resolução/aplicação de dano bloqueiam primeiro a linha de ataque e depois a mesma linha de movimento pendente. Se cancelamento e aplicação de dano ocorrerem simultaneamente para o mesmo ataque/movimento, existe uma espera circular possível (cancelamento segura pending e aguarda attack; dano segura attack e aguarda pending), que pode terminar em deadlock e abortar uma das transações.
+
+**Classificação:** risco de deadlock sustentado pela ordem estática dos locks; ainda não reproduzido em concorrência. Deve ser prioridade no desenho de lock order e no teste concorrente descartável. A correção provável exige o cancelamento adquirir locks de ataques e pendência em uma ordem compatível e determinística, mas não foi aplicada sem fixture e teste transacional.
+
+A ordem completa de locks de todas as RPCs do combate ainda não está fechada. Não inferir que as demais rotas são livres de deadlock apenas por esta amostra.
