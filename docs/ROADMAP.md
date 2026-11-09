@@ -221,3 +221,8 @@ O advisor sinaliza 99 funções públicas SECURITY DEFINER executáveis por auth
 ## CI e testes — diagnóstico atual — 2026-11-09
 
 Quatro workflows atuais cobrem sintaxe JavaScript, invariantes do dado manual e smoke test HTTP de GitHub Pages, mas não há validação SQL, pgTAP, RPC autenticado, RLS ou concorrência. O desenho atual/alvo e a sequência de implantação estão em [CI_TEST_ARCHITECTURE.md](CI_TEST_ARCHITECTURE.md). Consolidar workflows somente depois de preservar os gatilhos/cobertura existentes.
+
+
+## Storage e mídia
+
+Snapshot de buckets/policies criado em [STORAGE_POLICIES_SNAPSHOT.md](STORAGE_POLICIES_SNAPSHOT.md). A revisão identificou bucket público `midia` sem limite/allowlist MIME configurados e bucket privado `mesa-media` com SVG/áudio/vídeo permitidos; alterações ficam pendentes de revisão de compatibilidade.
