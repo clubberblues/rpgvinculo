@@ -122,3 +122,9 @@ Localizar/reconstituir os testes históricos e torná-los reproduzíveis no repo
 - Resultado: **success**.
 - Verificação: 9 blocos JavaScript inline/compartilhados em 5 páginas ativas; referências locais de scripts; contrato de rolagem manual do Dice.
 - Limite: não testa DOM em navegador, chamadas Supabase, autorização, regras de domínio, transações ou multiplayer. É a primeira camada, não substitui testes de integração/E2E.
+
+
+## Segunda execução CI — 2026-11-08
+- [GitHub Actions run #2](https://github.com/clubberblues/rpgvinculo/actions/runs/42548214654) — **success**.
+- Além da sintaxe, protege os contratos de iniciativa manual (registrar_iniciativa_d20 e iniciar_iniciativa_com_dados), registro de ataque manual e proíbe chamadas literais a roll_dice nas páginas ativas.
+- Nenhuma alteração de dados de jogo foi necessária.
