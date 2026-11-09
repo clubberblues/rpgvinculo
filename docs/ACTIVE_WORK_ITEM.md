@@ -159,3 +159,7 @@ Inventário completo dos conjuntos divergentes: [MIGRATION_RECONCILIATION.md](MI
 - No conjunto movimento/turnos: 41 funções exportadas; 0 com EXECUTE para anon e 28 com EXECUTE para authenticated.
 - A análise de locks confirmou o risco de inversão AOO: cancelamento bloqueia movimento pendente e atualiza ataques; resolução/dano bloqueia ataque e depois movimento pendente. Não reproduzido.
 - Próxima etapa: matriz global de locks e chamadas transitivas; não alterar funções nem dados até existir ambiente descartável.
+
+
+### Risco adicional de inversão AOO
+A análise de `priv.srd_encerrar_reacao_aoo_pendente_impl` confirmou que o cancelamento explícito de ataque também adquire pending → attack, enquanto ocultação/resolução/dano adquire attack → pending. O risco de deadlock inclui agora cancelamento de reação × ocultação/resolução/dano, além do cancelamento total do movimento.
