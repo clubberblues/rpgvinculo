@@ -10,7 +10,7 @@ Nenhuma fase deve ser repetida integralmente sem evidência de mudança ou lacun
 **Objetivo:** criar uma visão confiável a partir das auditorias e documentos existentes.
 - [x] Identificar e consolidar README, arquitetura D&D 3.5 e Plano Mestre como referências centrais; reconciliação detalhada do conteúdo segue em andamento.
 - [x] Consolidar fotografia atual de catálogos, funções, migrations e pendências; snapshots históricos divergentes estão registrados com data/critério e não foram apagados.
-- [x] Mapear fluxos prioritários e registrar dependências frontend/RPC/tabelas; criados INTEGRATION_MAP, DATA_MODEL e inventário de 103 RPCs/111 assinaturas. Argumentos e consumidores externos restantes viram tarefas por fluxo nas fases 1–2; candidatos a legado estão documentados.
+- [x] Mapear fluxos prioritários e registrar dependências frontend/RPC/tabelas; criados INTEGRATION_MAP, DATA_MODEL e inventário atualizado de 106 nomes de função/114 assinaturas públicas. Argumentos e consumidores externos restantes viram tarefas por fluxo nas fases 1–2; candidatos a legado estão documentados.
 - [x] Inventariar o estado conhecido dos testes e criar CI estático aprovado; Playwright/pglast e integração/E2E ausentes ou não reproduzíveis estão registrados como lacunas da Fase 2.
 - [x] Atualizar o registro de auditorias sem repetir itens já verificados; pendências e evidências centralizadas em AUDIT_REGISTER.md.
 - [x] Capturar fotografia somente de leitura do estado remoto do Supabase; contagens, RLS, FKs, triggers, advisors e principais tabelas foram registrados.
