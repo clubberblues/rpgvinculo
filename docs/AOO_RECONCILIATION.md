@@ -227,3 +227,10 @@ A fila `cbaWriteQueue` serializa somente as chamadas feitas por esse cliente; n�
 Os usos em `mesa.html` foram localizados nas linhas atuais 2294, 3626, 4974, 5116, 5431, 5468, 6154 e 6633. As intenções são, respectivamente: retrato, spellState, spawn de NPC, bônus de iniciativa de reforço, fallback fora de combate, publicação de mapa/grade, preparação da iniciativa e enriquecimento de dados de monstro. A linha 5325 contém a chamada central a `sb.rpc('salvar_cena_cba',...)`.
 
 A separação de comandos deve manter esses fluxos funcionando, mas nenhum deles pode reescrever coordenadas/PV/equipamentos de tokens por snapshot obsoleto. O spawn deve passar por validação server-side de célula livre; mapa/grade deve atualizar somente metadados; movimento deve passar pelos RPCs de movimento.
+
+
+### Call-site inventory do writer genérico
+
+Os usos em `mesa.html` foram localizados nas linhas atuais 2294, 3626, 4974, 5116, 5431, 5468, 6154 e 6633. As intenções são, respectivamente: retrato, spellState, spawn de NPC, bônus de iniciativa de reforço, fallback fora de combate, publicação de mapa/grade, preparação da iniciativa e enriquecimento de dados de monstro. A linha 5325 contém a chamada central a `sb.rpc('salvar_cena_cba',...)`.
+
+A separação de comandos deve manter esses fluxos funcionando, mas nenhum deles pode reescrever coordenadas/PV/equipamentos de tokens por snapshot obsoleto. O spawn deve passar por validação server-side de célula livre; mapa/grade deve atualizar somente metadados; movimento deve passar pelos RPCs de movimento.
