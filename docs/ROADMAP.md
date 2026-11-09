@@ -197,3 +197,13 @@ Os dois arquivos locais sem nome remoto correspondente foram inspecionados. `202
 
 
 Inventário detalhado da divergência de migrations (listas de todas as versões sem correspondência exata) registrado em [MIGRATION_RECONCILIATION.md](MIGRATION_RECONCILIATION.md).
+
+
+## Próximo lote de auditoria — funções remotas
+
+- [x] Exportar definições atuais do subsistema AOO (37 funções).
+- [x] Exportar definições de movimento, economia de ações, iniciativa e turnos (41 funções).
+- [x] Registrar reconciliação focal das 51 migrations remotas de AOO/movimento pendente sem arquivo local de mesmo nome.
+- [ ] Comparar a ordem de locks transitiva de todas as RPCs de combate e movimento, incluindo helpers privados.
+- [ ] Fechar matriz de autorização por papel e fluxo frontend→RPC para as funções com authenticated EXECUTE.
+- [ ] Reproduzir concorrência cancelamento AOO × resolução/dano em ambiente descartável após baseline.
