@@ -1227,11 +1227,10 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/core/supabase-client.js"></script>
 <script>
 (function(){
-  var SUPABASE_URL = 'https://grrgwxcagvvafdmzsmro.supabase.co';
-  var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdycmd3eGNhZ3Z2YWZkbXpzbXJvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyNTY4MTQsImV4cCI6MjEwNTgzMjgxNH0.hqLiYynGXHwyUtqcbGTTa2orSStm7ko2C5R03QNmqtQ';
-  var sb = window.supabase && typeof window.supabase.createClient === 'function' ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
+  var sb = window.VINCULO_SUPABASE_CLIENT;
 
   if(!sb){var loadingRoot=document.getElementById('root');if(loadingRoot)loadingRoot.innerHTML='<div class="loading-full" style="color:#f87171">Não foi possível carregar o serviço da mesa. Atualize a página; se continuar, o serviço de conexão está indisponível.</div>';return;}
   var MESA_ID = new URLSearchParams(location.search).get('mesa');
