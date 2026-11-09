@@ -326,3 +326,10 @@ Fixture descartável com campanha em combate, movimento pendente ativo, reação
    - Esperado após correção: serialização por ordem global única, sem deadlock, gasto duplicado de espaço ou efeito aplicado parcialmente.
 41. Repetir para resolução de dano com salvamento bem-sucedido, resistência à magia e efeito de condição; verificar se todos os caminhos transitivos usam a mesma ordem.
 42. A fixture atual modela apenas campaign ↔ sheet. Quando a reconciliação permitir, adicionar o corpo real dos wrappers e helpers a um banco efêmero sem Auth/produção.
+
+
+### Resultado CI — expansão campaign/resource e campaign/sheet
+
+- [Run 42678898017](https://github.com/clubberblues/rpgvinculo/actions/runs/42678898017) — **success**; fixture campaign ↔ feature resource.
+- [Run 42679102920](https://github.com/clubberblues/rpgvinculo/actions/runs/42679102920) — **success**; fixture campaign ↔ sheet, junto com todos os cenários anteriores.
+- Os oito pares de lock sintéticos passaram. Nenhum deles executa as RPCs remotas ou comprova que a combinação de chamadas é alcançável em produção; os testes de integração real permanecem pendentes.
