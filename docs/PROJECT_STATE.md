@@ -64,3 +64,40 @@ Ao encerrar ou atingir limite:
 
 ## Histórico de atualização
 - 2026-11-08: criado como registro inicial de continuidade; conteúdo baseado nas referências existentes no repositório e no histórico de trabalho. Reconciliação do estado atual permanece como primeira tarefa.
+
+
+## Fotografia técnica verificada — 2026-11-08
+
+Levantamento somente de leitura realizado durante a implantação do método:
+
+### Repositório
+- Branch principal observada: main.
+- A documentação existente inclui README, DND35_RULE_ENGINE_ARCHITECTURE.md e PLANO_MESTRE_MESA.md.
+- A camada web atual ainda concentra grandes blocos de HTML/CSS/JavaScript nas páginas:
+  - mesa.html: 691.956 caracteres, 5 tags script, 87 nomes distintos de RPC, 27 referências .from() e 9 chamadas channel()/on() identificadas por varredura estática.
+  - ficha.html: 362.301 caracteres, 4 tags script, 12 nomes distintos de RPC e 31 referências .from().
+  - lobby.html: 138.602 caracteres, 4 tags script, 10 nomes distintos de RPC e 10 referências .from().
+  - dice.html: 214.174 caracteres, 5 tags script; nenhuma chamada .rpc() ou .from() detectada na varredura.
+- Essa varredura é um inventário inicial de chamadas, não um grafo completo de dependências.
+
+### Supabase — fotografia somente de leitura
+- Histórico de migrations: 966 registros; versão mínima observada 20261031160944 e máxima 20261109005941.
+- Relações: 76 em public e 7 em priv.
+- RLS: 76/76 tabelas public com RLS habilitado; 5/7 tabelas priv com RLS habilitado. A exposição e os grants do schema priv devem continuar avaliados separadamente.
+- Funções por schema: public 225 (150 SECURITY DEFINER); priv 94 (88 SECURITY DEFINER); private 8 (8 SECURITY DEFINER). São contagens atuais de funções no catálogo, não uma avaliação individual de autorização.
+
+### Catálogos atuais
+- SRD: 7 raças; 11 classes; 59 registros em srd_skills; 110 talentos; 1.021 equipamentos; 607 magias; 607 efeitos tipados; 445 monstros; 220 progressões de classe; 1.400 progressões de espaços de magia; 131 características de classe.
+- Auditoria de catálogo: 1.403 linhas em srd_catalog_entry_audit, todas com audit_status manual_verified.
+- Cobertura: 15 linhas em srd_catalog_coverage — 3 complete, 8 in_progress e 4 pending.
+- srd_spell_effects: 25 verification_status verified_srd e 582 needs_review.
+- Características de classe: 131/131 com verification_status verified_srd.
+- Perícias: 55 com source_status verified_srd e 4 excluded; a tabela de cobertura ainda declara 50 entradas. Essa divergência precisa ser reconciliada.
+- Vínculo: 16 classes; 160 habilidades; 95 magias; 191 itens; 72 talentos.
+
+### Interpretação
+- O estado do banco e o estado dos catálogos não são equivalentes: uma linha manual_verified no registro de auditoria não significa que a mecânica correspondente esteja implementada ou automatizada.
+- Os 607 efeitos tipados não estão todos resolvidos: 582 permanecem needs_review.
+- Os totais históricos de 49/50/59 perícias e os diferentes snapshots de funções/migrations não devem ser usados sem indicar data, tabela e critério de contagem.
+
+Nenhuma linha de personagem, ficha, campanha, token ou progresso foi alterada nesta fotografia.
