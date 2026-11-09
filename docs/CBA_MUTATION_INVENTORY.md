@@ -282,3 +282,45 @@ Nenhuma função ou dado remoto foi alterado. A análise não autoriza ainda uma
 ### Ciclo adicional envolvendo o encerramento manual da Fúria de personagem
 
 A RPC public.usar_furia_barbaro_srd também começa bloqueando a linha de public.characters e depois public.srd_character_sheets com FOR UPDATE; somente depois bloqueia campaigns. No caminho de encerramento, ela chama priv.srd_end_barbarian_rage, que bloqueia srd_campaign_effects antes de retornar ao fluxo de campanha/condições. Em concorrência com a trigger de avanço de rodada, a sessão manual pode reter ficha/efeito e aguardar campaigns, enquanto a trigger retém campaigns e, após bloquear o efeito, pode aguardar a mesma ficha. Portanto, a revisão da ordem não pode limitar-se a mover o lock de campaigns para dentro de priv.srd_end_barbarian_rage: o chamador público também precisa ser analisado para que não mantenha characters/srd_character_sheets antes da campanha. A correção deve padronizar a ordem no ponto de entrada e em todas as rotinas transitivas, não apenas no helper interno.
+
+
+## Expansão da matriz de locks: encerramento de combate e expiração de estados
+
+Data da coleta: 2026-11-09. Corpos consultados diretamente no banco remoto por leitura. Nenhuma alteração de produção.
+
+### Novo ciclo confirmado: encerramento de combate × avanço/expiração de rodada
+
+Além do ciclo já documentado entre a trigger de avanço de rodada e o encerramento de Fúria, foram confirmados outros caminhos com a mesma inversão:
+
+- `public.end_combat(cid)` seleciona e bloqueia primeiro linhas de `srd_campaign_effects` (`FOR UPDATE`) para encerrar Fúria. Só no fim atualiza `campaigns.state`, adquirindo o lock da campanha depois dos efeitos. Se concorrer com uma transação que já bloqueou `campaigns` e tenta bloquear os mesmos efeitos, há ciclo potencial `campaigns → srd_campaign_effects → campaigns`.
+- `public.alternar_estado_campanha(p_campaign_id,p_novo_estado)` bloqueia primeiro `campaigns`, depois percorre efeitos de Fúria com `FOR UPDATE`. A direção é inversa à de `public.end_combat`.
+- `public.srd_expire_campaign_conditions(p_campaign_id)` bloqueia primeiro `campaigns` e depois efeitos expirados com `FOR UPDATE`; ao encerrar Fúria, chama helpers que também podem buscar efeitos e condições. Deve ser tratado como fluxo de campanha-primeiro.
+- A trigger `trg_expire_barbarian_rage_on_round_change` também é campanha-primeiro, pois é executada dentro do UPDATE de `campaigns.combat_data`.
+
+Portanto, não é um caso isolado de uma trigger: há pelo menos um endpoint de encerramento de combate com efeito-primeiro e endpoints/triggers de avanço ou expiração com campanha-primeiro. A ordem precisa ser uniformizada nos pontos de entrada, inclusive no caminho legado `end_combat`; não basta corrigir apenas os helpers de Fúria.
+
+### Escritores de condições/efeitos que não serializam pela campanha
+
+Os corpos de `public.srd_remove_campaign_condition` e `public.srd_remove_campaign_effect` fazem UPDATE direto nas respectivas tabelas sem adquirir previamente `campaigns FOR UPDATE`. Ambos exigem GM autenticado, mas a autorização não serializa mutações com os fluxos de combate/expiração. Isso não constitui por si só prova de deadlock; cria caminhos concorrentes que podem alterar estado durante resolução/expiração e precisam de política transacional explícita.
+
+Outros caminhos observados:
+- `priv.srd_clear_combat_flatfooted_actor/all` atualizam condições diretamente, sem lock explícito da campanha. Chamadas dentro de triggers/rotinas que já atualizaram a campanha herdam o lock da transação; chamadas isoladas não.
+- `priv.srd_sync_character_vital_condition` atualiza e insere condições sem bloquear primeiro a campanha. É invocada por fluxos de PV; a ordenação depende do chamador e das linhas de personagem/ficha que ele já mantém.
+- `priv.srd_sync_linked_npc_token_vitals` adquire campanha primeiro, depois ficha, lê condições/efeitos e atualiza campanha/ficha/condições. É um fluxo campanha-primeiro com locks adicionais em ficha.
+- `public.descanso_longo_personagem_srd` adquire personagem e ficha antes de consultar campanha sem FOR UPDATE; depois chama sincronização de condição e atualiza ficha/recursos. A ordem personagem → ficha → condições, combinada com rotinas que bloqueiam campanha → personagem/ficha, requer revisão específica antes de adicionar locks de campanha nesse endpoint.
+- `priv.descanso_longo_npc_vinculado_srd_impl` começa com campanha → personagem → ficha, chama encerramento da Fúria token e depois altera condições/recursos. É um fluxo campanha-primeiro, mas a chamada interna de Fúria deve respeitar a mesma ordem sem reter previamente efeito de forma conflitante.
+
+### Teste de concorrência no CI
+
+A execução do workflow PostgreSQL fixture tests para o commit `27f2c6d60b07066f4bea21c10bdbc81dacbe736e` terminou com conclusão `success`. O fixture concorrente observou o PostgreSQL detectar `deadlock detected` e abortar um participante, conforme esperado. Isso comprova o comportamento do padrão sintético campaign→effect versus effect→campaign; não executa as RPCs instaladas nem demonstra que uma transação real do jogo já sofreu deadlock.
+
+Execução: https://github.com/clubberblues/rpgvinculo/actions/runs/42642696293
+
+### Próximas regressões e decisões de arquitetura
+
+1. Testar concorrência entre `end_combat` e avanço de rodada/expiração.
+2. Testar `alternar_estado_campanha` contra encerramento manual de Fúria.
+3. Testar remoção manual de efeito/condição contra expiração automática, incluindo idempotência.
+4. Testar sincronização de PV e descanso longo concorrentes com resolução de combate, respeitando locks de personagem, ficha e campanha.
+5. Definir um protocolo global de locks por campanha e por entidade. O lock da campanha pode ser a primeira barreira para operações de estado de combate, mas os fluxos que precisam bloquear personagem/ficha antes da campanha devem ser redesenhados como um todo; inserir um lock isolado pode apenas transferir o deadlock.
+6. Não alterar essas RPCs no banco remoto até reconciliar versões/migrations e cobrir chamadas transitivas. A auditoria continua read-only.
