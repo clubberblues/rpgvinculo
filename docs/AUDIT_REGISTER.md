@@ -121,7 +121,11 @@ A auditoria manual de entradas, a verificação da fonte SRD e a implementação
 Nenhum dado de personagem, ficha, campanha, token ou progresso foi modificado nesta fotografia. Nenhuma migration foi aplicada nesta etapa.
 
 
-## Contratos RPC de combate — sobrecargas\n- Conferidas estaticamente as chamadas de sete grupos sobrecarregados usados em combate: dano iterativo (5 args), dano de token (11), início de ataque NPC (8), sequência iterativa (8), CA (3/4 por tipo de alvo), modificadores de manobra (6) e AOO natural de monstro (5). Cada chamada corresponde à assinatura com o conjunto de argumentos observado.\n- Wrappers de ataque iterativo NPC são SECURITY INVOKER e delegam a priv.*; resolvers de dano/CA relevantes são SECURITY DEFINER com auth.uid e verificações de campanha/papel. Ainda falta teste de execução por papel.\n\n## Persistência de cena e tokens
+## Contratos RPC de combate — sobrecargas
+- Conferidas estaticamente as chamadas de sete grupos sobrecarregados usados em combate: dano iterativo (5 args), dano de token (11), início de ataque NPC (8), sequência iterativa (8), CA (3/4 por tipo de alvo), modificadores de manobra (6) e AOO natural de monstro (5). Cada chamada corresponde à assinatura com o conjunto de argumentos observado.
+- Wrappers de ataque iterativo NPC são SECURITY INVOKER e delegam a priv.*; resolvers de dano/CA relevantes são SECURITY DEFINER com auth.uid e verificações de campanha/papel. Ainda falta teste de execução por papel.
+
+## Persistência de cena e tokens
 - Foram confirmados dois caminhos coexistentes: CBA em campaigns.cba_data (JSONB) e modelo relacional public.tokens/monster_instances usado por RPCs antigas. Resolvedores de condição/efeito aceitam alvos em ambos os caminhos.
 - A mesa atual usa RPCs CBA; RPCs antigas como move_token, attack e start_combat não aparecem na varredura direta do frontend atual. create_campaign ainda cria registro em scenes, mas não foi identificada leitura direta por mesa.html.
 - Classificação: compatibilidade/legado a reconciliar; não remover nem migrar antes de mapear todos os consumidores e dados.
