@@ -176,3 +176,13 @@ A fotografia de políticas também mostrou:
 - srd_character_sheets: leitura para proprietário ou membros da campanha.
 
 Não foi feita alteração de política nem de subscription.
+
+
+## CA de personagem vinculado a token NPC — verificação somente de leitura
+
+- O frontend mesa.html usa a sobrecarga de 4 argumentos de public.srd_calcular_ca_personagem_srd para NPCs vinculados à ficha; a sobrecarga encaminha ao helper priv.srd_calcular_ca_alvo_campanha_srd quando o Mestre e o vínculo do token são confirmados.
+- O helper calcula armadura/escudo a partir de srd_character_equipment, Destreza efetiva, condições, tamanho, efeitos e características de classe. A rotina de atualização da mesa também usa essa sobrecarga.
+- Teste de leitura no ambiente atual: personagem 681 (Thorgar), token NPC vinculado na campanha 131. Resultado da função: final_ac=10, armor_bonus=0, dexterity_modifier=0, effect_modifier=0.
+- A linha Armadura de Couro existe no inventário com bônus de CA +2 e máximo de Destreza +6, mas equipado=false. Portanto, CA 10 é coerente com o estado persistido atual; CA 12 seria o resultado esperado depois de equipar a armadura.
+- A consulta simulou apenas o claim de identidade para executar a função em modo somente leitura. Nenhum registro foi alterado.
+- **Reclassificação:** a pendência histórica “CA 10 quando deveria ser 12” não comprova defeito no resolver. O código atual possui o caminho de CA vinculada; a validação visual final deve ser feita depois que o item estiver equipado por uma ação normal de jogo/fixture descartável, sem alterar os dados atuais.
