@@ -4,10 +4,10 @@
 
 ## Resumo
 
-- 100 nomes literais distintos chamados diretamente por lobby.html, ficha.html e mesa.html.
+- 100 nomes literais distintos extraídos diretamente de lobby.html, ficha.html e mesa.html; mais 3 nomes dinâmicos resolvidos em rpcName/request.name, totalizando 103 RPCs chamadas.
 - mesa.html: 87; ficha.html: 12; lobby.html: 10.
 - 0 nomes sem função pública correspondente (esperado: 0).
-- 108 assinaturas públicas correspondentes, incluindo sobrecargas.
+- 111 assinaturas públicas correspondentes, incluindo sobrecargas e as 3 chamadas dinâmicas.
 
 ## RPCs e assinaturas
 
@@ -143,3 +143,14 @@
 | srd_iniciar_ataque_oportunidade_monstro_srd | 5 | overload com p_natural_attack_index |
 
 As chaves e quantidades observadas correspondem às assinaturas existentes. Isso reduz risco de resolução acidental para overload legado, mas ainda não prova compatibilidade de tipos em runtime nem resultado funcional. Os wrappers de ataque iterativo NPC são SECURITY INVOKER e delegam a implementações priv.*; os resolvers de dano e CA relevantes são SECURITY DEFINER com auth.uid e validação de campanha/papel no corpo.
+
+
+## Chamadas dinâmicas resolvidas fora da extração literal
+
+| RPC dinâmica | Página(s) | Assinatura pública | SECURITY DEFINER | Auth EXECUTE | Anon EXECUTE | Contrato |
+|---|---|---|---|---|---|---|
+| equipar_arma_instancia_personagem | ficha, mesa | p_character_id text, p_instance_id uuid, p_hand_slot text, p_equipado boolean | não | sim | não | Wrapper INVOKER → private.equipar_arma_instancia_personagem_impl; helper exige auth.uid e propriedade da ficha ou papel GM |
+| equipar_arma_instancia_npc_vinculado_srd | ficha, mesa | p_campaign_id bigint, p_token_id text, p_instance_id uuid, p_hand_slot text, p_equipado boolean | não | sim | não | Wrapper INVOKER → private.equipar_arma_instancia_npc_vinculado_impl; helper exige auth.uid, GM e vínculo NPC válido |
+| equipar_arma_instancia_token | mesa | p_campaign_id bigint, p_token_id text, p_instance_id uuid, p_hand_slot text, p_equipado boolean | não | sim | não | Wrapper INVOKER → private.equipar_arma_instancia_token_impl; helper exige auth.uid, papel GM e token NPC/monstro |
+
+Esses três nomes são selecionados por dispatch dinâmico conforme o escopo character/linked_npc/token. Os helpers privados são SECURITY DEFINER com search_path pg_catalog,public,pg_temp e guardas de propriedade/papel. A contagem de 103 inclui as 100 chamadas literais mais esses três destinos dinâmicos observados.
