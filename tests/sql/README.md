@@ -45,3 +45,5 @@ These tests run against a disposable PostgreSQL service inside a standard GitHub
 - The current UI also calls srd_resolve_dying_round, which locks character → sheet → campaign → dying condition. The existing campaign/sheet synthetic case covers the lock shape; the function was added to the active sheet-first refactor list. Player initiative registration is campaign → sheet and is not part of this inversion.
 
 - Equipment/weapon inversion reachability is now confirmed in the current UI: mesa.html calls entregar_item_srd, whose quantity upsert fires the inventory trigger (equipment → weapon instance); mesa.html and ficha.html call equipar_arma_instancia_personagem, which locks weapon instance before updating the equipment summary. The existing synthetic equipment/weapon test covers this pair; it does not execute either RPC or trigger.
+
+- Scope qualification: the campaign/sheet deadlock requires both transactions to touch the same character sheet in the same campaign. A concrete reachable overlap is dying-round resolution versus a pending spell whose target is that same dying character; different character sheets do not by themselves form the inverse edge.
