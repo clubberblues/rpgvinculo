@@ -199,3 +199,13 @@ Fixture descartável com campanha em combate, movimento pendente ativo, reação
 5. Testar especificamente `aplicar_dano_token_ataque_srd_v2` (ambas sobrecargas) e `usar_imposicao_maos_mortos_vivos_srd` em distâncias exatamente no limite e uma casa além.
 
 **Critério:** todos os sistemas usam o mesmo helper canônico e o espaço Colossal corresponde a 6 quadrados em cada eixo.
+
+
+## Restrição de custo e harness de testes — decisão 2026-11-09
+
+- Orçamento adicional disponível para infraestrutura: **zero**. Não criar projetos ou branches Supabase pagos, nem contratar serviços externos.
+- O primeiro ambiente automatizado de testes será PostgreSQL efêmero em GitHub Actions, com fixtures SQL mínimas e descarte ao fim do job.
+- Testes de lógica SQL, transações e concorrência podem usar esse PostgreSQL, desde que dependências necessárias sejam modeladas explicitamente.
+- Testes que dependam especificamente de Supabase Auth, RLS/PostgREST, Realtime, Storage ou extensões ainda não reproduzidas devem permanecer como **bloqueados/não verificados**, nunca ser simulados como se fossem E2E Supabase.
+- Nenhum teste mutável será executado na base conectada, em campanhas reais ou em TESTE 2.
+- A prioridade do primeiro harness é a regressão P1: movimento direto sem pré-check, pending global, janela TOCTOU e lock order. A fixture deve provar atomicidade e concorrência antes de qualquer patch no banco real.
