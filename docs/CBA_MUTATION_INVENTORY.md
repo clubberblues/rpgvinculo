@@ -602,3 +602,25 @@ A consulta de callers encontrou, entre outros, `priv.descanso_longo_npc_vinculad
 **Classificação:** inversão estática confirmada nos corpos instalados; deadlock real entre trigger e encerramento não foi reproduzido com RPCs remotas. A fixture nova no GitHub modela o prefixo efeito → ficha → campanha versus campanha → efeito em tabelas descartáveis, sem executar esses corpos.
 
 A trigger `trg_srd_request_confusion_turn_roll` (OID 27271) também é transitiva de UPDATE de campanha: campanha → condição confundida → `campaign_log`. `priv.srd_condition_has_flag` (OID 24984) é helper SQL STABLE de leitura e não adquire locks explícitos. A função `priv.srd_sync_character_vital_condition` atualiza condições e apenas lê campanha por MVCC; essa leitura isolada não deve ser anotada como lock de campanha.
+
+
+### Escritores de condições: separar locks próprios dos locks herdados — 2026-11-09
+
+Varredura adicional por OID das rotinas que escrevem em `srd_campaign_conditions` e/ou `campaign_log` mostrou que nem todo helper adquire lock da campanha. A classificação depende do chamador:
+
+| Rotina | OID | Lock próprio | Contexto |
+|---|---:|---|---|
+| `priv.srd_clear_combat_flatfooted_actor(bigint,jsonb)` | 27083 | UPDATE direto de condição; sem lock de campanha | Helpers de iniciativa/rodada surpresa herdam lock do chamador |
+| `priv.srd_clear_combat_flatfooted_all(bigint)` | 27085 | UPDATE direto de condições; sem lock de campanha | Chamado por `alternar_estado_campanha` (campaign-first) e `end_combat` (antes do UPDATE final da campanha) |
+| `priv.srd_start_combat_flatfooted(bigint,jsonb,integer)` | 27084 | INSERT/UPDATE de condições; sem lock de campanha | Chamado após UPDATE/lock da campanha em início de iniciativa |
+| `priv.srd_restore_surprised_flatfooted(bigint,jsonb,text[])` | 27103 | INSERT de condições; sem lock de campanha | Chamado depois do lock em `srd_configurar_rodada_surpresa_srd` |
+| `priv.srd_sync_character_vital_condition(text,integer,boolean)` | 24908 | UPDATE/INSERT de condições; leitura posterior de campanha sem `FOR UPDATE` | Leitura MVCC não é lock; ordem herdada |
+| `public.srd_remove_campaign_condition(bigint,text,text,text)` | 24806 | UPDATE direto; sem `campaigns FOR UPDATE` | SECURITY DEFINER, EXECUTE authenticated; valida auth e papel GM |
+| `priv.srd_request_confusion_turn_roll()` | 27271 | UPDATE condição + INSERT log; sem lock próprio | Trigger AFTER UPDATE de `campaigns.combat_data`, herda lock da campanha |
+| `priv.log(bigint,text,jsonb)` | 18737 | INSERT em `campaign_log`; sem lock próprio | Helper append-only |
+
+Outros caminhos confirmados: `srd_configurar_rodada_surpresa_srd` (OID 27092) bloqueia campanha antes de restaurar/limpar condições; `iniciar_iniciativa_com_dados` (OID 20577) e `registrar_iniciativa` (OID 20073) bloqueiam campanha antes do helper. Já `end_combat` (OID 19091) atualiza condições e chama `srd_clear_combat_flatfooted_all` antes do primeiro UPDATE explícito em `campaigns`. `alternar_estado_campanha` (OID 20103), por contraste, adquire campaign FOR UPDATE no início.
+
+**Interpretação:** helpers sem lock próprio não são automaticamente defeituosos: vários herdam corretamente o lock do chamador. O risco está em compartilhar helpers entre callers com ordens diferentes e em expor writer público sem serialização do agregado. `public.srd_remove_campaign_condition` precisa de revisão de contrato/uso frontend; a busca textual GitHub não encontrou chamada direta em `mesa.html`, portanto não presumir que seja caminho ativo. Nenhuma permissão foi alterada.
+
+**Próxima verificação:** revisar callers e ACLs dos escritores de condição; decidir se remoção deve bloquear campanha e revalidar pending/estado antes do UPDATE. Não adicionar `FOR UPDATE` sem analisar chamadores, pois isso pode criar nova inversão.
