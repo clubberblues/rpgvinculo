@@ -15,6 +15,10 @@ A documentação de engenharia e o estado contínuo do desenvolvimento estão em
 
 Os documentos novos consolidam e conectam as referências existentes; não substituem os documentos especializados nem significam que todos os estados históricos já foram reconciliados. O estado atual deve ser atualizado com evidências do código, banco e testes.
 
+## Estado consolidado — 08/11/2026
+
+A fotografia atual de arquitetura, catálogo e pendências está nos documentos de engenharia vinculados acima. Em consulta somente de leitura, o Supabase registrou 966 migrations, 76 relações em public (todas com RLS habilitado), 607 magias, 607 efeitos tipados, 220 progressões de classe e 131 características de classe. A cobertura do catálogo tem 15 categorias: 3 complete, 8 in_progress e 4 pending. Catálogo auditado não significa regra automatizada; 582 dos 607 efeitos continuam needs_review. Os snapshots datados nas seções seguintes devem ser lidos como histórico, não como fotografia atual.
+
 ## Arquivos e publicação
 
 Publique `index.html`, `lobby.html`, `ficha.html` e `mesa.html` na raiz do site. O pacote também preserva `lobby_atualizado.html` como arquivo legado (não sincronizado com `lobby.html` no estado atual), `dice.html`, `fundo-livro.png` e as capas `capa-mestre.png`, `capa-jogador.png`, `capa-monstros.png` e `capa-mundo.png`.
