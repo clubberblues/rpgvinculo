@@ -1,0 +1,54 @@
+name: PostgreSQL fixture tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "tests/sql/**"
+      - ".github/workflows/postgres-fixture-tests.yml"
+  pull_request:
+    paths:
+      - "tests/sql/**"
+      - ".github/workflows/postgres-fixture-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: postgres-fixture-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  footprint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: vinculo_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d vinculo_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Run isolated SQL fixture
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/footprint_fixture.sql
+          psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/footprint_test.sql
