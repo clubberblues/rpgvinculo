@@ -86,6 +86,15 @@ if (!dice.includes("if (!aguardarClique) {") || !dice.includes("vinculoRollButto
   reportFailure('dice.html manual-click handshake changed; review before accepting automatic or hidden rolls.');
 }
 
+for (const required of ['registrar_iniciativa_d20', 'iniciar_iniciativa_com_dados', 'registrar_rolagem_ataque_iterativo_srd']) {
+  if (!mesa.includes(required)) reportFailure('mesa.html is missing the manual-roll flow contract: ' + required);
+}
+
+const activePageSource = htmlFiles.map((file) => readFileSync(resolve(root, file), 'utf8')).join('\n');
+if (/\.rpc\s*\(\s*['"`]roll_dice['"`]/.test(activePageSource)) {
+  reportFailure('An active page calls server-side roll_dice; action rolls must come from the user-clicked Dice UI.');
+}
+
 if (failures.length) {
   process.stderr.write('\nStatic validation failed: ' + failures.length + ' issue(s).\n');
   process.exit(1);
