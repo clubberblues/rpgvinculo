@@ -118,3 +118,30 @@ Pendências remanescentes de produto, não de auditoria de fonte: executar a mat
 A validação ponta a ponta em transação isolada encontrou e corrigiu referências legadas ao antigo modelo de tokens. As RPCs `attack`, `start_combat`, `add_monster_to_scene`, `apply_damage`, `apply_heal`, `combat_set_turn`, `set_turn`, `end_combat` e `move_token` agora usam `tokens.col/row`, `srd_character_sheets`, `monster_instances` e `srd_monsters`. A FK de `monster_instances.monster_id` também aponta para `srd_monsters`.
 
 Teste transacional executado com autenticação GM simulada: inclusão temporária de dois monstros SRD, início de combate, iniciativa, ataque, dano, cura e encerramento; todos os registros foram revertidos com ROLLBACK. O teste retornou ataque válido, defesa numérica, atualização de PV/HP e encerramento OK. Quando a fonte não fornece uma expressão de dano segura, o resultado informa dano pendente em vez de inventá-lo.
+
+
+## Fotografia reconciliada do catálogo — 2026-11-08
+
+Consulta somente de leitura ao Supabase conectado. Este adendo atualiza os snapshots anteriores; os registros antigos permanecem como histórico.
+
+### Estado atual observado
+- 7 raças; 11 classes; 59 registros em srd_skills; 110 talentos; 1.021 equipamentos; 607 magias; 607 efeitos; 445 monstros.
+- 220 progressões de classe; 1.400 linhas de progressão de espaços de magia; 131 características de classe.
+- srd_catalog_entry_audit: 1.403 entradas em manual_verified.
+- srd_catalog_coverage: 15 categorias, sendo 3 complete, 8 in_progress e 4 pending.
+
+### Cobertura por categoria
+- **complete:** class_level_progressions (220/220), class_proficiencies (11/11), class_skills (11/11).
+- **in_progress:** class_features (131), classes (11), conditions (38), domain_spells (196), domains (22), races (7), spell_effects (607), spells (607).
+- **pending:** equipment (1.021), feats (110), monsters (445), skills (50 entradas-base).
+
+### Distinções de auditoria
+- As 1.403 entradas manual_verified indicam revisão de catálogo, não conclusão mecânica.
+- As 131 características têm verification_status=verified_srd, mas a cobertura de class_features continua in_progress porque requisitos e execução ainda precisam de implementação/revisão.
+- srd_spell_effects possui 25 entradas verification_status=verified_srd e 582 needs_review. Mesmo as entradas verificadas não devem ser consideradas automaticamente resolvidas sem um resolver e testes próprios.
+- srd_skills possui 59 linhas: 55 verified_srd e 4 excluded. A cobertura de 50 entradas-base corresponde a 46 verified_srd e 4 excluded; nove registros adicionais são especializações de Atuação, não nove perícias independentes adicionais por padrão.
+
+### Consequência
+O motor permanece incompleto em cobertura e automação, mesmo com uma fundação relacional instalada e catálogos auditados. A contagem de entradas não substitui a matriz de regras, os resolvers e os testes de integração.
+
+Nenhuma ficha, personagem, campanha, token ou progresso foi alterado nesta consulta; nenhuma migration foi aplicada.
