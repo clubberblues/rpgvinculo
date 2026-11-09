@@ -253,3 +253,20 @@ Cada página ativa cria sua própria instância do cliente; não há módulo com
 
 ## Versionamento e implantação — controle temporário
 O histórico remoto do projeto conectado contém 966 migrations aplicadas; o repositório main contém 681 arquivos em `supabase/migrations/`. A diferença de 285 exige reconciliação por versão e comparação do schema efetivo antes de considerar o diretório como fonte completa de reconstrução. Até lá, produção não deve ser resetada, reconstruída ou receber deploy automático baseado apenas no diretório atual. O snapshot remoto e a classificação de drift passam a ser entregáveis da Fase 1/2.
+
+
+## Reconciliação exata do histórico de migrations — 2026-11-09
+
+Comparação somente de leitura entre a árvore recursiva de `main` e `supabase_migrations.schema_migrations` no projeto remoto conectado:
+- Arquivos locais em `supabase/migrations/`: **681**.
+- Registros remotos aplicados: **966**.
+- Versões exatamente coincidentes: **640**; nos 640 casos, o nome também coincide.
+- Registros remotos sem arquivo local com a mesma versão: **326**.
+- Arquivos locais sem registro remoto com a mesma versão: **41**.
+- Entre esses dois conjuntos, **41 pares** compartilham o mesmo nome, mas têm timestamps diferentes. Assim, existem **285 nomes remotos sem arquivo local de mesmo nome** e **2 nomes locais sem registro remoto correspondente**.
+
+Distribuição dos 326 registros remotos sem versão local: 2026-11-04: 36; 2026-11-05: 41; 2026-11-08: 232; 2026-11-09: 17. Os 41 arquivos locais sem versão remota são 30 em 2026-11-04 e 11 em 2026-11-05. Os dois nomes locais sem qualquer nome remoto correspondente são `dwarf_barbarian_n1_racial_movement_fixes` e `dwarf_armor_load_classification`.
+
+**Interpretação:** a diferença líquida de 285 não representa, por si só, 285 arquivos simplesmente removidos. Há versões com timestamps reescritos, 285 migrações remotas sem arquivo de mesmo nome e dois arquivos locais sem contraparte remota. Os nomes coincidentes não provam equivalência do SQL; a comparação de conteúdo/efeitos ainda não foi realizada. O histórico remoto registra versão e nome, não o texto SQL original.
+
+**Decisão de segurança:** manter bloqueados reset, deploy automático, squash e reconstrução do banco. Próxima etapa: inventariar o schema remoto efetivo (DDL, funções, constraints, índices, triggers, policies, grants, enums, extensões e schemas), identificar quais objetos correspondem às migrações sem arquivo e elaborar um baseline reproduzível revisado. Nenhum DDL ou dado de jogo foi alterado nesta etapa.
