@@ -244,3 +244,17 @@ Entretanto, a verificação de alcance mudou a classificação:
 - `avancar_turno` e `alternar_estado_campanha` seguem campanha → condição no fluxo frontend atual.
 
 **Classificação:** manter o prefixo condição → campanha de `end_combat` como risco legado/dormant, não como ciclo operacional alcançável por authenticated no estado atual. O cenário sintético foi removido do harness para não atribuir cobertura de produção a uma rota sem alcance demonstrado. Reavaliar se o grant ou os consumidores de `end_combat` forem reativados.
+
+
+## AOO — inversão ativa entre mudança de estado da mesa e resolução de reação (2026-11-09)
+
+A leitura dos corpos remotos e da chamada frontend confirma uma cadeia operacional mais específica que o padrão isolado pending ↔ attack:
+
+- `mesa.html` chama `alternar_estado_campanha` (OID 20103) para sair de combate. A RPC é executável por authenticated, bloqueia `campaigns FOR UPDATE`, depois atualiza `priv.srd_aoo_attacks` para cancelar ataques pendentes e, em seguida, atualiza `priv.srd_aoo_pending_movements`.
+- `mesa.html` também chama `srd_resolver_ataque_oportunidade_srd` (OID 27025), executável por authenticated. A função bloqueia primeiro o ataque AOO, depois a movimentação pendente e depois a campanha.
+- `mesa.html` chama `srd_cancelar_movimento_aoo_pendente_srd` (OID 26966), que delega a `priv.srd_cancelar_movimento_aoo_pendente_impl` (OID 27268). Esse helper bloqueia pending primeiro e depois atualiza os ataques associados.
+- O caminho de encerrar reação também bloqueia pending antes de, quando necessário, bloquear o ataque associado.
+
+**Ciclos ativos demonstrados nos prefixos:** campanha → ataque versus ataque → pending → campanha; e pending → ataque versus ataque → pending. Os entrypoints públicos relevantes têm EXECUTE para authenticated e são chamados pela interface atual. Isso torna AOO uma prioridade operacional, não apenas risco de função legada.
+
+Foi acrescentado ao harness um cenário sintético explícito campanha → ataque versus ataque → pending → campanha. O teste usa tabelas descartáveis e não executa as RPCs Supabase; deadlock real de produção continua não observado. A correção deve unificar o fluxo de cancelamento/encerramento/resolução sob uma ordem única e impedir que a troca de estado da campanha dispute a mesma cadeia em ordem reversa.
