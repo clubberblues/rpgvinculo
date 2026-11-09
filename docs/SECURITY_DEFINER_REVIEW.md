@@ -165,3 +165,8 @@ O problema é de **integridade do payload e autoridade do estado**: a função a
 Como o frontend usa essa RPC em fluxos legítimos durante combate, não revogar EXECUTE nem bloquear a função indiscriminadamente. A correção deve restringir campos mutáveis e dividir a operação em endpoints de metadados, spawn/remoção, estado de token e movimento. A posição e os valores autoritativos de combate devem ser preservados/mesclados no servidor. Casos de regressão 9–15 em `TEST_STRATEGY.md`.
 
 **Classificação:** P1 de integridade/autoridade do estado, confirmado por leitura estática do corpo remoto; exploração por chamada autenticada direta e concorrência ainda não reproduzidas. Não corrigido.
+
+
+## Triagem por padrões — baseline 2026-11-09
+
+Nas 99 funções SECURITY DEFINER públicas com EXECUTE para authenticated, a busca estática encontrou referências diretas a `auth.uid()` em 96, `public.my_role()` em 39, `public.members` em 37, `owner_id` em 14 e `need_gm` em 5 (categorias sobrepostas). Nenhuma ficou sem todos esses padrões. Isso não encerra a revisão: autenticação não é sinônimo de autorização, e as verificações podem ocorrer em helpers transitivos. Priorizar validação de campanha, papel, ownership, alvo e coerência dos parâmetros em cada assinatura.
