@@ -116,7 +116,13 @@ As camadas são limites de responsabilidade, não uma ordem para criar serviços
 Consulte [DATA_MODEL.md](DATA_MODEL.md) para fontes canônicas, relações, estruturas JSONB, compatibilidade e tabelas sem uso atual identificado.
 
 ## Mapa detalhado de integração
-Consulte [INTEGRATION_MAP.md](INTEGRATION_MAP.md) para o inventário inicial das páginas, RPCs, tabelas, Realtime e comunicação com o iframe de dados.
+Consulte [INTEGRATION_MAP.md](INTEGRATION_MAP.md) para o inventário das páginas, fluxos de campanha, ficha, combate, RPCs, tabelas, Realtime e comunicação com o iframe de dados.
+
+## Inventário de contratos RPC
+Consulte [RPC_INVENTORY.md](RPC_INVENTORY.md) para nomes literais/dinâmicos, assinaturas, sobrecargas, grants e guardas estáticas.
+
+## Validação automatizada
+O primeiro workflow estático foi aprovado: [GitHub Actions run #1](https://github.com/clubberblues/rpgvinculo/actions/runs/42546411046). A cobertura atual é sintaxe de scripts inline/compartilhados e contrato de rolagem manual; integração/E2E ainda não.
 
 ## Referências
 - [Arquitetura do motor D&D 3.5](../DND35_RULE_ENGINE_ARCHITECTURE.md)
@@ -147,7 +153,7 @@ As referências .from() são chamadas de acesso a dados/serviços detectadas est
 ### Banco observado
 O snapshot atual mostra 76 relações em public e 7 em priv, com funções distribuídas entre public, priv e private. As tabelas públicas estão todas com RLS habilitado no momento da consulta. A contagem de SECURITY DEFINER é registrada em PROJECT_STATE.md e AUDIT_REGISTER.md; cada função precisa ser avaliada pelo contrato de autorização, não apenas pela classificação.
 
-A varredura também identificou 100 nomes distintos de RPC chamados por mesa.html, ficha.html e lobby.html; uma consulta ao catálogo PostgreSQL encontrou os 100 nomes em public. Isso é apenas correspondência por nome: não valida assinatura, grants, autorização, semântica ou execução.
+A varredura identificou 103 RPCs resolvidas chamadas por mesa.html, ficha.html e lobby.html: 100 nomes literais e 3 destinos dinâmicos de equipamento. Foram mapeadas 111 assinaturas públicas correspondentes, incluindo sobrecargas. Isso é correspondência estática; não valida tipos em runtime, semântica, autorização por papel ou execução ponta a ponta.
 
 index.html e lobby_atualizado.html estão presentes no repositório; dex.html não foi encontrado em main no caminho consultado.
 
@@ -159,3 +165,17 @@ Esses números são fotografia de implementação, não arquitetura final nem cr
 A mesa atual usa o estado CBA em campaigns.cba_data (JSONB), com RPCs específicas para adicionar e mover tokens, alterar PV e atualizar cena. O schema também conserva public.tokens e public.monster_instances, utilizados por RPCs relacionais antigas (movimento, ataque, dano, turno e inclusão de monstros). Os resolvedores de condições e efeitos aceitam alvos encontrados tanto no array JSON CBA quanto no modelo relacional.
 
 Esse desenho deve ser tratado como coexistência/compatibilidade até que todos os consumidores e dados sejam mapeados. Não remover a tabela relacional nem migrar tokens para JSON ou vice-versa sem plano, equivalência, backfill, testes e rollback.
+
+
+## Estado de reconciliação — 2026-11-08
+
+| Ponto a confirmar | Estado atual |
+|---|---|
+| Dependências entre HTML, RPCs e tabelas | Mapa inicial e inventário RPC criados; argumentos de todos os fluxos ainda não conferidos |
+| Fonte canônica dos valores mecânicos | DATA_MODEL documenta principais fontes; XP/ouro e alguns campos JSONB ainda precisam de decisão |
+| Limites SRD/Vínculo | Separação de catálogos e fichas mapeada; não unificar regras |
+| Realtime e Storage | 9 subscriptions mapeadas com filtros e policies; fluxos Storage de mídia/exclusão ainda exigem E2E |
+| Dados JSON/legados | CBA JSONB vs tabelas relacionais, combate JSONB vs combat_state e campaign_log vs roll_log registrados |
+| Testes | CI estático aprovado; Playwright/pglast e integração/E2E não reproduzíveis no repositório |
+| Deploy/publicação | Processo de publicação ainda precisa de confirmação e checklist |
+
