@@ -316,3 +316,17 @@ A reconciliação focal AOO está em [AOO_RECONCILIATION.md](AOO_RECONCILIATION.
 
 ## Achado prioritário de integridade — movimento/AOO
 A auditoria do código remoto e do frontend confirmou que o cliente chama pré-check AOO e depois uma segunda RPC de movimento. A RPC pública de movimento é executável por authenticated e sua implementação privada não reexecuta a detecção de ameaça; portanto, pode ser chamada diretamente para contornar AOO. Também há janela TOCTOU entre as duas transações. O trigger existente só bloqueia o token que já tem pending ativo. Achado P1 documentado em AOO_RECONCILIATION.md e teste isolado especificado em TEST_STRATEGY.md. Nenhuma função ou dado foi alterado.
+
+
+## Caso comprovado de drift — movimento e economia de ações — 2026-11-09
+
+Os arquivos locais `20261108134918_player_movement_action_economy.sql` e `20261108135111_block_movement_when_no_actions.sql` usam `pg_get_functiondef` e patch textual para alterar diretamente `public.mover_token_player_cba` e `public.mover_token_gm_cba_srd`. O SQL local procura declarações/blocos internos dessas funções públicas.
+
+No schema remoto atual, ambas as funções públicas são wrappers SQL SECURITY INVOKER de poucas linhas, delegando a implementação para `priv.mover_token_player_cba_impl` e `priv.mover_token_gm_cba_srd_impl` (SECURITY DEFINER). As implementações atuais têm os controles de economia de ações e movimento, mas estão em outro schema/função.
+
+O histórico remoto registra as migrations posteriores que efetuaram essa mudança:
+- `20261108194444_wrap_gm_token_movement_rpc_as_invoker`
+- `20261108195245_wrap_player_attack_and_movement_rpcs_as_invoker`
+- `20261108214901_secure_character_movement_speed_rpc_access`
+
+Nenhuma dessas três tem arquivo local de mesmo nome. Portanto, o conjunto local não representa a transformação de arquitetura remota. Os arquivos locais de economia de ações não devem ser reaplicados sobre o schema remoto atual: os pontos de patch textual já não existem nos wrappers. Isso é evidência concreta de que igualar apenas o número ou o nome das migrations não restaura a arquitetura. Não foi feita alteração no banco.
