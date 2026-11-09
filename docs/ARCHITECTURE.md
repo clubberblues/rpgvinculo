@@ -330,3 +330,7 @@ Total exportado: 1.216.018 caracteres de definições (sem cabeçalhos). Isso fe
 ## Storage e mídia — snapshot de policies
 
 O inventário de buckets, allowlists MIME, policies e funções de caminho está em [STORAGE_POLICIES_SNAPSHOT.md](STORAGE_POLICIES_SNAPSHOT.md). Não foram lidos objetos de usuários nem alteradas policies/buckets.
+
+
+## Invariante de geometria de tokens
+Toda regra de ocupação, colisão, distância, alcance, ataque e AOO deve usar um único cálculo canônico de footprint (`priv.srd_token_grid_footprint`). Para Colossal, o footprint é 6×6 (30 ft); não manter CASEs locais divergentes nas RPCs. A auditoria encontrou implementações que usam 5×5 em movimento/ataque enquanto o helper e o detector AOO usam 6×6.
