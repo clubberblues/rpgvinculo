@@ -62,6 +62,21 @@ A revisão dos entrypoints usados pela interface distinguiu ausência de seriali
 - A correção candidata é adquirir campaign FOR UPDATE para personagem vinculado antes de decidir se a ação é exigida, revalidar state/ownership/vínculo e então bloquear personagem/ficha/equipamento na ordem estabelecida. O caminho de poção já segue campanha-first quando a leitura inicial encontra COMBATE, mas o branch fora de combate não é serializado.
 - `public.descanso_longo_personagem_srd` (OID 24366) tem o mesmo padrão de leitura de estado não bloqueante antes de alterar PV, magias, recursos e condições; já está detalhado acima. Tratar ambos como corridas de regra/estado distintas dos ciclos de deadlock.
 
+
+### Revisão dos triggers que cruzam campanha, condição, efeito e ficha (2026-11-09)
+
+A inspeção de `pg_trigger`, `pg_get_triggerdef` e corpos dos handlers ativos acrescentou estas qualificações:
+
+- `trg_expire_barbarian_rage_on_round_change` (AFTER UPDATE de `campaigns.combat_data`, OID 26292) executa enquanto a linha de campanha já está bloqueada. Bloqueia efeitos de Fúria em `effect_instance_id` crescente e chama os encerradores; não cria uma entrada effect-first independente.
+- `trg_srd_request_confusion_turn_roll` (AFTER UPDATE de `campaigns.combat_data`, OID 27271) bloqueia a condição Confuso correspondente e insere `campaign_log`. Como roda após o UPDATE da campanha, a ordem efetiva é campaign → condition → log.
+- `trg_srd_guard_pending_aoo_movement` (BEFORE UPDATE de `campaigns.cba_data`, OID 26962) consulta pending sem `FOR UPDATE`; é uma guarda de consistência, não uma aresta de lock pending-first.
+- `trg_srd_validate_aoo_pending_movement_preview` (AFTER INSERT de pending AOO, OID 27033) reentra no movimento dentro de subtransação que termina em exceção sentinela e rollback. Os writers de pending já adquirem campaign antes do INSERT, portanto a prévia herda o lock campaign-first.
+- `trg_srd_aoo_require_blind_concealment_roll` (OID 27248) e `trg_srd_guard_aoo_cannot_attack` (OID 27241) consultam condições por helpers de leitura sem `FOR UPDATE`; não acrescentam condição → ataque como lock de linha.
+- `trg_srd_toughness_hp_delta` (BEFORE UPDATE de `srd_character_sheets`, OID 26347) ajusta PV na própria linha `NEW`; não acessa campanha, recursos ou condições.
+- Não foram encontrados triggers ativos nas tabelas `srd_campaign_conditions`, `srd_campaign_effects`, `srd_pending_spell_resolutions` ou `srd_character_feature_resources` no snapshot consultado. Isso reduz a superfície de locks implícitos, mas deve ser revalidado junto com qualquer migration futura.
+
+**Resultado:** nenhum novo ciclo autônomo foi acrescentado por esses triggers. A ordem campanha → efeitos/condições/log já descrita continua sendo herdada dos writers de campanha; os problemas remanescentes são os entrypoints que chegam a esses recursos em ordem diferente ou não participam da serialização.
+
 ## 3. Evidências que motivam a proposta
 
 ### Ciclos já identificados nos corpos remotos
