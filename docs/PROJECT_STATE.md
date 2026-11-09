@@ -207,3 +207,5 @@ Portanto, o teste de CA 10 executado para Thorgar (681) **não valida nem invali
 - Cruzada a chamada de criação D&D 3.5 com a assinatura de 14 argumentos de finalizar_criacao_personagem_srd. O corpo é transacional e delega validações de personagem, idiomas, talentos bônus, domínios, grimório e equipamento inicial; não tem request_id explícito.
 - Leitura dos corpos de salvar_grimorio_srd, salvar_dominios_personagem_srd e descanso_longo_personagem_srd confirmou validações server-side e locks na ficha; descanso aplica intervalo de 8 horas. Fúria tem consultas e comandos separados para personagem/NPC; retry/concorrência não foram testados.
 - Nenhuma ação mutável foi executada.
+
+- Escopo do legado Vínculo refinado por consulta agregada: 5 personagens existentes, 5 com ficha SRD, 0 sem ficha SRD e 0 com ficha Vínculo; o lobby atual inicia criação com ruleset=dnd35. A divergência em ficha.html é rota legada latente, sem impacto demonstrado no fluxo ativo atual.
