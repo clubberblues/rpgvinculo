@@ -216,3 +216,8 @@ Unificar detecção AOO e persistência de movimento na mesma RPC/transação. O
 ## Segurança — triagem SECURITY DEFINER — 2026-11-09
 
 O advisor sinaliza 99 funções públicas SECURITY DEFINER executáveis por authenticated. A triagem está em [SECURITY_DEFINER_REVIEW.md](SECURITY_DEFINER_REVIEW.md): 0 EXECUTE para anon, 99/99 com search_path explícito e pg_temp, e padrões diretos/delegados de autenticação/autorização presentes nos corpos. A revisão semântica de autorização segue pendente; não revogar nem converter em lote.
+
+
+## CI e testes — diagnóstico atual — 2026-11-09
+
+Quatro workflows atuais cobrem sintaxe JavaScript, invariantes do dado manual e smoke test HTTP de GitHub Pages, mas não há validação SQL, pgTAP, RPC autenticado, RLS ou concorrência. O desenho atual/alvo e a sequência de implantação estão em [CI_TEST_ARCHITECTURE.md](CI_TEST_ARCHITECTURE.md). Consolidar workflows somente depois de preservar os gatilhos/cobertura existentes.
