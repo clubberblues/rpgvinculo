@@ -83,3 +83,10 @@ Caminho de testes adotado:
 O PostgreSQL efêmero é adequado para testar lógica transacional/locks e fixtures controladas, mas não prova compatibilidade integral com Supabase Auth, PostgREST, Realtime, Storage ou configuração de projeto. Os testes devem declarar exatamente o que simulam.
 
 A sequência não depende de uma nova branch Supabase: primeiro montar fixtures mínimas para a regressão P1 AOO; depois expandir gradualmente o harness conforme cada dependência for compreendida. Qualquer operação destrutiva no banco conectado permanece proibida durante testes.
+
+
+### Confirmação de custo do runner — 2026-11-09
+
+O repositório `clubberblues/rpgvinculo` foi confirmado como **público**. A documentação oficial do GitHub informa que o uso de runners GitHub-hosted padrão em repositórios públicos é gratuito; runners maiores são cobrados. Portanto, o harness deve usar somente `ubuntu-latest` padrão e um serviço PostgreSQL efêmero no job, sem larger runners, Codespaces, GitHub Sandbox, serviços gerenciados adicionais ou runners self-hosted pagos. Referência: [GitHub Actions billing](https://docs.github.com/en/billing/concepts/product-billing/github-actions).
+
+O workflow deve ter limites de tempo e não publicar artifacts com dados de campanha. As fixtures serão sintéticas e descartadas ao fim do job.
