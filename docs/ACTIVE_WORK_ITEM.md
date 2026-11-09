@@ -125,3 +125,25 @@ Portanto, o teste de CA 10 executado para Thorgar (681) **não valida nem invali
 
 ## Atualização de prioridade — 2026-11-09
 Esta pauta deixou de ser a tarefa ativa imediata. O diagnóstico identificou Thorgar (681) e Thunga Mestre (682) como registros distintos; não inferir que um substitui o outro. A Fase 1 — arquitetura e contratos — tem precedência até fechar os contratos e preparar testes isolados. Nenhum dado de jogo foi alterado.
+
+
+## Trabalho ativo — reconciliação de migrations e baseline remoto — 2026-11-09
+
+**Prioridade atual:** tornar o estado remoto do Supabase reproduzível antes de qualquer refatoração funcional ou teste mutável.
+
+### Concluído nesta etapa
+- Comparação exata de versões local/remota: 681 arquivos locais, 966 registros remotos, 640 versões coincidentes, 326 registros remotos sem versão local, 41 arquivos locais sem versão remota; 41 registros remotos compartilham nomes com arquivos locais (39 nomes únicos) e dois nomes remotos estão duplicados.
+- Snapshot descritivo remoto criado em [REMOTE_SCHEMA_SNAPSHOT.md](REMOTE_SCHEMA_SNAPSHOT.md): 83 relações, 229 índices, 378 constraints, 114 policies, 14 triggers, 327 funções/procedures com fingerprints e ACLs/owners/default privileges.
+- RLS desabilitado em priv.throttle e priv.srd_aoo_reaction_ledger; sem privilégios diretos para anon/authenticated, mas com uso por funções SECURITY DEFINER.
+- Default privileges de authenticated em priv são permissivos para futuras tabelas, sequences e funções; mudança proposta, não aplicada.
+- Ausência de supabase/config.toml e de branch Supabase de desenvolvimento; apenas branch main está disponível. Nenhum ambiente descartável foi criado.
+- Documentação atualizada em PROJECT_STATE, ROADMAP, ARCHITECTURE, AUDIT_REGISTER e snapshot.
+
+### Próximas ações obrigatórias
+1. Exportar e revisar os corpos SQL das funções críticas em lotes, começando por SECURITY DEFINER, wrappers INVOKER e rotinas com efeitos em combate/progressão.
+2. Comparar constraints, índices, policies, grants, triggers e funções com as migrations locais, classificando cada divergência por objeto e efeito.
+3. Confirmar no Dashboard a lista de Exposed schemas (especialmente priv/private).
+4. Preparar estratégia de ambiente descartável; não criar branch Supabase sem conhecer/cumprir eventual custo.
+5. Somente após a reconciliação, gerar baseline reproduzível e CI de drift; não resetar, deployar ou squashear o histórico remoto.
+
+**Restrições:** somente leitura nesta fase; não alterar dados de jogo, ACLs, policies, funções, schema ou comportamento de produção. Não executar testes mutáveis em TESTE 2; Thorgar (681) e Thunga Mestre (682) são registros distintos.
