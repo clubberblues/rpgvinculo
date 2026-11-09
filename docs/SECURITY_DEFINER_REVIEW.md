@@ -134,3 +134,10 @@ A triagem encontrou guardas diretas ou delegadas nos 99 corpos. Isto **não é a
 
 - Security: 99 SECURITY DEFINER executáveis por authenticated (WARN); 7 tabelas com RLS habilitado sem policy (INFO; acesso direto negado por padrão); proteção contra senhas vazadas desabilitada (WARN).
 - Performance: 52 índices sem uso registrado (INFO). Não remover automaticamente; parte pode ser recente, preventiva para FKs ou ainda não exercitada, incluindo índices do subsistema AOO.
+
+
+## Verificação adicional das duas funções delegadas — 2026-11-09
+
+A triagem de padrões não encontrou `auth.uid()`, `my_role()` ou consulta direta a `members` no corpo de `gm_get_code` e `media_gc`. A abertura dos corpos confirmou que ambas chamam `priv.need_gm(cid)`. Essa helper chama `public.my_role(cid)` e exige papel GM; `priv.need_gm` não concede EXECUTE direto a authenticated ou anon. `can_read_media` delega a verificação para `public.my_role`.
+
+A consulta agregada confirmou para as 99 funções: 0 EXECUTE para anon, 99 EXECUTE para authenticated, 0 sem search_path explícito e 0 sem `pg_temp` no search_path. Isso fecha apenas a triagem de exposição/ambiente de execução; não substitui a validação semântica de cada parâmetro e recurso.
