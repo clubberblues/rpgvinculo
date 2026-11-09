@@ -144,4 +144,15 @@ As referências .from() são chamadas de acesso a dados/serviços detectadas est
 ### Banco observado
 O snapshot atual mostra 76 relações em public e 7 em priv, com funções distribuídas entre public, priv e private. As tabelas públicas estão todas com RLS habilitado no momento da consulta. A contagem de SECURITY DEFINER é registrada em PROJECT_STATE.md e AUDIT_REGISTER.md; cada função precisa ser avaliada pelo contrato de autorização, não apenas pela classificação.
 
-A varredura também identificou 100 nomes distintos de RPC chamados por mesa.html, ficha.html e lobby.html; uma consulta ao catálogo PostgreSQL encontrou os 100 nomes em public. Isso é apenas correspondência por nome: não valida assinatura, grants, autorização, semântica ou execução.\n\nindex.html e lobby_atualizado.html estão presentes no repositório; dex.html não foi encontrado em main no caminho consultado.\n\nEsses números são fotografia de implementação, não arquitetura final nem critério de qualidade isolado.
+A varredura também identificou 100 nomes distintos de RPC chamados por mesa.html, ficha.html e lobby.html; uma consulta ao catálogo PostgreSQL encontrou os 100 nomes em public. Isso é apenas correspondência por nome: não valida assinatura, grants, autorização, semântica ou execução.
+
+index.html e lobby_atualizado.html estão presentes no repositório; dex.html não foi encontrado em main no caminho consultado.
+
+Esses números são fotografia de implementação, não arquitetura final nem critério de qualidade isolado.
+
+
+## Persistência CBA e compatibilidade relacional
+
+A mesa atual usa o estado CBA em campaigns.cba_data (JSONB), com RPCs específicas para adicionar e mover tokens, alterar PV e atualizar cena. O schema também conserva public.tokens e public.monster_instances, utilizados por RPCs relacionais antigas (movimento, ataque, dano, turno e inclusão de monstros). Os resolvedores de condições e efeitos aceitam alvos encontrados tanto no array JSON CBA quanto no modelo relacional.
+
+Esse desenho deve ser tratado como coexistência/compatibilidade até que todos os consumidores e dados sejam mapeados. Não remover a tabela relacional nem migrar tokens para JSON ou vice-versa sem plano, equivalência, backfill, testes e rollback.
