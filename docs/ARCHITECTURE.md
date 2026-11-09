@@ -282,3 +282,8 @@ Consulta somente de leitura ao catálogo PostgreSQL, restrita às relações/fun
 - Privilégio USAGE: anon não tem USAGE em priv/private; authenticated tem USAGE em ambos. Isso não comprova se os schemas estão expostos no PostgREST; a configuração de Exposed schemas continua pendente de confirmação no Dashboard.
 
 Este é um inventário estrutural agregado, não um snapshot DDL nem uma revisão semântica. As 378 constraints, 14 triggers, 114 policies e 327 funções ainda precisam ser exportadas/classificadas por objeto e comparadas com os arquivos versionados. Não houve alteração de schema, ACL, policies, triggers ou dados.
+
+
+## Snapshot estrutural remoto
+
+O inventário descritivo de relações/colunas, índices e assinaturas/fingerprints das funções foi registrado em [REMOTE_SCHEMA_SNAPSHOT.md](REMOTE_SCHEMA_SNAPSHOT.md). Ele é uma referência de comparação, não um dump restaurável nem uma migration. Os detalhes de ACL, policies, triggers e corpos SQL seguem em revisão.
