@@ -32,3 +32,16 @@ No histórico recente de Actions, a publicação do GitHub Pages para o commit `
 6. Reexecutar advisors após correções de segurança futuras e comparar o baseline.
 
 **Limite da evidência:** os advisors são um sinalizador estático/estatístico, não um pentest nem prova de exploração. A ausência de alertas também não comprova segurança ponta a ponta.
+
+
+## Triagem estática adicional das 99 funções SECURITY DEFINER
+
+Consulta de padrões no corpo das 99 funções públicas executáveis por `authenticated`:
+- 96 referenciam diretamente `auth.uid()`;
+- 39 referenciam `public.my_role()`;
+- 37 consultam `public.members`;
+- 14 referenciam `owner_id`;
+- 5 usam o helper `need_gm`;
+- nenhuma ficou sem qualquer referência aos padrões de autenticação/papel/propriedade pesquisados.
+
+Essas categorias se sobrepõem. O resultado reduz a hipótese de funções inteiramente sem guarda explícita, mas **não prova autorização correta**: `auth.uid()` pode significar apenas sessão autenticada; a validação de ownership/campanha/role pode ocorrer em helpers transitivos; funções podem validar o ator errado ou aceitar alvo arbitrário. Revisão semântica por função continua obrigatória.
