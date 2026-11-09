@@ -154,3 +154,9 @@ As chaves e quantidades observadas correspondem às assinaturas existentes. Isso
 | equipar_arma_instancia_token | mesa | p_campaign_id bigint, p_token_id text, p_instance_id uuid, p_hand_slot text, p_equipado boolean | não | sim | não | Wrapper INVOKER → private.equipar_arma_instancia_token_impl; helper exige auth.uid, papel GM e token NPC/monstro |
 
 Esses três nomes são selecionados por dispatch dinâmico conforme o escopo character/linked_npc/token. Os helpers privados são SECURITY DEFINER com search_path pg_catalog,public,pg_temp e guardas de propriedade/papel. A contagem de 103 inclui as 100 chamadas literais mais esses três destinos dinâmicos observados.
+
+
+## Verificação adicional de nomes literais — 2026-11-09
+Varredura estática do HEAD atual em `mesa.html`, `ficha.html` e `lobby.html` extraiu 100 nomes literais distintos de chamadas `.rpc()`: 87 na mesa, 12 na ficha e 10 no lobby (há sobreposição entre páginas). Consulta somente de leitura ao catálogo `pg_proc` confirmou correspondência de **100/100 nomes no schema public**, sem nome literal ausente.
+
+**Limite da evidência:** a correspondência por nome não comprova correspondência de argumentos/tipos, seleção correta de sobrecarga, autorização, semântica ou comportamento em runtime. Os 3 destinos dinâmicos anteriormente mapeados permanecem uma categoria separada e exigem validação de cada valor possível.
