@@ -68,3 +68,36 @@ Essas correções não devem ser refeitas automaticamente. Antes, conferir os co
 Uma auditoria só deve ser reaberta quando código/schema relacionado mudou; teste falhou; documentação diverge do estado real; há evidência concreta de risco; ou a auditoria anterior não cobriu o caso necessário.
 
 Ao reabrir, delimitar o delta em vez de repetir todo o escopo.
+
+
+## Fotografia reconciliada do ambiente — 2026-11-08
+
+Consulta somente de leitura ao Supabase conectado e varredura estática do HEAD do GitHub:
+
+### Banco e funções
+- Histórico de migrations: 966 registros (mínima 20261031160944; máxima 20261109005941).
+- Relações: public 76; priv 7.
+- RLS habilitado: public 76/76; priv 5/7.
+- Funções: public 225, sendo 150 SECURITY DEFINER; priv 94, sendo 88 SECURITY DEFINER; private 8, sendo 8 SECURITY DEFINER.
+- A fotografia não concede conclusão automática de segurança. Grants efetivos, RLS, search_path, validação interna e exposição por API continuam sendo os critérios de cada função/tabela.
+
+### Catálogos e cobertura
+- SRD: 7 raças; 11 classes; 59 registros de perícias; 110 talentos; 1.021 equipamentos; 607 magias; 607 efeitos; 445 monstros; 220 progressões de classe; 1.400 progressões de slots; 131 características de classe.
+- Vínculo: 16 classes; 160 habilidades; 95 magias; 191 itens; 72 talentos.
+- srd_catalog_entry_audit: 1.403/1.403 linhas em manual_verified.
+- srd_catalog_coverage: 15 categorias; 3 complete, 8 in_progress, 4 pending.
+- srd_spell_effects: 25 verified_srd e 582 needs_review.
+- srd_class_level_features: 131 verified_srd.
+- srd_skills: 55 verified_srd e 4 excluded; srd_catalog_coverage.skills ainda registra actual_entries=50. Reconciliar a diferença de 9 registros entre o catálogo (59) e a cobertura (50), verificando critérios de inclusão/exclusão e possíveis duplicatas.
+
+### Distinção importante
+A auditoria manual de entradas, a verificação da fonte SRD e a implementação mecânica são estados diferentes. O status manual_verified de 1.403 entradas não significa que todas as regras estejam implementadas. A própria tabela de cobertura registra lacunas mecânicas em características de classe, condições, domínios, magias e efeitos.
+
+### Varredura estática da interface
+- mesa.html: 87 RPCs distintas, 27 referências .from(), 9 channel()/on().
+- ficha.html: 12 RPCs distintas, 31 referências .from().
+- lobby.html: 10 RPCs distintas, 10 referências .from().
+- dice.html: nenhuma chamada .rpc() ou .from() detectada.
+- Os quatro arquivos são páginas grandes com scripts inline; a varredura não representa grafo completo de chamadas nem teste de execução.
+
+Nenhum dado de personagem, ficha, campanha, token ou progresso foi modificado nesta fotografia. Nenhuma migration foi aplicada nesta etapa.
