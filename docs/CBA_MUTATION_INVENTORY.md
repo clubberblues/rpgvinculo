@@ -606,3 +606,17 @@ Outros caminhos confirmados: `srd_configurar_rodada_surpresa_srd` (OID 27092) bl
 **Interpretação:** helpers sem lock próprio não são automaticamente defeituosos: vários herdam corretamente o lock do chamador. O risco está em compartilhar helpers entre callers com ordens diferentes e em expor writer público sem serialização do agregado. `public.srd_remove_campaign_condition` precisa de revisão de contrato/uso frontend; a busca textual GitHub não encontrou chamada direta em `mesa.html`, portanto não presumir que seja caminho ativo. Nenhuma permissão foi alterada.
 
 **Próxima verificação:** revisar callers e ACLs dos escritores de condição; decidir se remoção deve bloquear campanha e revalidar pending/estado antes do UPDATE. Não adicionar `FOR UPDATE` sem analisar chamadores, pois isso pode criar nova inversão.
+
+
+### Snapshot completo do CBA — confirmação do risco de lost update no frontend (2026-11-09)
+
+A leitura integral de public.salvar_cena_cba(bigint,jsonb) e do fluxo de publicação em mesa.html confirma que o lock da campanha não elimina snapshots obsoletos:
+
+- O RPC autentica o Mestre, adquire campaigns FOR UPDATE, lê o cba_data atual e substitui a cena usando p_scene como base. A união de tokens preserva tokens que existem no banco mas não vieram no snapshot; para tokens com o mesmo id/key, porém, prevalece integralmente a versão enviada pelo cliente.
+- Campos da cena fora de tokens vêm diretamente de p_scene; não há comparação de versão, timestamp, hash/base revision ou merge por campo.
+- mesa.html mantém cbaWriteQueue = Promise.resolve() e encadeia gravarCBAnaCampanha apenas dentro daquela instância da página. A função clona o objeto recebido antes de enfileirar e envia esse snapshot para sb.rpc('salvar_cena_cba', ...). Isso ordena writes de uma aba/cliente, mas não coordena duas abas, dois Mestres ou RPCs de outros fluxos.
+- Foram encontrados nove pontos de chamada do wrapper no arquivo atual. Eles serializam estado local derivado de cbaPublishedState, scene ou do estado publicado; o enfileiramento não atualiza/reconcilia o snapshot já capturado com o último estado remoto antes de cada RPC.
+
+**Cenário concreto:** dois clientes carregam a mesma revisão. Cliente A altera posição de um token e salva. Cliente B, ainda com o snapshot antigo, altera retrato ou metadado desse mesmo token e salva depois. O lock serializa as duas transações, mas a segunda grava a versão antiga do token inteiro, podendo restaurar a posição anterior. O mesmo vale para campos de cena fora de tokens. A preservação de tokens ausentes não protege campos de tokens que aparecem em ambos os snapshots.
+
+**Classificação:** risco de lost update confirmado pela implementação, distinto de deadlock. Não foi reproduzido em duas sessões contra produção e não há evidência de que o sistema atualmente faça reconciliação otimista. A correção deve ser desenhada separadamente do protocolo de locks: preferir RPCs de mutação granular para ações frequentes (posição/PV/metadados) ou controle otimista por revisão (expected_version + incremento atômico), com merge explícito e tratamento de conflito no frontend. Não substituir silenciosamente por merge JSONB genérico, pois arrays de tokens exigem semântica por identidade e operações de exclusão precisam ser explícitas.
