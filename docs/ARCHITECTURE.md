@@ -294,3 +294,8 @@ A comparação também identificou dois nomes de migration repetidos em versões
 
 
 O mapeamento exato de versões locais/remotas e todos os registros divergentes está em [MIGRATION_RECONCILIATION.md](MIGRATION_RECONCILIATION.md); o snapshot de objetos atuais está em [REMOTE_SCHEMA_SNAPSHOT.md](REMOTE_SCHEMA_SNAPSHOT.md).
+
+
+## Exportação de definições atuais
+
+As definições remotas atuais dos subsistemas AOO e movimento/turnos foram preservadas em [REMOTE_AOO_FUNCTIONS.sql.md](REMOTE_AOO_FUNCTIONS.sql.md) e [REMOTE_TURN_MOVEMENT_FUNCTIONS.md](REMOTE_TURN_MOVEMENT_FUNCTIONS.md). A reconciliação de histórico AOO está em [AOO_RECONCILIATION.md](AOO_RECONCILIATION.md). Estes documentos preservam o estado observável atual e fingerprints, mas não substituem o SQL original das migrations nem são um dump restaurável.
