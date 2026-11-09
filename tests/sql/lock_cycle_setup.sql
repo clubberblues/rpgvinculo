@@ -1,4 +1,4 @@
--- Disposable model of the observed campaign/effect lock inversion.
+-- Disposable rows for documented lock-order concurrency patterns.
 -- This is a concurrency-pattern regression, not an execution of production RPCs.
 DROP SCHEMA IF EXISTS lock_fixture CASCADE;
 CREATE SCHEMA lock_fixture;
