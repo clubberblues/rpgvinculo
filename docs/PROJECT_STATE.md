@@ -168,6 +168,7 @@ Portanto, o teste de CA 10 executado para Thorgar (681) **não valida nem invali
 
 ## Refatoração em revisão
 - Branch GitHub: `refactor/shared-supabase-client`.
+- PR draft #73: https://github.com/clubberblues/rpgvinculo/pull/73 (CI em execução; não mesclado).
 - Centraliza a inicialização do cliente Supabase em `assets/js/core/supabase-client.js` para index/lobby/ficha/mesa.
 - Mantém uma instância por documento e os defaults do SDK; não altera RPCs, banco ou dados de jogo.
 - CI ampliado para validar a centralização. Aguardar PR/CI antes de considerar concluído.
