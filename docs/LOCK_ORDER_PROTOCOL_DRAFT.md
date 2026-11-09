@@ -394,3 +394,14 @@ Esse é outro caminho operacional personagem → ficha → campanha. Ele concorr
 O registro de iniciativa, public.registrar_iniciativa_d20 (OID 25178), faz o inverso seguro nesse trecho: campanha FOR UPDATE (35) → ficha FOR UPDATE (51). Não deve ser agrupado com a função de estabilização.
 
 **Prioridade:** incluir srd_resolve_dying_round no grupo de RPCs que precisam começar por campanha e revalidar personagem/ficha/estado Morrendo após adquirir locks. A fixture campaign ↔ sheet já representa o padrão de lock, mas não executa a semântica da estabilização.
+
+
+## Telemetria observada e versão PostgreSQL (2026-11-09)
+
+Consulta read-only a pg_stat_database no banco atual retornou PostgreSQL 17.6, stats_reset em 2026-08-25 20:33:23 UTC, deadlocks=0 e conflicts=0. Uma amostra simultânea de pg_stat_activity encontrou 0 sessões aguardando lock e 0 sessões bloqueadas (6 sessões ativas no instante da consulta).
+
+**Interpretação:** não há deadlocks contabilizados desde o último reset de estatísticas, nem espera por lock no instante observado. Isso não invalida os ciclos estáticos identificados: eles são caminhos possíveis que ainda não se manifestaram como deadlock nesse intervalo. A contagem não identifica RPCs nem inclui períodos anteriores ao reset.
+
+O projeto está em PostgreSQL 17.6. O changelog Supabase publicou em 25/09/2026 a atualização PostgreSQL 15.19/17.11 com correções de 44 CVEs e possíveis ações para ltree, pgcrypto, btree_gist e operadores customizados. O projeto tem pgcrypto 1.3 instalado, não tem ltree nem btree_gist instalados, e a varredura de funções public/priv/private não encontrou uso de pgcrypto nas rotinas da aplicação. O schema vault usa helpers de criptografia próprios. Antes de qualquer upgrade gerenciado, revisar a orientação atual do Supabase e confirmar se há dados criptografados fora das rotinas SQL inspecionadas; nenhuma atualização foi solicitada ou executada.
+
+Referência: https://supabase.com/changelog
