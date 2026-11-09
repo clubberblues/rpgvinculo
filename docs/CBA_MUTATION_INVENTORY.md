@@ -395,3 +395,26 @@ Consulta read-only dos corpos atuais de `public.usar_imposicao_maos_mortos_vivos
 4. Repetição concorrente das operações acima com duas sessões PostgreSQL efêmeras, usando fixtures isoladas e identificando os cenários condicionais; não executar concorrência de teste no banco remoto.
 
 **Limite:** estes são caminhos de lock diretamente confirmados nos corpos instalados. As inversões são riscos estruturais condicionais, não incidentes reproduzidos. Não foi construído ainda um grafo transitivo completo por OID/assinatura e triggers. Nenhuma função, ACL, policy, migration ou dado remoto foi alterado.
+
+
+### Ciclo de lock mais específico: início e resolução de ataque iterativo
+
+A leitura dos corpos completos de `public.registrar_rolagem_ataque_iterativo_srd` e `public.resolver_ataque_iterativo_srd` refinou o risco de equipamento/ataque:
+
+- `priv.iniciar_sequencia_ataque_iterativo_srd_7_impl` mantém lock `FOR UPDATE` na instância de arma antes de delegar ao início da sequência, que bloqueia a campanha.
+- `public.resolver_ataque_iterativo_srd` bloqueia a campanha primeiro, depois a tentativa, depois a sequência; mais adiante adquire `FOR SHARE` na instância de arma para validar que continua equipada.
+- Se uma nova chamada de início (ou repetição concorrente) mantiver a mesma instância bloqueada enquanto espera a campanha, e a resolução da sequência anterior mantiver a campanha enquanto espera `FOR SHARE` nessa instância, o ciclo é direto: **instância de arma → campanha → instância de arma**.
+- O corpo do início verifica a existência de sequência ativa somente depois de adquirir o lock da campanha. Portanto, a validação de duplicidade não elimina a janela de espera circular anterior.
+- `public.registrar_rolagem_ataque_iterativo_srd` é campanha → sequência → tentativa pendente; `public.resolver_ataque_iterativo_srd` é campanha → tentativa → sequência → instância de arma. Os endpoints de resolução são consistentes entre si no prefixo campanha, mas o wrapper 7 antecipa o lock da arma.
+
+**Classificação:** inversão estrutural de lock confirmada nos corpos remotos, com cenário concorrente plausível sobre a mesma instância e campanha. Ainda não reproduzida com duas sessões. Teste obrigatório: resolução de uma tentativa já registrada concorrente com nova solicitação de sequência usando a mesma instância; verificar que PostgreSQL não encontra ciclo após a correção futura. Não reproduzir no Supabase de produção.
+
+### Consistência observada no restante do motor iterativo
+
+- `public.registrar_rolagem_ataque_iterativo_srd`: campanha → sequência → tentativa pendente; cria a tentativa e avança o índice.
+- `public.resolver_ataque_iterativo_srd`: campanha → tentativa → sequência → instância de arma (`FOR SHARE`); atualiza resolução e pode encerrar sequência.
+- `public.aplicar_dano_ataque_iterativo_srd` (duas sobrecargas) e `priv.npc_aplicar_dano_ataque_iterativo_impl`: campanha → tentativa → sequência; o caminho de alvo personagem também bloqueia ficha e sincroniza condições/PV.
+- `priv.npc_confirmar_critico_ataque_iterativo_impl` e `public.confirmar_critico_ataque_iterativo_srd` começam pela campanha e depois bloqueiam tentativa/sequência.
+- `public.consultar_sequencia_ataque_iterativo_pendente_srd` bloqueia a sequência, mas não tenta adquirir depois campanha ou outra linha bloqueante no corpo observado; por si só, não fecha um ciclo com a campanha.
+
+O achado reforça que a ordem do wrapper 7 deve ser corrigida em conjunto com a resolução, não isoladamente. Não alterar remoto antes da reconciliação de migrations e dos testes concorrentes.
