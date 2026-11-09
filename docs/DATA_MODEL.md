@@ -105,3 +105,7 @@ A separação SRD/Vínculo é um limite de domínio: compartilhar identidade e i
 - [Mapa de integração](INTEGRATION_MAP.md)
 - [Inventário de RPCs](RPC_INVENTORY.md)
 - [Registro de auditorias](AUDIT_REGISTER.md)
+
+
+## Estado observado dos dados de personagens — 2026-11-09
+Consulta agregada somente de leitura: 5 personagens no total; 5 com registro srd_character_sheets; 0 sem ficha SRD; 0 com registro vinculo_character_sheets. Isso confirma que, no snapshot atual, o caminho ativo de personagens é D&D 3.5. Não significa que o domínio Vínculo deva ser descartado; o código legado e as tabelas vinculo_* permanecem como domínio separado, mas sua integração de ficha não está ativa nos registros atuais.
