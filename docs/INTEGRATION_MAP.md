@@ -319,7 +319,7 @@ Este contrato está confirmado por inspeção do frontend e das funções SQL. A
 - dice.html e vinculo-ui.js não inicializam cliente Supabase.
 - A inicialização do cliente foi centralizada em assets/js/core/supabase-client.js; vinculo-ui.js continua sendo apenas utilitário de interface. Contexto de auth e chamadas RPC ainda são orquestrados em cada página.
 
-**Consequência arquitetural:** a futura centralização de cliente/auth deve preservar as opções padrão de persistência/refresh, o ciclo de sessão e os fluxos específicos de cada página. Primeiro comparar todos os guards e chamadas de auth; depois extrair em fatia pequena, sem alterar o contrato de sessão.
+**Consequência arquitetural:** a inicialização do cliente foi centralizada sem alterar persistência/refresh. A próxima extração deve ser o contexto de autenticação e os adaptadores RPC, preservando os guards e os fluxos específicos de cada página; fazer isso em fatias pequenas e sem alterar o contrato de sessão.
 
 
 ## Rotas e páginas candidatas a legado
