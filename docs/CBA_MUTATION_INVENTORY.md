@@ -450,3 +450,25 @@ Inspeção por assinatura dos entrypoints de conjuração ativos e do aplicador 
 As rotinas de resolução de salvamento e resistência bloqueiam primeiro a linha da pendência. No corpo observado, não adquirem depois `campaigns FOR UPDATE`; não classificar automaticamente como ciclo pending → campaign. Já o aplicador interno de resolução pendente faz pending → campaign, mas não foi identificado nesta coleta um caminho oposto que bloqueie a mesma linha pending depois da campanha; manter como aresta da matriz, não como deadlock confirmado.
 
 **Limite:** a classificação é por leitura dos corpos e ordem lexical dos statements SQL, com helpers transitivos assinalados; não é um grafo completo de chamadas nem reprodução concorrente. Nenhuma função ou dado remoto foi alterado.
+
+
+### AOO: inversões adicionais entre campanha, pending e ataque — 2026-11-09
+
+A inspeção por assinatura dos endpoints de início, confirmação, cancelamento, finalização e encerramento de combate refinou a matriz:
+
+- `public.alternar_estado_campanha` mantém lock da campanha e depois atualiza ataques AOO e pendências ativas (campanha → ataque/pending).
+- `public.srd_finalizar_movimento_aoo_pendente_srd` bloqueia a pendência primeiro e depois a campanha (pending → campanha). Sobre a mesma pendência, pode formar ciclo com encerramento de combate/alternância de estado: um segura campanha e espera pending, o outro segura pending e espera campanha.
+- `public.srd_iniciar_ataque_oportunidade_srd`, `public.srd_iniciar_ataque_oportunidade_desarmado_srd` e o caminho NPC correspondente também seguem pending → campanha → reaction ledger; depois criam ataque e atualizam o JSON da pending.
+- `public.srd_resolver_ataque_oportunidade_srd` segue attack → pending → campanha. `priv.srd_cancelar_movimento_aoo_pendente_impl` e `priv.srd_encerrar_reacao_aoo_pendente_impl` seguem pending → attack. Assim, há inversão direta pending → attack versus attack → pending entre cancelamento/encerramento e resolução. A confirmação crítica também bloqueia attack → pending, consistente com o prefixo da resolução.
+- `public.srd_iniciar_ataque_oportunidade_monstro_srd` (overload com índice de ataque natural) delega ao endpoint legado e depois atualiza a linha de ataque recém-criada; não deve ser tratado como fluxo independente sem considerar a transação externa.
+- `public.srd_registrar_ocultacao_ataque_oportunidade_srd` permanece attack → pending → campanha, reforçando o grupo attack-first.
+- `public.srd_reservar_reacao_movimento_aoo_srd` segue pending → campanha, e `public.srd_reservar_ataque_oportunidade_srd` segue campanha → reaction ledger. O ledger é uma terceira entidade que precisa permanecer no mapa de locks.
+
+**Classificação:** as ordens conflitantes estão confirmadas nos corpos instalados. Os ciclos dependem de operações simultâneas sobre a mesma campanha/pending/attack e ainda não foram reproduzidos usando RPCs reais. Não inferir que o ciclo necessariamente acontece em todo uso.
+
+### Novas fixtures sintéticas
+O harness agora modela também:
+- campaign → pending versus pending → campaign;
+- pending → attack versus attack → pending.
+
+A aprovação do CI validará apenas que PostgreSQL detecta esses dois padrões sintéticos; não executará os endpoints remotos.

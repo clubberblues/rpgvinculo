@@ -24,3 +24,16 @@ CREATE TABLE lock_fixture.characters (
 );
 INSERT INTO lock_fixture.weapon_instances VALUES (1, 1);
 INSERT INTO lock_fixture.characters VALUES (1, 1);
+
+CREATE TABLE lock_fixture.pending_movements (
+  id integer PRIMARY KEY,
+  campaign_id integer NOT NULL REFERENCES lock_fixture.campaigns(id),
+  status text NOT NULL
+);
+CREATE TABLE lock_fixture.aoo_attacks (
+  id integer PRIMARY KEY,
+  pending_id integer NOT NULL REFERENCES lock_fixture.pending_movements(id),
+  status text NOT NULL
+);
+INSERT INTO lock_fixture.pending_movements VALUES (1,1,'waiting_reactions');
+INSERT INTO lock_fixture.aoo_attacks VALUES (1,1,'awaiting_damage');

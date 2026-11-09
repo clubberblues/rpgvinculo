@@ -11,3 +11,5 @@ These tests run against a disposable PostgreSQL service inside a standard GitHub
 - Fixture SQL is not a migration and must never be applied to the connected Supabase project.
 
 - The lock-cycle script now also models two additional inversions found during the read-only audit: campaign → weapon versus weapon → campaign, and campaign → character versus character → campaign. These are synthetic PostgreSQL lock-pattern tests, not executions of the remote RPG functions. A passing test proves PostgreSQL detects the deliberately constructed cycle; it does not prove that the corresponding production RPC pair deadlocked in use.
+
+- The lock-cycle fixture additionally models two AOO-related inversions observed in installed function bodies: campaign → pending versus pending → campaign, and pending → attack versus attack → pending. As with the other cases, these are deliberately synthetic lock patterns, not production RPC executions.

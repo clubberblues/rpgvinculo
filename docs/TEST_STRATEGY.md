@@ -292,3 +292,10 @@ Fixture descartável com campanha em combate, movimento pendente ativo, reação
 - [Run 42670106095](https://github.com/clubberblues/rpgvinculo/actions/runs/42670106095) — **success**, commit `7de4c031087c3a5084881c0f2049c3596915d6c0`.
 - Passaram: footprint helper; campaign/effect; campaign/weapon; campaign/character.
 - Os três testes de concorrência provocam intencionalmente deadlock em tabelas sintéticas e verificam que PostgreSQL aborta exatamente um participante. Não executam RPCs reais.
+
+
+### AOO — regressões sintéticas de ordem de locks
+
+29. Alternância de estado/encerramento de combate (campaign → pending) concorrente com finalização de movimento (pending → campaign) na mesma pending.
+30. Cancelamento/encerramento de reação (pending → attack) concorrente com resolução/ocultação/crit confirmation (attack → pending) na mesma reação.
+31. Executar os dois pares no PostgreSQL efêmero como testes de padrão de lock; não usar banco Supabase remoto.
