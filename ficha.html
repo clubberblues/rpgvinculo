@@ -1694,6 +1694,13 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2938
   function dnd35FeatWarnings(feat, attrs, state, pickIndex, featParameter) {
     var req=dnd35Objeto(feat.requisitos),out=[],abilities=[['FOR','for_min'],['DES','des_min'],['CON','con_min'],['INT','int_min'],['SAB','sab_min'],['CAR','car_min']];
     var weaponChoice=dnd35FeatParamNorm(featParameter||(state.featPicks&&state.featPicks[pickIndex]&&state.featPicks[pickIndex].parametro)||'');
+    var parameterType=dnd35FeatParameterType(feat);
+    if(weaponChoice&&(parameterType==='weapon_martial'||parameterType==='weapon_exotic')){
+      var selectedWeapon=dnd35FindWeapon(state,featParameter||weaponChoice),selectedType=selectedWeapon?dnd35WeaponProficiencyType(selectedWeapon,state):'';
+      var requiredType=parameterType==='weapon_martial'?'martial':'exotic';
+      if(!selectedWeapon)out.push('A arma informada não existe no catálogo SRD.');
+      else if(selectedType!==requiredType)out.push(requiredType==='martial'?'A escolha precisa ser uma arma marcial.':'A escolha precisa ser uma arma exótica para esta raça.');
+    }
     abilities.forEach(function(pair){var minimum=dnd35ReqNumber(feat[pair[1]]!=null?feat[pair[1]]:req[pair[1]]);if(feat.id==='srd35_feat_exotic_weapon_proficiency'&&pair[1]==='for_min'&&['espada bastarda','machado de guerra anao'].indexOf(weaponChoice)<0)return;if(minimum!=null&&Number(attrs[pair[0]])<minimum)out.push('Requer '+pair[0]+' '+minimum+'.');});
     if(feat.id==='srd35_feat_exotic_weapon_proficiency'&&['espada bastarda','machado de guerra anao'].indexOf(weaponChoice)>=0&&Number(attrs.FOR)<13)out.push('Espada bastarda e machado de guerra anão exigem FOR 13.');
     var reqBab=dnd35ReqNumber(feat.bab_min!=null?feat.bab_min:req.bab_min);if(reqBab!=null&&dnd35Bab(state)<reqBab)out.push('Requer BBA +'+reqBab+'.');
@@ -1919,20 +1926,34 @@ function dnd35TranslateCatalogText(value){
   }
 
   
-function dnd35WeaponProficient(state,weaponName){
-    var normalized=dnd35FeatParamNorm(weaponName),weapon=(state.equipment||[]).find(function(item){var category=dnd35Norm(item.categoria||item.tipo||''),details=dnd35Objeto(item.detalhes),isWeapon=category==='arma'||category==='weapon'||category.indexOf('weapon')>=0||String(details.tipo_origem||'').toLowerCase()==='weapon'||!!details.weapon_group;return isWeapon&&dnd35FeatParamNorm(item.nome)===normalized;});
+function dnd35WeaponProficiencyType(weapon,state){
+    var details=dnd35Objeto(weapon&&weapon.detalhes),explicit=dnd35Norm(details.weapon_proficiency||''),group=dnd35Norm(details.weapon_group||''),name=String(weapon&&weapon.nome||''),text=dnd35FeatParamNorm(name+' '+String(dnd35Objeto(details.campos_catalogo).descricao_origem||''));
+    if(explicit.indexOf('exotic')>=0)return 'exotic';
+    if(explicit.indexOf('martial')>=0)return 'martial';
+    if(explicit.indexOf('simple')>=0)return 'simple';
+    if(group.indexOf('exotic')>=0)return 'exotic';
+    if(group.indexOf('martial')>=0)return 'martial';
+    if(group.indexOf('simple')>=0)return 'simple';
+    if(text.indexOf('sunblade')>=0||text.indexOf('luckblade')>=0)return 'martial';
+    if(['bastardsword','twobladedsword','orcdoubleaxe','dwarvenwaraxe','waraxe','urgrosh','spikedchain','handcrossbow','repeatingcrossbow','direflail','gnomehookedhammer','kama','nunchaku','sai','shuriken','siangham','bolas','net','whip'].some(function(token){return text.indexOf(token)>=0;}))return 'exotic';
+    if(['dagger','javelin','heavymace','lightmace','mace','heavycrossbow','lightcrossbow','crossbow','club','dart','gauntlet','lighthammer','morningstar','quarterstaff','sickle','spear','longspear','shortspear','sling','bolt','arrow','unarmedstrike'].some(function(token){return text.indexOf(token)>=0;}))return 'simple';
+    if(['battleaxe','longsword','greatsword','greataxe','warhammer','rapier','scimitar','trident','longbow','shortbow','glaive','halberd','flail','guisarme','ranseur','lance','falchion','kukri','handaxe','throwingaxe','heavypick','lightpick','shortsword','sap'].some(function(token){return text.indexOf(token)>=0;}))return 'martial';
+    if(String(state&&state.raca&&state.raca.id)==='anao'&&['machado de guerra anao','urgrosh anao'].indexOf(dnd35FeatParamNorm(name))>=0)return 'martial';
+    return '';
+  }
+  function dnd35FindWeapon(state,weaponName){
+    var normalized=dnd35FeatParamNorm(weaponName);
+    return (state.equipment||[]).find(function(item){var category=dnd35Norm(item.categoria||item.tipo||''),details=dnd35Objeto(item.detalhes),isWeapon=category==='arma'||category==='weapon'||category.indexOf('weapon')>=0||String(details.tipo_origem||'').toLowerCase()==='weapon'||!!details.weapon_group;return isWeapon&&dnd35FeatParamNorm(item.nome)===normalized;})||null;
+  }
+  function dnd35WeaponProficient(state,weaponName){
+    var normalized=dnd35FeatParamNorm(weaponName),weapon=dnd35FindWeapon(state,weaponName);
     if(!weapon)return false;
-    var details=dnd35Objeto(weapon.detalhes),weaponGroup=dnd35Norm(details.weapon_group||weapon.categoria),category=String(details.weapon_proficiency||(weaponGroup.indexOf('exotic')>=0?'exotic':weaponGroup.indexOf('martial')>=0?'martial':weaponGroup.indexOf('simple')>=0?'simple':'')),proficiencies=dnd35Objeto(state.classe&&state.classe.dados_tecnicos).proficiencias||{},weapons=Array.isArray(proficiencies.armas)?proficiencies.armas:[proficiencies.armas].filter(Boolean);
-    var isDwarf=String(state.raca&&state.raca.id)==='anao';
-    var dwarfFamiliarity=isDwarf&&['machado de guerra anao','urgrosh anao'].indexOf(normalized)>=0;
-    // D&D 3.5: dwarf familiarity changes these exotic weapons to martial;
-    // it does not grant proficiency to a class lacking martial proficiency.
-    var effectiveCategory=dwarfFamiliarity?'martial':category;
+    var category=dnd35WeaponProficiencyType(weapon,state),proficiencies=dnd35Objeto(state.classe&&state.classe.dados_tecnicos).proficiencias||{},weapons=Array.isArray(proficiencies.armas)?proficiencies.armas:[proficiencies.armas].filter(Boolean);
     return weapons.some(function(entry){
-      var p=dnd35Norm(entry).replace(/\\s+/g,'');
+      var p=dnd35Norm(entry).replace(/\s+/g,'');
       return dnd35FeatParamNorm(entry)===normalized||
-        (p==='armassimples'&&effectiveCategory==='simple')||
-        (p==='todasasarmassimplesemarciais'&&['simple','martial'].indexOf(effectiveCategory)>=0);
+        (p==='armassimples'&&category==='simple')||
+        (p==='todasasarmassimplesemarciais'&&['simple','martial'].indexOf(category)>=0);
     });
   }
   function dnd35InitialClassBonusSpec(state){
