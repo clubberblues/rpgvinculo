@@ -57,3 +57,17 @@ CREATE TABLE lock_fixture.sheets (
   pv integer NOT NULL
 );
 INSERT INTO lock_fixture.sheets VALUES (1, 1, 10);
+
+CREATE TABLE lock_fixture.npc_sequences (
+  id integer PRIMARY KEY,
+  campaign_id integer NOT NULL REFERENCES lock_fixture.campaigns(id),
+  status text NOT NULL
+);
+INSERT INTO lock_fixture.npc_sequences VALUES (1,1,'active');
+
+CREATE TABLE lock_fixture.npc_attempts (
+  id integer PRIMARY KEY,
+  sequence_id integer NOT NULL REFERENCES lock_fixture.npc_sequences(id),
+  status text NOT NULL
+);
+INSERT INTO lock_fixture.npc_attempts VALUES (1,1,'pending_resolution');
