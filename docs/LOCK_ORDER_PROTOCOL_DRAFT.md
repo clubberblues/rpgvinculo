@@ -54,6 +54,14 @@ A revisão dos entrypoints usados pela interface distinguiu ausência de seriali
 - A rota de descanso longo de NPC vinculado já é campaign-first; a rota de personagem jogador não é. A checagem “não descansar durante combate” não é atômica com o início/alteração de combate: uma transação pode ler estado fora de combate, outra iniciar combate e confirmar, e a primeira continuar aplicando descanso depois.
 - Não classificar isso automaticamente como deadlock: a função de descanso não pede lock da campanha depois de manter personagem/ficha. É um bypass da serialização do agregado e uma corrida de regra/estado. A correção candidata é localizar campanha sem lock, bloquear `campaigns` primeiro, revalidar vínculo/ownership e estado, e só então bloquear personagem → ficha → recursos/condições.
 
+
+### Corrida adicional — consumo de poção e início de combate (2026-11-09)
+
+- `public.usar_pocao_cura_srd_manual` (OID 24655, authenticated EXECUTE), chamada por `mesa.html`, lê `campaigns.state` sem lock. Se a leitura indicar `COMBATE`, chama `consumir_acao_turno_srd`, que adquire campanha antes de bloquear equipamento/ficha. Se a leitura indicar fora de combate, não adquire o lock da campanha e ainda assim consome a poção e altera PV.
+- Isso permite uma corrida: a função pode ler estado fora de combate; outra transação inicia combate; a primeira continua e usa a poção sem consumir a ação de combate. Não é deadlock; é validação de estado não atômica com o uso do recurso.
+- A correção candidata é adquirir campaign FOR UPDATE para personagem vinculado antes de decidir se a ação é exigida, revalidar state/ownership/vínculo e então bloquear personagem/ficha/equipamento na ordem estabelecida. O caminho de poção já segue campanha-first quando a leitura inicial encontra COMBATE, mas o branch fora de combate não é serializado.
+- `public.descanso_longo_personagem_srd` (OID 24366) tem o mesmo padrão de leitura de estado não bloqueante antes de alterar PV, magias, recursos e condições; já está detalhado acima. Tratar ambos como corridas de regra/estado distintas dos ciclos de deadlock.
+
 ## 3. Evidências que motivam a proposta
 
 ### Ciclos já identificados nos corpos remotos
@@ -177,7 +185,7 @@ A rota de NPC, `public.usar_furia_barbaro_npc_srd` (OID 26656), é campaign-firs
 
 ### 4. Resolução de magia pendente — lock dedicado antes da campanha
 
-`priv.srd_apply_pending_spell_resolution(uuid)` (OID 25071) bloqueia `priv.srd_pending_spell_resolutions` antes de adquirir `campaigns FOR UPDATE`; depois pode bloquear ficha e chamar sincronização de vitalidade. O helper interno não tem EXECUTE direto para authenticated/anon. Ainda falta mapear todos os escritores e transições do registro pending para determinar se há algum caminho inverso campaign → spell-pending. Até isso ser verificado, a ordem pending-spell → campaign é uma dependência a preservar ou harmonizar, não uma inversão confirmada isoladamente.
+`priv.srd_apply_pending_spell_resolution(uuid)` (OID 25071) bloqueia `priv.srd_pending_spell_resolutions` antes de adquirir `campaigns FOR UPDATE`; depois pode bloquear ficha e chamar sincronização de vitalidade. O helper interno não tem EXECUTE direto para authenticated/anon. Os callers autenticados `public.srd_resolve_pending_spell_save` (OID 25072) e `public.srd_resolve_pending_spell_resistance` (OID 25073) também bloqueiam o pending primeiro; em alguns ramos delegam ao helper final, enquanto outros atualizam condição/status e registram log sem lock explícito da campanha. Os escritores de novas pendências encontrados adquirem campanha antes do INSERT, mas isso não é um lock inverso sobre uma linha pending já existente. Portanto, não há ciclo pending ↔ campaign isolado comprovado; há bypass da serialização de campanha e uma ordem a harmonizar, especialmente nos ramos que alteram condições de campanha.
 
 ### 5. Armas e instâncias — duas conclusões distintas
 
@@ -214,7 +222,7 @@ A varredura de todas as funções cujo corpo referencia `priv.srd_pending_spell_
 | `public.conjurar_magia_dano_multialvo_srd` (OID 25246) | personagem → ficha → consumir ação → campanha → INSERT pending | Mesmo padrão de risco; confirmar o lock transitivo de consumir ação por OID na revisão de chamadas |
 | `public.conjurar_magia_srd_manual` (OID 24656) | ficha/personagem → campanha em mais de um ramo → updates de PV/cena e INSERT pending | Fluxo com múltiplos ramos e alvos; precisa de análise de cada branch antes de definir ordem única |
 | `public.avancar_turno` (OID 20074) | campanha → UPDATE combat_data (trigger de rodada) → INSERT pending quando necessário | Caminho campaign-first; o trigger pode encerrar Fúria e bloquear efeitos |
-| `public.srd_resolve_pending_spell_save` (OID 25072) e `public.srd_resolve_pending_spell_resistance` (OID 25073) | pending spell → atualização do próprio pending | Não foi encontrado lock explícito de campanha nesses dois resolvers; não constituem por si sós o caminho inverso pending ↔ campaign |
+| `public.srd_resolve_pending_spell_save` (OID 25072) e `public.srd_resolve_pending_spell_resistance` (OID 25073) | pending spell → validações/updates de condição e status; em alguns ramos delegam ao helper pending → campaign → ficha/efeito | Bypass de serialização nos ramos que não delegam; sem writer campaign-first identificado que bloqueie o mesmo pending existente, não há ciclo pending ↔ campaign isolado comprovado |
 | `priv.srd_apply_pending_spell_resolution` (OID 25071) | pending spell → campanha → ficha/efeitos/condições, conforme ramo | Mantém pending-first; não há evidência suficiente de um writer campaign-first que bloqueie o mesmo pending existente |
 
 **Conclusão refinada:** o ciclo campaign ↔ sheet/personagem continua sustentado por entrypoints de conjuração que bloqueiam ficha antes de chamar consumo de ação/lock da campanha, contra resolução de magia pendente e outros fluxos campaign-first. O risco é de ordem de locks, não prova de deadlock ocorrido em produção. Para a tabela de pendências de magia, não foi encontrada inversão simétrica completa: os resolvers de salvamento/resistência bloqueiam o pending e atualizam apenas seu status; os caminhos de conjuração inserem novos pendings depois de bloquear a campanha. Não misturar esse caso com o ciclo AOO pending ↔ attack.
@@ -243,7 +251,7 @@ Foi feita leitura integral dos sete arquivos de interface/scripts da branch prin
 - Para magia multialvo de efeitos, a interface chama diretamente `conjurar_magia_efeitos_multialvo` (OID 25109), que também bloqueia personagem → ficha antes de consumir ação e obter o lock da campanha.
 - Para Míssil Mágico, a interface chama `conjurar_missil_magico_srd_manual` (OID 25191), que bloqueia personagem → ficha e delega para `conjurar_missil_magico_srd` (OID 24356), que chama `conjurar_magia_com_acao_srd` e depois bloqueia campanha. A rota também apresenta prefixo personagem/ficha → campanha.
 - Para magia de alvo único não Míssil Mágico, a interface chama `conjurar_magia_com_acao_srd_manual` (OID 24658), wrapper que bloqueia personagem → campanha antes de delegar para a resolução manual.
-- A interface usa `srd_resolve_pending_spell_save` e `srd_resolve_pending_spell_resistance` para os pedidos de resistência/penetração. Os dois resolvers bloqueiam primeiro o registro pending; o de resistência à magia pode delegar para `priv.srd_apply_pending_spell_resolution` após sucesso.
+- A interface usa `srd_resolve_pending_spell_save` e `srd_resolve_pending_spell_resistance` para os pedidos de resistência/penetração. Os dois resolvers bloqueiam primeiro o registro pending. O de resistência à magia pode delegar para `priv.srd_apply_pending_spell_resolution`; o de salvamento também delega em alguns ramos (dano com aplicação de efeito), mas altera condições diretamente em outros ramos sem lock da campanha.
 
 ### Remoção direta de condições/efeitos
 
