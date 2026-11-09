@@ -164,3 +164,20 @@ Fixture descartável com campanha em combate, movimento pendente ativo, reação
 - O repositório não contém `supabase/config.toml`, `package.json` ou diretório `tests/`. Os workflows existentes são estáticos e o smoke test usa Playwright instalado no próprio job.
 - Não criar branch Supabase sem confirmar custo e necessidade; não usar main para testes que alterem dados.
 - A reconciliação de migrations está bloqueando reset/deploy e qualquer tentativa de reconstrução. Primeiro gerar baseline a partir do schema remoto e validar em ambiente descartável.
+
+
+## Regressão P1 — movimento direto não pode contornar AOO
+
+**Pré-condição:** ambiente Supabase descartável com campanha de teste, iniciativa ativa, token jogador próprio e criatura inimiga ameaçando o quadrado de origem; nenhum registro pending ativo. Nunca executar em TESTE 2/produção.
+
+1. Invocar diretamente `mover_token_player_cba(p_campaign_id,p_character_id,p_grid_x,p_grid_y)` sem chamar `srd_solicitar_movimento_com_aoo_srd`, escolhendo destino que saia da área ameaçada.
+   - Esperado após correção: a RPC retorna movimento pendente/AOO e não altera coordenadas nem consome deslocamento até resolução.
+   - Estado atual inferido do código: a implementação valida turno/ação/distância, mas não executa detector AOO; provável movimento direto. Reproduzir apenas no ambiente descartável.
+2. Chamar o pré-check AOO com destino sem ameaça; antes de chamar a RPC de movimento, alterar a posição de um token ameaçador em transação separada para que o mesmo trajeto agora provoque AOO; depois chamar a RPC de movimento.
+   - Esperado após correção: detecção e persistência serializadas na mesma transação; criar pending ou impedir movimento.
+   - Estado atual: duas RPCs/transações; janela TOCTOU existente.
+3. Repetir com GM usando `mover_token_gm_cba_srd`, confirmando a política de autoridade de GM e se a movimentação também deve abrir AOO.
+4. Validar que, com pending já ativo, o trigger `trg_srd_guard_pending_aoo_movement` continua bloqueando alteração/remoção do token que está pendente, exceto pelo caminho de commit autorizado.
+
+**Critérios:** sem movimento ou consumo de ação antes de resolver AOO; uma única pending por campanha; retries não duplicam movimento/reação; logs e UI refletem o resultado; testes concorrentes não produzem deadlock.
+
