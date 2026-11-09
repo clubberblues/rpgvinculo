@@ -23,7 +23,7 @@ Nenhuma fase deve ser repetida integralmente sem evidência de mudança ou lacun
 - [x] Definir proposta inicial de módulos e limites no ARCHITECTURE.md (ainda não implementada no código).
 - [x] Mapear fontes canônicas atuais e registrar campos pendentes em DATA_MODEL.md; [ ] fechar decisões restantes de XP/ouro e valores derivados.
 - [ ] Definir contratos de ações, resultados, eventos e erros.
-- [ ] Definir política de transações, idempotência e concorrência.
+- [ ] Definir política de transações, idempotência e concorrência (locks e idempotência de ataques/pending já mapeados; revisar turn advance e conjuração manual).
 - [x] Definir limites de domínio SRD/Vínculo e separar catálogos/regras.
 - [ ] Fechar estratégia de testes e implantação (CI estático é a primeira camada; integração/E2E e deploy permanecem pendentes).
 
