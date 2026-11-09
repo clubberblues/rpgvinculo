@@ -259,3 +259,14 @@ Consulta somente de leitura ao catálogo PostgreSQL, restrita às relações/fun
 - Privilégio USAGE: anon não tem USAGE em priv/private; authenticated tem USAGE em ambos. Isso não comprova se os schemas estão expostos no PostgREST; a configuração de Exposed schemas continua pendente de confirmação no Dashboard.
 
 Este é um inventário estrutural agregado, não um snapshot DDL nem uma revisão semântica. As 378 constraints, 14 triggers, 114 policies e 327 funções ainda precisam ser exportadas/classificadas por objeto e comparadas com os arquivos versionados. Não houve alteração de schema, ACL, policies, triggers ou dados.
+
+
+## Revisão de tabelas internas com RLS desabilitado — 2026-11-09
+
+O inventário verbose do Supabase e a consulta direta a ACL identificaram duas relações em `priv` com RLS desabilitado: `priv.throttle` e `priv.srd_aoo_reaction_ledger`.
+
+**Permissões efetivas conferidas:** anon não tem USAGE no schema priv nem privilégios SELECT/INSERT/UPDATE/DELETE nessas relações; authenticated tem USAGE no schema, mas também não possui privilégios diretos nessas tabelas. A ACL de ambas lista somente postgres e service_role. Logo, o alerta do advisor (“RLS disabled”) é válido como hardening pendente, mas não demonstra, isoladamente, leitura/escrita direta por clientes PostgREST.
+
+**Uso interno identificado:** `priv.throttle` é acessada por `priv.locked(text)`, `priv.fail(text,integer)` e `priv.clear(text)`, chamadas por `public.create_campaign`, `public.join_campaign` e `public.entrar_campanha_com_codigo` (SECURITY DEFINER). `priv.srd_aoo_reaction_ledger` é acessada por helpers SECURITY DEFINER de reserva/início de AOO; o helper de reserva exige autenticação e papel GM. Não foi alterado nenhum privilégio, policy ou estado de RLS.
+
+**Tratamento:** manter como hardening P2 condicionado à confirmação de Exposed schemas e revisão dos caminhos SECURITY DEFINER. Não aplicar automaticamente o SQL sugerido pelo advisor: habilitar RLS sem desenhar e testar as policies/semântica de bypass pode quebrar o acesso interno esperado ou criar falsa sensação de segurança. Nenhum dado foi alterado.
