@@ -108,3 +108,12 @@ Resolver a divergência de identidade: confirmar se **Thunga Mestre** é o perso
 
 - 2026-11-08: item criado a partir da continuidade das sessões. Os casos são uma pauta de validação recuperada, não resultados de testes executados nesta data.
 - 2026-11-08: pré-verificação somente de leitura encontrou Thunga Mestre em TESTE 2, não Thorgar; Armadura de Couro equipada, Machado Grande não equipado e ausência de token. Nenhum dado foi modificado.
+
+
+## Reconciliação adicional de identidade — 2026-11-08
+
+Consulta somente de leitura confirmou dois registros distintos:
+- **Thorgar (ID 681):** campaign_id NULL; pertence ao Mestre da campanha 131 e está vinculado a um token do tipo NPC nessa campanha (sourceCharacterId=681). A Armadura de Couro e os demais itens consultados estão com equipado=false. A sobrecarga de CA para NPC vinculado retornou CA 10, coerente com esse estado.
+- **Thunga Mestre (ID 682):** campaign_id=131; não possui token vinculado em cba_data; Armadura de Couro está equipada e Machado Grande não está equipado.
+
+Portanto, o teste de CA 10 executado para Thorgar (681) **não valida nem invalida** a CA de Thunga Mestre (682). São registros diferentes; a identidade do personagem que deve ser alvo da pauta histórica precisa ser confirmada antes de qualquer teste funcional. Nenhum dado foi alterado.
