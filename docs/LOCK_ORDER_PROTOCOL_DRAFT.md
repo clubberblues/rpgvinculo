@@ -407,17 +407,18 @@ O projeto está em PostgreSQL 17.6. O changelog Supabase publicou em 25/09/2026 
 Referência: https://supabase.com/changelog
 
 
-## Inventário e instâncias de armas — inversão ativa confirmada pelo frontend (2026-11-09)
+## Inventário e instâncias de armas — risco condicional, não inversão operacional demonstrada (2026-11-09)
 
-A revisão dos callers frontend fecha a condição de alcance que faltava para o padrão equipamento ↔ instância:
+A revisão completa dos writers e das permissões mudou a classificação anterior:
 
-- mesa.html chama public.entregar_item_srd (OID 20556) para entregar arma ao personagem. A RPC faz INSERT ... ON CONFLICT DO UPDATE na linha srd_character_equipment, alterando quantidade. O trigger AFTER INSERT/DELETE/UPDATE OF quantidade (private.sync_character_weapon_instances_from_inventory, OID 26446) cria/remove instâncias em srd_character_weapon_instances e atualiza o resumo em srd_character_equipment. Ordem efetiva: equipamento → instância.
-- mesa.html e ficha.html chamam public.equipar_arma_instancia_personagem (OID 26442). A implementação private.equipar_arma_instancia_personagem_impl (OID 26441) bloqueia characters FOR UPDATE, depois srd_character_weapon_instances FOR UPDATE, e atualiza srd_character_equipment no fim. Ordem efetiva: personagem → instância → equipamento.
-- ficha.html também redireciona fichas ligadas a token NPC para public.equipar_arma_instancia_npc_vinculado_srd (OID 27445), cuja implementação deve ser lida como caminho campaign/token → personagem vinculado → instância → resumo de equipamento; não altera o padrão personagem/instância/equipamento.
+- mesa.html chama public.entregar_item_srd (OID 20556), que faz INSERT ... ON CONFLICT DO UPDATE aumentando a quantidade. Para delta positivo, o trigger private.sync_character_weapon_instances_from_inventory (OID 26446) cria novas instâncias; não bloqueia as instâncias existentes com FOR UPDATE.
+- mesa.html e ficha.html chamam public.equipar_arma_instancia_personagem (OID 26442). A implementação private.equipar_arma_instancia_personagem_impl (OID 26441) bloqueia characters FOR UPDATE, depois srd_character_weapon_instances FOR UPDATE, e atualiza o resumo em srd_character_equipment.
+- O trigger também contém um ramo delta negativo que apaga instâncias não equipadas (equipamento → instância), mas não foi encontrado writer RPC/frontend atual que reduza quantidade de arma. A tabela srd_character_equipment não concede UPDATE/INSERT/DELETE direto a authenticated; há apenas SELECT direto, embora exista policy UPDATE que não concede privilégio sem grant.
+- O DELETE do trigger é alcançado pelo cleanup de inventário ao excluir personagem, mas o caminho de equipar também bloqueia primeiro a linha do personagem, serializando esse par.
 
-**Classificação:** o ciclo equipamento → instância versus instância → equipamento é alcançável por duas ações reais da interface: entrega de arma pelo Mestre e equipar/desequipar instância pelo jogador/Mestre. A entrega e o equipar podem incidir sobre a mesma ficha/arma. O harness já contém esse padrão sintético; nenhum deadlock de produção foi observado.
+**Classificação corrigida:** não há evidência de um caminho operacional atual equipamento → instância concorrendo com instância → equipamento para a mesma arma. A entrega positiva insere novas instâncias e não cria a aresta inversa; o decremento de quantidade seria o caminho relevante, mas não está exposto por writer atual identificado. O ciclo permanece risco condicional/futuro se for adicionada remoção/redução de armas ou concedido DML direto. O cenário sintético correspondente foi retirado do harness ativo para não inflar a contagem de riscos alcançáveis.
 
-**Direção de correção:** definir a ordem personagem → equipamento → instância (ou outra ordem única), e fazer tanto a entrega/remoção de quantidade quanto o equipar/desequipar respeitarem a mesma ordem. O trigger não deve inverter o par. Revalidar quantidade, instâncias equipadas e slot após os locks; não desativar o trigger sem substituir a sincronização de instâncias.
+**Direção para futura remoção de armas:** se essa funcionalidade for implementada, ordenar personagem → equipamento → instância e fazer o trigger/writer de remoção respeitar a mesma sequência. Não desativar o trigger sem substituir a sincronização de instâncias.
 
 
 ### Qualificação de alcance — locks da mesma ficha
