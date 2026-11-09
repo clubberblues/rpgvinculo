@@ -1,10 +1,10 @@
 # Vínculo RPG — Inventário de RPCs chamadas pelo frontend
 
-> Snapshot estático de 2026-11-08. A correspondência é por nome e catálogo PostgreSQL; ainda não valida se cada objeto de argumentos enviado pelo JavaScript corresponde à assinatura selecionada em runtime.
+> Snapshot estático de 2026-11-08. A extração considera chamadas com nome literal (chamadas construídas dinamicamente podem não aparecer). A correspondência é por nome e catálogo PostgreSQL; ainda não valida se cada objeto de argumentos enviado pelo JavaScript corresponde à assinatura selecionada em runtime.
 
 ## Resumo
 
-- 100 nomes distintos chamados diretamente por lobby.html, ficha.html e mesa.html.
+- 100 nomes literais distintos chamados diretamente por lobby.html, ficha.html e mesa.html.
 - mesa.html: 87; ficha.html: 12; lobby.html: 10.
 - 0 nomes sem função pública correspondente (esperado: 0).
 - 108 assinaturas públicas correspondentes, incluindo sobrecargas.
