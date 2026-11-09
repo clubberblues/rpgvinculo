@@ -53,7 +53,7 @@ O histórico de continuidade registra correções em:
 
 Essas correções não devem ser refeitas automaticamente. Antes, conferir os commits/migrations correspondentes e validar se o estado atual as contém.
 
-## Pendências consolidadas a reconciliar
+## Testes — inventário inicial\n- O README descreve parse local, pglast e smoke tests Playwright com Supabase simulado.\n- package.json, configuração Playwright, arquivos de teste convencionais e workflow CI não foram encontrados nos caminhos consultados.\n- Classificação: harness automatizado não localizado nos caminhos convencionais; localizar ou reconstituir os testes e torná-los reproduzíveis.\n\n## Pendências consolidadas a reconciliar
 1. Estado real de cada fluxo da ficha e mesa no HEAD atual.
 2. Fonte canônica de CA, ataques, dano, PV e atributos derivados em fichas e tokens.
 3. Matriz de ações e capacidades por classe/nível.
