@@ -256,3 +256,11 @@ Fixture descartável com campanha em combate, movimento pendente ativo, reação
    - Esperado: operações estruturais bloqueadas/adiadas até concluir a pending.
 21. Durante pending, alterar PV de token envolvido por RPC genérico de GM.
    - Esperado: seguir política explícita de pausa; nunca invalidar silenciosamente o snapshot de reação ou o commit do movimento.
+
+
+### Regressão de concorrência — inversão de locks AOO
+
+22. Duas sessões: uma executa cancelamento/encerramento de reação (pending → attack), enquanto outra executa resolução ou aplicação de dano (attack → pending).
+   - Esperado após correção: ordem de locks única; ambas as operações serializam ou uma retorna conflito de estado definido, sem deadlock.
+23. Repetir a concorrência entre cancelamento total da pending e aplicação de dano de ataque de oportunidade.
+   - Esperado: uma transição terminal válida, sem estado parcial, duplicação de dano ou pending travada.
