@@ -5633,3 +5633,1560 @@ permissive=PERMISSIVE; roles=anon,authenticated; cmd=SELECT; using=true; check=N
 permissive=PERMISSIVE; roles=anon,authenticated; cmd=SELECT; using=true; check=NULL
 ```
 
+
+
+## ACL — schemas, relações e rotinas
+
+> Lista dos privilégios efetivos encontrados nas ACLs, filtrada para PUBLIC, anon, authenticated e service_role. A ausência de linha para um papel significa que ele não recebeu aquele privilégio explícito/default nessa consulta; verifique herança, ownership, bypassrls e privilégios indiretos antes de concluir exposição.
+
+| Categoria | Objeto | Grantee | Privilégio | Grantable |
+|---|---|---|---|---:|
+| routine | `priv.can_delete_midia(p_name text)` | authenticated | EXECUTE | não |
+| routine | `priv.can_delete_midia(p_name text)` | service_role | EXECUTE | não |
+| routine | `priv.can_write_midia(p_name text)` | authenticated | EXECUTE | não |
+| routine | `priv.can_write_midia(p_name text)` | service_role | EXECUTE | não |
+| routine | `priv.clear(k text)` | service_role | EXECUTE | não |
+| routine | `priv.concluir_avanco_nivel_personagem_srd(p_campaign_id bigint, p_character_id text, p_hit_die_roll integer, p_skill_ranks jsonb, p_feats jsonb, p_attribute text)` | authenticated | EXECUTE | não |
+| routine | `priv.concluir_avanco_nivel_personagem_srd(p_campaign_id bigint, p_character_id text, p_hit_die_roll integer, p_skill_ranks jsonb, p_feats jsonb, p_attribute text)` | service_role | EXECUTE | não |
+| routine | `priv.consumir_acao_rodada_completa_srd_impl(p_campaign_id bigint, p_actor_id text, p_actor_kind text)` | authenticated | EXECUTE | não |
+| routine | `priv.consumir_acao_rodada_completa_srd_impl(p_campaign_id bigint, p_actor_id text, p_actor_kind text)` | service_role | EXECUTE | não |
+| routine | `priv.consumir_acao_token_gm_srd_impl(p_campaign_id bigint, p_token_id text, p_acao text)` | authenticated | EXECUTE | não |
+| routine | `priv.consumir_acao_token_gm_srd_impl(p_campaign_id bigint, p_token_id text, p_acao text)` | service_role | EXECUTE | não |
+| routine | `priv.d20()` | service_role | EXECUTE | não |
+| routine | `priv.descanso_longo_npc_vinculado_srd_impl(p_campaign_id bigint, p_token_id text)` | authenticated | EXECUTE | não |
+| routine | `priv.descanso_longo_npc_vinculado_srd_impl(p_campaign_id bigint, p_token_id text)` | service_role | EXECUTE | não |
+| routine | `priv.fail(k text, mx integer)` | service_role | EXECUTE | não |
+| routine | `priv.finalizar_exclusao_campanha_propria(p_campaign_id bigint)` | authenticated | EXECUTE | não |
+| routine | `priv.finalizar_exclusao_campanha_propria(p_campaign_id bigint)` | service_role | EXECUTE | não |
+| routine | `priv.gm_npc_apply_typed_damage_impl(p_campaign_id bigint, p_actor_token_id text, p_target_token_id text, p_raw_damage integer, p_damage_type text)` | authenticated | EXECUTE | não |
+| routine | `priv.gm_npc_apply_typed_damage_impl(p_campaign_id bigint, p_actor_token_id text, p_target_token_id text, p_raw_damage integer, p_damage_type text)` | service_role | EXECUTE | não |
+| routine | `priv.grow_scene()` | service_role | EXECUTE | não |
+| routine | `priv.iniciar_sequencia_ataque_iterativo_srd_5_impl(p_campaign_id bigint, p_character_id text, p_target_token_id text, p_attack_type text, p_weapon_instance_id uuid)` | authenticated | EXECUTE | não |
+| routine | `priv.iniciar_sequencia_ataque_iterativo_srd_5_impl(p_campaign_id bigint, p_character_id text, p_target_token_id text, p_attack_type text, p_weapon_instance_id uuid)` | service_role | EXECUTE | não |
+| routine | `priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(p_campaign_id bigint, p_character_id text, p_target_token_id text, p_attack_type text, p_weapon_instance_id uuid, p_weapon_hand_slot text, p_weapon_end text)` | authenticated | EXECUTE | não |
+| routine | `priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(p_campaign_id bigint, p_character_id text, p_target_token_id text, p_attack_type text, p_weapon_instance_id uuid, p_weapon_hand_slot text, p_weapon_end text)` | service_role | EXECUTE | não |
+| routine | `priv.iniciar_sequencia_ataque_iterativo_srd_8_impl(p_campaign_id bigint, p_character_id text, p_target_token_id text, p_attack_type text, p_weapon_instance_id uuid, p_weapon_hand_slot text, p_weapon_end text, p_power_attack_penalty integer)` | authenticated | EXECUTE | não |
+| routine | `priv.iniciar_sequencia_ataque_iterativo_srd_8_impl(p_campaign_id bigint, p_character_id text, p_target_token_id text, p_attack_type text, p_weapon_instance_id uuid, p_weapon_hand_slot text, p_weapon_end text, p_power_attack_penalty integer)` | service_role | EXECUTE | não |
+| routine | `priv.is_my_turn(p_campaign bigint, p_token bigint)` | service_role | EXECUTE | não |
+| routine | `priv.locked(k text)` | service_role | EXECUTE | não |
+| routine | `priv.log(cid bigint, t text, d jsonb)` | service_role | EXECUTE | não |
+| routine | `priv.monster_atk(p_nivel integer)` | service_role | EXECUTE | não |
+| routine | `priv.mover_token_gm_cba_srd_impl(p_campaign_id bigint, p_token_id text, p_grid_x integer, p_grid_y integer)` | authenticated | EXECUTE | não |
+| routine | `priv.mover_token_gm_cba_srd_impl(p_campaign_id bigint, p_token_id text, p_grid_x integer, p_grid_y integer)` | service_role | EXECUTE | não |
+| routine | `priv.mover_token_player_cba_impl(p_campaign_id bigint, p_character_id text, p_grid_x integer, p_grid_y integer)` | authenticated | EXECUTE | não |
+| routine | `priv.mover_token_player_cba_impl(p_campaign_id bigint, p_character_id text, p_grid_x integer, p_grid_y integer)` | service_role | EXECUTE | não |
+| routine | `priv.need_gm(cid bigint)` | service_role | EXECUTE | não |
+| routine | `priv.need_owner(cid bigint)` | service_role | EXECUTE | não |
+| routine | `priv.new_sheet()` | service_role | EXECUTE | não |
+| routine | `priv.new_user()` | service_role | EXECUTE | não |
+| routine | `priv.npc_aplicar_dano_ataque_iterativo_impl(p_campaign_id bigint, p_attempt_id uuid, p_damage_rolls integer[], p_idempotency_key uuid, p_sneak_damage_rolls integer[])` | authenticated | EXECUTE | não |
+| routine | `priv.npc_aplicar_dano_ataque_iterativo_impl(p_campaign_id bigint, p_attempt_id uuid, p_damage_rolls integer[], p_idempotency_key uuid, p_sneak_damage_rolls integer[])` | service_role | EXECUTE | não |
+| routine | `priv.npc_confirmar_critico_ataque_iterativo_impl(p_campaign_id bigint, p_attempt_id uuid, p_confirmation_d20 integer)` | authenticated | EXECUTE | não |
+| routine | `priv.npc_confirmar_critico_ataque_iterativo_impl(p_campaign_id bigint, p_attempt_id uuid, p_confirmation_d20 integer)` | service_role | EXECUTE | não |
+| routine | `priv.npc_consultar_ataque_iterativo_impl(p_campaign_id bigint, p_token_id text, p_attack_type text)` | authenticated | EXECUTE | não |
+| routine | `priv.npc_consultar_ataque_iterativo_impl(p_campaign_id bigint, p_token_id text, p_attack_type text)` | service_role | EXECUTE | não |
+| routine | `priv.npc_consultar_ataque_iterativo_pendente_impl(p_campaign_id bigint, p_actor_token_id text)` | authenticated | EXECUTE | não |
+| routine | `priv.npc_consultar_ataque_iterativo_pendente_impl(p_campaign_id bigint, p_actor_token_id text)` | service_role | EXECUTE | não |
+| routine | `priv.npc_iniciar_ataque_iterativo_impl(p_campaign_id bigint, p_actor_token_id text, p_target_token_id text, p_attack_type text, p_weapon_instance_id uuid, p_weapon_hand_slot text, p_weapon_end text)` | authenticated | EXECUTE | não |
+| routine | `priv.npc_iniciar_ataque_iterativo_impl(p_campaign_id bigint, p_actor_token_id text, p_target_token_id text, p_attack_type text, p_weapon_instance_id uuid, p_weapon_hand_slot text, p_weapon_end text)` | service_role | EXECUTE | não |
+| routine | `priv.npc_iniciar_ataque_iterativo_impl(p_campaign_id bigint, p_actor_token_id text, p_target_token_id text, p_attack_type text, p_weapon_instance_id uuid, p_weapon_hand_slot text, p_weapon_end text, p_power_attack_penalty integer)` | authenticated | EXECUTE | não |
+| routine | `priv.npc_iniciar_ataque_iterativo_impl(p_campaign_id bigint, p_actor_token_id text, p_target_token_id text, p_attack_type text, p_weapon_instance_id uuid, p_weapon_hand_slot text, p_weapon_end text, p_power_attack_penalty integer)` | service_role | EXECUTE | não |
+| routine | `priv.npc_registrar_rolagem_ataque_iterativo_impl(p_campaign_id bigint, p_sequence_id uuid, p_manual_d20 integer, p_idempotency_key uuid)` | authenticated | EXECUTE | não |
+| routine | `priv.npc_registrar_rolagem_ataque_iterativo_impl(p_campaign_id bigint, p_sequence_id uuid, p_manual_d20 integer, p_idempotency_key uuid)` | service_role | EXECUTE | não |
+| routine | `priv.npc_resolver_ataque_iterativo_impl(p_campaign_id bigint, p_attempt_id uuid)` | authenticated | EXECUTE | não |
+| routine | `priv.npc_resolver_ataque_iterativo_impl(p_campaign_id bigint, p_attempt_id uuid)` | service_role | EXECUTE | não |
+| routine | `priv.pasta_gm(p_name text)` | authenticated | EXECUTE | não |
+| routine | `priv.pasta_gm(p_name text)` | service_role | EXECUTE | não |
+| routine | `priv.pericias_completas(p jsonb)` | service_role | EXECUTE | não |
+| routine | `priv.preparar_exclusao_campanha_propria(p_campaign_id bigint)` | authenticated | EXECUTE | não |
+| routine | `priv.preparar_exclusao_campanha_propria(p_campaign_id bigint)` | service_role | EXECUTE | não |
+| routine | `priv.roll_dice_expr(p_expr text)` | service_role | EXECUTE | não |
+| routine | `priv.sheet_fix()` | service_role | EXECUTE | não |
+| routine | `priv.srd35_maneuver_profile(p_campaign_id bigint, p_token_id text)` | service_role | EXECUTE | não |
+| routine | `priv.srd_adjust_damage(p_campaign_id bigint, p_target_kind text, p_target_id text, p_damage_type text, p_base_damage integer)` | service_role | EXECUTE | não |
+| routine | `priv.srd_adjust_damage_components(p_campaign_id bigint, p_target_kind text, p_target_id text, p_effect_data jsonb)` | service_role | EXECUTE | não |
+| routine | `priv.srd_aoo_require_blind_concealment_roll()` | service_role | EXECUTE | não |
+| routine | `priv.srd_apply_campaign_condition(p_campaign_id bigint, p_target_kind text, p_target_id text, p_condition_id text, p_duration_rounds integer, p_notes jsonb, p_source_spell_id text)` | service_role | EXECUTE | não |
+| routine | `priv.srd_apply_campaign_effect(p_campaign_id bigint, p_target_kind text, p_target_id text, p_effect_kind text, p_effect_data jsonb, p_duration_rounds integer, p_source_spell_id text, p_concentration_actor_id text)` | service_role | EXECUTE | não |
+| routine | `priv.srd_apply_pending_spell_resolution(p_pending_id uuid)` | service_role | EXECUTE | não |
+| routine | `priv.srd_calcular_ca_alvo_campanha_srd(p_campaign_id bigint, p_character_id text, p_attack_context text)` | service_role | EXECUTE | não |
+| routine | `priv.srd_cancelar_movimento_aoo_pendente_impl(p_campaign_id bigint, p_pending_id uuid)` | authenticated | EXECUTE | não |
+| routine | `priv.srd_cancelar_movimento_aoo_pendente_impl(p_campaign_id bigint, p_pending_id uuid)` | service_role | EXECUTE | não |
+| routine | `priv.srd_clear_combat_flatfooted_actor(p_campaign_id bigint, p_actor jsonb)` | service_role | EXECUTE | não |
+| routine | `priv.srd_clear_combat_flatfooted_all(p_campaign_id bigint)` | service_role | EXECUTE | não |
+| routine | `priv.srd_condition_has_flag(p_campaign_id bigint, p_target_kind text, p_target_id text, p_flag text)` | authenticated | EXECUTE | não |
+| routine | `priv.srd_condition_has_flag(p_campaign_id bigint, p_target_kind text, p_target_id text, p_flag text)` | service_role | EXECUTE | não |
+| routine | `priv.srd_condition_modifier(p_campaign_id bigint, p_target_kind text, p_target_id text, p_stat text)` | service_role | EXECUTE | não |
+| routine | `priv.srd_condition_speed_multiplier(p_campaign_id bigint, p_target_kind text, p_target_id text)` | service_role | EXECUTE | não |
+| routine | `priv.srd_confusion_aoo_engaged(p_campaign_id bigint, p_actor_token_id text, p_actor_character_id text, p_mover_token_id text)` | service_role | EXECUTE | não |
+| routine | `priv.srd_confusion_attack_target_allowed(p_campaign_id bigint, p_actor_kind text, p_actor_id text, p_target_token_id text)` | service_role | EXECUTE | não |
+| routine | `priv.srd_confusion_flee_destination_allowed(p_campaign_id bigint, p_actor_token_id text, p_destination_x integer, p_destination_y integer)` | service_role | EXECUTE | não |
+| routine | `priv.srd_confusion_nearest_target_id(p_campaign_id bigint, p_actor_token_id text)` | service_role | EXECUTE | não |
+| routine | `priv.srd_effect_has_flag(p_campaign_id bigint, p_target_kind text, p_target_id text, p_flag text)` | service_role | EXECUTE | não |
+| routine | `priv.srd_effective_modifier(p_campaign_id bigint, p_target_kind text, p_target_id text, p_stat text)` | service_role | EXECUTE | não |
+| routine | `priv.srd_effective_token_speed_m(p_campaign_id bigint, p_token_id text)` | service_role | EXECUTE | não |
+| routine | `priv.srd_encerrar_reacao_aoo_pendente_impl(p_campaign_id bigint, p_pending_id uuid, p_reactor_token_id text, p_cancel_attack boolean)` | authenticated | EXECUTE | não |
+| routine | `priv.srd_encerrar_reacao_aoo_pendente_impl(p_campaign_id bigint, p_pending_id uuid, p_reactor_token_id text, p_cancel_attack boolean)` | service_role | EXECUTE | não |
+| routine | `priv.srd_end_barbarian_rage(p_campaign_id bigint, p_character_id text, p_apply_fatigue boolean)` | service_role | EXECUTE | não |
+| routine | `priv.srd_end_barbarian_rage_token(p_campaign_id bigint, p_token_id text, p_apply_fatigue boolean)` | service_role | EXECUTE | não |
+| routine | `priv.srd_expire_barbarian_rage_on_round_change()` | service_role | EXECUTE | não |
+| routine | `priv.srd_feat_saving_throw_modifier(p_feats jsonb, p_save text)` | PUBLIC | EXECUTE | não |
+| routine | `priv.srd_feat_saving_throw_modifier(p_feats jsonb, p_save text)` | authenticated | EXECUTE | não |
+| routine | `priv.srd_feat_saving_throw_modifier(p_feats jsonb, p_save text)` | service_role | EXECUTE | não |
+| routine | `priv.srd_grid_footprint_distance_ft(p_ax integer, p_ay integer, p_asize integer, p_bx integer, p_by integer, p_bsize integer)` | service_role | EXECUTE | não |
+| routine | `priv.srd_guard_aoo_cannot_attack()` | service_role | EXECUTE | não |
+| routine | `priv.srd_guard_pending_aoo_movement()` | service_role | EXECUTE | não |
+| routine | `priv.srd_iniciar_derrubar_com_aoo_srd(p_campaign_id bigint, p_attacker_token_id text, p_defender_token_id text, p_defender_firm_ground boolean, p_trip_using_weapon boolean)` | authenticated | EXECUTE | não |
+| routine | `priv.srd_iniciar_derrubar_com_aoo_srd(p_campaign_id bigint, p_attacker_token_id text, p_defender_token_id text, p_defender_firm_ground boolean, p_trip_using_weapon boolean)` | service_role | EXECUTE | não |
+| routine | `priv.srd_iniciar_encontrao_srd(p_campaign_id bigint, p_attacker_token_id text, p_defender_token_id text)` | authenticated | EXECUTE | não |
+| routine | `priv.srd_iniciar_encontrao_srd(p_campaign_id bigint, p_attacker_token_id text, p_defender_token_id text)` | service_role | EXECUTE | não |
+| routine | `priv.srd_iniciar_levantar_caido_srd(p_campaign_id bigint, p_token_id text)` | authenticated | EXECUTE | não |
+| routine | `priv.srd_iniciar_levantar_caido_srd(p_campaign_id bigint, p_token_id text)` | service_role | EXECUTE | não |
+| routine | `priv.srd_parse_natural_attack_list(p_attack_text text)` | authenticated | EXECUTE | não |
+| routine | `priv.srd_parse_natural_attack_list(p_attack_text text)` | service_role | EXECUTE | não |
+| routine | `priv.srd_passive_feat_modifier(p_character_id bigint, p_stat text)` | service_role | EXECUTE | não |
+| routine | `priv.srd_registrar_ocultacao_ataque_oportunidade_impl(p_campaign_id bigint, p_attack_id uuid, p_manual_d100 integer)` | authenticated | EXECUTE | não |
+| routine | `priv.srd_registrar_ocultacao_ataque_oportunidade_impl(p_campaign_id bigint, p_attack_id uuid, p_manual_d100 integer)` | service_role | EXECUTE | não |
+| routine | `priv.srd_request_confusion_turn_roll()` | service_role | EXECUTE | não |
+| routine | `priv.srd_reservar_ataque_oportunidade_impl(p_campaign_id bigint, p_actor_token_id text, p_trigger_key text, p_actor_flat_footed boolean)` | authenticated | EXECUTE | não |
+| routine | `priv.srd_reservar_ataque_oportunidade_impl(p_campaign_id bigint, p_actor_token_id text, p_trigger_key text, p_actor_flat_footed boolean)` | service_role | EXECUTE | não |
+| routine | `priv.srd_reservar_reacao_movimento_aoo_impl(p_campaign_id bigint, p_pending_id uuid, p_reactor_token_id text)` | authenticated | EXECUTE | não |
+| routine | `priv.srd_reservar_reacao_movimento_aoo_impl(p_campaign_id bigint, p_pending_id uuid, p_reactor_token_id text)` | service_role | EXECUTE | não |
+| routine | `priv.srd_resolve_confusion_turn_impl(p_campaign_id bigint, p_target_kind text, p_target_id text, p_request_id uuid, p_manual_d100 integer)` | authenticated | EXECUTE | não |
+| routine | `priv.srd_resolve_confusion_turn_impl(p_campaign_id bigint, p_target_kind text, p_target_id text, p_request_id uuid, p_manual_d100 integer)` | service_role | EXECUTE | não |
+| routine | `priv.srd_resolver_derrubar_apos_aoo_srd(p_campaign_id bigint, p_pending_id uuid, p_attacker_d20 integer, p_defender_d20 integer, p_defender_firm_ground boolean)` | authenticated | EXECUTE | não |
+| routine | `priv.srd_resolver_derrubar_apos_aoo_srd(p_campaign_id bigint, p_pending_id uuid, p_attacker_d20 integer, p_defender_d20 integer, p_defender_firm_ground boolean)` | service_role | EXECUTE | não |
+| routine | `priv.srd_resolver_derrubar_srd(p_campaign_id bigint, p_attacker_token_id text, p_defender_token_id text, p_attacker_d20 integer, p_defender_d20 integer, p_defender_uses_dex boolean, p_defender_firm_ground boolean, p_trip_using_weapon boolean)` | authenticated | EXECUTE | não |
+| routine | `priv.srd_resolver_derrubar_srd(p_campaign_id bigint, p_attacker_token_id text, p_defender_token_id text, p_attacker_d20 integer, p_defender_d20 integer, p_defender_uses_dex boolean, p_defender_firm_ground boolean, p_trip_using_weapon boolean)` | service_role | EXECUTE | não |
+| routine | `priv.srd_resolver_derrubar_srd_api(p_campaign_id bigint, p_attacker_token_id text, p_defender_token_id text, p_attacker_d20 integer, p_defender_d20 integer, p_defender_firm_ground boolean, p_trip_using_weapon boolean)` | authenticated | EXECUTE | não |
+| routine | `priv.srd_resolver_derrubar_srd_api(p_campaign_id bigint, p_attacker_token_id text, p_defender_token_id text, p_attacker_d20 integer, p_defender_d20 integer, p_defender_firm_ground boolean, p_trip_using_weapon boolean)` | service_role | EXECUTE | não |
+| routine | `priv.srd_resolver_encontrao_srd(p_campaign_id bigint, p_pending_id uuid, p_attacker_d20 integer, p_defender_d20 integer, p_follow boolean)` | authenticated | EXECUTE | não |
+| routine | `priv.srd_resolver_encontrao_srd(p_campaign_id bigint, p_pending_id uuid, p_attacker_d20 integer, p_defender_d20 integer, p_follow boolean)` | service_role | EXECUTE | não |
+| routine | `priv.srd_resolver_levantar_caido_apos_aoo_srd(p_campaign_id bigint, p_pending_id uuid)` | authenticated | EXECUTE | não |
+| routine | `priv.srd_resolver_levantar_caido_apos_aoo_srd(p_campaign_id bigint, p_pending_id uuid)` | service_role | EXECUTE | não |
+| routine | `priv.srd_restore_surprised_flatfooted(p_campaign_id bigint, p_turn_order jsonb, p_aware_ids text[])` | service_role | EXECUTE | não |
+| routine | `priv.srd_saving_throw_bonus(p_campaign_id bigint, p_target_kind text, p_target_id text, p_save_type text, p_context text)` | service_role | EXECUTE | não |
+| routine | `priv.srd_spell_penetration_feat_bonus(p_character_id text)` | service_role | EXECUTE | não |
+| routine | `priv.srd_spell_resistance_value(p_campaign_id bigint, p_target_kind text, p_target_id text)` | service_role | EXECUTE | não |
+| routine | `priv.srd_start_combat_flatfooted(p_campaign_id bigint, p_turn_order jsonb, p_first_turn integer)` | service_role | EXECUTE | não |
+| routine | `priv.srd_sync_character_vital_condition(p_character_id text, p_pv integer, p_stabilize boolean)` | service_role | EXECUTE | não |
+| routine | `priv.srd_sync_linked_npc_token_vitals(p_campaign_id bigint, p_token_id text, p_token_hp integer, p_token_max_hp integer)` | service_role | EXECUTE | não |
+| routine | `priv.srd_sync_linked_npc_token_vitals(p_campaign_id bigint, p_token_id text, p_token_hp integer, p_token_max_hp integer, p_stabilize boolean)` | service_role | EXECUTE | não |
+| routine | `priv.srd_token_grid_footprint(p_campaign_id bigint, p_token_id text)` | service_role | EXECUTE | não |
+| routine | `priv.srd_validate_aoo_pending_movement_preview()` | service_role | EXECUTE | não |
+| routine | `priv.srd_validate_surprise_action(p_campaign_id bigint, p_actor_id text, p_action text)` | service_role | EXECUTE | não |
+| routine | `priv.srd_weapon_proficiency(p_details jsonb, p_weapon_name text)` | service_role | EXECUTE | não |
+| routine | `private.consultar_inventario_npc_vinculado_impl(p_campaign_id bigint, p_token_id text)` | authenticated | EXECUTE | não |
+| routine | `private.equipar_arma_instancia_npc_vinculado_impl(p_campaign_id bigint, p_token_id text, p_instance_id uuid, p_hand_slot text, p_equipado boolean)` | authenticated | EXECUTE | não |
+| routine | `private.equipar_arma_instancia_npc_vinculado_impl(p_campaign_id bigint, p_token_id text, p_instance_id uuid, p_hand_slot text, p_equipado boolean)` | service_role | EXECUTE | não |
+| routine | `private.equipar_arma_instancia_personagem_impl(p_character_id text, p_instance_id uuid, p_hand_slot text, p_equipado boolean)` | authenticated | EXECUTE | não |
+| routine | `private.equipar_arma_instancia_token_impl(p_campaign_id bigint, p_token_id text, p_instance_id uuid, p_hand_slot text, p_equipado boolean)` | authenticated | EXECUTE | não |
+| routine | `private.equipar_item_npc_vinculado_impl(p_campaign_id bigint, p_token_id text, p_equipment_id text, p_equipado boolean)` | authenticated | EXECUTE | não |
+| routine | `private.equipar_item_npc_vinculado_impl(p_campaign_id bigint, p_token_id text, p_equipment_id text, p_equipado boolean)` | service_role | EXECUTE | não |
+| routine | `private.equipar_item_token_srd_maos_impl(p_campaign_id bigint, p_token_id text, p_equipment_id text, p_hand_slot text, p_equipado boolean)` | authenticated | EXECUTE | não |
+| routine | `public._srd35_attr(p_doc jsonb, p_keys text[])` | authenticated | EXECUTE | não |
+| routine | `public._srd35_attr(p_doc jsonb, p_keys text[])` | service_role | EXECUTE | não |
+| routine | `public._srd35_character_class_level(p_character_id text, p_class_key text, p_primary_class_id text, p_total_level integer)` | service_role | EXECUTE | não |
+| routine | `public._srd35_class_key(p_value text)` | authenticated | EXECUTE | não |
+| routine | `public._srd35_class_key(p_value text)` | service_role | EXECUTE | não |
+| routine | `public._srd35_school_key(p_school text)` | PUBLIC | EXECUTE | não |
+| routine | `public._srd35_school_key(p_school text)` | authenticated | EXECUTE | não |
+| routine | `public._srd35_school_key(p_school text)` | service_role | EXECUTE | não |
+| routine | `public._srd35_slots(p_class text, p_level integer, p_score integer, p_circle integer)` | authenticated | EXECUTE | não |
+| routine | `public._srd35_slots(p_class text, p_level integer, p_score integer, p_circle integer)` | service_role | EXECUTE | não |
+| routine | `public._srd35_spell_class_ok(p_classes text[], p_class text)` | authenticated | EXECUTE | não |
+| routine | `public._srd35_spell_class_ok(p_classes text[], p_class text)` | service_role | EXECUTE | não |
+| routine | `public._srd35_spell_level_for_class(p_levels text, p_class_key text, p_fallback integer)` | service_role | EXECUTE | não |
+| routine | `public.add_monster_to_scene(cid bigint, p_monster text, p_x integer, p_y integer)` | service_role | EXECUTE | não |
+| routine | `public.add_owner_as_gm()` | service_role | EXECUTE | não |
+| routine | `public.adicionar_combatente_iniciativa(p_campaign_id bigint, p_combatente_id text, p_nome text, p_valor integer, p_tipo text)` | authenticated | EXECUTE | não |
+| routine | `public.adicionar_combatente_iniciativa(p_campaign_id bigint, p_combatente_id text, p_nome text, p_valor integer, p_tipo text)` | service_role | EXECUTE | não |
+| routine | `public.adicionar_token_cba(p_campaign_id bigint, p_token jsonb)` | service_role | EXECUTE | não |
+| routine | `public.adicionar_token_cba_completo(p_campaign_id bigint, p_token jsonb)` | authenticated | EXECUTE | não |
+| routine | `public.adicionar_token_cba_completo(p_campaign_id bigint, p_token jsonb)` | service_role | EXECUTE | não |
+| routine | `public.alterar_pv_personagem(p_campaign_id bigint, p_character_id text, p_variacao integer)` | authenticated | EXECUTE | não |
+| routine | `public.alterar_pv_personagem(p_campaign_id bigint, p_character_id text, p_variacao integer)` | service_role | EXECUTE | não |
+| routine | `public.alterar_pv_token_cba(p_campaign_id bigint, p_token_id text, p_variacao integer, p_pv_max integer)` | authenticated | EXECUTE | não |
+| routine | `public.alterar_pv_token_cba(p_campaign_id bigint, p_token_id text, p_variacao integer, p_pv_max integer)` | service_role | EXECUTE | não |
+| routine | `public.alternar_estado_campanha(p_campaign_id bigint, p_novo_estado text)` | authenticated | EXECUTE | não |
+| routine | `public.alternar_estado_campanha(p_campaign_id bigint, p_novo_estado text)` | service_role | EXECUTE | não |
+| routine | `public.answer_roll(p_id bigint, p_d20 integer)` | service_role | EXECUTE | não |
+| routine | `public.aplicar_dano_ataque_iterativo_npc_srd(p_campaign_id bigint, p_attempt_id uuid, p_damage_rolls integer[], p_idempotency_key uuid, p_sneak_damage_rolls integer[])` | authenticated | EXECUTE | não |
+| routine | `public.aplicar_dano_ataque_iterativo_npc_srd(p_campaign_id bigint, p_attempt_id uuid, p_damage_rolls integer[], p_idempotency_key uuid, p_sneak_damage_rolls integer[])` | service_role | EXECUTE | não |
+| routine | `public.aplicar_dano_ataque_iterativo_srd(p_campaign_id bigint, p_attempt_id uuid, p_damage_rolls integer[], p_idempotency_key uuid)` | authenticated | EXECUTE | não |
+| routine | `public.aplicar_dano_ataque_iterativo_srd(p_campaign_id bigint, p_attempt_id uuid, p_damage_rolls integer[], p_idempotency_key uuid)` | service_role | EXECUTE | não |
+| routine | `public.aplicar_dano_ataque_iterativo_srd(p_campaign_id bigint, p_attempt_id uuid, p_damage_rolls integer[], p_idempotency_key uuid, p_sneak_damage_rolls integer[])` | authenticated | EXECUTE | não |
+| routine | `public.aplicar_dano_ataque_iterativo_srd(p_campaign_id bigint, p_attempt_id uuid, p_damage_rolls integer[], p_idempotency_key uuid, p_sneak_damage_rolls integer[])` | service_role | EXECUTE | não |
+| routine | `public.aplicar_dano_ataque_npc_gm_srd(p_campaign_id bigint, p_actor_token_id text, p_target_token_id text, p_raw_damage integer, p_damage_type text)` | authenticated | EXECUTE | não |
+| routine | `public.aplicar_dano_ataque_npc_gm_srd(p_campaign_id bigint, p_actor_token_id text, p_target_token_id text, p_raw_damage integer, p_damage_type text)` | service_role | EXECUTE | não |
+| routine | `public.aplicar_dano_token_ataque_srd(p_campaign_id bigint, p_character_id text, p_token_id text, p_d20 integer, p_bonus_ataque integer, p_dano integer)` | service_role | EXECUTE | não |
+| routine | `public.aplicar_dano_token_ataque_srd_v2(p_campaign_id bigint, p_character_id text, p_token_id text, p_d20 integer, p_bonus_ataque integer, p_dano integer, p_weapon_id text, p_attack_type text, p_power_penalty integer)` | authenticated | EXECUTE | não |
+| routine | `public.aplicar_dano_token_ataque_srd_v2(p_campaign_id bigint, p_character_id text, p_token_id text, p_d20 integer, p_bonus_ataque integer, p_dano integer, p_weapon_id text, p_attack_type text, p_power_penalty integer)` | service_role | EXECUTE | não |
+| routine | `public.aplicar_dano_token_ataque_srd_v2(p_campaign_id bigint, p_character_id text, p_token_id text, p_d20 integer, p_bonus_ataque integer, p_dano integer, p_weapon_id text, p_attack_type text, p_power_penalty integer, p_sneak_attack_dice integer, p_sneak_attack_damage integer)` | authenticated | EXECUTE | não |
+| routine | `public.aplicar_dano_token_ataque_srd_v2(p_campaign_id bigint, p_character_id text, p_token_id text, p_d20 integer, p_bonus_ataque integer, p_dano integer, p_weapon_id text, p_attack_type text, p_power_penalty integer, p_sneak_attack_dice integer, p_sneak_attack_damage integer)` | service_role | EXECUTE | não |
+| routine | `public.aplicar_dano_token_gm_personagem_srd(p_campaign_id bigint, p_token_id text, p_character_id text, p_dano integer)` | authenticated | EXECUTE | não |
+| routine | `public.aplicar_dano_token_gm_personagem_srd(p_campaign_id bigint, p_token_id text, p_character_id text, p_dano integer)` | service_role | EXECUTE | não |
+| routine | `public.apply_condition(p_char bigint, p_condition text, p_origem text, p_duracao text)` | service_role | EXECUTE | não |
+| routine | `public.apply_damage(p_alvo bigint, p_qtd integer, p_tipo text)` | service_role | EXECUTE | não |
+| routine | `public.apply_heal(p_alvo bigint, p_qtd integer)` | service_role | EXECUTE | não |
+| routine | `public.ask_roll(cid bigint, p_to uuid, p_kind text, p_label text, p_atributo text, p_cd integer, p_motivo text)` | service_role | EXECUTE | não |
+| routine | `public.attack(p_atk bigint, p_alvo bigint, p_tipo text)` | service_role | EXECUTE | não |
+| routine | `public.attr_max(p_nivel integer)` | authenticated | EXECUTE | não |
+| routine | `public.attr_max(p_nivel integer)` | service_role | EXECUTE | não |
+| routine | `public.attr_points(p_nivel integer)` | authenticated | EXECUTE | não |
+| routine | `public.attr_points(p_nivel integer)` | service_role | EXECUTE | não |
+| routine | `public.atualizar_configuracoes_campanha(p_campaign_id bigint, p_name text, p_require_code boolean, p_code text)` | authenticated | EXECUTE | não |
+| routine | `public.atualizar_configuracoes_campanha(p_campaign_id bigint, p_name text, p_require_code boolean, p_code text)` | service_role | EXECUTE | não |
+| routine | `public.avancar_turno(p_campaign_id bigint)` | authenticated | EXECUTE | não |
+| routine | `public.avancar_turno(p_campaign_id bigint)` | service_role | EXECUTE | não |
+| routine | `public.calc_ca(p_armadura text, p_escudo text, p_des integer, p_bonus integer)` | authenticated | EXECUTE | não |
+| routine | `public.calc_ca(p_armadura text, p_escudo text, p_des integer, p_bonus integer)` | service_role | EXECUTE | não |
+| routine | `public.calc_desl(p_classe text, p_des integer, p_armadura text, p_escudo text, p_condicoes jsonb, p_carga numeric, p_capacidade numeric)` | authenticated | EXECUTE | não |
+| routine | `public.calc_desl(p_classe text, p_des integer, p_armadura text, p_escudo text, p_condicoes jsonb, p_carga numeric, p_capacidade numeric)` | service_role | EXECUTE | não |
+| routine | `public.calc_ini(p_des integer)` | authenticated | EXECUTE | não |
+| routine | `public.calc_ini(p_des integer)` | service_role | EXECUTE | não |
+| routine | `public.calc_pm(p_classe text, p_int integer)` | authenticated | EXECUTE | não |
+| routine | `public.calc_pm(p_classe text, p_int integer)` | service_role | EXECUTE | não |
+| routine | `public.calc_pv(p_classe text, p_con integer)` | authenticated | EXECUTE | não |
+| routine | `public.calc_pv(p_classe text, p_con integer)` | service_role | EXECUTE | não |
+| routine | `public.calc_rm(p_classe text, p_int integer, p_bonus integer)` | authenticated | EXECUTE | não |
+| routine | `public.calc_rm(p_classe text, p_int integer, p_bonus integer)` | service_role | EXECUTE | não |
+| routine | `public.calc_sheet(p_char bigint)` | authenticated | EXECUTE | não |
+| routine | `public.calc_sheet(p_char bigint)` | service_role | EXECUTE | não |
+| routine | `public.can_read_media(p_path text)` | authenticated | EXECUTE | não |
+| routine | `public.can_read_media(p_path text)` | service_role | EXECUTE | não |
+| routine | `public.capacity(p_for integer)` | authenticated | EXECUTE | não |
+| routine | `public.capacity(p_for integer)` | service_role | EXECUTE | não |
+| routine | `public.clonar_equipamento_ficha_para_token(p_campaign_id bigint, p_token_id text, p_character_id text)` | authenticated | EXECUTE | não |
+| routine | `public.clonar_equipamento_ficha_para_token(p_campaign_id bigint, p_token_id text, p_character_id text)` | service_role | EXECUTE | não |
+| routine | `public.combat_set_turn(p_token bigint)` | service_role | EXECUTE | não |
+| routine | `public.conceder_xp_personagem_srd(p_campaign_id bigint, p_character_id text, p_xp integer)` | authenticated | EXECUTE | não |
+| routine | `public.conceder_xp_personagem_srd(p_campaign_id bigint, p_character_id text, p_xp integer)` | service_role | EXECUTE | não |
+| routine | `public.concluir_avanco_nivel_personagem_srd_v2(p_campaign_id bigint, p_character_id text, p_hit_die_roll integer, p_skill_ranks jsonb, p_feats jsonb, p_attribute text, p_idiomas jsonb)` | authenticated | EXECUTE | não |
+| routine | `public.concluir_avanco_nivel_personagem_srd_v2(p_campaign_id bigint, p_character_id text, p_hit_die_roll integer, p_skill_ranks jsonb, p_feats jsonb, p_attribute text, p_idiomas jsonb)` | service_role | EXECUTE | não |
+| routine | `public.confirm_sheet(p_char bigint)` | service_role | EXECUTE | não |
+| routine | `public.confirmar_critico_ataque_iterativo_npc_srd(p_campaign_id bigint, p_attempt_id uuid, p_confirmation_d20 integer)` | authenticated | EXECUTE | não |
+| routine | `public.confirmar_critico_ataque_iterativo_npc_srd(p_campaign_id bigint, p_attempt_id uuid, p_confirmation_d20 integer)` | service_role | EXECUTE | não |
+| routine | `public.confirmar_critico_ataque_iterativo_srd(p_campaign_id bigint, p_attempt_id uuid, p_confirmation_d20 integer)` | authenticated | EXECUTE | não |
+| routine | `public.confirmar_critico_ataque_iterativo_srd(p_campaign_id bigint, p_attempt_id uuid, p_confirmation_d20 integer)` | service_role | EXECUTE | não |
+| routine | `public.conjurar_magia_com_acao_srd(p_character_id text, p_spell_id text, p_slot_level smallint, p_target_token_key text)` | service_role | EXECUTE | não |
+| routine | `public.conjurar_magia_com_acao_srd_manual(p_character_id text, p_spell_id text, p_slot_level smallint, p_target_token_key text, p_roll_results integer[])` | authenticated | EXECUTE | não |
+| routine | `public.conjurar_magia_com_acao_srd_manual(p_character_id text, p_spell_id text, p_slot_level smallint, p_target_token_key text, p_roll_results integer[])` | service_role | EXECUTE | não |
+| routine | `public.conjurar_magia_com_acao_srd_multialvo(p_character_id text, p_spell_id text, p_slot_level smallint, p_target_token_keys text[])` | service_role | EXECUTE | não |
+| routine | `public.conjurar_magia_com_acao_srd_multialvo_v2(p_character_id text, p_spell_id text, p_slot_level smallint, p_target_token_keys text[])` | service_role | EXECUTE | não |
+| routine | `public.conjurar_magia_com_acao_srd_multialvo_v3(p_character_id text, p_spell_id text, p_slot_level smallint, p_target_token_keys text[], p_roll_results integer[])` | authenticated | EXECUTE | não |
+| routine | `public.conjurar_magia_com_acao_srd_multialvo_v3(p_character_id text, p_spell_id text, p_slot_level smallint, p_target_token_keys text[], p_roll_results integer[])` | service_role | EXECUTE | não |
+| routine | `public.conjurar_magia_dano_multialvo_srd(p_character_id text, p_spell_id text, p_slot_level smallint, p_target_token_keys text[], p_roll_results integer[])` | authenticated | EXECUTE | não |
+| routine | `public.conjurar_magia_dano_multialvo_srd(p_character_id text, p_spell_id text, p_slot_level smallint, p_target_token_keys text[], p_roll_results integer[])` | service_role | EXECUTE | não |
+| routine | `public.conjurar_magia_efeitos_multialvo(p_character_id text, p_spell_id text, p_slot_level smallint, p_target_token_keys text[])` | authenticated | EXECUTE | não |
+| routine | `public.conjurar_magia_efeitos_multialvo(p_character_id text, p_spell_id text, p_slot_level smallint, p_target_token_keys text[])` | service_role | EXECUTE | não |
+| routine | `public.conjurar_magia_srd(p_character_id text, p_spell_id text, p_slot_level smallint, p_target_token_key text)` | service_role | EXECUTE | não |
+| routine | `public.conjurar_magia_srd_manual(p_character_id text, p_spell_id text, p_slot_level smallint, p_target_token_key text, p_roll_results integer[])` | service_role | EXECUTE | não |
+| routine | `public.conjurar_magia_srd_multialvo(p_character_id text, p_spell_id text, p_slot_level smallint, p_target_token_keys text[])` | service_role | EXECUTE | não |
+| routine | `public.conjurar_magia_srd_multialvo_v2(p_character_id text, p_spell_id text, p_slot_level smallint, p_target_token_keys text[])` | service_role | EXECUTE | não |
+| routine | `public.conjurar_magia_srd_multialvo_v3(p_character_id text, p_spell_id text, p_slot_level smallint, p_target_token_keys text[], p_roll_results integer[])` | service_role | EXECUTE | não |
+| routine | `public.conjurar_missil_magico_srd(p_character_id text, p_spell_id text, p_slot_level smallint, p_target_token_key text, p_damage integer)` | service_role | EXECUTE | não |
+| routine | `public.conjurar_missil_magico_srd_manual(p_character_id text, p_spell_id text, p_slot_level smallint, p_target_token_key text, p_damage_rolls integer[])` | authenticated | EXECUTE | não |
+| routine | `public.conjurar_missil_magico_srd_manual(p_character_id text, p_spell_id text, p_slot_level smallint, p_target_token_key text, p_damage_rolls integer[])` | service_role | EXECUTE | não |
+| routine | `public.consultar_ataque_iterativo_npc_pendente_srd(p_campaign_id bigint, p_actor_token_id text)` | authenticated | EXECUTE | não |
+| routine | `public.consultar_ataque_iterativo_npc_pendente_srd(p_campaign_id bigint, p_actor_token_id text)` | service_role | EXECUTE | não |
+| routine | `public.consultar_ataque_iterativo_npc_srd(p_campaign_id bigint, p_token_id text, p_attack_type text)` | authenticated | EXECUTE | não |
+| routine | `public.consultar_ataque_iterativo_npc_srd(p_campaign_id bigint, p_token_id text, p_attack_type text)` | service_role | EXECUTE | não |
+| routine | `public.consultar_furia_barbaro_npc_srd(p_campaign_id bigint, p_token_id text)` | authenticated | EXECUTE | não |
+| routine | `public.consultar_furia_barbaro_npc_srd(p_campaign_id bigint, p_token_id text)` | service_role | EXECUTE | não |
+| routine | `public.consultar_furia_barbaro_srd(p_character_id text)` | authenticated | EXECUTE | não |
+| routine | `public.consultar_furia_barbaro_srd(p_character_id text)` | service_role | EXECUTE | não |
+| routine | `public.consultar_inventario_npc_vinculado_srd(p_campaign_id bigint, p_token_id text)` | authenticated | EXECUTE | não |
+| routine | `public.consultar_inventario_npc_vinculado_srd(p_campaign_id bigint, p_token_id text)` | service_role | EXECUTE | não |
+| routine | `public.consultar_sequencia_ataque_iterativo_pendente_srd(p_campaign_id bigint, p_character_id text)` | authenticated | EXECUTE | não |
+| routine | `public.consultar_sequencia_ataque_iterativo_pendente_srd(p_campaign_id bigint, p_character_id text)` | service_role | EXECUTE | não |
+| routine | `public.consumir_acao_rodada_completa_srd(p_campaign_id bigint, p_actor_id text, p_actor_kind text)` | authenticated | EXECUTE | não |
+| routine | `public.consumir_acao_rodada_completa_srd(p_campaign_id bigint, p_actor_id text, p_actor_kind text)` | service_role | EXECUTE | não |
+| routine | `public.consumir_acao_token_gm_srd(p_campaign_id bigint, p_token_id text, p_acao text)` | authenticated | EXECUTE | não |
+| routine | `public.consumir_acao_token_gm_srd(p_campaign_id bigint, p_token_id text, p_acao text)` | service_role | EXECUTE | não |
+| routine | `public.consumir_acao_turno_srd(p_campaign_id bigint, p_character_id text, p_acao text)` | authenticated | EXECUTE | não |
+| routine | `public.consumir_acao_turno_srd(p_campaign_id bigint, p_character_id text, p_acao text)` | service_role | EXECUTE | não |
+| routine | `public.create_campaign(p_name text, p_code text, p_location bigint)` | authenticated | EXECUTE | não |
+| routine | `public.create_campaign(p_name text, p_code text, p_location bigint)` | service_role | EXECUTE | não |
+| routine | `public.create_character(cid bigint, p_nome text)` | service_role | EXECUTE | não |
+| routine | `public.criar_personagem_srd(p_nome text, p_raca_id text, p_classe_id text, p_atributos jsonb)` | service_role | EXECUTE | não |
+| routine | `public.criar_personagem_srd_completo(p_nome text, p_raca_id text, p_classe_id text, p_atributos jsonb, p_pericias jsonb, p_talentos jsonb)` | authenticated | EXECUTE | não |
+| routine | `public.criar_personagem_srd_completo(p_nome text, p_raca_id text, p_classe_id text, p_atributos jsonb, p_pericias jsonb, p_talentos jsonb)` | service_role | EXECUTE | não |
+| routine | `public.criar_personagem_srd_completo(p_nome text, p_raca_id text, p_classe_id text, p_atributos jsonb, p_pericias jsonb, p_talentos jsonb, p_identidade jsonb)` | authenticated | EXECUTE | não |
+| routine | `public.criar_personagem_srd_completo(p_nome text, p_raca_id text, p_classe_id text, p_atributos jsonb, p_pericias jsonb, p_talentos jsonb, p_identidade jsonb)` | service_role | EXECUTE | não |
+| routine | `public.descanso_longo_npc_vinculado_srd(p_campaign_id bigint, p_token_id text)` | authenticated | EXECUTE | não |
+| routine | `public.descanso_longo_npc_vinculado_srd(p_campaign_id bigint, p_token_id text)` | service_role | EXECUTE | não |
+| routine | `public.descanso_longo_personagem_srd(p_campaign_id bigint, p_character_id text)` | authenticated | EXECUTE | não |
+| routine | `public.descanso_longo_personagem_srd(p_campaign_id bigint, p_character_id text)` | service_role | EXECUTE | não |
+| routine | `public.encumbrance(p_carga numeric, p_for integer)` | authenticated | EXECUTE | não |
+| routine | `public.encumbrance(p_carga numeric, p_for integer)` | service_role | EXECUTE | não |
+| routine | `public.end_combat(cid bigint)` | service_role | EXECUTE | não |
+| routine | `public.end_turn(p_token bigint)` | service_role | EXECUTE | não |
+| routine | `public.enforce_campaign_member_role()` | service_role | EXECUTE | não |
+| routine | `public.entrar_campanha_aberta(p_campaign_id bigint)` | authenticated | EXECUTE | não |
+| routine | `public.entrar_campanha_aberta(p_campaign_id bigint)` | service_role | EXECUTE | não |
+| routine | `public.entrar_campanha_com_codigo(p_campaign_id bigint, p_code text)` | authenticated | EXECUTE | não |
+| routine | `public.entrar_campanha_com_codigo(p_campaign_id bigint, p_code text)` | service_role | EXECUTE | não |
+| routine | `public.entregar_item_srd(p_campaign_id bigint, p_character_id text, p_equipment_id text, p_quantidade integer)` | authenticated | EXECUTE | não |
+| routine | `public.entregar_item_srd(p_campaign_id bigint, p_character_id text, p_equipment_id text, p_quantidade integer)` | service_role | EXECUTE | não |
+| routine | `public.entregar_item_token_srd(p_campaign_id bigint, p_token_id text, p_equipment_id text, p_quantidade integer)` | authenticated | EXECUTE | não |
+| routine | `public.entregar_item_token_srd(p_campaign_id bigint, p_token_id text, p_equipment_id text, p_quantidade integer)` | service_role | EXECUTE | não |
+| routine | `public.equipar_arma_instancia_npc_vinculado_srd(p_campaign_id bigint, p_token_id text, p_instance_id uuid, p_hand_slot text, p_equipado boolean)` | authenticated | EXECUTE | não |
+| routine | `public.equipar_arma_instancia_npc_vinculado_srd(p_campaign_id bigint, p_token_id text, p_instance_id uuid, p_hand_slot text, p_equipado boolean)` | service_role | EXECUTE | não |
+| routine | `public.equipar_arma_instancia_personagem(p_character_id text, p_instance_id uuid, p_hand_slot text, p_equipado boolean)` | authenticated | EXECUTE | não |
+| routine | `public.equipar_arma_instancia_personagem(p_character_id text, p_instance_id uuid, p_hand_slot text, p_equipado boolean)` | service_role | EXECUTE | não |
+| routine | `public.equipar_arma_instancia_token(p_campaign_id bigint, p_token_id text, p_instance_id uuid, p_hand_slot text, p_equipado boolean)` | authenticated | EXECUTE | não |
+| routine | `public.equipar_arma_instancia_token(p_campaign_id bigint, p_token_id text, p_instance_id uuid, p_hand_slot text, p_equipado boolean)` | service_role | EXECUTE | não |
+| routine | `public.equipar_item_npc_vinculado_srd(p_campaign_id bigint, p_token_id text, p_equipment_id text, p_equipado boolean)` | authenticated | EXECUTE | não |
+| routine | `public.equipar_item_npc_vinculado_srd(p_campaign_id bigint, p_token_id text, p_equipment_id text, p_equipado boolean)` | service_role | EXECUTE | não |
+| routine | `public.equipar_item_srd(p_character_id text, p_equipment_id text, p_equipado boolean)` | authenticated | EXECUTE | não |
+| routine | `public.equipar_item_srd(p_character_id text, p_equipment_id text, p_equipado boolean)` | service_role | EXECUTE | não |
+| routine | `public.equipar_item_srd_maos(p_character_id text, p_equipment_id text, p_hand_slot text, p_equipado boolean)` | authenticated | EXECUTE | não |
+| routine | `public.equipar_item_srd_maos(p_character_id text, p_equipment_id text, p_hand_slot text, p_equipado boolean)` | service_role | EXECUTE | não |
+| routine | `public.equipar_item_token_srd(p_campaign_id bigint, p_token_id text, p_equipment_id text, p_equipado boolean)` | authenticated | EXECUTE | não |
+| routine | `public.equipar_item_token_srd(p_campaign_id bigint, p_token_id text, p_equipment_id text, p_equipado boolean)` | service_role | EXECUTE | não |
+| routine | `public.equipar_item_token_srd_maos(p_campaign_id bigint, p_token_id text, p_equipment_id text, p_hand_slot text, p_equipado boolean)` | authenticated | EXECUTE | não |
+| routine | `public.equipar_item_token_srd_maos(p_campaign_id bigint, p_token_id text, p_equipment_id text, p_hand_slot text, p_equipado boolean)` | service_role | EXECUTE | não |
+| routine | `public.excluir_ficha_propria(p_character_id text)` | authenticated | EXECUTE | não |
+| routine | `public.excluir_ficha_propria(p_character_id text)` | service_role | EXECUTE | não |
+| routine | `public.finalizar_criacao_personagem_srd(p_nome text, p_raca_id text, p_classe_id text, p_atributos jsonb, p_pericias jsonb, p_talentos jsonb, p_identidade jsonb, p_idiomas jsonb, p_talentos_bonus jsonb, p_domain_ids text[], p_grimorio jsonb, p_equipamento_metodo text, p_equipamento_resultados jsonb, p_equipamento_itens jsonb)` | authenticated | EXECUTE | não |
+| routine | `public.finalizar_criacao_personagem_srd(p_nome text, p_raca_id text, p_classe_id text, p_atributos jsonb, p_pericias jsonb, p_talentos jsonb, p_identidade jsonb, p_idiomas jsonb, p_talentos_bonus jsonb, p_domain_ids text[], p_grimorio jsonb, p_equipamento_metodo text, p_equipamento_resultados jsonb, p_equipamento_itens jsonb)` | service_role | EXECUTE | não |
+| routine | `public.finalizar_equipamento_inicial_srd(p_character_id text, p_metodo text, p_resultados jsonb, p_itens jsonb)` | authenticated | EXECUTE | não |
+| routine | `public.finalizar_equipamento_inicial_srd(p_character_id text, p_metodo text, p_resultados jsonb, p_itens jsonb)` | service_role | EXECUTE | não |
+| routine | `public.finalizar_exclusao_campanha_propria(p_campaign_id bigint)` | authenticated | EXECUTE | não |
+| routine | `public.finalizar_exclusao_campanha_propria(p_campaign_id bigint)` | service_role | EXECUTE | não |
+| routine | `public.forget_spell(p_char bigint, p_spell bigint)` | service_role | EXECUTE | não |
+| routine | `public.gm_get_code(cid bigint)` | authenticated | EXECUTE | não |
+| routine | `public.gm_get_code(cid bigint)` | service_role | EXECUTE | não |
+| routine | `public.gm_grant(cid bigint, p_char bigint, p_ouro integer, p_xp integer, p_item text, p_qtd integer)` | authenticated | EXECUTE | não |
+| routine | `public.gm_grant(cid bigint, p_char bigint, p_ouro integer, p_xp integer, p_item text, p_qtd integer)` | service_role | EXECUTE | não |
+| routine | `public.gm_kick(cid bigint, p_user uuid)` | authenticated | EXECUTE | não |
+| routine | `public.gm_kick(cid bigint, p_user uuid)` | service_role | EXECUTE | não |
+| routine | `public.gm_reopen_sheet(p_char bigint, p_motivo text)` | authenticated | EXECUTE | não |
+| routine | `public.gm_reopen_sheet(p_char bigint, p_motivo text)` | service_role | EXECUTE | não |
+| routine | `public.gm_set_bonus(p_char bigint, p_ca integer, p_rm integer, p_motivo text)` | authenticated | EXECUTE | não |
+| routine | `public.gm_set_bonus(p_char bigint, p_ca integer, p_rm integer, p_motivo text)` | service_role | EXECUTE | não |
+| routine | `public.gm_set_code(cid bigint, p_code text)` | authenticated | EXECUTE | não |
+| routine | `public.gm_set_code(cid bigint, p_code text)` | service_role | EXECUTE | não |
+| routine | `public.gm_set_role(cid bigint, p_username text, p_role text)` | authenticated | EXECUTE | não |
+| routine | `public.gm_set_role(cid bigint, p_username text, p_role text)` | service_role | EXECUTE | não |
+| routine | `public.gm_transfer(cid bigint, p_username text, p_confirmar boolean)` | authenticated | EXECUTE | não |
+| routine | `public.gm_transfer(cid bigint, p_username text, p_confirmar boolean)` | service_role | EXECUTE | não |
+| routine | `public.handle_new_user()` | service_role | EXECUTE | não |
+| routine | `public.hex_cost(cid bigint, x1 integer, y1 integer, x2 integer, y2 integer)` | authenticated | EXECUTE | não |
+| routine | `public.hex_cost(cid bigint, x1 integer, y1 integer, x2 integer, y2 integer)` | service_role | EXECUTE | não |
+| routine | `public.hex_dist(x1 integer, y1 integer, x2 integer, y2 integer)` | authenticated | EXECUTE | não |
+| routine | `public.hex_dist(x1 integer, y1 integer, x2 integer, y2 integer)` | service_role | EXECUTE | não |
+| routine | `public.iniciar_ataque_iterativo_npc_srd(p_campaign_id bigint, p_actor_token_id text, p_target_token_id text, p_attack_type text, p_weapon_instance_id uuid, p_weapon_hand_slot text, p_weapon_end text)` | authenticated | EXECUTE | não |
+| routine | `public.iniciar_ataque_iterativo_npc_srd(p_campaign_id bigint, p_actor_token_id text, p_target_token_id text, p_attack_type text, p_weapon_instance_id uuid, p_weapon_hand_slot text, p_weapon_end text)` | service_role | EXECUTE | não |
+| routine | `public.iniciar_ataque_iterativo_npc_srd(p_campaign_id bigint, p_actor_token_id text, p_target_token_id text, p_attack_type text, p_weapon_instance_id uuid, p_weapon_hand_slot text, p_weapon_end text, p_power_attack_penalty integer)` | authenticated | EXECUTE | não |
+| routine | `public.iniciar_ataque_iterativo_npc_srd(p_campaign_id bigint, p_actor_token_id text, p_target_token_id text, p_attack_type text, p_weapon_instance_id uuid, p_weapon_hand_slot text, p_weapon_end text, p_power_attack_penalty integer)` | service_role | EXECUTE | não |
+| routine | `public.iniciar_iniciativa(p_campaign_id bigint, p_expected_character_ids text[])` | service_role | EXECUTE | não |
+| routine | `public.iniciar_iniciativa_com_dados(p_campaign_id bigint, p_expected_character_ids text[], p_request_id text, p_gm_d20_results jsonb)` | authenticated | EXECUTE | não |
+| routine | `public.iniciar_iniciativa_com_dados(p_campaign_id bigint, p_expected_character_ids text[], p_request_id text, p_gm_d20_results jsonb)` | service_role | EXECUTE | não |
+| routine | `public.iniciar_iniciativa_com_pedido(p_campaign_id bigint, p_expected_character_ids text[], p_request_id text)` | service_role | EXECUTE | não |
+| routine | `public.iniciar_sequencia_ataque_iterativo_srd(p_campaign_id bigint, p_character_id text, p_target_token_id text, p_attack_type text, p_weapon_instance_id uuid)` | authenticated | EXECUTE | não |
+| routine | `public.iniciar_sequencia_ataque_iterativo_srd(p_campaign_id bigint, p_character_id text, p_target_token_id text, p_attack_type text, p_weapon_instance_id uuid)` | service_role | EXECUTE | não |
+| routine | `public.iniciar_sequencia_ataque_iterativo_srd(p_campaign_id bigint, p_character_id text, p_target_token_id text, p_attack_type text, p_weapon_instance_id uuid, p_weapon_hand_slot text, p_weapon_end text)` | authenticated | EXECUTE | não |
+| routine | `public.iniciar_sequencia_ataque_iterativo_srd(p_campaign_id bigint, p_character_id text, p_target_token_id text, p_attack_type text, p_weapon_instance_id uuid, p_weapon_hand_slot text, p_weapon_end text)` | service_role | EXECUTE | não |
+| routine | `public.iniciar_sequencia_ataque_iterativo_srd(p_campaign_id bigint, p_character_id text, p_target_token_id text, p_attack_type text, p_weapon_instance_id uuid, p_weapon_hand_slot text, p_weapon_end text, p_power_attack_penalty integer)` | authenticated | EXECUTE | não |
+| routine | `public.iniciar_sequencia_ataque_iterativo_srd(p_campaign_id bigint, p_character_id text, p_target_token_id text, p_attack_type text, p_weapon_instance_id uuid, p_weapon_hand_slot text, p_weapon_end text, p_power_attack_penalty integer)` | service_role | EXECUTE | não |
+| routine | `public.join_campaign(p_code text)` | authenticated | EXECUTE | não |
+| routine | `public.join_campaign(p_code text)` | service_role | EXECUTE | não |
+| routine | `public.learn_abilities_for_level(p_char bigint, p_nivel integer)` | service_role | EXECUTE | não |
+| routine | `public.learn_spell(p_char bigint, p_spell bigint)` | service_role | EXECUTE | não |
+| routine | `public.leave_campaign(cid bigint)` | authenticated | EXECUTE | não |
+| routine | `public.leave_campaign(cid bigint)` | service_role | EXECUTE | não |
+| routine | `public.level_from_xp(p_xp integer)` | authenticated | EXECUTE | não |
+| routine | `public.level_from_xp(p_xp integer)` | service_role | EXECUTE | não |
+| routine | `public.limpar_ficha_srd_ao_excluir_personagem()` | service_role | EXECUTE | não |
+| routine | `public.limpar_inventario_srd_ao_excluir_personagem()` | service_role | EXECUTE | não |
+| routine | `public.lobby_list()` | service_role | EXECUTE | não |
+| routine | `public.lobby_list_v2()` | authenticated | EXECUTE | não |
+| routine | `public.lobby_list_v2()` | service_role | EXECUTE | não |
+| routine | `public.long_rest(p_char bigint)` | service_role | EXECUTE | não |
+| routine | `public.media_gc(cid bigint)` | authenticated | EXECUTE | não |
+| routine | `public.media_gc(cid bigint)` | service_role | EXECUTE | não |
+| routine | `public.move_token(p_token bigint, p_x integer, p_y integer)` | service_role | EXECUTE | não |
+| routine | `public.mover_combatente_iniciativa(p_campaign_id bigint, p_indice integer, p_direcao integer)` | authenticated | EXECUTE | não |
+| routine | `public.mover_combatente_iniciativa(p_campaign_id bigint, p_indice integer, p_direcao integer)` | service_role | EXECUTE | não |
+| routine | `public.mover_token_gm_cba_srd(p_campaign_id bigint, p_token_id text, p_grid_x integer, p_grid_y integer)` | authenticated | EXECUTE | não |
+| routine | `public.mover_token_gm_cba_srd(p_campaign_id bigint, p_token_id text, p_grid_x integer, p_grid_y integer)` | service_role | EXECUTE | não |
+| routine | `public.mover_token_player_cba(p_campaign_id bigint, p_character_id text, p_grid_x integer, p_grid_y integer)` | authenticated | EXECUTE | não |
+| routine | `public.mover_token_player_cba(p_campaign_id bigint, p_character_id text, p_grid_x integer, p_grid_y integer)` | service_role | EXECUTE | não |
+| routine | `public.my_role(cid bigint)` | authenticated | EXECUTE | não |
+| routine | `public.my_role(cid bigint)` | service_role | EXECUTE | não |
+| routine | `public.nivel_de_xp(p_xp integer)` | authenticated | EXECUTE | não |
+| routine | `public.nivel_de_xp(p_xp integer)` | service_role | EXECUTE | não |
+| routine | `public.preparar_exclusao_campanha_propria(p_campaign_id bigint)` | authenticated | EXECUTE | não |
+| routine | `public.preparar_exclusao_campanha_propria(p_campaign_id bigint)` | service_role | EXECUTE | não |
+| routine | `public.registrar_iniciativa(p_campaign_id bigint, p_personagem_id text, p_nome text, p_valor integer)` | service_role | EXECUTE | não |
+| routine | `public.registrar_iniciativa_d20(p_campaign_id bigint, p_personagem_id text, p_d20 integer)` | authenticated | EXECUTE | não |
+| routine | `public.registrar_iniciativa_d20(p_campaign_id bigint, p_personagem_id text, p_d20 integer)` | service_role | EXECUTE | não |
+| routine | `public.registrar_rolagem_ataque_iterativo_npc_srd(p_campaign_id bigint, p_sequence_id uuid, p_manual_d20 integer, p_idempotency_key uuid)` | authenticated | EXECUTE | não |
+| routine | `public.registrar_rolagem_ataque_iterativo_npc_srd(p_campaign_id bigint, p_sequence_id uuid, p_manual_d20 integer, p_idempotency_key uuid)` | service_role | EXECUTE | não |
+| routine | `public.registrar_rolagem_ataque_iterativo_srd(p_campaign_id bigint, p_sequence_id uuid, p_manual_d20 integer, p_idempotency_key uuid)` | authenticated | EXECUTE | não |
+| routine | `public.registrar_rolagem_ataque_iterativo_srd(p_campaign_id bigint, p_sequence_id uuid, p_manual_d20 integer, p_idempotency_key uuid)` | service_role | EXECUTE | não |
+| routine | `public.remove_condition(p_char bigint, p_condition text)` | service_role | EXECUTE | não |
+| routine | `public.repor_magias_srd(p_character_id text)` | service_role | EXECUTE | não |
+| routine | `public.resolver_ataque_iterativo_npc_srd(p_campaign_id bigint, p_attempt_id uuid)` | authenticated | EXECUTE | não |
+| routine | `public.resolver_ataque_iterativo_npc_srd(p_campaign_id bigint, p_attempt_id uuid)` | service_role | EXECUTE | não |
+| routine | `public.resolver_ataque_iterativo_srd(p_campaign_id bigint, p_attempt_id uuid)` | authenticated | EXECUTE | não |
+| routine | `public.resolver_ataque_iterativo_srd(p_campaign_id bigint, p_attempt_id uuid)` | service_role | EXECUTE | não |
+| routine | `public.roll_death_save(p_char bigint)` | service_role | EXECUTE | não |
+| routine | `public.roll_dice(p_expr text, p_visibilidade text)` | service_role | EXECUTE | não |
+| routine | `public.salvar_cena_cba(p_campaign_id bigint, p_scene jsonb)` | authenticated | EXECUTE | não |
+| routine | `public.salvar_cena_cba(p_campaign_id bigint, p_scene jsonb)` | service_role | EXECUTE | não |
+| routine | `public.salvar_dominios_personagem_srd(p_character_id text, p_domain_ids text[])` | authenticated | EXECUTE | não |
+| routine | `public.salvar_dominios_personagem_srd(p_character_id text, p_domain_ids text[])` | service_role | EXECUTE | não |
+| routine | `public.salvar_grimorio_srd(p_character_id text, p_estado jsonb)` | authenticated | EXECUTE | não |
+| routine | `public.salvar_grimorio_srd(p_character_id text, p_estado jsonb)` | service_role | EXECUTE | não |
+| routine | `public.salvar_idiomas_personagem_srd(p_character_id text, p_idiomas jsonb)` | authenticated | EXECUTE | não |
+| routine | `public.salvar_idiomas_personagem_srd(p_character_id text, p_idiomas jsonb)` | service_role | EXECUTE | não |
+| routine | `public.salvar_pericias_srd(p_character_id text, p_pericias jsonb)` | service_role | EXECUTE | não |
+| routine | `public.salvar_talentos_bonus_classe_inicial_srd(p_character_id text, p_talentos jsonb)` | authenticated | EXECUTE | não |
+| routine | `public.salvar_talentos_bonus_classe_inicial_srd(p_character_id text, p_talentos jsonb)` | service_role | EXECUTE | não |
+| routine | `public.salvar_talentos_srd(p_character_id text, p_talentos jsonb)` | service_role | EXECUTE | não |
+| routine | `public.save_sheet(p_char bigint, p_dados jsonb, p_motivo text)` | service_role | EXECUTE | não |
+| routine | `public.scene_config(cid bigint, p_state text, p_cols integer, p_rows integer)` | service_role | EXECUTE | não |
+| routine | `public.sell_price(p_item text)` | authenticated | EXECUTE | não |
+| routine | `public.sell_price(p_item text)` | service_role | EXECUTE | não |
+| routine | `public.send_chat(cid bigint, p_texto text, p_visibilidade text)` | service_role | EXECUTE | não |
+| routine | `public.sentar_personagem_na_mesa(p_campaign_id bigint, p_character_id text)` | authenticated | EXECUTE | não |
+| routine | `public.sentar_personagem_na_mesa(p_campaign_id bigint, p_character_id text)` | service_role | EXECUTE | não |
+| routine | `public.set_turn(cid bigint, p_token bigint)` | authenticated | EXECUTE | não |
+| routine | `public.set_turn(cid bigint, p_token bigint)` | service_role | EXECUTE | não |
+| routine | `public.short_rest(p_char bigint)` | service_role | EXECUTE | não |
+| routine | `public.sou_membro(cid bigint)` | authenticated | EXECUTE | não |
+| routine | `public.sou_membro(cid bigint)` | service_role | EXECUTE | não |
+| routine | `public.spell_dc(p_int integer, p_circulo integer)` | authenticated | EXECUTE | não |
+| routine | `public.spell_dc(p_int integer, p_circulo integer)` | service_role | EXECUTE | não |
+| routine | `public.srd35_deslocamento_personagem(p_character_id text, p_base_speed_m numeric)` | authenticated | EXECUTE | não |
+| routine | `public.srd35_deslocamento_personagem(p_character_id text, p_base_speed_m numeric)` | service_role | EXECUTE | não |
+| routine | `public.srd35_equipment_ca_bonus(p_equipment_id text)` | PUBLIC | EXECUTE | não |
+| routine | `public.srd35_equipment_ca_bonus(p_equipment_id text)` | anon | EXECUTE | não |
+| routine | `public.srd35_equipment_ca_bonus(p_equipment_id text)` | authenticated | EXECUTE | não |
+| routine | `public.srd35_equipment_ca_bonus(p_equipment_id text)` | service_role | EXECUTE | não |
+| routine | `public.srd35_equipment_slot(p_categoria text, p_nome text)` | PUBLIC | EXECUTE | não |
+| routine | `public.srd35_equipment_slot(p_categoria text, p_nome text)` | anon | EXECUTE | não |
+| routine | `public.srd35_equipment_slot(p_categoria text, p_nome text)` | authenticated | EXECUTE | não |
+| routine | `public.srd35_equipment_slot(p_categoria text, p_nome text)` | service_role | EXECUTE | não |
+| routine | `public.srd35_normalizar_parametro_talento(p_text text)` | PUBLIC | EXECUTE | não |
+| routine | `public.srd35_normalizar_parametro_talento(p_text text)` | anon | EXECUTE | não |
+| routine | `public.srd35_normalizar_parametro_talento(p_text text)` | authenticated | EXECUTE | não |
+| routine | `public.srd35_normalizar_parametro_talento(p_text text)` | service_role | EXECUTE | não |
+| routine | `public.srd_aplicar_dano_ataque_oportunidade_monstro_srd(p_campaign_id bigint, p_attack_id uuid, p_damage_rolls integer[], p_idempotency_key uuid)` | authenticated | EXECUTE | não |
+| routine | `public.srd_aplicar_dano_ataque_oportunidade_monstro_srd(p_campaign_id bigint, p_attack_id uuid, p_damage_rolls integer[], p_idempotency_key uuid)` | service_role | EXECUTE | não |
+| routine | `public.srd_aplicar_dano_ataque_oportunidade_srd(p_campaign_id bigint, p_attack_id uuid, p_damage_rolls integer[], p_idempotency_key uuid)` | authenticated | EXECUTE | não |
+| routine | `public.srd_aplicar_dano_ataque_oportunidade_srd(p_campaign_id bigint, p_attack_id uuid, p_damage_rolls integer[], p_idempotency_key uuid)` | service_role | EXECUTE | não |
+| routine | `public.srd_apply_campaign_condition(p_campaign_id bigint, p_target_kind text, p_target_id text, p_condition_id text, p_duration_rounds integer, p_notes jsonb)` | authenticated | EXECUTE | não |
+| routine | `public.srd_apply_campaign_condition(p_campaign_id bigint, p_target_kind text, p_target_id text, p_condition_id text, p_duration_rounds integer, p_notes jsonb)` | service_role | EXECUTE | não |
+| routine | `public.srd_apply_campaign_effect(p_campaign_id bigint, p_target_kind text, p_target_id text, p_effect_kind text, p_effect_data jsonb, p_duration_rounds integer, p_source_spell_id text, p_concentration_actor_id text)` | authenticated | EXECUTE | não |
+| routine | `public.srd_apply_campaign_effect(p_campaign_id bigint, p_target_kind text, p_target_id text, p_effect_kind text, p_effect_data jsonb, p_duration_rounds integer, p_source_spell_id text, p_concentration_actor_id text)` | service_role | EXECUTE | não |
+| routine | `public.srd_apply_toughness_hp_delta()` | PUBLIC | EXECUTE | não |
+| routine | `public.srd_apply_toughness_hp_delta()` | authenticated | EXECUTE | não |
+| routine | `public.srd_apply_toughness_hp_delta()` | service_role | EXECUTE | não |
+| routine | `public.srd_calcular_ca_personagem_srd(p_campaign_id bigint, p_character_id text, p_attack_context text)` | authenticated | EXECUTE | não |
+| routine | `public.srd_calcular_ca_personagem_srd(p_campaign_id bigint, p_character_id text, p_attack_context text)` | service_role | EXECUTE | não |
+| routine | `public.srd_calcular_ca_personagem_srd(p_campaign_id bigint, p_character_id text, p_attack_context text, p_attacker_is_giant boolean)` | authenticated | EXECUTE | não |
+| routine | `public.srd_calcular_ca_personagem_srd(p_campaign_id bigint, p_character_id text, p_attack_context text, p_attacker_is_giant boolean)` | service_role | EXECUTE | não |
+| routine | `public.srd_cancelar_movimento_aoo_pendente_srd(p_campaign_id bigint, p_pending_id uuid)` | authenticated | EXECUTE | não |
+| routine | `public.srd_cancelar_movimento_aoo_pendente_srd(p_campaign_id bigint, p_pending_id uuid)` | service_role | EXECUTE | não |
+| routine | `public.srd_configurar_perfil_combate_token_srd(p_campaign_id bigint, p_token_id text, p_combat_faction text, p_melee_reach_ft integer)` | authenticated | EXECUTE | não |
+| routine | `public.srd_configurar_perfil_combate_token_srd(p_campaign_id bigint, p_token_id text, p_combat_faction text, p_melee_reach_ft integer)` | service_role | EXECUTE | não |
+| routine | `public.srd_configurar_rodada_surpresa_srd(p_campaign_id bigint, p_aware_ids text[])` | authenticated | EXECUTE | não |
+| routine | `public.srd_configurar_rodada_surpresa_srd(p_campaign_id bigint, p_aware_ids text[])` | service_role | EXECUTE | não |
+| routine | `public.srd_confirmar_critico_ataque_oportunidade_srd(p_campaign_id bigint, p_attack_id uuid, p_confirmation_d20 integer)` | authenticated | EXECUTE | não |
+| routine | `public.srd_confirmar_critico_ataque_oportunidade_srd(p_campaign_id bigint, p_attack_id uuid, p_confirmation_d20 integer)` | service_role | EXECUTE | não |
+| routine | `public.srd_consultar_armas_aoo_srd(p_campaign_id bigint, p_pending_id uuid, p_reactor_token_id text)` | authenticated | EXECUTE | não |
+| routine | `public.srd_consultar_armas_aoo_srd(p_campaign_id bigint, p_pending_id uuid, p_reactor_token_id text)` | service_role | EXECUTE | não |
+| routine | `public.srd_consultar_ataque_oportunidade_srd(p_campaign_id bigint, p_attack_id uuid)` | authenticated | EXECUTE | não |
+| routine | `public.srd_consultar_ataque_oportunidade_srd(p_campaign_id bigint, p_attack_id uuid)` | service_role | EXECUTE | não |
+| routine | `public.srd_consultar_modificadores_manobra_srd(p_campaign_id bigint, p_attacker_token_id text, p_defender_token_id text, p_maneuver text, p_defender_firm_ground boolean)` | authenticated | EXECUTE | não |
+| routine | `public.srd_consultar_modificadores_manobra_srd(p_campaign_id bigint, p_attacker_token_id text, p_defender_token_id text, p_maneuver text, p_defender_firm_ground boolean)` | service_role | EXECUTE | não |
+| routine | `public.srd_consultar_modificadores_manobra_srd(p_campaign_id bigint, p_attacker_token_id text, p_defender_token_id text, p_maneuver text, p_defender_firm_ground boolean, p_trip_using_weapon boolean)` | authenticated | EXECUTE | não |
+| routine | `public.srd_consultar_modificadores_manobra_srd(p_campaign_id bigint, p_attacker_token_id text, p_defender_token_id text, p_maneuver text, p_defender_firm_ground boolean, p_trip_using_weapon boolean)` | service_role | EXECUTE | não |
+| routine | `public.srd_consultar_movimento_aoo_pendente_srd(p_campaign_id bigint, p_pending_id uuid)` | authenticated | EXECUTE | não |
+| routine | `public.srd_consultar_movimento_aoo_pendente_srd(p_campaign_id bigint, p_pending_id uuid)` | service_role | EXECUTE | não |
+| routine | `public.srd_detectar_saida_alcance_ameacado_srd(p_campaign_id bigint, p_mover_token_id text, p_destination_x integer, p_destination_y integer)` | authenticated | EXECUTE | não |
+| routine | `public.srd_detectar_saida_alcance_ameacado_srd(p_campaign_id bigint, p_mover_token_id text, p_destination_x integer, p_destination_y integer)` | service_role | EXECUTE | não |
+| routine | `public.srd_effective_modifier(p_campaign_id bigint, p_target_kind text, p_target_id text, p_stat text)` | authenticated | EXECUTE | não |
+| routine | `public.srd_effective_modifier(p_campaign_id bigint, p_target_kind text, p_target_id text, p_stat text)` | service_role | EXECUTE | não |
+| routine | `public.srd_encerrar_reacao_aoo_pendente_srd(p_campaign_id bigint, p_pending_id uuid, p_reactor_token_id text, p_cancel_attack boolean)` | authenticated | EXECUTE | não |
+| routine | `public.srd_encerrar_reacao_aoo_pendente_srd(p_campaign_id bigint, p_pending_id uuid, p_reactor_token_id text, p_cancel_attack boolean)` | service_role | EXECUTE | não |
+| routine | `public.srd_expire_campaign_conditions(p_campaign_id bigint)` | service_role | EXECUTE | não |
+| routine | `public.srd_finalizar_movimento_aoo_pendente_srd(p_campaign_id bigint, p_pending_id uuid)` | authenticated | EXECUTE | não |
+| routine | `public.srd_finalizar_movimento_aoo_pendente_srd(p_campaign_id bigint, p_pending_id uuid)` | service_role | EXECUTE | não |
+| routine | `public.srd_iniciar_ataque_oportunidade_desarmado_srd(p_campaign_id bigint, p_pending_id uuid, p_reactor_token_id text, p_reaction_id uuid)` | authenticated | EXECUTE | não |
+| routine | `public.srd_iniciar_ataque_oportunidade_desarmado_srd(p_campaign_id bigint, p_pending_id uuid, p_reactor_token_id text, p_reaction_id uuid)` | service_role | EXECUTE | não |
+| routine | `public.srd_iniciar_ataque_oportunidade_monstro_srd(p_campaign_id bigint, p_pending_id uuid, p_reactor_token_id text, p_reaction_id uuid)` | authenticated | EXECUTE | não |
+| routine | `public.srd_iniciar_ataque_oportunidade_monstro_srd(p_campaign_id bigint, p_pending_id uuid, p_reactor_token_id text, p_reaction_id uuid)` | service_role | EXECUTE | não |
+| routine | `public.srd_iniciar_ataque_oportunidade_monstro_srd(p_campaign_id bigint, p_pending_id uuid, p_reactor_token_id text, p_reaction_id uuid, p_natural_attack_index integer)` | authenticated | EXECUTE | não |
+| routine | `public.srd_iniciar_ataque_oportunidade_monstro_srd(p_campaign_id bigint, p_pending_id uuid, p_reactor_token_id text, p_reaction_id uuid, p_natural_attack_index integer)` | service_role | EXECUTE | não |
+| routine | `public.srd_iniciar_ataque_oportunidade_srd(p_campaign_id bigint, p_pending_id uuid, p_reactor_token_id text, p_reaction_id uuid, p_weapon_instance_id uuid, p_weapon_hand_slot text, p_weapon_end text)` | authenticated | EXECUTE | não |
+| routine | `public.srd_iniciar_ataque_oportunidade_srd(p_campaign_id bigint, p_pending_id uuid, p_reactor_token_id text, p_reaction_id uuid, p_weapon_instance_id uuid, p_weapon_hand_slot text, p_weapon_end text)` | service_role | EXECUTE | não |
+| routine | `public.srd_iniciar_derrubar_com_aoo_srd(p_campaign_id bigint, p_attacker_token_id text, p_defender_token_id text, p_defender_firm_ground boolean, p_trip_using_weapon boolean)` | authenticated | EXECUTE | não |
+| routine | `public.srd_iniciar_derrubar_com_aoo_srd(p_campaign_id bigint, p_attacker_token_id text, p_defender_token_id text, p_defender_firm_ground boolean, p_trip_using_weapon boolean)` | service_role | EXECUTE | não |
+| routine | `public.srd_iniciar_encontrao_srd(p_campaign_id bigint, p_attacker_token_id text, p_defender_token_id text)` | authenticated | EXECUTE | não |
+| routine | `public.srd_iniciar_encontrao_srd(p_campaign_id bigint, p_attacker_token_id text, p_defender_token_id text)` | service_role | EXECUTE | não |
+| routine | `public.srd_iniciar_levantar_caido_srd(p_campaign_id bigint, p_token_id text)` | authenticated | EXECUTE | não |
+| routine | `public.srd_iniciar_levantar_caido_srd(p_campaign_id bigint, p_token_id text)` | service_role | EXECUTE | não |
+| routine | `public.srd_listar_ataques_naturais_oportunidade_srd(p_campaign_id bigint, p_reactor_token_id text)` | authenticated | EXECUTE | não |
+| routine | `public.srd_listar_ataques_naturais_oportunidade_srd(p_campaign_id bigint, p_reactor_token_id text)` | service_role | EXECUTE | não |
+| routine | `public.srd_listar_movimentos_aoo_pendentes_srd(p_campaign_id bigint)` | authenticated | EXECUTE | não |
+| routine | `public.srd_listar_movimentos_aoo_pendentes_srd(p_campaign_id bigint)` | service_role | EXECUTE | não |
+| routine | `public.srd_registrar_ocultacao_ataque_oportunidade_srd(p_campaign_id bigint, p_attack_id uuid, p_manual_d100 integer)` | authenticated | EXECUTE | não |
+| routine | `public.srd_registrar_ocultacao_ataque_oportunidade_srd(p_campaign_id bigint, p_attack_id uuid, p_manual_d100 integer)` | service_role | EXECUTE | não |
+| routine | `public.srd_registrar_rolagem_ataque_oportunidade_srd(p_campaign_id bigint, p_attack_id uuid, p_manual_d20 integer, p_idempotency_key uuid)` | authenticated | EXECUTE | não |
+| routine | `public.srd_registrar_rolagem_ataque_oportunidade_srd(p_campaign_id bigint, p_attack_id uuid, p_manual_d20 integer, p_idempotency_key uuid)` | service_role | EXECUTE | não |
+| routine | `public.srd_remove_campaign_condition(p_campaign_id bigint, p_target_kind text, p_target_id text, p_condition_id text)` | authenticated | EXECUTE | não |
+| routine | `public.srd_remove_campaign_condition(p_campaign_id bigint, p_target_kind text, p_target_id text, p_condition_id text)` | service_role | EXECUTE | não |
+| routine | `public.srd_remove_campaign_effect(p_campaign_id bigint, p_effect_instance_id bigint)` | authenticated | EXECUTE | não |
+| routine | `public.srd_remove_campaign_effect(p_campaign_id bigint, p_effect_instance_id bigint)` | service_role | EXECUTE | não |
+| routine | `public.srd_reservar_ataque_oportunidade_srd(p_campaign_id bigint, p_actor_token_id text, p_trigger_key text, p_actor_flat_footed boolean)` | authenticated | EXECUTE | não |
+| routine | `public.srd_reservar_ataque_oportunidade_srd(p_campaign_id bigint, p_actor_token_id text, p_trigger_key text, p_actor_flat_footed boolean)` | service_role | EXECUTE | não |
+| routine | `public.srd_reservar_reacao_movimento_aoo_srd(p_campaign_id bigint, p_pending_id uuid, p_reactor_token_id text)` | authenticated | EXECUTE | não |
+| routine | `public.srd_reservar_reacao_movimento_aoo_srd(p_campaign_id bigint, p_pending_id uuid, p_reactor_token_id text)` | service_role | EXECUTE | não |
+| routine | `public.srd_resolve_confusion_turn_srd(p_campaign_id bigint, p_target_kind text, p_target_id text, p_request_id uuid, p_manual_d100 integer)` | authenticated | EXECUTE | não |
+| routine | `public.srd_resolve_confusion_turn_srd(p_campaign_id bigint, p_target_kind text, p_target_id text, p_request_id uuid, p_manual_d100 integer)` | service_role | EXECUTE | não |
+| routine | `public.srd_resolve_dying_round(p_campaign_id bigint, p_character_id text, p_d100 integer)` | authenticated | EXECUTE | não |
+| routine | `public.srd_resolve_dying_round(p_campaign_id bigint, p_character_id text, p_d100 integer)` | service_role | EXECUTE | não |
+| routine | `public.srd_resolve_npc_dying_round(p_campaign_id bigint, p_token_id text, p_d100 integer)` | authenticated | EXECUTE | não |
+| routine | `public.srd_resolve_npc_dying_round(p_campaign_id bigint, p_token_id text, p_d100 integer)` | service_role | EXECUTE | não |
+| routine | `public.srd_resolve_pending_spell_resistance(p_pending_id uuid, p_d20 integer)` | authenticated | EXECUTE | não |
+| routine | `public.srd_resolve_pending_spell_resistance(p_pending_id uuid, p_d20 integer)` | service_role | EXECUTE | não |
+| routine | `public.srd_resolve_pending_spell_save(p_pending_id uuid, p_d20 integer)` | authenticated | EXECUTE | não |
+| routine | `public.srd_resolve_pending_spell_save(p_pending_id uuid, p_d20 integer)` | service_role | EXECUTE | não |
+| routine | `public.srd_resolve_requested_saving_throw_srd(p_campaign_id bigint, p_character_id text, p_request_id text, p_d20 integer)` | authenticated | EXECUTE | não |
+| routine | `public.srd_resolve_requested_saving_throw_srd(p_campaign_id bigint, p_character_id text, p_request_id text, p_d20 integer)` | service_role | EXECUTE | não |
+| routine | `public.srd_resolver_ataque_oportunidade_srd(p_campaign_id bigint, p_attack_id uuid)` | authenticated | EXECUTE | não |
+| routine | `public.srd_resolver_ataque_oportunidade_srd(p_campaign_id bigint, p_attack_id uuid)` | service_role | EXECUTE | não |
+| routine | `public.srd_resolver_derrubar_apos_aoo_srd(p_campaign_id bigint, p_pending_id uuid, p_attacker_d20 integer, p_defender_d20 integer, p_defender_firm_ground boolean)` | authenticated | EXECUTE | não |
+| routine | `public.srd_resolver_derrubar_apos_aoo_srd(p_campaign_id bigint, p_pending_id uuid, p_attacker_d20 integer, p_defender_d20 integer, p_defender_firm_ground boolean)` | service_role | EXECUTE | não |
+| routine | `public.srd_resolver_derrubar_srd(p_campaign_id bigint, p_attacker_token_id text, p_defender_token_id text, p_attacker_d20 integer, p_defender_d20 integer, p_defender_uses_dex boolean, p_defender_firm_ground boolean, p_trip_using_weapon boolean)` | authenticated | EXECUTE | não |
+| routine | `public.srd_resolver_derrubar_srd(p_campaign_id bigint, p_attacker_token_id text, p_defender_token_id text, p_attacker_d20 integer, p_defender_d20 integer, p_defender_uses_dex boolean, p_defender_firm_ground boolean, p_trip_using_weapon boolean)` | service_role | EXECUTE | não |
+| routine | `public.srd_resolver_encontrao_srd(p_campaign_id bigint, p_pending_id uuid, p_attacker_d20 integer, p_defender_d20 integer, p_follow boolean)` | authenticated | EXECUTE | não |
+| routine | `public.srd_resolver_encontrao_srd(p_campaign_id bigint, p_pending_id uuid, p_attacker_d20 integer, p_defender_d20 integer, p_follow boolean)` | service_role | EXECUTE | não |
+| routine | `public.srd_resolver_levantar_caido_apos_aoo_srd(p_campaign_id bigint, p_pending_id uuid)` | authenticated | EXECUTE | não |
+| routine | `public.srd_resolver_levantar_caido_apos_aoo_srd(p_campaign_id bigint, p_pending_id uuid)` | service_role | EXECUTE | não |
+| routine | `public.srd_resolver_teste_resistencia_token_srd(p_campaign_id bigint, p_token_id text, p_save_type text, p_context text, p_d20 integer, p_dc integer)` | authenticated | EXECUTE | não |
+| routine | `public.srd_resolver_teste_resistencia_token_srd(p_campaign_id bigint, p_token_id text, p_save_type text, p_context text, p_d20 integer, p_dc integer)` | service_role | EXECUTE | não |
+| routine | `public.srd_solicitar_movimento_com_aoo_srd(p_campaign_id bigint, p_mover_token_id text, p_destination_x integer, p_destination_y integer, p_controller text)` | authenticated | EXECUTE | não |
+| routine | `public.srd_solicitar_movimento_com_aoo_srd(p_campaign_id bigint, p_mover_token_id text, p_destination_x integer, p_destination_y integer, p_controller text)` | service_role | EXECUTE | não |
+| routine | `public.srd_validar_uso_pericia_srd(p_character_id text, p_skill_id text)` | authenticated | EXECUTE | não |
+| routine | `public.srd_validar_uso_pericia_srd(p_character_id text, p_skill_id text)` | service_role | EXECUTE | não |
+| routine | `public.start_combat(cid bigint)` | service_role | EXECUTE | não |
+| routine | `public.usar_furia_barbaro_npc_srd(p_campaign_id bigint, p_token_id text, p_action text)` | authenticated | EXECUTE | não |
+| routine | `public.usar_furia_barbaro_npc_srd(p_campaign_id bigint, p_token_id text, p_action text)` | service_role | EXECUTE | não |
+| routine | `public.usar_furia_barbaro_srd(p_character_id text, p_action text)` | authenticated | EXECUTE | não |
+| routine | `public.usar_furia_barbaro_srd(p_character_id text, p_action text)` | service_role | EXECUTE | não |
+| routine | `public.usar_habilidade_classe_srd(p_character_id text, p_feature_key text, p_target_token_key text, p_amount integer)` | authenticated | EXECUTE | não |
+| routine | `public.usar_habilidade_classe_srd(p_character_id text, p_feature_key text, p_target_token_key text, p_amount integer)` | service_role | EXECUTE | não |
+| routine | `public.usar_imposicao_maos_mortos_vivos_srd(p_character_id text, p_target_token_key text, p_d20 integer, p_amount integer)` | authenticated | EXECUTE | não |
+| routine | `public.usar_imposicao_maos_mortos_vivos_srd(p_character_id text, p_target_token_key text, p_d20 integer, p_amount integer)` | service_role | EXECUTE | não |
+| routine | `public.usar_pocao_cura_srd(p_character_id text, p_equipment_id text)` | service_role | EXECUTE | não |
+| routine | `public.usar_pocao_cura_srd_manual(p_character_id text, p_equipment_id text, p_roll_results integer[])` | authenticated | EXECUTE | não |
+| routine | `public.usar_pocao_cura_srd_manual(p_character_id text, p_equipment_id text, p_roll_results integer[])` | service_role | EXECUTE | não |
+| routine | `public.xp_to_next(p_xp integer)` | authenticated | EXECUTE | não |
+| routine | `public.xp_to_next(p_xp integer)` | service_role | EXECUTE | não |
+| schema | `priv` | authenticated | USAGE | não |
+| schema | `priv` | service_role | USAGE | não |
+| schema | `private` | authenticated | USAGE | não |
+| schema | `public` | anon | USAGE | não |
+| schema | `public` | authenticated | USAGE | não |
+| schema | `public` | service_role | USAGE | não |
+| table | `priv.campaign_deletion_cleanup` | service_role | DELETE | não |
+| table | `priv.campaign_deletion_cleanup` | service_role | INSERT | não |
+| table | `priv.campaign_deletion_cleanup` | service_role | MAINTAIN | não |
+| table | `priv.campaign_deletion_cleanup` | service_role | REFERENCES | não |
+| table | `priv.campaign_deletion_cleanup` | service_role | SELECT | não |
+| table | `priv.campaign_deletion_cleanup` | service_role | TRIGGER | não |
+| table | `priv.campaign_deletion_cleanup` | service_role | TRUNCATE | não |
+| table | `priv.campaign_deletion_cleanup` | service_role | UPDATE | não |
+| table | `priv.srd_aoo_attacks` | service_role | DELETE | não |
+| table | `priv.srd_aoo_attacks` | service_role | INSERT | não |
+| table | `priv.srd_aoo_attacks` | service_role | MAINTAIN | não |
+| table | `priv.srd_aoo_attacks` | service_role | REFERENCES | não |
+| table | `priv.srd_aoo_attacks` | service_role | SELECT | não |
+| table | `priv.srd_aoo_attacks` | service_role | TRIGGER | não |
+| table | `priv.srd_aoo_attacks` | service_role | TRUNCATE | não |
+| table | `priv.srd_aoo_attacks` | service_role | UPDATE | não |
+| table | `priv.srd_aoo_pending_movements` | service_role | DELETE | não |
+| table | `priv.srd_aoo_pending_movements` | service_role | INSERT | não |
+| table | `priv.srd_aoo_pending_movements` | service_role | MAINTAIN | não |
+| table | `priv.srd_aoo_pending_movements` | service_role | REFERENCES | não |
+| table | `priv.srd_aoo_pending_movements` | service_role | SELECT | não |
+| table | `priv.srd_aoo_pending_movements` | service_role | TRIGGER | não |
+| table | `priv.srd_aoo_pending_movements` | service_role | TRUNCATE | não |
+| table | `priv.srd_aoo_pending_movements` | service_role | UPDATE | não |
+| table | `priv.srd_aoo_reaction_ledger` | service_role | DELETE | não |
+| table | `priv.srd_aoo_reaction_ledger` | service_role | INSERT | não |
+| table | `priv.srd_aoo_reaction_ledger` | service_role | MAINTAIN | não |
+| table | `priv.srd_aoo_reaction_ledger` | service_role | REFERENCES | não |
+| table | `priv.srd_aoo_reaction_ledger` | service_role | SELECT | não |
+| table | `priv.srd_aoo_reaction_ledger` | service_role | TRIGGER | não |
+| table | `priv.srd_aoo_reaction_ledger` | service_role | TRUNCATE | não |
+| table | `priv.srd_aoo_reaction_ledger` | service_role | UPDATE | não |
+| table | `priv.srd_condition_engine_rules` | service_role | DELETE | não |
+| table | `priv.srd_condition_engine_rules` | service_role | INSERT | não |
+| table | `priv.srd_condition_engine_rules` | service_role | MAINTAIN | não |
+| table | `priv.srd_condition_engine_rules` | service_role | REFERENCES | não |
+| table | `priv.srd_condition_engine_rules` | service_role | SELECT | não |
+| table | `priv.srd_condition_engine_rules` | service_role | TRIGGER | não |
+| table | `priv.srd_condition_engine_rules` | service_role | TRUNCATE | não |
+| table | `priv.srd_condition_engine_rules` | service_role | UPDATE | não |
+| table | `priv.srd_pending_spell_resolutions` | service_role | DELETE | não |
+| table | `priv.srd_pending_spell_resolutions` | service_role | INSERT | não |
+| table | `priv.srd_pending_spell_resolutions` | service_role | MAINTAIN | não |
+| table | `priv.srd_pending_spell_resolutions` | service_role | REFERENCES | não |
+| table | `priv.srd_pending_spell_resolutions` | service_role | SELECT | não |
+| table | `priv.srd_pending_spell_resolutions` | service_role | TRIGGER | não |
+| table | `priv.srd_pending_spell_resolutions` | service_role | TRUNCATE | não |
+| table | `priv.srd_pending_spell_resolutions` | service_role | UPDATE | não |
+| table | `priv.throttle` | service_role | DELETE | não |
+| table | `priv.throttle` | service_role | INSERT | não |
+| table | `priv.throttle` | service_role | MAINTAIN | não |
+| table | `priv.throttle` | service_role | REFERENCES | não |
+| table | `priv.throttle` | service_role | SELECT | não |
+| table | `priv.throttle` | service_role | TRIGGER | não |
+| table | `priv.throttle` | service_role | TRUNCATE | não |
+| table | `priv.throttle` | service_role | UPDATE | não |
+| table | `public.campaign_codes` | authenticated | SELECT | não |
+| table | `public.campaign_codes` | service_role | DELETE | não |
+| table | `public.campaign_codes` | service_role | INSERT | não |
+| table | `public.campaign_codes` | service_role | MAINTAIN | não |
+| table | `public.campaign_codes` | service_role | REFERENCES | não |
+| table | `public.campaign_codes` | service_role | SELECT | não |
+| table | `public.campaign_codes` | service_role | TRIGGER | não |
+| table | `public.campaign_codes` | service_role | TRUNCATE | não |
+| table | `public.campaign_codes` | service_role | UPDATE | não |
+| table | `public.campaign_log` | authenticated | INSERT | não |
+| table | `public.campaign_log` | authenticated | SELECT | não |
+| table | `public.campaign_log` | service_role | DELETE | não |
+| table | `public.campaign_log` | service_role | INSERT | não |
+| table | `public.campaign_log` | service_role | MAINTAIN | não |
+| table | `public.campaign_log` | service_role | REFERENCES | não |
+| table | `public.campaign_log` | service_role | SELECT | não |
+| table | `public.campaign_log` | service_role | TRIGGER | não |
+| table | `public.campaign_log` | service_role | TRUNCATE | não |
+| table | `public.campaign_log` | service_role | UPDATE | não |
+| table | `public.campaign_log_id_seq` | anon | SELECT | não |
+| table | `public.campaign_log_id_seq` | anon | UPDATE | não |
+| table | `public.campaign_log_id_seq` | anon | USAGE | não |
+| table | `public.campaign_log_id_seq` | authenticated | SELECT | não |
+| table | `public.campaign_log_id_seq` | authenticated | UPDATE | não |
+| table | `public.campaign_log_id_seq` | authenticated | USAGE | não |
+| table | `public.campaign_log_id_seq` | service_role | SELECT | não |
+| table | `public.campaign_log_id_seq` | service_role | UPDATE | não |
+| table | `public.campaign_log_id_seq` | service_role | USAGE | não |
+| table | `public.campaign_rule_modules` | authenticated | SELECT | não |
+| table | `public.campaign_rule_modules` | service_role | DELETE | não |
+| table | `public.campaign_rule_modules` | service_role | INSERT | não |
+| table | `public.campaign_rule_modules` | service_role | MAINTAIN | não |
+| table | `public.campaign_rule_modules` | service_role | REFERENCES | não |
+| table | `public.campaign_rule_modules` | service_role | SELECT | não |
+| table | `public.campaign_rule_modules` | service_role | TRIGGER | não |
+| table | `public.campaign_rule_modules` | service_role | TRUNCATE | não |
+| table | `public.campaign_rule_modules` | service_role | UPDATE | não |
+| table | `public.campaigns` | authenticated | SELECT | não |
+| table | `public.campaigns` | service_role | DELETE | não |
+| table | `public.campaigns` | service_role | INSERT | não |
+| table | `public.campaigns` | service_role | MAINTAIN | não |
+| table | `public.campaigns` | service_role | REFERENCES | não |
+| table | `public.campaigns` | service_role | SELECT | não |
+| table | `public.campaigns` | service_role | TRIGGER | não |
+| table | `public.campaigns` | service_role | TRUNCATE | não |
+| table | `public.campaigns` | service_role | UPDATE | não |
+| table | `public.campaigns_id_seq` | anon | SELECT | não |
+| table | `public.campaigns_id_seq` | anon | UPDATE | não |
+| table | `public.campaigns_id_seq` | anon | USAGE | não |
+| table | `public.campaigns_id_seq` | authenticated | SELECT | não |
+| table | `public.campaigns_id_seq` | authenticated | UPDATE | não |
+| table | `public.campaigns_id_seq` | authenticated | USAGE | não |
+| table | `public.campaigns_id_seq` | service_role | SELECT | não |
+| table | `public.campaigns_id_seq` | service_role | UPDATE | não |
+| table | `public.campaigns_id_seq` | service_role | USAGE | não |
+| table | `public.character_abilities` | authenticated | SELECT | não |
+| table | `public.character_abilities` | service_role | DELETE | não |
+| table | `public.character_abilities` | service_role | INSERT | não |
+| table | `public.character_abilities` | service_role | MAINTAIN | não |
+| table | `public.character_abilities` | service_role | REFERENCES | não |
+| table | `public.character_abilities` | service_role | SELECT | não |
+| table | `public.character_abilities` | service_role | TRIGGER | não |
+| table | `public.character_abilities` | service_role | TRUNCATE | não |
+| table | `public.character_abilities` | service_role | UPDATE | não |
+| table | `public.character_conditions` | authenticated | SELECT | não |
+| table | `public.character_conditions` | service_role | DELETE | não |
+| table | `public.character_conditions` | service_role | INSERT | não |
+| table | `public.character_conditions` | service_role | MAINTAIN | não |
+| table | `public.character_conditions` | service_role | REFERENCES | não |
+| table | `public.character_conditions` | service_role | SELECT | não |
+| table | `public.character_conditions` | service_role | TRIGGER | não |
+| table | `public.character_conditions` | service_role | TRUNCATE | não |
+| table | `public.character_conditions` | service_role | UPDATE | não |
+| table | `public.character_conditions_id_seq` | anon | SELECT | não |
+| table | `public.character_conditions_id_seq` | anon | UPDATE | não |
+| table | `public.character_conditions_id_seq` | anon | USAGE | não |
+| table | `public.character_conditions_id_seq` | authenticated | SELECT | não |
+| table | `public.character_conditions_id_seq` | authenticated | UPDATE | não |
+| table | `public.character_conditions_id_seq` | authenticated | USAGE | não |
+| table | `public.character_conditions_id_seq` | service_role | SELECT | não |
+| table | `public.character_conditions_id_seq` | service_role | UPDATE | não |
+| table | `public.character_conditions_id_seq` | service_role | USAGE | não |
+| table | `public.character_notes_id_seq` | anon | SELECT | não |
+| table | `public.character_notes_id_seq` | anon | UPDATE | não |
+| table | `public.character_notes_id_seq` | anon | USAGE | não |
+| table | `public.character_notes_id_seq` | authenticated | SELECT | não |
+| table | `public.character_notes_id_seq` | authenticated | UPDATE | não |
+| table | `public.character_notes_id_seq` | authenticated | USAGE | não |
+| table | `public.character_notes_id_seq` | service_role | SELECT | não |
+| table | `public.character_notes_id_seq` | service_role | UPDATE | não |
+| table | `public.character_notes_id_seq` | service_role | USAGE | não |
+| table | `public.character_spells` | authenticated | INSERT | não |
+| table | `public.character_spells` | authenticated | SELECT | não |
+| table | `public.character_spells` | service_role | DELETE | não |
+| table | `public.character_spells` | service_role | INSERT | não |
+| table | `public.character_spells` | service_role | MAINTAIN | não |
+| table | `public.character_spells` | service_role | REFERENCES | não |
+| table | `public.character_spells` | service_role | SELECT | não |
+| table | `public.character_spells` | service_role | TRIGGER | não |
+| table | `public.character_spells` | service_role | TRUNCATE | não |
+| table | `public.character_spells` | service_role | UPDATE | não |
+| table | `public.character_talents` | authenticated | DELETE | não |
+| table | `public.character_talents` | authenticated | INSERT | não |
+| table | `public.character_talents` | authenticated | MAINTAIN | não |
+| table | `public.character_talents` | authenticated | REFERENCES | não |
+| table | `public.character_talents` | authenticated | SELECT | não |
+| table | `public.character_talents` | authenticated | TRIGGER | não |
+| table | `public.character_talents` | authenticated | TRUNCATE | não |
+| table | `public.character_talents` | authenticated | UPDATE | não |
+| table | `public.character_talents` | service_role | DELETE | não |
+| table | `public.character_talents` | service_role | INSERT | não |
+| table | `public.character_talents` | service_role | MAINTAIN | não |
+| table | `public.character_talents` | service_role | REFERENCES | não |
+| table | `public.character_talents` | service_role | SELECT | não |
+| table | `public.character_talents` | service_role | TRIGGER | não |
+| table | `public.character_talents` | service_role | TRUNCATE | não |
+| table | `public.character_talents` | service_role | UPDATE | não |
+| table | `public.characters` | authenticated | INSERT | não |
+| table | `public.characters` | authenticated | SELECT | não |
+| table | `public.characters` | service_role | DELETE | não |
+| table | `public.characters` | service_role | INSERT | não |
+| table | `public.characters` | service_role | MAINTAIN | não |
+| table | `public.characters` | service_role | REFERENCES | não |
+| table | `public.characters` | service_role | SELECT | não |
+| table | `public.characters` | service_role | TRIGGER | não |
+| table | `public.characters` | service_role | TRUNCATE | não |
+| table | `public.characters` | service_role | UPDATE | não |
+| table | `public.characters_id_seq` | anon | SELECT | não |
+| table | `public.characters_id_seq` | anon | UPDATE | não |
+| table | `public.characters_id_seq` | anon | USAGE | não |
+| table | `public.characters_id_seq` | authenticated | SELECT | não |
+| table | `public.characters_id_seq` | authenticated | UPDATE | não |
+| table | `public.characters_id_seq` | authenticated | USAGE | não |
+| table | `public.characters_id_seq` | service_role | SELECT | não |
+| table | `public.characters_id_seq` | service_role | UPDATE | não |
+| table | `public.characters_id_seq` | service_role | USAGE | não |
+| table | `public.combat_state` | authenticated | SELECT | não |
+| table | `public.combat_state` | service_role | DELETE | não |
+| table | `public.combat_state` | service_role | INSERT | não |
+| table | `public.combat_state` | service_role | MAINTAIN | não |
+| table | `public.combat_state` | service_role | REFERENCES | não |
+| table | `public.combat_state` | service_role | SELECT | não |
+| table | `public.combat_state` | service_role | TRIGGER | não |
+| table | `public.combat_state` | service_role | TRUNCATE | não |
+| table | `public.combat_state` | service_role | UPDATE | não |
+| table | `public.conditions` | authenticated | SELECT | não |
+| table | `public.conditions` | service_role | DELETE | não |
+| table | `public.conditions` | service_role | INSERT | não |
+| table | `public.conditions` | service_role | MAINTAIN | não |
+| table | `public.conditions` | service_role | REFERENCES | não |
+| table | `public.conditions` | service_role | SELECT | não |
+| table | `public.conditions` | service_role | TRIGGER | não |
+| table | `public.conditions` | service_role | TRUNCATE | não |
+| table | `public.conditions` | service_role | UPDATE | não |
+| table | `public.continents` | anon | SELECT | não |
+| table | `public.continents` | authenticated | SELECT | não |
+| table | `public.continents` | service_role | DELETE | não |
+| table | `public.continents` | service_role | INSERT | não |
+| table | `public.continents` | service_role | MAINTAIN | não |
+| table | `public.continents` | service_role | REFERENCES | não |
+| table | `public.continents` | service_role | SELECT | não |
+| table | `public.continents` | service_role | TRIGGER | não |
+| table | `public.continents` | service_role | TRUNCATE | não |
+| table | `public.continents` | service_role | UPDATE | não |
+| table | `public.layers` | authenticated | DELETE | não |
+| table | `public.layers` | authenticated | INSERT | não |
+| table | `public.layers` | authenticated | SELECT | não |
+| table | `public.layers` | authenticated | UPDATE | não |
+| table | `public.layers` | service_role | DELETE | não |
+| table | `public.layers` | service_role | INSERT | não |
+| table | `public.layers` | service_role | MAINTAIN | não |
+| table | `public.layers` | service_role | REFERENCES | não |
+| table | `public.layers` | service_role | SELECT | não |
+| table | `public.layers` | service_role | TRIGGER | não |
+| table | `public.layers` | service_role | TRUNCATE | não |
+| table | `public.layers` | service_role | UPDATE | não |
+| table | `public.layers_id_seq` | anon | SELECT | não |
+| table | `public.layers_id_seq` | anon | UPDATE | não |
+| table | `public.layers_id_seq` | anon | USAGE | não |
+| table | `public.layers_id_seq` | authenticated | SELECT | não |
+| table | `public.layers_id_seq` | authenticated | UPDATE | não |
+| table | `public.layers_id_seq` | authenticated | USAGE | não |
+| table | `public.layers_id_seq` | service_role | SELECT | não |
+| table | `public.layers_id_seq` | service_role | UPDATE | não |
+| table | `public.layers_id_seq` | service_role | USAGE | não |
+| table | `public.locations` | anon | SELECT | não |
+| table | `public.locations` | authenticated | SELECT | não |
+| table | `public.locations` | service_role | DELETE | não |
+| table | `public.locations` | service_role | INSERT | não |
+| table | `public.locations` | service_role | MAINTAIN | não |
+| table | `public.locations` | service_role | REFERENCES | não |
+| table | `public.locations` | service_role | SELECT | não |
+| table | `public.locations` | service_role | TRIGGER | não |
+| table | `public.locations` | service_role | TRUNCATE | não |
+| table | `public.locations` | service_role | UPDATE | não |
+| table | `public.locations_id_seq` | anon | SELECT | não |
+| table | `public.locations_id_seq` | anon | UPDATE | não |
+| table | `public.locations_id_seq` | anon | USAGE | não |
+| table | `public.locations_id_seq` | authenticated | SELECT | não |
+| table | `public.locations_id_seq` | authenticated | UPDATE | não |
+| table | `public.locations_id_seq` | authenticated | USAGE | não |
+| table | `public.locations_id_seq` | service_role | SELECT | não |
+| table | `public.locations_id_seq` | service_role | UPDATE | não |
+| table | `public.locations_id_seq` | service_role | USAGE | não |
+| table | `public.media` | authenticated | DELETE | não |
+| table | `public.media` | authenticated | INSERT | não |
+| table | `public.media` | authenticated | SELECT | não |
+| table | `public.media` | authenticated | UPDATE | não |
+| table | `public.media` | service_role | DELETE | não |
+| table | `public.media` | service_role | INSERT | não |
+| table | `public.media` | service_role | MAINTAIN | não |
+| table | `public.media` | service_role | REFERENCES | não |
+| table | `public.media` | service_role | SELECT | não |
+| table | `public.media` | service_role | TRIGGER | não |
+| table | `public.media` | service_role | TRUNCATE | não |
+| table | `public.media` | service_role | UPDATE | não |
+| table | `public.media_id_seq` | anon | SELECT | não |
+| table | `public.media_id_seq` | anon | UPDATE | não |
+| table | `public.media_id_seq` | anon | USAGE | não |
+| table | `public.media_id_seq` | authenticated | SELECT | não |
+| table | `public.media_id_seq` | authenticated | UPDATE | não |
+| table | `public.media_id_seq` | authenticated | USAGE | não |
+| table | `public.media_id_seq` | service_role | SELECT | não |
+| table | `public.media_id_seq` | service_role | UPDATE | não |
+| table | `public.media_id_seq` | service_role | USAGE | não |
+| table | `public.members` | authenticated | SELECT | não |
+| table | `public.members` | service_role | DELETE | não |
+| table | `public.members` | service_role | INSERT | não |
+| table | `public.members` | service_role | MAINTAIN | não |
+| table | `public.members` | service_role | REFERENCES | não |
+| table | `public.members` | service_role | SELECT | não |
+| table | `public.members` | service_role | TRIGGER | não |
+| table | `public.members` | service_role | TRUNCATE | não |
+| table | `public.members` | service_role | UPDATE | não |
+| table | `public.monster_instances` | authenticated | DELETE | não |
+| table | `public.monster_instances` | authenticated | INSERT | não |
+| table | `public.monster_instances` | authenticated | MAINTAIN | não |
+| table | `public.monster_instances` | authenticated | REFERENCES | não |
+| table | `public.monster_instances` | authenticated | SELECT | não |
+| table | `public.monster_instances` | authenticated | TRIGGER | não |
+| table | `public.monster_instances` | authenticated | TRUNCATE | não |
+| table | `public.monster_instances` | authenticated | UPDATE | não |
+| table | `public.monster_instances` | service_role | DELETE | não |
+| table | `public.monster_instances` | service_role | INSERT | não |
+| table | `public.monster_instances` | service_role | MAINTAIN | não |
+| table | `public.monster_instances` | service_role | REFERENCES | não |
+| table | `public.monster_instances` | service_role | SELECT | não |
+| table | `public.monster_instances` | service_role | TRIGGER | não |
+| table | `public.monster_instances` | service_role | TRUNCATE | não |
+| table | `public.monster_instances` | service_role | UPDATE | não |
+| table | `public.monster_instances_id_seq` | anon | SELECT | não |
+| table | `public.monster_instances_id_seq` | anon | UPDATE | não |
+| table | `public.monster_instances_id_seq` | anon | USAGE | não |
+| table | `public.monster_instances_id_seq` | authenticated | SELECT | não |
+| table | `public.monster_instances_id_seq` | authenticated | UPDATE | não |
+| table | `public.monster_instances_id_seq` | authenticated | USAGE | não |
+| table | `public.monster_instances_id_seq` | service_role | SELECT | não |
+| table | `public.monster_instances_id_seq` | service_role | UPDATE | não |
+| table | `public.monster_instances_id_seq` | service_role | USAGE | não |
+| table | `public.monsters` | anon | MAINTAIN | não |
+| table | `public.monsters` | anon | SELECT | não |
+| table | `public.monsters` | authenticated | MAINTAIN | não |
+| table | `public.monsters` | authenticated | SELECT | não |
+| table | `public.monsters` | service_role | DELETE | não |
+| table | `public.monsters` | service_role | INSERT | não |
+| table | `public.monsters` | service_role | MAINTAIN | não |
+| table | `public.monsters` | service_role | REFERENCES | não |
+| table | `public.monsters` | service_role | SELECT | não |
+| table | `public.monsters` | service_role | TRIGGER | não |
+| table | `public.monsters` | service_role | TRUNCATE | não |
+| table | `public.monsters` | service_role | UPDATE | não |
+| table | `public.profiles` | anon | MAINTAIN | não |
+| table | `public.profiles` | anon | REFERENCES | não |
+| table | `public.profiles` | anon | SELECT | não |
+| table | `public.profiles` | anon | TRIGGER | não |
+| table | `public.profiles` | anon | TRUNCATE | não |
+| table | `public.profiles` | authenticated | INSERT | não |
+| table | `public.profiles` | authenticated | MAINTAIN | não |
+| table | `public.profiles` | authenticated | REFERENCES | não |
+| table | `public.profiles` | authenticated | SELECT | não |
+| table | `public.profiles` | authenticated | TRIGGER | não |
+| table | `public.profiles` | authenticated | TRUNCATE | não |
+| table | `public.profiles` | authenticated | UPDATE | não |
+| table | `public.profiles` | service_role | DELETE | não |
+| table | `public.profiles` | service_role | INSERT | não |
+| table | `public.profiles` | service_role | MAINTAIN | não |
+| table | `public.profiles` | service_role | REFERENCES | não |
+| table | `public.profiles` | service_role | SELECT | não |
+| table | `public.profiles` | service_role | TRIGGER | não |
+| table | `public.profiles` | service_role | TRUNCATE | não |
+| table | `public.profiles` | service_role | UPDATE | não |
+| table | `public.roll_log` | authenticated | SELECT | não |
+| table | `public.roll_log` | service_role | DELETE | não |
+| table | `public.roll_log` | service_role | INSERT | não |
+| table | `public.roll_log` | service_role | MAINTAIN | não |
+| table | `public.roll_log` | service_role | REFERENCES | não |
+| table | `public.roll_log` | service_role | SELECT | não |
+| table | `public.roll_log` | service_role | TRIGGER | não |
+| table | `public.roll_log` | service_role | TRUNCATE | não |
+| table | `public.roll_log` | service_role | UPDATE | não |
+| table | `public.roll_log_id_seq` | anon | SELECT | não |
+| table | `public.roll_log_id_seq` | anon | UPDATE | não |
+| table | `public.roll_log_id_seq` | anon | USAGE | não |
+| table | `public.roll_log_id_seq` | authenticated | SELECT | não |
+| table | `public.roll_log_id_seq` | authenticated | UPDATE | não |
+| table | `public.roll_log_id_seq` | authenticated | USAGE | não |
+| table | `public.roll_log_id_seq` | service_role | SELECT | não |
+| table | `public.roll_log_id_seq` | service_role | UPDATE | não |
+| table | `public.roll_log_id_seq` | service_role | USAGE | não |
+| table | `public.roll_requests` | authenticated | SELECT | não |
+| table | `public.roll_requests` | service_role | DELETE | não |
+| table | `public.roll_requests` | service_role | INSERT | não |
+| table | `public.roll_requests` | service_role | MAINTAIN | não |
+| table | `public.roll_requests` | service_role | REFERENCES | não |
+| table | `public.roll_requests` | service_role | SELECT | não |
+| table | `public.roll_requests` | service_role | TRIGGER | não |
+| table | `public.roll_requests` | service_role | TRUNCATE | não |
+| table | `public.roll_requests` | service_role | UPDATE | não |
+| table | `public.roll_requests_id_seq` | anon | SELECT | não |
+| table | `public.roll_requests_id_seq` | anon | UPDATE | não |
+| table | `public.roll_requests_id_seq` | anon | USAGE | não |
+| table | `public.roll_requests_id_seq` | authenticated | SELECT | não |
+| table | `public.roll_requests_id_seq` | authenticated | UPDATE | não |
+| table | `public.roll_requests_id_seq` | authenticated | USAGE | não |
+| table | `public.roll_requests_id_seq` | service_role | SELECT | não |
+| table | `public.roll_requests_id_seq` | service_role | UPDATE | não |
+| table | `public.roll_requests_id_seq` | service_role | USAGE | não |
+| table | `public.scenes` | authenticated | DELETE | não |
+| table | `public.scenes` | authenticated | INSERT | não |
+| table | `public.scenes` | authenticated | MAINTAIN | não |
+| table | `public.scenes` | authenticated | REFERENCES | não |
+| table | `public.scenes` | authenticated | SELECT | não |
+| table | `public.scenes` | authenticated | TRIGGER | não |
+| table | `public.scenes` | authenticated | TRUNCATE | não |
+| table | `public.scenes` | authenticated | UPDATE | não |
+| table | `public.scenes` | service_role | DELETE | não |
+| table | `public.scenes` | service_role | INSERT | não |
+| table | `public.scenes` | service_role | MAINTAIN | não |
+| table | `public.scenes` | service_role | REFERENCES | não |
+| table | `public.scenes` | service_role | SELECT | não |
+| table | `public.scenes` | service_role | TRIGGER | não |
+| table | `public.scenes` | service_role | TRUNCATE | não |
+| table | `public.scenes` | service_role | UPDATE | não |
+| table | `public.skills` | authenticated | SELECT | não |
+| table | `public.skills` | service_role | DELETE | não |
+| table | `public.skills` | service_role | INSERT | não |
+| table | `public.skills` | service_role | MAINTAIN | não |
+| table | `public.skills` | service_role | REFERENCES | não |
+| table | `public.skills` | service_role | SELECT | não |
+| table | `public.skills` | service_role | TRIGGER | não |
+| table | `public.skills` | service_role | TRUNCATE | não |
+| table | `public.skills` | service_role | UPDATE | não |
+| table | `public.skills_id_seq` | anon | SELECT | não |
+| table | `public.skills_id_seq` | anon | UPDATE | não |
+| table | `public.skills_id_seq` | anon | USAGE | não |
+| table | `public.skills_id_seq` | authenticated | SELECT | não |
+| table | `public.skills_id_seq` | authenticated | UPDATE | não |
+| table | `public.skills_id_seq` | authenticated | USAGE | não |
+| table | `public.skills_id_seq` | service_role | SELECT | não |
+| table | `public.skills_id_seq` | service_role | UPDATE | não |
+| table | `public.skills_id_seq` | service_role | USAGE | não |
+| table | `public.srd_attack_sequence_attempts` | service_role | DELETE | não |
+| table | `public.srd_attack_sequence_attempts` | service_role | INSERT | não |
+| table | `public.srd_attack_sequence_attempts` | service_role | MAINTAIN | não |
+| table | `public.srd_attack_sequence_attempts` | service_role | REFERENCES | não |
+| table | `public.srd_attack_sequence_attempts` | service_role | SELECT | não |
+| table | `public.srd_attack_sequence_attempts` | service_role | TRIGGER | não |
+| table | `public.srd_attack_sequence_attempts` | service_role | TRUNCATE | não |
+| table | `public.srd_attack_sequence_attempts` | service_role | UPDATE | não |
+| table | `public.srd_attack_sequences` | service_role | DELETE | não |
+| table | `public.srd_attack_sequences` | service_role | INSERT | não |
+| table | `public.srd_attack_sequences` | service_role | MAINTAIN | não |
+| table | `public.srd_attack_sequences` | service_role | REFERENCES | não |
+| table | `public.srd_attack_sequences` | service_role | SELECT | não |
+| table | `public.srd_attack_sequences` | service_role | TRIGGER | não |
+| table | `public.srd_attack_sequences` | service_role | TRUNCATE | não |
+| table | `public.srd_attack_sequences` | service_role | UPDATE | não |
+| table | `public.srd_campaign_conditions` | authenticated | SELECT | não |
+| table | `public.srd_campaign_conditions` | service_role | DELETE | não |
+| table | `public.srd_campaign_conditions` | service_role | INSERT | não |
+| table | `public.srd_campaign_conditions` | service_role | MAINTAIN | não |
+| table | `public.srd_campaign_conditions` | service_role | REFERENCES | não |
+| table | `public.srd_campaign_conditions` | service_role | SELECT | não |
+| table | `public.srd_campaign_conditions` | service_role | TRIGGER | não |
+| table | `public.srd_campaign_conditions` | service_role | TRUNCATE | não |
+| table | `public.srd_campaign_conditions` | service_role | UPDATE | não |
+| table | `public.srd_campaign_conditions_condition_instance_id_seq` | anon | SELECT | não |
+| table | `public.srd_campaign_conditions_condition_instance_id_seq` | anon | UPDATE | não |
+| table | `public.srd_campaign_conditions_condition_instance_id_seq` | anon | USAGE | não |
+| table | `public.srd_campaign_conditions_condition_instance_id_seq` | authenticated | SELECT | não |
+| table | `public.srd_campaign_conditions_condition_instance_id_seq` | authenticated | UPDATE | não |
+| table | `public.srd_campaign_conditions_condition_instance_id_seq` | authenticated | USAGE | não |
+| table | `public.srd_campaign_conditions_condition_instance_id_seq` | service_role | SELECT | não |
+| table | `public.srd_campaign_conditions_condition_instance_id_seq` | service_role | UPDATE | não |
+| table | `public.srd_campaign_conditions_condition_instance_id_seq` | service_role | USAGE | não |
+| table | `public.srd_campaign_effects` | authenticated | SELECT | não |
+| table | `public.srd_campaign_effects` | service_role | DELETE | não |
+| table | `public.srd_campaign_effects` | service_role | INSERT | não |
+| table | `public.srd_campaign_effects` | service_role | MAINTAIN | não |
+| table | `public.srd_campaign_effects` | service_role | REFERENCES | não |
+| table | `public.srd_campaign_effects` | service_role | SELECT | não |
+| table | `public.srd_campaign_effects` | service_role | TRIGGER | não |
+| table | `public.srd_campaign_effects` | service_role | TRUNCATE | não |
+| table | `public.srd_campaign_effects` | service_role | UPDATE | não |
+| table | `public.srd_campaign_effects_effect_instance_id_seq` | anon | SELECT | não |
+| table | `public.srd_campaign_effects_effect_instance_id_seq` | anon | UPDATE | não |
+| table | `public.srd_campaign_effects_effect_instance_id_seq` | anon | USAGE | não |
+| table | `public.srd_campaign_effects_effect_instance_id_seq` | authenticated | SELECT | não |
+| table | `public.srd_campaign_effects_effect_instance_id_seq` | authenticated | UPDATE | não |
+| table | `public.srd_campaign_effects_effect_instance_id_seq` | authenticated | USAGE | não |
+| table | `public.srd_campaign_effects_effect_instance_id_seq` | service_role | SELECT | não |
+| table | `public.srd_campaign_effects_effect_instance_id_seq` | service_role | UPDATE | não |
+| table | `public.srd_campaign_effects_effect_instance_id_seq` | service_role | USAGE | não |
+| table | `public.srd_catalog_coverage` | authenticated | SELECT | não |
+| table | `public.srd_catalog_coverage` | service_role | DELETE | não |
+| table | `public.srd_catalog_coverage` | service_role | INSERT | não |
+| table | `public.srd_catalog_coverage` | service_role | MAINTAIN | não |
+| table | `public.srd_catalog_coverage` | service_role | REFERENCES | não |
+| table | `public.srd_catalog_coverage` | service_role | SELECT | não |
+| table | `public.srd_catalog_coverage` | service_role | TRIGGER | não |
+| table | `public.srd_catalog_coverage` | service_role | TRUNCATE | não |
+| table | `public.srd_catalog_coverage` | service_role | UPDATE | não |
+| table | `public.srd_catalog_entry_audit` | anon | MAINTAIN | não |
+| table | `public.srd_catalog_entry_audit` | anon | SELECT | não |
+| table | `public.srd_catalog_entry_audit` | authenticated | MAINTAIN | não |
+| table | `public.srd_catalog_entry_audit` | authenticated | SELECT | não |
+| table | `public.srd_catalog_entry_audit` | service_role | DELETE | não |
+| table | `public.srd_catalog_entry_audit` | service_role | INSERT | não |
+| table | `public.srd_catalog_entry_audit` | service_role | MAINTAIN | não |
+| table | `public.srd_catalog_entry_audit` | service_role | REFERENCES | não |
+| table | `public.srd_catalog_entry_audit` | service_role | SELECT | não |
+| table | `public.srd_catalog_entry_audit` | service_role | TRIGGER | não |
+| table | `public.srd_catalog_entry_audit` | service_role | TRUNCATE | não |
+| table | `public.srd_catalog_entry_audit` | service_role | UPDATE | não |
+| table | `public.srd_cba_token_equipment` | authenticated | MAINTAIN | não |
+| table | `public.srd_cba_token_equipment` | authenticated | SELECT | não |
+| table | `public.srd_cba_token_equipment` | service_role | DELETE | não |
+| table | `public.srd_cba_token_equipment` | service_role | INSERT | não |
+| table | `public.srd_cba_token_equipment` | service_role | MAINTAIN | não |
+| table | `public.srd_cba_token_equipment` | service_role | REFERENCES | não |
+| table | `public.srd_cba_token_equipment` | service_role | SELECT | não |
+| table | `public.srd_cba_token_equipment` | service_role | TRIGGER | não |
+| table | `public.srd_cba_token_equipment` | service_role | TRUNCATE | não |
+| table | `public.srd_cba_token_equipment` | service_role | UPDATE | não |
+| table | `public.srd_cba_token_weapon_instances` | authenticated | DELETE | não |
+| table | `public.srd_cba_token_weapon_instances` | authenticated | INSERT | não |
+| table | `public.srd_cba_token_weapon_instances` | authenticated | MAINTAIN | não |
+| table | `public.srd_cba_token_weapon_instances` | authenticated | REFERENCES | não |
+| table | `public.srd_cba_token_weapon_instances` | authenticated | SELECT | não |
+| table | `public.srd_cba_token_weapon_instances` | authenticated | TRIGGER | não |
+| table | `public.srd_cba_token_weapon_instances` | authenticated | TRUNCATE | não |
+| table | `public.srd_cba_token_weapon_instances` | authenticated | UPDATE | não |
+| table | `public.srd_cba_token_weapon_instances` | service_role | DELETE | não |
+| table | `public.srd_cba_token_weapon_instances` | service_role | INSERT | não |
+| table | `public.srd_cba_token_weapon_instances` | service_role | MAINTAIN | não |
+| table | `public.srd_cba_token_weapon_instances` | service_role | REFERENCES | não |
+| table | `public.srd_cba_token_weapon_instances` | service_role | SELECT | não |
+| table | `public.srd_cba_token_weapon_instances` | service_role | TRIGGER | não |
+| table | `public.srd_cba_token_weapon_instances` | service_role | TRUNCATE | não |
+| table | `public.srd_cba_token_weapon_instances` | service_role | UPDATE | não |
+| table | `public.srd_character_class_levels` | authenticated | SELECT | não |
+| table | `public.srd_character_class_levels` | service_role | DELETE | não |
+| table | `public.srd_character_class_levels` | service_role | INSERT | não |
+| table | `public.srd_character_class_levels` | service_role | MAINTAIN | não |
+| table | `public.srd_character_class_levels` | service_role | REFERENCES | não |
+| table | `public.srd_character_class_levels` | service_role | SELECT | não |
+| table | `public.srd_character_class_levels` | service_role | TRIGGER | não |
+| table | `public.srd_character_class_levels` | service_role | TRUNCATE | não |
+| table | `public.srd_character_class_levels` | service_role | UPDATE | não |
+| table | `public.srd_character_domain_choices` | authenticated | SELECT | não |
+| table | `public.srd_character_domain_choices` | service_role | DELETE | não |
+| table | `public.srd_character_domain_choices` | service_role | INSERT | não |
+| table | `public.srd_character_domain_choices` | service_role | MAINTAIN | não |
+| table | `public.srd_character_domain_choices` | service_role | REFERENCES | não |
+| table | `public.srd_character_domain_choices` | service_role | SELECT | não |
+| table | `public.srd_character_domain_choices` | service_role | TRIGGER | não |
+| table | `public.srd_character_domain_choices` | service_role | TRUNCATE | não |
+| table | `public.srd_character_domain_choices` | service_role | UPDATE | não |
+| table | `public.srd_character_equipment` | authenticated | MAINTAIN | não |
+| table | `public.srd_character_equipment` | authenticated | SELECT | não |
+| table | `public.srd_character_equipment` | service_role | DELETE | não |
+| table | `public.srd_character_equipment` | service_role | INSERT | não |
+| table | `public.srd_character_equipment` | service_role | MAINTAIN | não |
+| table | `public.srd_character_equipment` | service_role | REFERENCES | não |
+| table | `public.srd_character_equipment` | service_role | SELECT | não |
+| table | `public.srd_character_equipment` | service_role | TRIGGER | não |
+| table | `public.srd_character_equipment` | service_role | TRUNCATE | não |
+| table | `public.srd_character_equipment` | service_role | UPDATE | não |
+| table | `public.srd_character_feature_resources` | service_role | DELETE | não |
+| table | `public.srd_character_feature_resources` | service_role | INSERT | não |
+| table | `public.srd_character_feature_resources` | service_role | MAINTAIN | não |
+| table | `public.srd_character_feature_resources` | service_role | REFERENCES | não |
+| table | `public.srd_character_feature_resources` | service_role | SELECT | não |
+| table | `public.srd_character_feature_resources` | service_role | TRIGGER | não |
+| table | `public.srd_character_feature_resources` | service_role | TRUNCATE | não |
+| table | `public.srd_character_feature_resources` | service_role | UPDATE | não |
+| table | `public.srd_character_known_spells` | authenticated | SELECT | não |
+| table | `public.srd_character_known_spells` | service_role | DELETE | não |
+| table | `public.srd_character_known_spells` | service_role | INSERT | não |
+| table | `public.srd_character_known_spells` | service_role | MAINTAIN | não |
+| table | `public.srd_character_known_spells` | service_role | REFERENCES | não |
+| table | `public.srd_character_known_spells` | service_role | SELECT | não |
+| table | `public.srd_character_known_spells` | service_role | TRIGGER | não |
+| table | `public.srd_character_known_spells` | service_role | TRUNCATE | não |
+| table | `public.srd_character_known_spells` | service_role | UPDATE | não |
+| table | `public.srd_character_prepared_spells` | authenticated | SELECT | não |
+| table | `public.srd_character_prepared_spells` | service_role | DELETE | não |
+| table | `public.srd_character_prepared_spells` | service_role | INSERT | não |
+| table | `public.srd_character_prepared_spells` | service_role | MAINTAIN | não |
+| table | `public.srd_character_prepared_spells` | service_role | REFERENCES | não |
+| table | `public.srd_character_prepared_spells` | service_role | SELECT | não |
+| table | `public.srd_character_prepared_spells` | service_role | TRIGGER | não |
+| table | `public.srd_character_prepared_spells` | service_role | TRUNCATE | não |
+| table | `public.srd_character_prepared_spells` | service_role | UPDATE | não |
+| table | `public.srd_character_prepared_spells_preparation_id_seq` | anon | SELECT | não |
+| table | `public.srd_character_prepared_spells_preparation_id_seq` | anon | UPDATE | não |
+| table | `public.srd_character_prepared_spells_preparation_id_seq` | anon | USAGE | não |
+| table | `public.srd_character_prepared_spells_preparation_id_seq` | authenticated | SELECT | não |
+| table | `public.srd_character_prepared_spells_preparation_id_seq` | authenticated | UPDATE | não |
+| table | `public.srd_character_prepared_spells_preparation_id_seq` | authenticated | USAGE | não |
+| table | `public.srd_character_prepared_spells_preparation_id_seq` | service_role | SELECT | não |
+| table | `public.srd_character_prepared_spells_preparation_id_seq` | service_role | UPDATE | não |
+| table | `public.srd_character_prepared_spells_preparation_id_seq` | service_role | USAGE | não |
+| table | `public.srd_character_sheets` | authenticated | MAINTAIN | não |
+| table | `public.srd_character_sheets` | authenticated | SELECT | não |
+| table | `public.srd_character_sheets` | service_role | DELETE | não |
+| table | `public.srd_character_sheets` | service_role | INSERT | não |
+| table | `public.srd_character_sheets` | service_role | MAINTAIN | não |
+| table | `public.srd_character_sheets` | service_role | REFERENCES | não |
+| table | `public.srd_character_sheets` | service_role | SELECT | não |
+| table | `public.srd_character_sheets` | service_role | TRIGGER | não |
+| table | `public.srd_character_sheets` | service_role | TRUNCATE | não |
+| table | `public.srd_character_sheets` | service_role | UPDATE | não |
+| table | `public.srd_character_spell_slot_state` | authenticated | SELECT | não |
+| table | `public.srd_character_spell_slot_state` | service_role | DELETE | não |
+| table | `public.srd_character_spell_slot_state` | service_role | INSERT | não |
+| table | `public.srd_character_spell_slot_state` | service_role | MAINTAIN | não |
+| table | `public.srd_character_spell_slot_state` | service_role | REFERENCES | não |
+| table | `public.srd_character_spell_slot_state` | service_role | SELECT | não |
+| table | `public.srd_character_spell_slot_state` | service_role | TRIGGER | não |
+| table | `public.srd_character_spell_slot_state` | service_role | TRUNCATE | não |
+| table | `public.srd_character_spell_slot_state` | service_role | UPDATE | não |
+| table | `public.srd_character_spellbook` | authenticated | SELECT | não |
+| table | `public.srd_character_spellbook` | service_role | DELETE | não |
+| table | `public.srd_character_spellbook` | service_role | INSERT | não |
+| table | `public.srd_character_spellbook` | service_role | MAINTAIN | não |
+| table | `public.srd_character_spellbook` | service_role | REFERENCES | não |
+| table | `public.srd_character_spellbook` | service_role | SELECT | não |
+| table | `public.srd_character_spellbook` | service_role | TRIGGER | não |
+| table | `public.srd_character_spellbook` | service_role | TRUNCATE | não |
+| table | `public.srd_character_spellbook` | service_role | UPDATE | não |
+| table | `public.srd_character_weapon_instances` | authenticated | DELETE | não |
+| table | `public.srd_character_weapon_instances` | authenticated | INSERT | não |
+| table | `public.srd_character_weapon_instances` | authenticated | MAINTAIN | não |
+| table | `public.srd_character_weapon_instances` | authenticated | REFERENCES | não |
+| table | `public.srd_character_weapon_instances` | authenticated | SELECT | não |
+| table | `public.srd_character_weapon_instances` | authenticated | TRIGGER | não |
+| table | `public.srd_character_weapon_instances` | authenticated | TRUNCATE | não |
+| table | `public.srd_character_weapon_instances` | authenticated | UPDATE | não |
+| table | `public.srd_character_weapon_instances` | service_role | DELETE | não |
+| table | `public.srd_character_weapon_instances` | service_role | INSERT | não |
+| table | `public.srd_character_weapon_instances` | service_role | MAINTAIN | não |
+| table | `public.srd_character_weapon_instances` | service_role | REFERENCES | não |
+| table | `public.srd_character_weapon_instances` | service_role | SELECT | não |
+| table | `public.srd_character_weapon_instances` | service_role | TRIGGER | não |
+| table | `public.srd_character_weapon_instances` | service_role | TRUNCATE | não |
+| table | `public.srd_character_weapon_instances` | service_role | UPDATE | não |
+| table | `public.srd_class_level_features` | authenticated | SELECT | não |
+| table | `public.srd_class_level_features` | service_role | DELETE | não |
+| table | `public.srd_class_level_features` | service_role | INSERT | não |
+| table | `public.srd_class_level_features` | service_role | MAINTAIN | não |
+| table | `public.srd_class_level_features` | service_role | REFERENCES | não |
+| table | `public.srd_class_level_features` | service_role | SELECT | não |
+| table | `public.srd_class_level_features` | service_role | TRIGGER | não |
+| table | `public.srd_class_level_features` | service_role | TRUNCATE | não |
+| table | `public.srd_class_level_features` | service_role | UPDATE | não |
+| table | `public.srd_class_level_progressions` | authenticated | SELECT | não |
+| table | `public.srd_class_level_progressions` | service_role | DELETE | não |
+| table | `public.srd_class_level_progressions` | service_role | INSERT | não |
+| table | `public.srd_class_level_progressions` | service_role | MAINTAIN | não |
+| table | `public.srd_class_level_progressions` | service_role | REFERENCES | não |
+| table | `public.srd_class_level_progressions` | service_role | SELECT | não |
+| table | `public.srd_class_level_progressions` | service_role | TRIGGER | não |
+| table | `public.srd_class_level_progressions` | service_role | TRUNCATE | não |
+| table | `public.srd_class_level_progressions` | service_role | UPDATE | não |
+| table | `public.srd_classes` | anon | MAINTAIN | não |
+| table | `public.srd_classes` | anon | SELECT | não |
+| table | `public.srd_classes` | authenticated | MAINTAIN | não |
+| table | `public.srd_classes` | authenticated | SELECT | não |
+| table | `public.srd_classes` | service_role | DELETE | não |
+| table | `public.srd_classes` | service_role | INSERT | não |
+| table | `public.srd_classes` | service_role | MAINTAIN | não |
+| table | `public.srd_classes` | service_role | REFERENCES | não |
+| table | `public.srd_classes` | service_role | SELECT | não |
+| table | `public.srd_classes` | service_role | TRIGGER | não |
+| table | `public.srd_classes` | service_role | TRUNCATE | não |
+| table | `public.srd_classes` | service_role | UPDATE | não |
+| table | `public.srd_conditions` | authenticated | SELECT | não |
+| table | `public.srd_conditions` | service_role | DELETE | não |
+| table | `public.srd_conditions` | service_role | INSERT | não |
+| table | `public.srd_conditions` | service_role | MAINTAIN | não |
+| table | `public.srd_conditions` | service_role | REFERENCES | não |
+| table | `public.srd_conditions` | service_role | SELECT | não |
+| table | `public.srd_conditions` | service_role | TRIGGER | não |
+| table | `public.srd_conditions` | service_role | TRUNCATE | não |
+| table | `public.srd_conditions` | service_role | UPDATE | não |
+| table | `public.srd_deities` | authenticated | MAINTAIN | não |
+| table | `public.srd_deities` | authenticated | SELECT | não |
+| table | `public.srd_deities` | service_role | DELETE | não |
+| table | `public.srd_deities` | service_role | INSERT | não |
+| table | `public.srd_deities` | service_role | MAINTAIN | não |
+| table | `public.srd_deities` | service_role | REFERENCES | não |
+| table | `public.srd_deities` | service_role | SELECT | não |
+| table | `public.srd_deities` | service_role | TRIGGER | não |
+| table | `public.srd_deities` | service_role | TRUNCATE | não |
+| table | `public.srd_deities` | service_role | UPDATE | não |
+| table | `public.srd_domain_spells` | authenticated | SELECT | não |
+| table | `public.srd_domain_spells` | service_role | DELETE | não |
+| table | `public.srd_domain_spells` | service_role | INSERT | não |
+| table | `public.srd_domain_spells` | service_role | MAINTAIN | não |
+| table | `public.srd_domain_spells` | service_role | REFERENCES | não |
+| table | `public.srd_domain_spells` | service_role | SELECT | não |
+| table | `public.srd_domain_spells` | service_role | TRIGGER | não |
+| table | `public.srd_domain_spells` | service_role | TRUNCATE | não |
+| table | `public.srd_domain_spells` | service_role | UPDATE | não |
+| table | `public.srd_domains` | authenticated | SELECT | não |
+| table | `public.srd_domains` | service_role | DELETE | não |
+| table | `public.srd_domains` | service_role | INSERT | não |
+| table | `public.srd_domains` | service_role | MAINTAIN | não |
+| table | `public.srd_domains` | service_role | REFERENCES | não |
+| table | `public.srd_domains` | service_role | SELECT | não |
+| table | `public.srd_domains` | service_role | TRIGGER | não |
+| table | `public.srd_domains` | service_role | TRUNCATE | não |
+| table | `public.srd_domains` | service_role | UPDATE | não |
+| table | `public.srd_equipment` | anon | MAINTAIN | não |
+| table | `public.srd_equipment` | anon | SELECT | não |
+| table | `public.srd_equipment` | authenticated | MAINTAIN | não |
+| table | `public.srd_equipment` | authenticated | SELECT | não |
+| table | `public.srd_equipment` | service_role | DELETE | não |
+| table | `public.srd_equipment` | service_role | INSERT | não |
+| table | `public.srd_equipment` | service_role | MAINTAIN | não |
+| table | `public.srd_equipment` | service_role | REFERENCES | não |
+| table | `public.srd_equipment` | service_role | SELECT | não |
+| table | `public.srd_equipment` | service_role | TRIGGER | não |
+| table | `public.srd_equipment` | service_role | TRUNCATE | não |
+| table | `public.srd_equipment` | service_role | UPDATE | não |
+| table | `public.srd_equipment_audit` | anon | MAINTAIN | não |
+| table | `public.srd_equipment_audit` | anon | SELECT | não |
+| table | `public.srd_equipment_audit` | authenticated | MAINTAIN | não |
+| table | `public.srd_equipment_audit` | authenticated | SELECT | não |
+| table | `public.srd_equipment_audit` | service_role | DELETE | não |
+| table | `public.srd_equipment_audit` | service_role | INSERT | não |
+| table | `public.srd_equipment_audit` | service_role | MAINTAIN | não |
+| table | `public.srd_equipment_audit` | service_role | REFERENCES | não |
+| table | `public.srd_equipment_audit` | service_role | SELECT | não |
+| table | `public.srd_equipment_audit` | service_role | TRIGGER | não |
+| table | `public.srd_equipment_audit` | service_role | TRUNCATE | não |
+| table | `public.srd_equipment_audit` | service_role | UPDATE | não |
+| table | `public.srd_feats` | anon | MAINTAIN | não |
+| table | `public.srd_feats` | anon | SELECT | não |
+| table | `public.srd_feats` | authenticated | MAINTAIN | não |
+| table | `public.srd_feats` | authenticated | SELECT | não |
+| table | `public.srd_feats` | service_role | DELETE | não |
+| table | `public.srd_feats` | service_role | INSERT | não |
+| table | `public.srd_feats` | service_role | MAINTAIN | não |
+| table | `public.srd_feats` | service_role | REFERENCES | não |
+| table | `public.srd_feats` | service_role | SELECT | não |
+| table | `public.srd_feats` | service_role | TRIGGER | não |
+| table | `public.srd_feats` | service_role | TRUNCATE | não |
+| table | `public.srd_feats` | service_role | UPDATE | não |
+| table | `public.srd_languages` | anon | SELECT | não |
+| table | `public.srd_languages` | authenticated | MAINTAIN | não |
+| table | `public.srd_languages` | authenticated | SELECT | não |
+| table | `public.srd_languages` | service_role | DELETE | não |
+| table | `public.srd_languages` | service_role | INSERT | não |
+| table | `public.srd_languages` | service_role | MAINTAIN | não |
+| table | `public.srd_languages` | service_role | REFERENCES | não |
+| table | `public.srd_languages` | service_role | SELECT | não |
+| table | `public.srd_languages` | service_role | TRIGGER | não |
+| table | `public.srd_languages` | service_role | TRUNCATE | não |
+| table | `public.srd_languages` | service_role | UPDATE | não |
+| table | `public.srd_monsters` | anon | MAINTAIN | não |
+| table | `public.srd_monsters` | anon | SELECT | não |
+| table | `public.srd_monsters` | authenticated | MAINTAIN | não |
+| table | `public.srd_monsters` | authenticated | SELECT | não |
+| table | `public.srd_monsters` | service_role | DELETE | não |
+| table | `public.srd_monsters` | service_role | INSERT | não |
+| table | `public.srd_monsters` | service_role | MAINTAIN | não |
+| table | `public.srd_monsters` | service_role | REFERENCES | não |
+| table | `public.srd_monsters` | service_role | SELECT | não |
+| table | `public.srd_monsters` | service_role | TRIGGER | não |
+| table | `public.srd_monsters` | service_role | TRUNCATE | não |
+| table | `public.srd_monsters` | service_role | UPDATE | não |
+| table | `public.srd_npc_archetypes` | anon | MAINTAIN | não |
+| table | `public.srd_npc_archetypes` | anon | SELECT | não |
+| table | `public.srd_npc_archetypes` | authenticated | MAINTAIN | não |
+| table | `public.srd_npc_archetypes` | authenticated | SELECT | não |
+| table | `public.srd_npc_archetypes` | service_role | DELETE | não |
+| table | `public.srd_npc_archetypes` | service_role | INSERT | não |
+| table | `public.srd_npc_archetypes` | service_role | MAINTAIN | não |
+| table | `public.srd_npc_archetypes` | service_role | REFERENCES | não |
+| table | `public.srd_npc_archetypes` | service_role | SELECT | não |
+| table | `public.srd_npc_archetypes` | service_role | TRIGGER | não |
+| table | `public.srd_npc_archetypes` | service_role | TRUNCATE | não |
+| table | `public.srd_npc_archetypes` | service_role | UPDATE | não |
+| table | `public.srd_npc_attack_attempts` | service_role | DELETE | não |
+| table | `public.srd_npc_attack_attempts` | service_role | INSERT | não |
+| table | `public.srd_npc_attack_attempts` | service_role | MAINTAIN | não |
+| table | `public.srd_npc_attack_attempts` | service_role | REFERENCES | não |
+| table | `public.srd_npc_attack_attempts` | service_role | SELECT | não |
+| table | `public.srd_npc_attack_attempts` | service_role | TRIGGER | não |
+| table | `public.srd_npc_attack_attempts` | service_role | TRUNCATE | não |
+| table | `public.srd_npc_attack_attempts` | service_role | UPDATE | não |
+| table | `public.srd_npc_attack_sequences` | service_role | DELETE | não |
+| table | `public.srd_npc_attack_sequences` | service_role | INSERT | não |
+| table | `public.srd_npc_attack_sequences` | service_role | MAINTAIN | não |
+| table | `public.srd_npc_attack_sequences` | service_role | REFERENCES | não |
+| table | `public.srd_npc_attack_sequences` | service_role | SELECT | não |
+| table | `public.srd_npc_attack_sequences` | service_role | TRIGGER | não |
+| table | `public.srd_npc_attack_sequences` | service_role | TRUNCATE | não |
+| table | `public.srd_npc_attack_sequences` | service_role | UPDATE | não |
+| table | `public.srd_races` | anon | SELECT | não |
+| table | `public.srd_races` | authenticated | SELECT | não |
+| table | `public.srd_races` | service_role | DELETE | não |
+| table | `public.srd_races` | service_role | INSERT | não |
+| table | `public.srd_races` | service_role | MAINTAIN | não |
+| table | `public.srd_races` | service_role | REFERENCES | não |
+| table | `public.srd_races` | service_role | SELECT | não |
+| table | `public.srd_races` | service_role | TRIGGER | não |
+| table | `public.srd_races` | service_role | TRUNCATE | não |
+| table | `public.srd_races` | service_role | UPDATE | não |
+| table | `public.srd_rule_modules` | authenticated | SELECT | não |
+| table | `public.srd_rule_modules` | service_role | DELETE | não |
+| table | `public.srd_rule_modules` | service_role | INSERT | não |
+| table | `public.srd_rule_modules` | service_role | MAINTAIN | não |
+| table | `public.srd_rule_modules` | service_role | REFERENCES | não |
+| table | `public.srd_rule_modules` | service_role | SELECT | não |
+| table | `public.srd_rule_modules` | service_role | TRIGGER | não |
+| table | `public.srd_rule_modules` | service_role | TRUNCATE | não |
+| table | `public.srd_rule_modules` | service_role | UPDATE | não |
+| table | `public.srd_rule_sources` | authenticated | SELECT | não |
+| table | `public.srd_rule_sources` | service_role | DELETE | não |
+| table | `public.srd_rule_sources` | service_role | INSERT | não |
+| table | `public.srd_rule_sources` | service_role | MAINTAIN | não |
+| table | `public.srd_rule_sources` | service_role | REFERENCES | não |
+| table | `public.srd_rule_sources` | service_role | SELECT | não |
+| table | `public.srd_rule_sources` | service_role | TRIGGER | não |
+| table | `public.srd_rule_sources` | service_role | TRUNCATE | não |
+| table | `public.srd_rule_sources` | service_role | UPDATE | não |
+| table | `public.srd_rulesets` | authenticated | SELECT | não |
+| table | `public.srd_rulesets` | service_role | DELETE | não |
+| table | `public.srd_rulesets` | service_role | INSERT | não |
+| table | `public.srd_rulesets` | service_role | MAINTAIN | não |
+| table | `public.srd_rulesets` | service_role | REFERENCES | não |
+| table | `public.srd_rulesets` | service_role | SELECT | não |
+| table | `public.srd_rulesets` | service_role | TRIGGER | não |
+| table | `public.srd_rulesets` | service_role | TRUNCATE | não |
+| table | `public.srd_rulesets` | service_role | UPDATE | não |
+| table | `public.srd_skills` | anon | SELECT | não |
+| table | `public.srd_skills` | authenticated | SELECT | não |
+| table | `public.srd_skills` | service_role | DELETE | não |
+| table | `public.srd_skills` | service_role | INSERT | não |
+| table | `public.srd_skills` | service_role | MAINTAIN | não |
+| table | `public.srd_skills` | service_role | REFERENCES | não |
+| table | `public.srd_skills` | service_role | SELECT | não |
+| table | `public.srd_skills` | service_role | TRIGGER | não |
+| table | `public.srd_skills` | service_role | TRUNCATE | não |
+| table | `public.srd_skills` | service_role | UPDATE | não |
+| table | `public.srd_spell_effects` | authenticated | SELECT | não |
+| table | `public.srd_spell_effects` | service_role | DELETE | não |
+| table | `public.srd_spell_effects` | service_role | INSERT | não |
+| table | `public.srd_spell_effects` | service_role | MAINTAIN | não |
+| table | `public.srd_spell_effects` | service_role | REFERENCES | não |
+| table | `public.srd_spell_effects` | service_role | SELECT | não |
+| table | `public.srd_spell_effects` | service_role | TRIGGER | não |
+| table | `public.srd_spell_effects` | service_role | TRUNCATE | não |
+| table | `public.srd_spell_effects` | service_role | UPDATE | não |
+| table | `public.srd_spell_level_progressions` | authenticated | SELECT | não |
+| table | `public.srd_spell_level_progressions` | service_role | DELETE | não |
+| table | `public.srd_spell_level_progressions` | service_role | INSERT | não |
+| table | `public.srd_spell_level_progressions` | service_role | MAINTAIN | não |
+| table | `public.srd_spell_level_progressions` | service_role | REFERENCES | não |
+| table | `public.srd_spell_level_progressions` | service_role | SELECT | não |
+| table | `public.srd_spell_level_progressions` | service_role | TRIGGER | não |
+| table | `public.srd_spell_level_progressions` | service_role | TRUNCATE | não |
+| table | `public.srd_spell_level_progressions` | service_role | UPDATE | não |
+| table | `public.srd_spell_progressions` | PUBLIC | SELECT | não |
+| table | `public.srd_spell_progressions` | anon | SELECT | não |
+| table | `public.srd_spell_progressions` | authenticated | SELECT | não |
+| table | `public.srd_spell_progressions` | service_role | DELETE | não |
+| table | `public.srd_spell_progressions` | service_role | INSERT | não |
+| table | `public.srd_spell_progressions` | service_role | MAINTAIN | não |
+| table | `public.srd_spell_progressions` | service_role | REFERENCES | não |
+| table | `public.srd_spell_progressions` | service_role | SELECT | não |
+| table | `public.srd_spell_progressions` | service_role | TRIGGER | não |
+| table | `public.srd_spell_progressions` | service_role | TRUNCATE | não |
+| table | `public.srd_spell_progressions` | service_role | UPDATE | não |
+| table | `public.srd_spells` | anon | MAINTAIN | não |
+| table | `public.srd_spells` | anon | SELECT | não |
+| table | `public.srd_spells` | authenticated | MAINTAIN | não |
+| table | `public.srd_spells` | authenticated | SELECT | não |
+| table | `public.srd_spells` | service_role | DELETE | não |
+| table | `public.srd_spells` | service_role | INSERT | não |
+| table | `public.srd_spells` | service_role | MAINTAIN | não |
+| table | `public.srd_spells` | service_role | REFERENCES | não |
+| table | `public.srd_spells` | service_role | SELECT | não |
+| table | `public.srd_spells` | service_role | TRIGGER | não |
+| table | `public.srd_spells` | service_role | TRUNCATE | não |
+| table | `public.srd_spells` | service_role | UPDATE | não |
+| table | `public.srd_starting_packages` | authenticated | MAINTAIN | não |
+| table | `public.srd_starting_packages` | authenticated | SELECT | não |
+| table | `public.srd_starting_packages` | service_role | DELETE | não |
+| table | `public.srd_starting_packages` | service_role | INSERT | não |
+| table | `public.srd_starting_packages` | service_role | MAINTAIN | não |
+| table | `public.srd_starting_packages` | service_role | REFERENCES | não |
+| table | `public.srd_starting_packages` | service_role | SELECT | não |
+| table | `public.srd_starting_packages` | service_role | TRIGGER | não |
+| table | `public.srd_starting_packages` | service_role | TRUNCATE | não |
+| table | `public.srd_starting_packages` | service_role | UPDATE | não |
+| table | `public.terrain` | authenticated | DELETE | não |
+| table | `public.terrain` | authenticated | INSERT | não |
+| table | `public.terrain` | authenticated | SELECT | não |
+| table | `public.terrain` | authenticated | UPDATE | não |
+| table | `public.terrain` | service_role | DELETE | não |
+| table | `public.terrain` | service_role | INSERT | não |
+| table | `public.terrain` | service_role | MAINTAIN | não |
+| table | `public.terrain` | service_role | REFERENCES | não |
+| table | `public.terrain` | service_role | SELECT | não |
+| table | `public.terrain` | service_role | TRIGGER | não |
+| table | `public.terrain` | service_role | TRUNCATE | não |
+| table | `public.terrain` | service_role | UPDATE | não |
+| table | `public.tokens` | authenticated | MAINTAIN | não |
+| table | `public.tokens` | authenticated | SELECT | não |
+| table | `public.tokens` | service_role | DELETE | não |
+| table | `public.tokens` | service_role | INSERT | não |
+| table | `public.tokens` | service_role | MAINTAIN | não |
+| table | `public.tokens` | service_role | REFERENCES | não |
+| table | `public.tokens` | service_role | SELECT | não |
+| table | `public.tokens` | service_role | TRIGGER | não |
+| table | `public.tokens` | service_role | TRUNCATE | não |
+| table | `public.tokens` | service_role | UPDATE | não |
+| table | `public.tokens_id_seq` | anon | SELECT | não |
+| table | `public.tokens_id_seq` | anon | UPDATE | não |
+| table | `public.tokens_id_seq` | anon | USAGE | não |
+| table | `public.tokens_id_seq` | authenticated | SELECT | não |
+| table | `public.tokens_id_seq` | authenticated | UPDATE | não |
+| table | `public.tokens_id_seq` | authenticated | USAGE | não |
+| table | `public.tokens_id_seq` | service_role | SELECT | não |
+| table | `public.tokens_id_seq` | service_role | UPDATE | não |
+| table | `public.tokens_id_seq` | service_role | USAGE | não |
+| table | `public.vinculo_abilities` | anon | SELECT | não |
+| table | `public.vinculo_abilities` | authenticated | SELECT | não |
+| table | `public.vinculo_abilities` | service_role | DELETE | não |
+| table | `public.vinculo_abilities` | service_role | INSERT | não |
+| table | `public.vinculo_abilities` | service_role | MAINTAIN | não |
+| table | `public.vinculo_abilities` | service_role | REFERENCES | não |
+| table | `public.vinculo_abilities` | service_role | SELECT | não |
+| table | `public.vinculo_abilities` | service_role | TRIGGER | não |
+| table | `public.vinculo_abilities` | service_role | TRUNCATE | não |
+| table | `public.vinculo_abilities` | service_role | UPDATE | não |
+| table | `public.vinculo_character_notes` | authenticated | DELETE | não |
+| table | `public.vinculo_character_notes` | authenticated | INSERT | não |
+| table | `public.vinculo_character_notes` | authenticated | MAINTAIN | não |
+| table | `public.vinculo_character_notes` | authenticated | REFERENCES | não |
+| table | `public.vinculo_character_notes` | authenticated | SELECT | não |
+| table | `public.vinculo_character_notes` | authenticated | TRIGGER | não |
+| table | `public.vinculo_character_notes` | authenticated | TRUNCATE | não |
+| table | `public.vinculo_character_notes` | authenticated | UPDATE | não |
+| table | `public.vinculo_character_notes` | service_role | DELETE | não |
+| table | `public.vinculo_character_notes` | service_role | INSERT | não |
+| table | `public.vinculo_character_notes` | service_role | MAINTAIN | não |
+| table | `public.vinculo_character_notes` | service_role | REFERENCES | não |
+| table | `public.vinculo_character_notes` | service_role | SELECT | não |
+| table | `public.vinculo_character_notes` | service_role | TRIGGER | não |
+| table | `public.vinculo_character_notes` | service_role | TRUNCATE | não |
+| table | `public.vinculo_character_notes` | service_role | UPDATE | não |
+| table | `public.vinculo_character_sheets` | authenticated | INSERT | não |
+| table | `public.vinculo_character_sheets` | authenticated | SELECT | não |
+| table | `public.vinculo_character_sheets` | authenticated | UPDATE | não |
+| table | `public.vinculo_character_sheets` | service_role | DELETE | não |
+| table | `public.vinculo_character_sheets` | service_role | INSERT | não |
+| table | `public.vinculo_character_sheets` | service_role | MAINTAIN | não |
+| table | `public.vinculo_character_sheets` | service_role | REFERENCES | não |
+| table | `public.vinculo_character_sheets` | service_role | SELECT | não |
+| table | `public.vinculo_character_sheets` | service_role | TRIGGER | não |
+| table | `public.vinculo_character_sheets` | service_role | TRUNCATE | não |
+| table | `public.vinculo_character_sheets` | service_role | UPDATE | não |
+| table | `public.vinculo_classes` | anon | SELECT | não |
+| table | `public.vinculo_classes` | authenticated | SELECT | não |
+| table | `public.vinculo_classes` | service_role | DELETE | não |
+| table | `public.vinculo_classes` | service_role | INSERT | não |
+| table | `public.vinculo_classes` | service_role | MAINTAIN | não |
+| table | `public.vinculo_classes` | service_role | REFERENCES | não |
+| table | `public.vinculo_classes` | service_role | SELECT | não |
+| table | `public.vinculo_classes` | service_role | TRIGGER | não |
+| table | `public.vinculo_classes` | service_role | TRUNCATE | não |
+| table | `public.vinculo_classes` | service_role | UPDATE | não |
+| table | `public.vinculo_inventory` | authenticated | DELETE | não |
+| table | `public.vinculo_inventory` | authenticated | INSERT | não |
+| table | `public.vinculo_inventory` | authenticated | SELECT | não |
+| table | `public.vinculo_inventory` | authenticated | UPDATE | não |
+| table | `public.vinculo_inventory` | service_role | DELETE | não |
+| table | `public.vinculo_inventory` | service_role | INSERT | não |
+| table | `public.vinculo_inventory` | service_role | MAINTAIN | não |
+| table | `public.vinculo_inventory` | service_role | REFERENCES | não |
+| table | `public.vinculo_inventory` | service_role | SELECT | não |
+| table | `public.vinculo_inventory` | service_role | TRIGGER | não |
+| table | `public.vinculo_inventory` | service_role | TRUNCATE | não |
+| table | `public.vinculo_inventory` | service_role | UPDATE | não |
+| table | `public.vinculo_items` | anon | SELECT | não |
+| table | `public.vinculo_items` | authenticated | SELECT | não |
+| table | `public.vinculo_items` | service_role | DELETE | não |
+| table | `public.vinculo_items` | service_role | INSERT | não |
+| table | `public.vinculo_items` | service_role | MAINTAIN | não |
+| table | `public.vinculo_items` | service_role | REFERENCES | não |
+| table | `public.vinculo_items` | service_role | SELECT | não |
+| table | `public.vinculo_items` | service_role | TRIGGER | não |
+| table | `public.vinculo_items` | service_role | TRUNCATE | não |
+| table | `public.vinculo_items` | service_role | UPDATE | não |
+| table | `public.vinculo_spells` | anon | SELECT | não |
+| table | `public.vinculo_spells` | authenticated | SELECT | não |
+| table | `public.vinculo_spells` | service_role | DELETE | não |
+| table | `public.vinculo_spells` | service_role | INSERT | não |
+| table | `public.vinculo_spells` | service_role | MAINTAIN | não |
+| table | `public.vinculo_spells` | service_role | REFERENCES | não |
+| table | `public.vinculo_spells` | service_role | SELECT | não |
+| table | `public.vinculo_spells` | service_role | TRIGGER | não |
+| table | `public.vinculo_spells` | service_role | TRUNCATE | não |
+| table | `public.vinculo_spells` | service_role | UPDATE | não |
+| table | `public.vinculo_talents` | anon | SELECT | não |
+| table | `public.vinculo_talents` | authenticated | SELECT | não |
+| table | `public.vinculo_talents` | service_role | DELETE | não |
+| table | `public.vinculo_talents` | service_role | INSERT | não |
+| table | `public.vinculo_talents` | service_role | MAINTAIN | não |
+| table | `public.vinculo_talents` | service_role | REFERENCES | não |
+| table | `public.vinculo_talents` | service_role | SELECT | não |
+| table | `public.vinculo_talents` | service_role | TRIGGER | não |
+| table | `public.vinculo_talents` | service_role | TRUNCATE | não |
+| table | `public.vinculo_talents` | service_role | UPDATE | não |
