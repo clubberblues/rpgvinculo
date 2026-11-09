@@ -205,3 +205,18 @@ A leitura do corpo remoto de `public.salvar_cena_cba(p_campaign_id,p_scene)` ide
 6. Manter compatibilidade dos fluxos legítimos atuais do frontend, migrando cada chamada antes de restringir o endpoint legado.
 
 **Estado:** confirmado por leitura do corpo SQL remoto e dos call sites em `mesa.html`; ainda não testado por chamada autenticada direta. Não corrigido.
+
+
+### Impact adicional — escrita de cena obsoleta pode sobrescrever estado concorrente
+
+O endpoint recebe um snapshot completo do cliente e, para cada token cujo `id`/`key` aparece no payload, prefere integralmente o objeto enviado ao objeto atual. O lock `FOR UPDATE` serializa as transações, mas **não impede lost update**: uma cena carregada antes de uma ação pode ser salva depois dela com valores antigos.
+
+Exemplo de sequência possível:
+1. Cliente GM mantém snapshot com posição/PV antigos.
+2. Um RPC de combate persiste movimento ou dano e atualiza `campaigns.cba_data`.
+3. O cliente GM salva uma alteração não relacionada (por exemplo, metadados de iniciativa ou inclusão de NPC) usando o snapshot antigo.
+4. `salvar_cena_cba` substitui novamente os objetos dos tokens e pode restaurar coordenadas/PV anteriores.
+
+A fila `cbaWriteQueue` serializa somente as chamadas feitas por esse cliente; não sincroniza com RPCs de combate, outros clientes ou alterações diretas no servidor.
+
+**Correção estrutural necessária:** evitar substituição integral de tokens. Usar RPCs específicas por intenção/colunas, ou controle de versão otimista por cena/token com merge server-side de campos permitidos. A operação de publicação de metadados não deve poder regravar estado autoritativo de combate. Não aplicar apenas um timestamp gerado no cliente como proteção; a versão deve ser lida e incrementada no servidor.
