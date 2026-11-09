@@ -135,3 +135,24 @@ Localizar/reconstituir os testes históricos e torná-los reproduzíveis no repo
 - Enviar duas vezes o mesmo request_id de avanço de turno deve avançar apenas um ator.
 - Repetir registrar_iniciativa_d20 com mesma ficha deve retornar a ordem atual sem alterar resultado.
 - Repetir registrar_rolagem_ataque_iterativo_srd/aplicar_dano_ataque_iterativo_srd com a mesma idempotency_key deve retornar o resultado persistido sem duplicar dano.
+
+
+## Casos de concorrência prioritários — 2026-11-09
+
+### Ataque de Oportunidade: cancelar vs. aplicar dano
+Fixture descartável com campanha em combate, movimento pendente ativo, reação reservada e ataque em `awaiting_damage`:
+1. Sessão GM A inicia `srd_cancelar_movimento_aoo_pendente_srd` e pausa após obter lock da pendência.
+2. Sessão GM B inicia `srd_aplicar_dano_ataque_oportunidade_srd` para o ataque associado e pausa após obter lock do ataque.
+3. Liberar ambas as sessões e observar se ocorre deadlock/aborto; registrar SQLSTATE, transação sobrevivente e estado final.
+4. Repetir com ordem de chegada invertida e com a variante de dano de monstro.
+5. Verificar atomicidade: nunca pode haver dano aplicado em movimento cancelado nem ataque pendente após movimento finalizado/cancelado.
+
+**Estado:** não executado. O risco foi identificado estaticamente por inversão de ordem de locks; não executar no projeto de dados real. Só realizar após criar fixture/campanha descartável e duas sessões autenticadas.
+
+### Realtime: desconexão e reconciliação
+1. Dois clientes autenticados na mesma campanha; capturar snapshot inicial.
+2. Desconectar um cliente, executar mudanças de turno, PV, condições, equipamentos e mensagens no outro.
+3. Reconectar e verificar recuperação de snapshot sem depender de novo evento.
+4. Injetar repetição/ordem invertida de eventos quando possível; confirmar dedupe e rejeição de estado antigo.
+
+**Estado:** não executado. Depende do contrato de state_version e resync a definir.
