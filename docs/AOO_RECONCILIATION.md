@@ -122,3 +122,19 @@ Histórico remoto de migrations com nomes contendo `aoo`, `oportunidade` ou `pen
 - Exportar e comparar funções de movimento normal, ataque iterativo, economia de ações e turnos.
 - Formalizar matriz de lock order de todas as RPCs que alteram combate.
 - Criar teste concorrente de deadlock em banco descartável após baseline reproduzível.
+
+
+## Ampliação da análise de deadlock — fechamento de reação — 2026-11-09
+
+A revisão do corpo atual de `priv.srd_encerrar_reacao_aoo_pendente_impl` confirmou uma segunda rota com inversão de locks: quando `p_cancel_attack=true`, ela bloqueia primeiro `priv.srd_aoo_pending_movements` (`FOR UPDATE`) e depois `priv.srd_aoo_attacks` (`FOR UPDATE`). Já `priv.srd_registrar_ocultacao_ataque_oportunidade_impl`, `public.srd_resolver_ataque_oportunidade_srd` e as RPCs de aplicar dano bloqueiam primeiro a linha de ataque e depois o movimento pendente. Portanto, o deadlock potencial não se limita ao cancelamento total do movimento: o cancelamento explícito de uma reação/ataque também pode disputar com ocultação, resolução ou dano.
+
+**Ordem observada nas rotas principais:**
+- Cancelar movimento: pending → UPDATE attacks → UPDATE pending.
+- Encerrar reação com cancelamento de ataque: pending → attack → UPDATE attack → UPDATE pending.
+- Resolver ataque: attack → pending → campaign.
+- Resolver ocultação: attack → pending → campaign → atualiza attack/pending.
+- Aplicar dano: attack → pending → campaign → ficha de personagem quando alvo player.
+- Iniciar ataque/reservar reação: pending → campaign → ledger/arma (conforme caminho).
+- Finalizar movimento: pending → campaign.
+
+**Classificação:** risco de deadlock por inversão de ordem de locks sustentado pela leitura dos corpos atuais; ainda não reproduzido. Correção proposta: padronizar uma ordem global, por exemplo campaign → pending → attack → ficha/ledger, e garantir que todas as rotas adquiram locks nessa ordem. A ordem final deve considerar locks transitivos de helpers e não deve ser aplicada até teste concorrente em ambiente descartável.
