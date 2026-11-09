@@ -119,7 +119,7 @@
 - Uma RPC pode ter várias sobrecargas. O frontend pode escolher a sobrecarga errada se o conjunto de chaves/tipos enviado não corresponder à assinatura esperada; esse cruzamento ainda está pendente.
 - A coluna Guarda estática indica apenas a presença de marcadores textuais (auth.uid, my_role, need_gm, public.members). Não prova que a validação esteja correta, nem que cubra campanha, papel, alvo e estado.
 - EXECUTE para authenticated é esperado em RPCs de aplicação, mas cada função SECURITY DEFINER precisa de validação semântica e testes por papel.
-- As 100 chamadas por nome foram encontradas em public. Nenhuma permissão foi alterada nesta inspeção.
+- Os 100 nomes literais e os 3 destinos dinâmicos resolvidos têm correspondência em public. Nenhuma permissão foi alterada nesta inspeção.
 - Próximo recorte recomendado: comparar argumentos/assinaturas para fluxos críticos em ordem: lobby/campanha, criação e edição de personagem, equipamento/CA, iniciativa, movimento, ataques/dano, magias e progressão.
 
 ## Arquivos de origem
