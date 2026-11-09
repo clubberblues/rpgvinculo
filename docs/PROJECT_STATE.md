@@ -311,3 +311,7 @@ O inventário completo dos 326 registros remotos e 41 arquivos locais sem corres
 Além do snapshot estrutural, foram preservadas definições SQL remotas completas de 37 funções AOO e 41 funções relacionadas a movimento, economia de ações, iniciativa e turnos: [REMOTE_AOO_FUNCTIONS.sql.md](REMOTE_AOO_FUNCTIONS.sql.md), [REMOTE_TURN_MOVEMENT_FUNCTIONS.md](REMOTE_TURN_MOVEMENT_FUNCTIONS.md). As exportações incluem assinaturas, SECURITY DEFINER/INVOKER, grants anon/authenticated, search_path e fingerprints MD5. São artefatos de referência, não migrations restauráveis.
 
 A reconciliação focal AOO está em [AOO_RECONCILIATION.md](AOO_RECONCILIATION.md): 51 migrations remotas com nomes AOO/movimento pendente, nenhuma com arquivo local de mesmo nome. A ordem de locks inversa entre cancelamento e resolução/dano permanece risco estático não reproduzido.
+
+
+## Achado prioritário de integridade — movimento/AOO
+A auditoria do código remoto e do frontend confirmou que o cliente chama pré-check AOO e depois uma segunda RPC de movimento. A RPC pública de movimento é executável por authenticated e sua implementação privada não reexecuta a detecção de ameaça; portanto, pode ser chamada diretamente para contornar AOO. Também há janela TOCTOU entre as duas transações. O trigger existente só bloqueia o token que já tem pending ativo. Achado P1 documentado em AOO_RECONCILIATION.md e teste isolado especificado em TEST_STRATEGY.md. Nenhuma função ou dado foi alterado.
