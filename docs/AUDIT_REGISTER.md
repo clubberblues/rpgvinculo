@@ -338,4 +338,4 @@ Ações com efeitos não reversíveis ou consumo de recursos devem aceitar um re
 - **Ação necessária:** conferir manualmente Supabase Dashboard → Project Settings → API → Exposed schemas. Se priv/private estiverem expostos, revisar imediatamente o conjunto de funções com EXECUTE para authenticated antes de qualquer revogação. Não remover USAGE/EXECUTE agora, pois wrappers SECURITY INVOKER dependem desses grants para chamar helpers internos.
 
 ### Refatoração compartilhada de cliente Supabase — branch
-A branch refactor/shared-supabase-client extraiu a criação do cliente para assets/js/core/supabase-client.js e atualizou as quatro páginas ativas. A alteração preserva defaults do SDK e não modifica banco/dados. Aguardar CI e revisão do PR.
+A branch refactor/shared-supabase-client (PR draft #73) extraiu a criação do cliente para assets/js/core/supabase-client.js e atualizou as quatro páginas ativas. A alteração preserva defaults do SDK e não modifica banco/dados. Aguardar CI e revisão do PR.
