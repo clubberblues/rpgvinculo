@@ -20,6 +20,8 @@ Os documentos novos consolidam e conectam as referências existentes; não subst
 
 A fotografia atual de arquitetura, catálogo e pendências está nos documentos de engenharia vinculados acima. Em consulta somente de leitura, o Supabase registrou 966 migrations, 76 relações em public (todas com RLS habilitado), 607 magias, 607 efeitos tipados, 220 progressões de classe e 131 características de classe. A cobertura do catálogo tem 15 categorias: 3 complete, 8 in_progress e 4 pending. Catálogo auditado não significa regra automatizada; 582 dos 607 efeitos continuam needs_review. Os snapshots datados nas seções seguintes devem ser lidos como histórico, não como fotografia atual.
 
+## Arquivos e publicação
+
 Publique `index.html`, `lobby.html`, `ficha.html` e `mesa.html` na raiz do site. O pacote também preserva `lobby_atualizado.html` como arquivo legado (não sincronizado com `lobby.html` no estado atual), `dice.html`, `fundo-livro.png` e as capas `capa-mestre.png`, `capa-jogador.png`, `capa-monstros.png` e `capa-mundo.png`.
 
 O modo D&D 3.5 usa `srd_character_sheets`; a compatibilidade arquivada usa `vinculo_character_sheets`. Não deve haver consulta direta à relação removida `public.character_sheets`.
