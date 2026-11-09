@@ -31,7 +31,7 @@ O [RPC_INVENTORY.md](RPC_INVENTORY.md) registra as 100 chamadas literais e 108 a
 
 ## Integração de dados e RPC
 
-A varredura identificou 100 nomes distintos de RPC chamados por mesa.html, ficha.html e lobby.html. Uma consulta ao catálogo PostgreSQL encontrou os 100 nomes no schema public.
+A varredura identificou 103 RPCs resolvidas (100 nomes literais e 3 destinos dinâmicos) chamadas por mesa.html, ficha.html e lobby.html. Uma consulta ao catálogo PostgreSQL encontrou os 100 nomes no schema public.
 
 **O que isso confirma:** os nomes chamados pelo frontend têm função correspondente no schema public.
 
