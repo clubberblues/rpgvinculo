@@ -224,3 +224,21 @@ Chamadas observadas em `mesa.html` e dispatcher de ações da ficha, comparadas 
 O frontend prepara o estado desejado de equipamento nos atributos `data-equipped`; a leitura estática confirmou que os botões de item enviam esse valor desejado e os botões de instância de arma enviam `!equipped`. Não foi encontrado, nesta amostra, um erro de inversão do toggle.
 
 **Ainda não validado:** concorrência entre duas ações de equipamento, retry após resposta perdida, consistência entre ficha e token vinculado, duplicação/quantidade de itens, clonagem repetida do inventário e comportamento após desconexão. Não houve alteração de inventário, personagem, token ou campanha.
+
+
+## Cruzamento inicial — progressão, descanso e valores derivados — 2026-11-09
+
+| Fluxo | RPC / assinatura PostgreSQL | Evidência estática e limite |
+|---|---|---|
+| Conceder XP | `conceder_xp_personagem_srd(p_campaign_id bigint, p_character_id text, p_xp integer)` | mesa envia campanha, ID de ficha como texto e quantidade; a distribuição para múltiplos selecionados ocorre em chamadas sequenciais individuais, portanto o lote pode ter sucesso parcial. |
+| Avançar nível | `concluir_avanco_nivel_personagem_srd_v2(p_campaign_id bigint, p_character_id text, p_hit_die_roll integer, p_skill_ranks jsonb, p_feats jsonb, p_attribute text, p_idiomas jsonb)` | ficha envia todos os argumentos previstos; rolagem de dado de vida vem do fluxo manual de dados. Não há request_id no contrato atual. |
+| Descanso longo de personagem | `descanso_longo_personagem_srd(p_campaign_id bigint, p_character_id text)` | ficha envia campanha e ID do personagem. |
+| Descanso longo de NPC vinculado | `descanso_longo_npc_vinculado_srd(p_campaign_id bigint, p_token_id text)` | dispatcher escolhe a RPC conforme o alvo ser ficha ou token NPC vinculado. |
+| Salvar grimório | `salvar_grimorio_srd(p_character_id text, p_estado jsonb)` | ficha envia o estado serializado do grimório como JSONB. |
+| Salvar domínios | `salvar_dominios_personagem_srd(p_character_id text, p_domain_ids text[])` | IDs de domínio são convertidos para string e enviados como array. |
+| Calcular CA | duas sobrecargas de `srd_calcular_ca_personagem_srd` | ficha envia campanha, personagem, contexto normal e `p_attacker_is_giant=false`, selecionando a assinatura de quatro argumentos. |
+| Calcular deslocamento | `srd35_deslocamento_personagem(p_character_id text, p_base_speed_m numeric)` | ficha envia ID do personagem e deslocamento racial convertido para Number. |
+
+**Pontos arquiteturais:** concessão de XP em lote não é uma única transação; a interface registra quais personagens receberam XP e quais falharam. Avanço de nível é uma operação de alto impacto e não recebe request_id no contrato atual; sua proteção contra retry precisa ser examinada no corpo da função e validada em fixture descartável antes de qualquer alteração. Descanso e atualização de grimório também são operações mutáveis que precisam de casos de retry e autorização por papel.
+
+**Limite da verificação:** foram comparadas chaves/formatos enviados e assinaturas do catálogo. Não foram executadas RPCs mutáveis nem alterados XP, nível, PV, grimório, domínios ou campanha.
