@@ -277,3 +277,29 @@ A exclusão usa duas RPCs e operações Storage no cliente, não uma transação
 **Segurança observada nas RPCs de lobby:** as funções públicas listadas têm EXECUTE para authenticated, sem EXECUTE para anon ou PUBLIC. As SECURITY DEFINER consultadas usam search_path com pg_temp por último. Isso é apenas a camada de grants/configuração; as guardas semânticas foram descritas por função acima e ainda precisam de testes com papéis reais.
 
 Não foram criadas/excluídas campanhas, membros, fichas, arquivos Storage ou registros de pendência durante esta análise.
+
+
+## Divergência confirmada — caminho legado Vínculo em ficha.html — 2026-11-09
+
+A página `ficha.html` possui dois caminhos: se a ficha tem linha em `srd_character_sheets`, usa o fluxo D&D 3.5; caso contrário, usa o caminho legado Vínculo. A criação Vínculo também usa esse caminho. A comparação do código com `information_schema.tables` encontrou nomes antigos ainda referenciados pelo frontend, enquanto o banco conectado possui os nomes versionados:
+
+| Referência atual no frontend legado | Relação existente no banco | Situação |
+|---|---|---|
+| `classes` | `vinculo_classes` | Nome antigo ausente; criação/abertura de classe tende a falhar. |
+| `abilities` | `vinculo_abilities` | Nome antigo ausente. |
+| `talents` | `vinculo_talents` | Nome antigo ausente. |
+| `spells` | `vinculo_spells` | Nome antigo ausente. |
+| `inventory` | `vinculo_inventory` + `vinculo_items` | Nome antigo ausente; carregamento do inventário falha e é silenciosamente convertido em lista vazia. |
+| `character_notes` | `vinculo_character_notes` | Nome antigo ausente; carregamento de notas ignora o erro e apresenta lista vazia. |
+| `vinculo_character_sheets` | `vinculo_character_sheets` | Correspondência atual. |
+| `character_talents`, `character_spells` | relações ainda existentes | Permanecem, mas o catálogo correspondente consultado pelo frontend usa nomes antigos; não presumir que representam o modelo final Vínculo. |
+
+O fluxo de criação legado tenta inserir em `characters` e depois fazer upsert em `vinculo_character_sheets`, mas consulta classe em `classes` e habilidades em `abilities`. Como esses nomes não existem no schema public atual, o caminho legado de criação/abertura está incompatível com o banco observado. A página D&D 3.5 tem um desvio próprio e não é afetada por essa constatação quando a ficha possui linha SRD.
+
+### RLS observado nas relações Vínculo atuais
+- Catálogos `vinculo_classes`, `vinculo_abilities`, `vinculo_talents`, `vinculo_spells` e `vinculo_items`: leitura pública por políticas SELECT.
+- `vinculo_character_notes`: SELECT/INSERT/UPDATE/DELETE para proprietário da ficha ou Mestre da campanha.
+- `vinculo_inventory`: SELECT/INSERT/UPDATE para proprietário ou Mestre; DELETE somente para Mestre na política observada. Isso conflita com o código legado, que tenta apagar o item ao consumir a última unidade ou removê-lo. Mesmo após corrigir o nome da relação, a operação de jogador precisaria de decisão explícita de regra e política.
+- `vinculo_character_sheets`: leitura por membros da campanha, INSERT pelo proprietário e UPDATE pelo proprietário ou Mestre.
+
+**Classificação:** incompatibilidade frontend ↔ schema confirmada, não apenas hipótese. Não foi feita substituição de nomes nem alteração de RLS nesta fase, porque precisamos decidir se o caminho legado Vínculo será reativado, adaptado ao novo schema ou descontinuado em favor do novo modelo. Não houve escrita em personagem, inventário, notas, talento, magia ou catálogo.
