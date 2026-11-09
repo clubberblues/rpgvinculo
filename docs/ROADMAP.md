@@ -31,7 +31,7 @@ Nenhuma fase deve ser repetida integralmente sem evidência de mudança ou lacun
 ## Fase 2 — Fundação operacional
 **Objetivo:** assegurar que identidade, autorização, persistência e sincronização suportem os módulos.
 - [ ] Validar matriz de papéis Mestre/Jogador/Observador.
-- [ ] Avaliar proteção de senha vazada no Auth; 52 índices marcados como não utilizados ficam sem remoção até análise de tráfego e planos.
+- [ ] Avaliar proteção de senha vazada no Auth; revisar limites MIME/tamanho do bucket midia; 52 índices marcados como não utilizados ficam sem remoção até análise de tráfego e planos.
 - [ ] Validar RLS, RPCs e propriedade por fluxo; priorizar revisão individual das 99 SECURITY DEFINER acessíveis a authenticated e confirmar exposição dos schemas internos priv/private.
 - [ ] Validar integridade relacional e transações críticas.
 - [ ] Validar eventos, logs, Realtime e recuperação de estado.
