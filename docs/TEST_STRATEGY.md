@@ -299,3 +299,11 @@ Fixture descartável com campanha em combate, movimento pendente ativo, reação
 29. Alternância de estado/encerramento de combate (campaign → pending) concorrente com finalização de movimento (pending → campaign) na mesma pending.
 30. Cancelamento/encerramento de reação (pending → attack) concorrente com resolução/ocultação/crit confirmation (attack → pending) na mesma reação.
 31. Executar os dois pares no PostgreSQL efêmero como testes de padrão de lock; não usar banco Supabase remoto.
+
+
+### Inventário e triggers transitivos
+
+32. Alteração de quantidade/remoção de item concorrente com equipar a mesma instância de arma.
+33. Entrega de arma concorrente com equipar/desquipar instância na mesma ficha.
+34. Finalização do equipamento inicial concorrente com alteração de inventário.
+35. Exclusão de personagem concorrente com operações de equipamento; validar limpeza e ausência de instâncias órfãs.

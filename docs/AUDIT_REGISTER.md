@@ -460,3 +460,10 @@ A auditoria read-only foi ampliada para recursos de classe, descanso, arma equip
 ### Protocolo global de locks — proposta
 - [LOCK_ORDER_PROTOCOL_DRAFT.md](LOCK_ORDER_PROTOCOL_DRAFT.md) consolida a ordem candidata de aquisição de locks, evidências de inversões, critérios de aceite e bloqueios antes de qualquer migration.
 - Status: rascunho não aprovado. A ordem ainda depende do mapeamento de todas as chamadas transitivas por OID/assinatura e testes de concorrência; não autoriza alteração no Supabase.
+
+
+### Triggers e inventário — 2026-11-09
+- Confirmado o efeito transitivo do trigger `sync_character_weapon_instances_from_inventory`: alterações de inventário por INSERT/DELETE/UPDATE OF quantidade também criam/removem instâncias de armas e atualizam o resumo da linha de equipamento.
+- A função de equipar instância de personagem segue personagem → instância → resumo de inventário; caminhos de inventário podem adquirir locks na linha de equipamento antes de chegar às instâncias via trigger. Risco de inversão é condicional a operações de quantidade/remoção na mesma ficha/arma; ainda não reproduzido.
+- O trigger de preview AOO executa RPC de movimento em subtransação e força rollback para validar sem persistir movimento. Isso deve ser incluído na revisão dos locks transitivos dos requests de movimento.
+- Regressões de inventário/instâncias foram adicionadas à estratégia; nenhuma operação de inventário remota foi executada.

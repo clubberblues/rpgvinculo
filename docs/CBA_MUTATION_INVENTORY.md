@@ -472,3 +472,23 @@ O harness agora modela também:
 - pending → attack versus attack → pending.
 
 A aprovação do CI validará apenas que PostgreSQL detecta esses dois padrões sintéticos; não executará os endpoints remotos.
+
+
+### Triggers de AOO e inventário: locks transitivos e alcance real — 2026-11-09
+
+Foram inspecionados os corpos completos dos quatro triggers relevantes, além dos endpoints que os acionam:
+
+- `priv.trg_srd_validate_aoo_pending_movement_preview` é AFTER INSERT em `priv.srd_aoo_pending_movements`. Executa um preview de movimento via RPC player/GM sob GUC transacional e força rollback da subtransação para não persistir a movimentação. A inserção de pending ocorre dentro do request que já bloqueou campanha; locks obtidos dentro do bloco de exceção são revertidos junto com o preview. O trigger, contudo, torna o caminho de solicitação dependente dos writers de movimento e de seus triggers.
+- `priv.trg_srd_aoo_guard...`/triggers de ataques AOO executam verificações de condição em BEFORE INSERT/UPDATE. As funções consultadas não adquirem lock explícito de campanha; leem condições através de helpers. Não foi encontrado lock adicional explícito nessas duas funções de trigger.
+- `private.sync_character_weapon_instances_from_inventory` é AFTER INSERT/DELETE/UPDATE OF quantidade em `public.srd_character_equipment`. No DELETE remove instâncias; no INSERT ou alteração de quantidade cria/remove instâncias e atualiza o resumo de equipamento. Assim, a ordem de locks do endpoint de inventário inclui implicitamente equipamento → instância(s) de arma → atualização do resumo de equipamento.
+- `private.equipar_arma_instancia_personagem_impl` bloqueia personagem → instância(s) de arma → atualiza `srd_character_equipment`. Já `private.equipar_arma_instancia_npc_vinculado_impl` bloqueia campanha → instância de arma → resumo de equipamento.
+- O trigger de inventário não é executado quando o UPDATE altera apenas `equipado/hand_slot`, pois está definido para UPDATE OF quantidade; ele é acionado por INSERT, DELETE ou mudança de quantidade. O ciclo equipamento → instância versus instância → equipamento é, portanto, condicional a uma operação que altera a quantidade/remove/adiciona item enquanto outra equipa a mesma instância.
+- `public.finalizar_equipamento_inicial_srd` bloqueia personagem → ficha e insere linhas de inventário; os triggers criam as instâncias de arma. `public.usar_pocao_cura_srd` bloqueia inventário → ficha e remove/atualiza a linha de item; para item não-arma o trigger retorna sem criar instância, mas no DELETE executa o DELETE de instâncias correspondente (normalmente sem linhas). Não tratar todo consumo de item como lock-free.
+- `public.entregar_item_srd` e `public.equipar_item_srd` têm caminhos distintos dos wrappers de instância; devem ser mantidos na matriz até validação das chamadas de mesa e permissões.
+
+### Novos cenários de concorrência para inventário
+
+32. Alteração de quantidade/remoção de item que aciona o trigger de instâncias, concorrente com equipar a mesma instância.
+33. Entrega de arma e equipamento simultâneos para a mesma ficha, verificando duplicidade/perda de instâncias.
+34. Finalização de equipamento inicial concorrente com alteração de inventário na mesma ficha.
+35. Exclusão de personagem e limpeza de inventário concorrentes com ação de equipamento; validar cascade/trigger e ownership.
