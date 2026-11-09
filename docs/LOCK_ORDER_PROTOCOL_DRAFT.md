@@ -276,3 +276,16 @@ A leitura por OID também confirma outros caminhos ativos:
 - `srd_encerrar_reacao_aoo_pendente_srd` (OID 27035) delega ao helper (OID 27269), que bloqueia pending e, se cancelar ataque iniciado, bloqueia o ataque associado.
 
 Assim, a transição de estado da mesa campanha-first conflita com pelo menos dois caminhos expostos: pending-first → campaign e attack-first → pending → campaign. O cancelamento e encerramento de reação também mantêm a ordem pending → attack. A ordem candidata para o domínio AOO deve ser decidida em conjunto com a linha campaign; não basta ordenar apenas as duas tabelas AOO.
+
+
+### Ordem candidata específica para AOO (ainda não implementada)
+
+A correção deve fazer todos os entrypoints AOO compartilharem o mesmo prefixo:
+1. `campaigns FOR UPDATE` — serializa a transição da mesa e revalida estado/rodada/turno.
+2. `srd_aoo_pending_movements` por `pending_id` crescente — bloqueia e revalida status/reação pendente.
+3. `srd_aoo_attacks` por `attack_id` crescente — bloqueia e revalida a etapa de ataque.
+4. Ledgers/attempts e logs, em ordem estável, depois das linhas principais.
+
+Para APIs que recebem `attack_id`, pode-se fazer uma leitura MVCC inicial apenas para descobrir `pending_id`, sem manter lock; depois bloquear campanha → pending → attack e revalidar que o vínculo e o status continuam iguais. Para cancelamento/finalização, o `pending_id` já é conhecido. Para encerrar combate, bloquear primeiro todos os pendings da campanha em ordem estável e depois os ataques associados, em vez de atualizar ataques antes dos pendings.
+
+Essa é uma direção de refatoração, não uma autorização de alteração. Antes de codificar, ainda é necessário revisar todos os writers de attempts/ledgers, triggers e os fluxos de ataque iterativo para confirmar que nenhuma tabela anterior é adquirida depois. O harness atual testa apenas os padrões de locks, não a semântica transacional completa.
