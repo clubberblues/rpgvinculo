@@ -541,3 +541,8 @@ A inspeção read-only das implementações instaladas refinou a ordem candidata
 - A ordem ficha → pending → attack é uma proposta, não decisão final: confirmar todos os callers transitivos de dano, sincronização vital e encerramento AOO, bem como a relação de ownership do alvo, antes de implementar. Não adicionar lock de ficha para alvos token-only.
 
 **Classificação:** as sequências conflitantes estão confirmadas nos corpos remotos por OID; a concorrência/deadlock entre RPCs reais ainda não foi reproduzida. Esta revisão não altera a conclusão de que a ordem global é parcial e que campaign-first deve ser a primeira barreira de serialização.
+
+
+### Recursos de classe — verificação dos vínculos reais no snapshot atual (2026-11-09)
+
+Consulta agregada read-only cruzou tokens NPC com sourceCharacterId e a linha correspondente em characters: foram encontrados 3 tokens NPC com ficha de origem existente; os 3 personagens de origem estão com campaign_id NULL e nenhum tem campaign_id igual ao da campanha do token. Portanto, o caminho personagem/ficha → recurso → campanha de usar_habilidade_classe_srd não disputa atualmente o mesmo personagem/recurso com o caminho campaign → personagem/ficha → recurso de Fúria/descanso NPC na mesma campanha. A inversão de prefixos continua real nos corpos, mas a colisão de linhas necessária ao deadlock não está presente neste snapshot de dados. Reclassificar como condicional/futuro até que um vínculo de NPC a personagem pertencente à mesma campanha seja permitido/criado; revalidar se o modelo de vínculo mudar.
