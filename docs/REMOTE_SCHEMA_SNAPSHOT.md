@@ -2436,3 +2436,3200 @@
 2. Exportar policies, grants, triggers, constraints, views, sequences, tipos/domínios e defaults.
 3. Comparar os objetos do snapshot com os arquivos de migration versionados e com os 285 nomes remotos sem arquivo local de mesmo nome.
 4. Construir baseline reproduzível em branch/ambiente descartável; não reconstruir produção.
+
+
+## Constraints
+
+### `priv.campaign_deletion_cleanup.campaign_deletion_cleanup_pkey`
+
+```sql
+PRIMARY KEY (campaign_id)
+```
+
+### `priv.srd_aoo_attacks.srd_aoo_attacks_campaign_id_fkey`
+
+```sql
+FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+```
+
+### `priv.srd_aoo_attacks.srd_aoo_attacks_critical_confirmation_d20_check`
+
+```sql
+CHECK (critical_confirmation_d20 >= 1 AND critical_confirmation_d20 <= 20)
+```
+
+### `priv.srd_aoo_attacks.srd_aoo_attacks_damage_idempotency_key_key`
+
+```sql
+UNIQUE (damage_idempotency_key)
+```
+
+### `priv.srd_aoo_attacks.srd_aoo_attacks_manual_d20_check`
+
+```sql
+CHECK (manual_d20 >= 1 AND manual_d20 <= 20)
+```
+
+### `priv.srd_aoo_attacks.srd_aoo_attacks_pending_id_fkey`
+
+```sql
+FOREIGN KEY (pending_id) REFERENCES priv.srd_aoo_pending_movements(pending_id) ON DELETE CASCADE
+```
+
+### `priv.srd_aoo_attacks.srd_aoo_attacks_pkey`
+
+```sql
+PRIMARY KEY (attack_id)
+```
+
+### `priv.srd_aoo_attacks.srd_aoo_attacks_reaction_id_fkey`
+
+```sql
+FOREIGN KEY (reaction_id) REFERENCES priv.srd_aoo_reaction_ledger(reaction_id)
+```
+
+### `priv.srd_aoo_attacks.srd_aoo_attacks_reaction_id_key`
+
+```sql
+UNIQUE (reaction_id)
+```
+
+### `priv.srd_aoo_attacks.srd_aoo_attacks_status_check`
+
+```sql
+CHECK (status = ANY (ARRAY['awaiting_attack_roll'::text, 'awaiting_critical_confirmation'::text, 'awaiting_miss_chance'::text, 'awaiting_damage'::text, 'miss'::text, 'damage_applied'::text, 'cancelled'::text]))
+```
+
+### `priv.srd_aoo_attacks.srd_aoo_attacks_weapon_end_check`
+
+```sql
+CHECK (weapon_end = ANY (ARRAY['main'::text, 'off'::text]))
+```
+
+### `priv.srd_aoo_attacks.srd_aoo_attacks_weapon_hand_slot_check`
+
+```sql
+CHECK ((weapon_hand_slot = ANY (ARRAY['main_hand'::text, 'off_hand'::text, 'natural'::text])) OR weapon_hand_slot IS NULL)
+```
+
+### `priv.srd_aoo_pending_movements.srd_aoo_pending_movements_campaign_id_fkey`
+
+```sql
+FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+```
+
+### `priv.srd_aoo_pending_movements.srd_aoo_pending_movements_combat_round_check`
+
+```sql
+CHECK (combat_round >= 1)
+```
+
+### `priv.srd_aoo_pending_movements.srd_aoo_pending_movements_current_turn_check`
+
+```sql
+CHECK (current_turn >= 0)
+```
+
+### `priv.srd_aoo_pending_movements.srd_aoo_pending_movements_destination_x_check`
+
+```sql
+CHECK (destination_x >= 0 AND destination_x <= 199)
+```
+
+### `priv.srd_aoo_pending_movements.srd_aoo_pending_movements_destination_y_check`
+
+```sql
+CHECK (destination_y >= 0 AND destination_y <= 199)
+```
+
+### `priv.srd_aoo_pending_movements.srd_aoo_pending_movements_movement_controller_check`
+
+```sql
+CHECK (movement_controller = ANY (ARRAY['player'::text, 'gm'::text]))
+```
+
+### `priv.srd_aoo_pending_movements.srd_aoo_pending_movements_origin_x_check`
+
+```sql
+CHECK (origin_x >= 0 AND origin_x <= 199)
+```
+
+### `priv.srd_aoo_pending_movements.srd_aoo_pending_movements_origin_y_check`
+
+```sql
+CHECK (origin_y >= 0 AND origin_y <= 199)
+```
+
+### `priv.srd_aoo_pending_movements.srd_aoo_pending_movements_pending_reactions_check`
+
+```sql
+CHECK (jsonb_typeof(pending_reactions) = 'array'::text)
+```
+
+### `priv.srd_aoo_pending_movements.srd_aoo_pending_movements_pkey`
+
+```sql
+PRIMARY KEY (pending_id)
+```
+
+### `priv.srd_aoo_pending_movements.srd_aoo_pending_movements_status_check`
+
+```sql
+CHECK (status = ANY (ARRAY['waiting_reactions'::text, 'ready_to_commit'::text, 'committed'::text, 'cancelled'::text, 'expired'::text]))
+```
+
+### `priv.srd_aoo_pending_movements.srd_aoo_pending_movements_threats_check`
+
+```sql
+CHECK (jsonb_typeof(threats) = 'array'::text)
+```
+
+### `priv.srd_aoo_reaction_ledger.srd_aoo_reaction_ledger_campaign_id_fkey`
+
+```sql
+FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+```
+
+### `priv.srd_aoo_reaction_ledger.srd_aoo_reaction_ledger_combat_phase_check`
+
+```sql
+CHECK (combat_phase = ANY (ARRAY['surprise_round'::text, 'normal'::text]))
+```
+
+### `priv.srd_aoo_reaction_ledger.srd_aoo_reaction_ledger_combat_round_check`
+
+```sql
+CHECK (combat_round >= 1)
+```
+
+### `priv.srd_aoo_reaction_ledger.srd_aoo_reaction_ledger_max_reactions_check`
+
+```sql
+CHECK (max_reactions >= 1)
+```
+
+### `priv.srd_aoo_reaction_ledger.srd_aoo_reaction_ledger_phase_ordinal_uq`
+
+```sql
+UNIQUE (campaign_id, combat_phase, combat_round, actor_token_id, reaction_number)
+```
+
+### `priv.srd_aoo_reaction_ledger.srd_aoo_reaction_ledger_phase_trigger_uq`
+
+```sql
+UNIQUE (campaign_id, combat_phase, combat_round, actor_token_id, trigger_key)
+```
+
+### `priv.srd_aoo_reaction_ledger.srd_aoo_reaction_ledger_pkey`
+
+```sql
+PRIMARY KEY (reaction_id)
+```
+
+### `priv.srd_aoo_reaction_ledger.srd_aoo_reaction_ledger_reaction_number_check`
+
+```sql
+CHECK (reaction_number >= 1)
+```
+
+### `priv.srd_condition_engine_rules.srd_condition_engine_flags_object`
+
+```sql
+CHECK (jsonb_typeof(flags) = 'object'::text)
+```
+
+### `priv.srd_condition_engine_rules.srd_condition_engine_modifiers_array`
+
+```sql
+CHECK (jsonb_typeof(modifiers) = 'array'::text)
+```
+
+### `priv.srd_condition_engine_rules.srd_condition_engine_rules_condition_id_fkey`
+
+```sql
+FOREIGN KEY (condition_id) REFERENCES srd_conditions(condition_id) ON DELETE CASCADE
+```
+
+### `priv.srd_condition_engine_rules.srd_condition_engine_rules_pkey`
+
+```sql
+PRIMARY KEY (condition_id)
+```
+
+### `priv.srd_condition_engine_rules.srd_condition_engine_speed_range`
+
+```sql
+CHECK (speed_multiplier IS NULL OR speed_multiplier >= 0.05 AND speed_multiplier <= 1::numeric)
+```
+
+### `priv.srd_pending_spell_resolutions.srd_pending_spell_resolutions_campaign_id_fkey`
+
+```sql
+FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+```
+
+### `priv.srd_pending_spell_resolutions.srd_pending_spell_resolutions_caster_level_check`
+
+```sql
+CHECK (caster_level >= 1 AND caster_level <= 40)
+```
+
+### `priv.srd_pending_spell_resolutions.srd_pending_spell_resolutions_condition_break_instance_id_fkey`
+
+```sql
+FOREIGN KEY (condition_break_instance_id) REFERENCES srd_campaign_conditions(condition_instance_id) ON DELETE CASCADE
+```
+
+### `priv.srd_pending_spell_resolutions.srd_pending_spell_resolutions_condition_id_fkey`
+
+```sql
+FOREIGN KEY (condition_id) REFERENCES srd_conditions(condition_id)
+```
+
+### `priv.srd_pending_spell_resolutions.srd_pending_spell_resolutions_pkey`
+
+```sql
+PRIMARY KEY (pending_id)
+```
+
+### `priv.srd_pending_spell_resolutions.srd_pending_spell_resolutions_save_dc_check`
+
+```sql
+CHECK (save_dc >= 1 AND save_dc <= 60)
+```
+
+### `priv.srd_pending_spell_resolutions.srd_pending_spell_resolutions_save_type_check`
+
+```sql
+CHECK (save_type = ANY (ARRAY['fortitude'::text, 'reflex'::text, 'will'::text]))
+```
+
+### `priv.srd_pending_spell_resolutions.srd_pending_spell_resolutions_spell_id_fkey`
+
+```sql
+FOREIGN KEY (spell_id) REFERENCES srd_spells(id)
+```
+
+### `priv.srd_pending_spell_resolutions.srd_pending_spell_resolutions_status_check`
+
+```sql
+CHECK (status = ANY (ARRAY['pending_save'::text, 'awaiting_spell_resistance'::text, 'resolved'::text, 'saved'::text, 'resisted'::text, 'expired'::text]))
+```
+
+### `priv.srd_pending_spell_resolutions.srd_pending_spell_resolutions_target_kind_check`
+
+```sql
+CHECK (target_kind = ANY (ARRAY['character'::text, 'token'::text]))
+```
+
+### `priv.srd_pending_spell_resolutions.srd_pending_spell_save_pair_check`
+
+```sql
+CHECK ((save_type IS NULL) = (save_dc IS NULL))
+```
+
+### `priv.throttle.throttle_pkey`
+
+```sql
+PRIMARY KEY (key)
+```
+
+### `public.campaign_codes.campaign_codes_campaign_id_fkey`
+
+```sql
+FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+```
+
+### `public.campaign_codes.campaign_codes_code_check`
+
+```sql
+CHECK (code ~ '^[0-9]{4}$'::text)
+```
+
+### `public.campaign_codes.campaign_codes_code_key`
+
+```sql
+UNIQUE (code)
+```
+
+### `public.campaign_codes.campaign_codes_pkey`
+
+```sql
+PRIMARY KEY (campaign_id)
+```
+
+### `public.campaign_log.campaign_log_campaign_id_fkey`
+
+```sql
+FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+```
+
+### `public.campaign_log.campaign_log_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.campaign_log.campaign_log_visibilidade_check`
+
+```sql
+CHECK (visibilidade = ANY (ARRAY['PUBLIC'::text, 'VISIBLE'::text, 'HIDDEN'::text, 'REVEALED'::text]))
+```
+
+### `public.campaign_rule_modules.campaign_rule_modules_automation_level_check`
+
+```sql
+CHECK (automation_level = ANY (ARRAY['remind'::text, 'validate'::text, 'resolve'::text]))
+```
+
+### `public.campaign_rule_modules.campaign_rule_modules_campaign_id_fkey`
+
+```sql
+FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+```
+
+### `public.campaign_rule_modules.campaign_rule_modules_module_id_fkey`
+
+```sql
+FOREIGN KEY (module_id) REFERENCES srd_rule_modules(module_id) ON DELETE RESTRICT
+```
+
+### `public.campaign_rule_modules.campaign_rule_modules_pkey`
+
+```sql
+PRIMARY KEY (campaign_id, module_id)
+```
+
+### `public.campaign_rule_modules.campaign_rule_modules_settings_check`
+
+```sql
+CHECK (jsonb_typeof(settings) = 'object'::text)
+```
+
+### `public.campaigns.campaigns_location_id_fkey`
+
+```sql
+FOREIGN KEY (location_id) REFERENCES locations(id)
+```
+
+### `public.campaigns.campaigns_name_check`
+
+```sql
+CHECK (char_length(name) >= 2 AND char_length(name) <= 60)
+```
+
+### `public.campaigns.campaigns_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.campaigns.campaigns_state_check`
+
+```sql
+CHECK (state = ANY (ARRAY['EXPLORACAO'::text, 'COMBATE'::text, 'PAUSA'::text]))
+```
+
+### `public.character_abilities.character_abilities_character_id_fkey`
+
+```sql
+FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE
+```
+
+### `public.character_abilities.character_abilities_pkey`
+
+```sql
+PRIMARY KEY (character_id, ability_id)
+```
+
+### `public.character_conditions.character_conditions_character_id_condition_id_key`
+
+```sql
+UNIQUE (character_id, condition_id)
+```
+
+### `public.character_conditions.character_conditions_character_id_fkey`
+
+```sql
+FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE
+```
+
+### `public.character_conditions.character_conditions_condition_id_fkey`
+
+```sql
+FOREIGN KEY (condition_id) REFERENCES conditions(id)
+```
+
+### `public.character_conditions.character_conditions_niveis_check`
+
+```sql
+CHECK (niveis >= 1 AND niveis <= 6)
+```
+
+### `public.character_conditions.character_conditions_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.character_spells.character_spells_character_id_fkey`
+
+```sql
+FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE
+```
+
+### `public.character_spells.character_spells_pkey`
+
+```sql
+PRIMARY KEY (character_id, spell_id)
+```
+
+### `public.character_talents.character_talents_character_id_fkey`
+
+```sql
+FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE
+```
+
+### `public.character_talents.character_talents_pkey`
+
+```sql
+PRIMARY KEY (character_id, talent_id)
+```
+
+### `public.characters.characters_campaign_id_fkey`
+
+```sql
+FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+```
+
+### `public.characters.characters_campaign_id_user_id_key`
+
+```sql
+UNIQUE (campaign_id, user_id)
+```
+
+### `public.characters.characters_nome_check`
+
+```sql
+CHECK (char_length(nome) >= 2 AND char_length(nome) <= 40)
+```
+
+### `public.characters.characters_ouro_check`
+
+```sql
+CHECK (ouro >= 0)
+```
+
+### `public.characters.characters_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.characters.characters_xp_check`
+
+```sql
+CHECK (xp >= 0)
+```
+
+### `public.combat_state.combat_state_campaign_id_fkey`
+
+```sql
+FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+```
+
+### `public.combat_state.combat_state_pkey`
+
+```sql
+PRIMARY KEY (campaign_id)
+```
+
+### `public.conditions.conditions_nome_key`
+
+```sql
+UNIQUE (nome)
+```
+
+### `public.conditions.conditions_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.continents.continents_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.layers.layers_campaign_id_fkey`
+
+```sql
+FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+```
+
+### `public.layers.layers_h_check`
+
+```sql
+CHECK (h >= 1::numeric AND h <= 2000::numeric)
+```
+
+### `public.layers.layers_media_id_fkey`
+
+```sql
+FOREIGN KEY (media_id) REFERENCES media(id)
+```
+
+### `public.layers.layers_opacity_check`
+
+```sql
+CHECK (opacity >= 0::numeric AND opacity <= 1::numeric)
+```
+
+### `public.layers.layers_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.layers.layers_volume_check`
+
+```sql
+CHECK (volume >= 0::numeric AND volume <= 1::numeric)
+```
+
+### `public.layers.layers_w_check`
+
+```sql
+CHECK (w >= 1::numeric AND w <= 2000::numeric)
+```
+
+### `public.layers.layers_x_check`
+
+```sql
+CHECK (x >= '-1000'::integer::numeric AND x <= 2000::numeric)
+```
+
+### `public.layers.layers_y_check`
+
+```sql
+CHECK (y >= '-1000'::integer::numeric AND y <= 2000::numeric)
+```
+
+### `public.layers.layers_z_check`
+
+```sql
+CHECK (z = ANY (ARRAY['abaixo'::text, 'acima'::text]))
+```
+
+### `public.locations.locations_continent_id_fkey`
+
+```sql
+FOREIGN KEY (continent_id) REFERENCES continents(id)
+```
+
+### `public.locations.locations_nome_key`
+
+```sql
+UNIQUE (nome)
+```
+
+### `public.locations.locations_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.locations.locations_tipo_check`
+
+```sql
+CHECK (tipo = ANY (ARRAY['cidade'::text, 'vilarejo'::text, 'campo_de_batalha'::text]))
+```
+
+### `public.media.media_campaign_id_fkey`
+
+```sql
+FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+```
+
+### `public.media.media_kind_check`
+
+```sql
+CHECK (kind = ANY (ARRAY['IMAGEM'::text, 'VIDEO'::text, 'AUDIO'::text]))
+```
+
+### `public.media.media_path_key`
+
+```sql
+UNIQUE (path)
+```
+
+### `public.media.media_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.members.members_campaign_id_fkey`
+
+```sql
+FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+```
+
+### `public.members.members_pkey`
+
+```sql
+PRIMARY KEY (campaign_id, user_id)
+```
+
+### `public.members.members_role_check`
+
+```sql
+CHECK (role = ANY (ARRAY['GM'::text, 'PLAYER'::text, 'OBSERVER'::text]))
+```
+
+### `public.monster_instances.monster_instances_campaign_id_fkey`
+
+```sql
+FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+```
+
+### `public.monster_instances.monster_instances_monster_id_fkey`
+
+```sql
+FOREIGN KEY (monster_id) REFERENCES srd_monsters(id)
+```
+
+### `public.monster_instances.monster_instances_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.monsters.monsters_continente_fkey`
+
+```sql
+FOREIGN KEY (continente) REFERENCES continents(id)
+```
+
+### `public.monsters.monsters_dificuldade_check`
+
+```sql
+CHECK (dificuldade = ANY (ARRAY['Fácil'::text, 'Comum'::text, 'Perigoso'::text, 'Elite'::text, 'Lendário'::text, 'Épico'::text]))
+```
+
+### `public.monsters.monsters_mechanics_object_check`
+
+```sql
+CHECK (jsonb_typeof(mechanics) = 'object'::text)
+```
+
+### `public.monsters.monsters_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.profiles.profiles_id_fkey`
+
+```sql
+FOREIGN KEY (id) REFERENCES auth.users(id) ON DELETE CASCADE
+```
+
+### `public.profiles.profiles_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.profiles.profiles_username_key`
+
+```sql
+UNIQUE (username)
+```
+
+### `public.roll_log.roll_log_campaign_id_fkey`
+
+```sql
+FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+```
+
+### `public.roll_log.roll_log_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.roll_requests.roll_requests_atributo_check`
+
+```sql
+CHECK (atributo = ANY (ARRAY['FOR'::text, 'DES'::text, 'CON'::text, 'INT'::text, 'SAB'::text, 'CAR'::text]))
+```
+
+### `public.roll_requests.roll_requests_campaign_id_fkey`
+
+```sql
+FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+```
+
+### `public.roll_requests.roll_requests_kind_check`
+
+```sql
+CHECK (kind = ANY (ARRAY['PERICIA'::text, 'RESISTENCIA'::text, 'INICIATIVA'::text, 'LIVRE'::text]))
+```
+
+### `public.roll_requests.roll_requests_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.roll_requests.roll_requests_status_check`
+
+```sql
+CHECK (status = ANY (ARRAY['PENDENTE'::text, 'RESPONDIDO'::text, 'CANCELADO'::text]))
+```
+
+### `public.scenes.scenes_campaign_id_fkey`
+
+```sql
+FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+```
+
+### `public.scenes.scenes_pkey`
+
+```sql
+PRIMARY KEY (campaign_id)
+```
+
+### `public.skills.skills_atributo_check`
+
+```sql
+CHECK (atributo = ANY (ARRAY['FOR'::text, 'DES'::text, 'CON'::text, 'INT'::text, 'SAB'::text, 'CAR'::text]))
+```
+
+### `public.skills.skills_nome_key`
+
+```sql
+UNIQUE (nome)
+```
+
+### `public.skills.skills_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.srd_attack_sequence_attempts.srd_attack_sequence_attempts_attack_total_check`
+
+```sql
+CHECK (attack_total IS NULL OR attack_total >= 0 AND attack_total <= 200)
+```
+
+### `public.srd_attack_sequence_attempts.srd_attack_sequence_attempts_attempt_index_check`
+
+```sql
+CHECK (attempt_index >= 1 AND attempt_index <= 6)
+```
+
+### `public.srd_attack_sequence_attempts.srd_attack_sequence_attempts_critical_confirmation_d20_check`
+
+```sql
+CHECK (critical_confirmation_d20 IS NULL OR critical_confirmation_d20 >= 1 AND critical_confirmation_d20 <= 20)
+```
+
+### `public.srd_attack_sequence_attempts.srd_attack_sequence_attempts_damage_applied_check`
+
+```sql
+CHECK (damage_applied IS NULL OR damage_applied >= 0 AND damage_applied <= 10000)
+```
+
+### `public.srd_attack_sequence_attempts.srd_attack_sequence_attempts_damage_rolls_check`
+
+```sql
+CHECK (damage_rolls IS NULL OR cardinality(damage_rolls) >= 1 AND cardinality(damage_rolls) <= 30 AND array_position(damage_rolls, NULL::integer) IS NULL AND (0 < ALL (damage_rolls)))
+```
+
+### `public.srd_attack_sequence_attempts.srd_attack_sequence_attempts_iterative_penalty_check`
+
+```sql
+CHECK (iterative_penalty >= 0 AND iterative_penalty <= 25)
+```
+
+### `public.srd_attack_sequence_attempts.srd_attack_sequence_attempts_manual_d20_check`
+
+```sql
+CHECK (manual_d20 >= 1 AND manual_d20 <= 20)
+```
+
+### `public.srd_attack_sequence_attempts.srd_attack_sequence_attempts_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.srd_attack_sequence_attempts.srd_attack_sequence_attempts_resolution_data_object_check`
+
+```sql
+CHECK (jsonb_typeof(resolution_data) = 'object'::text)
+```
+
+### `public.srd_attack_sequence_attempts.srd_attack_sequence_attempts_sequence_id_fkey`
+
+```sql
+FOREIGN KEY (sequence_id) REFERENCES srd_attack_sequences(id) ON DELETE CASCADE
+```
+
+### `public.srd_attack_sequence_attempts.srd_attack_sequence_attempts_status_check`
+
+```sql
+CHECK (status = ANY (ARRAY['pending_resolution'::text, 'miss'::text, 'critical_confirmation_pending'::text, 'hit_pending_damage'::text, 'damage_applied'::text, 'cancelled'::text]))
+```
+
+### `public.srd_attack_sequence_attempts.srd_attack_sequence_attempts_target_ac_check`
+
+```sql
+CHECK (target_ac IS NULL OR target_ac >= 0 AND target_ac <= 200)
+```
+
+### `public.srd_attack_sequence_attempts.srd_attack_sequence_attempts_unique_idempotency`
+
+```sql
+UNIQUE (idempotency_key)
+```
+
+### `public.srd_attack_sequence_attempts.srd_attack_sequence_attempts_unique_index`
+
+```sql
+UNIQUE (sequence_id, attempt_index)
+```
+
+### `public.srd_attack_sequences.srd_attack_sequences_actor_character_id_fkey`
+
+```sql
+FOREIGN KEY (actor_character_id) REFERENCES characters(id) ON DELETE CASCADE
+```
+
+### `public.srd_attack_sequences.srd_attack_sequences_attack_type_check`
+
+```sql
+CHECK (attack_type = ANY (ARRAY['atk-corpo'::text, 'atk-dist'::text]))
+```
+
+### `public.srd_attack_sequences.srd_attack_sequences_attacks_total_check`
+
+```sql
+CHECK (attacks_total >= 2 AND attacks_total <= 6)
+```
+
+### `public.srd_attack_sequences.srd_attack_sequences_base_attack_bonus_check`
+
+```sql
+CHECK (base_attack_bonus >= 1)
+```
+
+### `public.srd_attack_sequences.srd_attack_sequences_campaign_id_fkey`
+
+```sql
+FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+```
+
+### `public.srd_attack_sequences.srd_attack_sequences_next_attack_index_check`
+
+```sql
+CHECK (next_attack_index >= 1 AND next_attack_index <= 7)
+```
+
+### `public.srd_attack_sequences.srd_attack_sequences_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.srd_attack_sequences.srd_attack_sequences_power_attack_penalty_check`
+
+```sql
+CHECK (power_attack_penalty >= 0 AND power_attack_penalty <= 30)
+```
+
+### `public.srd_attack_sequences.srd_attack_sequences_progress_check`
+
+```sql
+CHECK (next_attack_index <= (attacks_total + 1))
+```
+
+### `public.srd_attack_sequences.srd_attack_sequences_round_number_check`
+
+```sql
+CHECK (round_number > 0)
+```
+
+### `public.srd_attack_sequences.srd_attack_sequences_status_check`
+
+```sql
+CHECK (status = ANY (ARRAY['active'::text, 'completed'::text, 'abandoned'::text, 'invalidated'::text]))
+```
+
+### `public.srd_attack_sequences.srd_attack_sequences_turn_index_check`
+
+```sql
+CHECK (turn_index >= 0)
+```
+
+### `public.srd_attack_sequences.srd_attack_sequences_weapon_end_check`
+
+```sql
+CHECK (weapon_end IS NULL OR (weapon_end = ANY (ARRAY['main'::text, 'off'::text])))
+```
+
+### `public.srd_attack_sequences.srd_attack_sequences_weapon_hand_slot_check`
+
+```sql
+CHECK (weapon_hand_slot IS NULL OR (weapon_hand_slot = ANY (ARRAY['main_hand'::text, 'off_hand'::text])))
+```
+
+### `public.srd_campaign_conditions.srd_campaign_conditions_campaign_id_fkey`
+
+```sql
+FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+```
+
+### `public.srd_campaign_conditions.srd_campaign_conditions_condition_id_fkey`
+
+```sql
+FOREIGN KEY (condition_id) REFERENCES srd_conditions(condition_id) ON DELETE RESTRICT
+```
+
+### `public.srd_campaign_conditions.srd_campaign_conditions_notes_check`
+
+```sql
+CHECK (jsonb_typeof(notes) = 'object'::text)
+```
+
+### `public.srd_campaign_conditions.srd_campaign_conditions_pkey`
+
+```sql
+PRIMARY KEY (condition_instance_id)
+```
+
+### `public.srd_campaign_conditions.srd_campaign_conditions_source_spell_id_fkey`
+
+```sql
+FOREIGN KEY (source_spell_id) REFERENCES srd_spells(id) ON DELETE SET NULL
+```
+
+### `public.srd_campaign_conditions.srd_campaign_conditions_target_kind_check`
+
+```sql
+CHECK (target_kind = ANY (ARRAY['character'::text, 'token'::text]))
+```
+
+### `public.srd_campaign_effects.srd_campaign_effects_campaign_id_fkey`
+
+```sql
+FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+```
+
+### `public.srd_campaign_effects.srd_campaign_effects_effect_data_check`
+
+```sql
+CHECK (jsonb_typeof(effect_data) = 'object'::text)
+```
+
+### `public.srd_campaign_effects.srd_campaign_effects_pkey`
+
+```sql
+PRIMARY KEY (effect_instance_id)
+```
+
+### `public.srd_campaign_effects.srd_campaign_effects_source_spell_id_fkey`
+
+```sql
+FOREIGN KEY (source_spell_id) REFERENCES srd_spells(id) ON DELETE SET NULL
+```
+
+### `public.srd_campaign_effects.srd_campaign_effects_target_kind_check`
+
+```sql
+CHECK (target_kind = ANY (ARRAY['character'::text, 'token'::text, 'area'::text]))
+```
+
+### `public.srd_catalog_coverage.srd_catalog_coverage_actual_entries_check`
+
+```sql
+CHECK (actual_entries >= 0)
+```
+
+### `public.srd_catalog_coverage.srd_catalog_coverage_audit_status_check`
+
+```sql
+CHECK (audit_status = ANY (ARRAY['pending'::text, 'in_progress'::text, 'complete'::text, 'blocked'::text, 'excluded'::text]))
+```
+
+### `public.srd_catalog_coverage.srd_catalog_coverage_expected_entries_check`
+
+```sql
+CHECK (expected_entries IS NULL OR expected_entries >= 0)
+```
+
+### `public.srd_catalog_coverage.srd_catalog_coverage_pkey`
+
+```sql
+PRIMARY KEY (catalog_key)
+```
+
+### `public.srd_catalog_coverage.srd_catalog_coverage_ruleset_id_fkey`
+
+```sql
+FOREIGN KEY (ruleset_id) REFERENCES srd_rulesets(ruleset_id)
+```
+
+### `public.srd_catalog_coverage.srd_catalog_coverage_verified_entries_check`
+
+```sql
+CHECK (verified_entries >= 0)
+```
+
+### `public.srd_catalog_entry_audit.srd_catalog_entry_audit_pkey`
+
+```sql
+PRIMARY KEY (catalog_key, entry_id)
+```
+
+### `public.srd_cba_token_equipment.srd_cba_token_equipment_campaign_id_fkey`
+
+```sql
+FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+```
+
+### `public.srd_cba_token_equipment.srd_cba_token_equipment_equipment_id_fkey`
+
+```sql
+FOREIGN KEY (equipment_id) REFERENCES srd_equipment(id) ON DELETE RESTRICT
+```
+
+### `public.srd_cba_token_equipment.srd_cba_token_equipment_hand_slot_check`
+
+```sql
+CHECK (hand_slot IS NULL OR (hand_slot = ANY (ARRAY['main_hand'::text, 'off_hand'::text])))
+```
+
+### `public.srd_cba_token_equipment.srd_cba_token_equipment_pkey`
+
+```sql
+PRIMARY KEY (campaign_id, token_id, equipment_id)
+```
+
+### `public.srd_cba_token_equipment.srd_cba_token_equipment_quantidade_check`
+
+```sql
+CHECK (quantidade > 0)
+```
+
+### `public.srd_cba_token_weapon_instances.srd_cba_token_weapon_instances_campaign_id_fkey`
+
+```sql
+FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+```
+
+### `public.srd_cba_token_weapon_instances.srd_cba_token_weapon_instances_equipment_id_fkey`
+
+```sql
+FOREIGN KEY (equipment_id) REFERENCES srd_equipment(id) ON DELETE RESTRICT
+```
+
+### `public.srd_cba_token_weapon_instances.srd_cba_token_weapon_instances_hand_slot_check`
+
+```sql
+CHECK (hand_slot IS NULL OR (hand_slot = ANY (ARRAY['main_hand'::text, 'off_hand'::text])))
+```
+
+### `public.srd_cba_token_weapon_instances.srd_cba_token_weapon_instances_pkey`
+
+```sql
+PRIMARY KEY (instance_id)
+```
+
+### `public.srd_character_class_levels.srd_character_class_levels_character_id_fkey`
+
+```sql
+FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE
+```
+
+### `public.srd_character_class_levels.srd_character_class_levels_class_id_fkey`
+
+```sql
+FOREIGN KEY (class_id) REFERENCES srd_classes(id) ON DELETE RESTRICT
+```
+
+### `public.srd_character_class_levels.srd_character_class_levels_class_level_check`
+
+```sql
+CHECK (class_level > 0)
+```
+
+### `public.srd_character_class_levels.srd_character_class_levels_hit_points_gained_check`
+
+```sql
+CHECK (hit_points_gained IS NULL OR hit_points_gained >= 0)
+```
+
+### `public.srd_character_class_levels.srd_character_class_levels_pkey`
+
+```sql
+PRIMARY KEY (character_id, class_id)
+```
+
+### `public.srd_character_class_levels.srd_character_class_levels_skill_points_spent_check`
+
+```sql
+CHECK (jsonb_typeof(skill_points_spent) = 'object'::text)
+```
+
+### `public.srd_character_class_levels.srd_character_class_levels_taken_at_character_level_check`
+
+```sql
+CHECK (taken_at_character_level IS NULL OR taken_at_character_level > 0)
+```
+
+### `public.srd_character_domain_choices.srd_character_domain_choices_character_id_domain_id_key`
+
+```sql
+UNIQUE (character_id, domain_id)
+```
+
+### `public.srd_character_domain_choices.srd_character_domain_choices_character_id_fkey`
+
+```sql
+FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE
+```
+
+### `public.srd_character_domain_choices.srd_character_domain_choices_domain_id_fkey`
+
+```sql
+FOREIGN KEY (domain_id) REFERENCES srd_domains(domain_id) ON DELETE RESTRICT
+```
+
+### `public.srd_character_domain_choices.srd_character_domain_choices_domain_slot_check`
+
+```sql
+CHECK (domain_slot >= 1 AND domain_slot <= 2)
+```
+
+### `public.srd_character_domain_choices.srd_character_domain_choices_pkey`
+
+```sql
+PRIMARY KEY (character_id, domain_slot)
+```
+
+### `public.srd_character_equipment.srd_character_equipment_equipment_id_fkey`
+
+```sql
+FOREIGN KEY (equipment_id) REFERENCES srd_equipment(id) ON DELETE RESTRICT
+```
+
+### `public.srd_character_equipment.srd_character_equipment_hand_slot_check`
+
+```sql
+CHECK (hand_slot IS NULL OR (hand_slot = ANY (ARRAY['main_hand'::text, 'off_hand'::text])))
+```
+
+### `public.srd_character_equipment.srd_character_equipment_pkey`
+
+```sql
+PRIMARY KEY (character_id, equipment_id)
+```
+
+### `public.srd_character_equipment.srd_character_equipment_quantidade_check`
+
+```sql
+CHECK (quantidade > 0)
+```
+
+### `public.srd_character_feature_resources.srd_character_feature_resources_character_id_fkey`
+
+```sql
+FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE
+```
+
+### `public.srd_character_feature_resources.srd_character_feature_resources_pkey`
+
+```sql
+PRIMARY KEY (character_id, feature_key)
+```
+
+### `public.srd_character_feature_resources.srd_character_feature_resources_resource_spent_check`
+
+```sql
+CHECK (resource_spent >= 0)
+```
+
+### `public.srd_character_feature_resources.srd_character_feature_resources_uses_spent_check`
+
+```sql
+CHECK (uses_spent >= 0)
+```
+
+### `public.srd_character_known_spells.srd_character_known_spells_character_id_fkey`
+
+```sql
+FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE
+```
+
+### `public.srd_character_known_spells.srd_character_known_spells_class_id_fkey`
+
+```sql
+FOREIGN KEY (class_id) REFERENCES srd_classes(id) ON DELETE CASCADE
+```
+
+### `public.srd_character_known_spells.srd_character_known_spells_learned_at_character_level_check`
+
+```sql
+CHECK (learned_at_character_level > 0)
+```
+
+### `public.srd_character_known_spells.srd_character_known_spells_pkey`
+
+```sql
+PRIMARY KEY (character_id, class_id, spell_id)
+```
+
+### `public.srd_character_known_spells.srd_character_known_spells_spell_id_fkey`
+
+```sql
+FOREIGN KEY (spell_id) REFERENCES srd_spells(id) ON DELETE RESTRICT
+```
+
+### `public.srd_character_prepared_spells.srd_character_prepared_spells_character_id_class_id_prepare_key`
+
+```sql
+UNIQUE (character_id, class_id, prepared_for, spell_level, slot_number, source_track)
+```
+
+### `public.srd_character_prepared_spells.srd_character_prepared_spells_character_id_fkey`
+
+```sql
+FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE
+```
+
+### `public.srd_character_prepared_spells.srd_character_prepared_spells_class_id_fkey`
+
+```sql
+FOREIGN KEY (class_id) REFERENCES srd_classes(id) ON DELETE CASCADE
+```
+
+### `public.srd_character_prepared_spells.srd_character_prepared_spells_pkey`
+
+```sql
+PRIMARY KEY (preparation_id)
+```
+
+### `public.srd_character_prepared_spells.srd_character_prepared_spells_slot_number_check`
+
+```sql
+CHECK (slot_number > 0)
+```
+
+### `public.srd_character_prepared_spells.srd_character_prepared_spells_source_track_check`
+
+```sql
+CHECK (source_track = ANY (ARRAY['class'::text, 'domain'::text, 'special'::text]))
+```
+
+### `public.srd_character_prepared_spells.srd_character_prepared_spells_spell_id_fkey`
+
+```sql
+FOREIGN KEY (spell_id) REFERENCES srd_spells(id) ON DELETE RESTRICT
+```
+
+### `public.srd_character_prepared_spells.srd_character_prepared_spells_spell_level_check`
+
+```sql
+CHECK (spell_level >= 0 AND spell_level <= 9)
+```
+
+### `public.srd_character_sheets.srd_character_sheets_character_id_fkey`
+
+```sql
+FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE
+```
+
+### `public.srd_character_sheets.srd_character_sheets_pkey`
+
+```sql
+PRIMARY KEY (character_id)
+```
+
+### `public.srd_character_spell_slot_state.srd_character_spell_slot_state_character_id_fkey`
+
+```sql
+FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE
+```
+
+### `public.srd_character_spell_slot_state.srd_character_spell_slot_state_check`
+
+```sql
+CHECK (expended_slots >= 0 AND expended_slots <= max_slots)
+```
+
+### `public.srd_character_spell_slot_state.srd_character_spell_slot_state_class_id_fkey`
+
+```sql
+FOREIGN KEY (class_id) REFERENCES srd_classes(id) ON DELETE CASCADE
+```
+
+### `public.srd_character_spell_slot_state.srd_character_spell_slot_state_max_slots_check`
+
+```sql
+CHECK (max_slots >= 0)
+```
+
+### `public.srd_character_spell_slot_state.srd_character_spell_slot_state_pkey`
+
+```sql
+PRIMARY KEY (character_id, class_id, spell_level, period_started_at)
+```
+
+### `public.srd_character_spell_slot_state.srd_character_spell_slot_state_spell_level_check`
+
+```sql
+CHECK (spell_level >= 0 AND spell_level <= 9)
+```
+
+### `public.srd_character_spellbook.srd_character_spellbook_character_id_fkey`
+
+```sql
+FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE
+```
+
+### `public.srd_character_spellbook.srd_character_spellbook_class_id_fkey`
+
+```sql
+FOREIGN KEY (class_id) REFERENCES srd_classes(id) ON DELETE CASCADE
+```
+
+### `public.srd_character_spellbook.srd_character_spellbook_pkey`
+
+```sql
+PRIMARY KEY (character_id, class_id, spell_id)
+```
+
+### `public.srd_character_spellbook.srd_character_spellbook_spell_id_fkey`
+
+```sql
+FOREIGN KEY (spell_id) REFERENCES srd_spells(id) ON DELETE RESTRICT
+```
+
+### `public.srd_character_weapon_instances.srd_character_weapon_instances_equipment_id_fkey`
+
+```sql
+FOREIGN KEY (equipment_id) REFERENCES srd_equipment(id) ON DELETE RESTRICT
+```
+
+### `public.srd_character_weapon_instances.srd_character_weapon_instances_hand_slot_check`
+
+```sql
+CHECK (hand_slot IS NULL OR (hand_slot = ANY (ARRAY['main_hand'::text, 'off_hand'::text])))
+```
+
+### `public.srd_character_weapon_instances.srd_character_weapon_instances_pkey`
+
+```sql
+PRIMARY KEY (instance_id)
+```
+
+### `public.srd_class_level_features.srd_class_level_features_class_id_class_level_fkey`
+
+```sql
+FOREIGN KEY (class_id, class_level) REFERENCES srd_class_level_progressions(class_id, class_level) ON DELETE CASCADE
+```
+
+### `public.srd_class_level_features.srd_class_level_features_mechanics_check`
+
+```sql
+CHECK (jsonb_typeof(mechanics) = 'object'::text)
+```
+
+### `public.srd_class_level_features.srd_class_level_features_pkey`
+
+```sql
+PRIMARY KEY (class_id, class_level, feature_key)
+```
+
+### `public.srd_class_level_features.srd_class_level_features_source_id_fkey`
+
+```sql
+FOREIGN KEY (source_id) REFERENCES srd_rule_sources(source_id)
+```
+
+### `public.srd_class_level_features.srd_class_level_features_verification_status_check`
+
+```sql
+CHECK (verification_status = ANY (ARRAY['unreviewed'::text, 'verified_srd'::text, 'derived'::text, 'needs_license'::text]))
+```
+
+### `public.srd_class_level_progressions.srd_class_level_progressions_base_attack_bonus_check`
+
+```sql
+CHECK (base_attack_bonus >= 0::numeric)
+```
+
+### `public.srd_class_level_progressions.srd_class_level_progressions_base_fortitude_check`
+
+```sql
+CHECK (base_fortitude >= 0)
+```
+
+### `public.srd_class_level_progressions.srd_class_level_progressions_base_reflex_check`
+
+```sql
+CHECK (base_reflex >= 0)
+```
+
+### `public.srd_class_level_progressions.srd_class_level_progressions_base_will_check`
+
+```sql
+CHECK (base_will >= 0)
+```
+
+### `public.srd_class_level_progressions.srd_class_level_progressions_class_id_fkey`
+
+```sql
+FOREIGN KEY (class_id) REFERENCES srd_classes(id) ON DELETE CASCADE
+```
+
+### `public.srd_class_level_progressions.srd_class_level_progressions_class_level_check`
+
+```sql
+CHECK (class_level >= 1 AND class_level <= 20)
+```
+
+### `public.srd_class_level_progressions.srd_class_level_progressions_first_level_skill_multiplier_check`
+
+```sql
+CHECK (first_level_skill_multiplier > 0)
+```
+
+### `public.srd_class_level_progressions.srd_class_level_progressions_pkey`
+
+```sql
+PRIMARY KEY (class_id, class_level)
+```
+
+### `public.srd_class_level_progressions.srd_class_level_progressions_skill_points_per_level_check`
+
+```sql
+CHECK (skill_points_per_level >= 0)
+```
+
+### `public.srd_class_level_progressions.srd_class_level_progressions_source_id_fkey`
+
+```sql
+FOREIGN KEY (source_id) REFERENCES srd_rule_sources(source_id)
+```
+
+### `public.srd_class_level_progressions.srd_class_level_progressions_verification_status_check`
+
+```sql
+CHECK (verification_status = ANY (ARRAY['derived_pending_review'::text, 'verified_srd'::text, 'needs_review'::text]))
+```
+
+### `public.srd_classes.srd_classes_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.srd_classes.srd_classes_source_id_fkey`
+
+```sql
+FOREIGN KEY (source_id) REFERENCES srd_rule_sources(source_id)
+```
+
+### `public.srd_classes.srd_classes_source_status_check`
+
+```sql
+CHECK (source_status = ANY (ARRAY['unreviewed'::text, 'source_attached'::text, 'verified_srd'::text, 'derived'::text, 'house_rule'::text, 'needs_license'::text, 'excluded'::text]))
+```
+
+### `public.srd_conditions.srd_conditions_mechanical_effects_check`
+
+```sql
+CHECK (jsonb_typeof(mechanical_effects) = 'object'::text)
+```
+
+### `public.srd_conditions.srd_conditions_pkey`
+
+```sql
+PRIMARY KEY (condition_id)
+```
+
+### `public.srd_conditions.srd_conditions_source_id_fkey`
+
+```sql
+FOREIGN KEY (source_id) REFERENCES srd_rule_sources(source_id)
+```
+
+### `public.srd_conditions.srd_conditions_verification_status_check`
+
+```sql
+CHECK (verification_status = ANY (ARRAY['unreviewed'::text, 'verified_srd'::text, 'needs_review'::text, 'needs_license'::text]))
+```
+
+### `public.srd_deities.srd_deities_alignment_check`
+
+```sql
+CHECK (alignment = ANY (ARRAY['Leal e Bom'::text, 'Neutro e Bom'::text, 'Caótico e Bom'::text, 'Leal e Neutro'::text, 'Neutro'::text, 'Caótico e Neutro'::text, 'Leal e Mau'::text, 'Neutro e Mau'::text, 'Caótico e Mau'::text]))
+```
+
+### `public.srd_deities.srd_deities_pkey`
+
+```sql
+PRIMARY KEY (deity_id)
+```
+
+### `public.srd_domain_spells.srd_domain_spells_domain_id_fkey`
+
+```sql
+FOREIGN KEY (domain_id) REFERENCES srd_domains(domain_id) ON DELETE CASCADE
+```
+
+### `public.srd_domain_spells.srd_domain_spells_pkey`
+
+```sql
+PRIMARY KEY (domain_id, spell_level)
+```
+
+### `public.srd_domain_spells.srd_domain_spells_source_id_fkey`
+
+```sql
+FOREIGN KEY (source_id) REFERENCES srd_rule_sources(source_id)
+```
+
+### `public.srd_domain_spells.srd_domain_spells_spell_id_fkey`
+
+```sql
+FOREIGN KEY (spell_id) REFERENCES srd_spells(id) ON DELETE RESTRICT
+```
+
+### `public.srd_domain_spells.srd_domain_spells_spell_level_check`
+
+```sql
+CHECK (spell_level >= 0 AND spell_level <= 9)
+```
+
+### `public.srd_domain_spells.srd_domain_spells_verification_status_check`
+
+```sql
+CHECK (verification_status = ANY (ARRAY['unreviewed'::text, 'verified_srd'::text, 'needs_review'::text]))
+```
+
+### `public.srd_domains.srd_domains_mechanics_check`
+
+```sql
+CHECK (jsonb_typeof(mechanics) = 'object'::text)
+```
+
+### `public.srd_domains.srd_domains_pkey`
+
+```sql
+PRIMARY KEY (domain_id)
+```
+
+### `public.srd_domains.srd_domains_source_id_fkey`
+
+```sql
+FOREIGN KEY (source_id) REFERENCES srd_rule_sources(source_id)
+```
+
+### `public.srd_domains.srd_domains_verification_status_check`
+
+```sql
+CHECK (verification_status = ANY (ARRAY['unreviewed'::text, 'verified_srd'::text, 'needs_review'::text, 'needs_license'::text]))
+```
+
+### `public.srd_equipment.srd_equipment_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.srd_equipment.srd_equipment_source_id_fkey`
+
+```sql
+FOREIGN KEY (source_id) REFERENCES srd_rule_sources(source_id)
+```
+
+### `public.srd_equipment.srd_equipment_source_status_check`
+
+```sql
+CHECK (source_status = ANY (ARRAY['unreviewed'::text, 'source_attached'::text, 'verified_srd'::text, 'derived'::text, 'house_rule'::text, 'needs_license'::text, 'excluded'::text]))
+```
+
+### `public.srd_equipment_audit.srd_equipment_audit_audit_status_check`
+
+```sql
+CHECK (audit_status = ANY (ARRAY['ready_for_manual_review'::text, 'needs_data_fix'::text, 'manual_verified'::text, 'not_applicable_or_unspecified'::text]))
+```
+
+### `public.srd_equipment_audit.srd_equipment_audit_equipment_id_fkey`
+
+```sql
+FOREIGN KEY (equipment_id) REFERENCES srd_equipment(id) ON DELETE CASCADE
+```
+
+### `public.srd_equipment_audit.srd_equipment_audit_pkey`
+
+```sql
+PRIMARY KEY (equipment_id)
+```
+
+### `public.srd_feats.srd_feats_mechanics_object_check`
+
+```sql
+CHECK (jsonb_typeof(mechanics) = 'object'::text)
+```
+
+### `public.srd_feats.srd_feats_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.srd_feats.srd_feats_source_id_fkey`
+
+```sql
+FOREIGN KEY (source_id) REFERENCES srd_rule_sources(source_id)
+```
+
+### `public.srd_feats.srd_feats_source_status_check`
+
+```sql
+CHECK (source_status = ANY (ARRAY['unreviewed'::text, 'source_attached'::text, 'verified_srd'::text, 'derived'::text, 'house_rule'::text, 'needs_license'::text, 'excluded'::text]))
+```
+
+### `public.srd_languages.srd_languages_nome_key`
+
+```sql
+UNIQUE (nome)
+```
+
+### `public.srd_languages.srd_languages_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.srd_monsters.srd_monsters_mechanics_object_check`
+
+```sql
+CHECK (jsonb_typeof(mechanics) = 'object'::text)
+```
+
+### `public.srd_monsters.srd_monsters_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.srd_monsters.srd_monsters_source_id_fkey`
+
+```sql
+FOREIGN KEY (source_id) REFERENCES srd_rule_sources(source_id)
+```
+
+### `public.srd_monsters.srd_monsters_source_status_check`
+
+```sql
+CHECK (source_status = ANY (ARRAY['unreviewed'::text, 'source_attached'::text, 'verified_srd'::text, 'derived'::text, 'house_rule'::text, 'needs_license'::text, 'excluded'::text]))
+```
+
+### `public.srd_npc_archetypes.srd_npc_archetypes_class_id_fkey`
+
+```sql
+FOREIGN KEY (class_id) REFERENCES srd_classes(id) ON DELETE CASCADE
+```
+
+### `public.srd_npc_archetypes.srd_npc_archetypes_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.srd_npc_archetypes.srd_npc_archetypes_race_id_class_id_variant_key`
+
+```sql
+UNIQUE (race_id, class_id, variant)
+```
+
+### `public.srd_npc_archetypes.srd_npc_archetypes_race_id_fkey`
+
+```sql
+FOREIGN KEY (race_id) REFERENCES srd_races(id) ON DELETE CASCADE
+```
+
+### `public.srd_npc_archetypes.srd_npc_archetypes_source_id_fkey`
+
+```sql
+FOREIGN KEY (source_id) REFERENCES srd_rule_sources(source_id)
+```
+
+### `public.srd_npc_archetypes.srd_npc_archetypes_source_status_check`
+
+```sql
+CHECK (source_status = ANY (ARRAY['unreviewed'::text, 'source_attached'::text, 'verified_srd'::text, 'derived'::text, 'house_rule'::text, 'needs_license'::text, 'excluded'::text]))
+```
+
+### `public.srd_npc_archetypes.srd_npc_archetypes_variant_check`
+
+```sql
+CHECK (variant >= 1 AND variant <= 5)
+```
+
+### `public.srd_npc_attack_attempts.srd_npc_attack_attempts_critical_confirmation_d20_check`
+
+```sql
+CHECK (critical_confirmation_d20 >= 1 AND critical_confirmation_d20 <= 20)
+```
+
+### `public.srd_npc_attack_attempts.srd_npc_attack_attempts_manual_d20_check`
+
+```sql
+CHECK (manual_d20 >= 1 AND manual_d20 <= 20)
+```
+
+### `public.srd_npc_attack_attempts.srd_npc_attack_attempts_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.srd_npc_attack_attempts.srd_npc_attack_attempts_sequence_id_attempt_index_key`
+
+```sql
+UNIQUE (sequence_id, attempt_index)
+```
+
+### `public.srd_npc_attack_attempts.srd_npc_attack_attempts_sequence_id_damage_idempotency_key_key`
+
+```sql
+UNIQUE (sequence_id, damage_idempotency_key)
+```
+
+### `public.srd_npc_attack_attempts.srd_npc_attack_attempts_sequence_id_fkey`
+
+```sql
+FOREIGN KEY (sequence_id) REFERENCES srd_npc_attack_sequences(id) ON DELETE CASCADE
+```
+
+### `public.srd_npc_attack_attempts.srd_npc_attack_attempts_sequence_id_idempotency_key_key`
+
+```sql
+UNIQUE (sequence_id, idempotency_key)
+```
+
+### `public.srd_npc_attack_attempts.srd_npc_attack_attempts_status_check`
+
+```sql
+CHECK (status = ANY (ARRAY['pending_resolution'::text, 'critical_confirmation_pending'::text, 'hit_pending_damage'::text, 'miss'::text, 'damage_applied'::text]))
+```
+
+### `public.srd_npc_attack_sequences.srd_npc_attack_sequences_actor_character_id_fkey`
+
+```sql
+FOREIGN KEY (actor_character_id) REFERENCES characters(id) ON DELETE RESTRICT
+```
+
+### `public.srd_npc_attack_sequences.srd_npc_attack_sequences_attack_type_check`
+
+```sql
+CHECK (attack_type = ANY (ARRAY['atk-corpo'::text, 'atk-dist'::text]))
+```
+
+### `public.srd_npc_attack_sequences.srd_npc_attack_sequences_attacks_total_check`
+
+```sql
+CHECK (attacks_total >= 2 AND attacks_total <= 6)
+```
+
+### `public.srd_npc_attack_sequences.srd_npc_attack_sequences_base_attack_bonus_check`
+
+```sql
+CHECK (base_attack_bonus >= 6)
+```
+
+### `public.srd_npc_attack_sequences.srd_npc_attack_sequences_campaign_id_fkey`
+
+```sql
+FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+```
+
+### `public.srd_npc_attack_sequences.srd_npc_attack_sequences_check`
+
+```sql
+CHECK (power_attack_penalty >= 0 AND power_attack_penalty <= base_attack_bonus)
+```
+
+### `public.srd_npc_attack_sequences.srd_npc_attack_sequences_id_campaign_id_key`
+
+```sql
+UNIQUE (id, campaign_id)
+```
+
+### `public.srd_npc_attack_sequences.srd_npc_attack_sequences_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.srd_npc_attack_sequences.srd_npc_attack_sequences_status_check`
+
+```sql
+CHECK (status = ANY (ARRAY['active'::text, 'completed'::text, 'cancelled'::text]))
+```
+
+### `public.srd_npc_attack_sequences.srd_npc_attack_sequences_weapon_hand_slot_check`
+
+```sql
+CHECK (weapon_hand_slot = ANY (ARRAY['main_hand'::text, 'off_hand'::text]))
+```
+
+### `public.srd_races.srd_races_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.srd_races.srd_races_source_id_fkey`
+
+```sql
+FOREIGN KEY (source_id) REFERENCES srd_rule_sources(source_id)
+```
+
+### `public.srd_races.srd_races_source_status_check`
+
+```sql
+CHECK (source_status = ANY (ARRAY['unreviewed'::text, 'source_attached'::text, 'verified_srd'::text, 'derived'::text, 'house_rule'::text, 'needs_license'::text, 'excluded'::text]))
+```
+
+### `public.srd_rule_modules.srd_rule_modules_module_kind_check`
+
+```sql
+CHECK (module_kind = ANY (ARRAY['core'::text, 'supplement'::text, 'house_rule'::text, 'interface'::text]))
+```
+
+### `public.srd_rule_modules.srd_rule_modules_pkey`
+
+```sql
+PRIMARY KEY (module_id)
+```
+
+### `public.srd_rule_modules.srd_rule_modules_ruleset_id_fkey`
+
+```sql
+FOREIGN KEY (ruleset_id) REFERENCES srd_rulesets(ruleset_id) ON DELETE CASCADE
+```
+
+### `public.srd_rule_modules.srd_rule_modules_ruleset_id_module_key_key`
+
+```sql
+UNIQUE (ruleset_id, module_key)
+```
+
+### `public.srd_rule_modules.srd_rule_modules_source_id_fkey`
+
+```sql
+FOREIGN KEY (source_id) REFERENCES srd_rule_sources(source_id)
+```
+
+### `public.srd_rule_sources.srd_rule_sources_pkey`
+
+```sql
+PRIMARY KEY (source_id)
+```
+
+### `public.srd_rule_sources.srd_rule_sources_source_url_check`
+
+```sql
+CHECK (source_url ~ '^https://'::text)
+```
+
+### `public.srd_rulesets.srd_rulesets_pkey`
+
+```sql
+PRIMARY KEY (ruleset_id)
+```
+
+### `public.srd_rulesets.srd_rulesets_primary_source_id_fkey`
+
+```sql
+FOREIGN KEY (primary_source_id) REFERENCES srd_rule_sources(source_id)
+```
+
+### `public.srd_rulesets.srd_rulesets_status_check`
+
+```sql
+CHECK (status = ANY (ARRAY['draft'::text, 'active'::text, 'retired'::text]))
+```
+
+### `public.srd_skills.srd_skills_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.srd_skills.srd_skills_source_id_fkey`
+
+```sql
+FOREIGN KEY (source_id) REFERENCES srd_rule_sources(source_id)
+```
+
+### `public.srd_skills.srd_skills_source_status_check`
+
+```sql
+CHECK (source_status = ANY (ARRAY['unreviewed'::text, 'source_attached'::text, 'verified_srd'::text, 'derived'::text, 'house_rule'::text, 'needs_license'::text, 'excluded'::text]))
+```
+
+### `public.srd_spell_effects.srd_spell_effects_effect_index_check`
+
+```sql
+CHECK (effect_index > 0)
+```
+
+### `public.srd_spell_effects.srd_spell_effects_effect_kind_check`
+
+```sql
+CHECK (effect_kind = ANY (ARRAY['attack'::text, 'damage'::text, 'healing'::text, 'saving_throw'::text, 'condition'::text, 'buff'::text, 'debuff'::text, 'summon'::text, 'movement'::text, 'utility'::text, 'drain'::text, 'special'::text, 'manual'::text]))
+```
+
+### `public.srd_spell_effects.srd_spell_effects_parameters_check`
+
+```sql
+CHECK (jsonb_typeof(parameters) = 'object'::text)
+```
+
+### `public.srd_spell_effects.srd_spell_effects_pkey`
+
+```sql
+PRIMARY KEY (spell_id, effect_index)
+```
+
+### `public.srd_spell_effects.srd_spell_effects_save_result_check`
+
+```sql
+CHECK (save_result IS NULL OR (save_result = ANY (ARRAY['negates'::text, 'partial'::text, 'half'::text, 'special'::text])))
+```
+
+### `public.srd_spell_effects.srd_spell_effects_saving_throw_check`
+
+```sql
+CHECK (saving_throw IS NULL OR (saving_throw = ANY (ARRAY['fortitude'::text, 'reflex'::text, 'will'::text, 'special'::text])))
+```
+
+### `public.srd_spell_effects.srd_spell_effects_source_id_fkey`
+
+```sql
+FOREIGN KEY (source_id) REFERENCES srd_rule_sources(source_id)
+```
+
+### `public.srd_spell_effects.srd_spell_effects_spell_id_fkey`
+
+```sql
+FOREIGN KEY (spell_id) REFERENCES srd_spells(id) ON DELETE CASCADE
+```
+
+### `public.srd_spell_effects.srd_spell_effects_verification_status_check`
+
+```sql
+CHECK (verification_status = ANY (ARRAY['unreviewed'::text, 'verified_srd'::text, 'needs_review'::text, 'manual_only'::text]))
+```
+
+### `public.srd_spell_level_progressions.srd_spell_level_progressions_base_slots_check`
+
+```sql
+CHECK (base_slots >= 0)
+```
+
+### `public.srd_spell_level_progressions.srd_spell_level_progressions_class_id_fkey`
+
+```sql
+FOREIGN KEY (class_id) REFERENCES srd_classes(id) ON DELETE CASCADE
+```
+
+### `public.srd_spell_level_progressions.srd_spell_level_progressions_class_level_check`
+
+```sql
+CHECK (class_level >= 1 AND class_level <= 20)
+```
+
+### `public.srd_spell_level_progressions.srd_spell_level_progressions_known_spells_check`
+
+```sql
+CHECK (known_spells IS NULL OR known_spells >= '-1'::integer)
+```
+
+### `public.srd_spell_level_progressions.srd_spell_level_progressions_pkey`
+
+```sql
+PRIMARY KEY (class_id, class_level, spell_level)
+```
+
+### `public.srd_spell_level_progressions.srd_spell_level_progressions_source_id_fkey`
+
+```sql
+FOREIGN KEY (source_id) REFERENCES srd_rule_sources(source_id)
+```
+
+### `public.srd_spell_level_progressions.srd_spell_level_progressions_spell_level_check`
+
+```sql
+CHECK (spell_level >= 0 AND spell_level <= 9)
+```
+
+### `public.srd_spell_level_progressions.srd_spell_level_progressions_verification_status_check`
+
+```sql
+CHECK (verification_status = ANY (ARRAY['derived_pending_review'::text, 'verified_srd'::text, 'needs_review'::text]))
+```
+
+### `public.srd_spell_progressions.srd_spell_progressions_pkey`
+
+```sql
+PRIMARY KEY (class_key)
+```
+
+### `public.srd_spells.srd_spells_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.srd_spells.srd_spells_source_id_fkey`
+
+```sql
+FOREIGN KEY (source_id) REFERENCES srd_rule_sources(source_id)
+```
+
+### `public.srd_spells.srd_spells_source_status_check`
+
+```sql
+CHECK (source_status = ANY (ARRAY['unreviewed'::text, 'source_attached'::text, 'verified_srd'::text, 'derived'::text, 'house_rule'::text, 'needs_license'::text, 'excluded'::text]))
+```
+
+### `public.srd_starting_packages.srd_starting_packages_class_id_fkey`
+
+```sql
+FOREIGN KEY (class_id) REFERENCES srd_classes(id) ON DELETE CASCADE
+```
+
+### `public.srd_starting_packages.srd_starting_packages_items_check`
+
+```sql
+CHECK (jsonb_typeof(items) = 'array'::text)
+```
+
+### `public.srd_starting_packages.srd_starting_packages_pkey`
+
+```sql
+PRIMARY KEY (class_id)
+```
+
+### `public.srd_starting_packages.srd_starting_packages_source_id_fkey`
+
+```sql
+FOREIGN KEY (source_id) REFERENCES srd_rule_sources(source_id)
+```
+
+### `public.srd_starting_packages.srd_starting_packages_source_status_check`
+
+```sql
+CHECK (source_status = ANY (ARRAY['unreviewed'::text, 'source_attached'::text, 'verified_srd'::text, 'derived'::text, 'house_rule'::text, 'needs_license'::text, 'excluded'::text]))
+```
+
+### `public.terrain.terrain_campaign_id_fkey`
+
+```sql
+FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+```
+
+### `public.terrain.terrain_pkey`
+
+```sql
+PRIMARY KEY (campaign_id, x, y)
+```
+
+### `public.tokens.token_um_dono`
+
+```sql
+CHECK (((character_id IS NOT NULL)::integer + (monster_instance_id IS NOT NULL)::integer) = 1)
+```
+
+### `public.tokens.tokens_campaign_id_fkey`
+
+```sql
+FOREIGN KEY (campaign_id) REFERENCES campaigns(id) ON DELETE CASCADE
+```
+
+### `public.tokens.tokens_character_id_fkey`
+
+```sql
+FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE
+```
+
+### `public.tokens.tokens_monster_instance_id_fkey`
+
+```sql
+FOREIGN KEY (monster_instance_id) REFERENCES monster_instances(id) ON DELETE CASCADE
+```
+
+### `public.tokens.tokens_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.vinculo_abilities.abilities_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.vinculo_character_notes.character_notes_character_id_fkey`
+
+```sql
+FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE
+```
+
+### `public.vinculo_character_notes.character_notes_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.vinculo_character_sheets.character_sheets_armadura_fkey`
+
+```sql
+FOREIGN KEY (armadura) REFERENCES vinculo_items(id)
+```
+
+### `public.vinculo_character_sheets.character_sheets_atributos_check`
+
+```sql
+CHECK (jsonb_typeof(atributos) = 'object'::text)
+```
+
+### `public.vinculo_character_sheets.character_sheets_character_id_fkey`
+
+```sql
+FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE
+```
+
+### `public.vinculo_character_sheets.character_sheets_classe_fkey`
+
+```sql
+FOREIGN KEY (classe) REFERENCES vinculo_classes(id)
+```
+
+### `public.vinculo_character_sheets.character_sheets_cultura_fkey`
+
+```sql
+FOREIGN KEY (cultura) REFERENCES continents(id)
+```
+
+### `public.vinculo_character_sheets.character_sheets_escudo_fkey`
+
+```sql
+FOREIGN KEY (escudo) REFERENCES vinculo_items(id)
+```
+
+### `public.vinculo_character_sheets.character_sheets_pericias_check`
+
+```sql
+CHECK (jsonb_typeof(pericias) = 'object'::text)
+```
+
+### `public.vinculo_character_sheets.character_sheets_pkey`
+
+```sql
+PRIMARY KEY (character_id)
+```
+
+### `public.vinculo_classes.classes_nome_key`
+
+```sql
+UNIQUE (nome)
+```
+
+### `public.vinculo_classes.classes_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.vinculo_inventory.inventory_character_id_fkey`
+
+```sql
+FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE
+```
+
+### `public.vinculo_inventory.inventory_item_id_fkey`
+
+```sql
+FOREIGN KEY (item_id) REFERENCES vinculo_items(id)
+```
+
+### `public.vinculo_inventory.inventory_pkey`
+
+```sql
+PRIMARY KEY (character_id, item_id)
+```
+
+### `public.vinculo_inventory.inventory_qtd_check`
+
+```sql
+CHECK (qtd > 0)
+```
+
+### `public.vinculo_items.items_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.vinculo_spells.spells_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+### `public.vinculo_talents.talents_pkey`
+
+```sql
+PRIMARY KEY (id)
+```
+
+
+
+## Triggers
+
+### `priv.srd_aoo_attacks.trg_srd_aoo_require_blind_concealment_roll`
+
+```sql
+CREATE TRIGGER trg_srd_aoo_require_blind_concealment_roll BEFORE UPDATE OF status ON priv.srd_aoo_attacks FOR EACH ROW EXECUTE FUNCTION priv.srd_aoo_require_blind_concealment_roll()
+```
+
+### `priv.srd_aoo_attacks.trg_srd_guard_aoo_cannot_attack`
+
+```sql
+CREATE TRIGGER trg_srd_guard_aoo_cannot_attack BEFORE INSERT OR UPDATE OF status ON priv.srd_aoo_attacks FOR EACH ROW EXECUTE FUNCTION priv.srd_guard_aoo_cannot_attack()
+```
+
+### `priv.srd_aoo_pending_movements.trg_srd_validate_aoo_pending_movement_preview`
+
+```sql
+CREATE TRIGGER trg_srd_validate_aoo_pending_movement_preview AFTER INSERT ON priv.srd_aoo_pending_movements FOR EACH ROW EXECUTE FUNCTION priv.srd_validate_aoo_pending_movement_preview()
+```
+
+### `public.campaigns.on_campaign_created`
+
+```sql
+CREATE TRIGGER on_campaign_created AFTER INSERT ON campaigns FOR EACH ROW EXECUTE FUNCTION add_owner_as_gm()
+```
+
+### `public.campaigns.trg_expire_barbarian_rage_on_round_change`
+
+```sql
+CREATE TRIGGER trg_expire_barbarian_rage_on_round_change AFTER UPDATE OF combat_data ON campaigns FOR EACH ROW WHEN (old.combat_data IS DISTINCT FROM new.combat_data) EXECUTE FUNCTION priv.srd_expire_barbarian_rage_on_round_change()
+```
+
+### `public.campaigns.trg_srd_guard_pending_aoo_movement`
+
+```sql
+CREATE TRIGGER trg_srd_guard_pending_aoo_movement BEFORE UPDATE OF cba_data ON campaigns FOR EACH ROW EXECUTE FUNCTION priv.srd_guard_pending_aoo_movement()
+```
+
+### `public.campaigns.trg_srd_request_confusion_turn_roll`
+
+```sql
+CREATE TRIGGER trg_srd_request_confusion_turn_roll AFTER UPDATE OF combat_data ON campaigns FOR EACH ROW EXECUTE FUNCTION priv.srd_request_confusion_turn_roll()
+```
+
+### `public.characters.trg_limpar_ficha_srd_ao_excluir_personagem`
+
+```sql
+CREATE TRIGGER trg_limpar_ficha_srd_ao_excluir_personagem BEFORE DELETE ON characters FOR EACH ROW EXECUTE FUNCTION limpar_ficha_srd_ao_excluir_personagem()
+```
+
+### `public.characters.trg_limpar_inventario_srd_ao_excluir_personagem`
+
+```sql
+CREATE TRIGGER trg_limpar_inventario_srd_ao_excluir_personagem AFTER DELETE ON characters FOR EACH ROW EXECUTE FUNCTION limpar_inventario_srd_ao_excluir_personagem()
+```
+
+### `public.members.enforce_campaign_member_role`
+
+```sql
+CREATE TRIGGER enforce_campaign_member_role BEFORE INSERT OR UPDATE OF campaign_id, user_id, role ON members FOR EACH ROW EXECUTE FUNCTION enforce_campaign_member_role()
+```
+
+### `public.srd_cba_token_equipment.sync_token_weapon_instances_from_inventory`
+
+```sql
+CREATE TRIGGER sync_token_weapon_instances_from_inventory AFTER INSERT OR DELETE OR UPDATE OF quantidade ON srd_cba_token_equipment FOR EACH ROW EXECUTE FUNCTION private.sync_token_weapon_instances_from_inventory()
+```
+
+### `public.srd_character_equipment.sync_character_weapon_instances_from_inventory`
+
+```sql
+CREATE TRIGGER sync_character_weapon_instances_from_inventory AFTER INSERT OR DELETE OR UPDATE OF quantidade ON srd_character_equipment FOR EACH ROW EXECUTE FUNCTION private.sync_character_weapon_instances_from_inventory()
+```
+
+### `public.srd_character_sheets.trg_srd_toughness_hp_delta`
+
+```sql
+CREATE TRIGGER trg_srd_toughness_hp_delta BEFORE INSERT OR UPDATE OF talentos ON srd_character_sheets FOR EACH ROW EXECUTE FUNCTION srd_apply_toughness_hp_delta()
+```
+
+### `public.vinculo_character_sheets.sheet_fix`
+
+```sql
+CREATE TRIGGER sheet_fix BEFORE INSERT OR UPDATE ON vinculo_character_sheets FOR EACH ROW EXECUTE FUNCTION priv.sheet_fix()
+```
+
+
+
+## Policies
+
+### `priv.campaign_deletion_cleanup.campaign_deletion_cleanup_deny_all`
+
+```sql
+permissive=PERMISSIVE; roles=public; cmd=ALL; using=false; check=false
+```
+
+### `priv.srd_condition_engine_rules.srd_condition_engine_rules_deny_all`
+
+```sql
+permissive=PERMISSIVE; roles=public; cmd=ALL; using=false; check=false
+```
+
+### `priv.srd_pending_spell_resolutions.srd_pending_spell_resolutions_deny_all`
+
+```sql
+permissive=PERMISSIVE; roles=public; cmd=ALL; using=false; check=false
+```
+
+### `public.campaign_codes.campaign_codes_gm_read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=(my_role(campaign_id) = 'GM'::text); check=NULL
+```
+
+### `public.campaign_log.campaign_log_insert_member_chat`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=INSERT; using=NULL; check=((my_role(campaign_id) = 'GM'::text) OR ((my_role(campaign_id) = ANY (ARRAY['PLAYER'::text, 'OBSERVER'::text])) AND (type = ANY (ARRAY['texto'::text, 'sistema'::text, 'rolagem'::text])) AND (visibilidade = 'PUBLIC'::text) AND ((data ->> 'autor_id'::text) = (( SELECT auth.uid() AS uid))::text)))
+```
+
+### `public.campaign_log.campaign_log_read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=((my_role(campaign_id) = 'GM'::text) OR ((my_role(campaign_id) = ANY (ARRAY['PLAYER'::text, 'OBSERVER'::text])) AND (visibilidade = 'PUBLIC'::text))); check=NULL
+```
+
+### `public.campaign_rule_modules.campaign_rule_modules_member_read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=((EXISTS ( SELECT 1
+   FROM campaigns c
+  WHERE ((c.id = campaign_rule_modules.campaign_id) AND (c.owner_id = ( SELECT ( SELECT auth.uid() AS uid) AS uid))))) OR (EXISTS ( SELECT 1
+   FROM members m
+  WHERE ((m.campaign_id = campaign_rule_modules.campaign_id) AND (m.user_id = ( SELECT ( SELECT auth.uid() AS uid) AS uid)))))); check=NULL
+```
+
+### `public.campaigns.campaigns_member_read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=(my_role(id) IS NOT NULL); check=NULL
+```
+
+### `public.campaigns.campaigns_owner_create`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=INSERT; using=NULL; check=(owner_id = ( SELECT ( SELECT auth.uid() AS uid) AS uid))
+```
+
+### `public.campaigns.campaigns_owner_update`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=UPDATE; using=(my_role(id) = 'GM'::text); check=(my_role(id) = 'GM'::text)
+```
+
+### `public.character_abilities.p_sel`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=(EXISTS ( SELECT 1
+   FROM characters c
+  WHERE ((c.id = character_abilities.character_id) AND ((my_role(c.campaign_id) = 'GM'::text) OR (c.user_id = ( SELECT auth.uid() AS uid)))))); check=NULL
+```
+
+### `public.character_conditions.p_sel`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=(EXISTS ( SELECT 1
+   FROM characters c
+  WHERE ((c.id = character_conditions.character_id) AND ((my_role(c.campaign_id) = 'GM'::text) OR (c.user_id = ( SELECT auth.uid() AS uid)))))); check=NULL
+```
+
+### `public.character_spells.character_spells_owner_or_gm_insert`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=INSERT; using=NULL; check=(EXISTS ( SELECT 1
+   FROM characters c
+  WHERE ((c.id = character_spells.character_id) AND ((c.user_id = ( SELECT auth.uid() AS uid)) OR (my_role(c.campaign_id) = 'GM'::text)))))
+```
+
+### `public.character_spells.p_sel`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=(EXISTS ( SELECT 1
+   FROM characters c
+  WHERE ((c.id = character_spells.character_id) AND ((my_role(c.campaign_id) = 'GM'::text) OR (c.user_id = ( SELECT auth.uid() AS uid)))))); check=NULL
+```
+
+### `public.character_talents.character_talents_owner_or_gm_delete`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=DELETE; using=(EXISTS ( SELECT 1
+   FROM characters c
+  WHERE ((c.id = character_talents.character_id) AND ((c.user_id = ( SELECT auth.uid() AS uid)) OR (my_role(c.campaign_id) = 'GM'::text))))); check=NULL
+```
+
+### `public.character_talents.character_talents_owner_or_gm_insert`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=INSERT; using=NULL; check=(EXISTS ( SELECT 1
+   FROM characters c
+  WHERE ((c.id = character_talents.character_id) AND ((c.user_id = ( SELECT auth.uid() AS uid)) OR (my_role(c.campaign_id) = 'GM'::text)))))
+```
+
+### `public.character_talents.character_talents_owner_or_gm_select`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=(EXISTS ( SELECT 1
+   FROM characters c
+  WHERE ((c.id = character_talents.character_id) AND ((c.user_id = ( SELECT auth.uid() AS uid)) OR (my_role(c.campaign_id) = 'GM'::text))))); check=NULL
+```
+
+### `public.character_talents.character_talents_owner_or_gm_update`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=UPDATE; using=(EXISTS ( SELECT 1
+   FROM characters c
+  WHERE ((c.id = character_talents.character_id) AND ((c.user_id = ( SELECT auth.uid() AS uid)) OR (my_role(c.campaign_id) = 'GM'::text))))); check=(EXISTS ( SELECT 1
+   FROM characters c
+  WHERE ((c.id = character_talents.character_id) AND ((c.user_id = ( SELECT auth.uid() AS uid)) OR (my_role(c.campaign_id) = 'GM'::text)))))
+```
+
+### `public.characters.characters_create_unassigned`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=INSERT; using=NULL; check=((user_id = ( SELECT ( SELECT auth.uid() AS uid) AS uid)) AND (campaign_id IS NULL))
+```
+
+### `public.characters.characters_owner_or_campaign_read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=((user_id = ( SELECT ( SELECT auth.uid() AS uid) AS uid)) OR (my_role(campaign_id) IS NOT NULL)); check=NULL
+```
+
+### `public.characters.characters_owner_or_gm_update`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=UPDATE; using=((user_id = ( SELECT ( SELECT auth.uid() AS uid) AS uid)) OR (my_role(campaign_id) = 'GM'::text)); check=(((user_id = ( SELECT ( SELECT auth.uid() AS uid) AS uid)) AND ((campaign_id IS NULL) OR (my_role(campaign_id) IS NOT NULL))) OR (my_role(campaign_id) = 'GM'::text))
+```
+
+### `public.combat_state.p_sel`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=(my_role(campaign_id) IS NOT NULL); check=NULL
+```
+
+### `public.conditions.p_sel`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.continents.leitura publica`
+
+```sql
+permissive=PERMISSIVE; roles=anon,authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.layers.p_del`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=DELETE; using=(my_role(campaign_id) = 'GM'::text); check=NULL
+```
+
+### `public.layers.p_ins`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=INSERT; using=NULL; check=(my_role(campaign_id) = 'GM'::text)
+```
+
+### `public.layers.p_sel`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=((my_role(campaign_id) = 'GM'::text) OR ((my_role(campaign_id) IS NOT NULL) AND visible)); check=NULL
+```
+
+### `public.layers.p_upd`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=UPDATE; using=(my_role(campaign_id) = 'GM'::text); check=(my_role(campaign_id) = 'GM'::text)
+```
+
+### `public.locations.leitura publica`
+
+```sql
+permissive=PERMISSIVE; roles=anon,authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.media.p_del`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=DELETE; using=(my_role(campaign_id) = 'GM'::text); check=NULL
+```
+
+### `public.media.p_ins`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=INSERT; using=NULL; check=(my_role(campaign_id) = 'GM'::text)
+```
+
+### `public.media.p_sel`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=((my_role(campaign_id) = 'GM'::text) OR (EXISTS ( SELECT 1
+   FROM layers l
+  WHERE ((l.media_id = media.id) AND l.visible AND (my_role(l.campaign_id) IS NOT NULL))))); check=NULL
+```
+
+### `public.media.p_upd`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=UPDATE; using=(my_role(campaign_id) = 'GM'::text); check=(my_role(campaign_id) = 'GM'::text)
+```
+
+### `public.members.members_self_or_campaign_read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=((user_id = ( SELECT ( SELECT auth.uid() AS uid) AS uid)) OR (my_role(campaign_id) IS NOT NULL)); check=NULL
+```
+
+### `public.monster_instances.consolidated_monster_instances_delete`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=DELETE; using=(campaign_id IN ( SELECT members.campaign_id
+   FROM members
+  WHERE ((members.user_id = ( SELECT auth.uid() AS uid)) AND (members.role = 'GM'::text)))); check=NULL
+```
+
+### `public.monster_instances.consolidated_monster_instances_insert`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=INSERT; using=NULL; check=(campaign_id IN ( SELECT members.campaign_id
+   FROM members
+  WHERE ((members.user_id = ( SELECT auth.uid() AS uid)) AND (members.role = 'GM'::text))))
+```
+
+### `public.monster_instances.consolidated_monster_instances_update`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=UPDATE; using=(campaign_id IN ( SELECT members.campaign_id
+   FROM members
+  WHERE ((members.user_id = ( SELECT auth.uid() AS uid)) AND (members.role = 'GM'::text)))); check=(campaign_id IN ( SELECT members.campaign_id
+   FROM members
+  WHERE ((members.user_id = ( SELECT auth.uid() AS uid)) AND (members.role = 'GM'::text))))
+```
+
+### `public.monster_instances.instances read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=(campaign_id IN ( SELECT members.campaign_id
+   FROM members
+  WHERE (members.user_id = ( SELECT auth.uid() AS uid)))); check=NULL
+```
+
+### `public.monsters.leitura publica`
+
+```sql
+permissive=PERMISSIVE; roles=anon,authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.profiles.Public profiles are viewable by everyone.`
+
+```sql
+permissive=PERMISSIVE; roles=public; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.profiles.Users can insert their own profile.`
+
+```sql
+permissive=PERMISSIVE; roles=public; cmd=INSERT; using=NULL; check=(( SELECT auth.uid() AS uid) = id)
+```
+
+### `public.profiles.Users can update own profile.`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=UPDATE; using=(( SELECT auth.uid() AS uid) = id); check=(( SELECT auth.uid() AS uid) = id)
+```
+
+### `public.roll_log.p_sel`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=(my_role(campaign_id) IS NOT NULL); check=NULL
+```
+
+### `public.roll_requests.p_ins`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=INSERT; using=NULL; check=((from_id = ( SELECT auth.uid() AS uid)) AND (my_role(campaign_id) = 'GM'::text))
+```
+
+### `public.roll_requests.p_sel`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=((from_id = ( SELECT auth.uid() AS uid)) OR (to_id = ( SELECT auth.uid() AS uid)) OR (my_role(campaign_id) = 'GM'::text)); check=NULL
+```
+
+### `public.roll_requests.p_upd`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=UPDATE; using=((to_id = ( SELECT auth.uid() AS uid)) OR (from_id = ( SELECT auth.uid() AS uid))); check=((to_id = ( SELECT auth.uid() AS uid)) OR (from_id = ( SELECT auth.uid() AS uid)))
+```
+
+### `public.scenes.consolidated_scenes_delete`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=DELETE; using=(campaign_id IN ( SELECT members.campaign_id
+   FROM members
+  WHERE ((members.user_id = ( SELECT auth.uid() AS uid)) AND (members.role = 'GM'::text)))); check=NULL
+```
+
+### `public.scenes.consolidated_scenes_insert`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=INSERT; using=NULL; check=(campaign_id IN ( SELECT members.campaign_id
+   FROM members
+  WHERE ((members.user_id = ( SELECT auth.uid() AS uid)) AND (members.role = 'GM'::text))))
+```
+
+### `public.scenes.consolidated_scenes_update`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=UPDATE; using=(campaign_id IN ( SELECT members.campaign_id
+   FROM members
+  WHERE ((members.user_id = ( SELECT auth.uid() AS uid)) AND (members.role = 'GM'::text)))); check=(campaign_id IN ( SELECT members.campaign_id
+   FROM members
+  WHERE ((members.user_id = ( SELECT auth.uid() AS uid)) AND (members.role = 'GM'::text))))
+```
+
+### `public.scenes.scenes read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=(campaign_id IN ( SELECT members.campaign_id
+   FROM members
+  WHERE (members.user_id = ( SELECT auth.uid() AS uid)))); check=NULL
+```
+
+### `public.skills.p_sel`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.srd_campaign_conditions.srd_campaign_conditions_member_read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=((EXISTS ( SELECT 1
+   FROM campaigns c
+  WHERE ((c.id = srd_campaign_conditions.campaign_id) AND (c.owner_id = ( SELECT ( SELECT auth.uid() AS uid) AS uid))))) OR (EXISTS ( SELECT 1
+   FROM members m
+  WHERE ((m.campaign_id = srd_campaign_conditions.campaign_id) AND (m.user_id = ( SELECT ( SELECT auth.uid() AS uid) AS uid)))))); check=NULL
+```
+
+### `public.srd_campaign_effects.srd_campaign_effects_member_read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=((EXISTS ( SELECT 1
+   FROM campaigns c
+  WHERE ((c.id = srd_campaign_effects.campaign_id) AND (c.owner_id = ( SELECT ( SELECT auth.uid() AS uid) AS uid))))) OR (EXISTS ( SELECT 1
+   FROM members m
+  WHERE ((m.campaign_id = srd_campaign_effects.campaign_id) AND (m.user_id = ( SELECT ( SELECT auth.uid() AS uid) AS uid)))))); check=NULL
+```
+
+### `public.srd_catalog_coverage.srd_catalog_coverage_read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.srd_catalog_entry_audit.srd_catalog_entry_audit_read`
+
+```sql
+permissive=PERMISSIVE; roles=anon,authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.srd_cba_token_equipment.srd_cba_token_equipment_member_read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=(EXISTS ( SELECT 1
+   FROM members member
+  WHERE ((member.campaign_id = srd_cba_token_equipment.campaign_id) AND (member.user_id = ( SELECT ( SELECT auth.uid() AS uid) AS uid))))); check=NULL
+```
+
+### `public.srd_cba_token_weapon_instances.srd_cba_token_weapon_instances_select`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=(EXISTS ( SELECT 1
+   FROM members m
+  WHERE ((m.campaign_id = srd_cba_token_weapon_instances.campaign_id) AND (m.user_id = ( SELECT auth.uid() AS uid)) AND (m.role = 'GM'::text)))); check=NULL
+```
+
+### `public.srd_character_class_levels.srd_character_class_levels_owner_read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=((EXISTS ( SELECT 1
+   FROM characters ch
+  WHERE ((ch.id = srd_character_class_levels.character_id) AND (ch.user_id = ( SELECT ( SELECT auth.uid() AS uid) AS uid))))) OR (EXISTS ( SELECT 1
+   FROM (characters ch
+     JOIN members m ON ((m.campaign_id = ch.campaign_id)))
+  WHERE ((ch.id = srd_character_class_levels.character_id) AND (m.user_id = ( SELECT ( SELECT auth.uid() AS uid) AS uid)) AND (m.role = 'GM'::text))))); check=NULL
+```
+
+### `public.srd_character_domain_choices.srd_character_domain_choices_owner_read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=((EXISTS ( SELECT 1
+   FROM characters ch
+  WHERE ((ch.id = srd_character_domain_choices.character_id) AND (ch.user_id = ( SELECT ( SELECT auth.uid() AS uid) AS uid))))) OR (EXISTS ( SELECT 1
+   FROM (characters ch
+     JOIN members m ON ((m.campaign_id = ch.campaign_id)))
+  WHERE ((ch.id = srd_character_domain_choices.character_id) AND (m.user_id = ( SELECT ( SELECT auth.uid() AS uid) AS uid)) AND (m.role = 'GM'::text))))); check=NULL
+```
+
+### `public.srd_character_equipment.srd_character_equipment_owner_or_gm_update`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=UPDATE; using=(EXISTS ( SELECT 1
+   FROM characters ch
+  WHERE (((ch.id)::text = srd_character_equipment.character_id) AND ((ch.user_id = ( SELECT auth.uid() AS uid)) OR (my_role(ch.campaign_id) = 'GM'::text))))); check=(EXISTS ( SELECT 1
+   FROM characters ch
+  WHERE (((ch.id)::text = srd_character_equipment.character_id) AND ((ch.user_id = ( SELECT auth.uid() AS uid)) OR (my_role(ch.campaign_id) = 'GM'::text)))))
+```
+
+### `public.srd_character_equipment.srd_character_equipment_select`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=((EXISTS ( SELECT 1
+   FROM (characters ch
+     JOIN members member ON ((member.campaign_id = ch.campaign_id)))
+  WHERE (((ch.id)::text = srd_character_equipment.character_id) AND (member.user_id = ( SELECT auth.uid() AS uid)) AND (member.role = 'GM'::text)))) OR (EXISTS ( SELECT 1
+   FROM characters ch
+  WHERE (((ch.id)::text = srd_character_equipment.character_id) AND (ch.user_id = ( SELECT auth.uid() AS uid)))))); check=NULL
+```
+
+### `public.srd_character_known_spells.srd_character_known_spells_owner_read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=((EXISTS ( SELECT 1
+   FROM characters ch
+  WHERE ((ch.id = srd_character_known_spells.character_id) AND (ch.user_id = ( SELECT ( SELECT auth.uid() AS uid) AS uid))))) OR (EXISTS ( SELECT 1
+   FROM (characters ch
+     JOIN members m ON ((m.campaign_id = ch.campaign_id)))
+  WHERE ((ch.id = srd_character_known_spells.character_id) AND (m.user_id = ( SELECT ( SELECT auth.uid() AS uid) AS uid)) AND (m.role = 'GM'::text))))); check=NULL
+```
+
+### `public.srd_character_prepared_spells.srd_character_prepared_spells_owner_read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=((EXISTS ( SELECT 1
+   FROM characters ch
+  WHERE ((ch.id = srd_character_prepared_spells.character_id) AND (ch.user_id = ( SELECT ( SELECT auth.uid() AS uid) AS uid))))) OR (EXISTS ( SELECT 1
+   FROM (characters ch
+     JOIN members m ON ((m.campaign_id = ch.campaign_id)))
+  WHERE ((ch.id = srd_character_prepared_spells.character_id) AND (m.user_id = ( SELECT ( SELECT auth.uid() AS uid) AS uid)) AND (m.role = 'GM'::text))))); check=NULL
+```
+
+### `public.srd_character_sheets.srd_character_sheets_owner_or_gm_update`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=UPDATE; using=(EXISTS ( SELECT 1
+   FROM characters ch
+  WHERE (((ch.id)::text = (srd_character_sheets.character_id)::text) AND ((ch.user_id = ( SELECT auth.uid() AS uid)) OR (my_role(ch.campaign_id) = 'GM'::text) OR (EXISTS ( SELECT 1
+           FROM campaigns campaign
+          WHERE ((campaign.id = ch.campaign_id) AND (campaign.owner_id = ( SELECT auth.uid() AS uid))))))))); check=(EXISTS ( SELECT 1
+   FROM characters ch
+  WHERE (((ch.id)::text = (srd_character_sheets.character_id)::text) AND ((ch.user_id = ( SELECT auth.uid() AS uid)) OR (my_role(ch.campaign_id) = 'GM'::text) OR (EXISTS ( SELECT 1
+           FROM campaigns campaign
+          WHERE ((campaign.id = ch.campaign_id) AND (campaign.owner_id = ( SELECT auth.uid() AS uid)))))))))
+```
+
+### `public.srd_character_sheets.srd_character_sheets_select_owner_or_campaign`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=(EXISTS ( SELECT 1
+   FROM characters ch
+  WHERE (((ch.id)::text = (srd_character_sheets.character_id)::text) AND ((ch.user_id = ( SELECT auth.uid() AS uid)) OR ((ch.campaign_id IS NOT NULL) AND ((EXISTS ( SELECT 1
+           FROM members m
+          WHERE (((m.campaign_id)::text = (ch.campaign_id)::text) AND (m.user_id = ( SELECT auth.uid() AS uid))))) OR (EXISTS ( SELECT 1
+           FROM campaigns c
+          WHERE (((c.id)::text = (ch.campaign_id)::text) AND (c.owner_id = ( SELECT auth.uid() AS uid))))))))))); check=NULL
+```
+
+### `public.srd_character_spell_slot_state.srd_character_spell_slot_state_owner_read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=((EXISTS ( SELECT 1
+   FROM characters ch
+  WHERE ((ch.id = srd_character_spell_slot_state.character_id) AND (ch.user_id = ( SELECT ( SELECT auth.uid() AS uid) AS uid))))) OR (EXISTS ( SELECT 1
+   FROM (characters ch
+     JOIN members m ON ((m.campaign_id = ch.campaign_id)))
+  WHERE ((ch.id = srd_character_spell_slot_state.character_id) AND (m.user_id = ( SELECT ( SELECT auth.uid() AS uid) AS uid)) AND (m.role = 'GM'::text))))); check=NULL
+```
+
+### `public.srd_character_spellbook.srd_character_spellbook_owner_read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=((EXISTS ( SELECT 1
+   FROM characters ch
+  WHERE ((ch.id = srd_character_spellbook.character_id) AND (ch.user_id = ( SELECT ( SELECT auth.uid() AS uid) AS uid))))) OR (EXISTS ( SELECT 1
+   FROM (characters ch
+     JOIN members m ON ((m.campaign_id = ch.campaign_id)))
+  WHERE ((ch.id = srd_character_spellbook.character_id) AND (m.user_id = ( SELECT ( SELECT auth.uid() AS uid) AS uid)) AND (m.role = 'GM'::text))))); check=NULL
+```
+
+### `public.srd_character_weapon_instances.srd_character_weapon_instances_select`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=(EXISTS ( SELECT 1
+   FROM characters ch
+  WHERE (((ch.id)::text = srd_character_weapon_instances.character_id) AND ((ch.user_id = ( SELECT auth.uid() AS uid)) OR (my_role(ch.campaign_id) = 'GM'::text))))); check=NULL
+```
+
+### `public.srd_class_level_features.srd_class_level_features_read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.srd_class_level_progressions.srd_class_level_progressions_read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.srd_classes.srd_classes_catalog_read`
+
+```sql
+permissive=PERMISSIVE; roles=anon,authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.srd_conditions.srd_conditions_read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.srd_deities.srd_deities_read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.srd_domain_spells.srd_domain_spells_read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.srd_domains.srd_domains_read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.srd_equipment.srd_equipment_catalog_read`
+
+```sql
+permissive=PERMISSIVE; roles=anon,authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.srd_equipment_audit.srd_equipment_audit_read`
+
+```sql
+permissive=PERMISSIVE; roles=anon,authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.srd_feats.srd_feats_public_select`
+
+```sql
+permissive=PERMISSIVE; roles=anon,authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.srd_languages.srd_languages_public_read`
+
+```sql
+permissive=PERMISSIVE; roles=public; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.srd_monsters.srd_monsters_catalog_read`
+
+```sql
+permissive=PERMISSIVE; roles=anon,authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.srd_npc_archetypes.srd_npc_archetypes_catalog_read`
+
+```sql
+permissive=PERMISSIVE; roles=anon,authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.srd_races.srd_races_catalog_read`
+
+```sql
+permissive=PERMISSIVE; roles=anon,authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.srd_rule_modules.srd_rule_modules_read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.srd_rule_sources.srd_rule_sources_read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.srd_rulesets.srd_rulesets_read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.srd_skills.srd_skills_catalog_read`
+
+```sql
+permissive=PERMISSIVE; roles=anon,authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.srd_spell_effects.srd_spell_effects_read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.srd_spell_level_progressions.srd_spell_level_progressions_read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.srd_spell_progressions.srd_spell_progressions_catalog_read`
+
+```sql
+permissive=PERMISSIVE; roles=anon,authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.srd_spells.srd_spells_catalog_read`
+
+```sql
+permissive=PERMISSIVE; roles=anon,authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.srd_starting_packages.srd_starting_packages_read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.terrain.p_del`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=DELETE; using=(my_role(campaign_id) = 'GM'::text); check=NULL
+```
+
+### `public.terrain.p_ins`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=INSERT; using=NULL; check=(my_role(campaign_id) = 'GM'::text)
+```
+
+### `public.terrain.p_sel`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=(my_role(campaign_id) IS NOT NULL); check=NULL
+```
+
+### `public.tokens.consolidated_tokens_delete`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=DELETE; using=(campaign_id IN ( SELECT members.campaign_id
+   FROM members
+  WHERE (members.user_id = ( SELECT auth.uid() AS uid)))); check=NULL
+```
+
+### `public.tokens.consolidated_tokens_insert`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=INSERT; using=NULL; check=(campaign_id IN ( SELECT members.campaign_id
+   FROM members
+  WHERE (members.user_id = ( SELECT auth.uid() AS uid))))
+```
+
+### `public.tokens.consolidated_tokens_update`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=UPDATE; using=(campaign_id IN ( SELECT members.campaign_id
+   FROM members
+  WHERE (members.user_id = ( SELECT auth.uid() AS uid)))); check=(campaign_id IN ( SELECT members.campaign_id
+   FROM members
+  WHERE (members.user_id = ( SELECT auth.uid() AS uid))))
+```
+
+### `public.tokens.tokens read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=(campaign_id IN ( SELECT members.campaign_id
+   FROM members
+  WHERE (members.user_id = ( SELECT auth.uid() AS uid)))); check=NULL
+```
+
+### `public.vinculo_abilities.vinculo_abilities_catalog_read`
+
+```sql
+permissive=PERMISSIVE; roles=anon,authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.vinculo_character_notes.vinculo_character_notes_owner_or_gm_delete`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=DELETE; using=(EXISTS ( SELECT 1
+   FROM characters c
+  WHERE ((c.id = vinculo_character_notes.character_id) AND ((c.user_id = ( SELECT auth.uid() AS uid)) OR (my_role(c.campaign_id) = 'GM'::text))))); check=NULL
+```
+
+### `public.vinculo_character_notes.vinculo_character_notes_owner_or_gm_insert`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=INSERT; using=NULL; check=(EXISTS ( SELECT 1
+   FROM characters c
+  WHERE ((c.id = vinculo_character_notes.character_id) AND ((c.user_id = ( SELECT auth.uid() AS uid)) OR (my_role(c.campaign_id) = 'GM'::text)))))
+```
+
+### `public.vinculo_character_notes.vinculo_character_notes_owner_or_gm_select`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=(EXISTS ( SELECT 1
+   FROM characters c
+  WHERE ((c.id = vinculo_character_notes.character_id) AND ((c.user_id = ( SELECT auth.uid() AS uid)) OR (my_role(c.campaign_id) = 'GM'::text))))); check=NULL
+```
+
+### `public.vinculo_character_notes.vinculo_character_notes_owner_or_gm_update`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=UPDATE; using=(EXISTS ( SELECT 1
+   FROM characters c
+  WHERE ((c.id = vinculo_character_notes.character_id) AND ((c.user_id = ( SELECT auth.uid() AS uid)) OR (my_role(c.campaign_id) = 'GM'::text))))); check=(EXISTS ( SELECT 1
+   FROM characters c
+  WHERE ((c.id = vinculo_character_notes.character_id) AND ((c.user_id = ( SELECT auth.uid() AS uid)) OR (my_role(c.campaign_id) = 'GM'::text)))))
+```
+
+### `public.vinculo_character_sheets.vinculo_sheets_campaign_read`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=(EXISTS ( SELECT 1
+   FROM characters ch
+  WHERE ((ch.id = vinculo_character_sheets.character_id) AND ((ch.user_id = ( SELECT ( SELECT auth.uid() AS uid) AS uid)) OR (my_role(ch.campaign_id) IS NOT NULL))))); check=NULL
+```
+
+### `public.vinculo_character_sheets.vinculo_sheets_owner_create`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=INSERT; using=NULL; check=(EXISTS ( SELECT 1
+   FROM characters ch
+  WHERE ((ch.id = vinculo_character_sheets.character_id) AND (ch.user_id = ( SELECT ( SELECT auth.uid() AS uid) AS uid)))))
+```
+
+### `public.vinculo_character_sheets.vinculo_sheets_owner_or_gm_update`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=UPDATE; using=(EXISTS ( SELECT 1
+   FROM characters ch
+  WHERE ((ch.id = vinculo_character_sheets.character_id) AND ((ch.user_id = ( SELECT ( SELECT auth.uid() AS uid) AS uid)) OR (my_role(ch.campaign_id) = 'GM'::text))))); check=(EXISTS ( SELECT 1
+   FROM characters ch
+  WHERE ((ch.id = vinculo_character_sheets.character_id) AND ((ch.user_id = ( SELECT ( SELECT auth.uid() AS uid) AS uid)) OR (my_role(ch.campaign_id) = 'GM'::text)))))
+```
+
+### `public.vinculo_classes.leitura publica`
+
+```sql
+permissive=PERMISSIVE; roles=anon,authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.vinculo_inventory.vinculo_inventory_gm_delete`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=DELETE; using=(EXISTS ( SELECT 1
+   FROM characters c
+  WHERE ((c.id = vinculo_inventory.character_id) AND (my_role(c.campaign_id) = 'GM'::text)))); check=NULL
+```
+
+### `public.vinculo_inventory.vinculo_inventory_owner_or_gm_insert`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=INSERT; using=NULL; check=(EXISTS ( SELECT 1
+   FROM characters c
+  WHERE ((c.id = vinculo_inventory.character_id) AND ((c.user_id = ( SELECT auth.uid() AS uid)) OR (my_role(c.campaign_id) = 'GM'::text)))))
+```
+
+### `public.vinculo_inventory.vinculo_inventory_owner_or_gm_select`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=SELECT; using=(EXISTS ( SELECT 1
+   FROM characters c
+  WHERE ((c.id = vinculo_inventory.character_id) AND ((c.user_id = ( SELECT auth.uid() AS uid)) OR (my_role(c.campaign_id) = 'GM'::text))))); check=NULL
+```
+
+### `public.vinculo_inventory.vinculo_inventory_owner_or_gm_update`
+
+```sql
+permissive=PERMISSIVE; roles=authenticated; cmd=UPDATE; using=(EXISTS ( SELECT 1
+   FROM characters c
+  WHERE ((c.id = vinculo_inventory.character_id) AND ((c.user_id = ( SELECT auth.uid() AS uid)) OR (my_role(c.campaign_id) = 'GM'::text))))); check=(EXISTS ( SELECT 1
+   FROM characters c
+  WHERE ((c.id = vinculo_inventory.character_id) AND ((c.user_id = ( SELECT auth.uid() AS uid)) OR (my_role(c.campaign_id) = 'GM'::text)))))
+```
+
+### `public.vinculo_items.leitura publica`
+
+```sql
+permissive=PERMISSIVE; roles=anon,authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.vinculo_spells.vinculo_spells_catalog_read`
+
+```sql
+permissive=PERMISSIVE; roles=anon,authenticated; cmd=SELECT; using=true; check=NULL
+```
+
+### `public.vinculo_talents.vinculo_talents_catalog_read`
+
+```sql
+permissive=PERMISSIVE; roles=anon,authenticated; cmd=SELECT; using=true; check=NULL
+```
+
