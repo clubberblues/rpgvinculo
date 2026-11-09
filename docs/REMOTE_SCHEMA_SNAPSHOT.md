@@ -7255,3 +7255,7 @@ A comparação também identificou dois nomes de migration repetidos em versões
 | public | r | service_role | UPDATE | não |
 
 **Atenção arquitetural:** os privilégios padrão do schema `priv` concedem a `authenticated` privilégios amplos sobre futuras tabelas (DML/DDL operacional listado nas ACLs) e EXECUTE sobre futuras funções, além de privilégios de sequences. As tabelas internas existentes têm ACLs individuais que negam acesso direto a anon/authenticated, mas o default permissivo pode reabrir acesso em novos objetos se a migration não aplicar REVOKE explícito. Isso é risco preventivo de configuração, não evidência de exposição atual. Não alterado; qualquer hardening exige inventariar dependências dos wrappers SECURITY INVOKER e conceder EXECUTE pontualmente aos helpers necessários.
+
+
+### Arquivos locais sem contraparte remota nominal — análise preliminar
+Os dois arquivos locais sem nome remoto correspondente foram inspecionados. `20261104190000_dwarf_barbarian_n1_racial_movement_fixes.sql` declara quatro funções; `20261104194500_dwarf_armor_load_classification.sql` declara uma função de deslocamento. As definições atuais dessas funções no banco não são idênticas aos corpos encontrados nesses arquivos. Há migrations remotas com nomes relacionados (por exemplo, correções de movimento/armadura e resistências raciais), mas ainda não foi demonstrada equivalência completa nem ordem de substituição. Manter os arquivos como evidência histórica; não renomear, excluir ou marcar como aplicados sem reconstruir o efeito por função.
