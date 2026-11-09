@@ -527,3 +527,17 @@ O overload de Ataque Total usado pelo frontend confirma outro ciclo ativo:
 **Classificação:** inversão ativa, confirmada pelo caminho frontend e pelos OIDs. O início da sequência pode manter a instância enquanto aguarda campanha; a resolução pode manter campanha e sequência enquanto aguarda a mesma instância. Não foi reproduzido deadlock com as RPCs reais.
 
 O harness PostgreSQL voltou a incluir o par sintético campanha → instância (FOR SHARE) versus instância → campanha (FOR UPDATE). A ordem candidata deve ser campaign → sequence/attempt → weapon instance, ou outra sequência única que preserve a revalidação da arma; o início não pode bloquear a instância antes de adquirir campanha.
+
+
+### Interseção AOO × ficha × instância de arma — revisão por OID (2026-11-09)
+
+A inspeção read-only das implementações instaladas refinou a ordem candidata de resolução:
+
+- `public.srd_resolver_ataque_oportunidade_srd` (OID 27025) e `public.srd_aplicar_dano_ataque_oportunidade_srd` (OID 27036) bloqueiam a linha do ataque AOO → a pendência vinculada → campanha. O aplicador de dano então bloqueia a ficha do alvo jogador. A variante de dano de monstro (OID 27058) segue ataque → pending → campanha e também pode bloquear ficha se o alvo for personagem.
+- `public.srd_registrar_ocultacao_ataque_oportunidade_srd` (OID 27250) segue ataque → pending → campanha. A confirmação crítica (OID 27027) bloqueia ataque e atualiza a pendência; não foi identificada aquisição posterior de lock de campanha nesse corpo.
+- As rotinas de início de AOO (arma, desarmado e ataque natural) seguem pending → campanha → reaction ledger; a variante de arma equipada bloqueia também a instância com `FOR SHARE` antes de inserir o ataque e atualizar pending. A rotina de reserva do ledger (OID 27261) é campaign-first.
+- AOO e ataques iterativos podem ler/bloquear a mesma `srd_character_weapon_instances`: o início de AOO usa `FOR SHARE`, e o resolver iterativo PC/NPC também usa `FOR SHARE` depois de campaign → attempt → sequence. A inversão mais forte continua sendo o início iterativo PC que bloqueia a instância `FOR UPDATE` antes de entrar na campanha; depois de tornar esse caminho campaign-first, os caminhos campaign-scoped passam a serializar pela mesma linha de campanha antes de alcançar a instância. Não há evidência, neste recorte, de um ciclo independente sequence ↔ ledger ↔ weapon quando todos respeitam campaign-first.
+- Para resolução/dano AOO contra personagem, a ordem candidata mais coerente é: leitura MVCC inicial do ataque para localizar campanha/alvo; lock de campanha; revalidação; lock da ficha-alvo; lock da pending; lock do ataque; então efeitos/dano e atualizações. Isso preserva campaign → character/sheet, e pending → attack, e elimina o prefixo atual attack → pending → campaign. Para alvo NPC/monstro sem ficha persistente, usar campaign → pending → attack. Todos os IDs/status/target precisam ser revalidados depois dos locks.
+- A ordem ficha → pending → attack é uma proposta, não decisão final: confirmar todos os callers transitivos de dano, sincronização vital e encerramento AOO, bem como a relação de ownership do alvo, antes de implementar. Não adicionar lock de ficha para alvos token-only.
+
+**Classificação:** as sequências conflitantes estão confirmadas nos corpos remotos por OID; a concorrência/deadlock entre RPCs reais ainda não foi reproduzida. Esta revisão não altera a conclusão de que a ordem global é parcial e que campaign-first deve ser a primeira barreira de serialização.
