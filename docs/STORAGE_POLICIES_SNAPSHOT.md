@@ -45,3 +45,7 @@
 - Este snapshot não contém linhas de `storage.objects`, IDs de arquivos, nomes de objetos, URLs privadas, nem conteúdo de usuários.
 - As policies e funções estão registradas aqui para comparação. A definição completa das funções também consta nos snapshots SQL de `public` e `priv`.
 - Não houve alteração de bucket, policy, ACL ou arquivo.
+
+
+### Leitura de `mesa-media`
+A função `public.can_read_media(p_path)` permite leitura quando encontra `public.media.path=p_path` e o solicitante é GM da campanha ou membro da campanha com pelo menos uma linha correspondente em `public.layers` marcada `visible=true`. A policy não expõe diretamente `storage.objects` do bucket privado para anon. A visibilidade observada é global por `layers.visible`, não individual por jogador; se o requisito futuro for fog of war/visibilidade por jogador, o contrato precisará ser ampliado.
