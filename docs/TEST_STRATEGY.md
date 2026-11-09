@@ -264,3 +264,7 @@ Fixture descartável com campanha em combate, movimento pendente ativo, reação
    - Esperado após correção: ordem de locks única; ambas as operações serializam ou uma retorna conflito de estado definido, sem deadlock.
 23. Repetir a concorrência entre cancelamento total da pending e aplicação de dano de ataque de oportunidade.
    - Esperado: uma transição terminal válida, sem estado parcial, duplicação de dano ou pending travada.
+
+
+24. Repetir o cenário de cancelamento concorrente com `priv.srd_registrar_ocultacao_ataque_oportunidade_impl` versus cancelamento/encerramento de reação.
+   - Esperado: sem deadlock; uma transição consistente de status, mantendo a exigência de rolagem manual de ocultação.
