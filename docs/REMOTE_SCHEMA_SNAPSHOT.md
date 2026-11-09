@@ -7268,4 +7268,4 @@ As 327 definições atuais retornadas por `pg_get_functiondef` foram exportadas 
 - `docs/snapshots/remote_priv_functions.sql` — 94 definições.
 - `docs/snapshots/remote_private_functions.sql` — 8 definições.
 
-Total exportado: 1.215.018 caracteres de definições (sem cabeçalhos). Isso fecha a captura dos corpos das rotinas atuais, mas **não** transforma o conjunto em dump restaurável: tabelas, tipos, extensões, owners, ACLs, policies, triggers, constraints, índices e ordem de dependência continuam sendo reconciliados em separado. Os arquivos são snapshots de referência; não executar diretamente como migration.
+Total exportado: 1.216.018 caracteres de definições (sem cabeçalhos). Isso fecha a captura dos corpos das rotinas atuais, mas **não** transforma o conjunto em dump restaurável: tabelas, tipos, extensões, owners, ACLs, policies, triggers, constraints, índices e ordem de dependência continuam sendo reconciliados em separado. Os arquivos são snapshots de referência; não executar diretamente como migration.
