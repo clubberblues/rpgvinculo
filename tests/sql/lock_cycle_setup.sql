@@ -43,3 +43,10 @@ CREATE TABLE lock_fixture.equipment (
   quantity integer NOT NULL
 );
 INSERT INTO lock_fixture.equipment VALUES (1, 1);
+
+CREATE TABLE lock_fixture.feature_resources (
+  id integer PRIMARY KEY,
+  character_id integer NOT NULL REFERENCES lock_fixture.characters(id),
+  uses_spent integer NOT NULL
+);
+INSERT INTO lock_fixture.feature_resources VALUES (1, 1, 0);

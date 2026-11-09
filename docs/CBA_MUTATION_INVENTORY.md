@@ -499,3 +499,21 @@ Foram inspecionados os corpos completos dos quatro triggers relevantes, além do
 O harness recebeu um quinto padrão AOO/inventário (além dos pares campaign/effect, campaign/weapon, campaign/character, campaign/pending e pending/attack): **equipment → weapon instance versus weapon instance → equipment**. O padrão corresponde ao efeito AFTER trigger de inventário que cria/remove instâncias e atualiza a linha-resumo, versus a função de equipar instância que bloqueia a instância e depois atualiza o resumo.
 
 O teste não executa o trigger nem as RPCs de produção; verifica apenas se PostgreSQL detecta o ciclo deliberadamente construído. A confirmação funcional exige fixture que copie o trigger e os dois caminhos de escrita.
+
+
+### Recursos de classe: campanha versus recurso da ficha — 2026-11-09
+
+A inspeção dos corpos instalados identificou um prefixo de lock adicional:
+
+- `public.usar_habilidade_classe_srd` bloqueia `characters` → `srd_character_sheets` → `srd_character_feature_resources`; quando o alvo exige campanha, adquire depois `campaigns FOR UPDATE`. Para a habilidade atualmente aceita por essa RPC (`lay_on_hands`), o lock de recurso é adquirido antes do lock da campanha.
+- `public.usar_furia_barbaro_npc_srd` bloqueia `campaigns` → `characters` → `srd_character_sheets` → `srd_character_feature_resources` ao iniciar Fúria de NPC vinculado.
+- `priv.descanso_longo_npc_vinculado_srd_impl` também inicia por `campaigns FOR UPDATE`, depois bloqueia personagem e ficha, chama o encerramento da Fúria e reseta recursos de classe.
+- `priv.srd_end_barbarian_rage_token` bloqueia efeito de Fúria antes da campanha e pode continuar para ficha/condições; essa cadeia deve permanecer separada da cadeia de início/reset.
+
+**Risco classificado como inversão potencial, não deadlock de produção confirmado:** campanha → recurso versus recurso → campanha. Para formar ciclo, as duas operações precisam disputar o mesmo registro de recurso da mesma ficha e a mesma linha de campanha. A possibilidade depende de uma ficha de origem vinculada a token NPC também estar acessível ao endpoint de habilidade de personagem durante a mesma campanha. Isso deve ser confirmado na semântica de ownership/ligação e no frontend antes de elevar a severidade.
+
+O ponto importante é que a ordem candidata global não pode ser definida apenas pelo primeiro `FOR UPDATE` de cada RPC: é necessário incluir recurso de classe e as chamadas transitivas. Nenhuma função remota foi modificada.
+
+### Fixture sintética adicional
+
+Foi acrescentado ao harness o par campanha → recurso de classe versus recurso de classe → campanha. O teste serve para verificar o comportamento de deadlock do PostgreSQL em uma sequência deliberadamente invertida; não reproduz as RPCs nem demonstra que o par é alcançável em produção.

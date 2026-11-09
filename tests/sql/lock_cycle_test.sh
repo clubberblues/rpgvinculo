@@ -170,3 +170,19 @@ SELECT pg_sleep(0.3);
 UPDATE lock_fixture.equipment SET quantity=quantity+1 WHERE id=1;
 COMMIT;
 "
+
+run_expected_deadlock "campaign -> feature resource versus feature resource -> campaign" "
+SET deadlock_timeout='100ms'; SET lock_timeout='5s';
+BEGIN;
+UPDATE lock_fixture.campaigns SET round_number=round_number+1 WHERE id=1;
+SELECT pg_sleep(0.6);
+UPDATE lock_fixture.feature_resources SET uses_spent=uses_spent+1 WHERE id=1;
+COMMIT;
+" "
+SET deadlock_timeout='100ms'; SET lock_timeout='5s';
+BEGIN;
+SELECT id FROM lock_fixture.feature_resources WHERE id=1 FOR UPDATE;
+SELECT pg_sleep(0.3);
+UPDATE lock_fixture.campaigns SET round_number=round_number+1 WHERE id=1;
+COMMIT;
+"

@@ -310,3 +310,11 @@ Fixture descartável com campanha em combate, movimento pendente ativo, reação
 
 
 36. Concorrência de mudança de quantidade/remoção de item (equipment → weapon instance via trigger) com equipar a instância (weapon instance → equipment summary); após correção, não deve haver ciclo nem perda/duplicação de instâncias.
+
+
+### Recursos de classe — concorrência entre campanha e reserva de uso
+
+37. Duas sessões concorrentes sobre a mesma campanha e ficha vinculada: iniciar Fúria/descanso de NPC (campanha → recurso) versus habilidade de classe que reserva recurso e depois bloqueia campanha (recurso → campanha).
+   - Esperado após correção: ordem global única ou serialização explícita; sem deadlock, consumo duplicado ou reset perdido.
+38. Confirmar primeiro que a mesma ficha pode ser alcançada pelos dois entrypoints na mesma campanha; se ownership/ligação impedir essa combinação, registrar o par como não alcançável em vez de tratá-lo como deadlock operacional.
+39. Expandir a fixture para copiar os caminhos/locks reais quando o mapa de chamadas e os contratos estiverem completos; manter o teste atual como modelo sintético.

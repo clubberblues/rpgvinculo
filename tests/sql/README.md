@@ -17,3 +17,5 @@ These tests run against a disposable PostgreSQL service inside a standard GitHub
 - CI follow-up: run 42673083206 ended with workflow conclusion `failure`, but GitHub returned zero jobs and no step logs; it is not evidence of an SQL assertion failure. A fresh run is required to diagnose the expanded fixture set.
 
 - The fixture now also models inventory-trigger order (equipment row → weapon instance) versus direct weapon-instance equip order (weapon instance → equipment summary). It remains a synthetic lock-pattern test, not an execution of the production inventory trigger or RPC.
+
+- The lock-cycle fixture now models a class-resource inversion observed in the remote definitions: campaign → feature resource (NPC rage/rest paths) versus feature resource → campaign (class-feature path). This is a synthetic pattern only; the actual pair's reachability for the same linked character/campaign still requires confirmation, and no production RPC is executed.

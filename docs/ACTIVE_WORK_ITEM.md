@@ -1,3 +1,11 @@
+## Atualização consolidada — 2026-11-09 (continuidade)
+
+- CI `PostgreSQL fixture tests` do run [42673548023](https://github.com/clubberblues/rpgvinculo/actions/runs/42673548023) concluiu **success** no commit `502b47bc28b61ed7ed5c3dab181fee62c9f433ec`; job e etapa `Run isolated SQL fixtures` concluídos com sucesso.
+- A aprovação cobre o PostgreSQL efêmero e os padrões sintéticos existentes; não executa RPCs Supabase nem comprova deadlocks reais.
+- Nova inversão potencial identificada na auditoria read-only: campanha → recurso de classe versus recurso de classe → campanha. Reachability exige confirmar que os dois entrypoints podem operar sobre a mesma ficha vinculada/campanha.
+- Adicionada fixture sintética específica para esse par e critérios de validação em `TEST_STRATEGY.md`.
+- Nenhuma alteração no Supabase remoto; nenhuma operação em TESTE 2.
+
 ## Atualização consolidada — 2026-11-09 (18:24 UTC)
 
 - Matriz AOO ampliada: campanha → pending versus pending → campanha; pending → attack versus attack → pending.
