@@ -383,7 +383,6 @@ Consulta read-only dos corpos atuais de `public.usar_imposicao_maos_mortos_vivos
 ### Cura, equipamento e condições
 
 - `public.usar_pocao_cura_srd` (OID 20557) bloqueia inventário → ficha, mas não tem EXECUTE para authenticated no snapshot atual. A interface usa `public.usar_pocao_cura_srd_manual` (OID 24655): lê o estado da campanha sem lock e só chama `consumir_acao_turno_srd` quando a leitura encontra COMBATE; nesse branch, campanha é bloqueada antes de equipamento → ficha. Fora de combate, começa por equipamento → ficha e pode consumir a poção depois de outra transação iniciar combate. É uma corrida de regra/estado, não um deadlock demonstrado.
-- `public.usar_pocao_cura_srd_manual` pode consumir a ação do turno antes de bloquear inventário e ficha. Durante combate, a ordem inclui o fluxo de campanha/economia de ações antes de equipamento → ficha; fora de combate, começa pelo equipamento. Não é correto atribuir uma única ordem fixa a ambas as variantes.
 - A rotina de sincronização de condição atualiza condições e só consulta a rodada da campanha quando precisa inserir um novo estado; não faz `campaigns FOR UPDATE`. Um chamador que já mantém ficha/equipamento pode, portanto, adquirir locks de condição nessa ordem.
 - Esses caminhos precisam de testes de concorrência de cura, PV, condição e combate antes de qualquer padronização por lock de campanha.
 
@@ -391,7 +390,7 @@ Consulta read-only dos corpos atuais de `public.usar_imposicao_maos_mortos_vivos
 
 1. Descanso longo de NPC vinculado concorrente com uso de habilidade que consome recurso na mesma ficha, incluindo Imposição das Mãos quando aplicável.
 2. Ataque iterativo (overloads 7/8) concorrente com equipar/desequipar a mesma instância vinculada a NPC na mesma campanha.
-3. Uso automático e manual de poção concorrentes com sincronização de PV/condições e avanço de rodada.
+3. Uso manual de poção concorrente com início de combate/avanço de rodada, validando se a ação padrão é consumida exatamente quando a transação é serializada.
 4. Repetição concorrente das operações acima com duas sessões PostgreSQL efêmeras, usando fixtures isoladas e identificando os cenários condicionais; não executar concorrência de teste no banco remoto.
 
 **Limite:** estes são caminhos de lock diretamente confirmados nos corpos instalados. As inversões são riscos estruturais condicionais, não incidentes reproduzidos. Não foi construído ainda um grafo transitivo completo por OID/assinatura e triggers. Nenhuma função, ACL, policy, migration ou dado remoto foi alterado.
