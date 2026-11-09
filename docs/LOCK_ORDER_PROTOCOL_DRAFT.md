@@ -98,6 +98,16 @@ A varredura das funções que combinam `srd_character_equipment`, ficha e instâ
 
 **Classificação:** não adicionar como deadlock ativo. Reavaliar se itens consumíveis passarem a fazer parte dos pacotes iniciais ou se outro writer passar a atualizar a mesma linha de equipamento depois de bloquear a ficha. A corrida de estado de combate no uso da poção continua sendo um achado separado.
 
+
+### Ataques iterativos — ordem interna entre sequência e tentativa (2026-11-09)
+
+A varredura completa dos writers de `srd_attack_sequences`, `srd_attack_sequence_attempts`, `srd_npc_attack_sequences` e `srd_npc_attack_attempts` confirmou uma distinção importante:
+
+- PC: registro de rolagem (OID 26582) adquire campanha → sequência e insere tentativa; resolução/dano (OIDs 26607, 26622 e 26642) adquirem campanha antes de tentativa/sequência/arma, mas a ordem interna tentativa/sequence difere entre endpoints.
+- NPC: registro (OID 26730) adquire sequência → campanha → tentativa; resolução/crítico/dano (OIDs 26737, 26741 e 26743) adquirem campanha → tentativa → sequência.
+- A inversão operacional ativa é sequência → campanha versus campaign-first. A diferença interna sequência ↔ tentativa nos endpoints campaign-first não cria, isoladamente, deadlock entre esses writers porque todos precisam primeiro obter o mesmo lock exclusivo de `campaigns`; o segundo writer aguarda antes de adquirir qualquer linha de sequência/tentativa.
+- Para previsibilidade e menor risco de regressão, a ordem candidata após a correção é campaign → sequence → attempt → weapon instance, com IDs ordenados quando houver mais de uma linha. A implementação pode manter a ordem atual entre attempt/sequence temporariamente apenas se a análise provar que nenhum caminho contorna o lock da campanha; a recomendação é normalizar todos.
+
 ## 3. Evidências que motivam a proposta
 
 ### Ciclos já identificados nos corpos remotos
