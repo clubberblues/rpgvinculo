@@ -346,3 +346,11 @@ Total exportado: 1.216.018 caracteres de definições (sem cabeçalhos). Isso fe
 
 ## Geometria de tokens — achado P2
 A auditoria estática encontrou footprint Colossal inconsistente: o helper canônico e AOO usam 6×6, enquanto os dois RPCs de movimento, as duas sobrecargas de ataque iterativo legacy e Imposição de Mãos contra mortos-vivos usam 5×5. A correção candidata é centralizar todos no helper `priv.srd_token_grid_footprint`; não aplicada sem fixture. Casos de regressão registrados em TEST_STRATEGY.md.
+
+
+## Baseline advisors Supabase — 2026-11-09
+- Snapshot read-only registrado em [ADVISOR_SNAPSHOT_2026-11-09.md](ADVISOR_SNAPSHOT_2026-11-09.md).
+- Segurança: 99 funções SECURITY DEFINER executáveis por authenticated (WARN), 7 tabelas com RLS sem policies (INFO), proteção contra senhas comprometidas desativada (WARN).
+- Performance: 52 índices marcados como não utilizados (INFO). Nenhum grant, policy, índice ou configuração foi alterado; todos exigem análise contextual.
+- O deploy do GitHub Pages para o HEAD `89590799209d1c86395a65eb9ebe968087120d5d` concluiu com sucesso; isso não equivale aos testes de aplicação.
+- Achado P1 vigente: RPCs diretos de movimento podem contornar o pré-check AOO e a serialização de movimento pendente. Correção permanece bloqueada até existir teste de regressão seguro; não usar a campanha de produção nem TESTE 2.
