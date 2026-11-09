@@ -188,3 +188,9 @@ Portanto, o teste de CA 10 executado para Thorgar (681) **não valida nem invali
 - Amostras de cruzamento documentadas em ACTION_CONTRACTS.md: avanço de turno, iniciativa manual, conjuração e Míssil Mágico, movimento/AOO, inventário/equipamento, progressão, descanso, grimório, domínios, CA e deslocamento.
 - Foram identificadas operações sem request_id no contrato atual (avanço de turno, conjuração manual, XP, avanço de nível e algumas rotinas de descanso/equipamento); isso é inventário de risco para desenho de retry, não prova de falha reproduzida.
 - A compatibilidade integral de argumentos em todos os fluxos, testes com sessões autenticadas, exposição dos schemas internos e execução transacional/E2E continuam pendentes. Nenhuma função SQL, migration, personagem, ficha, campanha, token ou dado de jogo foi alterado nesta rodada.
+
+
+## Contratos de lobby e ciclo de vida — 2026-11-09
+- Mapeado o fluxo de listagem, criação, entrada por código/mesa aberta, associação de ficha à mesa, configurações e exclusão de ficha/campanha. Definições SQL e argumentos frontend foram comparados estaticamente; grants de authenticated/anon/PUBLIC e search_path foram consultados para as RPCs do lobby.
+- Exclusão de campanha é uma saga cliente + Storage + duas RPCs, não uma transação única. Foram registrados riscos de entrada concorrente durante a pendência, retomada dependente do navegador, finalização não idempotente após resposta perdida e possível objeto de capa órfão. Nenhum desses riscos foi alterado nesta rodada.
+- Nenhuma ação mutável foi executada; dados de jogo e Storage permaneceram intactos.
