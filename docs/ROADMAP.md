@@ -126,3 +126,7 @@ Uma descoberta só interrompe a tarefa atual se for P0, P1, dependência direta 
 
 ## Escopo e prioridade do caminho legado Vínculo — 2026-11-09
 A divergência de nomes em ficha.html foi classificada como rota latente: o banco tem 5 personagens, todos SRD, nenhum com ficha Vínculo; o lobby atual cria fichas com ruleset=dnd35. Não alterar o ramo legado sem decisão de produto e sem fixture Vínculo descartável. A prioridade da Fase 1 permanece concluir arquitetura/contratos do fluxo ativo D&D 3.5 + mesa; manter o domínio Vínculo documentado como separado, sem misturar catálogos.
+
+
+## Prioridade técnica identificada — lock order de AOO — 2026-11-09
+Antes da primeira refatoração, fechar a matriz de locks do combate. Achado prioritário: potencial deadlock por inversão de ordem entre cancelamento de movimento AOO (pending → attacks) e aplicação de dano/resolução (attack → pending). Exige teste concorrente em fixture descartável; não alterar RPC de produção sem reproduzir e validar rollback.
