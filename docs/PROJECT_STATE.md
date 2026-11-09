@@ -284,3 +284,12 @@ A comparação também identificou dois nomes de migration repetidos em versões
 
 A árvore atual de `main` contém 681 arquivos SQL em `supabase/migrations/`, sem timestamps duplicados. Um arquivo foge ao padrão ASCII de nome por conter acento: `20261102052430_srd35_skill_natação_verification.sql`. Não foi renomeado para evitar alteração desnecessária durante a reconciliação. Também não há `supabase/config.toml`, `package.json`, diretório `tests/` ou configuração Playwright/Vitest/Jest no repositório. Existem quatro workflows GitHub Actions e scripts em `scripts/`; o smoke test instala Playwright explicitamente no workflow. A ausência de config local limita a reprodutibilidade por Supabase CLI, mas não prova ausência de scripts externos ou configuração em outro ambiente.
 
+
+
+## Privilégios padrão do schema interno priv — 2026-11-09
+
+A inspeção de `pg_default_acl` identificou privilégios padrão permissivos para objetos futuros criados pelo owner postgres em `priv`: authenticated recebe SELECT/INSERT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER/MAINTAIN em futuras tabelas, SELECT/USAGE/UPDATE em sequences e EXECUTE em futuras funções. service_role também recebe privilégios administrativos. Não há default ACL personalizado em `private`.
+
+As relações internas existentes foram individualmente configuradas sem privilégios diretos para anon/authenticated, e as funções existentes passaram por revisão de search_path; portanto, o achado é **risco preventivo para novos objetos**, não evidência de acesso direto atual. Se `priv` estiver exposto no PostgREST, o risco é maior. A configuração Exposed schemas ainda precisa ser confirmada.
+
+**Ação proposta, não executada:** restringir default privileges de authenticated em `priv` (tabelas/sequences/funções) e conceder EXECUTE explicitamente apenas aos helpers internos chamados por wrappers SECURITY INVOKER. Não aplicar antes de reconciliar o histórico e mapear todas as dependências; a alteração de defaults sem grants pontuais pode quebrar chamadas legítimas. Nenhuma ACL foi alterada.
