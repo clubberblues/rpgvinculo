@@ -639,3 +639,10 @@ A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24
 - `srd_resolve_pending_spell_save` também encerra condição diretamente sem lock da campanha no ramo de quebra de condição. Isso altera a fonte consultada pela elegibilidade AOO.
 - Divergência do protocolo campaign-first confirmada por leitura estática; ainda não foi demonstrado ciclo de deadlock real para um mesmo pedido, portanto registrar como risco/ordem inconsistente, não como deadlock ocorrido.
 - Refatorar para campaign lock → revalidar pedido → lock do pedido → aplicar consequência, mantendo resolução idempotente. Nenhuma mutação remota executada.
+
+
+### Conjuração: RPCs autenticadas bloqueiam ficha antes da campanha (2026-11-10)
+
+- `conjurar_magia_efeitos_multialvo` e `conjurar_magia_dano_multialvo_srd` (ambas authenticated EXECUTE) bloqueiam personagem/ficha e depois campanha. Isso diverge do padrão campaign-first e concorre com ações de combate que seguram campanha antes da ficha.
+- `conjurar_magia_srd_manual` e `conjurar_missil_magico_srd` exibem ordem semelhante, mas sem EXECUTE authenticated direto; não tratá-las como endpoints de cliente sem confirmar wrappers/callsites.
+- Refatorar as RPCs públicas para campanha primeiro, revalidar permissão/estado, depois ficha do conjurador/alvos em ordem determinística. Nenhuma magia executada; nenhuma mudança remota.
