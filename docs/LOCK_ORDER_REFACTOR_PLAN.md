@@ -195,3 +195,8 @@ A consulta de dependências confirmou que `priv.need_owner` só é chamado por `
 Não basta revalidar somente funções que já bloqueiam campanha. `priv.need_gm` (18741) não bloqueia: `gm_grant` (18752) concede ouro/XP/itens após lock de personagem; `gm_reopen_sheet` (18892) e `gm_set_bonus` (18893) alteram ficha sem campanha lock; `media_gc` (18760) exclui metadados de mídia; `gm_get_code` (18746) expõe código. Também `srd_apply_campaign_condition/effect` (24805/24896) verificam papel antes de helper que bloqueia campanha, sem revalidação após lock; `srd_remove_campaign_condition/effect` (24806/24897) não bloqueiam campanha.
 
 Auditar e corrigir cada família com campaign-first quando houver mutação de estado compartilhado; preservar distinção de leitura e operações de Storage. Para personagem/ficha, ordem candidata campaign → character → sheet. Para efeitos/condições, campaign → tabela-alvo. Não inserir FOR UPDATE dentro de `priv.need_gm` sem mapear callers legados e a ordem anterior de locks.
+
+
+### Classificação de call sites da segunda camada GM
+
+As RPCs `gm_grant`, `gm_reopen_sheet`, `gm_set_bonus`, `media_gc`, `gm_get_code`, apply/remove condition/effect têm EXECUTE authenticated, mas não foram encontradas por busca exata no código frontend atual (mesa/ficha/lobby nem code search no repo). Mantê-las na revisão de superfície RPC e nos testes de segurança, mas não classificá-las como fluxo UI ativo sem evidência. Distinguir risco de autorização de deadlock e escolher ordem de lock de acordo com cada função; por exemplo, `gm_grant` bloqueia personagem após autorização, enquanto apply effect bloqueia campanha em helper após autorização.
