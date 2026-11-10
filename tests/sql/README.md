@@ -147,3 +147,10 @@ A fixture modela deliberadamente ausência de FK entre marcador/campanha e objet
 
 
 - Execução confirmada: PostgreSQL fixture #284 [42751013687](https://github.com/clubberblues/rpgvinculo/actions/runs/42751013687), #285 [42751022904](https://github.com/clubberblues/rpgvinculo/actions/runs/42751022904) e #293 [42751317308](https://github.com/clubberblues/rpgvinculo/actions/runs/42751317308) concluíram **success**; os logs mostram a reprodução da duplicata e da alteração geométrica de outro token. A validação estática, aplicação JS e mesa JS também passaram no head 041f0b5.
+
+
+### Execução integral mais recente do harness
+
+- PostgreSQL fixtures run [42808666665](https://github.com/clubberblues/rpgvinculo/actions/runs/42808666665), no commit 1b1a85d346cdc123dd3afd56302273f4f675a707: **success**. Logs confirm footprint assertions, controle de movimento único bloqueado, bypass por identidade duplicada reproduzido, mudança de geometria do token ameaçador reproduzida, fixture de lifecycle NPC, nove inversões sintéticas e controles de autorização/Storage.
+- O job terminou com sucesso porque as reproduções vulneráveis estão escritas como expectativas positivas de demonstração. Isso não significa que o trigger de produção esteja corrigido; o arquivo copia seu algoritmo atual e deve virar regressão negativa após a correção real.
+- A execução foi em PostgreSQL descartável; nenhuma RPC Supabase, Auth/PostgREST ou campanha real foi chamada.
