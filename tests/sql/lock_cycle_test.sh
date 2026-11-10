@@ -238,7 +238,18 @@ BEGIN
   IF v_owner IS DISTINCT FROM 'owner-a' THEN RAISE EXCEPTION 'owner precheck failed'; END IF;
 END $$;
 UPDATE lock_fixture.ownership_members SET role='PLAYER' WHERE campaign_id=1 AND user_id='owner-a';
-SELECT pg_sleep(0.8);
+DO $
+DECLARE v_attempt integer:=0; v_acquired boolean;
+BEGIN
+  LOOP
+    v_acquired:=pg_try_advisory_lock(8675309);
+    IF NOT v_acquired THEN EXIT; END IF;
+    PERFORM pg_advisory_unlock(8675309);
+    v_attempt:=v_attempt+1;
+    IF v_attempt>100 THEN RAISE EXCEPTION 'timed out waiting for second transfer to pass stale owner check'; END IF;
+    PERFORM pg_sleep(0.02);
+  END LOOP;
+END $;
 UPDATE lock_fixture.ownership_members SET role='GM' WHERE campaign_id=1 AND user_id='player-b';
 UPDATE lock_fixture.ownership_campaigns SET owner_id='player-b' WHERE id=1;
 COMMIT;
@@ -253,11 +264,12 @@ BEGIN
   SELECT owner_id INTO v_owner FROM lock_fixture.ownership_campaigns WHERE id=1;
   IF v_owner IS DISTINCT FROM 'owner-a' THEN RAISE EXCEPTION 'owner precheck failed'; END IF;
 END $$;
-SELECT pg_sleep(0.2);
+SELECT pg_advisory_lock(8675309);
 UPDATE lock_fixture.ownership_members SET role='PLAYER' WHERE campaign_id=1 AND user_id='owner-a';
 UPDATE lock_fixture.ownership_members SET role='GM' WHERE campaign_id=1 AND user_id='player-c';
 UPDATE lock_fixture.ownership_campaigns SET owner_id='player-c' WHERE id=1;
 COMMIT;
+SELECT pg_advisory_unlock(8675309);
 SQL
   local b=$!
   set +e
@@ -283,6 +295,7 @@ run_expected_serialized_owner_transfer() {
   psql -v ON_ERROR_STOP=1 -c "UPDATE lock_fixture.ownership_campaigns SET owner_id='owner-a' WHERE id=1; UPDATE lock_fixture.ownership_members SET role=CASE user_id WHEN 'owner-a' THEN 'GM' ELSE 'PLAYER' END WHERE campaign_id=1;" >/dev/null
   psql -v ON_ERROR_STOP=1 >"$tmp/a.log" 2>&1 <<'SQL' &
 BEGIN;
+SELECT pg_advisory_lock(8675309);
 SELECT owner_id FROM lock_fixture.ownership_campaigns WHERE id=1 FOR UPDATE;
 DO $$
 DECLARE v_owner text;
@@ -291,7 +304,18 @@ BEGIN
   IF v_owner IS DISTINCT FROM 'owner-a' THEN RAISE EXCEPTION 'authorization lost'; END IF;
 END $$;
 UPDATE lock_fixture.ownership_members SET role='PLAYER' WHERE campaign_id=1 AND user_id='owner-a';
-SELECT pg_sleep(0.8);
+DO $
+DECLARE v_attempt integer:=0; v_acquired boolean;
+BEGIN
+  LOOP
+    v_acquired:=pg_try_advisory_lock(8675309);
+    IF NOT v_acquired THEN EXIT; END IF;
+    PERFORM pg_advisory_unlock(8675309);
+    v_attempt:=v_attempt+1;
+    IF v_attempt>100 THEN RAISE EXCEPTION 'timed out waiting for second transfer to pass stale owner check'; END IF;
+    PERFORM pg_sleep(0.02);
+  END LOOP;
+END $;
 UPDATE lock_fixture.ownership_members SET role='GM' WHERE campaign_id=1 AND user_id='player-b';
 UPDATE lock_fixture.ownership_campaigns SET owner_id='player-b' WHERE id=1;
 COMMIT;
