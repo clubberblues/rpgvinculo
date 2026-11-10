@@ -394,3 +394,17 @@ Correção candidata, ainda não implementada: tornar o agregador o único entry
 
 
 - CI #208 [42743669088](https://github.com/clubberblues/rpgvinculo/actions/runs/42743669088) concluiu **success** no commit `cc1c5c7c179e289afd96a097c763884aa55bc63d`. O log confirma 12 assertions aprovadas em 11 tabelas temporárias, inclusive a sequência NPC remanescente vinculada à ficha-fonte e a FK `ON DELETE RESTRICT`, com ROLLBACK ao final. A validação continua sintética, sem executar RPCs de produção.
+
+
+### Exclusão em duas fases — refinamento e inversão de locks
+
+A revisão do callsite de exclusão da campanha corrigiu o diagnóstico anterior de Storage: a interface não apaga simplesmente SQL e depois tenta Storage sem estado intermediário. O fluxo atual é:
+1. `preparar_exclusao_campanha_propria` (wrapper público OID 24881 → implementação privada OID 24885) bloqueia a campanha, valida owner e faz upsert em `priv.campaign_deletion_cleanup`.
+2. O navegador lista recursivamente `campaigns/{id}` nos buckets `midia` e `mesa-media`, além de capas `capas_mesas/mesa-{id}-*`, e remove os arquivos em lotes de até 1000.
+3. `finalizar_exclusao_campanha_propria` (wrapper público OID 24882 → implementação privada OID 24886) bloqueia a linha de cleanup, depois bloqueia a campanha, revalida owner e apaga a campanha e o marcador.
+
+A tabela `priv.campaign_deletion_cleanup` tem apenas `campaign_id` (PK), `owner_id` e `requested_at`; RLS está habilitada, sem grants para authenticated/anon. Não armazena paths nem progresso por arquivo. A amostra atual tem zero exclusões pendentes. O marcador tem utilidade real: `priv.can_write_midia` impede novos uploads em paths da campanha enquanto a limpeza está pendente; `priv.can_delete_midia` permite ao proprietário remover arquivos durante a exclusão. Se a remoção Storage falhar, o frontend mantém a campanha e o marcador, mostra erro e reabilita o botão; o proprietário pode tentar novamente, relistando o que restou. Portanto, o fluxo é retomável por ação do usuário, mas não tem worker/outbox autônomo nem progresso individual durável.
+
+**Novo ciclo de locks encontrado:** preparação bloqueia campanha → upsert/lock da linha cleanup; finalização bloqueia cleanup → campanha. Duas abas podem concorrer: uma chamada de preparação retém campanha e aguarda cleanup, enquanto uma finalização retém cleanup e aguarda campanha. Isso forma inversão campaign↔cleanup, embora o fluxo sequencial em uma única aba não a exponha. A correção candidata é normalizar ambas para campanha → cleanup: finalização deve localizar o marcador por MVCC, bloquear campanha, revalidar owner e só então bloquear/validar cleanup e apagar. Revalidar marcador/owner após locks; manter a remoção Storage fora da transação e o marcador como estado retomável.
+
+Foi adicionado um cenário concorrente sintético ao harness que reproduz campaign → cleanup contra cleanup → campaign. O teste é modelo das duas cadeias de locks instaladas; aguarda CI antes de considerar validado. Nenhuma função, campanha, objeto Storage ou marcador remoto foi alterado.
