@@ -1027,6 +1027,17 @@ run_storage_zero_check_and_retry_contract() {
     rm -rf "$tmp"
     exit 1
   fi
+  psql -v ON_ERROR_STOP=1 -c "INSERT INTO lock_fixture.storage_objects(path,campaign_id) VALUES ('campaigns/1/orphan-after-delete.png',1)" >/dev/null
+  result="$(psql -Atq -c "SELECT lock_fixture.finalize_campaign_if_storage_empty(1,'owner-a')")"
+  markers="$(psql -Atq -c "SELECT count(*) FROM lock_fixture.campaign_deletion_cleanup WHERE campaign_id=1")"
+  objects="$(psql -Atq -c "SELECT count(*) FROM lock_fixture.storage_objects WHERE campaign_id=1")"
+  if [[ "$result" != "f" || "$markers" != "1" || "$objects" != "1" ]]; then
+    echo "FAIL: missing-campaign retry ignored orphaned Storage object"
+    echo "result=$result markers=$markers objects=$objects"
+    rm -rf "$tmp"
+    exit 1
+  fi
+  psql -v ON_ERROR_STOP=1 -c "DELETE FROM lock_fixture.storage_objects WHERE campaign_id=1" >/dev/null
   result="$(psql -Atq -c "SELECT lock_fixture.finalize_campaign_if_storage_empty(1,'owner-a')")"
   markers="$(psql -Atq -c "SELECT count(*) FROM lock_fixture.campaign_deletion_cleanup WHERE campaign_id=1")"
   if [[ "$result" != "t" || "$markers" != "0" ]]; then
