@@ -531,3 +531,6 @@ A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24
 - A pasta `supabase/migrations` contém agora exatamente 966 arquivos e os 966 hashes Git coincidem byte a byte com o ledger remoto. As 81 versões movimento/manobras/AOO estão alinhadas.
 - 13 variantes locais de versões aplicadas apresentavam diferenças semânticas; 90 eram diferenças de comentários/formatação/casts/terminadores. As 41 migrations locais em quarentena: 34 duplicatas semânticas com timestamp divergente, 5 variantes divergentes e 2 exclusivas de Anão/Bárbaro.
 - Nenhuma migration foi aplicada no Supabase; nenhum schema, função, ACL, policy, dado ou TESTE 2 foi alterado. Próximo gate é reproduzir o baseline completo em stack local descartável antes de nova migration.
+
+
+- **Bypass reproduzido em fixture descartável:** tests/sql/aoo_guard_duplicate_identity_repro.sql copia o trigger remoto e confirma que dois tokens com a mesma identidade (id/key) passam quando a primeira cópia permanece na origem e a segunda muda de coordenadas; o LIMIT 1 só compara a primeira. A mesma fixture confirma que outro token (ameaçador) pode mudar coordenadas enquanto o mover está pendente. Runs #284/#285/#293 passaram como reproduções intencionais, não como correção de segurança. Não executa a RPC instalada nem comprova exploração via API.
