@@ -1,0 +1,1 @@
+create index if not exists srd_attack_sequences_actor_character_idx on public.srd_attack_sequences(actor_character_id);

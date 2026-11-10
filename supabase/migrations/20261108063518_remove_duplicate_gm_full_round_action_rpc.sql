@@ -1,0 +1,1 @@
+drop function if exists public.consumir_acao_completa_token_gm_srd(bigint,text);

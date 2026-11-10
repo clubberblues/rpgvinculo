@@ -1,0 +1,2 @@
+UPDATE priv.srd_condition_engine_rules SET stack_group='fatigue',stack_rank=1 WHERE condition_id='fatigued';
+UPDATE priv.srd_condition_engine_rules SET stack_group='fatigue',stack_rank=2 WHERE condition_id='exhausted';

@@ -1,0 +1,1 @@
+create index if not exists idx_srd_character_weapon_instances_equipment_id on public.srd_character_weapon_instances(equipment_id);
