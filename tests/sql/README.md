@@ -164,3 +164,10 @@ A fixture modela deliberadamente ausência de FK entre marcador/campanha e objet
 - Verifica que authenticated/anon não executam diretamente helpers de condições, talentos, parser de ataques naturais ou implementações privadas de Ataque Total; os chamadores SECURITY DEFINER continuam funcionando.
 - Verifica que as duas entradas públicas de Ataque Total rejeitam ficha que não pertence ao usuário e que o helper de 7 argumentos mantém a defesa de propriedade mesmo em chamada privilegiada.
 - **Limite:** o fixture valida as migrations e ACLs num PostgreSQL isolado. Não chama PostgREST, Auth real, RPCs instaladas nem o Supabase de produção; a exposição efetiva do schema `priv` na configuração PostgREST continua não confirmada. CI ainda precisa executar o novo fixture no HEAD atual.
+
+
+### Correção da fronteira transacional na fixture de permissões — 2026-11-10
+
+O run PostgreSQL no commit `635bdf1` revelou a causa da falha após as migrations de teste: o arquivo iniciava uma transação externa, mas cada migration aplicada com `\i` contém seu próprio `BEGIN/COMMIT`. O `COMMIT` da primeira migration encerrou a transação externa. Consequentemente, os `set_config(..., true)` seguintes eram locais apenas à própria instrução e desapareciam antes da chamada da RPC simulada. O preflight registrou `auth.uid() = NULL` e `my_role() = NULL`, explicando corretamente o bloqueio GM.
+
+Correção aplicada: iniciar uma nova transação imediatamente depois dos scripts de migration/verificação e antes de definir o role authenticated e os claims JWT. Assim, os claims locais permanecem visíveis durante os testes e o `ROLLBACK` final limpa os dados de teste posteriores. Commit `c21490e`; aguarda execução CI própria.
