@@ -221,3 +221,12 @@ Adicionar aos endpoints da segunda camada os casos `gm_reopen_sheet` e `gm_set_b
 - `gm_get_code` (18746) é leitura; definir separadamente se exige revogação linearizável.
 - Fixtures sintéticos adicionados para corrida/rejeição de `gm_grant` e remoção de condição/efeito. Eles testam a ordem/autorização, não executam as RPCs reais nem validam o ramo de item incompatível com o schema.
 - Nenhuma mutação Supabase. Detalhes e limites em `docs/GM_ENDPOINT_AUDIT_2026-11-10.md`.
+
+
+### Exclusão de ficha: endpoint ativo e locks invertidos
+
+- `public.excluir_ficha_propria` (OID 20219) é chamado pelo botão de exclusão de ficha em `lobby.html`. O corpo bloqueia personagem e depois campanha (quando vinculado), invertendo campaign-first → character dos fluxos de combate ativos.
+- O mesmo corpo tenta apagar `public.character_notes` e `public.inventory`, relações ausentes no catálogo atual; existem `vinculo_character_notes` e `vinculo_inventory`. A primeira instrução inválida falha e reverte a transação, impedindo a exclusão no lobby.
+- Limpeza instalada inclui cascades de vinculo_inventory/vinculo_character_notes, trigger BEFORE DELETE da ficha SRD e trigger AFTER DELETE do equipamento SRD. Mapear todas as dependências antes de corrigir/remover instruções.
+- Correção candidata: MVCC campaign_id → campaign FOR UPDATE → revalidar propriedade/vínculo → character FOR UPDATE → ajuste da ordem de iniciativa/exclusão. Definir caminho de ficha sem campanha e corrida com associação/join.
+- O fixture genérico campaign↔character já representa o padrão; documentação associa agora o endpoint/call site ao cenário. Não executar a RPC nem alterar o banco até reconciliação de migrations.
