@@ -426,3 +426,18 @@ Nenhuma alteração de ACL ou função foi aplicada. A lista e os números são 
 - As seis funções `priv` invoker não têm todas a mesma exposição: `d20()`, `monster_atk(integer)`, `roll_dice_expr(text)`, `srd_grid_footprint_distance_ft(...)` e `srd_weapon_proficiency(jsonb,text)` não têm EXECUTE para authenticated/anon; `srd_parse_natural_attack_list(text)` (OID 27228) tem EXECUTE authenticated, mas não anon. Esta última é um helper parser chamado por wrapper público de ataques naturais; é read-only e deve ser mantida como dependência controlada ou encapsulada junto com a migração.
 - `current_setting('pgrst.db_schemas', true)` e `pgrst.db_extra_search_path` retornaram NULL na sessão SQL. Portanto, a lista real de schemas expostos pelo PostgREST permanece desconhecida; não concluir que `priv` está ou não publicado em REST.
 - Todos os achados são de catálogo/configuração observável via SQL; sem chamada REST autenticada/anon, não se provou exploração remota direta de endpoints `priv`.
+
+
+### Bloqueio de execução em wrappers SECURITY INVOKER (2026-11-10)
+
+Uma consulta refinada resolveu cada chamada explícita `priv.nome(...)` pelo schema `priv` e comparou o privilégio efetivo do role `authenticated` na assinatura exata. Foi confirmado um defeito funcional concreto na cadeia pública de manobras:
+
+- `public.srd_consultar_modificadores_manobra_srd(...)` (OID 27119) é `SECURITY INVOKER`, tem EXECUTE para authenticated e chama diretamente:
+  - `priv.srd35_maneuver_profile(bigint,text)` (OID 26884), sem EXECUTE para authenticated;
+  - `priv.srd_grid_footprint_distance_ft(integer,integer,integer,integer,integer,integer)` (OID 27071), sem EXECUTE para authenticated;
+  - `priv.srd_token_grid_footprint(bigint,text)` (OID 27073), sem EXECUTE para authenticated.
+- `public.srd_listar_ataques_naturais_oportunidade_srd(bigint,text)` (OID 27229) também é `SECURITY INVOKER`, tem EXECUTE para authenticated e chama `priv.srd35_maneuver_profile(bigint,text)` sem EXECUTE para authenticated. A chamada ao parser `priv.srd_parse_natural_attack_list(text)` (OID 27228) é permitida para authenticated.
+
+**Interpretação:** quando um wrapper é SECURITY INVOKER, a chamada interna é avaliada com os privilégios do usuário autenticado, não com os privilégios do owner do wrapper. Assim, as duas RPCs acima não conseguem executar os helpers que não concedem EXECUTE a authenticated; a falha ocorre antes de concluir a consulta/manobra. Isso é uma incompatibilidade de privilégios verificável no catálogo e não depende de o schema `priv` estar publicado como endpoint PostgREST. O catálogo não demonstra por si só a mensagem de erro observada numa sessão real; é necessária regressão autenticada controlada para confirmar o comportamento ponta a ponta.
+
+**Correção proposta:** não conceder EXECUTE indiscriminadamente nos helpers internos. Preferir converter esses wrappers específicos para SECURITY DEFINER somente depois de revisar sua autorização e garantir `search_path` fixo (com `pg_catalog` primeiro e schemas explicitamente qualificados); alternativa é expor um wrapper definer estreito para cada operação. Em seguida, testar chamada autenticada das duas RPCs, tanto caminho válido quanto negação de jogador que não seja GM, campanha inexistente, token inválido e parâmetros malformados. Não foi aplicada alteração de função ou ACL em produção.
