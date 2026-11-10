@@ -244,3 +244,8 @@ Para a exclusão ativa do lobby, manter o ajuste de iniciativa, mas reordenar pa
 ### Cópia de equipamento para NPC: fluxo autenticado ativo
 
 `mesa.html` chama `clonar_equipamento_ficha_para_token` (OID 26515) depois de `adicionar_token_cba_completo`. O clone verifica GM antes de ler o token/cena e inserir equipamento/instâncias, sem campaign lock/revalidação. Não depende das relações legadas `items/inventory`; classificar apenas como stale GM authorization e sincronização de snapshot, separado da correção de schema. Candidato: campaign FOR UPDATE → revalidar GM + token/sourceCharacterId + propriedade da ficha → validar origem → copiar equipamento/instâncias. A criação do token e a cópia são duas RPCs; falha da segunda deixa token já criado e é reportada ao usuário.
+
+
+### Não mapear RPC legado para tabelas Vínculo em projeto D&D 3.5
+
+As tabelas `vinculo_character_sheets`, `vinculo_items` e `vinculo_inventory` pertencem ao modelo legado; semelhança de colunas não autoriza religar as RPCs antigas. O motor D&D 3.5 atual usa `srd_character_sheets`, `srd_equipment`, `srd_character_equipment` e `srd_character_weapon_instances`. Não corrigir `calc_sheet`, `gm_reopen_sheet`, `gm_set_bonus`, `gm_grant` etc. apenas substituindo nomes de tabelas por `vinculo_*`. Sem call site atual, avaliar revogar ACL/aposentar; quando requisito existir, criar RPC D&D específica. A exceção é `excluir_ficha_propria`, ativa no lobby: corrigir a exclusão do personagem com cascades/triggers atuais e sem reativar inventário legado.
