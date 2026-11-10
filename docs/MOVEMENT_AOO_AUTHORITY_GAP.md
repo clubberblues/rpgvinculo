@@ -463,7 +463,7 @@ Este teste verifica o comportamento de privilégios e a sintaxe/efeito da migrat
 
 ### Redução adicional da superfície EXECUTE em helper de talentos (2026-11-10)
 
-A auditoria confirmou que `priv.srd_feat_saving_throw_modifier(jsonb,text)` (OID 26355) tinha EXECUTE herdado de PUBLIC, portanto também executável por anon, apesar de ser helper interno de cálculo passivo. Seu único consumidor catalogal identificado é `priv.srd_saving_throw_bonus(...)`, que é SECURITY DEFINER, owner postgres, e chama o helper sob privilégios do owner. O helper não precisa de EXECUTE anônimo para esse caminho.
+A auditoria confirmou que `priv.srd_feat_saving_throw_modifier(jsonb,text)` (OID 26355) tinha EXECUTE herdado de PUBLIC, portanto também executável por anon, apesar de ser helper interno de cálculo passivo. Seu único chamador SQL catalogal identificado é `priv.srd_saving_throw_bonus(...)`, SECURITY DEFINER, owner postgres; também há grant explícito a authenticated/service_role, que foi preservado. O grant herdado de PUBLIC/anon não é necessário para o chamador interno.
 
 Foi preparada a migration `20261110160000_revoke_public_feat_saving_throw_helper.sql`: remove EXECUTE de PUBLIC/anon, preserva authenticated/service_role, e não altera o corpo da função nem o consumidor. Script de verificação em `supabase/verification/verify_passive_feat_helper_acl.sql`. O fixture `tests/sql/maneuver_catalog_security_fixture.sql` agora aplica as duas migrations reais, verifica os guards GM, preserva o acesso autenticado ao motor de resistência e confirma que anon não chama diretamente o helper.
 
