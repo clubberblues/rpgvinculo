@@ -832,3 +832,24 @@ A consulta do catálogo público encontrou 41 funções com EXECUTE authenticate
 A lista exata com `my_role(...) IS DISTINCT FROM 'GM'` contém operações ativas de AOO, dano, confirmação crítica, movimento pendente, Fúria NPC, condições/efeitos, rodada surpresa, perfil de token, estabilização e resolução de resistências de magia. Várias têm call sites em `mesa.html`; isso amplia a revisão de authorization freshness para os fluxos de combate. Porém, cada corpo deve ser classificado: alguns permitem o dono/jogador como alternativa ao GM, alguns são somente consulta, e outros são ações administrativas exclusivas do GM. Não aplicar uma revalidação GM indiscriminada em ações de jogadores.
 
 Exemplos já confirmados de mutações que precisam de análise campaign-first quando a autorização é GM: wrappers apply condition/effect (checam antes do helper que bloqueia campanha); perfil de combate/rodada surpresa/Fúria NPC (checam antes do lock); resolução de estabilização e resolução de resistência (alguns bloqueiam personagem/pending antes de campanha e admitem jogador dono). As rotas AOO também misturam ações de Mestre e reação/rolagem de jogadores; separar a autorização do ator para cada transição de estado antes de refatorar.
+
+
+### Confirmação no catálogo remoto — ordem efetiva AOO (2026-11-10)
+
+Uma consulta read-only a `pg_get_functiondef` no Supabase, extraindo em ordem textual todos os contextos `FOR UPDATE`, confirmou inversões reais no código instalado (não apenas propostas de fixture):
+
+| Função instalada | OID | Ordem observada |
+|---|---:|---|
+| `public.srd_resolver_ataque_oportunidade_srd` | 27025 | attack → pending movement → campaign |
+| `priv.srd_registrar_ocultacao_ataque_oportunidade_impl` | 27254 | attack → pending movement → campaign |
+| `priv.srd_reservar_reacao_movimento_aoo_impl` | 27256 | pending movement → campaign |
+| `priv.srd_resolver_encontrao_srd` | 27169 | pending movement → campaign |
+| `priv.srd_cancelar_movimento_aoo_pendente_impl` | 27268 | pending movement primeiro; o restante do corpo requer revisão para confirmar locks subsequentes |
+| `priv.srd_encerrar_reacao_aoo_pendente_impl` | 27269 | pending movement → attack; o restante do corpo requer revisão para confirmar locks subsequentes |
+
+**Incompatibilidade confirmada:** solicitação de movimento e finalização seguem campaign-first, mas várias transições de reação começam bloqueando pending (e duas bloqueiam attack antes de pending/campaign). Há, portanto, uma ordem de locks não uniforme na mesma máquina de estados AOO. A consulta confirma a inversão estrutural; não foi executada concorrência contra o banco remoto e não se afirma que um deadlock tenha ocorrido em produção.
+
+**Correção estrutural candidata:** toda RPC AOO deve localizar a campanha/pending/attack por leitura MVCC sem lock, obter primeiro `campaigns FOR UPDATE`, revalidar combate/turno/pending/ator, depois bloquear pending movement, reaction ledger/attack e por último ficha/arma/equipamento segundo a necessidade do ramo. Para qualquer operação que afete várias campanhas, ordenar IDs crescentemente. Não basta mover uma linha `FOR UPDATE`: os wrappers e helpers transitivos precisam obedecer ao mesmo protocolo e não reacquirir locks em ordem inversa.
+
+**Cobertura obrigatória:** concorrência resolver ataque × finalizar movimento; reservar reação × cancelar pending; resolver Encontrão × encerrar reação; registrar ocultação × finalizar movimento; e duas reações simultâneas para o mesmo pending. Cada cenário deve verificar ausência de deadlock, transição idempotente, status terminal consistente e nenhuma coordenada/dano parcialmente persistidos.
+
