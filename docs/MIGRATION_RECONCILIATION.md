@@ -411,3 +411,22 @@ O histórico remoto registra as migrations posteriores que efetuaram essa mudan�
 - `20261108214901_secure_character_movement_speed_rpc_access`
 
 Nenhuma dessas três tem arquivo local de mesmo nome. Portanto, o conjunto local não representa a transformação de arquitetura remota. Os arquivos locais de economia de ações não devem ser reaplicados sobre o schema remoto atual: os pontos de patch textual já não existem nos wrappers. Isso é evidência concreta de que igualar apenas o número ou o nome das migrations não restaura a arquitetura. Não foi feita alteração no banco.
+
+
+## Recorte crítico — movimento, manobras e AOO (rechecado em 2026-11-10)
+
+A comparação por timestamp entre os 681 caminhos locais da branch e os 966 registros remotos identificou, no conjunto de migrations cujo nome menciona AOO, opportunity, movement/movimento ou maneuver/manobra:
+
+| Métrica | Quantidade |
+|---|---:|
+| Registros remotos nesse conjunto | 81 |
+| Registros remotos sem arquivo local da mesma versão | 72 |
+| Arquivos locais do mesmo conjunto sem versão remota | 1 |
+
+A ausência local inclui praticamente toda a construção incremental do AOO em 2026-11-08: ledger/reserva, pending, detecção de ameaças por armas/ataques naturais, cálculo de alcance/footprint, ataques individuais, dano/finalização, Derrubar, Encontrão, levantar Caído, ocultação, estados de reação e wrappers SECURITY INVOKER. Os nomes e versões completos permanecem na lista geral de registros remotos sem arquivo acima.
+
+O único arquivo local sem versão remota neste recorte é:
+- `20261104190000_dwarf_barbarian_n1_racial_movement_fixes.sql`
+
+**Consequência:** os corpos atualmente instalados no Supabase (inclusive OIDs 26923, 26964, 27038, 27306, 27366 e triggers relacionados) não podem ser reconstruídos com segurança a partir do conjunto local atual. Não criar uma migration corretiva sobre esse baseline nem aplicar/reordenar migrations até recuperar e comparar o conteúdo exato das versões remotas ausentes. A existência de uma migration remota no histórico não prova que seu arquivo local equivalente seja idêntico; mesmo as 640 versões coincidentes ainda exigem comparação de conteúdo.
+
