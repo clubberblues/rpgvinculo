@@ -795,3 +795,22 @@ A mesma dependência de `priv.need_owner` (OID 18742) aparece em `public.gm_set_
 Consulta completa de dependências no catálogo do banco: `priv.need_owner` (OID 18742) é chamado por exatamente quatro endpoints públicos authenticated: `gm_set_code` (18747), `gm_set_role` (18748), `gm_transfer` (18749) e `gm_kick` (19188). Nenhum desses quatro adquire lock da campanha antes do helper; o helper também não bloqueia campanha. A correção deve ser implementada em cada endpoint ou por wrapper transacional explícito, sem introduzir lock implícito no helper até mapear eventuais futuros callers. A janela de stale authorization está confirmada para transfer e kick pelos fixtures; set_code e set_role compartilham a mesma estrutura estática, mas ainda não têm cenários dedicados.
 
 GitHub Actions #141 no commit `cf1ba84cc55171e295d69e2b8f0bde19830b8943` aprovou os cenários atuais, incluindo reprodução e controle de transferência, kick, revogação GM em inventário e trigger-order da transferência.
+
+
+### Segunda camada de endpoints GM: priv.need_gm e mutações SRD
+
+A varredura completa das chamadas de `priv.need_gm` (OID 18741) mostrou que o helper também é apenas uma leitura de papel via `my_role`, sem lock nem revalidação. Entre os endpoints com EXECUTE authenticated no snapshot:
+
+- `gm_get_code` (18746): leitura do código; risco de confidencialidade após revogação do papel, sem mutação.
+- `gm_grant` (18752): verifica GM, depois bloqueia personagem e concede ouro/XP/item. Se houver transferência enquanto espera pelo lock da ficha, pode conceder recursos depois de perder o papel. Não adquire campaign lock antes da ficha.
+- `media_gc` (18760): verifica GM e exclui registros de mídia sem campaign lock. O navegador pode então remover arquivos do Storage; ação externa subsequente não é atômica com o banco.
+- `gm_reopen_sheet` (18892) e `gm_set_bonus` (18893): leem personagem, verificam GM e alteram ficha sem serializar pela campanha; podem concluir após revogação.
+
+Outras funções authenticated usam `public.my_role(cid)='GM'` diretamente:
+- `srd_apply_campaign_condition` (24805) e `srd_apply_campaign_effect` (24896) verificam GM antes de chamar helpers privados que depois bloqueiam a campanha. A operação espera pelo campaign lock sem revalidar o papel depois dele.
+- `srd_remove_campaign_condition` (24806) e `srd_remove_campaign_effect` (24897) verificam GM e alteram tabelas de condição/efeito sem campaign lock.
+- `srd_configurar_perfil_combate_token_srd` (26922), `srd_configurar_rodada_surpresa_srd` (27092), `usar_furia_barbaro_npc_srd` (26656) e os endpoints de CBA/iniciativa já registrados têm lock de campanha posterior à checagem inicial e precisam revalidar GM depois do lock.
+
+Não generalizar todos os endpoints como mesma correção: leitura de código, remoção de condição, concessão de recursos, mídia e alterações de ficha têm efeitos e locks diferentes. Matriz candidata: (a) operações mutáveis de campanha/token: campaign FOR UPDATE → revalidar GM → locks de domínio; (b) mutações de personagem/ficha: localizar campaign_id por MVCC, campaign FOR UPDATE → revalidar GM e vínculo → character → sheet/resource; (c) operações externas Storage: autorizar e marcar exclusão no banco sob campanha lock, depois tratar remoção de arquivo como etapa idempotente/reconciliável; (d) leituras protegidas: avaliar se exigem lock para revogação estrita ou aceitar consistência eventual explicitamente.
+
+Os endpoints acima foram identificados por catálogo/EXECUTE authenticated; a ausência de call site literal nos três arquivos principais não prova que nenhum consumidor externo exista. A lista de chamadas de `priv.need_gm` foi consultada no catálogo atual e inclui funções legadas sem EXECUTE authenticated, que não entram na superfície de RPC para o cliente.
