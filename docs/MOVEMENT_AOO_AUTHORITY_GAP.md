@@ -180,3 +180,20 @@ No commit `fc2f008e59e980305990e9083058f2b2e76c7750`, o GitHub Actions executou:
 
 Os commits posteriores que ampliaram este documento alteraram somente documentação; os fixtures e scripts não mudaram. Isso não valida as funções RPC reais, triggers, Auth/PostgREST nem concorrência no Supabase. Nenhuma escrita foi executada no banco remoto.
 
+
+
+### Incompatibilidade atual: acompanhamento no Encontrão é bloqueado pelo guard
+
+A leitura cruzada do resolver, trigger e frontend encontrou uma regressão mecânica adicional:
+
+- O frontend (mesa.html) oferece ao Mestre a opção de acompanhar o defensor após um Encontrão e envia p_follow à RPC pública srd_resolver_encontrao_srd (OID 27172).
+- A implementação priv.srd_resolver_encontrao_srd (OID 27169) recompõe campaigns.cba_data.tokens; quando success AND p_follow e o deslocamento/espaço permitem, ela altera gridX/gridY do token a, que foi carregado pela identidade p.mover_token_id da pending ativa.
+- A função não chama set_config nem define app.srd_aoo_pending_commit.
+- O trigger BEFORE UPDATE priv.srd_guard_pending_aoo_movement bloqueia mudança de coordenadas do próprio pending.mover_token_id enquanto o pending está ativo, salvo quando esse GUC corresponde ao pending.
+
+**Conclusão estática:** quando o ramo de acompanhamento realmente desloca o token identificado por p.mover_token_id, o trigger rejeita o UPDATE e a transação do Encontrão é revertida. O ramo que apenas empurra o defensor não altera o token mover e não encontra esse mesmo bloqueio. A interface oferece explicitamente as duas opções, portanto o caminho de acompanhamento está ativo; não foi executado contra produção.
+
+A correção não deve simplesmente remover a guarda. O resolver de Encontrão precisa receber uma autorização transacional estreita, limitada à manobra, à campanha, ao pending e aos tokens/posições que a própria resolução calculou. A autorização de manobra não pode liberar movimentos genéricos nem alterar o destino pendente original sem validação.
+
+**Regressão obrigatória:** resolver Encontrão com acompanhamento desmarcado e marcado; quando o teste resistido e o deslocamento permitirem, o defensor deve ser empurrado e o atacante deve acompanhá-lo; quando não houver espaço/deslocamento, o acompanhamento deve ser bloqueado de forma válida sem abortar indevidamente a resolução. Em todos os casos, pending/ataques e coordenadas devem terminar em estado consistente e idempotente.
+
