@@ -460,3 +460,11 @@ Preparei na branch uma migration aditiva que altera apenas essas duas assinatura
 Foi acrescentado `tests/sql/maneuver_catalog_security_fixture.sql`, que cria um ambiente PostgreSQL descartável com roles `authenticated`, `anon`, `service_role`, schema `priv`, helpers sem EXECUTE para authenticated e wrappers GM equivalentes às assinaturas remotas. O fixture aplica a migration focalizada real via `psql \\i`, executa o script de verificação pós-migration, valida chamada positiva com papel GM, valida negação de jogador e confirma que authenticated continua sem chamada direta ao helper interno. O workflow `postgres-fixture-tests.yml` foi atualizado para executar o novo fixture.
 
 Este teste verifica o comportamento de privilégios e a sintaxe/efeito da migration num PostgreSQL isolado; não substitui chamadas autenticadas contra as funções reais do Supabase nem teste de regressão com dados de campanha. Execução CI ainda pendente de confirmação para o novo commit.
+
+### Redução adicional da superfície EXECUTE em helper de talentos (2026-11-10)
+
+A auditoria confirmou que `priv.srd_feat_saving_throw_modifier(jsonb,text)` (OID 26355) tinha EXECUTE herdado de PUBLIC, portanto também executável por anon, apesar de ser helper interno de cálculo passivo. Seu único consumidor catalogal identificado é `priv.srd_saving_throw_bonus(...)`, que é SECURITY DEFINER, owner postgres, e chama o helper sob privilégios do owner. O helper não precisa de EXECUTE anônimo para esse caminho.
+
+Foi preparada a migration `20261110160000_revoke_public_feat_saving_throw_helper.sql`: remove somente EXECUTE de PUBLIC, mantém explicitamente authenticated/service_role, e não altera o corpo da função nem o consumidor. Script de verificação em `supabase/verification/verify_passive_feat_helper_acl.sql`. O fixture `tests/sql/maneuver_catalog_security_fixture.sql` agora aplica as duas migrations reais, verifica os guards GM, preserva o acesso autenticado ao motor de resistência e confirma que anon não chama diretamente o helper.
+
+As duas migrations e o fixture permanecem apenas no branch. Nenhuma ACL foi alterada no Supabase remoto; CI ainda não foi confirmado para o HEAD mais recente.
