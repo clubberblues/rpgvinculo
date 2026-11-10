@@ -166,3 +166,8 @@ Complemento transacional: triggers AFTER INSERT/DELETE/UPDATE OF quantidade de `
 Além de `gm_transfer`, os endpoints authenticated `gm_set_role` (OID 18748) e `gm_kick` (OID 19188) usam `priv.need_owner` (OID 18742), que consulta owner sem lock, e depois alteram `members` sem lock de campanha. `iniciar_iniciativa_com_dados` (OID 20577) valida GM antes de `campaigns FOR UPDATE`. Corrigir como uma família: campanha FOR UPDATE primeiro, revalidar owner/active/papel e alvo, depois mutações de membership/iniciativa. Testes concorrentes: transferência × mudança de papel, transferência × expulsão, transferência × início de iniciativa; apenas a operação autorizada sob o lock deve concluir.
 
 `sentar_personagem_na_mesa` (OID 21606) valida PLAYER antes do lock da ficha e altera campaign_id sem lock de campanha. Tratar em trilha separada: definir invariantes de associação de personagem e coordenar com join/leave/kick antes de impor campaign-first, evitando inventar uma ordem character↔campaign que gere ciclo.
+
+
+### Bloqueador de transferência: trigger de papel
+
+`gm_transfer` (OID 18749) altera membership antes de atualizar `campaigns.owner_id`, mas `enforce_campaign_member_role` (OID 21603) força o owner atual a GM e impede qualquer outro membro de receber GM. A ordem atual pode deixar owner_id no novo usuário enquanto membership preserva o antigo GM e rebaixa o novo para PLAYER. O snapshot atual tem 3 campanhas e todas mantêm owner=GM e exatamente um GM; não há inconsistência observada nos registros existentes. Novo teste fixture reproduz a ordem atual e valida controle owner-first, com lock de campanha. A correção candidata deve atualizar owner_id antes dos papéis, tudo sob campaign FOR UPDATE e na mesma transação.
