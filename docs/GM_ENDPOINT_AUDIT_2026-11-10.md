@@ -284,3 +284,8 @@ A política de exclusão/desvinculação precisa considerar também a multiplici
 ### A exclusão é oferecida mesmo para fichas-fonte vinculadas
 
 `lobby.html` lista as fichas do usuário e renderiza o botão `Excluir ficha` para cada uma; a listagem não consulta `sourceCharacterId` nem oculta/desabilita a exclusão quando a ficha é fonte de token NPC. Portanto, as 2 fichas-fonte observadas estão expostas ao botão. Hoje a RPC falha antes de excluir por causa das relações antigas ausentes; quando o defeito de schema for corrigido, a política de vínculo deve ser implementada no backend e a UI deve refletir o bloqueio/desvinculação. Não confiar apenas em esconder o botão.
+
+
+### Não existe ação explícita de desvincular no tabuleiro atual
+
+A busca no `mesa.html` não encontrou ação explícita que remova/limpe `sourceCharacterId` de um token (nem função chamada “desvincular”). O Mestre pode editar a cena por outros fluxos, mas não há um controle de produto claro para converter o NPC vinculado em independente. Assim, a política “bloquear exclusão até desvincular” exige primeiro construir esse fluxo de desvinculação ou um procedimento de limpeza seguro; não presumir que o usuário já tenha uma ação disponível.
