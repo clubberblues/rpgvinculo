@@ -86,3 +86,40 @@ As duas RPCs atualizam `character_sheets` e depois retornam `public.calc_sheet(p
 
 
 **Qualificação da inversão:** o prefixo character → campaign está confirmado no corpo e o padrão contrário existe em operações campaign-scoped; um deadlock real exige que ambas bloqueiem a mesma linha de personagem e a mesma campanha. O snapshot consultado anteriormente encontrou três tokens NPC com sourceCharacterId existente, mas todos os personagens-fonte tinham `campaign_id IS NULL`; para esses três casos, a exclusão não adquire lock de campanha e não forma esse ciclo específico. Classificar como inversão estrutural/condicional, não como deadlock de produção reproduzido.
+
+
+## Auditoria cruzada do schema legado e dependências — 2026-11-10
+
+### Estado observado no banco remoto
+
+O catálogo atual não contém `public.items`, `public.inventory`, `public.character_notes` nem `public.character_sheets`. As relações atuais equivalentes/relacionadas são `vinculo_items`, `vinculo_inventory`, `vinculo_character_notes` e `vinculo_character_sheets`; a ficha SRD é `srd_character_sheets`. A constatação veio de `pg_class` e das constraints do banco conectado, não apenas de busca no repositório.
+
+A tabela `supabase_migrations.schema_migrations` não tem uma linha com nome `srd35_character_sheets_cleanup_migration`; o arquivo homônimo no root é um script SQL manual, sem timestamp, e seu conteúdo é apenas diagnóstico/remoção de triggers que referenciam o antigo `public.character_sheets`, mais listagem de RPCs ainda contaminadas. Ele não recria nem substitui essas RPCs. A origem exata da remoção/renomeação de relações antigas não está demonstrada pelo histórico de migrations reconciliado. Tratar como divergência de schema/proveniência pendente, não atribuir a uma migration específica.
+
+### RPCs instaladas que permanecem incompatíveis
+
+- `excluir_ficha_propria` (20219): chamada confirmada no botão do lobby. Antes de apagar `characters`, executa `DELETE public.character_notes` e `DELETE public.inventory`; ambas as relações não existem. A primeira instrução aborta a transação, impedindo a exclusão. A função também bloqueia personagem antes da campanha.
+- `gm_reopen_sheet` (18892) e `gm_set_bonus` (18893): atualizam `public.character_sheets`, que não existe. A falha acontece no UPDATE antes de `calc_sheet`; não é apenas um erro de retorno.
+- `calc_sheet` (18883): declara `s public.character_sheets` e lê `public.inventory`/ `public.items`; não pode calcular ficha no schema atual.
+- `calc_ca` (18881), `calc_desl` (18882) e `sell_price` (19287): consultam `public.items`, inexistente. Têm EXECUTE authenticated no snapshot, mas não foram encontrados call sites nas seis páginas HTML atuais.
+- `gm_grant` (18752): os ramos de ouro/XP atualizam `characters`; o ramo de item consulta `items` e grava em `inventory`, relações inexistentes. Não foi encontrado call site literal no frontend atual.
+- `save_sheet` (18889): também referencia `public.character_sheets`, `public.items` e `public.inventory`, mas seu EXECUTE está restrito a `service_role` no snapshot; não classificar como endpoint authenticated disponível.
+
+### Dependências de exclusão de personagem
+
+O grafo de FK/triggers confirma que a exclusão de `characters` já possui limpeza em cascata:
+- `character_spells`, `character_talents`, `character_abilities`, `character_conditions`, `vinculo_inventory`, `vinculo_character_notes`, `vinculo_character_sheets`, `srd_character_sheets`, tokens e diversas tabelas SRD têm FK `ON DELETE CASCADE`.
+- Trigger BEFORE DELETE em `characters` remove `srd_character_sheets`; trigger AFTER DELETE remove `srd_character_equipment`.
+- Trigger AFTER DELETE de `srd_character_equipment` remove as instâncias correspondentes em `srd_character_weapon_instances`.
+- `srd_npc_attack_sequences.actor_character_id` tem FK `ON DELETE RESTRICT`, que pode bloquear a exclusão se houver sequência NPC ainda referenciando o personagem. Snapshot atual: zero linhas na tabela, então não bloqueia os dados observados.
+
+Portanto, não substituir cegamente os DELETEs inválidos por nomes com prefixo. A correção deve decidir quais deletes manuais são redundantes por cascade, preservar os triggers SRD, e tratar a referência RESTRICT de sequência NPC de modo explícito (cancelar/recusar com mensagem segura, sem apagar estado ativo inadvertidamente).
+
+### Ordem transacional candidata para exclusão
+
+Para personagem vinculado a campanha: leitura MVCC para localizar `campaign_id` → lock `campaigns FOR UPDATE` → revalidar `user_id=auth.uid()` e que o `campaign_id` do personagem continua igual → lock `characters FOR UPDATE` → ajustar `combat_data`/ordem de iniciativa → excluir personagem e deixar cascades/triggers aplicarem a limpeza. Se a ficha não estiver vinculada, manter caminho sem campanha, mas revalidar associação após bloquear personagem e definir interação com corrida de join/seat. O contrato precisa ser compatível com `sentar_personagem_na_mesa` e demais mudanças de campaign_id.
+
+### Cobertura e limites
+
+O fixture de lock-cycle já testa o padrão character → campaign versus campaign → character; agora está associado ao endpoint ativo. Nenhum teste de integração executou `excluir_ficha_propria` no banco remoto. O estado do schema foi consultado read-only. Correções devem ser criadas como migrations novas somente após reconciliação das 681 migrations locais versus 966 linhas remotas e revisão do SQL manual fora do ledger.
+
