@@ -196,3 +196,25 @@ CREATE TABLE lock_fixture.campaign_deletion_cleanup (
 );
 INSERT INTO lock_fixture.campaign_deletion_cleanup(campaign_id,owner_id)
 VALUES (1,'owner-a');
+
+
+-- Synthetic Storage upload gate: campaign KEY SHARE + cleanup marker check.
+-- This models the required lock handshake, not the Supabase Storage API.
+CREATE TABLE lock_fixture.storage_objects (
+  path text PRIMARY KEY,
+  campaign_id integer NOT NULL REFERENCES lock_fixture.campaigns(id)
+);
+CREATE FUNCTION lock_fixture.upload_if_allowed(p_campaign_id integer,p_path text)
+RETURNS boolean LANGUAGE plpgsql VOLATILE AS $$
+DECLARE v_campaign integer; v_cleanup boolean;
+BEGIN
+  SELECT id INTO v_campaign
+  FROM lock_fixture.campaigns WHERE id=p_campaign_id FOR KEY SHARE;
+  IF NOT FOUND THEN RETURN false; END IF;
+  SELECT EXISTS (SELECT 1 FROM lock_fixture.campaign_deletion_cleanup d
+    WHERE d.campaign_id=p_campaign_id) INTO v_cleanup;
+  IF v_cleanup THEN RETURN false; END IF;
+  INSERT INTO lock_fixture.storage_objects(path,campaign_id)
+  VALUES (p_path,p_campaign_id);
+  RETURN true;
+END $$;
