@@ -350,3 +350,11 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - Adicionada matriz de testes distintos para `createSignedUrl`, `download` com JWT, `list` (GM apenas se necessário), caminho de outra campanha e objeto ausente. Fonte: `docs/STORAGE_ACCESS_CONTRACT.md` com links oficiais.
 - Modelo SQL corrigido para não criar FKs artificiais entre campanha, marcador de cleanup e objeto Storage. O teste cobre marcador residual com campanha ausente e objeto órfão; finalização deve continuar negada até remoção do objeto.
 - Ainda não há integração real com Storage API; sem custo adicional ou branch Supabase pago. Nenhuma mudança de produção.
+
+
+## Atualização — coordenador confiável de exclusão Storage (2026-11-10)
+
+- Auditoria da documentação oficial do Supabase identificou uma limitação importante: `storage.objects` é metadado, não inventário dos bytes no provedor. SQL zero-row check não prova sozinho que o bucket físico está vazio; modificar/apagar linhas diretamente não remove bytes e é expressamente desaconselhado.
+- Proposta corrigida: Edge Function coordenadora autenticada pelo proprietário, com service_role somente em secret server-side, pagina e remove todos os objetos via Storage API, repete a listagem até vazio e só então chama finalizadora interna. A RPC mantém zero-check de metadados como defesa em profundidade. `EXECUTE` da finalizadora deve ser revogado para PUBLIC/anon/authenticated e concedido somente ao canal interno necessário; cliente não chama diretamente.
+- Código upstream atual `storage/src/storage/uploader.ts` mostra preflight de permissão, gravação dos bytes e autorização final na transação de metadados; o lock de campanha precisa ser obtido na autorização final, não apenas no preflight. Em caso de falha de autorização final, código tenta remover o objeto físico. Confirmar isso com a versão hosted e teste real antes de confiar na garantia.
+- Especificação detalhada em `docs/STORAGE_ACCESS_CONTRACT.md`. Nenhum Edge Function foi criado/deployado; nenhuma ACL, RPC, migration, policy ou dado de produção alterado.
