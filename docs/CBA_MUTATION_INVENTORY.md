@@ -653,3 +653,14 @@ O resolver AOO revalida a arma equipada no momento da resolução. Assim, desequ
 
 A correção deve proteger ou invalidar atomicamente o pending quando qualquer dependência do snapshot mudar. O guard de coordenadas isolado não é suficiente.
 
+
+
+## Reprodução do bypass do guard AOO por identidade duplicada
+
+O fixture tests/sql/aoo_guard_duplicate_identity_repro.sql copia a lógica do trigger remoto e reproduz:
+- movimento do token mover único bloqueado;
+- metadado não geométrico permitido;
+- duplicação de id/key com primeira cópia na origem e segunda cópia deslocada passa por causa do LIMIT 1;
+- coordenadas de token ameaçador alteradas durante pending passam.
+
+A fixture foi incluída no harness e os runs #284, #285 e #293 passaram como reproduções intencionais. Não é correção nem integração real com Supabase. A implementação futura deve inverter os dois resultados vulneráveis para rejeição e preservar o controle de metadados.
