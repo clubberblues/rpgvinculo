@@ -104,7 +104,7 @@ Ordem interna por dependências:
 
 ## Bloqueio P1 do motor de movimento — 2026-11-10
 
-A autoridade de movimento AOO precisa ser corrigida antes de ampliar combate: os endpoints autenticados de movimento direto do jogador e do Mestre podem gravar coordenadas sem passar pela solicitação AOO. O frontend faz a sequência correta hoje, mas o servidor não a impõe. Também há divergência de footprint Colossal (movimento usa 5; helper canônico/detector usam 6). Evidência, OIDs, contrato e testes de aceite em [MOVEMENT_AOO_AUTHORITY_GAP.md](MOVEMENT_AOO_AUTHORITY_GAP.md).
+A autoridade de movimento AOO precisa ser corrigida antes de ampliar combate: os endpoints autenticados de movimento direto do jogador e do Mestre podem gravar coordenadas sem passar pela solicitação AOO. O frontend faz a sequência correta no fluxo normal, mas o servidor não a impõe. Além dos wrappers diretos, `salvar_cena_cba` (OID 20077) aceita atualização geral de `cba_data` por GM autenticado e também pode alterar coordenadas sem AOO quando não há pending. A guarda comum precisa proteger todos os writers de coordenadas sem bloquear metadados legítimos. Também há divergência de footprint Colossal (movimento usa 5; helper canônico/detector usam 6). Evidência, OIDs, contrato e testes de aceite em [MOVEMENT_AOO_AUTHORITY_GAP.md](MOVEMENT_AOO_AUTHORITY_GAP.md).
 
 **Prioridade da Fase 3:** tratar a unificação server-side de detecção AOO + pending + commit e o footprint compartilhado como bloqueio P1 do módulo de movimento. Fechar antes a ordem parcial de locks com pending/attack/ficha; não aplicar migration remota enquanto a reconciliação do histórico não tiver aceite.
 
