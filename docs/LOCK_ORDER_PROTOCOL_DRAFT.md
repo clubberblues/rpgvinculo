@@ -602,3 +602,24 @@ A re-leitura numerada dos corpos instalados refinou três classificações do in
 - **Início de ataque AOO (OID 27022):** a ordem efetiva observada é pending → campanha → ledger de reação → leitura da ficha → instância de arma FOR SHARE. A leitura da ficha não é FOR UPDATE; o ledger, sim. O início continua com pending antes de campanha, em oposição aos caminhos que adquirem campanha antes de pending/attack.
 
 Essas correções não alteram a recomendação arquitetural: cada endpoint deve adquirir campanha primeiro quando sua transação coordena estado de campanha, depois as linhas de personagem/ficha/recurso/pending/attack conforme a matriz de domínio, e revalidar tudo que foi lido antes do lock. Para endpoints que não alteram campanha, não adicionar lock por conveniência; explicitar a corrida e definir a fronteira transacional correta.
+
+
+### Matriz final de RPCs AOO autenticadas — locks efetivos (2026-11-10)
+
+A leitura direta dos corpos instalados confirmou os seguintes prefixos e OIDs; todos os endpoints listados abaixo têm EXECUTE autenticado no snapshot:
+
+| RPC | OID | Prefixo de locks confirmado | Consequência |
+|---|---:|---|---|
+| alternar_estado_campanha | 20103 | campanha → ataques AOO → pendências AOO | Caminho de transição de combate que disputa ataque/pending com resolvers |
+| srd_resolver_ataque_oportunidade_srd | 27025 | ataque → pending → campanha | Inversão direta contra alternar_estado_campanha |
+| srd_aplicar_dano_ataque_oportunidade_srd | 27036 | ataque → pending → campanha → ficha do alvo (FOR UPDATE) | Acrescenta a interseção com estabilização e outras mutações de ficha |
+| srd_aplicar_dano_ataque_oportunidade_monstro_srd | 27058 | ataque → pending → campanha → ficha vinculada (quando aplicável) | Mesmo prefixo de AOO; pode alcançar ficha persistente de NPC vinculado |
+| srd_iniciar_ataque_oportunidade_srd | 27022 | pending → campanha → ledger → leitura da ficha → arma FOR SHARE | Inversão pending/campanha; ledger e arma entram depois da campanha |
+| srd_iniciar_ataque_oportunidade_desarmado_srd | 27065 | pending → campanha → ledger | Variante desarmada mantém o prefixo pending-first |
+| srd_iniciar_ataque_oportunidade_monstro_srd | 27055 | pending → campanha → ledger | Variante de monstro mantém o prefixo pending-first |
+| srd_finalizar_movimento_aoo_pendente_srd | 27038 | pending → campanha | Finalização mantém pending-first; consulta ataques sem bloqueá-los |
+| srd_registrar_ocultacao_ataque_oportunidade_impl | 27254 | ataque → pending → campanha | Helper privado SECURITY DEFINER chamado pelo wrapper público invoker |
+
+O teste sintético #7 representa o ciclo campanha → ataque versus ataque → pending → campanha; os testes #3/#4 cobrem campanha ↔ pending e pending ↔ ataque. O banco não registrou reprodução de deadlock real; a conclusão é de ciclo potencial derivado dos locks e da concorrência entre chamadas autenticadas, não de incidente observado.
+
+O lock da ficha no RPC de dano AOO (27036) torna concreta a interseção com estabilização (24914): AOO mantém ataque/pending/campanha e espera ficha; estabilização mantém personagem/ficha e espera campanha. A ordem candidata para dano em personagem persistente deve ser campaign → character → sheet → pending → attack, mas isso precisa ser reconciliado com o restante do domínio AOO, incluindo ledger/weapon e transições de estado, antes de alterar qualquer RPC.
