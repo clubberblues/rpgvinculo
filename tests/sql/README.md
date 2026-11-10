@@ -50,3 +50,12 @@ Modela a janela observada nos corpos instalados de `entregar_item_srd` (OID 2055
 
 
 Nota de execução (2026-11-10): os primeiros runs #116 e #117 falharam no harness novo, não nos oito testes de deadlock existentes. A sincronização inicial usava advisory-lock polling que podia monopolizar a barreira e expirar; foi substituída por eventos de fixture confirmados em commits/autocommit e por duas conexões independentes. O controle campaign-first usa o lock real da linha de campanha e espera a transação de revogação. A nova versão está sendo reexecutada; considerar o cenário pendente até CI verde.
+
+
+### Administração da campanha e membership
+
+Os novos testes também modelam, em transações PostgreSQL concorrentes, o risco de `gm_set_role`/`gm_kick`:
+- Reprodução: a sessão A valida `owner_id` enquanto ainda é owner, pausa dentro da transação, a sessão B transfere ownership e rebaixa A, e A ainda consegue expulsar um membro porque não bloqueou/revalidou a campanha.
+- Controle: a sessão que transfere ownership bloqueia a linha da campanha primeiro; a solicitação antiga espera, relê owner após o lock e é rejeitada.
+
+A mesma família inclui `gm_transfer` e o início de iniciativa (`iniciar_iniciativa_com_dados`), que valida GM antes do lock de campanha. Os fixtures são sintéticos e não executam as RPCs instaladas.
