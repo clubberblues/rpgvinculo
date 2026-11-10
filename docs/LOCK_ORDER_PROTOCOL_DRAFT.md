@@ -670,3 +670,14 @@ Outros escritores legados sem lock explícito de campanha observados na mesma va
 ### CI #100 — regressão de autorização concorrente aprovada (2026-11-10)
 
 O workflow [42731471362](https://github.com/clubberblues/rpgvinculo/actions/runs/42731471362), run #100, concluiu success no commit `dd38946efd5cd9ef58ec8ef33b492227793141e7`. Os logs confirmam: footprint helper assertions passed; oito inversões sintéticas esperadas; controle positivo campaign→effect; reprodução sintética da corrida de gm_transfer (duas chamadas pré-validadas, owner final player-c, dois membros GM); e controle corrigido campaign-first (segunda chamada rejeitada por perda de autoridade, owner final player-b, um único GM). O commit posterior `628beee3f2e979fadc99f47f5e2f58d94f098d78` alterou somente README/documentação; setup e script SQL testados não mudaram. A regressão é uma simulação transacional descartável, não execução da RPC instalada nem evidência de exploração em produção.
+
+
+### Fechamento da varredura de writers diretos de campaigns — EXECUTE authenticated
+
+A consulta read-only filtrou funções instaladas que fazem INSERT/UPDATE em campaigns, têm EXECUTE efetivo para authenticated e não exibem SELECT ... FOR UPDATE sobre a campanha no próprio corpo. Restaram três casos:
+
+- `public.create_campaign` (OID 18744): INSERT de uma nova linha de campanha; não disputa lock de uma campanha preexistente e não é inversão de lock.
+- `public.adicionar_token_cba_completo` (OID 21726): o corpo não adquire lock diretamente, mas chama `public.adicionar_token_cba` (OID 20075), que bloqueia a linha da campanha FOR UPDATE na mesma transação antes de enriquecer o JSONB. Classificar como lock herdado, não como writer sem lock.
+- `public.gm_transfer` (OID 18749): atualiza uma campanha existente sem lock/revalidação pós-lock; corrida TOCTOU documentada acima.
+
+Assim, nesta fotografia não apareceu outro writer direto authenticated de campaigns sem lock explícito ou herdado além de gm_transfer. O filtro é estático por corpo SQL e não substitui auditoria de triggers, chamadas dinâmicas ou consumidores externos.
