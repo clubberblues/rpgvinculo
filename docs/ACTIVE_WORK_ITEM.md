@@ -579,3 +579,12 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - `public.srd_resolve_dying_round` confirmado em leitura integral: personagem → ficha → campanha → condição. Além do risco de deadlock, a campanha pode avançar enquanto a RPC espera por locks anteriores; a rodada precisa ser revalidada após campaign lock, não antes.
 - Esses casos ampliam a auditoria: escritores de condição não são apenas as RPCs de administração GM. Descanso de jogador, estabilização e resistência a magia também alteram condições de combate e precisam participar do mesmo contrato por campanha. Consequências normais de magia/reação devem ser aplicadas na transação de resolução, não congeladas indiscriminadamente.
 - Somente catálogo remoto e leitura de definições; nenhuma RPC foi executada nem dados remotos alterados.
+
+
+### Resoluções de magia pendentes: pedido bloqueado antes da campanha (2026-11-10)
+
+- Leitura dos corpos completos confirma que `priv.srd_apply_pending_spell_resolution(uuid)` bloqueia `priv.srd_pending_spell_resolutions` primeiro e, para aplicar dano/efeito, bloqueia `public.campaigns` depois. `public.srd_resolve_pending_spell_save(uuid,integer)` já mantém o lock do pedido e pode delegar para esse helper; `public.srd_resolve_pending_spell_resistance(uuid,integer)` também pode delegar quando a magia não exige resistência de Reflexos/Fortitude/Vontade adicional.
+- No ramo de quebra de condição, `srd_resolve_pending_spell_save` atualiza `srd_campaign_conditions` diretamente enquanto mantém o pedido bloqueado, sem lock da campanha. Assim, o caminho de magia participa da mesma superfície de condições AOO e da ordem de locks.
+- Isso não prova deadlock observado: não foi identificado nesta varredura um ciclo completo com outro caller que bloqueie a campanha e depois exatamente o mesmo pedido de magia. É, porém, uma divergência do protocolo campaign-first e precisa ser normalizada antes de declarar o conjunto de writers consistente.
+- A correção deve ler os dados do pedido sem lock, adquirir campaign lock, revalidar status/expiração/alvo, então bloquear o pedido e só depois aplicar dano/condição/efeito. Manter idempotência da resolução e garantir que duas respostas concorrentes não apliquem o efeito duas vezes.
+- Consulta somente leitura; nenhuma resistência, magia ou pedido pendente foi executado/modificado.
