@@ -397,3 +397,10 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - Proposta: remover USAGE/EXECUTE de papéis cliente do schema interno após inventariar dependências, mantendo wrappers públicos controlados. Nenhuma ACL alterada. Detalhes em `docs/MOVEMENT_AOO_AUTHORITY_GAP.md`.
 
 - **Refinamento do grant `priv`:** não revogar USAGE em bloco agora. Foram encontrados diversos wrappers públicos `SECURITY INVOKER` que chamam `priv.*` diretamente (movimento jogador/GM, manobras e outras rotas de combate); revogar USAGE/EXECUTE quebraria essas jornadas. Primeiro inventariar e migrar com segurança os wrappers (incluindo search_path, ownership e autorização), depois restringir schema/ACL e executar regressão abrangente. Nenhuma alteração de ACL.
+
+
+### Atualização — dimensão da migração de privacidade do schema (2026-11-10)
+
+- Catálogo remoto: 70 funções internas `priv.*` distintas são chamadas por funções públicas; 35 funções públicas distintas são `SECURITY INVOKER` e chamam `priv.*`, com EXECUTE authenticated. Uma consulta anterior retornou 40 linhas de chamada, pois algumas assinaturas fazem múltiplas chamadas internas.
+- O problema de grants não é restrito ao movimento/AOO: envolve ataque iterativo NPC, dano, avanço de nível, ações, descanso e outras rotas. Não é seguro revogar USAGE/EXECUTE nem converter wrappers em lote.
+- Próxima entrega: matriz exata por assinatura/owner/search_path/grants/dependências e plano de migração individual dos wrappers, com testes de chamadas diretas negadas e fluxos públicos preservados. Detalhes em `docs/MOVEMENT_AOO_AUTHORITY_GAP.md`. Nenhuma mudança remota.
