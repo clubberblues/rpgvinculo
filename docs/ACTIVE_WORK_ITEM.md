@@ -408,3 +408,12 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - Contagem adicional de ACL: 40 funções/procedimentos em `priv` têm EXECUTE authenticated (39 SECURITY DEFINER); uma função (`priv.srd_feat_saving_throw_modifier`, OID 26355) também é executável por anon devido a grant PUBLIC. É helper SQL STABLE de cálculo de modificador passivo, sem mutação aparente; classificar se a exposição é intencional. `authenticated`/`anon` não têm CREATE nos schemas public/priv. Nenhuma ACL alterada.
 
 - As 94 funções `priv.*` identificadas têm owner `postgres` (88 SECURITY DEFINER). Entre seis helpers invoker, cinco não são executáveis por authenticated/anon; `priv.srd_parse_natural_attack_list(text)` (OID 27228) é executável por authenticated e serve a wrapper público de ataques naturais. `current_setting('pgrst.db_schemas',true)` e db_extra_search_path retornaram NULL: schema REST exposto segue não confirmado. Nenhuma exploração REST foi demonstrada.
+
+
+### CI e regressão de privilégios — 2026-11-10
+
+- HEAD `e32716894d3388478d416e63a31926a811810395` no PR #74: validação estática, JavaScript da aplicação e JavaScript da mesa passaram; PostgreSQL fixtures #351 passou.
+- O replay das 966 migrations #26 falhou antes de executar qualquer migration, porque o bootstrap local não cria `public.campaigns`; a primeira migration tenta criar função que referencia essa tabela. O job não chegou à etapa de replay/validação de objetos.
+- Os fixtures aprovados incluem helpers de footprint e reproduções sintéticas de inversões de locks, corridas de autorização e bypass de identidade AOO. Os logs mostram deadlocks/violações de autorização intencionais nos cenários de reprodução, seguidos de controles campaign-first que rejeitam as operações obsoletas. Isso valida os fixtures isolados, não prova que as RPCs remotas estejam corrigidas nem que houve deadlock em produção.
+- Nova verificação do catálogo confirmou que `public.srd_consultar_modificadores_manobra_srd` (OID 27119) e `public.srd_listar_ataques_naturais_oportunidade_srd` (OID 27229) são invoker com EXECUTE authenticated, mas tentam chamar `priv.srd35_maneuver_profile` (OID 26884), sem EXECUTE authenticated; a primeira também chama helpers de footprint sem EXECUTE authenticated. Forte indicação de falha funcional nessas duas rotas; precisa confirmação por chamada autenticada controlada. Detalhes e correção proposta em `docs/MOVEMENT_AOO_AUTHORITY_GAP.md`.
+- Nenhuma função, ACL, migration, trigger, campanha ou dado de produção foi alterado.
