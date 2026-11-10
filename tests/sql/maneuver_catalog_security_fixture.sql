@@ -42,8 +42,34 @@ REVOKE ALL ON FUNCTION priv.srd_token_grid_footprint(bigint,text) FROM PUBLIC, a
 
 CREATE OR REPLACE FUNCTION priv.srd_parse_natural_attack_list(text)
 RETURNS jsonb LANGUAGE sql IMMUTABLE
-AS $$ SELECT '[]'::jsonb $$;
+AS $ SELECT '[]'::jsonb $;
 REVOKE ALL ON FUNCTION priv.srd_parse_natural_attack_list(text) FROM PUBLIC, authenticated, anon;
+
+GRANT EXECUTE ON FUNCTION priv.srd_parse_natural_attack_list(text) TO authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION priv.srd_condition_has_flag(bigint,text,text,text)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path TO pg_catalog, public, priv, pg_temp
+AS $ SELECT true $;
+GRANT EXECUTE ON FUNCTION priv.srd_condition_has_flag(bigint,text,text,text) TO authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION priv.fixture_condition_caller(bigint,text,text,text)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path TO pg_catalog, public, priv, pg_temp
+AS $ SELECT priv.srd_condition_has_flag($1,$2,$3,$4) $;
+GRANT EXECUTE ON FUNCTION priv.fixture_condition_caller(bigint,text,text,text) TO authenticated;
+
+CREATE TABLE public.characters(id text, campaign_id bigint, user_id uuid);
+CREATE TABLE public.members(campaign_id bigint, user_id uuid, role text);
+
+CREATE OR REPLACE FUNCTION priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(
+ bigint,text,text,text,uuid,text,text
+) RETURNS jsonb LANGUAGE sql SECURITY DEFINER
+SET search_path TO public, priv, pg_temp
+AS $ SELECT '{}'::jsonb $;
+GRANT EXECUTE ON FUNCTION priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(bigint,text,text,text,uuid,text,text)
+TO authenticated, service_role;
+
 
 
 CREATE OR REPLACE FUNCTION priv.srd_feat_saving_throw_modifier(jsonb,text)
@@ -93,6 +119,8 @@ GRANT EXECUTE ON FUNCTION public.srd_listar_ataques_naturais_oportunidade_srd(bi
 \i supabase/verification/verify_maneuver_catalog_rpc_security.sql
 \i supabase/migrations/20261110160000_revoke_public_feat_saving_throw_helper.sql
 \i supabase/verification/verify_passive_feat_helper_acl.sql
+\i supabase/migrations/20261110170000_lock_down_internal_helper_execute.sql
+\i supabase/verification/verify_internal_helper_execute.sql
 
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',true);
@@ -105,10 +133,35 @@ BEGIN
   IF public.srd_listar_ataques_naturais_oportunidade_srd(1,'monster')->>'ok' <> 'true' THEN
     RAISE EXCEPTION 'GM natural attack wrapper did not return success';
   END IF;
-  IF priv.srd_feat_saving_throw_modifier('[]'::jsonb,'fortitude') <> 0
-     OR priv.srd_saving_throw_bonus(1,'character','1','fortitude','base') <> 0 THEN
-    RAISE EXCEPTION 'Authenticated saving throw helper call failed';
+  IF priv.srd_saving_throw_bonus(1,'character','1','fortitude','base') <> 0 THEN
+    RAISE EXCEPTION 'SECURITY DEFINER saving throw engine caller failed';
   END IF;
+  IF NOT priv.fixture_condition_caller(1,'token','monster','cannot_attack') THEN
+    RAISE EXCEPTION 'SECURITY DEFINER condition caller failed';
+  END IF;
+  BEGIN
+    PERFORM priv.srd_feat_saving_throw_modifier('[]'::jsonb,'fortitude');
+    RAISE EXCEPTION 'Authenticated unexpectedly executed passive feat helper directly';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    PERFORM priv.srd_condition_has_flag(1,'token','monster','cannot_attack');
+    RAISE EXCEPTION 'Authenticated unexpectedly executed condition helper directly';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    PERFORM priv.srd_parse_natural_attack_list('bite');
+    RAISE EXCEPTION 'Authenticated unexpectedly executed natural attack parser directly';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    PERFORM priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(
+      1,'not-owned','target','atk-corpo','11111111-1111-4111-8111-111111111111'::uuid,'main_hand',NULL
+    );
+    RAISE EXCEPTION 'Authenticated unexpectedly passed iterative attack ownership guard';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM='Authenticated unexpectedly passed iterative attack ownership guard' THEN RAISE; END IF;
+  END;
   BEGIN
     PERFORM priv.srd35_maneuver_profile(1,'a');
     RAISE EXCEPTION 'Authenticated unexpectedly executed private helper';
