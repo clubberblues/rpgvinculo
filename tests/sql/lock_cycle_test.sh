@@ -628,3 +628,59 @@ run_expected_campaign_first_owner_code_rejection() {
 
 run_expected_stale_owner_set_code_after_transfer
 run_expected_campaign_first_owner_code_rejection
+
+run_expected_stale_owner_set_role_after_transfer() {
+  local tmp owner role sa sb
+  tmp="$(mktemp -d)"
+  psql -v ON_ERROR_STOP=1 -c "UPDATE lock_fixture.ownership_campaigns SET owner_id='owner-a' WHERE id=1; UPDATE lock_fixture.ownership_members SET role=CASE user_id WHEN 'owner-a' THEN 'GM' ELSE 'PLAYER' END WHERE campaign_id=1;" >/dev/null
+  psql -v ON_ERROR_STOP=1 -c "BEGIN; DO \$\$ DECLARE v_owner text; BEGIN SELECT owner_id INTO v_owner FROM lock_fixture.ownership_campaigns WHERE id=1; IF v_owner IS DISTINCT FROM 'owner-a' THEN RAISE EXCEPTION 'initial owner check failed'; END IF; END \$\$; SELECT pg_sleep(0.4); UPDATE lock_fixture.ownership_members SET role='OBSERVER' WHERE campaign_id=1 AND user_id='player-c'; COMMIT;" >"$tmp/a.log" 2>&1 &
+  local a=$!
+  sleep 0.1
+  psql -v ON_ERROR_STOP=1 -c "BEGIN; UPDATE lock_fixture.ownership_campaigns SET owner_id='player-b' WHERE id=1; UPDATE lock_fixture.ownership_members SET role=CASE user_id WHEN 'owner-a' THEN 'PLAYER' WHEN 'player-b' THEN 'GM' ELSE role END WHERE campaign_id=1; COMMIT;" >"$tmp/b.log" 2>&1 &
+  local b=$!
+  set +e
+  wait "$a"; sa=$?
+  wait "$b"; sb=$?
+  set -e
+  owner="$(psql -Atq -c "SELECT owner_id FROM lock_fixture.ownership_campaigns WHERE id=1")"
+  role="$(psql -Atq -c "SELECT role FROM lock_fixture.ownership_members WHERE campaign_id=1 AND user_id='player-c'")"
+  if [[ "$sa" -ne 0 || "$sb" -ne 0 || "$owner" != "player-b" || "$role" != "OBSERVER" ]]; then
+    echo "FAIL: stale owner role mutation was not reproduced"
+    cat "$tmp/a.log" "$tmp/b.log"
+    echo "owner=$owner role=$role statuses=$sa/$sb"
+    rm -rf "$tmp"
+    exit 1
+  fi
+  echo "passed synthetic stale owner role mutation: owner=$owner, target_role=$role"
+  rm -rf "$tmp"
+}
+
+run_expected_campaign_first_owner_role_rejection() {
+  local tmp owner role sa sb
+  tmp="$(mktemp -d)"
+  psql -v ON_ERROR_STOP=1 -c "UPDATE lock_fixture.ownership_campaigns SET owner_id='owner-a' WHERE id=1; UPDATE lock_fixture.ownership_members SET role=CASE user_id WHEN 'owner-a' THEN 'GM' ELSE 'PLAYER' END WHERE campaign_id=1;" >/dev/null
+  psql -v ON_ERROR_STOP=1 -c "BEGIN; SELECT id FROM lock_fixture.ownership_campaigns WHERE id=1 FOR UPDATE; SELECT pg_sleep(0.4); UPDATE lock_fixture.ownership_campaigns SET owner_id='player-b' WHERE id=1; UPDATE lock_fixture.ownership_members SET role=CASE user_id WHEN 'owner-a' THEN 'PLAYER' WHEN 'player-b' THEN 'GM' ELSE role END WHERE campaign_id=1; COMMIT;" >"$tmp/a.log" 2>&1 &
+  local a=$!
+  sleep 0.1
+  psql -v ON_ERROR_STOP=1 -c "SELECT pg_sleep(0.1); BEGIN; SELECT id FROM lock_fixture.ownership_campaigns WHERE id=1 FOR UPDATE; DO \$\$ DECLARE v_owner text; BEGIN SELECT owner_id INTO v_owner FROM lock_fixture.ownership_campaigns WHERE id=1; IF v_owner IS DISTINCT FROM 'owner-a' THEN RAISE EXCEPTION 'owner authorization lost after campaign lock'; END IF; END \$\$; UPDATE lock_fixture.ownership_members SET role='OBSERVER' WHERE campaign_id=1 AND user_id='player-c'; COMMIT;" >"$tmp/b.log" 2>&1 &
+  local b=$!
+  set +e
+  wait "$a"; sa=$?
+  wait "$b"; sb=$?
+  set -e
+  owner="$(psql -Atq -c "SELECT owner_id FROM lock_fixture.ownership_campaigns WHERE id=1")"
+  role="$(psql -Atq -c "SELECT role FROM lock_fixture.ownership_members WHERE campaign_id=1 AND user_id='player-c'")"
+  if [[ "$sa" -ne 0 || "$sb" -eq 0 || "$owner" != "player-b" || "$role" != "PLAYER" ]] ||
+     ! grep -qi 'owner authorization lost after campaign lock' "$tmp/b.log"; then
+    echo "FAIL: campaign-first owner role control did not reject stale owner"
+    cat "$tmp/a.log" "$tmp/b.log"
+    echo "owner=$owner role=$role statuses=$sa/$sb"
+    rm -rf "$tmp"
+    exit 1
+  fi
+  echo "passed campaign-first owner role control: stale request rejected, owner=$owner, target_role=$role"
+  rm -rf "$tmp"
+}
+
+run_expected_stale_owner_set_role_after_transfer
+run_expected_campaign_first_owner_role_rejection
