@@ -1599,6 +1599,7 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
     return encontrados;
   }
 
+  // Keep lobby deletion aligned with mesa.html: both public and private campaign assets must be removed.
   async function coletarArquivosDaCampanha(mesaId){
     var id=String(mesaId);
     var arquivosMidia=await listarArquivosStorageRecursivo('midia','campaigns/'+id,0);
