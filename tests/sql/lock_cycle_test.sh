@@ -514,3 +514,60 @@ run_expected_owner_first_transfer_order_satisfies_trigger() {
 
 run_expected_current_transfer_order_is_rewritten_by_trigger
 run_expected_owner_first_transfer_order_satisfies_trigger
+
+# Mirrors srd_apply_campaign_effect/condition: role check, then helper locks campaign.
+run_expected_stale_gm_effect_after_campaign_wait() {
+  local tmp role effects sa sb
+  tmp="$(mktemp -d)"
+  psql -v ON_ERROR_STOP=1 -c "UPDATE lock_fixture.gm_gate_members SET role='GM' WHERE campaign_id=1 AND user_id='gm-a'; UPDATE lock_fixture.gm_gate_effects SET effect_count=0 WHERE campaign_id=1 AND target_id='target-a';" >/dev/null
+  psql -v ON_ERROR_STOP=1 -c "BEGIN; DO \$\$ DECLARE v_role text; BEGIN SELECT role INTO v_role FROM lock_fixture.gm_gate_members WHERE campaign_id=1 AND user_id='gm-a'; IF v_role IS DISTINCT FROM 'GM' THEN RAISE EXCEPTION 'initial GM check failed'; END IF; END \$\$; SELECT pg_sleep(0.4); SELECT id FROM lock_fixture.gm_gate_campaigns WHERE id=1 FOR UPDATE; UPDATE lock_fixture.gm_gate_effects SET effect_count=effect_count+1 WHERE campaign_id=1 AND target_id='target-a'; COMMIT;" >"$tmp/a.log" 2>&1 &
+  local a=$!
+  sleep 0.1
+  psql -v ON_ERROR_STOP=1 -c "BEGIN; SELECT id FROM lock_fixture.gm_gate_campaigns WHERE id=1 FOR UPDATE; UPDATE lock_fixture.gm_gate_members SET role='PLAYER' WHERE campaign_id=1 AND user_id='gm-a'; COMMIT;" >"$tmp/b.log" 2>&1 &
+  local b=$!
+  set +e
+  wait "$a"; sa=$?
+  wait "$b"; sb=$?
+  set -e
+  role="$(psql -Atq -c "SELECT role FROM lock_fixture.gm_gate_members WHERE campaign_id=1 AND user_id='gm-a'")"
+  effects="$(psql -Atq -c "SELECT effect_count FROM lock_fixture.gm_gate_effects WHERE campaign_id=1 AND target_id='target-a'")"
+  if [[ "$sa" -ne 0 || "$sb" -ne 0 || "$role" != "PLAYER" || "$effects" != "1" ]]; then
+    echo "FAIL: stale GM effect after campaign wait was not reproduced"
+    cat "$tmp/a.log" "$tmp/b.log"
+    echo "role=$role effects=$effects statuses=$sa/$sb"
+    rm -rf "$tmp"
+    exit 1
+  fi
+  echo "passed synthetic stale GM effect after campaign wait: role=$role, effect_change=$effects"
+  rm -rf "$tmp"
+}
+
+run_expected_campaign_first_gm_effect_rejection() {
+  local tmp role effects sa sb
+  tmp="$(mktemp -d)"
+  psql -v ON_ERROR_STOP=1 -c "UPDATE lock_fixture.gm_gate_members SET role='GM' WHERE campaign_id=1 AND user_id='gm-a'; UPDATE lock_fixture.gm_gate_effects SET effect_count=0 WHERE campaign_id=1 AND target_id='target-a';" >/dev/null
+  psql -v ON_ERROR_STOP=1 -c "BEGIN; SELECT id FROM lock_fixture.gm_gate_campaigns WHERE id=1 FOR UPDATE; SELECT pg_sleep(0.4); UPDATE lock_fixture.gm_gate_members SET role='PLAYER' WHERE campaign_id=1 AND user_id='gm-a'; COMMIT;" >"$tmp/a.log" 2>&1 &
+  local a=$!
+  sleep 0.1
+  psql -v ON_ERROR_STOP=1 -c "SELECT pg_sleep(0.1); BEGIN; SELECT id FROM lock_fixture.gm_gate_campaigns WHERE id=1 FOR UPDATE; DO \$\$ DECLARE v_role text; BEGIN SELECT role INTO v_role FROM lock_fixture.gm_gate_members WHERE campaign_id=1 AND user_id='gm-a'; IF v_role IS DISTINCT FROM 'GM' THEN RAISE EXCEPTION 'GM authorization lost after campaign lock'; END IF; END \$\$; UPDATE lock_fixture.gm_gate_effects SET effect_count=effect_count+1 WHERE campaign_id=1 AND target_id='target-a'; COMMIT;" >"$tmp/b.log" 2>&1 &
+  local b=$!
+  set +e
+  wait "$a"; sa=$?
+  wait "$b"; sb=$?
+  set -e
+  role="$(psql -Atq -c "SELECT role FROM lock_fixture.gm_gate_members WHERE campaign_id=1 AND user_id='gm-a'")"
+  effects="$(psql -Atq -c "SELECT effect_count FROM lock_fixture.gm_gate_effects WHERE campaign_id=1 AND target_id='target-a'")"
+  if [[ "$sa" -ne 0 || "$sb" -eq 0 || "$role" != "PLAYER" || "$effects" != "0" ]] ||
+     ! grep -qi 'GM authorization lost after campaign lock' "$tmp/b.log"; then
+    echo "FAIL: campaign-first GM effect control did not reject stale role"
+    cat "$tmp/a.log" "$tmp/b.log"
+    echo "role=$role effects=$effects statuses=$sa/$sb"
+    rm -rf "$tmp"
+    exit 1
+  fi
+  echo "passed campaign-first GM effect control: stale request rejected, role=$role, effect_change=$effects"
+  rm -rf "$tmp"
+}
+
+run_expected_stale_gm_effect_after_campaign_wait
+run_expected_campaign_first_gm_effect_rejection
