@@ -141,12 +141,13 @@ A fixture modela deliberadamente ausência de FK entre marcador/campanha e objet
 
 - `aoo_guard_duplicate_identity_repro.sql` copia para um schema descartável o algoritmo atual de `priv.srd_guard_pending_aoo_movement` (OID 26962).
 - Confirma que uma alteração direta das coordenadas do único token mover é bloqueada e que uma atualização de metadados não geométricos é permitida.
-- Reproduz duas lacunas conhecidas: (a) duplicar a identidade do token mover, mantendo a primeira cópia na origem e deslocando a segunda, passa pela busca `LIMIT 1`; (b) a geometria de outro token pode mudar enquanto há pending.
+- Reproduz quatro lacunas conhecidas: (a) duplicar a identidade do token mover, mantendo a primeira cópia na origem e deslocando a segunda, passa pela busca `LIMIT 1`; (b) a geometria de outro token pode mudar enquanto há pending; (c) facção e alcance corpo a corpo de uma ameaça podem ser alterados; (d) um novo token ameaçador pode ser inserido na cena.
 - **Interpretação do CI:** este é um reproducer de vulnerabilidade conhecida, não um teste de aprovação de segurança. Um run verde significa que a fixture conseguiu reproduzir o comportamento documentado do algoritmo copiado. Quando a implementação for corrigida, o fixture deverá ser convertido em regressão negativa (as tentativas devem ser rejeitadas).
 - O fixture não importa nem executa a função instalada, não chama RPC, não acessa Auth/PostgREST e não conecta ao Supabase. A cópia precisa ser comparada com o corpo remoto quando o trigger mudar.
 
 
-- Execução confirmada: PostgreSQL fixture #284 [42751013687](https://github.com/clubberblues/rpgvinculo/actions/runs/42751013687), #285 [42751022904](https://github.com/clubberblues/rpgvinculo/actions/runs/42751022904) e #293 [42751317308](https://github.com/clubberblues/rpgvinculo/actions/runs/42751317308) concluíram **success**; os logs mostram a reprodução da duplicata e da alteração geométrica de outro token. A validação estática, aplicação JS e mesa JS também passaram no head 041f0b5.
+- Execução confirmada para a versão anterior do reproducer: PostgreSQL fixture #284 [42751013687](https://github.com/clubberblues/rpgvinculo/actions/runs/42751013687), #285 [42751022904](https://github.com/clubberblues/rpgvinculo/actions/runs/42751022904) e #293 [42751317308](https://github.com/clubberblues/rpgvinculo/actions/runs/42751317308) concluíram **success**; os logs mostram a reprodução da duplicata e da alteração geométrica de outro token. A validação estática, aplicação JS e mesa JS também passaram no head 041f0b5.
+- A versão ampliada agora inclui também facção/alcance e inclusão de token novo. Ela foi adicionada depois do run #42808666665 e ainda não tem execução CI confirmada no head atual.
 
 
 ### Execução integral mais recente do harness
