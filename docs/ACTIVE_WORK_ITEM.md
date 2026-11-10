@@ -454,3 +454,10 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - A fixture foi ampliada para negar acesso ao helper por authenticated, negar ficha alheia, campanha incorreta, identidade de usuário incorreta e ausência de membership PLAYER, mantendo um controle positivo de service_role para ficha própria.
 - Commits posteriores foram gravados pela API do GitHub, mas não há Actions run associado ao head atual. Portanto, essas correções ainda não têm resultado de CI confirmado; o run antigo não é evidência de validação do head atual.
 - Nenhuma migration, ACL, função, policy, dado ou campanha foi alterada no Supabase remoto. Não houve deploy ou merge.
+
+
+### Diagnóstico da fixture PostgreSQL — 2026-11-10
+
+- Run #42890392296 no commit `635bdf1` falhou porque os scripts de migration executados pela fixture fazem `COMMIT`, encerrando a transação externa iniciada no começo do arquivo. Claims configurados com `set_config(..., true)` depois disso expiravam ao fim de cada instrução. O preflight mostrou ambos `auth.uid()` e `my_role()` nulos, causando a mensagem GM.
+- A fixture foi corrigida para abrir uma nova transação após aplicar/verificar as migrations e antes de configurar os claims. A correção está no commit `c21490e`; ainda sem CI confirmado.
+- O replay integral falha antes de aplicar a primeira migration porque o schema-base `public.campaigns` não existe no stack vazio. Continua sendo bloqueio de bootstrap, não falha de migration 969 nem da aplicação.
