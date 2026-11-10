@@ -472,3 +472,19 @@ A causa estrutural foi confirmada nos arquivos:
 4. Só então usar o replay como gate para futuras mudanças. Não exportar nem versionar dados reais de campanhas, usuários, fichas ou tokens.
 
 O workflow em .github/workflows/supabase-migration-replay.yml permanece intencionalmente sem credenciais ou referência ao projeto de produção. O primeiro run falhou na etapa de replay, após iniciar apenas o stack local descartável. Nenhuma escrita foi executada no Supabase remoto.
+
+
+### Inspeção complementar do repositório — origem do bootstrap ainda ausente (2026-11-10)
+
+A listagem da raiz e de `supabase/` foi revisada para localizar uma base SQL anterior aos 966 arquivos:
+
+- A raiz contém scripts como `cba_iniciativa_migration.sql`, `vtt_dnd35_final_migration.sql`, `srd35_spellcasting_migration.sql`, `srd35_schema_reconciliation.sql` e `srd35_character_migration.sql`. A leitura dos cabeçalhos/corpos confirma que são incrementais: por exemplo, `cba_iniciativa_migration.sql` começa com `ALTER TABLE public.campaigns`; `srd35_schema_reconciliation.sql` começa alterando `public.srd_equipment`; `srd35_character_migration.sql` altera `public.srd_character_sheets`.
+- `supabase/manual_sql_archive/` contém correções e reconciliações pontuais (policies, RPCs, Storage, combate), não uma criação inicial das tabelas-base.
+- `supabase/migration_archive/` contém somente dois scripts de level-up, também incrementais.
+- `supabase/verification/` contém fixtures/consultas de verificação, não bootstrap.
+- A pasta `supabase/` não possui atualmente `config.toml`; o workflow inicializa um diretório temporário com `supabase init`, o que resolve configuração da CLI, mas não cria o schema histórico da aplicação.
+
+**Conclusão refinada:** não há, no conjunto de arquivos versionados inspecionado, um SQL que crie a base original `public.campaigns`, `public.characters`, `public.members` e demais tabelas antes das migrações incrementais. A evidência aponta para bootstrap anterior/manual ou executado fora deste repositório. Não é seguro converter os scripts incrementais em bootstrap por tentativa, nem criar tabelas mínimas para satisfazer a primeira migration: isso produziria um schema fictício e poderia ocultar dependências/constraints ausentes.
+
+**Próxima ação técnica sem tocar produção:** recuperar uma definição estrutural confiável do schema-base (backup/schema-only dump, histórico SQL do projeto ou export do catálogo atual com trilha de proveniência); comparar com o catálogo remoto e separar objetos pré-migration dos criados pelas 966 migrations. Um `pg_dump --schema-only` do estado atual é evidência útil para comparação, mas sozinho não prova qual era o schema antes da primeira migration. Depois, reconstruir o bootstrap histórico em branch/stack descartável e executar replay integral + comparação de catálogo.
+
