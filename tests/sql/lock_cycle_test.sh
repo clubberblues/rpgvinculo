@@ -238,7 +238,7 @@ BEGIN
   IF v_owner IS DISTINCT FROM 'owner-a' THEN RAISE EXCEPTION 'owner precheck failed'; END IF;
 END $$;
 UPDATE lock_fixture.ownership_members SET role='PLAYER' WHERE campaign_id=1 AND user_id='owner-a';
-DO $
+DO $own$
 DECLARE v_attempt integer:=0; v_acquired boolean;
 BEGIN
   LOOP
@@ -249,7 +249,7 @@ BEGIN
     IF v_attempt>100 THEN RAISE EXCEPTION 'timed out waiting for second transfer to pass stale owner check'; END IF;
     PERFORM pg_sleep(0.02);
   END LOOP;
-END $;
+END $own$;
 UPDATE lock_fixture.ownership_members SET role='GM' WHERE campaign_id=1 AND user_id='player-b';
 UPDATE lock_fixture.ownership_campaigns SET owner_id='player-b' WHERE id=1;
 COMMIT;
@@ -295,7 +295,6 @@ run_expected_serialized_owner_transfer() {
   psql -v ON_ERROR_STOP=1 -c "UPDATE lock_fixture.ownership_campaigns SET owner_id='owner-a' WHERE id=1; UPDATE lock_fixture.ownership_members SET role=CASE user_id WHEN 'owner-a' THEN 'GM' ELSE 'PLAYER' END WHERE campaign_id=1;" >/dev/null
   psql -v ON_ERROR_STOP=1 >"$tmp/a.log" 2>&1 <<'SQL' &
 BEGIN;
-SELECT pg_advisory_lock(8675309);
 SELECT owner_id FROM lock_fixture.ownership_campaigns WHERE id=1 FOR UPDATE;
 DO $$
 DECLARE v_owner text;
@@ -304,7 +303,7 @@ BEGIN
   IF v_owner IS DISTINCT FROM 'owner-a' THEN RAISE EXCEPTION 'authorization lost'; END IF;
 END $$;
 UPDATE lock_fixture.ownership_members SET role='PLAYER' WHERE campaign_id=1 AND user_id='owner-a';
-DO $
+DO $own$
 DECLARE v_attempt integer:=0; v_acquired boolean;
 BEGIN
   LOOP
@@ -315,7 +314,7 @@ BEGIN
     IF v_attempt>100 THEN RAISE EXCEPTION 'timed out waiting for second transfer to pass stale owner check'; END IF;
     PERFORM pg_sleep(0.02);
   END LOOP;
-END $;
+END $own$;
 UPDATE lock_fixture.ownership_members SET role='GM' WHERE campaign_id=1 AND user_id='player-b';
 UPDATE lock_fixture.ownership_campaigns SET owner_id='player-b' WHERE id=1;
 COMMIT;
@@ -324,6 +323,7 @@ SQL
   sleep 0.1
   psql -v ON_ERROR_STOP=1 >"$tmp/b.log" 2>&1 <<'SQL' &
 BEGIN;
+SELECT pg_advisory_lock(8675309);
 SELECT owner_id FROM lock_fixture.ownership_campaigns WHERE id=1 FOR UPDATE;
 DO $$
 DECLARE v_owner text;
