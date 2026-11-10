@@ -102,6 +102,15 @@ for (const required of [
   if (!lobby.includes(required)) reportFailure('lobby.html campaign deletion is missing Storage cleanup contract: ' + required);
 }
 
+// Product invariant: an uploaded private CBA asset is compensated if signed-URL creation fails.
+for (const required of [
+  'async function descartarUploadPrivadoCBA(path)',
+  "sb.storage.from('mesa-media').remove([String(path)])",
+  'await descartarUploadPrivadoCBA(path);'
+]) {
+  if (!mesa.includes(required)) reportFailure('mesa.html is missing private CBA upload compensation: ' + required);
+}
+
 const activePageSource = htmlFiles.map((file) => readFileSync(resolve(root, file), 'utf8')).join('\n');
 if (/\.rpc\s*\(\s*['"`]roll_dice['"`]/.test(activePageSource)) {
   reportFailure('An active page calls server-side roll_dice; action rolls must come from the user-clicked Dice UI.');
