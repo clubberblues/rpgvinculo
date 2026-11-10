@@ -490,3 +490,18 @@ Tudo permanece somente na branch. A análise de chamadas foi feita por definiç�
 
 
 Checagem complementar dos consumidores (2026-11-10): nenhuma policy RLS usa diretamente os três helpers passivos cuja execução autenticada foi revogada; os chamadores SQL identificados são triggers ou funções SECURITY DEFINER. `service_role` mantém USAGE no schema `priv` e EXECUTE explícito nos helpers, conforme o ACL remoto observado. Isso não confirma exposição REST do schema, cuja configuração PostgREST segue indisponível.
+
+
+### Releitura do trigger e snapshot de identidade — 2026-11-10
+
+A leitura direta do corpo remoto de `priv.srd_guard_pending_aoo_movement()` (OID 26962) confirmou o limite exato da proteção:
+
+- É o único trigger não interno sobre `public.campaigns` que observa `cba_data`; executa BEFORE UPDATE OF cba_data.
+- Se não existir pending em `waiting_reactions` ou `ready_to_commit`, retorna sem validar qualquer mudança de coordenadas.
+- Com pending ativo, procura o mover em OLD e NEW por `id = mover_token_id OR key = mover_token_id`, usando `LIMIT 1` em ambos os lados.
+- Só rejeita remoção do mover ou alteração de `gridX/gridY` do mover sem o GUC correspondente ao pending_id.
+- Não compara a identidade/cardinalidade do conjunto de tokens, não protege posição dos demais tokens e não congela facção, alcance, tamanho, monsterStats ou outras fontes do snapshot de ameaças.
+
+Consulta read-only agregada ao snapshot atual das três campanhas: 8 tokens, nenhum valor de identidade duplicado entre campos `id`/`key`, nenhum token sem `id` ou `key`, e zero pending AOO ativo. Isso indica que a amostra atual não contém a duplicidade reproduzida na fixture; não corrige a ausência de uma restrição permanente nem elimina a possibilidade de bypass em chamadas futuras.
+
+A correção permanece no limite comum de escrita: validar identidade estável e cardinalidade, comparar todos os tokens e dependências AOO relevantes, autorizar somente o deslocamento exato do mover por um caminho servidor validado e congelar/inutilizar atomicamente o pending quando qualquer fonte de ameaça mudar. O GUC isolado não deve ser tratado como prova suficiente de autorização.
