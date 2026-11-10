@@ -229,3 +229,12 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - Um personagem-fonte está vinculado a dois tokens NPC na mesma campanha; outro está vinculado a um token em outra campanha.
 - `ficha.html` rejeita ações de descanso longo/Fúria se encontrar mais de um token na campanha, então o painel da ficha não consegue escolher entre os dois. Ações do painel de cada token em `mesa.html` recebem token_id e não têm essa ambiguidade.
 - Se clones múltiplos forem permitidos, a ficha precisa oferecer seleção do token ou definir operações com semântica compartilhada; não escolher o primeiro automaticamente.
+
+
+## Atualização — lifecycle de NPC vinculado (2026-11-10)
+
+- Adicionado `tests/sql/npc_lifecycle_test.sql`, integrado ao harness PostgreSQL.
+- CI #198 [42742904531](https://github.com/clubberblues/rpgvinculo/actions/runs/42742904531) concluiu success no commit `cb8c2f6c2ad923a92abb562df56296c30ec2d41d`; o log confirma execução do fixture em transação temporária com ROLLBACK, preservação de outros tokens, cancelamento de pendências, limpeza relacional e proteção de ficha-fonte.
+- A validação é sintética e não chama RPC real. A implementação continua bloqueada por ausência de endpoint de remoção, incompatibilidade de `excluir_ficha_propria` e reconciliação de migrations.
+- Nova frente auditada: `gm_grant` e `media_gc` são endpoints legados sem callsite atual identificado; o ramo de item de gm_grant referencia `items/inventory` inexistentes. A limpeza Storage da campanha é não atômica e deve migrar para outbox/retry.
+- Sem alterações no Supabase remoto, migrations, ACLs, políticas, Storage ou campanhas.
