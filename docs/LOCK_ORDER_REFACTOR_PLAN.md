@@ -130,3 +130,8 @@ A inspeção de mesa.html confirmou que Míssil Mágico usa o wrapper autenticad
 
 
 A cura multialvo usa o wrapper autenticado OID 24661, que adquire personagem → campanha antes de delegar ao helper OID 24659, que bloqueia ficha. Não confundir com dano/efeito multialvo (OIDs 25246/25109), que bloqueiam personagem → ficha antes da campanha. A Fase D deve manter contratos de teste separados por branch e reordenar todos os entrypoints para campaign-first, sem depender da ordem herdada pelo wrapper.
+
+
+### Writer legado de transferência de Mestre
+
+Incluir public.gm_transfer (OID 18749) na Fase A caso seja mantido: endpoint SECURITY DEFINER com EXECUTE authenticated chama priv.need_owner sem lock e depois atualiza dois membros e owner_id. Há uma corrida TOCTOU em chamadas concorrentes do proprietário atual. A correção candidata é lock de campanha antes da revalidação de owner_id/active e atualização de membros em ordem determinística. Antes de remover ou alterar, localizar consumidores externos; não há call site direto localizado nas três páginas principais consultadas. Teste de aceitação: duas transferências simultâneas, somente uma autorizada.
