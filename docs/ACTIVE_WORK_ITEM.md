@@ -204,3 +204,12 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - `salvarFichaSRD35` chama `finalizar_criacao_personagem_srd` (OID 25213), wrapper SECURITY INVOKER que executa criação, perícias/talentos, idiomas, talentos bônus, domínios, grimório e equipamento inicial em uma única transação.
 - O fluxo usa tabelas/catálogos SRD e `srd_character_equipment`, não o modelo Vínculo legado.
 - Manter atomicidade desse wrapper nas futuras mudanças; fallback antigo não é o caminho primário.
+
+
+## Achado novo — helpers de criação SRD executáveis diretamente
+
+- Duas sobrecargas SECURITY DEFINER de `criar_personagem_srd_completo` têm EXECUTE authenticated: OID 20270 (6 args, sem identidade/etapas complementares) e OID 24809 (7 args, valida identidade mas não executa idiomas, domínios, grimório, talentos bônus e equipamento).
+- O frontend usa somente `finalizar_criacao_personagem_srd` OID 25213, que agrega todas as etapas. A sobrecarga 6 args vem do script root não timestamped `srd35_skills_feats_migration.sql`; a de 7 args vem de migration 20261103200319.
+- O agregador foi mudado de SECURITY DEFINER para INVOKER em 20261104042251, e o helper 7 args permaneceu EXECUTE authenticated. Revogar isoladamente quebraria o wrapper; correção precisa rever o modelo de execução e testar o agregador.
+- Dados atuais: 5 fichas SRD, todas com identidade, talentos e equipamento inicial concluído; nenhuma ficha incompleta observada.
+- Nenhuma chamada RPC de teste ou alteração remota foi feita.
