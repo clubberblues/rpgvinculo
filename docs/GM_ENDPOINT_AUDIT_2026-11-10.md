@@ -452,3 +452,25 @@ Os 44 objetos órfãos do bucket público `midia` somam **55.708.560 bytes (~53,
 - O único objeto `capas_mesas` que não é órfão pertence à campanha atualmente existente (ID 129); não foi incluído na contagem órfã.
 - Não foi feita inspeção/download do conteúdo binário, e nenhum objeto foi removido. Como o bucket é público, o risco observado é retenção pública de mídia histórica, não exposição de um bucket privado.
 
+
+
+
+
+### Políticas do bucket privado — incompatibilidade de path confirmada
+
+O helper efetivo das quatro políticas de `mesa-media` é `priv.pasta_gm(name)`. Ele executa `storage.foldername(name)[1]`, exige que o primeiro segmento seja numérico e chama `public.my_role(id)`. Mas o frontend grava mapas e retratos em `campaigns/{campaign_id}/...`. A consulta direta do helper Storage confirmou:
+- `storage.foldername('campaigns/129/test.png') = ['campaigns','129']`
+- segmento [1] = `campaigns` (não numérico);
+- segmento [2] = `129`.
+
+Consequência: para o padrão de caminho atualmente usado pelo frontend, `pasta_gm` retorna false antes de consultar o papel do usuário. Isso bloqueia INSERT/UPDATE/DELETE em `mesa-media` para os paths atuais. O bucket tem zero objetos, compatível com a falha, embora o snapshot sozinho não prove tentativas de upload rejeitadas.
+
+Há uma segunda incompatibilidade de leitura: a política SELECT chama `public.can_read_media(name)`, que só permite GM ou camada visível quando existe linha em `public.media` com `media.path = name`. Snapshot atual: `public.media` = 0, `public.layers` = 0; não há trigger em `storage.objects` que crie metadados em `public.media`, e os callsites CBA em `mesa.html` fazem upload + `createSignedUrl` sem inserir essa linha. Assim, mesmo corrigindo o parser de pasta, a assinatura de URL para esses assets não tem uma autorização correspondente na tabela de mídia. O caminho privado de mapas/retratos está, portanto, incompleto no banco: escrita e leitura não estão alinhadas ao formato atual do CBA.
+
+Correção candidata deve ser desenhada como um contrato único por campanha: extrair o ID do segundo segmento de `campaigns/{id}/...`; autorizar GM da campanha; negar INSERT/UPDATE quando houver marcador de exclusão; permitir DELETE ao GM durante a limpeza; e permitir SELECT aos membros da campanha segundo a regra de visibilidade escolhida para mapa/retrato. Não reutilizar `can_read_media` sem uma etapa transacional que registre metadados em `public.media`; preferir um predicado específico para os assets do CBA se a visibilidade for de campanha. Não aplicar ACL/policy/function no banco de produção nesta etapa.
+
+CI sobre o código do lobby + validador estático:
+- Static validation #11 [42744608629](https://github.com/clubberblues/rpgvinculo/actions/runs/42744608629): **success**, commit `31882ee88881e5cc335b35f4de0e5544fe4e1661`; executou `scripts/check-static.mjs`, incluindo as novas invariantes de limpeza dos dois buckets.
+- PostgreSQL fixtures #220 [42744608913](https://github.com/clubberblues/rpgvinculo/actions/runs/42744608913): **success**, commit `31882ee88881e5cc335b35f4de0e5544fe4e1661`; nove inversões sintéticas e os demais fixtures passaram.
+- Syntax check #59 [42744608931](https://github.com/clubberblues/rpgvinculo/actions/runs/42744608931): **success**, mesmo commit.
+
