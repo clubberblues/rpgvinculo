@@ -81,3 +81,10 @@ O mesmo harness também modela `gm_set_role`: owner antigo valida, transfere-se 
 ### Ficha GM: reabertura e bônus
 
 O fixture de ficha modela as mutações de `gm_reopen_sheet` e `gm_set_bonus`: o GM valida papel, perde o papel durante uma transferência/revogação serializada na campanha e, no cenário vulnerável, ainda altera os dados da ficha. O controle adquire campaign FOR UPDATE antes da validação definitiva e rejeita a operação antiga. É um teste sintético da ordem/garantia, não uma chamada à RPC de produção.
+
+
+### Endpoints GM — grants e remoções
+
+- `gm_grant`: fixture sintética de stale GM check antes do lock do personagem e controle campaign-first que rejeita após revogação. Não executa a RPC real nem valida o branch de concessão de item.
+- `srd_remove_campaign_condition/effect`: fixture de stale GM check seguido de remoção direta e controle campaign-first. A aplicação de efeito é coberta por fixture própria.
+- Os testes modelam concorrência e autorização, não substituem integração autenticada contra as funções instaladas.
