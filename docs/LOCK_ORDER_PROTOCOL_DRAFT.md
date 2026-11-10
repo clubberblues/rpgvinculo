@@ -788,3 +788,10 @@ Após corrigir a ordem de `gm_transfer`, cada endpoint de GM que bloqueia campan
 #### Completar endpoints de owner: código de acesso
 
 A mesma dependência de `priv.need_owner` (OID 18742) aparece em `public.gm_set_code` (OID 18747), EXECUTE authenticated. A função valida owner/active por `need_owner` e depois altera `campaign_codes` sem lock de campanha. Assim, o antigo proprietário também pode alterar o código de entrada depois de uma transferência concorrente se a autorização tiver sido validada antes da revogação. A matriz de operações owner-first passa a incluir `gm_set_code`, `gm_set_role`, `gm_kick` e `gm_transfer`; o helper não deve ganhar lock implícito sem auditar callers.
+
+
+### Fechamento da chamada de priv.need_owner
+
+Consulta completa de dependências no catálogo do banco: `priv.need_owner` (OID 18742) é chamado por exatamente quatro endpoints públicos authenticated: `gm_set_code` (18747), `gm_set_role` (18748), `gm_transfer` (18749) e `gm_kick` (19188). Nenhum desses quatro adquire lock da campanha antes do helper; o helper também não bloqueia campanha. A correção deve ser implementada em cada endpoint ou por wrapper transacional explícito, sem introduzir lock implícito no helper até mapear eventuais futuros callers. A janela de stale authorization está confirmada para transfer e kick pelos fixtures; set_code e set_role compartilham a mesma estrutura estática, mas ainda não têm cenários dedicados.
+
+GitHub Actions #141 no commit `cf1ba84cc55171e295d69e2b8f0bde19830b8943` aprovou os cenários atuais, incluindo reprodução e controle de transferência, kick, revogação GM em inventário e trigger-order da transferência.
