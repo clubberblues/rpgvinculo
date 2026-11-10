@@ -1016,3 +1016,28 @@ run_storage_zero_check_and_retry_contract() {
 }
 
 run_storage_zero_check_and_retry_contract
+
+
+  # Production cleanup marker has no campaign FK: retry must also be safe if a
+  # previous/legacy finalizer removed the campaign but left the marker behind.
+  psql -v ON_ERROR_STOP=1 -c "
+    INSERT INTO lock_fixture.campaign_deletion_cleanup(campaign_id,owner_id)
+    VALUES (1,'owner-a')
+    ON CONFLICT (campaign_id) DO UPDATE SET owner_id=EXCLUDED.owner_id;
+  " >/dev/null
+  result="$(psql -Atq -c "SELECT lock_fixture.finalize_campaign_if_storage_empty(1,'wrong-owner')")"
+  markers="$(psql -Atq -c "SELECT count(*) FROM lock_fixture.campaign_deletion_cleanup WHERE campaign_id=1")"
+  if [[ "$result" != "f" || "$markers" != "1" ]]; then
+    echo "FAIL: missing-campaign retry accepted a non-owner or removed marker"
+    rm -rf "$tmp"
+    exit 1
+  fi
+  result="$(psql -Atq -c "SELECT lock_fixture.finalize_campaign_if_storage_empty(1,'owner-a')")"
+  markers="$(psql -Atq -c "SELECT count(*) FROM lock_fixture.campaign_deletion_cleanup WHERE campaign_id=1")"
+  if [[ "$result" != "t" || "$markers" != "0" ]]; then
+    echo "FAIL: missing-campaign retry did not clean a validated empty marker"
+    echo "result=$result markers=$markers"
+    rm -rf "$tmp"
+    exit 1
+  fi
+  echo "passed idempotent retry with missing campaign and residual cleanup marker"
