@@ -45,6 +45,18 @@ RETURNS jsonb LANGUAGE sql IMMUTABLE
 AS $$ SELECT '[]'::jsonb $$;
 REVOKE ALL ON FUNCTION priv.srd_parse_natural_attack_list(text) FROM PUBLIC, authenticated, anon;
 
+
+CREATE OR REPLACE FUNCTION priv.srd_feat_saving_throw_modifier(jsonb,text)
+RETURNS integer LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path TO pg_catalog, public, priv, pg_temp
+AS $ SELECT 0 $;
+GRANT EXECUTE ON FUNCTION priv.srd_feat_saving_throw_modifier(jsonb,text) TO authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION priv.srd_saving_throw_bonus(bigint,text,text,text,text)
+RETURNS integer LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path TO pg_catalog, public, priv, pg_temp
+AS $ SELECT priv.srd_feat_saving_throw_modifier('[]'::jsonb,'fortitude') $;
+
 CREATE OR REPLACE FUNCTION public.srd_consultar_modificadores_manobra_srd(
   bigint,text,text,text,boolean,boolean
 ) RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER
@@ -91,6 +103,10 @@ BEGIN
   IF public.srd_listar_ataques_naturais_oportunidade_srd(1,'monster')->>'ok' <> 'true' THEN
     RAISE EXCEPTION 'GM natural attack wrapper did not return success';
   END IF;
+  IF priv.srd_feat_saving_throw_modifier('[]'::jsonb,'fortitude') <> 0
+     OR priv.srd_saving_throw_bonus(1,'character','1','fortitude','base') <> 0 THEN
+    RAISE EXCEPTION 'Authenticated saving throw helper call failed';
+  END IF;
   BEGIN
     PERFORM priv.srd35_maneuver_profile(1,'a');
     RAISE EXCEPTION 'Authenticated unexpectedly executed private helper';
@@ -117,6 +133,19 @@ BEGIN
   END;
 END
 $player$;
+RESET ROLE;
+
+SET ROLE anon;
+DO $anon$
+BEGIN
+  BEGIN
+    PERFORM priv.srd_feat_saving_throw_modifier('[]'::jsonb,'fortitude');
+    RAISE EXCEPTION 'Anon unexpectedly executed passive feat helper';
+  EXCEPTION WHEN insufficient_privilege THEN
+    NULL;
+  END;
+END
+$anon$;
 RESET ROLE;
 
 ROLLBACK;
