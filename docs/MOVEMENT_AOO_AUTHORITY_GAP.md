@@ -385,3 +385,14 @@ Consulta read-only a `pg_proc` ampliou o inventário para além das RPCs explici
 - Isso significa que o schema chamado `priv` não está isolado do papel authenticated no nível de privilégios SQL. Não afirmar, sem a configuração efetiva do PostgREST, que esses objetos estão publicados como endpoints REST: `pgrst.db_schemas` não apareceu em `pg_settings` e a lista de schemas expostos não foi confirmada nesta sessão.
 - Ainda assim, conceder `USAGE` no schema e `EXECUTE` em funções internas `SECURITY DEFINER` amplia a superfície de chamada SQL autenticada e contraria a intenção de helpers privados. O plano de correção deve revogar `USAGE` de `priv` para `authenticated`/`anon` e `EXECUTE` das implementações internas para papéis cliente, mantendo concessão somente ao papel/owner interno estritamente necessário; wrappers públicos validam autorização e chamam helpers como owner. Antes da mudança, inventariar todas as dependências legítimas de `priv` e testar os wrappers.
 - `public` mantém USAGE para authenticated/anon; RPCs públicas listadas possuem EXECUTE authenticated e não anon. Nenhuma ACL foi alterada. A lista de schemas PostgREST expostos continua pendente de confirmação por configuração administrativa/REST.
+
+
+### Refinamento obrigatório antes de qualquer revogação em `priv` (2026-11-10)
+
+A proposta de revogar `USAGE` do schema `priv` para authenticated não pode ser aplicada de forma cega. A consulta de dependências encontrou wrappers `public` com `SECURITY DEFINER = false` que chamam diretamente implementações `priv`, incluindo:
+
+- `public.mover_token_player_cba` OID 20522 → `priv.mover_token_player_cba_impl`;
+- `public.mover_token_gm_cba_srd` OID 21615 → `priv.mover_token_gm_cba_srd_impl`;
+- fluxos AOO/manobras como `public.srd_reservar_ataque_oportunidade_srd` OID 26917, `public.srd_reservar_reacao_movimento_aoo_srd` OID 26971, `public.srd_iniciar_encontrao_srd` OID 27171, `public.srd_resolver_encontrao_srd` OID 27172, `public.srd_iniciar_derrubar_com_aoo_srd` OID 27144, `public.srd_resolver_derrubar_apos_aoo_srd` OID 27145, e `public.srd_finalizar_movimento_aoo_pendente_srd` (wrapper é SECURITY DEFINER, mas foi incluído na cadeia para validação).
+
+O catálogo também retornou outras RPCs públicas invoker que dependem de `priv` em combate/NPC/ataque iterativo. Portanto, revogar USAGE/EXECUTE imediatamente pode quebrar operações legítimas. A correção segura exige classificar todas as RPCs públicas invoker que chamam `priv`, converter wrappers para SECURITY DEFINER somente após revisar `search_path`, autorização e ownership, ou mover a lógica interna para um mecanismo que não exija privilégio do chamador; então restringir o schema e validar todas as jornadas. O achado é uma exposição/grant excessivo confirmado, mas o remédio precisa preservar a cadeia invoker existente.
