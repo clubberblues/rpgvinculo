@@ -350,3 +350,17 @@ Isso evita que simplesmente omitir um token do payload o remova, mas deixa a ide
 
 **Importante:** não foi demonstrado que trocar identidade permite mover diretamente o mesmo token pendente — a guarda atual tende a tratar isso como remoção e rejeitar. A falha comprovada é a ausência de proteção global sobre coordenadas e geometria; os casos de duplicação/colisão são riscos adicionais que exigem regressão específica, não uma exploração confirmada.
 
+
+
+### Reprodução descartável de bypass por identidade duplicada
+
+O repositório já contém `tests/sql/aoo_guard_duplicate_identity_repro.sql`, executado pelo harness `tests/sql/lock_cycle_test.sh`. A fixture copia o algoritmo atual do trigger (não chama a função instalada) e demonstra duas propriedades:
+
+1. Controle: alterar coordenadas do único token mover é rejeitado; atualizar apenas metadados não geométricos é permitido.
+2. Bypass reproduzido: enviar dois objetos com o mesmo `id/key`, mantendo o original primeiro na origem e colocando a segunda cópia em outra coordenada, passa pelo trigger porque cada busca usa `LIMIT 1` e compara apenas a primeira ocorrência. A fixture confirma duas cópias persistidas e a segunda deslocada.
+3. Pending sem congelamento da geometria de ameaça: enquanto o mover tem pending ativo, a coordenada do token ameaçador também pode ser alterada pelo trigger atual.
+
+Isso eleva duplicação de identidade de risco hipotético a **bypass reproduzido no algoritmo copiado**. Ainda não é uma chamada à RPC instalada nem prova de exploração via PostgREST; o payload de cena precisa ser rejeitado no contrato futuro por identidade canônica única antes do merge e a guarda deve comparar o conjunto completo de tokens.
+
+O README registra os runs PostgreSQL #284, #285 e #293 como success, com reprodução da duplicata e da alteração geométrica do outro token. São resultados sintéticos intencionais: verde significa que a vulnerabilidade conhecida foi reproduzida, não que a segurança esteja corrigida. Quando a implementação mudar, converter a fixture em regressão negativa, exigindo rejeição dos dois casos.
+
