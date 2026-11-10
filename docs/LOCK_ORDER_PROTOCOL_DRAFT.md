@@ -767,3 +767,19 @@ Consequência prevista pelo código instalado: após transferência, `campaigns.
 A agregação read-only no banco encontrou 3 campanhas; nas 3, o proprietário atual está como GM e existe exatamente um GM. Portanto, não há evidência de inconsistência já persistida no snapshot consultado, mas também não há teste real de execução de `gm_transfer` no banco. O novo fixture PostgreSQL replica a lógica do trigger e a ordem exata da função, esperando reproduzir o papel antigo GM/novo PLAYER; o controle troca owner_id primeiro sob lock de campanha e depois atualiza membership, esperando antigo PLAYER/novo GM.
 
 Correção candidata: bloquear campanha primeiro; validar owner atual; atualizar `campaigns.owner_id` dentro da transação; atualizar papéis depois, em ordem determinística, para que o trigger veja o novo owner. Testar em PostgreSQL descartável com o trigger equivalente, incluindo falha/rollback e duas transferências concorrentes. Não aplicar alteração remota até reconciliar migrations e obter aprovação para implantação.
+
+
+### Superfície ampliada de operações GM com validação antes do lock
+
+A varredura por SECURITY DEFINER authenticated e validação explícita de papel GM antes do primeiro `FOR UPDATE`, combinada com call sites do frontend, encontrou estes caminhos ativos adicionais:
+
+- `alternar_estado_campanha` (OID 20103): valida GM e depois bloqueia campanha.
+- `salvar_cena_cba` (OID 20077): valida GM e depois bloqueia campanha para substituir snapshot CBA.
+- `adicionar_combatente_iniciativa` (OID 20078) e `mover_combatente_iniciativa` (OID 20080): validam GM e depois bloqueiam campanha.
+- `iniciar_iniciativa_com_dados` (OID 20577): valida GM e lista de participantes antes do lock de campanha.
+- `srd_configurar_perfil_combate_token_srd` (OID 26922), `srd_configurar_rodada_surpresa_srd` (OID 27092) e `usar_furia_barbaro_npc_srd` (OID 26656): validam `my_role(...)=GM` antes do lock de campanha.
+- Inventário de token: `entregar_item_token_srd` (OID 21668) e `equipar_item_token_srd` (OID 21670) validam papel antes do lock.
+
+Call sites encontrados em `mesa.html`: alternância de estado, salvar CBA, adicionar/reordenar iniciativa, perfil de combate do token, rodada surpresa e Fúria de NPC. `ficha.html` também chama Fúria de NPC vinculado. Portanto, a janela de autorização não é só teórica nem limitada a endpoints sem frontend.
+
+Após corrigir a ordem de `gm_transfer`, cada endpoint de GM que bloqueia campanha depois de validar papel ainda precisa revalidar `members.role='GM'` depois de obter o lock. Caso contrário, uma chamada que leu GM antes da transferência pode esperar pelo lock e executar depois da revogação. A ordem segura é campaign FOR UPDATE → revalidar owner/membership/papel e estado → locks de domínio/ações. Para endpoints que não precisam de lock da campanha, definir serialização explícita antes de alterar membership.
