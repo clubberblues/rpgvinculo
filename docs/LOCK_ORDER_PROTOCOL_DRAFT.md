@@ -628,3 +628,8 @@ O lock da ficha no RPC de dano AOO (27036) torna concreta a interseção com est
 ### CI mais recente do harness (2026-11-10)
 
 O workflow PostgreSQL [42730159992](https://github.com/clubberblues/rpgvinculo/actions/runs/42730159992), run #72, concluiu com sucesso no commit documental anterior `027fa057a0f6ccd3a111e2a3a97b50e45f8b1f5d`. Setup, containers, checkout, cliente PostgreSQL, execução dos fixtures isolados e teardown concluíram. O commit atual `0e53e84b7914022b69410a1f4d1b3fd396ee8813` acrescentou somente documentação; nenhum arquivo de fixture ou workflow foi alterado depois do run #72. Logo, os testes sintéticos versionados continuam cobertos pelo CI #72, sem que isso represente execução de RPCs de produção.
+
+
+### Snapshot operacional read-only — 2026-11-10
+
+Consulta pontual a pg_stat_database para o banco atual `postgres`: desde `stats_reset = 2026-08-25 20:33:23+00`, foram contabilizados 4.268.202 commits, 8.365 rollbacks, 0 deadlocks e 0 conflicts. No instante da consulta havia 0 sessões aguardando lock e 0 locks não concedidos. Isso não exclui deadlocks anteriores ao reset, transações muito breves entre amostragens ou ciclos potenciais ainda não exercitados; os prefixos conflitantes continuam demonstrados nos corpos das RPCs e precisam de correção/teste transacional.
