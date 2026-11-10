@@ -135,3 +135,20 @@ A solução deve ser aplicada no ponto comum de persistência (trigger/validaç�
 - Movimento autorizado por orquestradora e finalização AOO: permitido uma única vez; GUC/contexto não autoriza outro token nem outra campanha.
 - Todos os writers de `cba_data` inventariados são exercitados em regressão para confirmar que apenas mudanças de coordenadas passam pela autoridade de movimento.
 
+
+
+### Mutadores geométricos internos e estabilidade da lista de ameaças
+
+A proteção comum também precisa distinguir mutações geométricas que fazem parte de outras regras SRD:
+
+- `public.adicionar_token_cba_completo` (OID 21726) tem EXECUTE authenticated e delega à inclusão de token. O helper `public.adicionar_token_cba` (OID 20075) cria coordenadas iniciais, valida apenas a célula de origem e não consulta pending. O trigger atual não bloqueia spawn durante uma reação pendente.
+- `public.srd_configurar_perfil_combate_token_srd` (OID 26922) tem EXECUTE authenticated, exige GM e pode alterar `combat_faction` e `melee_reach_ft`. Isso pode mudar a lista de criaturas que ameaçam o movimento enquanto o pending está aberto.
+- `priv.srd_resolver_encontrao_srd` (OID 27169) é um mutador interno de coordenadas: a resolução de Encontrão pode deslocar o defensor e, se solicitado e permitido, fazer o atacante acompanhar. É parte legítima de uma manobra durante a resolução AOO, não um movimento livre.
+- As rotinas de ataques iterativos e de consulta de manobra que mencionam `gridX/gridY` foram classificadas como leituras de alcance no corpo inspecionado; a mera presença dessas chaves não prova escrita de coordenadas. O mutador de Encontrão acima foi confirmado pelo trecho que recompõe o array de tokens com novos `gridX/gridY`.
+
+Assim, o contrato durante pending não pode ser apenas “proibir toda mudança de coordenadas”. Deve congelar a geometria e os parâmetros que sustentam as ameaças calculadas, exceto para mutações SRD explicitamente autorizadas e validadas no fluxo da própria reação. A lista de exceções deve ser pequena, por função e por token; não conceder um bypass genérico a qualquer writer SECURITY DEFINER.
+
+**Ameaças obsoletas a prevenir:** spawn de novo token, remoção/reposicionamento de outro token, alteração de facção, alcance corpo a corpo ou configuração de arma que altere o alcance ameaçado. O motor precisa definir quais desses eventos são rejeitados enquanto pending e quais, se algum, invalidam/cancelam o pending e exigem nova detecção.
+
+**Teste obrigatório adicional:** com pending ativo, tentar adicionar token, mover/remover um ameaçador ou alterar facção/alcance deve falhar sem modificar a geometria; a resolução de Encontrão autorizada deve conseguir aplicar seu deslocamento e eventual acompanhamento, sem abrir uma exceção que permita movimento genérico.
+
