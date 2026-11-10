@@ -509,3 +509,6 @@ A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24
 - **Política ainda em aberto:** congelar todas as dependências até terminalidade ou invalidar/cancelar e recalcular pending de modo atômico. Não há implementação ainda; consultas foram read-only.
 - **Detalhes e testes:** docs/MOVEMENT_AOO_AUTHORITY_GAP.md e docs/CBA_MUTATION_INVENTORY.md.
 
+
+
+- **P1, TOCTOU normal do movimento:** OID 26964 retorna `continue_with_existing_movement_rpc=true` sem commit quando não há ameaça; frontend então grava por OID 20522/21615 em transação separada. Outro writer pode alterar ameaças entre as chamadas e o RPC direto não recalcula AOO. Requer detecção + movimento na mesma transação. Evidência: MOVEMENT_AOO_AUTHORITY_GAP.md.
