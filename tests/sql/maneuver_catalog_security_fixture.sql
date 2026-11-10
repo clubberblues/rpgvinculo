@@ -70,7 +70,7 @@ CREATE OR REPLACE FUNCTION public.iniciar_sequencia_ataque_iterativo_srd(
  p_campaign_id bigint,p_character_id text,p_target_token_id text,p_attack_type text,p_weapon_instance_id uuid
 ) RETURNS jsonb LANGUAGE sql SECURITY DEFINER
 SET search_path TO pg_catalog, public, priv, pg_temp
-AS $ SELECT jsonb_build_object('sequence_id','22222222-2222-4222-8222-222222222222') $;
+AS $$ SELECT jsonb_build_object('sequence_id','22222222-2222-4222-8222-222222222222') $$;
 
 INSERT INTO public.characters(id,campaign_id,user_id)
 VALUES ('owned-character',1,'11111111-1111-4111-8111-111111111111');
