@@ -18,6 +18,13 @@ BEGIN
   IF NOT (SELECT prosecdef FROM pg_proc WHERE oid=v_oid) THEN
     RAISE EXCEPTION 'GM maneuver wrapper must be SECURITY DEFINER';
   END IF;
+  IF (SELECT pg_get_userbyid(proowner) FROM pg_proc WHERE oid=v_oid) <> 'postgres' THEN
+    RAISE EXCEPTION 'GM maneuver wrapper owner must be postgres';
+  END IF;
+  IF position('auth.uid()' in v_def)=0 OR position('public.my_role' in v_def)=0
+     OR position('auth.uid()' in v_def)>position('priv.srd35_maneuver_profile' in v_def) THEN
+    RAISE EXCEPTION 'Authentication/GM guard must precede private helper calls';
+  END IF;
   IF NOT ('search_path=pg_catalog, public, priv, pg_temp' = ANY(v_path)) THEN
     RAISE EXCEPTION 'GM maneuver wrapper search_path is not pinned';
   END IF;
@@ -42,6 +49,13 @@ BEGIN
   END IF;
   IF NOT (SELECT prosecdef FROM pg_proc WHERE oid=v_oid) THEN
     RAISE EXCEPTION 'GM natural attack catalog wrapper must be SECURITY DEFINER';
+  END IF;
+  IF (SELECT pg_get_userbyid(proowner) FROM pg_proc WHERE oid=v_oid) <> 'postgres' THEN
+    RAISE EXCEPTION 'GM natural attack wrapper owner must be postgres';
+  END IF;
+  IF position('auth.uid()' in v_def)=0 OR position('public.my_role' in v_def)=0
+     OR position('auth.uid()' in v_def)>position('priv.srd35_maneuver_profile' in v_def) THEN
+    RAISE EXCEPTION 'Authentication/GM guard must precede private helper calls';
   END IF;
   IF NOT ('search_path=pg_catalog, public, priv, pg_temp' = ANY(v_path)) THEN
     RAISE EXCEPTION 'GM natural attack catalog wrapper search_path is not pinned';
