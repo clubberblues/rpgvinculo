@@ -182,6 +182,7 @@ GRANT EXECUTE ON FUNCTION public.srd_listar_ataques_naturais_oportunidade_srd(bi
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',true);
 SELECT set_config('fixture.campaign_role','GM',true);
+SELECT auth.uid() AS fixture_uid, public.my_role(1) AS fixture_role, current_user AS fixture_current_user;
 DO $gm$
 BEGIN
   IF public.srd_consultar_modificadores_manobra_srd(1,'a','b','trip',true,false)->>'ok' <> 'true' THEN
