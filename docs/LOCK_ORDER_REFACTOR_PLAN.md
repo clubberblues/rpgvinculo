@@ -200,3 +200,8 @@ Auditar e corrigir cada família com campaign-first quando houver mutação de e
 ### Classificação de call sites da segunda camada GM
 
 As RPCs `gm_grant`, `gm_reopen_sheet`, `gm_set_bonus`, `media_gc`, `gm_get_code`, apply/remove condition/effect têm EXECUTE authenticated, mas não foram encontradas por busca exata no código frontend atual (mesa/ficha/lobby nem code search no repo). Mantê-las na revisão de superfície RPC e nos testes de segurança, mas não classificá-las como fluxo UI ativo sem evidência. Distinguir risco de autorização de deadlock e escolher ordem de lock de acordo com cada função; por exemplo, `gm_grant` bloqueia personagem após autorização, enquanto apply effect bloqueia campanha em helper após autorização.
+
+
+### Varredura de role checks — não generalizar
+
+Catálogo público: 41 funções authenticated mencionam `my_role` em comparação com GM; isso é contagem lexical, não total de vulnerabilidades. A lista mistura leituras, dono da ficha, jogador e GM, e RPCs de AOO com atores diferentes. A próxima etapa precisa classificar cada transição por ator autorizado e lock adquirido, preservando ações do jogador; não exigir GM globalmente. Helpers `priv` não são RPCs diretas apenas por terem EXECUTE quando schema USAGE não está concedido.
