@@ -119,3 +119,12 @@ O harness também reproduz a inversão potencial entre `preparar_exclusao_campan
 
 
 - CI #212 [42744027422](https://github.com/clubberblues/rpgvinculo/actions/runs/42744027422) concluiu **success** no commit `5da5948f1478a69a77d4644bb5dd86eaf021359e`. O log confirma o nono cenário de inversão: campanha → cleanup versus cleanup → campanha, reproduzindo o ciclo do fluxo de exclusão em duas fases. Os oito padrões anteriores, o controle positivo, o fixture de lifecycle e os demais cenários de autorização também passaram. O commit posterior alterou somente documentação.
+
+
+### Upload de Storage versus exclusão de campanha
+
+O fim de lock_cycle_test.sh modela o contrato campaign KEY SHARE no caminho de upload versus campaign FOR UPDATE na preparação/finalização:
+- Se o upload adquire KEY SHARE primeiro, a preparação aguarda seu commit e só depois grava o marcador; o objeto já criado fica visível para a limpeza.
+- Se a preparação grava o marcador primeiro, o upload aguarda o lock, relê o marcador e é rejeitado sem inserir objeto.
+
+O teste usa uma função/tabela fictícia no schema lock_fixture. Não chama RLS, Storage API, buckets, policies, RPCs nem dados Supabase reais. Serve para validar a compatibilidade dos locks PostgreSQL; não substitui o teste concorrente com dois usuários autenticados e upload real exigido em docs/STORAGE_ACCESS_CONTRACT.md.
