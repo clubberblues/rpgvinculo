@@ -10,6 +10,9 @@ export PGHOST PGPORT PGUSER PGDATABASE PGPASSWORD
 
 psql -v ON_ERROR_STOP=1 -f tests/sql/lock_cycle_setup.sql
 
+# Disposable NPC token lifecycle contract (separate from lock-cycle RPC models).
+psql -v ON_ERROR_STOP=1 -f tests/sql/npc_lifecycle_test.sql
+
 # Synthetic lock-order regressions. Each pair models a documented reachable
 # prefix or an explicitly conditional future path; none executes production RPCs.
 run_expected_deadlock() {
