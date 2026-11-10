@@ -713,3 +713,17 @@ A inspeção de `pg_trigger` confirmou efeitos transitivos que precisam integrar
 - Não há trigger de usuário instalado diretamente em `srd_character_weapon_instances` ou `srd_cba_token_weapon_instances` no snapshot consultado. Isso não exclui FK, índices únicos ou locks adquiridos pelo SQL chamado.
 
 Essas arestas são consequência de INSERT/DELETE/UPDATE de quantidade e não aparecem no corpo do RPC chamador. O inventário de locks já deve tratar equipamento → instância de arma como aresta real herdada por trigger, mas não inferir ciclo sem cruzar com os locks efetivos dos endpoints de ataque. Nenhuma alteração remota.
+
+
+### Refinamento do subgrafo de equipamento e instâncias (2026-11-10)
+
+A leitura das implementações privadas corrigiu uma generalização anterior sobre a direção do lock:
+
+- Personagem/arma: `public.equipar_arma_instancia_personagem` (wrapper OID 26442) chama `private.equipar_arma_instancia_personagem_impl` (OID 26441). A implementação bloqueia `characters FOR UPDATE`, depois a instância em `srd_character_weapon_instances FOR UPDATE`, atualiza instâncias e por fim sincroniza `srd_character_equipment`. Prefixo real: personagem → instância de arma → inventário/equipamento.
+- NPC/monstro: wrapper OID 26444 → impl OID 26443. A implementação bloqueia campanha primeiro, depois instância `srd_cba_token_weapon_instances`, e por fim inventário `srd_cba_token_equipment`. Prefixo real: campanha → instância de arma do token → inventário do token.
+- Os triggers de quantidade (private OIDs 26446/26447) têm prefixo inventário/equipamento → instâncias de arma apenas quando quantidade muda. Porém, a auditoria dos writers encontrados não identificou caminho autenticado atual que reduza/exclua quantidade de arma: o decremento é das rotas de poção, cujos IDs de item não são armas; a entrega soma quantidade; a inicialização insere; exclusão de personagem faz limpeza em cascata. Portanto, não afirmar deadlock ativo entre trigger de decremento e equipar arma sem localizar um writer de arma que alcance esse ramo. O ramo negativo do trigger continua exigindo teste se/ quando surgir um writer correspondente.
+- O caminho de token já serializa operações de equipamento pelo lock de campanha; o caminho de personagem usa lock da linha character antes de instância. Não colapsar os dois domínios em uma ordem global sem verificar os chamadores.
+
+### Revalidação de papel GM em mutações de inventário
+
+Três endpoints autenticados leem o papel GM antes de adquirir o lock de campanha (ou sem adquiri-lo): `public.entregar_item_srd` (OID 20556), `public.entregar_item_token_srd` (OID 21668) e `public.equipar_item_token_srd` (OID 21670). O primeiro não bloqueia campanha; os dois de token bloqueiam campanha apenas depois da consulta ao papel. A transferência `gm_transfer` (OID 18749) altera owner/membership. Assim, uma operação iniciada por um GM pode validar papel antigo, esperar/concorrer com transferência e continuar após a revogação. Para os endpoints token, o lock posterior da campanha não corrige a validação anterior: é necessário reler e revalidar o papel depois de adquirir o lock. Para entrega de ficha, adotar o mesmo padrão campaign-first, revalidando papel e pertencimento do alvo antes dos locks de inventário. Trata-se de janela TOCTOU de autorização, não deadlock reproduzido; ainda não há teste concorrente de RPC real.
