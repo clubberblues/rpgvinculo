@@ -238,3 +238,6 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - A validação é sintética e não chama RPC real. A implementação continua bloqueada por ausência de endpoint de remoção, incompatibilidade de `excluir_ficha_propria` e reconciliação de migrations.
 - Nova frente auditada: `gm_grant` e `media_gc` são endpoints legados sem callsite atual identificado; o ramo de item de gm_grant referencia `items/inventory` inexistentes. A limpeza Storage da campanha é não atômica e deve migrar para outbox/retry.
 - Sem alterações no Supabase remoto, migrations, ACLs, políticas, Storage ou campanhas.
+
+
+- CI #208 [42743669088](https://github.com/clubberblues/rpgvinculo/actions/runs/42743669088) terminou **success** no commit `cc1c5c7c179e289afd96a097c763884aa55bc63d`. O log lista 12 assertions aprovadas, incluindo referência JSON remanescente, sequência NPC ativa vinculada à ficha e FK `ON DELETE RESTRICT`; fixture encerra com ROLLBACK.
