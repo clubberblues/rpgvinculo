@@ -17,32 +17,32 @@ GRANT USAGE ON SCHEMA auth, priv TO authenticated, anon;
 
 CREATE OR REPLACE FUNCTION auth.uid()
 RETURNS uuid LANGUAGE sql STABLE
-AS $$ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
+AS $$$ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$$;
 GRANT EXECUTE ON FUNCTION auth.uid() TO PUBLIC;
 
 CREATE OR REPLACE FUNCTION public.my_role(cid bigint)
 RETURNS text LANGUAGE sql STABLE
-AS $$ SELECT current_setting('fixture.campaign_role',true) $$;
+AS $$$ SELECT current_setting('fixture.campaign_role',true) $$$;
 GRANT EXECUTE ON FUNCTION public.my_role(bigint) TO authenticated, anon;
 
 CREATE OR REPLACE FUNCTION priv.srd35_maneuver_profile(bigint,text)
 RETURNS jsonb LANGUAGE sql STABLE
-AS $$ SELECT jsonb_build_object('ok',true) $$;
+AS $$$ SELECT jsonb_build_object('ok',true) $$$;
 REVOKE ALL ON FUNCTION priv.srd35_maneuver_profile(bigint,text) FROM PUBLIC, authenticated, anon;
 
 CREATE OR REPLACE FUNCTION priv.srd_grid_footprint_distance_ft(integer,integer,integer,integer,integer,integer)
 RETURNS integer LANGUAGE sql IMMUTABLE
-AS $$ SELECT 5 $$;
+AS $$$ SELECT 5 $$$;
 REVOKE ALL ON FUNCTION priv.srd_grid_footprint_distance_ft(integer,integer,integer,integer,integer,integer) FROM PUBLIC, authenticated, anon;
 
 CREATE OR REPLACE FUNCTION priv.srd_token_grid_footprint(bigint,text)
 RETURNS integer LANGUAGE sql STABLE
-AS $$ SELECT 1 $$;
+AS $$$ SELECT 1 $$$;
 REVOKE ALL ON FUNCTION priv.srd_token_grid_footprint(bigint,text) FROM PUBLIC, authenticated, anon;
 
 CREATE OR REPLACE FUNCTION priv.srd_parse_natural_attack_list(text)
 RETURNS jsonb LANGUAGE sql IMMUTABLE
-AS $ SELECT '[]'::jsonb $;
+AS $$ SELECT '[]'::jsonb $$;
 REVOKE ALL ON FUNCTION priv.srd_parse_natural_attack_list(text) FROM PUBLIC, authenticated, anon;
 
 GRANT EXECUTE ON FUNCTION priv.srd_parse_natural_attack_list(text) TO authenticated, service_role;
@@ -50,13 +50,13 @@ GRANT EXECUTE ON FUNCTION priv.srd_parse_natural_attack_list(text) TO authentica
 CREATE OR REPLACE FUNCTION priv.srd_condition_has_flag(bigint,text,text,text)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
 SET search_path TO pg_catalog, public, priv, pg_temp
-AS $ SELECT true $;
+AS $$ SELECT true $$;
 GRANT EXECUTE ON FUNCTION priv.srd_condition_has_flag(bigint,text,text,text) TO authenticated, service_role;
 
 CREATE OR REPLACE FUNCTION priv.fixture_condition_caller(bigint,text,text,text)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
 SET search_path TO pg_catalog, public, priv, pg_temp
-AS $ SELECT priv.srd_condition_has_flag($1,$2,$3,$4) $;
+AS $$ SELECT priv.srd_condition_has_flag($1,$2,$3,$4) $$;
 GRANT EXECUTE ON FUNCTION priv.fixture_condition_caller(bigint,text,text,text) TO authenticated;
 
 CREATE TABLE public.characters(id text, campaign_id bigint, user_id uuid);
@@ -66,7 +66,7 @@ CREATE OR REPLACE FUNCTION priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(
  bigint,text,text,text,uuid,text,text
 ) RETURNS jsonb LANGUAGE sql SECURITY DEFINER
 SET search_path TO public, priv, pg_temp
-AS $ SELECT '{}'::jsonb $;
+AS $$ SELECT '{}'::jsonb $$;
 GRANT EXECUTE ON FUNCTION priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(bigint,text,text,text,uuid,text,text)
 TO authenticated, service_role;
 
@@ -75,18 +75,18 @@ TO authenticated, service_role;
 CREATE OR REPLACE FUNCTION priv.srd_feat_saving_throw_modifier(jsonb,text)
 RETURNS integer LANGUAGE sql STABLE SECURITY DEFINER
 SET search_path TO pg_catalog, public, priv, pg_temp
-AS $ SELECT 0 $;
+AS $$ SELECT 0 $$;
 GRANT EXECUTE ON FUNCTION priv.srd_feat_saving_throw_modifier(jsonb,text) TO authenticated, service_role;
 
 CREATE OR REPLACE FUNCTION priv.srd_saving_throw_bonus(bigint,text,text,text,text)
 RETURNS integer LANGUAGE sql STABLE SECURITY DEFINER
 SET search_path TO pg_catalog, public, priv, pg_temp
-AS $ SELECT priv.srd_feat_saving_throw_modifier('[]'::jsonb,'fortitude') $;
+AS $$ SELECT priv.srd_feat_saving_throw_modifier('[]'::jsonb,'fortitude') $$;
 
 CREATE OR REPLACE FUNCTION public.srd_consultar_modificadores_manobra_srd(
   bigint,text,text,text,boolean,boolean
 ) RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER
-AS $fn$
+AS $$fn$
 BEGIN
   IF auth.uid() IS NULL OR public.my_role($1) IS DISTINCT FROM 'GM' THEN
     RAISE EXCEPTION 'Somente o Mestre';
@@ -96,11 +96,11 @@ BEGIN
   PERFORM priv.srd_token_grid_footprint($1,$2);
   RETURN '{"ok":true}'::jsonb;
 END
-$fn$;
+$fn$$;
 
 CREATE OR REPLACE FUNCTION public.srd_listar_ataques_naturais_oportunidade_srd(bigint,text)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER
-AS $fn$
+AS $$fn$
 BEGIN
   IF auth.uid() IS NULL OR public.my_role($1) IS DISTINCT FROM 'GM' THEN
     RAISE EXCEPTION 'Somente o Mestre';
@@ -109,7 +109,7 @@ BEGIN
   PERFORM priv.srd_parse_natural_attack_list('bite');
   RETURN '{"ok":true}'::jsonb;
 END
-$fn$;
+$fn$$;
 
 GRANT EXECUTE ON FUNCTION public.srd_consultar_modificadores_manobra_srd(bigint,text,text,text,boolean,boolean) TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.srd_listar_ataques_naturais_oportunidade_srd(bigint,text) TO authenticated, service_role;
