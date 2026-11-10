@@ -88,3 +88,17 @@ O fixture de ficha modela as mutações de `gm_reopen_sheet` e `gm_set_bonus`: o
 - `gm_grant`: fixture sintética de stale GM check antes do lock do personagem e controle campaign-first que rejeita após revogação. Não executa a RPC real nem valida o branch de concessão de item.
 - `srd_remove_campaign_condition/effect`: fixture de stale GM check seguido de remoção direta e controle campaign-first. A aplicação de efeito é coberta por fixture própria.
 - Os testes modelam concorrência e autorização, não substituem integração autenticada contra as funções instaladas.
+
+
+## Ciclo de vida de NPC vinculado e exclusão de ficha
+
+`npc_lifecycle_test.sql` é executado pelo mesmo script de harness. Ele usa tabelas temporárias descartáveis para verificar o contrato proposto de remoção de um token:
+- remover somente o token selecionado da cena e da ordem de iniciativa;
+- limpar equipamento, instâncias, condições e sequências/attempts daquele token;
+- cancelar pendências AOO/magia ligadas ao token;
+- encerrar efeitos em que o token era fonte/concentrador;
+- preservar o estado de outros tokens na mesma campanha;
+- exigir ausência de todas as referências JSON `sourceCharacterId` antes de excluir a ficha-fonte;
+- modelar a FK `ON DELETE RESTRICT` de sequência NPC para personagem.
+
+O teste é intencionalmente sintético: não executa `excluir_ficha_propria`, nenhuma RPC de remoção (que ainda não existe), triggers reais, RLS, nem banco Supabase. Ele valida invariantes e a transação-modelo, não uma implementação de produção. A migration/RPC futura deverá adaptar os estados terminais e as relações ao schema efetivo, e incluir autorização GM e lock campaign-first com revalidação.
