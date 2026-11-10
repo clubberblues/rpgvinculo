@@ -138,3 +138,11 @@ FOR EACH ROW EXECUTE FUNCTION lock_fixture.enforce_transfer_member_role();
 INSERT INTO lock_fixture.transfer_trigger_campaigns VALUES (1,'owner-a');
 INSERT INTO lock_fixture.transfer_trigger_members VALUES
  (1,'owner-a','GM'),(1,'player-b','PLAYER');
+
+CREATE TABLE lock_fixture.gm_gate_effects (
+  campaign_id integer NOT NULL,
+  target_id text NOT NULL,
+  effect_count integer NOT NULL DEFAULT 0,
+  PRIMARY KEY (campaign_id,target_id)
+);
+INSERT INTO lock_fixture.gm_gate_effects VALUES (1,'target-a',0);
