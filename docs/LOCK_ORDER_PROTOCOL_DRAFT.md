@@ -681,3 +681,17 @@ A consulta read-only filtrou funções instaladas que fazem INSERT/UPDATE em cam
 - `public.gm_transfer` (OID 18749): atualiza uma campanha existente sem lock/revalidação pós-lock; corrida TOCTOU documentada acima.
 
 Assim, nesta fotografia não apareceu outro writer direto authenticated de campaigns sem lock explícito ou herdado além de gm_transfer. O filtro é estático por corpo SQL e não substitui auditoria de triggers, chamadas dinâmicas ou consumidores externos.
+
+
+### Corridas de estado: descanso longo e poção de cura (snapshot read-only 2026-11-10)
+
+Foram lidos os corpos instalados e os grants efetivos dos endpoints:
+
+- `public.descanso_longo_personagem_srd` (OID 24366): SECURITY DEFINER, EXECUTE authenticated. Bloqueia primeiro `characters` FOR UPDATE; consulta `campaigns.state` sem lock; depois bloqueia a ficha e altera PV, condições, magias e recursos. Se a campanha estiver em exploração na leitura, uma transição concorrente para combate pode confirmar enquanto o descanso continua e escreve estado de descanso durante combate. É uma corrida de estado/serialização, não um deadlock demonstrado.
+- `public.usar_pocao_cura_srd_manual` (OID 24655): SECURITY DEFINER, EXECUTE authenticated. Valida propriedade, lê `campaign_id` e `campaigns.state` sem lock. Só chama `consumir_acao_turno_srd` (OID 20405) se a leitura já indicar combate; essa função bloqueia campanha FOR UPDATE e revalida estado/turno. Se a poção observar exploração e o Mestre iniciar combate antes do consumo, o ramo não chama o consumo de ação e pode curar/consumir inventário sem gastar ação no combate. O lock da campanha dentro do helper de ação não cobre o ramo de exploração.
+- `public.alternar_estado_campanha` (OID 20103) é o caminho de transição autenticado para GM e bloqueia `campaigns` FOR UPDATE antes de alterar estado/combat_data. `public.start_combat` (OID 19090) não tem EXECUTE para authenticated nem anon no snapshot e não deve ser tratado como rota ativa do cliente.
+- `priv.srd_sync_character_vital_condition` (OID 24908) atualiza condições vitais sem bloquear campanha; deve herdar a pré-condição de campaign-first dos entrypoints que operam em campanha, sem adquirir campanha internamente depois de ficha/character.
+
+Correção candidata: ambos os endpoints devem localizar campanha por leitura MVCC, bloquear a linha da campanha primeiro, revalidar vínculo/owner/estado após o lock e só então bloquear personagem, ficha, equipamento e recursos na ordem validada de cada domínio. Descanso deve rejeitar combate já iniciado; poção deve decidir e consumir a ação sob o mesmo lock de campanha que serializa a transição, sem uma janela entre leitura de estado e consumo. Preservar as validações de propriedade, alvo, PV, item, rolagens e regras de ação. Testes concorrentes obrigatórios: descanso × início de combate; poção × início de combate; poção durante combate × ação já consumida; duas poções concorrentes × última unidade do inventário.
+
+Limite da evidência: análise estática dos corpos instalados e grants, sem execução concorrente das RPCs reais; nenhuma função/migration/ACL/policy/dado foi alterado no Supabase.
