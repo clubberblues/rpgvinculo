@@ -93,3 +93,17 @@ Auditoria adicional dos callsites de `mesa.html`:
 - Se o RPC de gravação da cena falhar depois do upload, não removemos automaticamente o arquivo: falha de rede pode deixar o resultado da transação ambíguo, e remover pode quebrar uma referência que tenha sido persistida. Esse caso precisa de GC compensatório com janela de retenção e verificação do JSONB atual.
 - Substituir mapa ou retrato também deixa o arquivo anterior sem referência. Não foi adicionada remoção imediata: duas abas podem manter snapshots diferentes, e uma aba antiga ainda pode persistir referência ao asset anterior. A solução correta é GC atrasado que varre referências atuais de `backgroundPath` e `tokens[].imagemPath`, respeita uma janela de segurança e só então remove via Storage API.
 - A compensação cobre somente falha de signed URL anterior à gravação da cena; não é transação distribuída e não substitui GC de assets órfãos.
+
+
+## Finalizador remoto — falhas confirmadas no snapshot atual
+
+Leitura direta das definições instaladas em PostgreSQL, sem executar as RPCs:
+
+- Wrapper public.preparar_exclusao_campanha_propria(bigint) (OID 24881) e implementação priv.preparar_exclusao_campanha_propria(bigint) (OID 24885) são executáveis por authenticated, não por anon.
+- A preparação bloqueia primeiro a linha de public.campaigns (FOR UPDATE) e depois insere/atualiza priv.campaign_deletion_cleanup.
+- Wrapper public.finalizar_exclusao_campanha_propria(bigint) (OID 24882) e implementação priv.finalizar_exclusao_campanha_propria(bigint) (OID 24886) também são executáveis por authenticated, não por anon.
+- O finalizador bloqueia primeiro o marcador de cleanup (FOR UPDATE) e depois a campanha (FOR UPDATE), invertendo a ordem da preparação. Isso mantém uma janela de deadlock entre chamadas concorrentes de preparação/finalização.
+- O finalizador atual não consulta storage.objects, não verifica prefixos nos buckets midia/mesa-media e não exige que capas tenham sido removidas. Depois de uma preparação válida, o proprietário pode chamar a RPC diretamente sem executar a limpeza do navegador; a campanha e o marcador podem ser excluídos enquanto objetos continuam no Storage.
+- A resposta deleted: true não prova que os objetos foram removidos. O estado de Storage é independente da transação PostgreSQL e precisa de verificação explícita antes da exclusão definitiva.
+
+Esses pontos foram confirmados por leitura de pg_get_functiondef e has_function_privilege no projeto remoto. Não foram feitas chamadas às RPCs nem alterações de banco. A correção proposta neste documento deve resolver conjuntamente: ordem campaign → cleanup nos dois caminhos, revalidação pós-lock, verificação server-side dos objetos restantes e retry seguro. A limpeza feita apenas pelo navegador não pode ser tratada como pré-condição confiável para o finalizador.
