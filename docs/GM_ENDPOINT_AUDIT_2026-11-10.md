@@ -242,3 +242,8 @@ Não há evidência no conjunto atual de fichas incompletas geradas por essas ro
 
 Nenhuma RPC foi invocada para testar a exposição; nenhuma alteração remota foi feita.
 
+
+
+### Classificação do risco e preservação do contrato de execução
+
+A exposição identificada é principalmente de integridade do fluxo/regras de criação, não evidência de IDOR: as duas sobrecargas verificam `auth.uid()` e criam o personagem para o próprio usuário. Não foi encontrado call site no frontend atual; a chamada ativa é ao agregador. O problema é que qualquer cliente autenticado pode chamar o helper público e deixar uma ficha parcial sem passar por todas as etapas da transação agregada. Nenhum dos cinco personagens atuais apresenta os sinais agregados de criação incompleta. A recomendação de esconder os helpers deve ser validada com o contrato do wrapper: como o agregador está INVOKER, não revogar EXECUTE sem torná-lo uma fronteira segura (por exemplo, SECURITY DEFINER com autenticação obrigatória, search_path fixo, referências qualificadas e revisão de todos os helpers chamados).
