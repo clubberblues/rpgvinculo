@@ -107,3 +107,34 @@ INSERT INTO lock_fixture.gm_gate_inventory VALUES (1,'player-x',0);
 CREATE TABLE lock_fixture.gm_gate_events (event_name text PRIMARY KEY);
 
 CREATE TABLE lock_fixture.owner_gate_events (event_name text PRIMARY KEY);
+
+-- Exact behavioral model of public.enforce_campaign_member_role + gm_transfer order.
+CREATE TABLE lock_fixture.transfer_trigger_campaigns (
+  id integer PRIMARY KEY,
+  owner_id text NOT NULL
+);
+CREATE TABLE lock_fixture.transfer_trigger_members (
+  campaign_id integer NOT NULL REFERENCES lock_fixture.transfer_trigger_campaigns(id),
+  user_id text NOT NULL,
+  role text NOT NULL,
+  PRIMARY KEY (campaign_id,user_id)
+);
+CREATE FUNCTION lock_fixture.enforce_transfer_member_role()
+RETURNS trigger LANGUAGE plpgsql AS $$
+DECLARE v_owner text;
+BEGIN
+  SELECT owner_id INTO v_owner FROM lock_fixture.transfer_trigger_campaigns WHERE id=NEW.campaign_id;
+  IF NEW.user_id=v_owner THEN
+    NEW.role:='GM';
+  ELSIF NEW.role='GM' THEN
+    NEW.role:='PLAYER';
+  END IF;
+  RETURN NEW;
+END $$;
+CREATE TRIGGER enforce_transfer_member_role
+BEFORE INSERT OR UPDATE OF campaign_id,user_id,role
+ON lock_fixture.transfer_trigger_members
+FOR EACH ROW EXECUTE FUNCTION lock_fixture.enforce_transfer_member_role();
+INSERT INTO lock_fixture.transfer_trigger_campaigns VALUES (1,'owner-a');
+INSERT INTO lock_fixture.transfer_trigger_members VALUES
+ (1,'owner-a','GM'),(1,'player-b','PLAYER');
