@@ -36,7 +36,7 @@ BEGIN
      OR position('public.members' in (SELECT prosrc FROM pg_proc WHERE oid=v_oid))=0
      OR position('public.characters' in (SELECT prosrc FROM pg_proc WHERE oid=v_oid))=0
      OR position('FROM public.characters' in (SELECT prosrc FROM pg_proc WHERE oid=v_oid))=0
-     OR position('FROM public.members' in (SELECT prosrc FROM pg_proc WHERE oid=v_oid))=0
+     OR position('JOIN public.members' in (SELECT prosrc FROM pg_proc WHERE oid=v_oid))=0
      OR position('FROM public.characters' in (SELECT prosrc FROM pg_proc WHERE oid=v_oid))>position('FROM public.srd_character_weapon_instances' in (SELECT prosrc FROM pg_proc WHERE oid=v_oid)) THEN
     RAISE EXCEPTION 'Private 7-argument helper lost its defense-in-depth ownership guard';
   END IF;
