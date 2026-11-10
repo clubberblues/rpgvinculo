@@ -213,3 +213,12 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - O agregador foi mudado de SECURITY DEFINER para INVOKER em 20261104042251, e o helper 7 args permaneceu EXECUTE authenticated. Revogar isoladamente quebraria o wrapper; correção precisa rever o modelo de execução e testar o agregador.
 - Dados atuais: 5 fichas SRD, todas com identidade, talentos e equipamento inicial concluído; nenhuma ficha incompleta observada.
 - Nenhuma chamada RPC de teste ou alteração remota foi feita.
+
+
+## Bloqueio de exclusão: tokens NPC vinculados por JSON
+
+- Snapshot atual contém 3 tokens NPC em 2 campanhas apontando para 2 personagens existentes via `sourceCharacterId`; ambos têm `characters.campaign_id IS NULL`.
+- `excluir_ficha_propria` só bloqueia campanha por `characters.campaign_id` e só atualiza `combat_data`; não limpa `cba_data.tokens[*].sourceCharacterId`.
+- Após corrigir as relações inexistentes, excluir essas fichas deixaria referência JSON quebrada, afetando RPCs SRD de NPC que dependem da ficha de origem.
+- Antes da correção, decidir entre bloquear exclusão até desvincular os NPCs ou converter o token para snapshot independente. Se mutar, localizar todas as campanhas pelo JSON, lock em ID crescente, revalidar links, depois bloquear personagem.
+- Nenhuma ficha/token/campanha foi alterada.
