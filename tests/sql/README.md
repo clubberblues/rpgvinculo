@@ -10,7 +10,7 @@ Executados em um serviço PostgreSQL descartável no GitHub Actions. Não se con
 
 ## Concorrência e locks
 
-O script lock_cycle_test.sh modela oito padrões sintéticos de inversão e um controle positivo:
+O script lock_cycle_test.sh modela nove padrões sintéticos de inversão e um controle positivo:
 
 1. campanha → instância de arma versus instância de arma → campanha (início PC de Ataque Total versus resolução).
 2. campanha → personagem versus personagem → campanha.
@@ -19,7 +19,7 @@ O script lock_cycle_test.sh modela oito padrões sintéticos de inversão e um c
 5. campanha → personagem → ficha → recurso de classe versus personagem → ficha → recurso → campanha (condicional à colisão da mesma linha de personagem/recurso).
 6. campanha → personagem → ficha versus personagem → ficha → campanha (conjuração multialvo e estabilização).
 7. campanha → ataque versus ataque → pending → campanha (mudança de estado do combate versus resolução AOO).
-8. sequência NPC → campanha versus campanha → tentativa → sequência NPC.
+8. sequência NPC → campanha versus campanha → tentativa → sequência NPC.\n9. campanha → marcador de exclusão versus marcador de exclusão → campanha (preparação versus finalização de exclusão em duas fases).
 
 O controle positivo faz duas sessões adquirirem campanha → efeito e verifica que ambas concluem sem deadlock.
 
@@ -111,3 +111,8 @@ O teste é intencionalmente sintético: não executa `excluir_ficha_propria`, ne
 
 
 CI #208 [42743669088](https://github.com/clubberblues/rpgvinculo/actions/runs/42743669088) concluiu **success** no commit `cc1c5c7c179e289afd96a097c763884aa55bc63d`. O log confirma 12 assertions com CHECK, incluindo a sequência NPC remanescente que mantém a ficha-fonte referenciada e a definição da FK `ON DELETE RESTRICT`; a transação termina em ROLLBACK. O fixture usa 11 tabelas temporárias e não executa RPCs reais.
+
+
+### Exclusão de campanha em duas fases
+
+O harness também reproduz a inversão potencial entre `preparar_exclusao_campanha_propria` (campanha → marcador `priv.campaign_deletion_cleanup`) e `finalizar_exclusao_campanha_propria` (marcador → campanha). A reprodução é sintética e usa a tabela descartável `lock_fixture.campaign_deletion_cleanup`; não executa os wrappers nem as implementações privadas reais.
