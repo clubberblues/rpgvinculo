@@ -267,3 +267,15 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - Risco restante de banco: o RPC finalizador não exige que `storage.objects` esteja vazio; chamada direta autenticada pode pular a limpeza. O marcador bloqueia writes no bucket `midia`, mas não no `mesa-media`, cuja política atual apenas exige papel GM. A solução precisa fechar o upload/update privado durante o marcador e validar os prefixos vazios no finalizador.
 - Os 44 arquivos públicos órfãos totalizam 55.708.560 bytes (~53,1 MiB), criados entre 20/10 e 03/11/2026. Não houve remoção.
 
+
+
+
+
+## Atualização — bucket privado CBA
+
+- Corrigido no lobby o percurso de limpeza para incluir `mesa-media`; validador estático exige coleta e remoção de ambos os buckets.
+- CI #11 (static), #220 (PostgreSQL fixtures) e #59 (syntax) passaram no commit `31882ee88881e5cc335b35f4de0e5544fe4e1661`.
+- Nova falha confirmada no banco: `priv.pasta_gm` testa o primeiro segmento do path como numérico, mas o frontend usa `campaigns/{id}/...`; `storage.foldername` retorna `['campaigns','{id}']`, então a política atual nega operações para esse path.
+- A política SELECT usa `public.can_read_media`, dependente de linha em `public.media`; a tabela e `public.layers` estão vazias e não há trigger de Storage que crie esses metadados. O CBA faz upload e cria signed URL sem inserir `public.media`.
+- O contrato de Storage privado precisa de revisão integrada (path, GM, membros/visibilidade, marcador de exclusão, upload, signed URL e remoção). Nenhuma policy ou função de produção foi alterada.
+
