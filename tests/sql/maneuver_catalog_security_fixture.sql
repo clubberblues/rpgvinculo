@@ -316,6 +316,15 @@ BEGIN
   )->>'weapon_hand_slot' <> 'main_hand' THEN
     RAISE EXCEPTION 'Trusted service role could not execute the guarded internal helper for an owned character';
   END IF;
+  BEGIN
+    PERFORM priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(
+      2,'owned-character','target','atk-corpo',
+      '33333333-3333-4333-8333-333333333333'::uuid,'main_hand',NULL
+    );
+    RAISE EXCEPTION 'Private iterative helper unexpectedly accepted an owned character under the wrong campaign';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM='Private iterative helper unexpectedly accepted an owned character under the wrong campaign' THEN RAISE; END IF;
+  END;
 END
 $service$;
 RESET ROLE;
