@@ -205,3 +205,8 @@ As RPCs `gm_grant`, `gm_reopen_sheet`, `gm_set_bonus`, `media_gc`, `gm_get_code`
 ### Varredura de role checks — não generalizar
 
 Catálogo público: 41 funções authenticated mencionam `my_role` em comparação com GM; isso é contagem lexical, não total de vulnerabilidades. A lista mistura leituras, dono da ficha, jogador e GM, e RPCs de AOO com atores diferentes. A próxima etapa precisa classificar cada transição por ator autorizado e lock adquirido, preservando ações do jogador; não exigir GM globalmente. Helpers `priv` não são RPCs diretas apenas por terem EXECUTE quando schema USAGE não está concedido.
+
+
+### Cobertura sintética de ficha GM
+
+Adicionar aos endpoints da segunda camada os casos `gm_reopen_sheet` e `gm_set_bonus`: ambos modificam ficha sem campaign lock após a autorização GM. O novo fixture modela reabertura e alteração de bônus após revogação concorrente; a correção candidata é campaign → revalidar GM/vínculo → character → sheet. Ainda é necessário inspecionar as assinaturas e efeitos colaterais completos antes de gerar SQL de migração.
