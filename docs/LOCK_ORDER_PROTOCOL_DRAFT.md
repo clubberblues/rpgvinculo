@@ -633,3 +633,6 @@ O workflow PostgreSQL [42730159992](https://github.com/clubberblues/rpgvinculo/a
 ### Snapshot operacional read-only — 2026-11-10
 
 Consulta pontual a pg_stat_database para o banco atual `postgres`: desde `stats_reset = 2026-08-25 20:33:23+00`, foram contabilizados 4.268.202 commits, 8.365 rollbacks, 0 deadlocks e 0 conflicts. No instante da consulta havia 0 sessões aguardando lock e 0 locks não concedidos. Isso não exclui deadlocks anteriores ao reset, transações muito breves entre amostragens ou ciclos potenciais ainda não exercitados; os prefixos conflitantes continuam demonstrados nos corpos das RPCs e precisam de correção/teste transacional.
+
+
+**Detalhe conferido nos logs do job #72:** `footprint_fixture.sql` e `footprint_test.sql` foram executados; o log registrou `footprint helper assertions passed`. O `lock_cycle_test.sh` registrou oito mensagens `passed synthetic lock inversion` e uma `passed consistent lock order`. As mensagens `ERROR: deadlock detected` aparecem nas sessões sintéticas intencionalmente invertidas e são esperadas pelo teste; o job terminou `success`. Isso confirma o harness e os helpers copiados, não os RPCs instalados no Supabase.
