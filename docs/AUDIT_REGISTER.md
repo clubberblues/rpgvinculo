@@ -614,3 +614,12 @@ A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24
 - `public.srd_resolve_dying_round` mantém ordem personagem → ficha → campanha → condição, incompatível com campaign-first e potencial fonte de deadlock concorrente com operações de combate.
 - O contrato deve serializar escritores de condições/efeitos por campanha e tratar alterações internas como parte da transação de reação; sem trigger AOO nessas tabelas, a consistência hoje depende dos contratos RPC.
 - Nenhuma alteração remota ou execução funcional realizada; evidência estática documentada em `docs/ACTIVE_WORK_ITEM.md`.
+
+
+### Fúria: novos callers com ordem de bloqueio inconsistente (2026-11-10)
+
+- `public.usar_furia_barbaro_srd` bloqueia personagem e ficha antes da campanha; `public.end_combat` bloqueia efeitos de Fúria antes de obter lock da campanha. Ambos divergem do protocolo campaign-first e podem formar espera circular com operações de combate.
+- Os helpers internos `priv.srd_end_barbarian_rage` e `_token` bloqueiam o efeito primeiro; são seguros apenas quando o caller já mantém lock da campanha. O catálogo indica que não são diretamente executáveis por authenticated.
+- Os caminhos NPC via `usar_furia_barbaro_npc_srd`, descanso longo, expiração de condições, mudança de estado e trigger de rodada obtêm campaign lock antes de chamar os helpers; não generalizar a falha a todos os caminhos.
+- CI no commit `1959849`: JS ficha/lobby, JS mesa e fixtures PostgreSQL passaram; inicialização do stack descartável para replay de migrations falhou antes do replay começar.
+- Correção requerida: campanha primeiro e revalidação de autorização/estado/turno, depois personagem/ficha/efeito/recurso; testes de concorrência reais/isolados antes de considerar resolvido. Nenhuma execução mutável remota.
