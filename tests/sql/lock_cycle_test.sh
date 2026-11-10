@@ -357,35 +357,17 @@ SQL
 run_expected_stale_owner_race
 run_expected_serialized_owner_transfer
 
-# GM-role TOCTOU in authenticated inventory RPCs. This models stale role
-# validation around the campaign lock; it does not execute Supabase RPCs.
+
+# GM-role TOCTOU in authenticated inventory RPCs. Synthetic only; production RPCs
+# are not executed. Both competing operations remain inside real transactions.
 run_expected_stale_gm_inventory_race() {
-  local tmp role item_count sa sb seen
+  local tmp role item_count sa sb
   tmp="$(mktemp -d)"
-  (
-    psql -v ON_ERROR_STOP=1 -c "DO \$\$ DECLARE v_role text; BEGIN SELECT role INTO v_role FROM lock_fixture.gm_gate_members WHERE campaign_id=1 AND user_id='gm-a'; IF v_role IS DISTINCT FROM 'GM' THEN RAISE EXCEPTION 'initial GM check failed'; END IF; END \$\$;"
-    psql -v ON_ERROR_STOP=1 -c "INSERT INTO lock_fixture.gm_gate_events(event_name) VALUES ('stale-role-checked')"
-    seen=""
-    for _ in $(seq 1 150); do
-      seen="$(psql -Atq -c "SELECT EXISTS(SELECT 1 FROM lock_fixture.gm_gate_events WHERE event_name='gm-revoked')")"
-      [[ "$seen" == "t" ]] && break
-      sleep 0.02
-    done
-    [[ "$seen" == "t" ]] || { echo "timed out waiting for GM revocation"; exit 1; }
-    psql -v ON_ERROR_STOP=1 -c "UPDATE lock_fixture.gm_gate_inventory SET item_count=item_count+1 WHERE campaign_id=1 AND user_id='player-x'"
-  ) >"$tmp/a.log" 2>&1 &
+  psql -v ON_ERROR_STOP=1 -c "UPDATE lock_fixture.gm_gate_members SET role='GM' WHERE campaign_id=1 AND user_id='gm-a'; UPDATE lock_fixture.gm_gate_inventory SET item_count=0 WHERE campaign_id=1 AND user_id='player-x';" >/dev/null
+  psql -v ON_ERROR_STOP=1 -c "BEGIN; DO \$\$ DECLARE v_role text; BEGIN SELECT role INTO v_role FROM lock_fixture.gm_gate_members WHERE campaign_id=1 AND user_id='gm-a'; IF v_role IS DISTINCT FROM 'GM' THEN RAISE EXCEPTION 'initial GM check failed'; END IF; END \$\$; SELECT pg_sleep(0.4); UPDATE lock_fixture.gm_gate_inventory SET item_count=item_count+1 WHERE campaign_id=1 AND user_id='player-x'; COMMIT;" >"$tmp/a.log" 2>&1 &
   local a=$!
-  (
-    seen=""
-    for _ in $(seq 1 150); do
-      seen="$(psql -Atq -c "SELECT EXISTS(SELECT 1 FROM lock_fixture.gm_gate_events WHERE event_name='stale-role-checked')")"
-      [[ "$seen" == "t" ]] && break
-      sleep 0.02
-    done
-    [[ "$seen" == "t" ]] || { echo "timed out waiting for stale role check"; exit 1; }
-    psql -v ON_ERROR_STOP=1 -c "UPDATE lock_fixture.gm_gate_members SET role='PLAYER' WHERE campaign_id=1 AND user_id='gm-a'"
-    psql -v ON_ERROR_STOP=1 -c "INSERT INTO lock_fixture.gm_gate_events(event_name) VALUES ('gm-revoked')"
-  ) >"$tmp/b.log" 2>&1 &
+  sleep 0.1
+  psql -v ON_ERROR_STOP=1 -c "UPDATE lock_fixture.gm_gate_members SET role='PLAYER' WHERE campaign_id=1 AND user_id='gm-a'" >"$tmp/b.log" 2>&1 &
   local b=$!
   set +e
   wait "$a"; sa=$?
@@ -407,7 +389,7 @@ run_expected_stale_gm_inventory_race() {
 run_expected_serialized_gm_inventory_rejection() {
   local tmp role item_count sa sb
   tmp="$(mktemp -d)"
-  psql -v ON_ERROR_STOP=1 -c "UPDATE lock_fixture.gm_gate_members SET role='GM' WHERE campaign_id=1 AND user_id='gm-a'; UPDATE lock_fixture.gm_gate_inventory SET item_count=0 WHERE campaign_id=1 AND user_id='player-x'; DELETE FROM lock_fixture.gm_gate_events;" >/dev/null
+  psql -v ON_ERROR_STOP=1 -c "UPDATE lock_fixture.gm_gate_members SET role='GM' WHERE campaign_id=1 AND user_id='gm-a'; UPDATE lock_fixture.gm_gate_inventory SET item_count=0 WHERE campaign_id=1 AND user_id='player-x';" >/dev/null
   psql -v ON_ERROR_STOP=1 -c "BEGIN; SELECT id FROM lock_fixture.gm_gate_campaigns WHERE id=1 FOR UPDATE; SELECT pg_sleep(0.4); UPDATE lock_fixture.gm_gate_members SET role='PLAYER' WHERE campaign_id=1 AND user_id='gm-a'; COMMIT;" >"$tmp/a.log" 2>&1 &
   local a=$!
   sleep 0.1
@@ -437,33 +419,13 @@ run_expected_serialized_gm_inventory_rejection
 # Owner-authorized membership administration (gm_set_role/gm_kick) after transfer.
 # Synthetic only; this does not invoke production RPCs or priv.need_owner.
 run_expected_stale_owner_admin_action() {
-  local tmp owner target_role sa sb seen
+  local tmp owner target_role sa sb
   tmp="$(mktemp -d)"
-  psql -v ON_ERROR_STOP=1 -c "UPDATE lock_fixture.ownership_campaigns SET owner_id='owner-a' WHERE id=1; UPDATE lock_fixture.ownership_members SET role=CASE user_id WHEN 'owner-a' THEN 'GM' ELSE 'PLAYER' END WHERE campaign_id=1; INSERT INTO lock_fixture.ownership_members(campaign_id,user_id,role) VALUES (1,'player-c','PLAYER') ON CONFLICT(campaign_id,user_id) DO UPDATE SET role='PLAYER'; DELETE FROM lock_fixture.owner_gate_events;" >/dev/null
-  (
-    psql -v ON_ERROR_STOP=1 -c "DO \$\$ DECLARE v_owner text; BEGIN SELECT owner_id INTO v_owner FROM lock_fixture.ownership_campaigns WHERE id=1; IF v_owner IS DISTINCT FROM 'owner-a' THEN RAISE EXCEPTION 'initial owner check failed'; END IF; END \$\$;"
-    psql -v ON_ERROR_STOP=1 -c "INSERT INTO lock_fixture.owner_gate_events VALUES ('owner-checked')"
-    seen=""
-    for _ in $(seq 1 150); do
-      seen="$(psql -Atq -c "SELECT EXISTS(SELECT 1 FROM lock_fixture.owner_gate_events WHERE event_name='ownership-transferred')")"
-      [[ "$seen" == "t" ]] && break
-      sleep 0.02
-    done
-    [[ "$seen" == "t" ]] || { echo "timed out waiting for ownership transfer"; exit 1; }
-    psql -v ON_ERROR_STOP=1 -c "DELETE FROM lock_fixture.ownership_members WHERE campaign_id=1 AND user_id='player-c'"
-  ) >"$tmp/a.log" 2>&1 &
+  psql -v ON_ERROR_STOP=1 -c "UPDATE lock_fixture.ownership_campaigns SET owner_id='owner-a' WHERE id=1; UPDATE lock_fixture.ownership_members SET role=CASE user_id WHEN 'owner-a' THEN 'GM' ELSE 'PLAYER' END WHERE campaign_id=1; INSERT INTO lock_fixture.ownership_members(campaign_id,user_id,role) VALUES (1,'player-c','PLAYER') ON CONFLICT(campaign_id,user_id) DO UPDATE SET role='PLAYER';" >/dev/null
+  psql -v ON_ERROR_STOP=1 -c "BEGIN; DO \$\$ DECLARE v_owner text; BEGIN SELECT owner_id INTO v_owner FROM lock_fixture.ownership_campaigns WHERE id=1; IF v_owner IS DISTINCT FROM 'owner-a' THEN RAISE EXCEPTION 'initial owner check failed'; END IF; END \$\$; SELECT pg_sleep(0.4); DELETE FROM lock_fixture.ownership_members WHERE campaign_id=1 AND user_id='player-c'; COMMIT;" >"$tmp/a.log" 2>&1 &
   local a=$!
-  (
-    seen=""
-    for _ in $(seq 1 150); do
-      seen="$(psql -Atq -c "SELECT EXISTS(SELECT 1 FROM lock_fixture.owner_gate_events WHERE event_name='owner-checked')")"
-      [[ "$seen" == "t" ]] && break
-      sleep 0.02
-    done
-    [[ "$seen" == "t" ]] || { echo "timed out waiting for owner check"; exit 1; }
-    psql -v ON_ERROR_STOP=1 -c "UPDATE lock_fixture.ownership_campaigns SET owner_id='player-b' WHERE id=1; UPDATE lock_fixture.ownership_members SET role=CASE user_id WHEN 'owner-a' THEN 'PLAYER' WHEN 'player-b' THEN 'GM' ELSE role END WHERE campaign_id=1"
-    psql -v ON_ERROR_STOP=1 -c "INSERT INTO lock_fixture.owner_gate_events VALUES ('ownership-transferred')"
-  ) >"$tmp/b.log" 2>&1 &
+  sleep 0.1
+  psql -v ON_ERROR_STOP=1 -c "BEGIN; UPDATE lock_fixture.ownership_campaigns SET owner_id='player-b' WHERE id=1; UPDATE lock_fixture.ownership_members SET role=CASE user_id WHEN 'owner-a' THEN 'PLAYER' WHEN 'player-b' THEN 'GM' ELSE role END WHERE campaign_id=1; COMMIT;" >"$tmp/b.log" 2>&1 &
   local b=$!
   set +e
   wait "$a"; sa=$?
@@ -485,7 +447,7 @@ run_expected_stale_owner_admin_action() {
 run_expected_serialized_owner_admin_rejection() {
   local tmp owner target_role sa sb
   tmp="$(mktemp -d)"
-  psql -v ON_ERROR_STOP=1 -c "UPDATE lock_fixture.ownership_campaigns SET owner_id='owner-a' WHERE id=1; UPDATE lock_fixture.ownership_members SET role=CASE user_id WHEN 'owner-a' THEN 'GM' ELSE 'PLAYER' END WHERE campaign_id=1; INSERT INTO lock_fixture.ownership_members(campaign_id,user_id,role) VALUES (1,'player-c','PLAYER') ON CONFLICT(campaign_id,user_id) DO UPDATE SET role='PLAYER'; DELETE FROM lock_fixture.owner_gate_events;" >/dev/null
+  psql -v ON_ERROR_STOP=1 -c "UPDATE lock_fixture.ownership_campaigns SET owner_id='owner-a' WHERE id=1; UPDATE lock_fixture.ownership_members SET role=CASE user_id WHEN 'owner-a' THEN 'GM' ELSE 'PLAYER' END WHERE campaign_id=1; INSERT INTO lock_fixture.ownership_members(campaign_id,user_id,role) VALUES (1,'player-c','PLAYER') ON CONFLICT(campaign_id,user_id) DO UPDATE SET role='PLAYER';" >/dev/null
   psql -v ON_ERROR_STOP=1 -c "BEGIN; SELECT id FROM lock_fixture.ownership_campaigns WHERE id=1 FOR UPDATE; SELECT pg_sleep(0.4); UPDATE lock_fixture.ownership_campaigns SET owner_id='player-b' WHERE id=1; UPDATE lock_fixture.ownership_members SET role=CASE user_id WHEN 'owner-a' THEN 'PLAYER' WHEN 'player-b' THEN 'GM' ELSE role END WHERE campaign_id=1; COMMIT;" >"$tmp/a.log" 2>&1 &
   local a=$!
   sleep 0.1
