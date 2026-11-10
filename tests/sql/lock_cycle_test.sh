@@ -571,3 +571,60 @@ run_expected_campaign_first_gm_effect_rejection() {
 
 run_expected_stale_gm_effect_after_campaign_wait
 run_expected_campaign_first_gm_effect_rejection
+
+# Mirrors gm_set_code and gm_set_role: need_owner check without campaign lock.
+run_expected_stale_owner_set_code_after_transfer() {
+  local tmp owner code sa sb
+  tmp="$(mktemp -d)"
+  psql -v ON_ERROR_STOP=1 -c "UPDATE lock_fixture.ownership_campaigns SET owner_id='owner-a' WHERE id=1; UPDATE lock_fixture.owner_gate_codes SET code='1111' WHERE campaign_id=1;" >/dev/null
+  psql -v ON_ERROR_STOP=1 -c "BEGIN; DO \$\$ DECLARE v_owner text; BEGIN SELECT owner_id INTO v_owner FROM lock_fixture.ownership_campaigns WHERE id=1; IF v_owner IS DISTINCT FROM 'owner-a' THEN RAISE EXCEPTION 'initial owner check failed'; END IF; END \$\$; SELECT pg_sleep(0.4); UPDATE lock_fixture.owner_gate_codes SET code='2222' WHERE campaign_id=1; COMMIT;" >"$tmp/a.log" 2>&1 &
+  local a=$!
+  sleep 0.1
+  psql -v ON_ERROR_STOP=1 -c "BEGIN; UPDATE lock_fixture.ownership_campaigns SET owner_id='player-b' WHERE id=1; UPDATE lock_fixture.ownership_members SET role=CASE user_id WHEN 'owner-a' THEN 'PLAYER' WHEN 'player-b' THEN 'GM' ELSE role END WHERE campaign_id=1; COMMIT;" >"$tmp/b.log" 2>&1 &
+  local b=$!
+  set +e
+  wait "$a"; sa=$?
+  wait "$b"; sb=$?
+  set -e
+  owner="$(psql -Atq -c "SELECT owner_id FROM lock_fixture.ownership_campaigns WHERE id=1")"
+  code="$(psql -Atq -c "SELECT code FROM lock_fixture.owner_gate_codes WHERE campaign_id=1")"
+  if [[ "$sa" -ne 0 || "$sb" -ne 0 || "$owner" != "player-b" || "$code" != "2222" ]]; then
+    echo "FAIL: stale owner code mutation was not reproduced"
+    cat "$tmp/a.log" "$tmp/b.log"
+    echo "owner=$owner code=$code statuses=$sa/$sb"
+    rm -rf "$tmp"
+    exit 1
+  fi
+  echo "passed synthetic stale owner code mutation: owner=$owner, code=$code"
+  rm -rf "$tmp"
+}
+
+run_expected_campaign_first_owner_code_rejection() {
+  local tmp owner code sa sb
+  tmp="$(mktemp -d)"
+  psql -v ON_ERROR_STOP=1 -c "UPDATE lock_fixture.ownership_campaigns SET owner_id='owner-a' WHERE id=1; UPDATE lock_fixture.owner_gate_codes SET code='1111' WHERE campaign_id=1;" >/dev/null
+  psql -v ON_ERROR_STOP=1 -c "BEGIN; SELECT id FROM lock_fixture.ownership_campaigns WHERE id=1 FOR UPDATE; SELECT pg_sleep(0.4); UPDATE lock_fixture.ownership_campaigns SET owner_id='player-b' WHERE id=1; UPDATE lock_fixture.ownership_members SET role=CASE user_id WHEN 'owner-a' THEN 'PLAYER' WHEN 'player-b' THEN 'GM' ELSE role END WHERE campaign_id=1; COMMIT;" >"$tmp/a.log" 2>&1 &
+  local a=$!
+  sleep 0.1
+  psql -v ON_ERROR_STOP=1 -c "SELECT pg_sleep(0.1); BEGIN; SELECT id FROM lock_fixture.ownership_campaigns WHERE id=1 FOR UPDATE; DO \$\$ DECLARE v_owner text; BEGIN SELECT owner_id INTO v_owner FROM lock_fixture.ownership_campaigns WHERE id=1; IF v_owner IS DISTINCT FROM 'owner-a' THEN RAISE EXCEPTION 'owner authorization lost after campaign lock'; END IF; END \$\$; UPDATE lock_fixture.owner_gate_codes SET code='2222' WHERE campaign_id=1; COMMIT;" >"$tmp/b.log" 2>&1 &
+  local b=$!
+  set +e
+  wait "$a"; sa=$?
+  wait "$b"; sb=$?
+  set -e
+  owner="$(psql -Atq -c "SELECT owner_id FROM lock_fixture.ownership_campaigns WHERE id=1")"
+  code="$(psql -Atq -c "SELECT code FROM lock_fixture.owner_gate_codes WHERE campaign_id=1")"
+  if [[ "$sa" -ne 0 || "$sb" -eq 0 || "$owner" != "player-b" || "$code" != "1111" ]] ||
+     ! grep -qi 'owner authorization lost after campaign lock' "$tmp/b.log"; then
+    echo "FAIL: campaign-first owner code control did not reject stale owner"
+    cat "$tmp/a.log" "$tmp/b.log"
+    echo "owner=$owner code=$code statuses=$sa/$sb"
+    rm -rf "$tmp"
+    exit 1
+  fi
+  echo "passed campaign-first owner code control: stale request rejected, owner=$owner, code=$code"
+  rm -rf "$tmp"
+}
+
+run_expected_stale_owner_set_code_after_transfer
+run_expected_campaign_first_owner_code_rejection
