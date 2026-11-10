@@ -1,51 +1,34 @@
 # PostgreSQL fixture tests
 
-These tests run against a disposable PostgreSQL service inside a standard GitHub Actions runner. They do not connect to Supabase and do not read or mutate campaign data.
+Executados em um serviço PostgreSQL descartável no GitHub Actions. Não se conectam ao Supabase, não leem nem alteram campanhas reais e não são migrations.
 
-## Current scope
+## Footprint D&D 3.5
 
-- The footprint fixture copies the current remote definitions of `public.srd35_normalizar_parametro_talento` and `priv.srd_token_grid_footprint` (captured 2026-11-09).
-- Assertions cover D&D 3.5 grid footprint categories, Portuguese size aliases, linked player-race fallback, key lookup, unknown-size fallback, and duplicate-token rejection.
-- This validates the canonical footprint helper only. It does **not** yet prove that movement, attack, spawn, or AOO RPCs all call the helper; the audit has confirmed those call sites still contain divergent logic.
-- Fixture SQL is not a migration and must never be applied to the connected Supabase project.
+- O fixture contém cópias capturadas das definições de `public.srd35_normalizar_parametro_talento` e `priv.srd_token_grid_footprint` (snapshot de 2026-11-09).
+- Asserções cobrem categorias de tamanho e footprint, aliases em português, fallback de raça do jogador vinculado, busca por key, tamanho desconhecido e rejeição de token duplicado.
+- O teste valida o helper canônico isoladamente. Não demonstra que movimento, ataque, spawn e AOO usam o helper; a auditoria ainda encontrou lógica geométrica divergente nesses caminhos.
 
-- The lock-cycle script now also models two additional inversions found during the read-only audit: campaign → weapon versus weapon → campaign, and campaign → character versus character → campaign. These are synthetic PostgreSQL lock-pattern tests, not executions of the remote RPG functions. A passing test proves PostgreSQL detects the deliberately constructed cycle; it does not prove that the corresponding production RPC pair deadlocked in use.
+## Concorrência e locks
 
-- The lock-cycle fixture additionally models two AOO-related inversions observed in installed function bodies: campaign → pending versus pending → campaign, and pending → attack versus attack → pending. As with the other cases, these are deliberately synthetic lock patterns, not production RPC executions.
+O script `lock_cycle_test.sh` modela **oito padrões sintéticos de inversão** e um controle positivo:
 
-- CI follow-up: run 42673083206 ended with workflow conclusion `failure`, but GitHub returned zero jobs and no step logs; it is not evidence of an SQL assertion failure. A fresh run is required to diagnose the expanded fixture set.
+1. campanha → instância de arma versus instância de arma → campanha (início PC de Ataque Total versus resolução).
+2. campanha → personagem versus personagem → campanha.
+3. campanha → pending AOO versus pending AOO → campanha.
+4. pending AOO → ataque versus ataque → pending AOO.
+5. campanha → personagem → ficha → recurso de classe versus personagem → ficha → recurso → campanha (condicional à colisão da mesma linha de personagem/recurso).
+6. campanha → personagem → ficha versus personagem → ficha → campanha (conjuração multialvo e estabilização).
+7. campanha → ataque versus ataque → pending → campanha (mudança de estado do combate versus resolução AOO).
+8. sequência NPC → campanha versus campanha → tentativa → sequência NPC.
 
-- The fixture now also models inventory-trigger order (equipment row → weapon instance) versus direct weapon-instance equip order (weapon instance → equipment summary). It remains a synthetic lock-pattern test, not an execution of the production inventory trigger or RPC.
+O controle positivo faz duas sessões adquirirem campanha → efeito e verifica que ambas concluem sem deadlock.
 
-- The lock-cycle fixture now models a class-resource inversion observed in the remote definitions: campaign → feature resource (NPC rage/rest paths) versus feature resource → campaign (class-feature path). This is a synthetic pattern only; the actual pair's reachability for the same linked character/campaign still requires confirmation, and no production RPC is executed.
+**Limites importantes:** cada cenário constrói manualmente os prefixos de lock em tabelas descartáveis. Nenhum executa RPC de produção, trigger real, autorização, semântica de combate ou dados de campanha. Um teste verde prova que o PostgreSQL detecta o ciclo sintético e que o harness funciona; não prova que uma chamada real já tenha produzido deadlock. O cenário de recurso de classe é condicional: a consulta read-only mais recente encontrou três fichas de origem de NPC, mas nenhuma vinculada à mesma campanha do token. O cenário de inventário/equipamento foi removido do harness ativo por não haver writer atual que alcance o ramo negativo do trigger.
 
-- A further synthetic pair models the spell-resolution order campaign → character sheet versus multi-target spell-casting order character sheet → campaign. The production bodies show these conflicting prefixes, but the fixture still models only PostgreSQL locks; it does not execute spell RPCs or establish a reproduced production deadlock.
+## Validação CI
 
+- Workflow [42727408284](https://github.com/clubberblues/rpgvinculo/actions/runs/42727408284), run #69, concluiu com sucesso no commit `54b7db97c6a0724e8e3cd6e2b53737859e6c6a10`.
+- O job `postgres-fixtures` completou setup, inicialização dos containers, checkout, instalação do cliente PostgreSQL, execução dos fixtures isolados, teardown e finalização.
+- O commit documental posterior `bf34920bfc9cefd9d9ff8abb91dcc2fc0a7488f2` não alterou nenhum fixture SQL; apenas `docs/LOCK_ORDER_PROTOCOL_DRAFT.md` foi modificado.
+- O harness permanece uma validação sintética, não um teste de integração das RPCs Supabase.
 
-
-- Added a positive-control concurrency case: two sessions both acquire campaign before effect and must complete without a deadlock. This guards against a harness that only proves deliberately inverted patterns fail; it still tests the PostgreSQL lock protocol in isolation, not production RPC bodies.
-- The latest read-only frontend scan confirmed that `mesa.html` directly invokes the multi-target damage/effect spell RPCs and the manual Magic Missile wrapper. The exact removal RPC names were not found in the seven tracked interface/script files; this is not proof that no external or indirect caller exists.
-
-
-- Validation for PR #74: PostgreSQL fixture run [42720743359](https://github.com/clubberblues/rpgvinculo/actions/runs/42720743359) completed successfully with eight synthetic inverted lock patterns plus one positive control. It includes the active PC weapon/campaign, AOO, character/sheet/resource, and NPC iterative sequence cases. It does not execute Supabase RPCs or test production data.
-
-- A new AOO regression models the active combat-state transition prefix `campaign → attack` against the exposed opportunity-attack resolver prefix `attack → pending movement → campaign`. The UI calls `alternar_estado_campanha` and the AOO cancellation/resolution RPCs; these are live authenticated paths. The test remains synthetic and does not execute the remote RPC bodies.
-
-- The generic campaign ↔ effect and compound rage effect-first scenarios were removed from the active fixture after call-site reachability review: all authenticated/current callers acquire campaign before invoking the rage end helper; the only effect-first caller is legacy `end_combat`, with no EXECUTE for authenticated/anon and no caller found in current SQL/interface files. The dormant path remains documented for re-evaluation if re-exposed.
-
-- The active character/sheet → campaign inversion is broader than spell casting: the current UI also calls multi-target spell RPCs, usar_habilidade_classe_srd (Lay on Hands), and usar_imposicao_maos_mortos_vivos_srd. These lock character/sheet (and in one path feature resources) before calling consumir_acao_turno_srd, which locks campaign first. The existing campaign ↔ sheet fixture models this order synthetically; it still does not execute those RPCs.
-
-- Expanded AOO reachability review: the current mesa.html also calls opportunity-attack damage application, concealment resolution, trip-after-AOO, stand-up-after-AOO, and grapple/overrun-style encounter resolution. Their production bodies include attack → pending → campaign or pending → campaign prefixes. The existing AOO synthetic cases cover these shared lock-order patterns, not the individual RPC semantics.
-- The AFTER INSERT pending-movement preview trigger invokes the movement RPC inside a caught sentinel-exception subtransaction. Current pending writers already hold the campaign lock before INSERT; do not count the preview trigger as an independent pending → campaign edge.
-
-- Resource-lock refinement: class-feature and undead-touch RPCs lock the character feature-resource row before campaign, while linked-NPC rage/rest paths lock campaign → character → sheet → feature resource. The campaign/resource fixture covers the lock pattern only; the real cycle depends on the token and operation referring to the same linked character.
-
-- New active NPC iterative-attack case: mesa.html calls NPC roll registration, resolution, and damage RPCs. Registration locks the NPC sequence before campaign; resolution/damage lock campaign → attempt → sequence. A synthetic sequence/campaign/attempt lock inversion was added to the PostgreSQL fixture; it does not execute the Supabase RPCs.
-
-- The current UI also calls srd_resolve_dying_round, which locks character → sheet → campaign → dying condition. The existing campaign/sheet synthetic case covers the lock shape; the function was added to the active sheet-first refactor list. Player initiative registration is campaign → sheet and is not part of this inversion.
-
-- Equipment/weapon was removed from the active fixture after reviewing the exact trigger branch and ACLs: current delivery increases quantity and inserts new instances; authenticated has no direct UPDATE/INSERT/DELETE grant on srd_character_equipment; no current writer reducing weapon quantity was found. The trigger's negative-delta branch remains a future risk if weapon removal is added.
-
-- Scope qualification: the campaign/sheet deadlock requires both transactions to touch the same character sheet in the same campaign. A concrete reachable overlap is dying-round resolution versus a pending spell whose target is that same dying character; different character sheets do not by themselves form the inverse edge.
-
-- Active PC iterative-attack lock cycle: mesa.html starts Ataque Total through the 8-argument RPC. Its 7-argument helper locks weapon instance FOR UPDATE before delegating to the base RPC that locks campaign; the resolver locks campaign → attempt → sequence → weapon instance FOR SHARE. A weapon/campaign synthetic test was restored to model this verified path.
