@@ -684,3 +684,62 @@ run_expected_campaign_first_owner_role_rejection() {
 
 run_expected_stale_owner_set_role_after_transfer
 run_expected_campaign_first_owner_role_rejection
+
+# Mirrors gm_reopen_sheet/gm_set_bonus stale GM authorization on character sheets.
+run_expected_stale_gm_sheet_mutation_after_revocation() {
+  local tmp role is_open bonus sa sb
+  tmp="$(mktemp -d)"
+  psql -v ON_ERROR_STOP=1 -c "UPDATE lock_fixture.gm_gate_members SET role='GM' WHERE campaign_id=1 AND user_id='gm-a'; UPDATE lock_fixture.gm_gate_sheets SET is_open=false,bonus=0 WHERE campaign_id=1 AND character_id='character-a';" >/dev/null
+  psql -v ON_ERROR_STOP=1 -c "BEGIN; DO \$\$ DECLARE v_role text; BEGIN SELECT role INTO v_role FROM lock_fixture.gm_gate_members WHERE campaign_id=1 AND user_id='gm-a'; IF v_role IS DISTINCT FROM 'GM' THEN RAISE EXCEPTION 'initial GM check failed'; END IF; END \$\$; SELECT pg_sleep(0.4); UPDATE lock_fixture.gm_gate_sheets SET is_open=true,bonus=5 WHERE campaign_id=1 AND character_id='character-a'; COMMIT;" >"$tmp/a.log" 2>&1 &
+  local a=$!
+  sleep 0.1
+  psql -v ON_ERROR_STOP=1 -c "BEGIN; SELECT id FROM lock_fixture.gm_gate_campaigns WHERE id=1 FOR UPDATE; UPDATE lock_fixture.gm_gate_members SET role='PLAYER' WHERE campaign_id=1 AND user_id='gm-a'; COMMIT;" >"$tmp/b.log" 2>&1 &
+  local b=$!
+  set +e
+  wait "$a"; sa=$?
+  wait "$b"; sb=$?
+  set -e
+  role="$(psql -Atq -c "SELECT role FROM lock_fixture.gm_gate_members WHERE campaign_id=1 AND user_id='gm-a'")"
+  is_open="$(psql -Atq -c "SELECT is_open FROM lock_fixture.gm_gate_sheets WHERE campaign_id=1 AND character_id='character-a'")"
+  bonus="$(psql -Atq -c "SELECT bonus FROM lock_fixture.gm_gate_sheets WHERE campaign_id=1 AND character_id='character-a'")"
+  if [[ "$sa" -ne 0 || "$sb" -ne 0 || "$role" != "PLAYER" || "$is_open" != "t" || "$bonus" != "5" ]]; then
+    echo "FAIL: stale GM sheet mutation was not reproduced"
+    cat "$tmp/a.log" "$tmp/b.log"
+    echo "role=$role is_open=$is_open bonus=$bonus statuses=$sa/$sb"
+    rm -rf "$tmp"
+    exit 1
+  fi
+  echo "passed synthetic stale GM sheet mutation: role=$role, is_open=$is_open, bonus=$bonus"
+  rm -rf "$tmp"
+}
+
+run_expected_campaign_first_gm_sheet_mutation_rejection() {
+  local tmp role is_open bonus sa sb
+  tmp="$(mktemp -d)"
+  psql -v ON_ERROR_STOP=1 -c "UPDATE lock_fixture.gm_gate_members SET role='GM' WHERE campaign_id=1 AND user_id='gm-a'; UPDATE lock_fixture.gm_gate_sheets SET is_open=false,bonus=0 WHERE campaign_id=1 AND character_id='character-a';" >/dev/null
+  psql -v ON_ERROR_STOP=1 -c "BEGIN; SELECT id FROM lock_fixture.gm_gate_campaigns WHERE id=1 FOR UPDATE; SELECT pg_sleep(0.4); UPDATE lock_fixture.gm_gate_members SET role='PLAYER' WHERE campaign_id=1 AND user_id='gm-a'; COMMIT;" >"$tmp/a.log" 2>&1 &
+  local a=$!
+  sleep 0.1
+  psql -v ON_ERROR_STOP=1 -c "SELECT pg_sleep(0.1); BEGIN; SELECT id FROM lock_fixture.gm_gate_campaigns WHERE id=1 FOR UPDATE; DO \$\$ DECLARE v_role text; BEGIN SELECT role INTO v_role FROM lock_fixture.gm_gate_members WHERE campaign_id=1 AND user_id='gm-a'; IF v_role IS DISTINCT FROM 'GM' THEN RAISE EXCEPTION 'GM authorization lost after campaign lock'; END IF; END \$\$; UPDATE lock_fixture.gm_gate_sheets SET is_open=true,bonus=5 WHERE campaign_id=1 AND character_id='character-a'; COMMIT;" >"$tmp/b.log" 2>&1 &
+  local b=$!
+  set +e
+  wait "$a"; sa=$?
+  wait "$b"; sb=$?
+  set -e
+  role="$(psql -Atq -c "SELECT role FROM lock_fixture.gm_gate_members WHERE campaign_id=1 AND user_id='gm-a'")"
+  is_open="$(psql -Atq -c "SELECT is_open FROM lock_fixture.gm_gate_sheets WHERE campaign_id=1 AND character_id='character-a'")"
+  bonus="$(psql -Atq -c "SELECT bonus FROM lock_fixture.gm_gate_sheets WHERE campaign_id=1 AND character_id='character-a'")"
+  if [[ "$sa" -ne 0 || "$sb" -eq 0 || "$role" != "PLAYER" || "$is_open" != "f" || "$bonus" != "0" ]] ||
+     ! grep -qi 'GM authorization lost after campaign lock' "$tmp/b.log"; then
+    echo "FAIL: campaign-first GM sheet control did not reject stale authorization"
+    cat "$tmp/a.log" "$tmp/b.log"
+    echo "role=$role is_open=$is_open bonus=$bonus statuses=$sa/$sb"
+    rm -rf "$tmp"
+    exit 1
+  fi
+  echo "passed campaign-first GM sheet control: stale request rejected, role=$role, is_open=$is_open, bonus=$bonus"
+  rm -rf "$tmp"
+}
+
+run_expected_stale_gm_sheet_mutation_after_revocation
+run_expected_campaign_first_gm_sheet_mutation_rejection
