@@ -151,3 +151,18 @@ Correção candidata: localizar e bloquear campanha primeiro → revalidar GM, t
 
 Nenhuma dessas funções foi invocada remotamente. O inventário e os ACLs foram consultados read-only.
 
+
+
+## Regra de remediação: não reativar o modelo Vínculo legado
+
+A inspeção das colunas confirmou que `vinculo_character_sheets`, `vinculo_items` e `vinculo_inventory` preservam o modelo antigo de ficha/equipamento. Embora `vinculo_character_sheets` tenha colunas semelhantes às antigas `character_sheets`, isso não a torna a ficha correta do VTT D&D 3.5. O modelo atual D&D 3.5 é `srd_character_sheets`, `srd_equipment`, `srd_character_equipment` e `srd_character_weapon_instances`.
+
+Portanto:
+- Não corrigir `calc_sheet`, `calc_ca`, `calc_desl`, `sell_price`, `save_sheet`, `confirm_sheet`, `gm_reopen_sheet` ou `gm_set_bonus` apenas trocando `items/inventory/character_sheets` por `vinculo_*`. Isso ressuscitaria o motor de regras legado e contrariaria a direção D&D 3.5.
+- Para endpoints sem call site atual e restritos ao fluxo antigo, avaliar revogação de EXECUTE para authenticated/public e manter só se houver consumidor legado explicitamente suportado.
+- Se reabrir ficha ou editar bônus ainda for requisito do VTT D&D 3.5, criar RPCs próprias sobre `srd_character_sheets` com regras D&D e autorização/locks campaign-first.
+- `excluir_ficha_propria` é diferente: permanece chamada no lobby e deve ser corrigida para excluir o personagem com segurança, usando cascades/triggers atuais em vez de voltar a operar no inventário legado.
+- `gm_grant` não tem call site atual identificado; não reescrever para o inventário D&D automaticamente. Se o Mestre precisar conceder ouro/XP/itens na mesa D&D, desenhar RPC específica sobre `characters` + `srd_character_equipment` e `srd_equipment`, com logs, validação e campaign-first.
+
+Essa distinção evita que a correção de schema reintroduza o sistema Vínculo antigo no motor D&D 3.5.
+
