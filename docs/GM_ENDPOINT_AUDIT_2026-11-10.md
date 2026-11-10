@@ -83,3 +83,6 @@ O fixture existente campaign → character versus character → campaign cobre o
 ### Efeito indireto em `gm_reopen_sheet` e `gm_set_bonus`
 
 As duas RPCs atualizam `character_sheets` e depois retornam `public.calc_sheet(p_char)`. O corpo instalado de `calc_sheet` (OID 18883) consulta `public.inventory` e `public.items`, ambos ausentes no catálogo. Para fichas com registro existente, essa chamada final falha e a transação reverte também a alteração de reabertura/bônus. Assim, além do TOCTOU GM já testado, essas duas rotas têm incompatibilidade funcional indireta. Sem call site literal nas páginas HTML consultadas; classificar como superfície RPC authenticated até confirmar consumidor.
+
+
+**Qualificação da inversão:** o prefixo character → campaign está confirmado no corpo e o padrão contrário existe em operações campaign-scoped; um deadlock real exige que ambas bloqueiem a mesma linha de personagem e a mesma campanha. O snapshot consultado anteriormente encontrou três tokens NPC com sourceCharacterId existente, mas todos os personagens-fonte tinham `campaign_id IS NULL`; para esses três casos, a exclusão não adquire lock de campanha e não forma esse ciclo específico. Classificar como inversão estrutural/condicional, não como deadlock de produção reproduzido.
