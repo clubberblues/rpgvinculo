@@ -178,3 +178,8 @@ Além de `gm_transfer`, os endpoints authenticated `gm_set_role` (OID 18748) e `
 Além de inventário e iniciativa, a varredura identificou endpoints ativos que verificam GM antes de `campaigns FOR UPDATE`: `alternar_estado_campanha` (20103), `salvar_cena_cba` (20077), `adicionar_combatente_iniciativa` (20078), `mover_combatente_iniciativa` (20080), `iniciar_iniciativa_com_dados` (20577), `srd_configurar_perfil_combate_token_srd` (26922), `srd_configurar_rodada_surpresa_srd` (27092), `usar_furia_barbaro_npc_srd` (26656), `entregar_item_token_srd` (21668) e `equipar_item_token_srd` (21670). O frontend principal chama esses fluxos em `mesa.html`/ `ficha.html`.
 
 Correção comum: obter campaign FOR UPDATE antes da autorização definitiva; revalidar papel GM após o lock; só então executar mutação. Preservar locks de domínio subsequentes e evitar que helpers adquiram campanha depois de personagem/ficha. Incluir testes concorrentes de transferência × alternância de estado, transferência × CBA snapshot, transferência × iniciativa, transferência × perfil/rodada surpresa/Fúria NPC e transferência × inventário token.
+
+
+#### Completar endpoints de owner: código de acesso
+
+A mesma dependência de `priv.need_owner` (OID 18742) aparece em `public.gm_set_code` (OID 18747), EXECUTE authenticated. A função valida owner/active por `need_owner` e depois altera `campaign_codes` sem lock de campanha. Assim, o antigo proprietário também pode alterar o código de entrada depois de uma transferência concorrente se a autorização tiver sido validada antes da revogação. A matriz de operações owner-first passa a incluir `gm_set_code`, `gm_set_role`, `gm_kick` e `gm_transfer`; o helper não deve ganhar lock implícito sem auditar callers.
