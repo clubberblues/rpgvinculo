@@ -346,3 +346,22 @@ Consultas foram exclusivamente read-only. Nenhum token, ficha, sequência, condi
 ### Snapshot relacional atual dos três NPCs vinculados
 
 Nova consulta read-only cruzou cada NPC de `campaigns.cba_data.tokens` com ficha-fonte e estado relacional. Os três tokens observados (dois na campanha 129 apontando para o personagem 678; um na campanha 131 apontando para o personagem 681) continuam com `sourceCharacterId` válido e ambos os personagens-fonte têm `characters.campaign_id IS NULL`. Para esses três tokens, a amostra atual retornou zero linhas de equipamento/instâncias de armas, zero sequências de ataque NPC, zero condições/efeitos como alvo, zero magias pendentes ativas e zero movimentos AOO pendentes. Isso reduz o estado órfão observado agora, mas não remove a necessidade de tratar todas essas dependências na RPC futura: a consulta é apenas um snapshot e novas ações podem criar registros depois.
+
+
+### Dependências de exclusão — verificação exata do schema
+
+A nova leitura de `pg_constraint` confirmou a matriz de FK de `characters`:
+- Cascade: `character_abilities`, `character_conditions`, `character_spells`, `character_talents`, `srd_attack_sequences`, `srd_character_class_levels`, `srd_character_domain_choices`, `srd_character_feature_resources`, `srd_character_known_spells`, `srd_character_prepared_spells`, `srd_character_sheets`, `srd_character_spell_slot_state`, `srd_character_spellbook`, `tokens`, `vinculo_character_notes`, `vinculo_character_sheets` e `vinculo_inventory`.
+- Restrict: `srd_npc_attack_sequences.actor_character_id → characters.id`. Essa é a única FK encontrada diretamente impeditiva para excluir a ficha-fonte no conjunto consultado; a sequência NPC precisa ser cancelada/removida antes, ou a exclusão deve falhar com mensagem de vínculo ativo.
+- O FK de `tokens.character_id` em cascade não limpa os objetos de token guardados em `campaigns.cba_data`; são estruturas distintas.
+- `public.character_spells`, `public.character_talents`, `public.srd_character_sheets`, `public.srd_character_equipment` e `public.tokens` existem. `public.character_notes` e `public.inventory` não existem.
+
+Dois triggers ativos na tabela `characters` já executam limpeza SRD: BEFORE DELETE chama `limpar_ficha_srd_ao_excluir_personagem` e remove `srd_character_sheets`; AFTER DELETE chama `limpar_inventario_srd_ao_excluir_personagem` e remove `srd_character_equipment`. A ficha e equipamento SRD são também alcançados por suas FKs/cascades. Assim, a RPC não precisa repetir limpeza de ficha/equipamento se a cadeia de triggers/constraints for mantida; a redundância pode ser removida na futura refatoração, após testar o comportamento transacional e a ordem de triggers.
+
+A função instalada ainda contém DELETEs explícitos em `public.character_spells` e `public.character_talents` (ambas relações existentes), além dos DELETEs inválidos em `character_notes` e `inventory`. Não foi executado o endpoint para confirmar o ponto exato da falha em runtime; a ausência das duas relações é suficiente para confirmar que a função não pode completar esse corpo no schema atual.
+
+### Primeiro contrato de fixture implementado no repositório
+
+Adicionado `tests/sql/npc_lifecycle_test.sql`, chamado pelo `tests/sql/lock_cycle_test.sh`. O fixture temporário cobre remoção isolada de um NPC, atualização de cena/iniciativa, limpeza de registros associados, cancelamento de pendências, encerramento de efeitos derivados, preservação de outro NPC e guarda de exclusão da ficha-fonte até remover todas as referências JSON. Também modela a FK RESTRICT da sequência NPC.
+
+O fixture é uma especificação executável de invariantes em tabelas temporárias, não uma cópia da RPC real. Não testa autorização, triggers reais, RLS, constraints de produção nem integração de frontend. O teste ainda precisa ser executado pelo CI antes de ser considerado aprovado.
