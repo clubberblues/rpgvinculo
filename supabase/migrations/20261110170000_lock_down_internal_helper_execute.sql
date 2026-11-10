@@ -39,7 +39,7 @@ CREATE OR REPLACE FUNCTION priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(
 RETURNS jsonb
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path TO 'public', 'priv', 'pg_temp'
+SET search_path TO 'pg_catalog', 'public', 'priv', 'pg_temp'
 AS $function$
 DECLARE
   v_instance public.srd_character_weapon_instances%ROWTYPE;
