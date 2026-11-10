@@ -179,6 +179,9 @@ GRANT EXECUTE ON FUNCTION public.srd_listar_ataques_naturais_oportunidade_srd(bi
 \i supabase/migrations/20261110170000_lock_down_internal_helper_execute.sql
 \i supabase/verification/verify_internal_helper_execute.sql
 
+-- The migrations commit their own transactions; begin a fresh transaction so
+-- SET LOCAL JWT/fixture claims remain visible to the authenticated test calls.
+BEGIN;
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',true);
 SELECT set_config('fixture.campaign_role','GM',true);
