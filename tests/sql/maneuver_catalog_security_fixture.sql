@@ -310,6 +310,12 @@ BEGIN
   EXCEPTION WHEN raise_exception THEN
     IF SQLERRM='Private iterative helper unexpectedly accepted unowned character' THEN RAISE; END IF;
   END;
+  IF priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(
+    1,'owned-character','target','atk-corpo',
+    '33333333-3333-4333-8333-333333333333'::uuid,'main_hand',NULL
+  )->>'weapon_hand_slot' <> 'main_hand' THEN
+    RAISE EXCEPTION 'Trusted service role could not execute the guarded internal helper for an owned character';
+  END IF;
 END
 $service$;
 RESET ROLE;
