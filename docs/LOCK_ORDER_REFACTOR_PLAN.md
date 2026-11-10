@@ -137,3 +137,12 @@ A cura multialvo usa o wrapper autenticado OID 24661, que adquire personagem →
 ### Writer legado de transferência de Mestre
 
 Incluir public.gm_transfer (OID 18749) na Fase A caso seja mantido: endpoint SECURITY DEFINER com EXECUTE authenticated chama priv.need_owner sem lock e depois atualiza dois membros e owner_id. Há uma corrida TOCTOU em chamadas concorrentes do proprietário atual. A correção candidata é lock de campanha antes da revalidação de owner_id/active e atualização de membros em ordem determinística. Antes de remover ou alterar, localizar consumidores externos; não há call site direto localizado nas três páginas principais consultadas. Teste de aceitação: duas transferências simultâneas, somente uma autorizada.
+
+
+### Complemento da Fase D — gates de estado e inventário (2026-11-10)
+
+Incluir descanso longo (OID 24366) e poção de cura manual (OID 24655) como mutações autenticadas que dependem do estado da campanha. Ambos fazem leitura de `campaigns.state` sem lock. Descanso bloqueia personagem antes da leitura; poção só chama o consumo de ação (OID 20405, que bloqueia campanha) quando a leitura anterior já indicou combate. A transição autenticada (OID 20103) bloqueia campanha primeiro. Há, portanto, janela de estado obsoleto: descanso pode continuar depois do início do combate; poção que observou exploração pode ser consumida sem ação se o combate iniciar em seguida.
+
+Direção candidata: MVCC localizar campanha → `campaigns FOR UPDATE` → revalidar vínculo/owner/estado → locks de personagem/ficha/equipamento/recursos conforme a ordem específica do inventário. A decisão de gastar ação da poção deve ocorrer dentro da mesma serialização da transição, não por leitura anterior sem lock. Não mover o lock de campanha para dentro de `srd_sync_character_vital_condition`: helper sem lock próprio, com pré-condição campaign-first explícita no caller, evita lock implícito campanha-after-sheet.
+
+**Aceite:** testes concorrentes com RPCs reais em PostgreSQL descartável para descanso × início de combate, poção × início de combate, poção em combate × ação já consumida e duas poções × última unidade; confirmar que estado, ação, inventário, PV, magias, recursos e condições não divergem.
