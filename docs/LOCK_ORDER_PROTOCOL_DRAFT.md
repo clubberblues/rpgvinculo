@@ -695,3 +695,10 @@ Foram lidos os corpos instalados e os grants efetivos dos endpoints:
 Correção candidata: ambos os endpoints devem localizar campanha por leitura MVCC, bloquear a linha da campanha primeiro, revalidar vínculo/owner/estado após o lock e só então bloquear personagem, ficha, equipamento e recursos na ordem validada de cada domínio. Descanso deve rejeitar combate já iniciado; poção deve decidir e consumir a ação sob o mesmo lock de campanha que serializa a transição, sem uma janela entre leitura de estado e consumo. Preservar as validações de propriedade, alvo, PV, item, rolagens e regras de ação. Testes concorrentes obrigatórios: descanso × início de combate; poção × início de combate; poção durante combate × ação já consumida; duas poções concorrentes × última unidade do inventário.
 
 Limite da evidência: análise estática dos corpos instalados e grants, sem execução concorrente das RPCs reais; nenhuma função/migration/ACL/policy/dado foi alterado no Supabase.
+
+
+### Contraste validado: descanso de NPC vinculado já é campaign-first
+
+O frontend de ficha chama também `public.descanso_longo_npc_vinculado_srd` (OID 26801, EXECUTE authenticated), wrapper SQL que delega a `priv.descanso_longo_npc_vinculado_srd_impl` (OID 26808). A implementação bloqueia `campaigns FOR UPDATE` e valida estado antes de bloquear token derivado do snapshot, personagem e ficha; depois ressincroniza campanha sob o lock já retido. Portanto, não generalizar a falha do descanso PC para NPC: o caminho NPC já serializa a transição de combate. Ainda requer teste de integração de autoridade/estado, mas não apresenta a mesma janela de leitura sem lock observada em OID 24366.
+
+Call sites confirmados no frontend principal: `ficha.html` chama descanso PC ou NPC vinculado; `mesa.html` chama a poção manual e `alternar_estado_campanha`. Nenhum call site de `srd_remove_campaign_condition` foi localizado nas três páginas consultadas; manter como endpoint authenticated legado até confirmar consumidores externos.
