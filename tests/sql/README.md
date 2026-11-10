@@ -69,3 +69,8 @@ Fixture adicional replica a lógica do trigger `enforce_campaign_member_role` e 
 ### Revalidação GM depois de esperar pelo lock da campanha
 
 Fixture reproduz o padrão dos wrappers `srd_apply_campaign_condition`/`srd_apply_campaign_effect`: a sessão A lê role=GM, depois aguarda para adquirir o lock da campanha; sessão B adquire o lock, rebaixa GM para PLAYER e confirma; A adquire o lock e, sem revalidar o papel, grava efeito. O controle adquire primeiro o lock e só então verifica role, rejeitando a chamada antiga. É modelo sintético da ordem observada nos corpos das funções; não invoca RPCs reais.
+
+
+### Família de endpoints owner: alteração de código
+
+Fixture reproduz `gm_set_code`: owner antigo valida autorização, aguarda, ocorre transferência e o owner antigo ainda altera o código. Controle usa campaign FOR UPDATE e revalida owner após o lock, rejeitando a mutação. O teste não executa a RPC instalada; modela a ordem SQL e o gate de propriedade.
