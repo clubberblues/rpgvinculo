@@ -4,13 +4,13 @@ Executados em um serviço PostgreSQL descartável no GitHub Actions. Não se con
 
 ## Footprint D&D 3.5
 
-- O fixture contém cópias capturadas das definições de `public.srd35_normalizar_parametro_talento` e `priv.srd_token_grid_footprint` (snapshot de 2026-11-09).
+- O fixture contém cópias capturadas das definições de public.srd35_normalizar_parametro_talento e priv.srd_token_grid_footprint (snapshot de 2026-11-09).
 - Asserções cobrem categorias de tamanho e footprint, aliases em português, fallback de raça do jogador vinculado, busca por key, tamanho desconhecido e rejeição de token duplicado.
 - O teste valida o helper canônico isoladamente. Não demonstra que movimento, ataque, spawn e AOO usam o helper; a auditoria ainda encontrou lógica geométrica divergente nesses caminhos.
 
 ## Concorrência e locks
 
-O script `lock_cycle_test.sh` modela **oito padrões sintéticos de inversão** e um controle positivo:
+O script lock_cycle_test.sh modela oito padrões sintéticos de inversão e um controle positivo:
 
 1. campanha → instância de arma versus instância de arma → campanha (início PC de Ataque Total versus resolução).
 2. campanha → personagem versus personagem → campanha.
@@ -23,12 +23,18 @@ O script `lock_cycle_test.sh` modela **oito padrões sintéticos de inversão** 
 
 O controle positivo faz duas sessões adquirirem campanha → efeito e verifica que ambas concluem sem deadlock.
 
-**Limites importantes:** cada cenário constrói manualmente os prefixos de lock em tabelas descartáveis. Nenhum executa RPC de produção, trigger real, autorização, semântica de combate ou dados de campanha. Um teste verde prova que o PostgreSQL detecta o ciclo sintético e que o harness funciona; não prova que uma chamada real já tenha produzido deadlock. O cenário de recurso de classe é condicional: a consulta read-only mais recente encontrou três fichas de origem de NPC, mas nenhuma vinculada à mesma campanha do token. O cenário de inventário/equipamento foi removido do harness ativo por não haver writer atual que alcance o ramo negativo do trigger.
+## Concorrência de autorização
+
+O mesmo script também contém dois cenários de transferência de Mestre, em tabelas descartáveis:
+- **Reprodução TOCTOU:** duas sessões validam owner_id sem lock; a primeira transfere a propriedade, a segunda continua após esperar na linha de membro e transfere novamente. O fixture verifica que a segunda operação consegue alterar owner_id e deixa dois membros com role GM.
+- **Controle corrigido:** as duas sessões bloqueiam primeiro a linha da campanha; após a primeira transferência, a segunda relê owner_id sob lock e é rejeitada por perda de autoridade. O fixture verifica um único GM e o proprietário esperado.
+
+Esses cenários reproduzem a forma transacional observada em gm_transfer/priv.need_owner, não executam a RPC instalada nem provam que houve exploração em produção.
+
+**Limites importantes:** cada cenário constrói manualmente os prefixos de lock/checagem em tabelas descartáveis. Nenhum executa RPC de produção, trigger real, autorização Supabase, semântica de combate ou dados de campanha. Um teste verde prova o comportamento PostgreSQL do cenário sintético e que o harness funciona; não prova que uma chamada real já tenha produzido deadlock ou que gm_transfer tenha sido explorado. O cenário de recurso de classe é condicional: a consulta read-only mais recente encontrou três fichas de origem de NPC, mas nenhuma vinculada à mesma campanha do token. O cenário de inventário/equipamento foi removido do harness ativo por não haver writer atual que alcance o ramo negativo do trigger.
 
 ## Validação CI
 
-- Workflow [42727408284](https://github.com/clubberblues/rpgvinculo/actions/runs/42727408284), run #69, concluiu com sucesso no commit `54b7db97c6a0724e8e3cd6e2b53737859e6c6a10`.
-- O job `postgres-fixtures` completou setup, inicialização dos containers, checkout, instalação do cliente PostgreSQL, execução dos fixtures isolados, teardown e finalização.
-- O commit documental posterior `bf34920bfc9cefd9d9ff8abb91dcc2fc0a7488f2` não alterou nenhum fixture SQL; apenas `docs/LOCK_ORDER_PROTOCOL_DRAFT.md` foi modificado.
+- Workflow PostgreSQL #72 [42730159992](https://github.com/clubberblues/rpgvinculo/actions/runs/42730159992) concluiu com sucesso no commit documental anterior; executou footprint e oito padrões de inversão + controle positivo.
+- A atualização atual acrescenta os dois cenários de transferência de Mestre; aguardar novo workflow antes de declarar esta versão do harness validada.
 - O harness permanece uma validação sintética, não um teste de integração das RPCs Supabase.
-
