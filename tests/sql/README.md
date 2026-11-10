@@ -36,5 +36,5 @@ Esses cenários reproduzem a forma transacional observada em gm_transfer/priv.ne
 ## Validação CI
 
 - Workflow PostgreSQL #72 [42730159992](https://github.com/clubberblues/rpgvinculo/actions/runs/42730159992) concluiu com sucesso no commit documental anterior; executou footprint e oito padrões de inversão + controle positivo.
-- A atualização atual acrescenta os dois cenários de transferência de Mestre; aguardar novo workflow antes de declarar esta versão do harness validada.
+- Workflow #100 [42731471362](https://github.com/clubberblues/rpgvinculo/actions/runs/42731471362) concluiu success no commit `dd38946efd5cd9ef58ec8ef33b492227793141e7`. Logs confirmam footprint helper, oito inversões sintéticas, um controle positivo, reprodução TOCTOU com dois GM após duas transferências stale e controle campaign-first em que a segunda transferência é rejeitada e permanece um único GM. O commit posterior só alterou documentação; os arquivos de teste permanecem iguais.
 - O harness permanece uma validação sintética, não um teste de integração das RPCs Supabase.
