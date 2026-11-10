@@ -623,3 +623,8 @@ A leitura direta dos corpos instalados confirmou os seguintes prefixos e OIDs; t
 O teste sintético #7 representa o ciclo campanha → ataque versus ataque → pending → campanha; os testes #3/#4 cobrem campanha ↔ pending e pending ↔ ataque. O banco não registrou reprodução de deadlock real; a conclusão é de ciclo potencial derivado dos locks e da concorrência entre chamadas autenticadas, não de incidente observado.
 
 O lock da ficha no RPC de dano AOO (27036) torna concreta a interseção com estabilização (24914): AOO mantém ataque/pending/campanha e espera ficha; estabilização mantém personagem/ficha e espera campanha. A ordem candidata para dano em personagem persistente deve ser campaign → character → sheet → pending → attack, mas isso precisa ser reconciliado com o restante do domínio AOO, incluindo ledger/weapon e transições de estado, antes de alterar qualquer RPC.
+
+
+### CI mais recente do harness (2026-11-10)
+
+O workflow PostgreSQL [42730159992](https://github.com/clubberblues/rpgvinculo/actions/runs/42730159992), run #72, concluiu com sucesso no commit documental anterior `027fa057a0f6ccd3a111e2a3a97b50e45f8b1f5d`. Setup, containers, checkout, cliente PostgreSQL, execução dos fixtures isolados e teardown concluíram. O commit atual `0e53e84b7914022b69410a1f4d1b3fd396ee8813` acrescentou somente documentação; nenhum arquivo de fixture ou workflow foi alterado depois do run #72. Logo, os testes sintéticos versionados continuam cobertos pelo CI #72, sem que isso represente execução de RPCs de produção.
