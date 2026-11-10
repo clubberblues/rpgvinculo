@@ -17,27 +17,27 @@ GRANT USAGE ON SCHEMA auth, priv TO authenticated, anon;
 
 CREATE OR REPLACE FUNCTION auth.uid()
 RETURNS uuid LANGUAGE sql STABLE
-AS $ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $;
+AS $$ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
 GRANT EXECUTE ON FUNCTION auth.uid() TO PUBLIC;
 
 CREATE OR REPLACE FUNCTION public.my_role(cid bigint)
 RETURNS text LANGUAGE sql STABLE
-AS $ SELECT current_setting('fixture.campaign_role',true) $;
+AS $$ SELECT current_setting('fixture.campaign_role',true) $$;
 GRANT EXECUTE ON FUNCTION public.my_role(bigint) TO authenticated, anon;
 
 CREATE OR REPLACE FUNCTION priv.srd35_maneuver_profile(bigint,text)
 RETURNS jsonb LANGUAGE sql STABLE
-AS $ SELECT jsonb_build_object('ok',true) $;
+AS $$ SELECT jsonb_build_object('ok',true) $$;
 REVOKE ALL ON FUNCTION priv.srd35_maneuver_profile(bigint,text) FROM PUBLIC, authenticated, anon;
 
 CREATE OR REPLACE FUNCTION priv.srd_grid_footprint_distance_ft(integer,integer,integer,integer,integer,integer)
 RETURNS integer LANGUAGE sql IMMUTABLE
-AS $ SELECT 5 $;
+AS $$ SELECT 5 $$;
 REVOKE ALL ON FUNCTION priv.srd_grid_footprint_distance_ft(integer,integer,integer,integer,integer,integer) FROM PUBLIC, authenticated, anon;
 
 CREATE OR REPLACE FUNCTION priv.srd_token_grid_footprint(bigint,text)
 RETURNS integer LANGUAGE sql STABLE
-AS $ SELECT 1 $;
+AS $$ SELECT 1 $$;
 REVOKE ALL ON FUNCTION priv.srd_token_grid_footprint(bigint,text) FROM PUBLIC, authenticated, anon;
 
 CREATE OR REPLACE FUNCTION priv.srd_parse_natural_attack_list(text)
@@ -78,7 +78,7 @@ CREATE OR REPLACE FUNCTION priv.iniciar_sequencia_ataque_iterativo_srd_8_impl(
  bigint,text,text,text,uuid,text,text,integer
 ) RETURNS jsonb LANGUAGE sql SECURITY DEFINER
 SET search_path TO public, priv, pg_temp
-AS $ SELECT '{}'::jsonb $;
+AS $$ SELECT '{}'::jsonb $$;
 GRANT EXECUTE ON FUNCTION priv.iniciar_sequencia_ataque_iterativo_srd_8_impl(bigint,text,text,text,uuid,text,text,integer)
 TO authenticated, service_role;
 
@@ -86,7 +86,7 @@ CREATE OR REPLACE FUNCTION public.iniciar_sequencia_ataque_iterativo_srd(
  bigint,text,text,text,uuid,text,text
 ) RETURNS jsonb LANGUAGE sql SECURITY INVOKER
 SET search_path TO pg_catalog, public, priv, pg_temp
-AS $ SELECT '{}'::jsonb $;
+AS $$ SELECT '{}'::jsonb $$;
 GRANT EXECUTE ON FUNCTION public.iniciar_sequencia_ataque_iterativo_srd(bigint,text,text,text,uuid,text,text)
 TO authenticated, service_role;
 
@@ -94,7 +94,7 @@ CREATE OR REPLACE FUNCTION public.iniciar_sequencia_ataque_iterativo_srd(
  bigint,text,text,text,uuid,text,text,integer
 ) RETURNS jsonb LANGUAGE sql SECURITY INVOKER
 SET search_path TO pg_catalog, public, priv, pg_temp
-AS $ SELECT '{}'::jsonb $;
+AS $$ SELECT '{}'::jsonb $$;
 GRANT EXECUTE ON FUNCTION public.iniciar_sequencia_ataque_iterativo_srd(bigint,text,text,text,uuid,text,text,integer)
 TO authenticated, service_role;
 
