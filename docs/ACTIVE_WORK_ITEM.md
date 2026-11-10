@@ -180,3 +180,11 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - A criação do token e a cópia de equipamento são RPCs separadas. Se a segunda falhar, o token permanece criado e o frontend já avisa que o equipamento não foi copiado.
 - Varredura refinada encontrou 17 funções com referências SQL reais a tabelas antigas; 8 têm EXECUTE authenticated e 9 são service_role-only. Falsos positivos em `finalizar_equipamento_inicial_srd` e `clonar_equipamento_ficha_para_token` foram descartados: usam catálogo/tabelas SRD atuais.
 - A função `priv.new_sheet` não está ligada a trigger no snapshot. Nenhuma função foi invocada nem alterada.
+
+
+## Diretriz de arquitetura para correção das RPCs antigas
+
+- As tabelas `vinculo_*` são o modelo legado, não o motor D&D 3.5. O motor atual usa `srd_character_sheets`, `srd_equipment`, `srd_character_equipment` e instâncias de arma.
+- Não fazer substituição textual de `character_sheets/items/inventory` por `vinculo_*` nas RPCs antigas. Isso reativaria o sistema que deixou de ser fonte de verdade.
+- RPCs antigas sem call site: avaliar revogar/aposentar; requisitos D&D ainda necessários devem receber implementação própria sobre tabelas SRD.
+- A exclusão do lobby é a exceção ativa: corrigir usando cascades/triggers e manter a ordem campaign-first, sem reativar tabelas antigas.
