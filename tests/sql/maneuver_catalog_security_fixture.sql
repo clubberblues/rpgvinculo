@@ -265,5 +265,21 @@ END
 $anon$;
 RESET ROLE;
 
+SET ROLE service_role;
+SELECT set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',true);
+DO $service$
+BEGIN
+  BEGIN
+    PERFORM priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(
+      1,'not-owned','target','atk-corpo','11111111-1111-4111-8111-111111111111'::uuid,'main_hand',NULL
+    );
+    RAISE EXCEPTION 'Private iterative helper unexpectedly accepted unowned character';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM='Private iterative helper unexpectedly accepted unowned character' THEN RAISE; END IF;
+  END;
+END
+$service$;
+RESET ROLE;
+
 ROLLBACK;
 SELECT 'maneuver catalog SECURITY DEFINER fixture passed' AS result;
