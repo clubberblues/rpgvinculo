@@ -86,7 +86,7 @@ END
 $fn$;
 
 GRANT EXECUTE ON FUNCTION public.srd_consultar_modificadores_manobra_srd(bigint,text,text,text,boolean,boolean) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.srd_listar_ataques_naturais_oportunidade_srd(bigint,text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.srd_listar_ataques_naturais_oportunidade_srd(bigint,text) TO authenticated, service_role;
 
 -- Apply the same migration that will be deployed in production.
 \i supabase/migrations/20261110150000_fix_invoker_maneuver_catalog_helper_permissions.sql
