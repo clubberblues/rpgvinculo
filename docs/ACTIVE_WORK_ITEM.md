@@ -342,3 +342,11 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - Teste ampliado: campanha ausente + marcador residual + objeto Storage órfão deve falhar mantendo marcador; depois da remoção do objeto, retry deve concluir. Isso cobre o caminho de idempotência sem mascarar objetos abandonados.
 - Commits: `0b12d60cc4956c4ba96b6478106e96b4aa720ae8`, `aee5738080999817b187490dfb6689046a3b45a9`, `fb0b9829052182c2813fb48419c9d303826ae1fc`, `70a4d40826c2e7574bf59b75c0e826ed27a73531`, `320e9ac65ba755396d94ceda0c68e223dc7b1e7c`.
 - Ainda é fixture PostgreSQL sintética; nenhum endpoint remoto, RLS ou Storage API foi executado. Nenhuma mudança de produção.
+
+
+## Atualização — contrato Storage e operações de leitura (2026-11-10)
+
+- Consulta à documentação oficial atual do Supabase Storage confirmou que bucket privado aplica RLS no download e oferece download autenticado ou signed URL temporária. SELECT deve ser analisado por operação: listagem, leitura autenticada e autorização para assinar URL não são necessariamente o mesmo acesso; helper `storage.allow_only_operation()` / `allow_any_operation()` permite separar operações.
+- Adicionada matriz de testes distintos para `createSignedUrl`, `download` com JWT, `list` (GM apenas se necessário), caminho de outra campanha e objeto ausente. Fonte: `docs/STORAGE_ACCESS_CONTRACT.md` com links oficiais.
+- Modelo SQL corrigido para não criar FKs artificiais entre campanha, marcador de cleanup e objeto Storage. O teste cobre marcador residual com campanha ausente e objeto órfão; finalização deve continuar negada até remoção do objeto.
+- Ainda não há integração real com Storage API; sem custo adicional ou branch Supabase pago. Nenhuma mudança de produção.
