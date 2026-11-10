@@ -783,3 +783,8 @@ A varredura por SECURITY DEFINER authenticated e validação explícita de papel
 Call sites encontrados em `mesa.html`: alternância de estado, salvar CBA, adicionar/reordenar iniciativa, perfil de combate do token, rodada surpresa e Fúria de NPC. `ficha.html` também chama Fúria de NPC vinculado. Portanto, a janela de autorização não é só teórica nem limitada a endpoints sem frontend.
 
 Após corrigir a ordem de `gm_transfer`, cada endpoint de GM que bloqueia campanha depois de validar papel ainda precisa revalidar `members.role='GM'` depois de obter o lock. Caso contrário, uma chamada que leu GM antes da transferência pode esperar pelo lock e executar depois da revogação. A ordem segura é campaign FOR UPDATE → revalidar owner/membership/papel e estado → locks de domínio/ações. Para endpoints que não precisam de lock da campanha, definir serialização explícita antes de alterar membership.
+
+
+#### Completar endpoints de owner: código de acesso
+
+A mesma dependência de `priv.need_owner` (OID 18742) aparece em `public.gm_set_code` (OID 18747), EXECUTE authenticated. A função valida owner/active por `need_owner` e depois altera `campaign_codes` sem lock de campanha. Assim, o antigo proprietário também pode alterar o código de entrada depois de uma transferência concorrente se a autorização tiver sido validada antes da revogação. A matriz de operações owner-first passa a incluir `gm_set_code`, `gm_set_role`, `gm_kick` e `gm_transfer`; o helper não deve ganhar lock implícito sem auditar callers.
