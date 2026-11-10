@@ -38,10 +38,11 @@ A próxima refatoração deve tornar o caminho de movimento uma única autoridad
 2. Bloquear a campanha e definir explicitamente a ordem parcial de locks do domínio AOO, reconciliando-a com os callers de pending/ataque/ficha já inventariados; a ordem final ainda não está aprovada. Revalidar estado e origem após o lock.
 3. Calcular destino, deslocamento, footprint e ameaças usando os mesmos helpers usados pelo restante do motor.
 4. Se houver ameaça, criar pending e **não** atualizar coordenadas nem consumir deslocamento até as reações terminarem.
-5. Se não houver ameaça, aplicar movimento dentro da mesma transação.
+5. Se não houver ameaça, a própria RPC orquestradora deve chamar internamente a implementação de movimento na mesma transação e devolver o resultado final (não apenas `continue_with_existing_movement_rpc`). Isso inclui movimento fora de combate; o frontend não deve fazer uma segunda chamada de escrita.
 6. Na finalização, validar novamente posição original, turno, round, ownership, ameaças e estado das reações; impedir duplicidade/idempotência incorreta.
-7. Tornar o caminho antigo de movimento inacessível ao cliente ou convertê-lo em wrapper que delega ao novo fluxo. A exceção interna de commit deve continuar limitada ao pending correto.
-8. Preservar o fluxo GM/NPC/monstro e a movimentação fora de combate, sem conceder autoridade adicional ao jogador.
+7. Revogar EXECUTE de `authenticated` nos wrappers públicos de movimento direto (OID 20522 e 21615) depois que todos os callsites forem migrados. As implementações privadas permanecem chamadas somente por funções servidoras autorizadas; validar privilégios do owner e não conceder EXECUTE público de volta.
+8. Atualizar `mesa.html` para consumir o resultado da RPC orquestradora tanto quando não há ameaça quanto quando há commit após reação. A exceção interna de commit deve continuar limitada ao pending correto.
+9. Preservar o fluxo GM/NPC/monstro e a movimentação fora de combate, sem conceder autoridade adicional ao jogador.
 
 Não basta adicionar uma chamada ao detector no frontend ou em um preflight separado: isso manteria a possibilidade de chamada direta e a janela entre detecção e gravação.
 
@@ -56,6 +57,8 @@ Isso permite divergência entre ocupação/movimento e alcance ameaçado. A refa
 - Jogador autenticado chama diretamente a RPC de movimento sem passar pela solicitação: deve criar pending se houver ameaça e não mover o token.
 - Jogador autenticado move sem ameaça: movimento é aplicado uma única vez.
 - Movimento com ameaça: posição e gasto de deslocamento permanecem inalterados até todas as reações atingirem estado terminal; depois o movimento é aplicado uma única vez.
+- Sem ameaça e fora de combate: a RPC orquestradora aplica o movimento e devolve `movement_result`; não há segundo RPC público de escrita no frontend.
+- Chamador autenticado não consegue executar diretamente os wrappers legados de movimento após a migração; chamadas internas autorizadas da orquestradora/finalizadora continuam funcionando.
 - Pending ativo impede movimento direto alternativo, alteração concorrente das coordenadas/remoção do token e finalização duplicada.
 - Alteração de turno/round, posição de origem, ownership ou estado da campanha invalida a finalização.
 - GM consegue mover NPC/monstro e token de jogador sob controle, respeitando o mesmo contrato AOO.
