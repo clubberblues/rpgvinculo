@@ -103,3 +103,5 @@ CREATE TABLE lock_fixture.gm_gate_inventory (
 INSERT INTO lock_fixture.gm_gate_campaigns VALUES (1);
 INSERT INTO lock_fixture.gm_gate_members VALUES (1,'gm-a','GM');
 INSERT INTO lock_fixture.gm_gate_inventory VALUES (1,'player-x',0);
+
+CREATE TABLE lock_fixture.gm_gate_events (event_name text PRIMARY KEY);
