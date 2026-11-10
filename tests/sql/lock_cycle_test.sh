@@ -964,3 +964,55 @@ SQL
 }
 
 run_storage_upload_cleanup_lock_contract
+
+
+# Candidate finalizer contract: never report success while Storage objects remain;
+# preserve campaign+marker for retry, then finish after Storage cleanup.
+run_storage_zero_check_and_retry_contract() {
+  local tmp result campaigns markers objects
+  tmp="$(mktemp -d)"
+  psql -v ON_ERROR_STOP=1 -c "
+    UPDATE lock_fixture.campaigns SET owner_id='owner-a' WHERE id=1;
+    INSERT INTO lock_fixture.campaign_deletion_cleanup(campaign_id,owner_id)
+    VALUES (1,'owner-a')
+    ON CONFLICT (campaign_id) DO UPDATE SET owner_id=EXCLUDED.owner_id;
+    INSERT INTO lock_fixture.storage_objects(path,campaign_id)
+    VALUES ('campaigns/1/pending-delete.png',1)
+    ON CONFLICT (path) DO NOTHING;
+  " >/dev/null
+
+  result="$(psql -Atq -c "SELECT lock_fixture.finalize_campaign_if_storage_empty(1,'wrong-owner')")"
+  campaigns="$(psql -Atq -c "SELECT count(*) FROM lock_fixture.campaigns WHERE id=1")"
+  markers="$(psql -Atq -c "SELECT count(*) FROM lock_fixture.campaign_deletion_cleanup WHERE campaign_id=1")"
+  if [[ "$result" != "f" || "$campaigns" != "1" || "$markers" != "1" ]]; then
+    echo "FAIL: finalizer accepted a non-owner or removed retry state"
+    rm -rf "$tmp"
+    exit 1
+  fi
+
+  result="$(psql -Atq -c "SELECT lock_fixture.finalize_campaign_if_storage_empty(1,'owner-a')")"
+  campaigns="$(psql -Atq -c "SELECT count(*) FROM lock_fixture.campaigns WHERE id=1")"
+  markers="$(psql -Atq -c "SELECT count(*) FROM lock_fixture.campaign_deletion_cleanup WHERE campaign_id=1")"
+  objects="$(psql -Atq -c "SELECT count(*) FROM lock_fixture.storage_objects WHERE campaign_id=1")"
+  if [[ "$result" != "f" || "$campaigns" != "1" || "$markers" != "1" || "$objects" != "1" ]]; then
+    echo "FAIL: finalizer did not preserve campaign+marker when Storage was non-empty"
+    echo "result=$result campaigns=$campaigns markers=$markers objects=$objects"
+    rm -rf "$tmp"
+    exit 1
+  fi
+
+  psql -v ON_ERROR_STOP=1 -c "DELETE FROM lock_fixture.storage_objects WHERE campaign_id=1" >/dev/null
+  result="$(psql -Atq -c "SELECT lock_fixture.finalize_campaign_if_storage_empty(1,'owner-a')")"
+  campaigns="$(psql -Atq -c "SELECT count(*) FROM lock_fixture.campaigns WHERE id=1")"
+  markers="$(psql -Atq -c "SELECT count(*) FROM lock_fixture.campaign_deletion_cleanup WHERE campaign_id=1")"
+  if [[ "$result" != "t" || "$campaigns" != "0" || "$markers" != "0" ]]; then
+    echo "FAIL: finalizer retry did not complete after Storage cleanup"
+    echo "result=$result campaigns=$campaigns markers=$markers"
+    rm -rf "$tmp"
+    exit 1
+  fi
+  echo "passed synthetic Storage zero-check/retry contract: wrong owner rejected; non-empty Storage preserved campaign+marker; clean retry completed"
+  rm -rf "$tmp"
+}
+
+run_storage_zero_check_and_retry_contract
