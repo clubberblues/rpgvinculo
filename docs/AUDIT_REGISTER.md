@@ -477,3 +477,12 @@ A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24
 - Novos modelos sintéticos incluídos: campaign/pending, pending/attack e equipment/weapon instance, além dos pares anteriores.
 - A execução do workflow para commit `502b47bc28b61ed7ed5c3dab181fee62c9f433ec` está queued (run 42673548023); aguardar resultado antes de declarar aprovação.
 - A tentativa anterior (run 42673083206) falhou sem check jobs ou logs de etapas. Foi classificada como falha sem diagnóstico, não como erro confirmado dos testes SQL. A concorrência que cancelava execuções foi removida.
+
+
+## Concorrência e ordem de locks — 2026-11-10
+- **Parcial / verificado estaticamente:** auditoria read-only de OIDs, definições instaladas, privilégios efetivos e call sites para AOO, ataques iterativos PC/NPC, ficha, magia, recursos de classe, condições e movimento.
+- **Evidência:** [LOCK_ORDER_PROTOCOL_DRAFT.md](LOCK_ORDER_PROTOCOL_DRAFT.md) contém o grafo parcial, OIDs, locks próprios/herdados e limites; [LOCK_ORDER_REFACTOR_PLAN.md](LOCK_ORDER_REFACTOR_PLAN.md) contém proposta faseada ainda não aprovada para deploy.
+- **CI:** PostgreSQL fixture run #72 [42730159992](https://github.com/clubberblues/rpgvinculo/actions/runs/42730159992) passou footprint helper + oito padrões sintéticos de deadlock + um controle positivo. Não executa RPCs de produção.
+- **Limites:** deadlocks de produção não foram reproduzidos; `pg_stat_database` mostra zero desde reset em 2026-08-25 e nenhum lock aguardando na amostragem de 2026-11-10, o que não elimina ciclos potenciais.
+- **Bloqueio de mudança:** 681 arquivos SQL locais versus 966 registros remotos, 640 versões coincidentes por timestamp/nome e conteúdo não reconciliado. Não alterar funções/migrations/ACL/policies/dados até reconciliar e validar em ambiente descartável.
+- **Próxima ação:** fechar grafo transitivo dos writers/callers e helpers/triggers; depois implementar fatias pequenas com teste real das RPCs em PostgreSQL descartável e plano de rollback.
