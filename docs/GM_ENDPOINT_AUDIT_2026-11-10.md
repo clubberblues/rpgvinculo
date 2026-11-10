@@ -279,3 +279,8 @@ No snapshot, um personagem-fonte está ligado a dois tokens NPC na mesma campanh
 
 A política de exclusão/desvinculação precisa considerar também a multiplicidade: uma ficha pode ser fonte de vários tokens em uma ou várias campanhas. Se a regra permitir vários clones, os controles de ficha precisam permitir escolher o token ou operar em escopo de ficha (com semântica compartilhada claramente definida); não escolher arbitrariamente o primeiro.
 
+
+
+### A exclusão é oferecida mesmo para fichas-fonte vinculadas
+
+`lobby.html` lista as fichas do usuário e renderiza o botão `Excluir ficha` para cada uma; a listagem não consulta `sourceCharacterId` nem oculta/desabilita a exclusão quando a ficha é fonte de token NPC. Portanto, as 2 fichas-fonte observadas estão expostas ao botão. Hoje a RPC falha antes de excluir por causa das relações antigas ausentes; quando o defeito de schema for corrigido, a política de vínculo deve ser implementada no backend e a UI deve refletir o bloqueio/desvinculação. Não confiar apenas em esconder o botão.
