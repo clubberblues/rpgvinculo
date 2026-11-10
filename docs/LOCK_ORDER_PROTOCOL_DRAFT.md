@@ -738,3 +738,17 @@ A matriz de EXECUTE authenticated confirma também:
 - `public.clonar_equipamento_ficha_para_token` (OID 26515) consulta papel GM, depois lê origem/token e altera inventário/instâncias sem bloquear campanha nem revalidar papel. É candidato adicional à mesma janela de autorização e a uma corrida de snapshot/sincronização do inventário do token.
 
 Esses endpoints têm EXECUTE authenticated e não anon no snapshot. A lista de rotas para análise de revogação GM passa a incluir OIDs 20556, 21668, 21670, 26390→26441, 26444→26443 e 26515. A regra de correção deve ser aplicada por domínio e autorização: para mutação de token/campanha, campaign FOR UPDATE antes de ler/revalidar role e token; para mutação de ficha PC, character/campaign lock order coerente com o protocolo e revalidação da autorização GM sob a serialização escolhida. Não inserir campaign lock depois de character/sheet.
+
+
+### Ampliação: administração da campanha e início de iniciativa (snapshot 2026-11-10)
+
+A busca por todas as funções SECURITY DEFINER com EXECUTE authenticated que alteram `members` encontrou mais caminhos que compartilham a mesma janela de autorização:
+
+- `priv.need_owner` (OID 18742) verifica `campaigns.owner_id=auth.uid()` e `active` por EXISTS simples, sem `FOR UPDATE`.
+- `public.gm_set_role` (OID 18748) e `public.gm_kick` (OID 19188) chamam `need_owner`, depois atualizam/excluem `members` sem bloquear campanha. Um antigo GM pode validar ownership antes de uma transferência e concluir alteração de papel/expulsão depois dela.
+- `public.gm_transfer` (OID 18749) tem o mesmo check sem lock, depois muda papéis e owner. Já existe cenário sintético de duas transferências concorrentes.
+- `public.iniciar_iniciativa_com_dados` (OID 20577) valida `members.role='GM'` e pertencimento dos participantes antes de bloquear `campaigns FOR UPDATE`. Se o GM for rebaixado durante a janela, a iniciativa ainda pode ser gravada após a revogação. EXECUTE authenticated confirmado.
+- `public.sentar_personagem_na_mesa` (OID 21606) valida papel PLAYER antes de bloquear a ficha e não bloqueia campanha. O risco primário é inconsistência de associação/estado se a membership mudar entre validação e update; o efeito é distinto do abuso de GM e precisa ser avaliado com o fluxo de associação de personagens.
+- `public.leave_campaign` (OID 19187) lê papel via `my_role` e remove membership sem lock de campanha. A leitura obsoleta pode competir com mudança de papel/expulsão; avaliar idempotência e logs.
+
+A família de mutações administrativas deve compartilhar uma serialização: localizar campanha por MVCC → bloquear campanha FOR UPDATE → revalidar owner_id/active e membership/papel → bloquear/alterar membros em ordem determinística → registrar log. `iniciar_iniciativa_com_dados` deve adquirir campanha antes de validar GM e participantes; validar os vínculos relevantes novamente após o lock. Não basta corrigir apenas os endpoints de inventário. Esta é análise estática de janelas TOCTOU, não prova de exploração; nenhuma função foi alterada.
