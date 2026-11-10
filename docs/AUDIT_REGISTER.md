@@ -516,3 +516,7 @@ A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24
 
 - **Reproducer CI, 2026-11-10:** fixtures #284 [42751013687](https://github.com/clubberblues/rpgvinculo/actions/runs/42751013687) e #285 [42751022904](https://github.com/clubberblues/rpgvinculo/actions/runs/42751022904) success. O modelo copiado do trigger reproduziu duplicata do mover e movimento de outro token durante pending; controlou bloqueio de movimento único e atualização de metadados. Não executa o trigger/RPC Supabase instalado.
 
+
+
+- **P1 mecânico — snapshot de armas incompleto:** OID 26923 grava source/range sem instância; consulta OID 27044 lista equipamento atual; início OID 27022 aceita instância atual equipada sem provar que estava equipada no gatilho. Mudanças por OIDs 20555/20556 durante pending podem invalidar/criar elegibilidade AOO. Correção exige snapshot de arma exata ou freeze de equipamento. Evidência em MOVEMENT_AOO_AUTHORITY_GAP.md.
+
