@@ -55,3 +55,8 @@ OID 18746. É leitura, não mutação; `priv.need_gm` não bloqueia campanha. De
 3. Comparar migrações locais/remotas e localizar a mudança que renomeou `items/inventory` para `vinculo_items/vinculo_inventory`; não corrigir função antes de reconstruir histórico e contrato de dados.
 4. Projetar migrations de campaign-first por fatias, com testes de integração autenticados em banco descartável.
 5. Manter qualquer alteração remota bloqueada até reconciliação completa das 681 migrations locais versus 966 registros remotos.
+
+
+## CI #170 — cobertura sintética aprovada
+
+GitHub Actions [run #170](https://github.com/clubberblues/rpgvinculo/actions/runs/42739191233), SHA `3c7144a5894e161d90dfa82762c040a97955e652`, concluiu SUCCESS. Os logs confirmam stale GM grant após revogação e rejeição campaign-first, stale condition/effect removal e rejeição campaign-first, além da cobertura de ficha GM. As exceções de autorização dos controles negativos eram esperadas. Testes sintéticos não executam RPCs remotas nem verificam o caminho de concessão de item.
