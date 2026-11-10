@@ -127,3 +127,8 @@ Aplicar o mesmo princípio a todos os prefixes de campanha graváveis, inclusive
 ## Fixture sintético do lock de upload
 
 O harness descartável agora modela a garantia de serialização com duas interleavings: (a) upload adquire campaign KEY SHARE antes da preparação, então a preparação aguarda o commit do upload antes de inserir o marcador; (b) preparação adquire campaign FOR UPDATE e grava o marcador antes, então o upload aguarda e é rejeitado ao reler o marcador. O modelo usa uma função PL/pgSQL VOLATILE e uma tabela de objetos fictícia. Ele valida a compatibilidade dos locks PostgreSQL, mas não executa policy RLS, Storage API, upload binário ou finalizador Supabase real; integração autenticada continua obrigatória.
+
+
+## Fixture sintético do finalizador e retry
+
+O harness descartável agora inclui uma implementação-modelo que bloqueia campanha primeiro, revalida proprietário e marcador, consulta se ainda existem objetos no Storage fictício e só então remove marcador/campanha. O teste verifica três resultados: usuário diferente do proprietário é rejeitado; Storage não vazio impede finalização e preserva campanha + marcador para retry; após remoção dos objetos, nova tentativa conclui. O modelo não chama Storage API nem substitui a validação da função remota; apenas fixa o contrato transacional esperado.
