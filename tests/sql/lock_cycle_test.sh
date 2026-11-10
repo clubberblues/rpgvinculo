@@ -1011,11 +1011,6 @@ run_storage_zero_check_and_retry_contract() {
     rm -rf "$tmp"
     exit 1
   fi
-  echo "passed synthetic Storage zero-check/retry contract: wrong owner rejected; non-empty Storage preserved campaign+marker; clean retry completed"
-  rm -rf "$tmp"
-}
-
-run_storage_zero_check_and_retry_contract
 
 
   # Production cleanup marker has no campaign FK: retry must also be safe if a
@@ -1041,3 +1036,9 @@ run_storage_zero_check_and_retry_contract
     exit 1
   fi
   echo "passed idempotent retry with missing campaign and residual cleanup marker"
+
+  echo "passed synthetic Storage zero-check/retry contract: wrong owner rejected; non-empty Storage preserved campaign+marker; clean retry completed"
+  rm -rf "$tmp"
+}
+
+run_storage_zero_check_and_retry_contract
