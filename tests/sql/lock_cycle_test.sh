@@ -887,3 +887,80 @@ run_expected_stale_gm_grant_after_revocation
 run_expected_campaign_first_gm_grant_rejection
 run_expected_stale_gm_condition_effect_removal_after_revocation
 run_expected_campaign_first_gm_condition_effect_removal_rejection
+
+
+# Synthetic contract for the campaign lock handshake required by Storage uploads.
+# It verifies both interleavings: an earlier upload must finish before prepare
+# can set the marker; an earlier prepare must make the later upload reject.
+run_storage_upload_cleanup_lock_contract() {
+  local tmp count marker result sa sb
+  tmp="$(mktemp -d)"
+  psql -v ON_ERROR_STOP=1 -c "DELETE FROM lock_fixture.campaign_deletion_cleanup WHERE campaign_id=1; TRUNCATE lock_fixture.storage_objects;" >/dev/null
+  psql -v ON_ERROR_STOP=1 >"$tmp/upload-first.log" 2>&1 <<'SQL' &
+BEGIN;
+SELECT lock_fixture.upload_if_allowed(1,'campaigns/1/upload-first.png');
+SELECT pg_sleep(0.4);
+COMMIT;
+SQL
+  local a=$!
+  sleep 0.1
+  psql -v ON_ERROR_STOP=1 >"$tmp/prepare-after.log" 2>&1 <<'SQL' &
+BEGIN;
+SELECT id FROM lock_fixture.campaigns WHERE id=1 FOR UPDATE;
+INSERT INTO lock_fixture.campaign_deletion_cleanup(campaign_id,owner_id)
+VALUES (1,'owner-a')
+ON CONFLICT (campaign_id) DO UPDATE SET owner_id=EXCLUDED.owner_id,requested_at=now();
+COMMIT;
+SQL
+  local b=$!
+  set +e
+  wait "$a"; sa=$?
+  wait "$b"; sb=$?
+  set -e
+  count="$(psql -Atq -c "SELECT count(*) FROM lock_fixture.storage_objects WHERE campaign_id=1")"
+  marker="$(psql -Atq -c "SELECT count(*) FROM lock_fixture.campaign_deletion_cleanup WHERE campaign_id=1")"
+  if [[ "$sa" -ne 0 || "$sb" -ne 0 || "$count" != "1" || "$marker" != "1" ]]; then
+    echo "FAIL: prepare did not wait for the earlier upload to finish"
+    cat "$tmp/upload-first.log" "$tmp/prepare-after.log"
+    echo "objects=$count marker=$marker statuses=$sa/$sb"
+    rm -rf "$tmp"
+    exit 1
+  fi
+
+  psql -v ON_ERROR_STOP=1 -c "DELETE FROM lock_fixture.campaign_deletion_cleanup WHERE campaign_id=1; TRUNCATE lock_fixture.storage_objects;" >/dev/null
+  psql -v ON_ERROR_STOP=1 >"$tmp/prepare-first.log" 2>&1 <<'SQL' &
+BEGIN;
+SELECT id FROM lock_fixture.campaigns WHERE id=1 FOR UPDATE;
+INSERT INTO lock_fixture.campaign_deletion_cleanup(campaign_id,owner_id)
+VALUES (1,'owner-a')
+ON CONFLICT (campaign_id) DO UPDATE SET owner_id=EXCLUDED.owner_id,requested_at=now();
+SELECT pg_sleep(0.4);
+COMMIT;
+SQL
+  a=$!
+  sleep 0.1
+  psql -v ON_ERROR_STOP=1 >"$tmp/upload-after.log" 2>&1 <<'SQL' &
+BEGIN;
+SELECT lock_fixture.upload_if_allowed(1,'campaigns/1/upload-after.png');
+COMMIT;
+SQL
+  b=$!
+  set +e
+  wait "$a"; sa=$?
+  wait "$b"; sb=$?
+  set -e
+  count="$(psql -Atq -c "SELECT count(*) FROM lock_fixture.storage_objects WHERE campaign_id=1")"
+  marker="$(psql -Atq -c "SELECT count(*) FROM lock_fixture.campaign_deletion_cleanup WHERE campaign_id=1")"
+  result="$(grep -Eo 'f|t' "$tmp/upload-after.log" | tail -n 1 || true)"
+  if [[ "$sa" -ne 0 || "$sb" -ne 0 || "$count" != "0" || "$marker" != "1" || "$result" != "f" ]]; then
+    echo "FAIL: upload after cleanup marker was not rejected"
+    cat "$tmp/prepare-first.log" "$tmp/upload-after.log"
+    echo "objects=$count marker=$marker result=$result statuses=$sa/$sb"
+    rm -rf "$tmp"
+    exit 1
+  fi
+  echo "passed synthetic Storage upload/cleanup lock contract: earlier upload serialized before marker; later upload rejected"
+  rm -rf "$tmp"
+}
+
+run_storage_upload_cleanup_lock_contract
