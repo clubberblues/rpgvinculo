@@ -528,3 +528,13 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - O catálogo confirma EXECUTE SQL para authenticated, mas não confirma que `private` esteja incluído em `pgrst.db_schemas`; não afirmar exposição REST explorável nem testar acesso HTTP sem a configuração efetiva. A exposição de schema continua uma pergunta separada.
 - Próxima unidade: inventariar os 8 objetos do schema `private`, mapear grants por assinatura e callers públicos; depois ampliar a matriz ACL para todos os schemas não expostos que têm USAGE concedido a papéis cliente. Não revogar em bloco antes de adaptar wrappers e testes.
 - Consulta read-only; nenhuma ACL, função, migration, trigger ou dado remoto foi alterado.
+
+
+### Avanço de nível altera entradas AOO sem serialização da campanha — 2026-11-10
+
+- Leitura integral da implementação instalada `priv.concluir_avanco_nivel_personagem_srd(bigint,text,integer,jsonb,jsonb,text)` confirma locks em personagem → ficha e atualização de `nivel`, `atributos`, `pericias`, `talentos` e progressão de classe. A implementação não consulta nem bloqueia `public.campaigns`; não há validação de que a campanha permaneça fora de combate nem verificação de pending AOO sob lock.
+- O wrapper ativo `public.concluir_avanco_nivel_personagem_srd_v2` é chamado por `ficha.html`. Logo, a lacuna é alcançável pelo fluxo de avanço de nível, não apenas por helper interno.
+- A alteração de talento/classe é material para AOO: o detector consulta classe Monge e o talento Ataque Desarmado Aprimorado para determinar se um personagem ameaça quadrados sem arma equipada; os níveis de classe também alimentam propriedades de combate. Assim, um avanço concluído enquanto existe pending pode mudar elegibilidade/ameaça entre o snapshot e a reação/commit. A função não é writer de geometria, mas writer de premissas do snapshot.
+- O lock personagem → ficha também não se integra ao protocolo campaign-first proposto. A correção deve bloquear a campanha primeiro, revalidar estado e pending, e então bloquear personagem/ficha; se avanço durante combate for permitido por regra de produto, deve invalidar/recalcular o pending dentro da mesma transação. Não basta adicionar um teste de estado antes do primeiro lock.
+- O marker textual `COMBATE` encontrado em uma varredura simplificada estava em listas/strings de talentos, não em uma guarda de estado. A revisão do corpo completo não encontrou guard real de combate.
+- Não foi executada a RPC nem alterada a implementação remota; conclusão estática baseada no corpo instalado e no callsite versionado.
