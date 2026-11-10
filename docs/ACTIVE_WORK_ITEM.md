@@ -461,3 +461,14 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - Run #42890392296 no commit `635bdf1` falhou porque os scripts de migration executados pela fixture fazem `COMMIT`, encerrando a transação externa iniciada no começo do arquivo. Claims configurados com `set_config(..., true)` depois disso expiravam ao fim de cada instrução. O preflight mostrou ambos `auth.uid()` e `my_role()` nulos, causando a mensagem GM.
 - A fixture foi corrigida para abrir uma nova transação após aplicar/verificar as migrations e antes de configurar os claims. A correção está no commit `c21490e`; ainda sem CI confirmado.
 - O replay integral falha antes de aplicar a primeira migration porque o schema-base `public.campaigns` não existe no stack vazio. Continua sendo bloqueio de bootstrap, não falha de migration 969 nem da aplicação.
+
+
+### Validação consolidada mais recente — 2026-11-10 20:02 UTC
+
+- HEAD da branch/PR #74: `5874c6fc36d1d79f7411f1299f97e316a3b772b7`; PR aberto, draft, não mesclado.
+- No HEAD `5874c6f`: Static validation, Validate application JavaScript, Validate mesa JavaScript e PostgreSQL fixture tests concluíram **success**. PostgreSQL run #42891004794.
+- Os logs do fixture confirmam: migrations de segurança 1500/1600/1700 aplicadas no banco descartável; verificações de ACL/SECURITY DEFINER passaram; GM autorizado e jogador/anon negados; helpers internos negados a authenticated; wrapper de Ataque Total positivo para ficha própria; helper interno de 7 args negou campanha incorreta, identidade de usuário incorreta e membership ausente; reproducer AOO confirmou as quatro lacunas (duplicidade, geometria de outro token, facção/alcance e spawn de token).
+- Os testes de deadlock/autorização também concluíram success como modelos sintéticos. Os erros de deadlock/authorization presentes no log são resultados esperados dos cenários de reprodução, não falhas do job nem incidentes observados no Supabase.
+- O workflow de replay integral ainda está em execução para esse HEAD; execuções anteriores falharam no bootstrap antes de aplicar a primeira migration, por ausência de `public.campaigns`. Aguardando o resultado do run atual.
+- A validação verde da fixture não é integração PostgREST/Auth real e não demonstra correção das rotas AOO em produção. As quatro lacunas permanecem reproduzidas no algoritmo atual.
+- Nenhuma migration/ACL/trigger/função/policy/dado/campanha remota foi alterada; nenhum deploy ou merge.
