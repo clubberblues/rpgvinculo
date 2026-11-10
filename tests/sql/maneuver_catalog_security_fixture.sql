@@ -35,9 +35,9 @@ RETURNS integer LANGUAGE sql IMMUTABLE
 AS $$ SELECT 5 $$;
 REVOKE ALL ON FUNCTION priv.srd_grid_footprint_distance_ft(integer,integer,integer,integer,integer,integer) FROM PUBLIC, authenticated, anon;
 
-CREATE OR REPLACE FUNCTION priv.srd_token_grid_footprint(bigint,text)
+CREATE OR REPLACE FUNCTION priv.srd_token_grid_footprint(p_campaign_id bigint,p_token_id text)
 RETURNS integer LANGUAGE sql STABLE
-AS $$ SELECT 1 $$;
+AS $ SELECT 1 $;
 REVOKE ALL ON FUNCTION priv.srd_token_grid_footprint(bigint,text) FROM PUBLIC, authenticated, anon;
 
 CREATE OR REPLACE FUNCTION priv.srd_parse_natural_attack_list(text)
@@ -67,7 +67,8 @@ CREATE TABLE public.srd_character_equipment(character_id text, equipment_id text
 CREATE TABLE public.srd_attack_sequences(id uuid, weapon_hand_slot text, weapon_end text);
 
 CREATE OR REPLACE FUNCTION priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(
- bigint,text,text,text,uuid,text,text
+ p_campaign_id bigint,p_character_id text,p_target_token_id text,p_attack_type text,
+ p_weapon_instance_id uuid,p_weapon_hand_slot text,p_weapon_end text
 ) RETURNS jsonb LANGUAGE sql SECURITY DEFINER
 SET search_path TO public, priv, pg_temp
 AS $$ SELECT '{}'::jsonb $$;
@@ -75,7 +76,8 @@ GRANT EXECUTE ON FUNCTION priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(big
 TO authenticated, service_role;
 
 CREATE OR REPLACE FUNCTION priv.iniciar_sequencia_ataque_iterativo_srd_8_impl(
- bigint,text,text,text,uuid,text,text,integer
+ p_campaign_id bigint,p_character_id text,p_target_token_id text,p_attack_type text,
+ p_weapon_instance_id uuid,p_weapon_hand_slot text,p_weapon_end text,p_power_attack_penalty integer
 ) RETURNS jsonb LANGUAGE sql SECURITY DEFINER
 SET search_path TO public, priv, pg_temp
 AS $$ SELECT '{}'::jsonb $$;
@@ -83,7 +85,8 @@ GRANT EXECUTE ON FUNCTION priv.iniciar_sequencia_ataque_iterativo_srd_8_impl(big
 TO authenticated, service_role;
 
 CREATE OR REPLACE FUNCTION public.iniciar_sequencia_ataque_iterativo_srd(
- bigint,text,text,text,uuid,text,text
+ p_campaign_id bigint,p_character_id text,p_target_token_id text,p_attack_type text,
+ p_weapon_instance_id uuid,p_weapon_hand_slot text,p_weapon_end text
 ) RETURNS jsonb LANGUAGE sql SECURITY INVOKER
 SET search_path TO pg_catalog, public, priv, pg_temp
 AS $$ SELECT '{}'::jsonb $$;
@@ -91,7 +94,8 @@ GRANT EXECUTE ON FUNCTION public.iniciar_sequencia_ataque_iterativo_srd(bigint,t
 TO authenticated, service_role;
 
 CREATE OR REPLACE FUNCTION public.iniciar_sequencia_ataque_iterativo_srd(
- bigint,text,text,text,uuid,text,text,integer
+ p_campaign_id bigint,p_character_id text,p_target_token_id text,p_attack_type text,
+ p_weapon_instance_id uuid,p_weapon_hand_slot text,p_weapon_end text,p_power_attack_penalty integer
 ) RETURNS jsonb LANGUAGE sql SECURITY INVOKER
 SET search_path TO pg_catalog, public, priv, pg_temp
 AS $$ SELECT '{}'::jsonb $$;
