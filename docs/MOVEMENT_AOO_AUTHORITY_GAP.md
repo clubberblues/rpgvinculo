@@ -91,3 +91,47 @@ A comparação do snapshot confirmou:
 - `priv.mover_token_player_cba_impl` e `priv.mover_token_gm_cba_srd_impl`: Colossal = 5.
 
 O helper canônico já existe, então a correção deve reutilizá-lo em vez de criar outro mapeamento de tamanho. A alteração precisa revisar todos os consumidores diretos de footprint para evitar regressões em ocupação, colisão e distância.
+
+
+## Terceira rota de escrita: salvamento geral da cena pelo Mestre
+
+A inspeção ampliada de `mesa.html` e do catálogo remoto confirmou que os dois RPCs de movimento não são os únicos caminhos capazes de alterar coordenadas:
+
+- `public.salvar_cena_cba(bigint,jsonb)` (OID 20077) é `SECURITY DEFINER`, tem EXECUTE para `authenticated` e valida que o chamador seja GM.
+- O corpo bloqueia a linha da campanha, recebe a cena inteira do cliente, mescla tokens por `id`/`key` e atualiza `campaigns.cba_data`. Não valida se as coordenadas de tokens existentes mudaram, nem chama o detector AOO.
+- `mesa.html` usa esse RPC pelo wrapper `gravarCBAnaCampanha` (nove callsites observados na branch auditada), inclusive para salvar metadados, publicar cena, atualizar tokens e outras operações. Portanto, a proteção não pode tratar todo UPDATE de `cba_data` como movimento, mas precisa distinguir alterações de coordenadas de outras mutações legítimas.
+- O trigger existente `trg_srd_guard_pending_aoo_movement` é BEFORE UPDATE de `campaigns.cba_data` e também intercepta esse salvamento geral. Porém, sua lógica só bloqueia mudança de posição quando já existe pending AOO ativo. Sem pending, permite a mudança.
+
+**Impacto:** revogar apenas os wrappers de movimento direto OIDs 20522 e 21615 não fecha o bypass. Um Mestre autenticado pode enviar uma cena com novas coordenadas pelo OID 20077 durante combate e contornar o fluxo AOO, desde que não exista pending já ativo. A evidência é estática; nenhuma chamada de escrita foi executada.
+
+### Contrato de proteção ampliado
+
+A solução deve ser aplicada no ponto comum de persistência (trigger/validação transacional de `campaigns.cba_data`) e nas funções de movimento:
+
+1. Detectar diferenças de coordenadas entre tokens persistentes da cena anterior e da nova cena, usando identidade estável e tratamento explícito de remoção/recriação. Mudanças em nome, imagem, HP, perfil de combate ou metadados não devem ser confundidas com movimento.
+2. Durante combate ativo, rejeitar alteração de coordenadas de token existente por qualquer writer genérico, inclusive `salvar_cena_cba`, salvo quando a transação estiver dentro de uma autoridade de movimento validada pelo servidor.
+3. A autoridade de movimento deve validar controlador, token, propriedade/GM, turno, origem, destino, economia de ações, ocupação, condições e AOO; somente ela pode definir o contexto transacional interno que autoriza a alteração de coordenadas.
+4. O contexto interno deve ser específico à campanha e ao token (e, na finalização, ao pending correto), não um booleano amplo reutilizável por qualquer update na mesma transação. A validação precisa impedir que um cliente defina o GUC de autorização por SQL/RPC próprio.
+5. Permitir alterações de coordenadas durante preparação/exploração somente conforme a política de movimento fora de combate, sem abrir uma rota paralela durante combate.
+6. Cobrir todos os writers que atualizam `cba_data`, não apenas `salvar_cena_cba` e os dois wrappers conhecidos. O trigger é o ponto de defesa comum, mas seus callers e contextos de autorização precisam ser inventariados antes da mudança.
+
+### Call sites e grants observados
+
+- `salvar_cena_cba`: OID 20077, authenticated EXECUTE; wrapper de persistência geral localizado em `mesa.html`.
+- `mover_token_player_cba`: OID 20522, authenticated EXECUTE.
+- `mover_token_gm_cba_srd`: OID 21615, authenticated EXECUTE.
+- `srd_solicitar_movimento_com_aoo_srd`: OID 26964, authenticated EXECUTE; atualmente retorna `continue_with_existing_movement_rpc=true` nos caminhos sem ameaça ou fora de combate, deixando a escrita para outra chamada.
+- O fluxo normal do jogador chama a solicitação AOO durante combate e depois chama o wrapper direto de movimento quando não há pending.
+- O fluxo normal do Mestre chama a solicitação AOO e depois o wrapper direto quando está no turno de um token; fora desse ramo, a sincronização geral da cena usa `salvar_cena_cba`.
+
+**Atualização do escopo:** a correção deve fechar simultaneamente (a) RPCs diretas de movimento, (b) salvamento geral da cena, (c) qualquer outro writer de `cba_data` que altere coordenadas. Revogar os wrappers diretos é necessário, mas insuficiente isoladamente.
+
+### Testes adicionais obrigatórios
+
+- GM tenta mover token existente durante combate por `salvar_cena_cba`: rejeitado sem alteração de coordenadas.
+- GM atualiza imagem, nome, HP, perfil de ameaça ou metadados sem alterar coordenadas: permitido conforme as regras existentes.
+- GM adiciona token novo em combate: comportamento explicitamente definido e testado; não pode ser usado para remover/recriar um token existente e escapar da guarda.
+- Tentativa de trocar `id`/`key`, remover e reinserir token para contornar a comparação de identidade: rejeitada ou tratada como remoção + criação sujeita às mesmas regras.
+- Movimento autorizado por orquestradora e finalização AOO: permitido uma única vez; GUC/contexto não autoriza outro token nem outra campanha.
+- Todos os writers de `cba_data` inventariados são exercitados em regressão para confirmar que apenas mudanças de coordenadas passam pela autoridade de movimento.
+
