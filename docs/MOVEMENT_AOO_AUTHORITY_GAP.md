@@ -240,3 +240,24 @@ O guard atual em `priv.srd_guard_pending_aoo_movement` consulta somente a pendin
 - Mudança de atributos não relacionados à ameaça (ex.: PV) deve continuar possível quando não afeta as dependências do snapshot.
 - Resolver ataque AOO e finalizar movimento devem verificar que o conjunto de ameaças e os dados mecânicos usados ainda correspondem ao snapshot, ou consumir um snapshot imutável com dependências bloqueadas.
 
+
+
+### Ambiguidade de identidade: duplicação de token pode escapar da guarda
+
+Foi confirmada uma falha adicional na comparação OLD/NEW:
+
+- `salvar_cena_cba` (OID 20077) aceita a lista enviada de tokens e a agrega com `UNION ALL`; não valida unicidade de `id` nem de `key`. Dois objetos solicitados com o mesmo identificador permanecem duplicados no array final.
+- `priv.srd_guard_pending_aoo_movement` (OID 26962) procura o token mover em OLD e NEW com `id = pending.mover_token_id OR key = pending.mover_token_id LIMIT 1`, sem contar correspondências nem rejeitar duplicatas.
+- Como a ordem do array enviado pelo Mestre é preservada, a cena pode conter dois objetos com a mesma identidade: primeiro o objeto mantendo as coordenadas de origem, depois um duplicado com coordenadas alteradas. O trigger compara somente o primeiro e não vê mudança; o UPDATE genérico pode ser aceito.
+- Os endpoints de solicitação/detecção e movimento GM contam correspondências e rejeitam token duplicado. Assim, a duplicação também pode impedir a conclusão posterior do movimento pendente e deixar a campanha bloqueada até cancelamento pelo Mestre.
+
+**Classificação:** P1 de integridade/DoS do fluxo AOO, confirmado estaticamente; não foi executado em produção. O teste deve reproduzir a ordenação dos duplicados em fixture isolada.
+
+**Correção necessária:** a validação de cena deve rejeitar qualquer duplicidade de identidade antes de persistir; a guarda deve exigir exatamente uma correspondência em OLD e exatamente uma em NEW para cada identidade relevante, e comparar a posição dessa única correspondência. A identidade canônica deve ser definida (id/key), sem aceitar aliases ambíguos. A validação de token duplicado também deve ser aplicada nos demais writers de CBA.
+
+**Regressões adicionais:**
+- Cena com IDs duplicados, keys duplicadas e colisão cruzada (id de um token igual à key de outro): rejeitada.
+- Durante pending, dois objetos com identidade do mover, primeiro na origem e segundo deslocado: rejeitado sem gravar cena.
+- Token único legítimo continua atualizável em metadados não geométricos.
+- Solicitação e finalização não podem ficar presas por duplicidade introduzida via salvamento geral.
+
