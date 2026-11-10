@@ -453,3 +453,10 @@ A inspeção das migrations de origem confirmou a causa: as migrations `20261108
 Preparei na branch uma migration aditiva que altera apenas essas duas assinaturas para SECURITY DEFINER, mantém `search_path` fixo, retira EXECUTE de PUBLIC/anon e mantém authenticated/service_role. Ambas já contêm validação explícita de `auth.uid()` e GM antes de consultar dados; a migration não altera os corpos das funções. Acrescentei `supabase/verification/verify_maneuver_catalog_rpc_security.sql` para validar flags, search_path, autorização preservada e ACL após aplicação.
 
 **Estado:** migration e verificação estão apenas no branch de auditoria; não foram aplicadas ao Supabase remoto. Regressão autenticada real ainda necessária, incluindo Derrubar com/sem arma apropriada, GM autorizado, jogador comum negado e catálogo de ataques naturais de NPC/monstro.
+
+
+### Fixture isolado da correção de privilégios (2026-11-10)
+
+Foi acrescentado `tests/sql/maneuver_catalog_security_fixture.sql`, que cria um ambiente PostgreSQL descartável com roles `authenticated`, `anon`, `service_role`, schema `priv`, helpers sem EXECUTE para authenticated e wrappers GM equivalentes às assinaturas remotas. O fixture aplica a migration focalizada real via `psql \\i`, executa o script de verificação pós-migration, valida chamada positiva com papel GM, valida negação de jogador e confirma que authenticated continua sem chamada direta ao helper interno. O workflow `postgres-fixture-tests.yml` foi atualizado para executar o novo fixture.
+
+Este teste verifica o comportamento de privilégios e a sintaxe/efeito da migration num PostgreSQL isolado; não substitui chamadas autenticadas contra as funções reais do Supabase nem teste de regressão com dados de campanha. Execução CI ainda pendente de confirmação para o novo commit.
