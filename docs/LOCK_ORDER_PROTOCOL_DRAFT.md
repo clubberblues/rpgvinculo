@@ -752,3 +752,18 @@ A busca por todas as funções SECURITY DEFINER com EXECUTE authenticated que al
 - `public.leave_campaign` (OID 19187) lê papel via `my_role` e remove membership sem lock de campanha. A leitura obsoleta pode competir com mudança de papel/expulsão; avaliar idempotência e logs.
 
 A família de mutações administrativas deve compartilhar uma serialização: localizar campanha por MVCC → bloquear campanha FOR UPDATE → revalidar owner_id/active e membership/papel → bloquear/alterar membros em ordem determinística → registrar log. `iniciar_iniciativa_com_dados` deve adquirir campanha antes de validar GM e participantes; validar os vínculos relevantes novamente após o lock. Não basta corrigir apenas os endpoints de inventário. Esta é análise estática de janelas TOCTOU, não prova de exploração; nenhuma função foi alterada.
+
+
+### Incompatibilidade determinística entre gm_transfer e enforce_campaign_member_role (2026-11-10)
+
+A inspeção do trigger instalado `public.enforce_campaign_member_role` (OID 21603; enabled O) revelou incompatibilidade direta com a ordem atual de `public.gm_transfer` (OID 18749):
+
+1. `gm_transfer` atualiza primeiro o membro proprietário antigo para PLAYER. O trigger lê o `campaigns.owner_id` ainda antigo e força esse mesmo usuário de volta a GM.
+2. Em seguida, `gm_transfer` tenta atualizar o novo proprietário para GM. O trigger ainda lê o owner antigo e converte o novo GM em PLAYER.
+3. Só depois a função atualiza `campaigns.owner_id` para o novo proprietário. Não existe trigger adicional em `campaigns.owner_id` que corrija os papéis.
+
+Consequência prevista pelo código instalado: após transferência, `campaigns.owner_id` aponta para o novo proprietário, mas a membership mantém o antigo owner como GM e o novo como PLAYER. Isso é diferente da corrida concorrente previamente documentada: é incompatibilidade determinística de ordem dentro de uma única chamada, causada pelo trigger BEFORE em cada UPDATE de membership.
+
+A agregação read-only no banco encontrou 3 campanhas; nas 3, o proprietário atual está como GM e existe exatamente um GM. Portanto, não há evidência de inconsistência já persistida no snapshot consultado, mas também não há teste real de execução de `gm_transfer` no banco. O novo fixture PostgreSQL replica a lógica do trigger e a ordem exata da função, esperando reproduzir o papel antigo GM/novo PLAYER; o controle troca owner_id primeiro sob lock de campanha e depois atualiza membership, esperando antigo PLAYER/novo GM.
+
+Correção candidata: bloquear campanha primeiro; validar owner atual; atualizar `campaigns.owner_id` dentro da transação; atualizar papéis depois, em ordem determinística, para que o trigger veja o novo owner. Testar em PostgreSQL descartável com o trigger equivalente, incluindo falha/rollback e duas transferências concorrentes. Não aplicar alteração remota até reconciliar migrations e obter aprovação para implantação.
