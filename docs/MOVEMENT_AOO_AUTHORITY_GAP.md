@@ -487,3 +487,6 @@ Migration `20261110170000_lock_down_internal_helper_execute.sql`:
 A verificação `verify_internal_helper_execute.sql` confere ACL, owner, SECURITY DEFINER, search_path e presença dos guards. O fixture PostgreSQL foi ampliado para cobrir acesso direto negado aos helpers, chamadas internas autorizadas por SECURITY DEFINER e rejeição de ficha não pertencente ao usuário.
 
 Tudo permanece somente na branch. A análise de chamadas foi feita por definição de funções do catálogo; não prova que o schema `priv` esteja exposto como schema REST, pois a configuração efetiva do PostgREST continua indisponível. Não houve teste de endpoint autenticado nem alteração no Supabase remoto.
+
+
+Checagem complementar dos consumidores (2026-11-10): nenhuma policy RLS usa diretamente os três helpers passivos cuja execução autenticada foi revogada; os chamadores SQL identificados são triggers ou funções SECURITY DEFINER. `service_role` mantém USAGE no schema `priv` e EXECUTE explícito nos helpers, conforme o ACL remoto observado. Isso não confirma exposição REST do schema, cuja configuração PostgREST segue indisponível.
