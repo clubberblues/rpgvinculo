@@ -188,3 +188,10 @@ A mesma dependência de `priv.need_owner` (OID 18742) aparece em `public.gm_set_
 ### Estado de verificação do bloco owner-admin
 
 A consulta de dependências confirmou que `priv.need_owner` só é chamado por `gm_set_code`, `gm_set_role`, `gm_transfer` e `gm_kick` no catálogo atual. Tratar os quatro na mesma mudança. A suíte sintética atual já cobre corrida de transferência, expulsão após perda de ownership e a incompatibilidade com trigger; acrescentar casos dedicados para mudança de código e alteração de papel antes de aprovar a refatoração. CI #141 (SHA `cf1ba84`) passou integralmente.
+
+
+### Extensão do plano: operações protegidas por GM fora da família owner-admin
+
+Não basta revalidar somente funções que já bloqueiam campanha. `priv.need_gm` (18741) não bloqueia: `gm_grant` (18752) concede ouro/XP/itens após lock de personagem; `gm_reopen_sheet` (18892) e `gm_set_bonus` (18893) alteram ficha sem campanha lock; `media_gc` (18760) exclui metadados de mídia; `gm_get_code` (18746) expõe código. Também `srd_apply_campaign_condition/effect` (24805/24896) verificam papel antes de helper que bloqueia campanha, sem revalidação após lock; `srd_remove_campaign_condition/effect` (24806/24897) não bloqueiam campanha.
+
+Auditar e corrigir cada família com campaign-first quando houver mutação de estado compartilhado; preservar distinção de leitura e operações de Storage. Para personagem/ficha, ordem candidata campaign → character → sheet. Para efeitos/condições, campaign → tabela-alvo. Não inserir FOR UPDATE dentro de `priv.need_gm` sem mapear callers legados e a ordem anterior de locks.
