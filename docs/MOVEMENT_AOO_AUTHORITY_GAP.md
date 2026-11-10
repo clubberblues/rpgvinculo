@@ -505,3 +505,23 @@ A leitura direta do corpo remoto de `priv.srd_guard_pending_aoo_movement()` (OID
 Consulta read-only agregada ao snapshot atual das três campanhas: 8 tokens, nenhum valor de identidade duplicado entre campos `id`/`key`, nenhum token sem `id` ou `key`, e zero pending AOO ativo. Isso indica que a amostra atual não contém a duplicidade reproduzida na fixture; não corrige a ausência de uma restrição permanente nem elimina a possibilidade de bypass em chamadas futuras.
 
 A correção permanece no limite comum de escrita: validar identidade estável e cardinalidade, comparar todos os tokens e dependências AOO relevantes, autorizar somente o deslocamento exato do mover por um caminho servidor validado e congelar/inutilizar atomicamente o pending quando qualquer fonte de ameaça mudar. O GUC isolado não deve ser tratado como prova suficiente de autorização.
+
+
+### Dependências reais do snapshot AOO e cobertura de triggers — 2026-11-10
+
+Leitura direta de `public.srd_detectar_saida_alcance_ameacado_srd` (OID 26923) mostra que a ameaça não depende apenas de `campaigns.cba_data`. O cálculo deriva:
+
+- Mover: `combat_faction`, `gridX/gridY`, tamanho/footprint e, quando aplicável, raça/tamanho da ficha vinculada.
+- Cada ameaça: identidade, facção, posição e tamanho/footprint; `melee_reach_ft`; alcance e propriedades da arma equipada (`reach_ft`, `threat_min_ft`, `weapon_melee`, `threatens_squares)); ataques naturais em `monsterStats`; e ataque desarmado por classe Monge ou talento Ataque Desarmado Aprimorado.
+- Fontes externas: `srd_character_sheets` (raça, classe, talentos), `srd_character_weapon_instances`, `srd_character_equipment` e `srd_equipment`.
+- A reserva de reação volta a consultar condições em `srd_campaign_conditions` e talentos/condições do reator. Portanto, congelar somente o JSON de tokens não preserva todas as premissas da decisão inicial.
+
+Inventário read-only dos triggers não internos nas tabelas relevantes:
+- `public.campaigns`: o único trigger ligado a `cba_data` é `trg_srd_guard_pending_aoo_movement`; há outros triggers sobre `combat_data`, não sobre o snapshot espacial AOO.
+- `public.srd_character_sheets`: trigger de delta de PV por Robustez, mas nenhum guard AOO.
+- `public.srd_character_equipment`: trigger de sincronização de instâncias de arma; nenhum guard AOO.
+- `public.srd_character_weapon_instances`, `public.srd_equipment`, `public.srd_campaign_conditions` e `public.srd_campaign_effects`: nenhum trigger AOO apareceu no inventário consultado.
+
+Implicação arquitetural: a correção precisa escolher explicitamente um contrato consistente entre (a) snapshot imutável completo, incluindo versão/hash das fontes de ficha/equipamento/condições e validação dessa versão em cada reação/commit; ou (b) triggers de invalidação/cancelamento atômico em todas as fontes relevantes, com protocolo de locks compatível com campaign-first. Um trigger só em `campaigns.cba_data` nunca consegue garantir sozinho a estabilidade de dados relacionais externos.
+
+Não é correto bloquear qualquer alteração dessas tabelas de forma indiscriminada: reações AOO legítimas podem alterar PV/condições durante o pending. O contrato deve distinguir mudanças que alteram elegibilidade/alcance/ameaça das mudanças de consequência (dano, PV, estados terminais), ou cancelar e recalcular de forma transacional e explícita.
