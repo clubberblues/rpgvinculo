@@ -149,3 +149,9 @@ A checagem deve usar os nomes reais de buckets/prefixos e o mesmo contrato de lo
 
 
 A fixture foi refinada para reproduzir duas características reais do esquema: `priv.campaign_deletion_cleanup` não possui FK para `public.campaigns`, e objetos de Storage não têm FK transacional com a campanha. Isso permite testar o estado de marcador residual e objeto órfão após a linha da campanha desaparecer. O teste agora exige que a tentativa idempotente também recuse sucesso se ainda existir objeto órfão, preservando o marcador até a limpeza.
+
+## Supabase Storage API — distinção entre leitura, assinatura e listagem
+
+A documentação oficial atual confirma que bucket privado aplica RLS também ao download; os caminhos suportados são download autenticado com JWT ou signed URL temporária. A política `SELECT` não deve ser tratada como um único caso funcional: a documentação recomenda `storage.allow_only_operation()` / `storage.allow_any_operation()` quando é necessário diferenciar listagem de leitura/autorização de objeto. Para o CBA, a integração deve testar separadamente: `createSignedUrl` para um caminho autorizado; `download` com JWT; `list` do prefixo (somente GM, se não for requisito do jogador); acesso a caminho de outra campanha; e objeto não existente. Não presumir que uma policy que permite assinatura também deve permitir enumerar todo o diretório.
+
+Referências oficiais consultadas em 2026-11-10: [Storage Access Control](https://supabase.com/docs/guides/storage/security/access-control), [Storage Buckets — Private buckets](https://supabase.com/docs/guides/storage/buckets/fundamentals), [Serving assets — Signed URLs](https://supabase.com/docs/guides/storage/serving/downloads). A documentação também esclarece que signed URLs são temporárias e independentes da chave JWT; a expiração do JWT não revoga URL já assinada. A remoção do objeto é o mecanismo prático de bloqueio imediato, sujeita à propagação de cache CDN quando aplicável.
