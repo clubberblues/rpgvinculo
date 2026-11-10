@@ -49,7 +49,7 @@ O harness inclui dois cenários sintéticos adicionais para endpoints que valida
 Modela a janela observada nos corpos instalados de `entregar_item_srd` (OID 20556), `entregar_item_token_srd` (OID 21668) e `equipar_item_token_srd` (OID 21670). Não executa essas RPCs, nem comprova exploração em produção.
 
 
-Nota de execução (2026-11-10): os primeiros runs #116 e #117 falharam no harness novo, não nos oito testes de deadlock existentes. A sincronização inicial usava advisory-lock polling que podia monopolizar a barreira e expirar; foi substituída por eventos de fixture confirmados em commits/autocommit e por duas conexões independentes. O controle campaign-first usa o lock real da linha de campanha e espera a transação de revogação. A nova versão está sendo reexecutada; considerar o cenário pendente até CI verde.
+Nota de execução (2026-11-10): os primeiros runs #116 e #117 falharam no harness novo, não nos oito testes de deadlock existentes. A sincronização inicial usava advisory-lock polling que podia monopolizar a barreira e expirar; foi substituída por eventos de fixture confirmados em commits/autocommit e por duas conexões independentes. O controle campaign-first usa o lock real da linha de campanha e espera a transação de revogação. A versão corrigida passou em CI #284 [42751013687](https://github.com/clubberblues/rpgvinculo/actions/runs/42751013687), #285 [42751022904](https://github.com/clubberblues/rpgvinculo/actions/runs/42751022904) e #293 [42751317308](https://github.com/clubberblues/rpgvinculo/actions/runs/42751317308); o cenário não está mais pendente.
 
 
 ### Administração da campanha e membership
