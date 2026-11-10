@@ -452,3 +452,23 @@ Os 13 arquivos de versões aplicadas cujo conteúdo local diferia semanticamente
 
 Cinco variantes locais sem versão remota, mas com nome lógico correspondente a uma versão remota, também foram preservadas em quarentena: srd35_flame_strike_engine_rule, srd35_monk_still_mind_enchantment_saves, srd35_paladin_lay_on_hands_harm_undead, stage_all_feat_and_monster_mechanics_for_review e structure_improved_initiative_feat. Duas migrations locais exclusivas de Anão/Bárbaro foram preservadas na mesma quarentena: dwarf_barbarian_n1_racial_movement_fixes e dwarf_armor_load_classification. Essas variantes não foram descartadas nem aplicadas; se alguma for aprovada, deverá ser convertida em nova migration pelo Supabase CLI, com novo timestamp e testes.
 
+
+
+## Bloqueio de replay integral identificado em CI (2026-11-10)
+
+Foi criado um workflow de replay em stack Supabase descartável usando CLI 3.0.0, sem token, project ref, conexão ou credenciais de produção. O workflow copia os 966 arquivos versionados, inicia Postgres/Auth/Storage local e tenta aplicar todas as migrations do zero.
+
+**Resultado observado no primeiro run:** falha na migration inicial 20261031160944_srd35_action_economy.sql, pois ela declara public.campaigns%ROWTYPE e o banco descartável ainda não possui a relação public.campaigns (SQLSTATE 42P01). A falha acontece antes de qualquer migration ser aplicada e não envolve o Supabase remoto.
+
+A causa estrutural foi confirmada nos arquivos:
+- A migration 20261031160944_srd35_action_economy.sql declara no cabeçalho que deve ser aplicada depois de cba_iniciativa_migration.sql, vtt_dnd35_final_migration.sql e srd35_spellcasting_migration.sql, arquivos legados no root do repositório.
+- Esses scripts legados também pressupõem tabelas preexistentes (por exemplo, cba_iniciativa_migration.sql faz ALTER TABLE public.campaigns; vtt_dnd35_final_migration.sql substitui rotinas e depende de characters/campaigns). Nenhum dos 966 arquivos atuais cria public.campaigns como primeira etapa.
+- Logo, os 966 SQL recuperados do ledger remoto constituem um histórico incremental pós-bootstrap, não uma instalação completa desde banco vazio. O schema-base inicial foi criado por processo anterior/manual ou fora do conjunto versionado e ainda não foi recuperado como baseline reproduzível.
+
+**Decisão segura:** manter o workflow vermelho; não mascarar a falha, não marcar migrations como já aplicadas, não pular a primeira migration e não inventar uma tabela campaigns mínima. Próximo trabalho de reconciliação:
+1. Recuperar um dump estrutural do schema-base real a partir de uma fonte confiável/backup do projeto (sem dados de usuários), incluindo tabelas, tipos, extensões, constraints, índices, funções/triggers de base e configurações necessárias.
+2. Identificar e documentar exatamente quais scripts legados foram aplicados antes da primeira migration versionada, com ordem e hashes, sem reaplicar scripts cumulativos sobre o schema existente.
+3. Construir um bootstrap versionado e idempotente em banco descartável; depois executar as 966 migrations em sequência e comparar objetos críticos com o catálogo remoto.
+4. Só então usar o replay como gate para futuras mudanças. Não exportar nem versionar dados reais de campanhas, usuários, fichas ou tokens.
+
+O workflow em .github/workflows/supabase-migration-replay.yml permanece intencionalmente sem credenciais ou referência ao projeto de produção. O primeiro run falhou na etapa de replay, após iniciar apenas o stack local descartável. Nenhuma escrita foi executada no Supabase remoto.
