@@ -145,3 +145,5 @@ A fixture modela deliberadamente ausência de FK entre marcador/campanha e objet
 - **Interpretação do CI:** este é um reproducer de vulnerabilidade conhecida, não um teste de aprovação de segurança. Um run verde significa que a fixture conseguiu reproduzir o comportamento documentado do algoritmo copiado. Quando a implementação for corrigida, o fixture deverá ser convertido em regressão negativa (as tentativas devem ser rejeitadas).
 - O fixture não importa nem executa a função instalada, não chama RPC, não acessa Auth/PostgREST e não conecta ao Supabase. A cópia precisa ser comparada com o corpo remoto quando o trigger mudar.
 
+
+- Execução confirmada: PostgreSQL fixture #284 [42751013687](https://github.com/clubberblues/rpgvinculo/actions/runs/42751013687), #285 [42751022904](https://github.com/clubberblues/rpgvinculo/actions/runs/42751022904) e #293 [42751317308](https://github.com/clubberblues/rpgvinculo/actions/runs/42751317308) concluíram **success**; os logs mostram a reprodução da duplicata e da alteração geométrica de outro token. A validação estática, aplicação JS e mesa JS também passaram no head 041f0b5.
