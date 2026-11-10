@@ -205,7 +205,8 @@ VALUES (1,'owner-a');
 -- This models the required lock handshake, not the Supabase Storage API.
 CREATE TABLE lock_fixture.storage_objects (
   path text PRIMARY KEY,
-  campaign_id integer NOT NULL REFERENCES lock_fixture.campaigns(id) ON DELETE CASCADE
+  -- No FK: Storage objects can outlive a campaign row in the real service.
+  campaign_id integer NOT NULL
 );
 CREATE FUNCTION lock_fixture.upload_if_allowed(p_campaign_id integer,p_path text)
 RETURNS boolean LANGUAGE plpgsql VOLATILE AS $$
