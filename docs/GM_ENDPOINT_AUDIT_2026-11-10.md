@@ -180,3 +180,8 @@ Snapshot read-only de dados: 5 personagens no total; 5 têm `srd_character_sheet
 
 Não remover o fallback nem revogar tabelas/ACLs enquanto não houver decisão explícita sobre compatibilidade e eventual migração de dados. Para o escopo D&D 3.5, manter a rota principal do lobby no caminho SRD e planejar desativação controlada do fallback legado, sem reativar o modelo antigo.
 
+
+
+### Incompatibilidade estrutural entre fichas legadas e SRD
+
+Além dos nomes, os modelos não são intercambiáveis por estrutura. `vinculo_character_sheets` contém `classe`, `cultura`, `armadura`, `escudo`, `bonus_ca`, `bonus_rm`, `ready`, `preserve_pv`, `pv_atual` e `pm_atual`. Já `srd_character_sheets` contém `classe_id`, `raca_id`, `nivel`, `atributos`, `pericias`, `talentos`, `magias_preparadas`, `idiomas_conhecidos`, `identidade`, `pv_atual` e dados SRD; não possui os campos legados `ready/preserve_pv/bonus_ca/bonus_rm`. Portanto, nem mesmo trocar `public.character_sheets` por `vinculo_character_sheets` corrigiria o fluxo para D&D 3.5. Os endpoints legados de reabertura e bônus exigiriam uma nova especificação de regras D&D e RPC própria, não um rename.
