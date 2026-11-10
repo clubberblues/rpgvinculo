@@ -162,3 +162,25 @@ CREATE TABLE lock_fixture.gm_gate_sheets (
   PRIMARY KEY (campaign_id,character_id)
 );
 INSERT INTO lock_fixture.gm_gate_sheets VALUES (1,'character-a',false,0);
+
+
+-- Synthetic stale-GM grant race for public.gm_grant; never connected to Supabase.
+CREATE TABLE lock_fixture.gm_gate_grants (
+  campaign_id integer NOT NULL,
+  character_id integer NOT NULL,
+  gold integer NOT NULL DEFAULT 0,
+  xp integer NOT NULL DEFAULT 0,
+  item_count integer NOT NULL DEFAULT 0,
+  PRIMARY KEY (campaign_id,character_id)
+);
+INSERT INTO lock_fixture.gm_gate_grants VALUES (1,1,0,0,0);
+
+-- Synthetic direct-removal race for srd_remove_campaign_condition/effect.
+CREATE TABLE lock_fixture.gm_gate_removals (
+  campaign_id integer NOT NULL,
+  target_id text NOT NULL,
+  condition_active boolean NOT NULL DEFAULT true,
+  effect_active boolean NOT NULL DEFAULT true,
+  PRIMARY KEY (campaign_id,target_id)
+);
+INSERT INTO lock_fixture.gm_gate_removals VALUES (1,'target-a',true,true);
