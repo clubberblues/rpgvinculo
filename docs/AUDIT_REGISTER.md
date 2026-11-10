@@ -564,3 +564,5 @@ A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24
 - Revogar USAGE/EXECUTE em bloco quebraria cadeias invoker; conversão em lote também não é segura. Exigir matriz por assinatura, autorização, owner e search_path e migração/testes individuais antes de restringir schema. Sem alteração de ACL/função. Ver `docs/MOVEMENT_AOO_AUTHORITY_GAP.md`.
 
 - ACL interna: 40 funções `priv.*` com EXECUTE authenticated, 39 SECURITY DEFINER. Exceção: `priv.srd_feat_saving_throw_modifier(jsonb,text)` OID 26355 tem grant PUBLIC/EXECUTE e é chamada também por anon; parece helper read-only de cálculo de talentos, mas precisa decisão explícita. Nenhum CREATE de authenticated/anon em public/priv. Sem alteração de grants.
+
+- `priv` ownership: 94 funções com owner postgres, 88 SECURITY DEFINER. Helper invoker `srd_parse_natural_attack_list(text)` OID 27228 também tem EXECUTE authenticated; demais cinco helpers invoker observados não têm EXECUTE cliente. Config PostgREST não pôde ser obtida via current_setting (NULL), logo exposição REST de `priv` não comprovada.
