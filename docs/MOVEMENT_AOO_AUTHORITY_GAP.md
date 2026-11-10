@@ -418,3 +418,11 @@ Nenhuma alteração de ACL ou função foi aplicada. A lista e os números são 
 - Uma função também tem `EXECUTE` efetivo para `anon`: `priv.srd_feat_saving_throw_modifier(jsonb,text)` (OID 26355). ACL `{=X/postgres,...}` indica concessão a `PUBLIC`, não apenas anon. A função é SQL STABLE e calcula modificadores passivos de talentos a partir de `public.srd_feats`; aceita JSON de talentos e tipo de resistência e não faz mutação. O efeito pode ser intencional como helper de cálculo, mas sua exposição pública contradiz a ideia de `priv` fechado e deve ser classificada explicitamente antes de revogar o grant.
 - Nem authenticated nem anon têm `CREATE` em `public` ou `priv` (e PUBLIC também não), reduzindo o risco de substituição de objetos nesses schemas. Isso não elimina a superfície de chamada direta por EXECUTE.
 - Remediação: revisar se a função 26355 precisa ser pública; se não, remover grant `PUBLIC` e conceder somente aos wrappers/roles internos. Não fazer revogação em massa até concluir o grafo de chamadas. Nenhum grant alterado.
+
+
+### Proprietário e funções internas não-definer (2026-11-10)
+
+- As 94 funções de `priv` encontradas pertencem ao role `postgres`; 88 são `SECURITY DEFINER`. O owner comum elimina variação de proprietário entre helpers, mas significa que qualquer chamada autorizada a um helper definer executa com privilégios amplos desse owner.
+- As seis funções `priv` invoker não têm todas a mesma exposição: `d20()`, `monster_atk(integer)`, `roll_dice_expr(text)`, `srd_grid_footprint_distance_ft(...)` e `srd_weapon_proficiency(jsonb,text)` não têm EXECUTE para authenticated/anon; `srd_parse_natural_attack_list(text)` (OID 27228) tem EXECUTE authenticated, mas não anon. Esta última é um helper parser chamado por wrapper público de ataques naturais; é read-only e deve ser mantida como dependência controlada ou encapsulada junto com a migração.
+- `current_setting('pgrst.db_schemas', true)` e `pgrst.db_extra_search_path` retornaram NULL na sessão SQL. Portanto, a lista real de schemas expostos pelo PostgREST permanece desconhecida; não concluir que `priv` está ou não publicado em REST.
+- Todos os achados são de catálogo/configuração observável via SQL; sem chamada REST autenticada/anon, não se provou exploração remota direta de endpoints `priv`.
