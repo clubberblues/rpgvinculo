@@ -434,3 +434,11 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - Verificações: `verify_maneuver_catalog_rpc_security.sql` e `verify_passive_feat_helper_acl.sql`.
 - Fixture isolado `tests/sql/maneuver_catalog_security_fixture.sql` aplica ambas as migrations e testa chamadas GM positivas, jogador negativo, anon negativo e chamadas internas do motor. Workflow PostgreSQL atualizado para executar o fixture.
 - Estado: branch apenas; sem alteração remota. Aguardar CI e depois regressão autenticada real antes de implantação.
+
+### Superfície EXECUTE de helpers internos — ampliação (2026-11-10)
+
+- Identificados helpers SECURITY DEFINER sem guarda de usuário executáveis diretamente por authenticated: `srd_condition_has_flag`, `srd_feat_saving_throw_modifier`; parser puro `srd_parse_natural_attack_list) também não precisava de execução cliente.
+- Revogação proposta de EXECUTE authenticated/anon/PUBLIC nesses helpers, mantendo service_role, porque os consumidores SQL identificados são funções SECURITY DEFINER/triggers.
+- Helpers iterativos de ataque de 7/8 argumentos deixaram de ser API cliente. Wrappers públicos 7/8 foram convertidos em SECURITY DEFINER, com search_path fixo e checagem de usuário, propriedade da ficha e membership PLAYER antes de chamar os helpers.
+- O helper de 7 argumentos também recebeu checagem redundante de propriedade antes de ler/bloquear arma.
+- Fixture e verificação atualizados. Estado permanece branch-only; CI e regressão real autenticada ainda pendentes.
