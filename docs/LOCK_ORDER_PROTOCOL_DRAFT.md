@@ -1,10 +1,10 @@
 # Protocolo global de locks — proposta para revisão
 
 Status: **rascunho de arquitetura; não aprovado para implementação**  
-Data: 2026-11-09  
+Data: 2026-11-10  
 Base: inspeção read-only dos corpos SQL remotos, triggers e writers de `campaigns`.
 
-Este documento consolida uma direção candidata para eliminar inversões de locks. Não é migration, não altera o banco e não declara que todas as dependências transitivas foram mapeadas. A implementação fica bloqueada até reconciliação de migrations, revisão por assinatura/OID e testes em PostgreSQL efêmero.
+Este documento consolida uma direção candidata para eliminar inversões de locks. Não é migration, não altera o banco e não declara que todas as dependências transitivas foram mapeadas. O baseline de migrations foi reconciliado byte a byte com o ledger remoto (966/966); variantes locais foram preservadas em quarentena. A implementação continua bloqueada até revisão do grafo transitivo por assinatura/OID e reprodução das 966 migrations em stack Supabase local descartável, seguida de testes de concorrência em PostgreSQL efêmero.
 
 ## 1. Invariante principal
 
