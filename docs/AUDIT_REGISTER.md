@@ -596,3 +596,12 @@ A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24
 - Também foi identificado que os helpers SECURITY DEFINER de sequência iterativa 7/8 argumentos estavam diretamente executáveis por authenticated. O helper de 7 args não validava usuário/propriedade antes de acessar arma; o de 8 args consultava ficha/arma antes de delegar a validação.
 - Migration proposta remove EXECUTE cliente desses cinco helpers, preserva service_role, e move a fronteira autenticada para wrappers públicos com checagem explícita de usuário, propriedade e membership PLAYER.
 - Fixture isolado e script de verificação ampliados. Nenhuma ACL/função foi alterada no banco remoto; schema REST PostgREST ainda não foi confirmado.
+
+
+### Dependências AOO em inventário, ficha e schema interno `private` (2026-11-10)
+
+- Trigger `private.sync_character_weapon_instances_from_inventory` propaga INSERT/DELETE/UPDATE de quantidade em `srd_character_equipment` para `srd_character_weapon_instances`; inventário é writer transitivo de armas/alcance AOO.
+- `entregar_item_srd` e `equipar_item_srd` são chamados por `mesa.html` e não adquirem lock de campanha no fluxo de personagem. `private.equipar_arma_instancia_personagem_impl` também tem EXECUTE authenticated e bloqueia personagem → instância, sem campanha/pending. O schema `private` tem USAGE authenticated; 8 funções SECURITY DEFINER, 6 com EXECUTE authenticated e nenhuma com anon. Exposição PostgREST permanece não confirmada.
+- `ficha.html` chama o wrapper ativo de avanço de nível. A implementação interna bloqueia personagem → ficha e atualiza nível/atributos/talentos/progressão de classe sem lock de campanha nem guarda real de combate. Talento Ataque Desarmado Aprimorado e classe Monge são entradas do detector AOO; avanço durante pending pode alterar elegibilidade/ameaça.
+- Metadados de idiomas e PV derivados foram separados das premissas de ameaça; não congelar toda escrita de ficha/inventário. Refatoração deve ser por campo/efeito, campaign-first, com invalidação atômica quando uma premissa AOO mudar.
+- Evidência e limites registrados em `docs/ACTIVE_WORK_ITEM.md`. Consulta read-only; nenhuma mudança remota.
