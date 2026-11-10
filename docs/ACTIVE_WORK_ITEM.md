@@ -1,3 +1,30 @@
+# Vínculo RPG — item de trabalho ativo
+
+## Estado consolidado — 2026-11-10
+
+- Frente ativa: auditoria read-only de concorrência/ordem de locks dos fluxos AOO, ficha, magia, recursos de classe e ataques iterativos.
+- Branch: `audit/lock-order-rage-removal-2026-11-09`.
+- PR #74: [docs: auditar inversões de locks em AOO, conjuração e ataques iterativos](https://github.com/clubberblues/rpgvinculo/pull/74), aberto, draft, não mesclado. Head observado: `25ebb4350e62128be469a31900ab1fee67eb5290`.
+- O PR contém apenas documentação e fixtures SQL descartáveis: `docs/LOCK_ORDER_PROTOCOL_DRAFT.md`, `docs/CBA_MUTATION_INVENTORY.md`, `tests/sql/README.md`, `tests/sql/lock_cycle_setup.sql`, `tests/sql/lock_cycle_test.sh`.
+- CI PostgreSQL #72 [42730159992](https://github.com/clubberblues/rpgvinculo/actions/runs/42730159992) concluiu success no commit `027fa057a0f6ccd3a111e2a3a97b50e45f8b1f5d`. Setup, PostgreSQL descartável, checkout, cliente, fixtures e teardown passaram. Commits posteriores só alteraram documentação; nenhum fixture/workflow mudou após o teste.
+- O harness tem oito padrões sintéticos de inversão + um controle positivo. Não executa RPCs, triggers nem dados de produção; não prova deadlock real.
+- Ciclos potenciais confirmados por corpos instalados: PC Ataque Total arma→campanha versus resolução campanha→tentativa/sequência/arma; NPC sequência→campanha versus campanha→tentativa/sequência; AOO ataque→pending→campanha versus transição campanha→ataque→pending; AOO pending→campanha em início/finalização; ficha/recurso→campanha em estabilização, conjuração multialvo e habilidades específicas.
+- Precisões relevantes: descanso longo PC não bloqueia campanha (personagem → leitura de estado sem lock → ficha → recursos/condições), logo o defeito é corrida de estado, não deadlock; estabilização bloqueia personagem → ficha → campanha; Imposição das Mãos contra mortos-vivos bloqueia personagem → ficha → recurso → campanha; habilidade de classe tem ordem variável por branch; resolução de salvamento altera condição diretamente sem lock explícito de campanha no branch condition_break.
+- AOO: RPCs autenticadas e OIDs documentados na matriz em LOCK_ORDER_PROTOCOL_DRAFT.md; dano AOO contra personagem bloqueia ataque → pending → campanha → ficha. Interseção com estabilização pode formar ciclo na mesma ficha.
+- A proposta de ordem é parcial por domínio, não hierarquia global. Direção preferida para mutações de campanha: localizar IDs via leitura MVCC, lock de campanha, revalidar vínculo/autoridade/estado/round, então bloquear personagem/ficha/recurso/pending/attack conforme o contrato específico. Ordem final de AOO e interseções de arma/ledger ainda precisam ser fechadas.
+- Nenhuma função, migration, ACL, policy, dado Supabase ou mesa/ficha foi alterada. TESTE 2 permanece intocado. Nenhum deploy remoto.
+- Reconciliação de migrations permanece bloqueio: 681 arquivos locais, 966 registros remotos, apenas 640 versões coincidentes exatas por timestamp/nome; conteúdo SQL ainda não foi comparado.
+
+## Próxima unidade de trabalho
+
+1. Fechar grafo transitivo de todos os writers que alteram campanha, ficha, pending, ataque, ledger, recurso, condição e log; separar lock adquirido diretamente, lock herdado e leitura MVCC.
+2. Reconciliar cada caminho com call sites de frontend e grants efetivos, distinguindo endpoints ativos, wrappers, helpers e legado.
+3. Elaborar sequência de refatoração por fatias (AOO, ataque iterativo PC/NPC, ficha/magia/recursos), com pré-condições, revalidação pós-lock, idempotência, rollback e testes de integração descartáveis.
+4. Estender testes apenas quando reproduzirem um contrato transacional específico; manter os cenários sintéticos identificados como tais.
+5. Não aplicar migration, alterar funções remotas, ACL/policies ou dados até reconciliação de migrations e teste de integração autenticado em ambiente descartável.
+
+---
+
 ## Atualização consolidada — 2026-11-09 (continuidade 2)
 
 - Run [42673548023](https://github.com/clubberblues/rpgvinculo/actions/runs/42673548023) concluiu **success** para o commit `502b47bc28b61ed7ed5c3dab181fee62c9f433ec`.
