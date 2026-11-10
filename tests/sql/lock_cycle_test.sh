@@ -363,7 +363,6 @@ run_expected_stale_gm_inventory_race() {
   local tmp role item_count sa sb
   tmp="$(mktemp -d)"
   psql -v ON_ERROR_STOP=1 >"$tmp/a.log" 2>&1 <<'SQL' &
-BEGIN;
 DO $$
 DECLARE v_role text;
 BEGIN
@@ -384,7 +383,6 @@ BEGIN
 END $gate$;
 UPDATE lock_fixture.gm_gate_inventory SET item_count=item_count+1
  WHERE campaign_id=1 AND user_id='player-x';
-COMMIT;
 SQL
   local a=$!
   psql -v ON_ERROR_STOP=1 >"$tmp/b.log" 2>&1 <<'SQL' &
@@ -398,11 +396,9 @@ BEGIN
     PERFORM pg_sleep(0.02);
   END LOOP;
 END $gate$;
-BEGIN;
 UPDATE lock_fixture.gm_gate_members SET role='PLAYER'
  WHERE campaign_id=1 AND user_id='gm-a';
 INSERT INTO lock_fixture.gm_gate_events(event_name) VALUES ('gm-revoked');
-COMMIT;
 SQL
   local b=$!
   set +e
@@ -429,24 +425,15 @@ run_expected_serialized_gm_inventory_rejection() {
   psql -v ON_ERROR_STOP=1 >"$tmp/a.log" 2>&1 <<'SQL' &
 BEGIN;
 SELECT id FROM lock_fixture.gm_gate_campaigns WHERE id=1 FOR UPDATE;
-INSERT INTO lock_fixture.gm_gate_events(event_name) VALUES ('campaign-lock-held');
-SELECT pg_sleep(0.35);
+SELECT pg_sleep(0.4);
 UPDATE lock_fixture.gm_gate_members SET role='PLAYER'
  WHERE campaign_id=1 AND user_id='gm-a';
 COMMIT;
 SQL
   local a=$!
+  sleep 0.1
   psql -v ON_ERROR_STOP=1 >"$tmp/b.log" 2>&1 <<'SQL' &
-DO $gate$
-DECLARE v_attempt integer:=0;
-BEGIN
-  LOOP
-    EXIT WHEN EXISTS (SELECT 1 FROM lock_fixture.gm_gate_events WHERE event_name='campaign-lock-held');
-    v_attempt:=v_attempt+1;
-    IF v_attempt>150 THEN RAISE EXCEPTION 'timed out waiting for campaign lock'; END IF;
-    PERFORM pg_sleep(0.02);
-  END LOOP;
-END $gate$;
+SELECT pg_sleep(0.1);
 BEGIN;
 SELECT id FROM lock_fixture.gm_gate_campaigns WHERE id=1 FOR UPDATE;
 DO $$
