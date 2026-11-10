@@ -146,3 +146,9 @@ CREATE TABLE lock_fixture.gm_gate_effects (
   PRIMARY KEY (campaign_id,target_id)
 );
 INSERT INTO lock_fixture.gm_gate_effects VALUES (1,'target-a',0);
+
+CREATE TABLE lock_fixture.owner_gate_codes (
+  campaign_id integer PRIMARY KEY,
+  code text NOT NULL
+);
+INSERT INTO lock_fixture.owner_gate_codes VALUES (1,'1111');
