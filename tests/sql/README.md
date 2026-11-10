@@ -154,3 +154,12 @@ A fixture modela deliberadamente ausência de FK entre marcador/campanha e objet
 - PostgreSQL fixtures run [42808666665](https://github.com/clubberblues/rpgvinculo/actions/runs/42808666665), no commit 1b1a85d346cdc123dd3afd56302273f4f675a707: **success**. Logs confirm footprint assertions, controle de movimento único bloqueado, bypass por identidade duplicada reproduzido, mudança de geometria do token ameaçador reproduzida, fixture de lifecycle NPC, nove inversões sintéticas e controles de autorização/Storage.
 - O job terminou com sucesso porque as reproduções vulneráveis estão escritas como expectativas positivas de demonstração. Isso não significa que o trigger de produção esteja corrigido; o arquivo copia seu algoritmo atual e deve virar regressão negativa após a correção real.
 - A execução foi em PostgreSQL descartável; nenhuma RPC Supabase, Auth/PostgREST ou campanha real foi chamada.
+
+
+## Regressão de privilégios das RPCs de manobra e helpers internos
+
+- `maneuver_catalog_security_fixture.sql` usa roles e objetos PostgreSQL descartáveis; aplica as migrations `20261110150000`, `20261110160000` e `20261110170000`, seguidas pelos três scripts de verificação.
+- Verifica que os wrappers GM de manobra/ataques naturais executam como SECURITY DEFINER com search_path fixo, aceitam GM autenticado e rejeitam jogador.
+- Verifica que authenticated/anon não executam diretamente helpers de condições, talentos, parser de ataques naturais ou implementações privadas de Ataque Total; os chamadores SECURITY DEFINER continuam funcionando.
+- Verifica que as duas entradas públicas de Ataque Total rejeitam ficha que não pertence ao usuário e que o helper de 7 argumentos mantém a defesa de propriedade mesmo em chamada privilegiada.
+- **Limite:** o fixture valida as migrations e ACLs num PostgreSQL isolado. Não chama PostgREST, Auth real, RPCs instaladas nem o Supabase de produção; a exposição efetiva do schema `priv` na configuração PostgREST continua não confirmada. CI ainda precisa executar o novo fixture no HEAD atual.
