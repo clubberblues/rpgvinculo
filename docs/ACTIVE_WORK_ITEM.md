@@ -333,3 +333,12 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - Releitura integral da implementação remota confirmou: finalizador atual bloqueia cleanup → campaign; se campanha não existir, remove marcador e retorna `deleted: true` sem checar Storage. O algoritmo proposto agora especifica campaign → cleanup, valida owner nos dois estados, verifica os três prefixos de Storage (`midia/campaigns/{id}/`, `mesa-media/campaigns/{id}/`, `midia/capas_mesas/mesa-{id}-`) e só retorna sucesso com zero objetos.
 - Idempotência definida: se campanha estiver ausente, marcador válido ainda precisa ser verificado; zero objetos permite remover marcador residual, mas qualquer objeto preserva marcador e impede sucesso. Sem campanha, nenhum upload novo deve ser autorizado.
 - Detalhes adicionados em docs/STORAGE_ACCESS_CONTRACT.md. A proposta não foi aplicada ao banco remoto.
+
+
+## Atualização — fidelidade do modelo de retry (2026-11-10)
+
+- Corrigido um desvio no modelo: no banco real, `priv.campaign_deletion_cleanup` não possui FK para `campaigns`, e Storage é independente da transação/vida da campanha. As tabelas descartáveis agora também não usam essas FKs.
+- A função-modelo agora admite campanha ausente somente após tentativa de lock/leitura da campanha, valida o marcador residual, verifica objetos órfãos e limpa o marcador apenas com Storage vazio.
+- Teste ampliado: campanha ausente + marcador residual + objeto Storage órfão deve falhar mantendo marcador; depois da remoção do objeto, retry deve concluir. Isso cobre o caminho de idempotência sem mascarar objetos abandonados.
+- Commits: `0b12d60cc4956c4ba96b6478106e96b4aa720ae8`, `aee5738080999817b187490dfb6689046a3b45a9`, `fb0b9829052182c2813fb48419c9d303826ae1fc`, `70a4d40826c2e7574bf59b75c0e826ed27a73531`, `320e9ac65ba755396d94ceda0c68e223dc7b1e7c`.
+- Ainda é fixture PostgreSQL sintética; nenhum endpoint remoto, RLS ou Storage API foi executado. Nenhuma mudança de produção.
