@@ -410,3 +410,11 @@ Nova consulta ao catálogo remoto, restringindo a resolução dos alvos ao schem
 **Estratégia de migração segura (proposta):** (1) materializar uma matriz exata por assinatura com owner, `prosecdef`, `proconfig`, grants, chamadas internas e consumidor frontend; (2) para cada wrapper invoker cliente, avaliar a conversão para `SECURITY DEFINER` com owner controlado, `search_path` fixo e autorização explícita antes de qualquer acesso; (3) manter invoker apenas quando não houver dependência de privilégio no schema interno ou redesenhar a API; (4) revogar EXECUTE cliente das implementações internas e USAGE do schema `priv` somente depois de converter toda a cadeia e testar todos os fluxos; (5) executar regressão negativa com chamadas diretas aos nomes `priv.*` para confirmar negação e regressão positiva via wrappers públicos. Não converter automaticamente os 35 wrappers em lote: cada um precisa de revisão de autorização e do comportamento atual.
 
 Nenhuma alteração de ACL ou função foi aplicada. A lista e os números são um retrato do catálogo remoto no momento da consulta.
+
+
+### Contagem de grants internos e exceção anon/PUBLIC (2026-11-10)
+
+- No schema `priv` foram encontrados 40 procedimentos/funções com `EXECUTE` efetivo para `authenticated`; 39 deles são `SECURITY DEFINER`. Nenhuma função `SECURITY DEFINER` em `priv` está sem `search_path` fixado na consulta.
+- Uma função também tem `EXECUTE` efetivo para `anon`: `priv.srd_feat_saving_throw_modifier(jsonb,text)` (OID 26355). ACL `{=X/postgres,...}` indica concessão a `PUBLIC`, não apenas anon. A função é SQL STABLE e calcula modificadores passivos de talentos a partir de `public.srd_feats`; aceita JSON de talentos e tipo de resistência e não faz mutação. O efeito pode ser intencional como helper de cálculo, mas sua exposição pública contradiz a ideia de `priv` fechado e deve ser classificada explicitamente antes de revogar o grant.
+- Nem authenticated nem anon têm `CREATE` em `public` ou `priv` (e PUBLIC também não), reduzindo o risco de substituição de objetos nesses schemas. Isso não elimina a superfície de chamada direta por EXECUTE.
+- Remediação: revisar se a função 26355 precisa ser pública; se não, remover grant `PUBLIC` e conceder somente aos wrappers/roles internos. Não fazer revogação em massa até concluir o grafo de chamadas. Nenhum grant alterado.
