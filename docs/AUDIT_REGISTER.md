@@ -582,3 +582,10 @@ A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24
 - A origem está nas migrations de 08/11 que criaram esses wrappers como invoker. A análise refinada não encontrou outros wrappers públicos invoker com dependência direta sem EXECUTE authenticated na amostra de chamadas diretas resolvidas.
 - Migration focalizada e script de verificação foram adicionados ao branch de auditoria; nenhum SQL foi executado no banco remoto. A conversão para SECURITY DEFINER preserva os guards auth.uid()/GM e search_path fixo, sem abrir EXECUTE dos helpers internos ao cliente.
 - Regressão autenticada e revisão final ainda pendentes; não declarar corrigido em produção.
+
+### EXECUTE em wrappers de manobra e helper passivo (2026-11-10)
+
+- Duas funções públicas invoker com chamadas a helpers internos sem EXECUTE authenticated foram corrigidas em migration proposta, sem abrir grants nos helpers.
+- Um helper passivo de talentos tinha EXECUTE herdado de PUBLIC, tornando-o também executável por anon; consumidor identificado é função SECURITY DEFINER interna. Migration proposta remove somente o grant PUBLIC e preserva authenticated/service_role.
+- Adicionados dois scripts de verificação e um fixture PostgreSQL que aplica as migrations e testa o modelo de privilégio isoladamente; workflow de fixtures atualizado.
+- Nada aplicado em produção. A execução do CI no HEAD atual e as chamadas reais autenticadas permanecem pendentes.
