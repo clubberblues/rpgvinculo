@@ -550,3 +550,8 @@ A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24
 - Referência textual a coordenadas não prova que a função altere geometria; ainda é necessário classificar diffs efetivos por função. O trigger ligado a `cba_data` é único e não substitui contrato comum para todos os writers.
 - Arquitetura futura deve centralizar ou fechar o conjunto de escritores, com política explícita para pending ativo (freeze ou invalidar/recalcular dependências AOO). Booleano `has_function_privilege` em `priv.*` não prova exposição PostgREST sem verificar grants do schema e wrappers.
 - Sem alteração de produção. Evidência detalhada: `docs/MOVEMENT_AOO_AUTHORITY_GAP.md`.
+
+
+### Segurança — grants do schema interno `priv` (2026-11-10)
+- Supabase remoto: authenticated tem USAGE no schema `priv` e EXECUTE em funções internas SECURITY DEFINER, incluindo OIDs 27306, 27366 e 27169. ACL inclui `authenticated=X`. Risco confirmado na camada SQL; exposição REST/PostgREST não foi provada, pois a configuração `pgrst.db_schemas` não foi obtida.
+- Correção candidata: revogar USAGE/EXECUTE para papéis cliente após inventário de dependências e manter wrappers públicos autorizadores. Nenhuma ACL alterada. Evidência em `docs/MOVEMENT_AOO_AUTHORITY_GAP.md`.
