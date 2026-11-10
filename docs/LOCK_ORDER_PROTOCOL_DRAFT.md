@@ -636,3 +636,14 @@ Consulta pontual a pg_stat_database para o banco atual `postgres`: desde `stats_
 
 
 **Detalhe conferido nos logs do job #72:** `footprint_fixture.sql` e `footprint_test.sql` foram executados; o log registrou `footprint helper assertions passed`. O `lock_cycle_test.sh` registrou oito mensagens `passed synthetic lock inversion` e uma `passed consistent lock order`. As mensagens `ERROR: deadlock detected` aparecem nas sessões sintéticas intencionalmente invertidas e são esperadas pelo teste; o job terminou `success`. Isso confirma o harness e os helpers copiados, não os RPCs instalados no Supabase.
+
+
+### Call sites de conjuração manual single-target confirmados no frontend (2026-11-10)
+
+A inspeção direta de mesa.html (linhas 3646–3651) encontrou três rotas: multialvo de cura/dano/efeito já mapeadas; Míssil Mágico chama public.conjurar_missil_magico_srd_manual (OID 25191); demais magias single-target manuais chamam public.conjurar_magia_com_acao_srd_manual (OID 24658).
+
+- **Míssil Mágico:** OID 25191 é SECURITY DEFINER com EXECUTE authenticated. Bloqueia characters FOR UPDATE → srd_character_sheets FOR UPDATE; delega para public.conjurar_missil_magico_srd (OID 24356, sem EXECUTE direto para authenticated), que chama public.conjurar_magia_com_acao_srd (OID 20410, também interno/sem EXECUTE autenticado) e adquire campanha depois dos locks de personagem/ficha. Prefixo alcançável: personagem → ficha → campanha. É mais um caminho single-target que pode disputar a mesma ficha com aplicação de magia pendente campaign-first.
+- **Demais magias manuais:** OID 24658 é SECURITY DEFINER com EXECUTE authenticated. Bloqueia personagem → campanha; depois chama public.conjurar_magia_srd_manual (OID 24656, sem EXECUTE direto autenticado), que bloqueia ficha e revalida/usa campanha. A ordem é branch/chain específica: personagem → campanha → ficha no caminho externo; não confundir com o prefixo personagem → ficha → campanha do Míssil Mágico.
+- Os OIDs 20410, 24356 e 24656 são helpers internos nesta rota, não endpoints frontend diretos no snapshot; a ausência de EXECUTE autenticado nesses helpers não é, isoladamente, falha de permissão, pois são chamados dentro dos wrappers SECURITY DEFINER autenticados.
+
+A correção da conjuração manual precisa começar pela campanha antes de qualquer lock de personagem/ficha quando a operação está vinculada à campanha; depois revalidar dono, participação, ficha, espaço, alvo, resistência à magia, rolagens e custo de ação. Testar separadamente Míssil Mágico, magia single-target manual, efeitos multialvo e dano multialvo.
