@@ -646,3 +646,12 @@ A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24
 - `conjurar_magia_efeitos_multialvo` e `conjurar_magia_dano_multialvo_srd` (ambas authenticated EXECUTE) bloqueiam personagem/ficha e depois campanha. Isso diverge do padrão campaign-first e concorre com ações de combate que seguram campanha antes da ficha.
 - `conjurar_magia_srd_manual` e `conjurar_missil_magico_srd` exibem ordem semelhante, mas sem EXECUTE authenticated direto; não tratá-las como endpoints de cliente sem confirmar wrappers/callsites.
 - Refatorar as RPCs públicas para campanha primeiro, revalidar permissão/estado, depois ficha do conjurador/alvos em ordem determinística. Nenhuma magia executada; nenhuma mudança remota.
+
+
+### Novos escritores de ficha/recursos fora do protocolo de campanha (2026-11-10)
+
+- `usar_habilidade_classe_srd` e `usar_imposicao_maos_mortos_vivos_srd` (authenticated EXECUTE) bloqueiam personagem/ficha/recurso antes de bloquear campanha; ambas alteram recursos e efeitos de combate.
+- `conceder_xp_personagem_srd` bloqueia personagem/ficha antes de progressão; validar guarda de combate porque progressão pode mudar classe/talentos e elegibilidade AOO.
+- `finalizar_equipamento_inicial_srd`, `salvar_talentos_bonus_classe_inicial_srd`, `salvar_dominios_personagem_srd` alteram ficha sem campaign lock; devem rejeitar alterações estruturais durante combate/pending ou passar por serialização campaign-first.
+- `excluir_ficha_propria` bloqueia personagem antes da campanha e pode alterar iniciativa; `usar_pocao_cura_srd_manual` altera inventário/PV/condição sem lock explícito de campanha. Revisar ambos.
+- Não presumir que todas as rotas geram deadlock; separar ações de mesa e alterações de ficha fora de combate. Nenhuma mutação remota executada.
