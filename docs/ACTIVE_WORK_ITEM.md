@@ -244,3 +244,14 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 
 
 - CI #212 [42744027422](https://github.com/clubberblues/rpgvinculo/actions/runs/42744027422) concluiu **success** no commit `5da5948f1478a69a77d4644bb5dd86eaf021359e`. O log confirma a reprodução do novo ciclo campanha → marcador de exclusão versus marcador → campanha, além dos oito padrões anteriores, do controle positivo e do fixture de lifecycle. O commit posterior mudou somente documentação.
+
+
+
+
+## Atualização — exclusão de campanha e Storage
+
+- O fluxo real é em duas fases: preparar (campanha → marcador cleanup), remover Storage no navegador, finalizar (marcador → campanha). O marcador bloqueia novos uploads em `midia` e permite ao proprietário retomar remoções; não existe progresso por arquivo nem worker automático.
+- Nova inversão de locks entre preparação e finalização documentada; o harness agora reproduz campanha → cleanup versus cleanup → campanha. CI #212 [42744027422](https://github.com/clubberblues/rpgvinculo/actions/runs/42744027422) passou com nove inversões sintéticas + controle positivo.
+- Snapshot Storage: 44 objetos órfãos em bucket público `midia` (33 caminhos de campanha e 11 capas), sem campanha correspondente; zero objetos encontrados em `mesa-media` sob esses prefixos e zero marcadores cleanup pendentes. Não foi feita limpeza.
+- O finalizador não valida a ausência de objetos Storage antes de apagar a campanha. A origem dos órfãos não está provada; inventariar e classificar antes de qualquer exclusão.
+
