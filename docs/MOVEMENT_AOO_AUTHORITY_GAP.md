@@ -468,3 +468,22 @@ A auditoria confirmou que `priv.srd_feat_saving_throw_modifier(jsonb,text)` (OID
 Foi preparada a migration `20261110160000_revoke_public_feat_saving_throw_helper.sql`: remove EXECUTE de PUBLIC/anon, preserva authenticated/service_role, e não altera o corpo da função nem o consumidor. Script de verificação em `supabase/verification/verify_passive_feat_helper_acl.sql`. O fixture `tests/sql/maneuver_catalog_security_fixture.sql` agora aplica as duas migrations reais, verifica os guards GM, preserva o acesso autenticado ao motor de resistência e confirma que anon não chama diretamente o helper.
 
 As duas migrations e o fixture permanecem apenas no branch. Nenhuma ACL foi alterada no Supabase remoto; CI ainda não foi confirmado para o HEAD mais recente.
+
+### Ampliação da auditoria de EXECUTE interno (2026-11-10)
+
+A inspeção de todas as funções `public` SECURITY INVOKER que chamam `priv.*` confirmou que as duas dependências incompatíveis já tratadas eram as únicas chamadas diretas sem EXECUTE authenticated na matriz analisada. A revisão dos próprios helpers com EXECUTE authenticated revelou uma superfície adicional:
+
+- `priv.srd_condition_has_flag(bigint,text,text,text)` era SECURITY DEFINER sem autenticação/autorização, respondendo se uma condição/flag estava ativa para qualquer campanha/token informado. Os consumidores identificados são triggers e funções SECURITY DEFINER do motor de magias/combate.
+- `priv.srd_feat_saving_throw_modifier(jsonb,text)` era SECURITY DEFINER sem contexto de usuário; consumidor SQL identificado: `priv.srd_saving_throw_bonus`, também SECURITY DEFINER.
+- `priv.srd_parse_natural_attack_list(text)` era um parser puro, mas exposto diretamente a authenticated sem necessidade; consumidores identificados são wrappers GM/ataque de oportunidade que podem operar sob SECURITY DEFINER.
+- `priv.iniciar_sequencia_ataque_iterativo_srd_7_impl` era SECURITY DEFINER executável por authenticated sem verificar `auth.uid()` ou propriedade da ficha antes de consultar/bloquear instância de arma. A implementação 8-argumentos também lia ficha/arma antes de delegar à validação de propriedade.
+
+Migration `20261110170000_lock_down_internal_helper_execute.sql`:
+1. Revoga EXECUTE authenticated/anon/PUBLIC dos três helpers internos passivos, preservando service_role.
+2. Revoga EXECUTE direto authenticated dos helpers iterativos de 7 e 8 argumentos.
+3. Converte os dois wrappers públicos iterativos para SECURITY DEFINER com search_path fixo e validação prévia de autenticação, propriedade da ficha e vínculo PLAYER na campanha.
+4. Mantém também a verificação de propriedade dentro do helper de 7 argumentos como defesa em profundidade.
+
+A verificação `verify_internal_helper_execute.sql` confere ACL, owner, SECURITY DEFINER, search_path e presença dos guards. O fixture PostgreSQL foi ampliado para cobrir acesso direto negado aos helpers, chamadas internas autorizadas por SECURITY DEFINER e rejeição de ficha não pertencente ao usuário.
+
+Tudo permanece somente na branch. A análise de chamadas foi feita por definição de funções do catálogo; não prova que o schema `priv` esteja exposto como schema REST, pois a configuração efetiva do PostgREST continua indisponível. Não houve teste de endpoint autenticado nem alteração no Supabase remoto.
