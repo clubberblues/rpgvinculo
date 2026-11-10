@@ -203,3 +203,42 @@ As rotinas internas fazem a criação/validação sobre `characters`, `srd_chara
 
 Esse caminho atual não usa `vinculo_character_sheets`, `vinculo_inventory` ou `vinculo_items`. A existência de fallback antigo em `ficha.html` não significa que ele seja o fluxo primário.
 
+
+
+## Criação D&D 3.5 — RPCs auxiliares expostas fora do agregador
+
+### Exposição confirmada
+
+O catálogo remoto contém duas sobrecargas SECURITY DEFINER de `public.criar_personagem_srd_completo`, ambas com EXECUTE authenticated:
+- OID 20270, seis argumentos (`nome, raça, classe, atributos, perícias, talentos`). Vem do script root `srd35_skills_feats_migration.sql`, fora do diretório timestamped de migrations; esse arquivo concede EXECUTE authenticated explicitamente. Não recebe identidade, idiomas, domínios, grimório, talento bônus de classe nem equipamento inicial. Cria personagem/ficha, salva perícias/talentos e registra classe/nível.
+- OID 24809, sete argumentos (inclui `p_identidade`). Vem da migration timestamped `20261103200319_dwarf_character_identity_creation_flow`, que também concede EXECUTE authenticated. Valida identidade/raça/classe e cria personagem/ficha, perícias/talentos e trilha de classe; não executa as etapas posteriores do agregador.
+
+O único chamador interno encontrado da sobrecarga de sete argumentos é `finalizar_criacao_personagem_srd` (OID 25213), que também chama idiomas, talentos bônus, domínios, grimório e equipamento. A busca nas páginas HTML encontrou apenas a chamada do frontend para o agregador, não para as sobrecargas auxiliares. A sobrecarga de seis argumentos não tem chamador interno encontrado no catálogo nem chamada no frontend atual.
+
+### Por que é um risco de integridade do fluxo
+
+Ambas as funções auxiliares são públicas e diretamente executáveis por authenticated, então um cliente pode contornar o agregador e deixar a ficha criada sem uma ou mais etapas obrigatórias. A sobrecarga de seis argumentos ainda ignora identidade/idade/tendência e as escolhas complementares; a de sete argumentos ignora as etapas posteriores do agregador. O caminho principal do lobby está correto, mas a superfície RPC permite uma criação parcial fora dele.
+
+O agregador foi criado em `20261104042217_srd35_atomic_character_creation` como SECURITY DEFINER e alterado para SECURITY INVOKER em `20261104042251_srd35_atomic_character_creation_invoker`. Como a sobrecarga de sete argumentos continua authenticated, a alteração para INVOKER preservou a permissão de chamá-la diretamente. Não foi identificada justificativa de uso direto no frontend atual.
+
+### Verificação dos dados atuais
+
+Snapshot read-only:
+- 5 fichas SRD; todas com identidade não vazia.
+- 5 com talentos; nenhuma sem talentos.
+- 5 com equipamento inicial concluído.
+- Nenhuma com identidade vazia ou classe/raça ausente.
+- Idiomas conhecidos não estão no valor padrão vazio.
+
+Não há evidência no conjunto atual de fichas incompletas geradas por essas rotas alternativas. Isso não elimina a exposição para chamadas futuras.
+
+### Correção candidata (não aplicada)
+
+1. Manter `finalizar_criacao_personagem_srd` como único endpoint público de criação completa.
+2. Revogar EXECUTE de authenticated/public nas duas sobrecargas auxiliares e manter acesso interno controlado.
+3. Como o agregador hoje é SECURITY INVOKER, decidir a forma segura de preservar a chamada interna: torná-lo SECURITY DEFINER com `auth.uid()` obrigatório, search_path fixo e todas as referências schema-qualified, ou mover os helpers para schema não exposto e adequar a execução/ACL do wrapper. Não fazer revoke isolado sem alterar/testar o contrato do wrapper.
+4. Testar com dois contextos autenticados: chamada direta aos helpers deve falhar; chamada do agregador deve concluir todas as etapas; falha em qualquer etapa deve reverter toda a criação.
+5. Reconciliar o script root não timestamped e as migrations antes de preparar migration de produção.
+
+Nenhuma RPC foi invocada para testar a exposição; nenhuma alteração remota foi feita.
+
