@@ -411,3 +411,19 @@ Foi adicionado um cenário concorrente sintético ao harness que reproduz campai
 
 
 - CI #212 [42744027422](https://github.com/clubberblues/rpgvinculo/actions/runs/42744027422) terminou **success** no commit `5da5948f1478a69a77d4644bb5dd86eaf021359e`. Logs confirmam a reprodução do nono padrão sintético campanha → cleanup versus cleanup → campanha; os oito padrões anteriores, controle positivo, lifecycle NPC e regressões de autorização também passaram. O único commit posterior antes deste registro alterou documentação, sem mudar fixtures.
+
+
+
+
+### Storage órfão — snapshot read-only do bucket público
+
+A consulta de `storage.objects` cruzou os IDs extraídos de `campaigns/{id}/...` e `capas_mesas/mesa-{id}-...` com `public.campaigns`:
+- Bucket `midia`: 33 objetos em caminhos `campaigns/{id}/`, todos sem campanha correspondente, distribuídos por 10 IDs (10–20, exceto 18).
+- Capas `capas_mesas`: 12 objetos no total; 11 sem campanha correspondente, distribuídos por 8 IDs. Uma capa pertence a campanha ainda existente.
+- Total observado: 44 objetos órfãos no bucket público `midia`; nenhum objeto correspondente foi encontrado no bucket `mesa-media`.
+- `priv.campaign_deletion_cleanup` tem zero linhas pendentes no snapshot. `public.media` também tem zero linhas, portanto `media_gc` não alcança esses arquivos.
+
+O finalizador privado `priv.finalizar_exclusao_campanha_propria` valida owner e marcador, mas não verifica se restam objetos em `storage.objects`; como o wrapper público tem EXECUTE para authenticated, o fluxo de Storage é uma garantia do cliente, não uma pré-condição imposta pelo banco. Os 44 objetos podem ter sido deixados por exclusões antigas/fluxos anteriores; a amostra não prova a origem nem identifica qual execução falhou. Como `midia` é public-read, os objetos órfãos continuam publicamente legíveis enquanto existirem.
+
+Não apagar esses objetos automaticamente: IDs sem campanha podem pertencer a arquivos históricos que precisam de classificação/backup. Próxima ação segura é gerar inventário por path, tipo e data, identificar se cada objeto é capa/mapa e obter decisão de retenção antes de qualquer remoção. Nenhum objeto, campanha ou marcador foi alterado.
+
