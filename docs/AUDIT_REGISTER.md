@@ -500,3 +500,12 @@ A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24
 - **CI:** commit fc2f008e59e980305990e9083058f2b2e76c7750 teve Static validation #62, Validate application JavaScript #110, Validate mesa JavaScript #365 e PostgreSQL fixture #271 (42749952496) em success. O fixture não testa RPCs remotas. Commits seguintes até o HEAD corrente alteram somente documentação.
 - **Decisão:** não implementar trigger/ACL/migration ainda. Fechar identidade estável de tokens, writers geométricos, exceções de manobra e ordem de locks; reconciliação do histórico de migrations continua bloqueio de deploy.
 
+
+
+### AOO — mutabilidade das fontes do snapshot (2026-11-10)
+- **P1, confirmado estaticamente:** detector OID 26923 deriva ameaças de posição/footprint/facção/alcance, raça/tamanho de ficha, armas equipadas, ataques naturais e Monge/Ataque Desarmado Aprimorado. Pending armazena o snapshot, mas o guard só verifica mover/remoção/posição.
+- **P1, endpoint ativo:** equipar_item_srd OID 20555 (authenticated EXECUTE) permite dono/GM alterar arma; cadeia OID 26390 → 26442 → 26441 bloqueia personagem/instância, mas não campanha/pending. entregar_item_srd OID 20556 (GM-only) pode adicionar item equipado automaticamente, também sem lock de campanha/pending. O resolver AOO revalida arma equipada, portanto a reação pode ficar inválida após a detecção.
+- **P1, fontes CBA:** salvar_cena_cba OID 20077 substitui dados completos de token e srd_configurar_perfil_combate_token_srd OID 26922 altera facção/alcance; o guard não protege esses campos. adicionar_token_cba_completo OID 21726 adiciona novo possível ameaçador durante pending.
+- **Política ainda em aberto:** congelar todas as dependências até terminalidade ou invalidar/cancelar e recalcular pending de modo atômico. Não há implementação ainda; consultas foram read-only.
+- **Detalhes e testes:** docs/MOVEMENT_AOO_AUTHORITY_GAP.md e docs/CBA_MUTATION_INVENTORY.md.
+
