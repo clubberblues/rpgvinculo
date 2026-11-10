@@ -647,3 +647,10 @@ A inspeção direta de mesa.html (linhas 3646–3651) encontrou três rotas: mul
 - Os OIDs 20410, 24356 e 24656 são helpers internos nesta rota, não endpoints frontend diretos no snapshot; a ausência de EXECUTE autenticado nesses helpers não é, isoladamente, falha de permissão, pois são chamados dentro dos wrappers SECURITY DEFINER autenticados.
 
 A correção da conjuração manual precisa começar pela campanha antes de qualquer lock de personagem/ficha quando a operação está vinculada à campanha; depois revalidar dono, participação, ficha, espaço, alvo, resistência à magia, rolagens e custo de ação. Testar separadamente Míssil Mágico, magia single-target manual, efeitos multialvo e dano multialvo.
+
+
+### Rota multialvo de cura — wrapper autenticado (2026-11-10)
+
+A inspeção do call site de mesa.html (linha 3648) confirmou que cura multialvo usa public.conjurar_magia_com_acao_srd_multialvo_v3 (OID 24661), SECURITY DEFINER com EXECUTE authenticated. O wrapper bloqueia personagem FOR UPDATE → campanha FOR UPDATE → chama public.conjurar_magia_srd_multialvo_v3 (OID 24659, helper interno) que bloqueia personagem/ficha e reentra na campanha. Ordem externa efetiva: personagem → campanha → ficha; não classificar como ficha→campanha no wrapper, embora o helper isolado tenha essa sequência quando executado sem o wrapper. A reentrada ocorre dentro da mesma transação e o lock da campanha já está retido.
+
+A rota de cura multialvo precisa permanecer separada das rotas de dano/efeito multialvo (OIDs 25246/25109), que bloqueiam personagem → ficha antes de adquirir campanha via consumo de ação. Testes e refatoração devem preservar esta distinção de wrapper e helper, revalidando campanha/estado antes do custo de ação e da alteração dos alvos.
