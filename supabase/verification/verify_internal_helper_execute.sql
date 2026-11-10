@@ -32,12 +32,18 @@ BEGIN
   v_oid:=to_regprocedure(
     'priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(bigint,text,text,text,uuid,text,text)'
   );
-  IF position('auth.uid()' in (SELECT prosrc FROM pg_proc WHERE oid=v_oid))=0
-     OR position('public.members' in (SELECT prosrc FROM pg_proc WHERE oid=v_oid))=0
-     OR position('public.characters' in (SELECT prosrc FROM pg_proc WHERE oid=v_oid))=0
-     OR position('FROM public.characters' in (SELECT prosrc FROM pg_proc WHERE oid=v_oid))=0
-     OR position('JOIN public.members' in (SELECT prosrc FROM pg_proc WHERE oid=v_oid))=0
-     OR position('FROM public.characters' in (SELECT prosrc FROM pg_proc WHERE oid=v_oid))>position('FROM public.srd_character_weapon_instances' in (SELECT prosrc FROM pg_proc WHERE oid=v_oid)) THEN
+  SELECT prosrc,proconfig INTO v_def,v_path FROM pg_proc WHERE oid=v_oid;
+  IF NOT ('search_path=pg_catalog, public, priv, pg_temp'=ANY(v_path)) THEN
+    RAISE EXCEPTION 'Private 7-argument helper search_path is not pinned';
+  END IF;
+  IF position('auth.uid()' in v_def)=0
+     OR position('FROM public.characters' in v_def)=0
+     OR position('JOIN public.members' in v_def)=0
+     OR position('ch.user_id = auth.uid()' in v_def)=0
+     OR position('ch.campaign_id = p_campaign_id' in v_def)=0
+     OR position('m.role = ''PLAYER''' in v_def)=0
+     OR position('FROM public.characters' in v_def)>position('JOIN public.members' in v_def)
+     OR position('JOIN public.members' in v_def)>position('FROM public.srd_character_weapon_instances' in v_def) THEN
     RAISE EXCEPTION 'Private 7-argument helper lost its defense-in-depth ownership guard';
   END IF;
 
