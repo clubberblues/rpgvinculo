@@ -61,6 +61,7 @@ GRANT EXECUTE ON FUNCTION priv.fixture_condition_caller(bigint,text,text,text) T
 
 CREATE TABLE public.characters(id text, campaign_id bigint, user_id uuid);
 CREATE TABLE public.members(campaign_id bigint, user_id uuid, role text);
+GRANT DELETE ON public.members TO service_role;
 CREATE TABLE public.srd_character_weapon_instances(instance_id uuid, character_id text, equipment_id text, equipado boolean, hand_slot text);
 CREATE TABLE public.srd_equipment(id text, detalhes jsonb);
 CREATE TABLE public.srd_character_equipment(character_id text, equipment_id text, equipado boolean, hand_slot text);
