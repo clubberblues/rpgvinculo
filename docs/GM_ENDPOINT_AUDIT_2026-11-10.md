@@ -299,3 +299,45 @@ A varredura do menu/painel de `mesa.html` não encontrou ação de remover/exclu
 ### O snapshot do token não é suficiente para desvincular automaticamente
 
 A inspeção read-only das chaves JSON dos três tokens ligados mostrou que o token guarda identificadores, PV, CA/ataque, dados de cena e um `monsterStats` parcial (classe, raça, nível, FOR, DES, ataques e chave de conjuração). Não há no snapshot de `monsterStats` as seis habilidades, talentos completos, progressão, perícias, identidade, todos os recursos ou ficha de magias completa. O tabuleiro também mantém `spellState`, mas isso não prova que todos os dados exigidos pelas rotinas de classe estejam materializados. Como as RPCs SRD consultam a ficha-fonte para várias operações, simplesmente remover `sourceCharacterId` não preservaria a semântica do NPC. Até existir um snapshot SRD completo e validado, a política segura é impedir exclusão da ficha enquanto houver token vinculado e fornecer uma ação explícita para remover o token da cena ou converter com snapshot completo.
+
+
+## Continuação da auditoria — ciclo de vida de NPC vinculado e exclusão de token
+
+### Ausência de operação individual de remoção
+
+A inspeção integral de `mesa.html` confirmou que o menu contextual do NPC oferece PV, inventário, abertura da ficha SRD, características, publicação no chat, ataque e movimento, mas não oferece remover/excluir token. A busca no catálogo PostgreSQL também não encontrou RPC de remoção/exclusão/limpeza de token NPC. Assim, a remoção individual do NPC não está implementada como fluxo explícito no frontend ou no banco consultado; não confundir com apagar a ficha-fonte nem com excluir a campanha.
+
+### Por que desvincular não é equivalente a remover
+
+`normalizarCBAData` e `serializarEstadoCBA` preservam `sourceCharacterId` no JSON de `campaigns.cba_data`. O token vinculado usa esse ID para consultar ficha, raça, nível, atributos, talentos, CA, ataques, magias, descanso longo, estabilização e recursos. O snapshot `monsterStats` não contém todos esses dados. Portanto, definir `sourceCharacterId = null` sem antes materializar um snapshot SRD completo e compatível degrada silenciosamente o NPC e pode quebrar ações já existentes. A clonagem de equipamento (`clonar_equipamento_ficha_para_token`) é separada e não materializa o restante da ficha.
+
+### Dependências persistentes que a remoção precisa considerar
+
+A inspeção do schema atual encontrou estado relacional associado ao token/campanha além do JSON da cena:
+- Equipamento e instâncias de armas: `srd_cba_token_equipment` e `srd_cba_token_weapon_instances`. As PKs incluem `campaign_id, token_id`, mas não há FK para o token dentro de `cba_data`; a exclusão da campanha é que limpa por FK.
+- Sequências/ataques NPC: `srd_npc_attack_sequences` e `srd_npc_attack_attempts`; tentativas têm cascade da sequência. A sequência tem FK `actor_character_id → characters(id) ON DELETE RESTRICT`, de modo que excluir a ficha-fonte pode falhar enquanto houver sequência NPC referenciando-a. A exclusão da ficha deve recusar com mensagem clara ou cancelar sequências de forma explícita e transacional, nunca depender de erro genérico da FK.
+- Ataques de oportunidade: `priv.srd_aoo_pending_movements`, `priv.srd_aoo_attacks` e `priv.srd_aoo_reaction_ledger` mantêm IDs de tokens/atores em colunas e/ou JSON; ataques dependem do pending e o pending tem FK para campanha, não para o token.
+- Magias pendentes: `priv.srd_pending_spell_resolutions` guarda `target_kind/target_id`; o target token é uma referência textual, não uma FK para o token.
+- Condições e efeitos: `srd_campaign_conditions` guarda `target_kind/target_id/source_actor_id`; `srd_campaign_effects` guarda `target_kind/target_id/concentration_actor_id`. Essas linhas também dependem da campanha, não da existência do token. A remoção precisa decidir entre cancelar/remover apenas estado do token e manter histórico auditável, ou preservar instâncias como histórico inerte; não pode apagar indiscriminadamente estado de outros alvos.
+- A cena ainda pode conter o token em `cba_data.tokens`; a ordem de combate pode manter IDs em `combat_data`/ordem de iniciativa e eventos/histórico podem referenciar o token.
+
+### Contrato candidato para uma futura RPC de remoção
+
+1. Autenticar e localizar a campanha por leitura MVCC; bloquear `campaigns FOR UPDATE` antes de qualquer linha filha; revalidar que o solicitante continua GM após o lock.
+2. Relê-la e validar que o token existe, é NPC, e que o ID não aponta para token de jogador. Se a ação for “remover token”, remover a entrada da cena e ajustar ordem/turno de combate na mesma transação.
+3. Bloquear/validar sequências de ataque do NPC; encerrar ou cancelar sequência ativa e garantir que as tentativas filhas sejam tratadas por cascade. Nunca deixar `srd_npc_attack_sequences` ativa sem token.
+4. Resolver pendências de AOO e magia que apontem para aquele token: cancelar com status terminal e preservar trilha quando suportado; remover dados auxiliares estritamente transitórios apenas após identificar as constraints e consumidores. Não apagar pending de outros tokens na mesma campanha.
+5. Remover condições/efeitos cujo alvo é o token; para efeitos em que ele é apenas fonte/concentrador, aplicar a regra de encerramento da concentração e atualizar somente os efeitos correspondentes.
+6. Excluir equipamento e instâncias do token, limpar referências em JSON de combate/iniciativa e persistir a cena uma única vez, com validação de versão/estado para evitar sobrescrever alterações concorrentes.
+7. Se a intenção for “desvincular e manter no tabuleiro”, primeiro materializar uma ficha NPC autossuficiente e validar equivalência mecânica; só então retirar `sourceCharacterId`. Isso é um fluxo separado de remoção.
+8. Para exclusão da ficha-fonte, localizar todas as campanhas que a referenciam por `cba_data.tokens[*].sourceCharacterId`, bloquear essas campanhas em ordem crescente de ID, revalidar as referências e impedir a exclusão enquanto houver token vinculado. Não usar apenas `characters.campaign_id`, pois o snapshot já mostrou personagens-fonte com `campaign_id IS NULL` vinculados a tokens de campanhas.
+
+### Exclusão da ficha — refinamento do diagnóstico
+
+O corpo instalado de `excluir_ficha_propria` ainda executa DELETEs para `public.character_notes` e `public.inventory`, inexistentes. Os nomes atuais `vinculo_character_notes`/`vinculo_inventory` têm FK cascade para `characters`; para o fluxo D&D 3.5, porém, não se deve reativar o modelo Vínculo. A limpeza de ficha SRD e equipamento já está em triggers BEFORE/AFTER DELETE, e as demais dependências com FK cascade devem ser inventariadas antes de retirar instruções redundantes. O FK RESTRICT de `srd_npc_attack_sequences` é uma dependência impeditiva explícita.
+
+A ordem character → campaign da RPC atual continua incompatível com operações campaign-first quando há campanha vinculada. Para personagens sem `campaign_id`, a remoção também deve proteger o vínculo externo via JSON de campanha; a solução precisa bloquear todas as campanhas que apontam para o personagem, não apenas a campanha da coluna `characters.campaign_id`.
+
+### Limites desta etapa
+
+Consultas foram exclusivamente read-only. Nenhum token, ficha, sequência, condição, efeito, inventário, campanha, ACL ou migration foi alterado. Nenhuma RPC de produção foi invocada. A proposta acima é contrato de desenho para fixture e futura migration, não implementação pronta nem autorização para alterar o banco remoto.
