@@ -166,3 +166,17 @@ Portanto:
 
 Essa distinção evita que a correção de schema reintroduza o sistema Vínculo antigo no motor D&D 3.5.
 
+
+
+## Estado real do fallback legado no frontend
+
+A revisão das seis páginas HTML encontrou um fallback legado ainda presente em `ficha.html`:
+- A rota ativa do lobby cria personagens com `mode=criar&ruleset=dnd35`, que entra em `carregarNovaFichaSRD35`.
+- Ao abrir personagem existente, `ficha.html` primeiro procura `srd_character_sheets`; se encontrar, usa o fluxo SRD atual.
+- Se não houver ficha SRD, o fallback consulta `vinculo_character_sheets`, mas também tenta ler `inventory` e `character_notes` por nomes ausentes. O formulário de criação legado ainda pode inserir `characters` e `vinculo_character_sheets` se a rota for aberta sem o parâmetro `ruleset=dnd35`.
+- As funções de inventário legado ainda executam writes diretos em `inventory`, e anotações em `character_notes`; ambos os endpoints/tabelas não existem no schema atual. Não foi encontrado uso de `vinculo_inventory` ou `vinculo_items` nessa página.
+
+Snapshot read-only de dados: 5 personagens no total; 5 têm `srd_character_sheets`; 0 estão sem ficha SRD e 0 estão vinculados a campanha sem ficha SRD. Portanto, o fallback quebrado não está sendo usado pelos personagens existentes observados, mas continua como caminho de código acessível por URL antiga/legada.
+
+Não remover o fallback nem revogar tabelas/ACLs enquanto não houver decisão explícita sobre compatibilidade e eventual migração de dados. Para o escopo D&D 3.5, manter a rota principal do lobby no caminho SRD e planejar desativação controlada do fallback legado, sem reativar o modelo antigo.
+
