@@ -473,3 +473,44 @@ run_expected_serialized_owner_admin_rejection() {
 
 run_expected_stale_owner_admin_action
 run_expected_serialized_owner_admin_rejection
+
+# Exact trigger-order regression for public.enforce_campaign_member_role.
+# It models the installed trigger logic and gm_transfer statement order.
+run_expected_current_transfer_order_is_rewritten_by_trigger() {
+  local tmp owner old_role new_role
+  tmp="$(mktemp -d)"
+  psql -v ON_ERROR_STOP=1 -c "UPDATE lock_fixture.transfer_trigger_campaigns SET owner_id='owner-a' WHERE id=1; UPDATE lock_fixture.transfer_trigger_members SET role=CASE user_id WHEN 'owner-a' THEN 'GM' ELSE 'PLAYER' END WHERE campaign_id=1;" >/dev/null
+  psql -v ON_ERROR_STOP=1 -c "BEGIN; UPDATE lock_fixture.transfer_trigger_members SET role='PLAYER' WHERE campaign_id=1 AND user_id='owner-a'; UPDATE lock_fixture.transfer_trigger_members SET role='GM' WHERE campaign_id=1 AND user_id='player-b'; UPDATE lock_fixture.transfer_trigger_campaigns SET owner_id='player-b' WHERE id=1; COMMIT;" >/dev/null
+  owner="$(psql -Atq -c "SELECT owner_id FROM lock_fixture.transfer_trigger_campaigns WHERE id=1")"
+  old_role="$(psql -Atq -c "SELECT role FROM lock_fixture.transfer_trigger_members WHERE campaign_id=1 AND user_id='owner-a'")"
+  new_role="$(psql -Atq -c "SELECT role FROM lock_fixture.transfer_trigger_members WHERE campaign_id=1 AND user_id='player-b'")"
+  if [[ "$owner" != "player-b" || "$old_role" != "GM" || "$new_role" != "PLAYER" ]]; then
+    echo "FAIL: current transfer order did not reproduce trigger rewrite"
+    echo "owner=$owner old_role=$old_role new_role=$new_role"
+    rm -rf "$tmp"
+    exit 1
+  fi
+  echo "passed transfer trigger-order reproduction: owner=$owner, old_owner_role=$old_role, new_owner_role=$new_role"
+  rm -rf "$tmp"
+}
+
+run_expected_owner_first_transfer_order_satisfies_trigger() {
+  local tmp owner old_role new_role
+  tmp="$(mktemp -d)"
+  psql -v ON_ERROR_STOP=1 -c "UPDATE lock_fixture.transfer_trigger_campaigns SET owner_id='owner-a' WHERE id=1; UPDATE lock_fixture.transfer_trigger_members SET role=CASE user_id WHEN 'owner-a' THEN 'GM' ELSE 'PLAYER' END WHERE campaign_id=1;" >/dev/null
+  psql -v ON_ERROR_STOP=1 -c "BEGIN; SELECT id FROM lock_fixture.transfer_trigger_campaigns WHERE id=1 FOR UPDATE; UPDATE lock_fixture.transfer_trigger_campaigns SET owner_id='player-b' WHERE id=1; UPDATE lock_fixture.transfer_trigger_members SET role='PLAYER' WHERE campaign_id=1 AND user_id='owner-a'; UPDATE lock_fixture.transfer_trigger_members SET role='GM' WHERE campaign_id=1 AND user_id='player-b'; COMMIT;" >/dev/null
+  owner="$(psql -Atq -c "SELECT owner_id FROM lock_fixture.transfer_trigger_campaigns WHERE id=1")"
+  old_role="$(psql -Atq -c "SELECT role FROM lock_fixture.transfer_trigger_members WHERE campaign_id=1 AND user_id='owner-a'")"
+  new_role="$(psql -Atq -c "SELECT role FROM lock_fixture.transfer_trigger_members WHERE campaign_id=1 AND user_id='player-b'")"
+  if [[ "$owner" != "player-b" || "$old_role" != "PLAYER" || "$new_role" != "GM" ]]; then
+    echo "FAIL: owner-first transfer did not satisfy role trigger"
+    echo "owner=$owner old_role=$old_role new_role=$new_role"
+    rm -rf "$tmp"
+    exit 1
+  fi
+  echo "passed owner-first transfer trigger control: owner=$owner, old_owner_role=$old_role, new_owner_role=$new_role"
+  rm -rf "$tmp"
+}
+
+run_expected_current_transfer_order_is_rewritten_by_trigger
+run_expected_owner_first_transfer_order_satisfies_trigger
