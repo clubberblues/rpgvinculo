@@ -362,7 +362,7 @@ As relações internas existentes foram individualmente configuradas sem privil�
 
 As definições atuais de 37 funções AOO e 41 funções de movimento/ações/iniciativa/turnos foram exportadas em documentos próprios, com SECURITY DEFINER/INVOKER, search_path, grants anon/authenticated e fingerprints. No conjunto AOO, 0 funções concedem EXECUTE a anon; no conjunto movimento/turnos, também 0. Isso não confirma a configuração PostgREST Exposed schemas nem substitui revisão de autorização por caminho de chamada.
 
-A reconciliação focal identificou 51 migrations remotas com nomes AOO/movimento pendente sem arquivo local de mesmo nome. A inversão de lock entre cancelamento e resolução/dano segue como risco de deadlock não reproduzido em ambiente concorrente.
+Snapshot histórico anterior à recuperação: havia migrations remotas AOO/movimento sem arquivo local. Em 2026-11-10, todas as 81 versões desse conjunto foram restauradas e alinhadas byte a byte ao ledger. A inversão de lock entre cancelamento e resolução/dano segue como risco de deadlock não reproduzido em ambiente concorrente.
 
 
 ### Risco adicional de inversão AOO
@@ -524,3 +524,10 @@ A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24
 
 - **P1/P2 mecânico — footprint duplicado Colossal:** OIDs 24744/25562 (ataque físico, overload ativo na mesa) e 25509 (Imposição das Mãos/toque, callsite ativo) ainda calculam Colossal=5 e não usam helper; OIDs 27073/26923 usam 6. A centralização deve alcançar ataques e toque, não apenas movimento. Evidência em MOVEMENT_AOO_AUTHORITY_GAP.md.
 
+
+
+### Reconciliação do baseline de migrations — 2026-11-10
+- `supabase_migrations.schema_migrations` preserva `statements[1]` para os 966 registros. Foram recuperados 326 arquivos ausentes; 103 variantes locais de versões aplicadas e 41 migrations locais sem versão remota foram preservadas em `docs/migration_reconciliation/`.
+- A pasta `supabase/migrations` contém agora exatamente 966 arquivos e os 966 hashes Git coincidem byte a byte com o ledger remoto. As 81 versões movimento/manobras/AOO estão alinhadas.
+- 13 variantes locais de versões aplicadas apresentavam diferenças semânticas; 90 eram diferenças de comentários/formatação/casts/terminadores. As 41 migrations locais em quarentena: 34 duplicatas semânticas com timestamp divergente, 5 variantes divergentes e 2 exclusivas de Anão/Bárbaro.
+- Nenhuma migration foi aplicada no Supabase; nenhum schema, função, ACL, policy, dado ou TESTE 2 foi alterado. Próximo gate é reproduzir o baseline completo em stack local descartável antes de nova migration.
