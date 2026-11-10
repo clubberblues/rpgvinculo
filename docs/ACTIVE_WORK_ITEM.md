@@ -326,3 +326,10 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - Documentação atualizada em docs/STORAGE_ACCESS_CONTRACT.md e tests/sql/README.md. Commits: 55ee0dd6442e108ef89fa726cecb29ee5d1c8461, 2913e395ad73465a45b9d1e3b38cdc868cf50b60, f3ec4daef3752c7ffbff23bf6f49ecd633e08a2a, d4537d0567ed6a70c641004665643afbd0a3a2c8, 4027bcb46c5956802d1e579cad7ac046e61b2fc8.
 - A fixture ainda é somente modelo de semântica transacional; não consulta `storage.objects`, não usa RLS/Storage API e não executa RPC de produção. Teste real em ambiente Supabase descartável continua necessário.
 - Nenhuma alteração foi aplicada ao projeto Supabase de produção, nenhum arquivo Storage foi apagado e a campanha TESTE 2 continua intocada.
+
+
+## Atualização — algoritmo remoto de finalização (2026-11-10)
+
+- Releitura integral da implementação remota confirmou: finalizador atual bloqueia cleanup → campaign; se campanha não existir, remove marcador e retorna `deleted: true` sem checar Storage. O algoritmo proposto agora especifica campaign → cleanup, valida owner nos dois estados, verifica os três prefixos de Storage (`midia/campaigns/{id}/`, `mesa-media/campaigns/{id}/`, `midia/capas_mesas/mesa-{id}-`) e só retorna sucesso com zero objetos.
+- Idempotência definida: se campanha estiver ausente, marcador válido ainda precisa ser verificado; zero objetos permite remover marcador residual, mas qualquer objeto preserva marcador e impede sucesso. Sem campanha, nenhum upload novo deve ser autorizado.
+- Detalhes adicionados em docs/STORAGE_ACCESS_CONTRACT.md. A proposta não foi aplicada ao banco remoto.
