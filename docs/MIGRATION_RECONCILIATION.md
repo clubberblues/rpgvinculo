@@ -1,22 +1,35 @@
-# Reconciliação de migrations — inventário exato — 2026-11-09
+# Reconciliação de migrations — inventário e recuperação — 2026-11-10
 
 ## Resultado
 
 | Métrica | Quantidade |
 |---|---:|
-| Arquivos locais SQL | 681 |
+| Arquivos locais SQL após recuperação | 1007 |
 | Registros remotos | 966 |
-| Versões coincidentes exatamente | 640 |
-| Registros remotos sem arquivo da mesma versão | 326 |
+| Versões remotas com arquivo local da mesma versão | 966 |
+| Registros remotos ainda sem arquivo local | 0 |
 | Arquivos locais sem registro da mesma versão | 41 |
-| Registros remotos sem arquivo de mesmo nome | 285 |
-| Registros remotos com nome também existente localmente, mas timestamp diferente | 41 |
-| Nomes únicos entre esses registros de timestamp diferente | 39 |
-| Nomes remotos duplicados | 2 |
+| Versões com hash Git idêntico ao SQL do ledger | 863 |
+| Versões com diferença byte a byte (comentários/formatação ou possível conteúdo) | 103 |
+| Nomes duplicados no ledger remoto | 2 |
 
-As versões coincidentes também têm o mesmo nome. A equivalência de conteúdo SQL não foi comprovada. Os nomes duplicados remotos são: `srd35_sneak_attack_damage_validation` (2 versões); `srd35_rogue_uncanny_dodge_catalog_status` (2 versões).
+Os nomes duplicados remotos continuam sendo: `srd35_sneak_attack_damage_validation` (2 versões) e `srd35_rogue_uncanny_dodge_catalog_status` (2 versões). Dos 41 arquivos locais sem versão remota, 39 compartilham o nome lógico com uma migration remota de timestamp diferente; dois não têm nome correspondente: dwarf barbarian movement fixes e dwarf armor/load classification.
 
-## Registros remotos sem arquivo na mesma versão
+## Recuperação do SQL aplicado a partir do ledger remoto (2026-11-10)
+
+A inspeção de `information_schema.columns` confirmou que `supabase_migrations.schema_migrations` contém a coluna `statements text[]`. Os 966 registros remotos têm um elemento SQL não vazio (`cardinality(statements)=1`). Portanto, ao contrário da hipótese inicial deste inventário, o ledger remoto **preserva o texto SQL executado** em `statements[1]`.
+
+- Foram recuperados para a branch 326 arquivos que estavam ausentes localmente, usando o timestamp, nome e SQL de `statements[1]`. Isso inclui as 72 migrations do conjunto movimento/manobras/AOO e 254 migrations de outros domínios.
+- A recuperação foi feita somente no GitHub, em `supabase/migrations/`, sem executar ou reaplicar qualquer migration no Supabase.
+- O lote de 254 arquivos foi registrado no commit `7e57ccfe9a2e44f72f919dae84720920ec33d4a3`. As 72 migrations de movimento/AOO foram restauradas em commits anteriores da mesma branch.
+- O texto recuperado é o SQL registrado como executado pelo Supabase. Comentários e formatação originais podem diferir do arquivo fonte histórico; por isso, o ledger é fonte de execução, não prova de identidade byte a byte com o arquivo original.
+- Os 8 arquivos do subconjunto movimento/manobras/AOO que diferiam byte a byte foram comparados por tokens SQL, ignorando comentários e espaços; os 8 são semanticamente equivalentes ao texto do ledger.
+- No conjunto completo, 103 versões apresentam diferença byte a byte entre arquivo local e ledger. A análise semântica dos 95 casos fora do subconjunto AOO continua pendente; não sobrescrever esses arquivos até concluir a comparação.
+- Os 41 arquivos locais sem versão remota permanecem preservados. Não foram apagados, renomeados nem aplicados. Os 39 candidatos com mesmo nome lógico ainda exigem comparação semântica; os dois arquivos exclusivos de Anão/Bárbaro permanecem pendentes de decisão.
+
+## Inventário histórico anterior à recuperação — snapshot de 2026-11-09
+
+A lista a seguir registra os 326 arquivos remotos que estavam ausentes antes da recuperação. Todos já foram reconstruídos na branch a partir de `statements[1]`; a lista foi mantida para rastreabilidade.
 
 - `20261104043845` — `srd35_open_ended_craft_profession_skills` — arquivo local com mesmo nome: 20261104043500
 - `20261104050319` — `srd35_spell_save_secondary_damage_rules` — arquivo local com mesmo nome: 20261104050200
@@ -395,7 +408,7 @@ As versões coincidentes também têm o mesmo nome. A equivalência de conteúdo
 2. Nome igual com timestamp diferente não é considerado versão aplicada; é apenas um candidato a migração renomeada/recriada.
 3. Nome igual não comprova conteúdo igual. Para cada candidato é necessário comparar o SQL e o efeito final no schema.
 4. Arquivo local sem registro remoto não deve ser renomeado, apagado ou reaplicado sem comparar seus efeitos com o estado remoto.
-5. Registro remoto sem arquivo local não pode ser reconstruído a partir de seu nome. A fonte original SQL não está na tabela de histórico; recuperar por Git history ou reconstruir a partir dos objetos atuais, com revisão.
+5. O ledger remoto preserva o SQL executado em `statements[1]`; isso permite recuperar a instrução aplicada, mas não necessariamente comentários/formatação originais. Comparar semanticamente com os arquivos locais antes de sobrescrever diferenças.
 6. Nenhum reset, deploy automático, squash ou reconstrução até a reconciliação ser aprovada.
 
 
@@ -413,20 +426,9 @@ O histórico remoto registra as migrations posteriores que efetuaram essa mudan�
 Nenhuma dessas três tem arquivo local de mesmo nome. Portanto, o conjunto local não representa a transformação de arquitetura remota. Os arquivos locais de economia de ações não devem ser reaplicados sobre o schema remoto atual: os pontos de patch textual já não existem nos wrappers. Isso é evidência concreta de que igualar apenas o número ou o nome das migrations não restaura a arquitetura. Não foi feita alteração no banco.
 
 
-## Recorte crítico — movimento, manobras e AOO (rechecado em 2026-11-10)
+## Recorte crítico — movimento, manobras e AOO após recuperação
 
-A comparação por timestamp entre os 681 caminhos locais da branch e os 966 registros remotos identificou, no conjunto de migrations cujo nome menciona AOO, opportunity, movement/movimento ou maneuver/manobra:
+As 81 migrations remotas desse conjunto agora têm arquivo local da mesma versão. As 72 que faltavam foram recuperadas do ledger; as 8 diferenças byte a byte entre arquivos já existentes e ledger foram comparadas por tokens SQL e são equivalentes. O arquivo local 20261104190000_dwarf_barbarian_n1_racial_movement_fixes.sql continua sem versão remota e permanece preservado como migration local não aplicada.
 
-| Métrica | Quantidade |
-|---|---:|
-| Registros remotos nesse conjunto | 81 |
-| Registros remotos sem arquivo local da mesma versão | 72 |
-| Arquivos locais do mesmo conjunto sem versão remota | 1 |
-
-A ausência local inclui praticamente toda a construção incremental do AOO em 2026-11-08: ledger/reserva, pending, detecção de ameaças por armas/ataques naturais, cálculo de alcance/footprint, ataques individuais, dano/finalização, Derrubar, Encontrão, levantar Caído, ocultação, estados de reação e wrappers SECURITY INVOKER. Os nomes e versões completos permanecem na lista geral de registros remotos sem arquivo acima.
-
-O único arquivo local sem versão remota neste recorte é:
-- `20261104190000_dwarf_barbarian_n1_racial_movement_fixes.sql`
-
-**Consequência:** os corpos atualmente instalados no Supabase (inclusive OIDs 26923, 26964, 27038, 27306, 27366 e triggers relacionados) não podem ser reconstruídos com segurança a partir do conjunto local atual. Não criar uma migration corretiva sobre esse baseline nem aplicar/reordenar migrations até recuperar e comparar o conteúdo exato das versões remotas ausentes. A existência de uma migration remota no histórico não prova que seu arquivo local equivalente seja idêntico; mesmo as 640 versões coincidentes ainda exigem comparação de conteúdo.
+**Consequência:** o histórico SQL necessário para reconstruir o baseline de movimento/AOO está agora presente na branch. Isso remove a ausência de arquivos como bloqueio imediato, mas não autoriza aplicação/reordenação: os 41 arquivos locais sem versão remota e os 95 casos de diferença byte a byte fora do conjunto AOO ainda exigem reconciliação. Os corpos instalados no Supabase devem continuar sendo tratados como referência até a validação integral.
 
