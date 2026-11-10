@@ -21,8 +21,12 @@ BEGIN
   IF (SELECT pg_get_userbyid(proowner) FROM pg_proc WHERE oid=v_oid) <> 'postgres' THEN
     RAISE EXCEPTION 'GM maneuver wrapper owner must be postgres';
   END IF;
-  IF position('auth.uid()' in v_def)=0 OR position('public.my_role' in v_def)=0
-     OR position('auth.uid()' in v_def)>position('priv.srd35_maneuver_profile' in v_def) THEN
+  IF position('auth.uid()' in v_def)=0
+     OR position('public.my_role' in v_def)=0
+     OR position('IS DISTINCT FROM ''GM''' in v_def)=0
+     OR position('auth.uid()' in v_def)>position('priv.srd35_maneuver_profile' in v_def)
+     OR position('public.my_role' in v_def)>position('priv.srd35_maneuver_profile' in v_def)
+     OR position('IS DISTINCT FROM ''GM''' in v_def)>position('priv.srd35_maneuver_profile' in v_def) THEN
     RAISE EXCEPTION 'Authentication/GM guard must precede private helper calls';
   END IF;
   IF NOT ('search_path=pg_catalog, public, priv, pg_temp' = ANY(v_path)) THEN
@@ -50,8 +54,12 @@ BEGIN
   IF (SELECT pg_get_userbyid(proowner) FROM pg_proc WHERE oid=v_oid) <> 'postgres' THEN
     RAISE EXCEPTION 'GM natural attack wrapper owner must be postgres';
   END IF;
-  IF position('auth.uid()' in v_def)=0 OR position('public.my_role' in v_def)=0
-     OR position('auth.uid()' in v_def)>position('priv.srd35_maneuver_profile' in v_def) THEN
+  IF position('auth.uid()' in v_def)=0
+     OR position('public.my_role' in v_def)=0
+     OR position('IS DISTINCT FROM ''GM''' in v_def)=0
+     OR position('auth.uid()' in v_def)>position('priv.srd35_maneuver_profile' in v_def)
+     OR position('public.my_role' in v_def)>position('priv.srd35_maneuver_profile' in v_def)
+     OR position('IS DISTINCT FROM ''GM''' in v_def)>position('priv.srd35_maneuver_profile' in v_def) THEN
     RAISE EXCEPTION 'Authentication/GM guard must precede private helper calls';
   END IF;
   IF NOT ('search_path=pg_catalog, public, priv, pg_temp' = ANY(v_path)) THEN
