@@ -636,3 +636,20 @@ A correção deve ainda considerar mutações geométricas legítimas internas d
 
 **Novos critérios de regressão:** tentativa de mover token existente via `salvar_cena_cba` em combate deve falhar; atualizar somente metadados deve continuar funcionando; adicionar/remover/recriar token não pode ser usado para contornar a comparação; manobras com reposicionamento devem funcionar somente por seus próprios entrypoints autorizados; todos os escritores reais de coordenadas precisam ser cobertos em fixture de integração.
 
+
+
+## Complemento — snapshot de ameaças AOO depende de equipamento e dados de ficha
+
+O detector public.srd_detectar_saida_alcance_ameacado_srd (OID 26923) deriva as faixas de ameaça de posição, footprint, facção, alcance manual do token, tamanho/raça da ficha vinculada, armas equipadas (instâncias + inventário), ataques naturais em monsterStats e capacidade de ataque desarmado (Monge ou talento). O snapshot em pending.threats registra os resultados calculados, mas o guard comum não protege as tabelas-fonte.
+
+Writers relevantes autenticados:
+- public.equipar_item_srd OID 20555 → equipar_item_srd_maos OID 26390 → equipar_arma_instancia_personagem OID 26442 → private.equipar_arma_instancia_personagem_impl OID 26441. A implementação bloqueia personagem e instância, atualiza srd_character_weapon_instances e sincroniza srd_character_equipment, mas não adquire lock da campanha nem verifica pending.
+- public.entregar_item_srd OID 20556, GM-only, altera srd_character_equipment e pode equipar automaticamente item quando a ficha não tem mochila; não adquire lock de campanha nem verifica pending.
+- public.srd_configurar_perfil_combate_token_srd OID 26922 altera facção/alcance sob lock da campanha, mas não verifica pending.
+- public.salvar_cena_cba OID 20077 aceita substituição de campos completos dos tokens.
+- public.adicionar_token_cba_completo OID 21726 adiciona tokens que podem passar a ameaçar o movimento.
+
+O resolver AOO revalida a arma equipada no momento da resolução. Assim, desequipar/trocar arma entre detecção e ataque pode invalidar a reação. O equipamento de NPC/monstro via srd_cba_token_equipment não foi classificado como dependência direta do detector atual, pois o corpo de OID 26923 não consulta essa tabela.
+
+A correção deve proteger ou invalidar atomicamente o pending quando qualquer dependência do snapshot mudar. O guard de coordenadas isolado não é suficiente.
+
