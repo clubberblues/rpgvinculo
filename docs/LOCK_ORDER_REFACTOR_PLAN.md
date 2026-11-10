@@ -159,3 +159,10 @@ Complemento transacional: triggers AFTER INSERT/DELETE/UPDATE OF quantidade de `
 - PC weapon equip (OID 26441): character → weapon instance → inventory row. Token weapon equip (OID 26443): campaign → token weapon instance → token inventory row. Manter ordens distintas por domínio.
 - Inventory quantity triggers (OIDs 26446/26447) produzem inventory row → weapon instances. No snapshot de writers authenticated, nenhum caminho reduz quantidade de arma; os decrementos encontrados são consumo de poção. Não classificar como ciclo ativo até existir writer que reduza/exclua arma; manter o ramo negativo como requisito de teste futuro.
 - Entrega de item PC (OID 20556) valida papel GM sem lock de campanha. Entrega/equipamento de item em token (OIDs 21668/21670) validam papel antes do lock de campanha. Como `gm_transfer` altera owner/membership, essas validações podem ficar obsoletas. Candidato: campaign FOR UPDATE → revalidar role GM e alvo → mutação de inventário/trigger; teste concorrente de revogação/transferência versus entrega/equipamento.
+
+
+### Administração da campanha: escopo ampliado da correção campaign-first
+
+Além de `gm_transfer`, os endpoints authenticated `gm_set_role` (OID 18748) e `gm_kick` (OID 19188) usam `priv.need_owner` (OID 18742), que consulta owner sem lock, e depois alteram `members` sem lock de campanha. `iniciar_iniciativa_com_dados` (OID 20577) valida GM antes de `campaigns FOR UPDATE`. Corrigir como uma família: campanha FOR UPDATE primeiro, revalidar owner/active/papel e alvo, depois mutações de membership/iniciativa. Testes concorrentes: transferência × mudança de papel, transferência × expulsão, transferência × início de iniciativa; apenas a operação autorizada sob o lock deve concluir.
+
+`sentar_personagem_na_mesa` (OID 21606) valida PLAYER antes do lock da ficha e altera campaign_id sem lock de campanha. Tratar em trilha separada: definir invariantes de associação de personagem e coordenar com join/leave/kick antes de impor campaign-first, evitando inventar uma ordem character↔campaign que gere ciclo.
