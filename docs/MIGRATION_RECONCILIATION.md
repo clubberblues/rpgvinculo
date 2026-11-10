@@ -4,28 +4,26 @@
 
 | Métrica | Quantidade |
 |---|---:|
-| Arquivos locais SQL após recuperação | 1007 |
+| Arquivos em supabase/migrations | 966 |
 | Registros remotos | 966 |
-| Versões remotas com arquivo local da mesma versão | 966 |
-| Registros remotos ainda sem arquivo local | 0 |
-| Arquivos locais sem registro da mesma versão | 41 |
-| Versões com hash Git idêntico ao SQL do ledger | 863 |
-| Versões com diferença byte a byte (comentários/formatação ou possível conteúdo) | 103 |
+| Arquivos byte a byte idênticos a statements[1] | 966 |
+| Versões remotas sem arquivo local | 0 |
+| Arquivos locais sem versão remota na pasta de migrations | 0 |
+| Variantes locais de versões aplicadas preservadas em arquivo | 103 |
+| Migrations locais sem versão remota preservadas em quarentena | 41 |
 | Nomes duplicados no ledger remoto | 2 |
 
-Os nomes duplicados remotos continuam sendo: `srd35_sneak_attack_damage_validation` (2 versões) e `srd35_rogue_uncanny_dodge_catalog_status` (2 versões). Dos 41 arquivos locais sem versão remota, 39 compartilham o nome lógico com uma migration remota de timestamp diferente; dois não têm nome correspondente: dwarf barbarian movement fixes e dwarf armor/load classification.
+Os nomes duplicados remotos continuam sendo: `srd35_sneak_attack_damage_validation` (2 versões) e `srd35_rogue_uncanny_dodge_catalog_status` (2 versões). Das 103 variantes locais preservadas, 13 tinham diferença semântica e 90 eram equivalentes após normalização de comentários, espaços, casts redundantes em defaults e terminadores. Das 41 migrations locais em quarentena, 34 eram duplicatas semânticas com timestamp diferente, 5 eram variantes divergentes com mesmo nome lógico e 2 eram exclusivas de Anão/Bárbaro.
 
 ## Recuperação do SQL aplicado a partir do ledger remoto (2026-11-10)
 
 A inspeção de `information_schema.columns` confirmou que `supabase_migrations.schema_migrations` contém a coluna `statements text[]`. Os 966 registros remotos têm um elemento SQL não vazio (`cardinality(statements)=1`). Portanto, ao contrário da hipótese inicial deste inventário, o ledger remoto **preserva o texto SQL executado** em `statements[1]`.
 
-- Foram recuperados para a branch 326 arquivos que estavam ausentes localmente, usando o timestamp, nome e SQL de `statements[1]`. Isso inclui as 72 migrations do conjunto movimento/manobras/AOO e 254 migrations de outros domínios.
-- A recuperação foi feita somente no GitHub, em `supabase/migrations/`, sem executar ou reaplicar qualquer migration no Supabase.
-- O lote de 254 arquivos foi registrado no commit `7e57ccfe9a2e44f72f919dae84720920ec33d4a3`. As 72 migrations de movimento/AOO foram restauradas em commits anteriores da mesma branch.
-- O texto recuperado é o SQL registrado como executado pelo Supabase. Comentários e formatação originais podem diferir do arquivo fonte histórico; por isso, o ledger é fonte de execução, não prova de identidade byte a byte com o arquivo original.
-- Os 8 arquivos do subconjunto movimento/manobras/AOO que diferiam byte a byte foram comparados por tokens SQL, ignorando comentários e espaços; os 8 são semanticamente equivalentes ao texto do ledger.
-- No conjunto completo, 103 versões apresentam diferença byte a byte entre arquivo local e ledger. A análise semântica dos 95 casos fora do subconjunto AOO continua pendente; não sobrescrever esses arquivos até concluir a comparação.
-- Os 41 arquivos locais sem versão remota permanecem preservados. Não foram apagados, renomeados nem aplicados. Os 39 candidatos com mesmo nome lógico ainda exigem comparação semântica; os dois arquivos exclusivos de Anão/Bárbaro permanecem pendentes de decisão.
+- Foram recuperados 326 arquivos ausentes, usando timestamp, nome e SQL de statements[1]: 72 de movimento/manobras/AOO e 254 de outros domínios.
+- A comparação byte a byte identificou 103 variantes locais de versões já aplicadas. As 103 foram preservadas em docs/migration_reconciliation/local_variants/ e os caminhos de supabase/migrations foram alinhados ao SQL do ledger. A análise por tokens identificou 13 diferenças semânticas; os 90 restantes eram equivalentes após normalização de comentários, espaços, casts redundantes em defaults e terminadores.
+- Os 41 arquivos locais sem versão remota foram preservados em docs/migration_reconciliation/unapplied_local/ e retirados de supabase/migrations para impedir que um db push os aplicasse por engano. Nenhum conteúdo foi descartado.
+- A pasta supabase/migrations agora contém exatamente 966 arquivos, um por versão remota, e todos os 966 hashes Git coincidem byte a byte com statements[1].
+- Toda a recuperação e reconciliação ocorreu somente no GitHub. Nenhuma migration foi executada, reaplicada ou alterada no Supabase remoto.
 
 ## Inventário histórico anterior à recuperação — snapshot de 2026-11-09
 
@@ -428,7 +426,29 @@ Nenhuma dessas três tem arquivo local de mesmo nome. Portanto, o conjunto local
 
 ## Recorte crítico — movimento, manobras e AOO após recuperação
 
-As 81 migrations remotas desse conjunto agora têm arquivo local da mesma versão. As 72 que faltavam foram recuperadas do ledger; as 8 diferenças byte a byte entre arquivos já existentes e ledger foram comparadas por tokens SQL e são equivalentes. O arquivo local 20261104190000_dwarf_barbarian_n1_racial_movement_fixes.sql continua sem versão remota e permanece preservado como migration local não aplicada.
+As 81 migrations remotas desse conjunto estão agora presentes em supabase/migrations e são byte a byte idênticas às entradas statements[1] do ledger. As 72 versões que faltavam foram recuperadas; as 8 variantes locais divergentes foram preservadas em docs/migration_reconciliation/local_variants/. Os arquivos locais de Anão/Bárbaro que não têm versão remota estão preservados em docs/migration_reconciliation/unapplied_local/ e não fazem parte do baseline aplicado.
 
-**Consequência:** o histórico SQL necessário para reconstruir o baseline de movimento/AOO está agora presente na branch. Isso remove a ausência de arquivos como bloqueio imediato, mas não autoriza aplicação/reordenação: os 41 arquivos locais sem versão remota e os 95 casos de diferença byte a byte fora do conjunto AOO ainda exigem reconciliação. Os corpos instalados no Supabase devem continuar sendo tratados como referência até a validação integral.
+**Consequência:** o baseline histórico de movimento/AOO está reconstruído e alinhado ao ledger remoto. Nenhuma migration foi aplicada no Supabase. A ordem de locks, os 13 desvios semânticos preservados e os testes de integração contra o schema completo continuam sendo etapas obrigatórias antes de qualquer nova migration ou deploy.
+
+
+
+## Diferenças semânticas preservadas para revisão
+
+Os 13 arquivos de versões aplicadas cujo conteúdo local diferia semanticamente do ledger foram alinhados em supabase/migrations ao SQL executado e suas variantes locais foram preservadas em docs/migration_reconciliation/local_variants/:
+
+- 20261104044506 srd35_paladin_lay_on_hands_engine
+- 20261104045534 srd35_fireball_partial_scope
+- 20261104050119 srd35_area_damage_secondary_conditions
+- 20261104050939 srd35_class_specific_spell_levels_and_caster_class_level
+- 20261104051117 srd35_grimoire_jsonb_key_count_fix
+- 20261104051135 srd35_grimoire_prepared_spell_school_select
+- 20261104051204 srd35_grimoire_nonnegative_slot_capacity
+- 20261104051555 srd35_flame_strike_split_damage_components
+- 20261104123152 srd35_barbarian_rage_engine
+- 20261104123351 srd35_barbarian_rage_class_level_fallback
+- 20261104123425 srd35_barbarian_rage_legacy_class_lookup_fix
+- 20261104132528 srd35_character_ac_uncanny_dodge_and_trap_sense
+- 20261104212203 srd35_halfling_thrown_weapon_attack_bonus
+
+Cinco variantes locais sem versão remota, mas com nome lógico correspondente a uma versão remota, também foram preservadas em quarentena: srd35_flame_strike_engine_rule, srd35_monk_still_mind_enchantment_saves, srd35_paladin_lay_on_hands_harm_undead, stage_all_feat_and_monster_mechanics_for_review e structure_improved_initiative_feat. Duas migrations locais exclusivas de Anão/Bárbaro foram preservadas na mesma quarentena: dwarf_barbarian_n1_racial_movement_fixes e dwarf_armor_load_classification. Essas variantes não foram descartadas nem aplicadas; se alguma for aprovada, deverá ser convertida em nova migration pelo Supabase CLI, com novo timestamp e testes.
 
