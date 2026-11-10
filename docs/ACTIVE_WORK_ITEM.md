@@ -17,6 +17,7 @@
 
 - Atualização do bloqueio de movimento/AOO: CI no commit `fc2f008e59e980305990e9083058f2b2e76c7750` — Static validation #62, aplicação JS #110 e mesa JS #365 concluídos **success**; PostgreSQL fixture #271 [42749952496](https://github.com/clubberblues/rpgvinculo/actions/runs/42749952496) concluído **success**. Os commits posteriores até o HEAD atual alteraram somente documentação; a fixture testada permaneceu inalterada. Nenhum teste executou RPCs Supabase reais.
 - Nenhuma função, migration, ACL, policy, dado Supabase ou mesa/ficha foi alterada. TESTE 2 permanece intocado. Nenhum deploy remoto.
+- Rechecagem por recorte do histórico: entre 81 migrations remotas de movimento/manobras/AOO, 72 não têm arquivo local da mesma versão; o arquivo local 20261104190000_dwarf_barbarian_n1_racial_movement_fixes.sql não tem versão remota. Isso impede reconstruir o baseline do AOO e reforça bloqueio total a migration/deploy até recuperar e comparar conteúdo. Detalhe em MIGRATION_RECONCILIATION.md.
 - Reconciliação de migrations permanece bloqueio: 681 arquivos locais, 966 registros remotos, apenas 640 versões coincidentes exatas por timestamp/nome; conteúdo SQL ainda não foi comparado.
 
 ## Próxima unidade de trabalho
