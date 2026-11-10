@@ -152,3 +152,19 @@ Assim, o contrato durante pending não pode ser apenas “proibir toda mudança 
 
 **Teste obrigatório adicional:** com pending ativo, tentar adicionar token, mover/remover um ameaçador ou alterar facção/alcance deve falhar sem modificar a geometria; a resolução de Encontrão autorizada deve conseguir aplicar seu deslocamento e eventual acompanhamento, sem abrir uma exceção que permita movimento genérico.
 
+
+
+### Diferença atual entre movimento livre do jogador e do Mestre
+
+O contrato fora de combate precisa preservar dois comportamentos distintos observados nos corpos:
+
+- `priv.mover_token_player_cba_impl` permite movimento do jogador quando não há combate ativo (desde que a campanha não esteja marcada COMBATE sem iniciativa); nesse caso não aplica economia de turno.
+- `priv.mover_token_gm_cba_srd_impl` exige campanha em estado COMBATE e iniciativa ativa. Portanto, não serve como implementação de movimento livre do Mestre na exploração.
+- Na interface, o jogador chama o wrapper de movimento próprio diretamente quando não há combate ativo. O Mestre usa o ramo específico GM durante turno de combate e cai no salvamento geral de cena para sincronizar movimento fora desse ramo.
+
+A futura orquestradora deve oferecer explicitamente os dois modos de exploração:
+1. jogador autenticado move somente o próprio token, preservando as validações atuais de ficha, deslocamento, condições e ocupação;
+2. GM move tokens autorizados durante exploração, preservando a permissão de Mestre e a validação de identidade/ocupação, sem exigir iniciativa.
+
+Não redirecionar movimento livre do Mestre para a implementação atual GM de combate, pois ela rejeita campanhas fora de COMBATE. Essa diferença precisa de teste próprio antes de revogar qualquer wrapper legado.
+
