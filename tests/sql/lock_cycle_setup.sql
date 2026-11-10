@@ -4,14 +4,15 @@ DROP SCHEMA IF EXISTS lock_fixture CASCADE;
 CREATE SCHEMA lock_fixture;
 CREATE TABLE lock_fixture.campaigns (
   id integer PRIMARY KEY,
-  round_number integer NOT NULL
+  round_number integer NOT NULL,
+  owner_id text NOT NULL DEFAULT 'owner-a'
 );
 CREATE TABLE lock_fixture.effects (
   id integer PRIMARY KEY,
   campaign_id integer NOT NULL REFERENCES lock_fixture.campaigns(id),
   active boolean NOT NULL
 );
-INSERT INTO lock_fixture.campaigns VALUES (1, 1);
+INSERT INTO lock_fixture.campaigns (id,round_number) VALUES (1, 1);
 INSERT INTO lock_fixture.effects VALUES (1, 1, true);
 
 CREATE TABLE lock_fixture.characters (
@@ -231,7 +232,7 @@ DECLARE
   v_owner text;
   v_marker_owner text;
 BEGIN
-  SELECT 'owner-a' INTO v_owner
+  SELECT owner_id INTO v_owner
   FROM lock_fixture.campaigns
   WHERE id=p_campaign_id
   FOR UPDATE;
