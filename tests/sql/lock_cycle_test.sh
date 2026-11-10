@@ -223,3 +223,112 @@ SELECT id FROM lock_fixture.npc_attempts WHERE id=1 FOR UPDATE;
 SELECT id FROM lock_fixture.npc_sequences WHERE id=1 FOR UPDATE;
 COMMIT;
 "
+
+
+# Ownership TOCTOU regression. This models gm_transfer/need_owner in disposable tables.
+run_expected_stale_owner_race() {
+  local tmp owner gm_count sa sb
+  tmp="$(mktemp -d)"
+  psql -v ON_ERROR_STOP=1 >"$tmp/a.log" 2>&1 <<'SQL' &
+BEGIN;
+DO $$
+DECLARE v_owner text;
+BEGIN
+  SELECT owner_id INTO v_owner FROM lock_fixture.ownership_campaigns WHERE id=1;
+  IF v_owner IS DISTINCT FROM 'owner-a' THEN RAISE EXCEPTION 'owner precheck failed'; END IF;
+END $$;
+UPDATE lock_fixture.ownership_members SET role='PLAYER' WHERE campaign_id=1 AND user_id='owner-a';
+SELECT pg_sleep(0.8);
+UPDATE lock_fixture.ownership_members SET role='GM' WHERE campaign_id=1 AND user_id='player-b';
+UPDATE lock_fixture.ownership_campaigns SET owner_id='player-b' WHERE id=1;
+COMMIT;
+SQL
+  local a=$!
+  sleep 0.1
+  psql -v ON_ERROR_STOP=1 >"$tmp/b.log" 2>&1 <<'SQL' &
+BEGIN;
+DO $$
+DECLARE v_owner text;
+BEGIN
+  SELECT owner_id INTO v_owner FROM lock_fixture.ownership_campaigns WHERE id=1;
+  IF v_owner IS DISTINCT FROM 'owner-a' THEN RAISE EXCEPTION 'owner precheck failed'; END IF;
+END $$;
+SELECT pg_sleep(0.2);
+UPDATE lock_fixture.ownership_members SET role='PLAYER' WHERE campaign_id=1 AND user_id='owner-a';
+UPDATE lock_fixture.ownership_members SET role='GM' WHERE campaign_id=1 AND user_id='player-c';
+UPDATE lock_fixture.ownership_campaigns SET owner_id='player-c' WHERE id=1;
+COMMIT;
+SQL
+  local b=$!
+  set +e
+  wait "$a"; sa=$?
+  wait "$b"; sb=$?
+  set -e
+  owner="$(psql -Atq -c "SELECT owner_id FROM lock_fixture.ownership_campaigns WHERE id=1")"
+  gm_count="$(psql -Atq -c "SELECT count(*) FROM lock_fixture.ownership_members WHERE campaign_id=1 AND role='GM'")"
+  if [[ "$sa" -ne 0 || "$sb" -ne 0 || "$owner" != "player-c" || "$gm_count" != "2" ]]; then
+    echo "FAIL: stale owner check race was not reproduced as expected"
+    cat "$tmp/a.log" "$tmp/b.log"
+    echo "owner=$owner gm_count=$gm_count statuses=$sa/$sb"
+    rm -rf "$tmp"
+    exit 1
+  fi
+  echo "passed synthetic stale owner authorization race: two prevalidated transfers, owner=$owner, gm_count=$gm_count"
+  rm -rf "$tmp"
+}
+
+run_expected_serialized_owner_transfer() {
+  local tmp owner gm_count sa sb
+  tmp="$(mktemp -d)"
+  psql -v ON_ERROR_STOP=1 -c "UPDATE lock_fixture.ownership_campaigns SET owner_id='owner-a' WHERE id=1; UPDATE lock_fixture.ownership_members SET role=CASE user_id WHEN 'owner-a' THEN 'GM' ELSE 'PLAYER' END WHERE campaign_id=1;" >/dev/null
+  psql -v ON_ERROR_STOP=1 >"$tmp/a.log" 2>&1 <<'SQL' &
+BEGIN;
+SELECT owner_id FROM lock_fixture.ownership_campaigns WHERE id=1 FOR UPDATE;
+DO $$
+DECLARE v_owner text;
+BEGIN
+  SELECT owner_id INTO v_owner FROM lock_fixture.ownership_campaigns WHERE id=1;
+  IF v_owner IS DISTINCT FROM 'owner-a' THEN RAISE EXCEPTION 'authorization lost'; END IF;
+END $$;
+UPDATE lock_fixture.ownership_members SET role='PLAYER' WHERE campaign_id=1 AND user_id='owner-a';
+SELECT pg_sleep(0.8);
+UPDATE lock_fixture.ownership_members SET role='GM' WHERE campaign_id=1 AND user_id='player-b';
+UPDATE lock_fixture.ownership_campaigns SET owner_id='player-b' WHERE id=1;
+COMMIT;
+SQL
+  local a=$!
+  sleep 0.1
+  psql -v ON_ERROR_STOP=1 >"$tmp/b.log" 2>&1 <<'SQL' &
+BEGIN;
+SELECT owner_id FROM lock_fixture.ownership_campaigns WHERE id=1 FOR UPDATE;
+DO $$
+DECLARE v_owner text;
+BEGIN
+  SELECT owner_id INTO v_owner FROM lock_fixture.ownership_campaigns WHERE id=1;
+  IF v_owner IS DISTINCT FROM 'owner-a' THEN RAISE EXCEPTION 'authorization lost'; END IF;
+END $$;
+UPDATE lock_fixture.ownership_members SET role='PLAYER' WHERE campaign_id=1 AND user_id='owner-a';
+UPDATE lock_fixture.ownership_members SET role='GM' WHERE campaign_id=1 AND user_id='player-c';
+UPDATE lock_fixture.ownership_campaigns SET owner_id='player-c' WHERE id=1;
+COMMIT;
+SQL
+  local b=$!
+  set +e
+  wait "$a"; sa=$?
+  wait "$b"; sb=$?
+  set -e
+  owner="$(psql -Atq -c "SELECT owner_id FROM lock_fixture.ownership_campaigns WHERE id=1")"
+  gm_count="$(psql -Atq -c "SELECT count(*) FROM lock_fixture.ownership_members WHERE campaign_id=1 AND role='GM'")"
+  if [[ "$sa" -ne 0 || "$sb" -eq 0 || "$owner" != "player-b" || "$gm_count" != "1" ]] || ! grep -qi 'authorization lost' "$tmp/b.log"; then
+    echo "FAIL: campaign-first ownership transfer did not reject stale authority"
+    cat "$tmp/a.log" "$tmp/b.log"
+    echo "owner=$owner gm_count=$gm_count statuses=$sa/$sb"
+    rm -rf "$tmp"
+    exit 1
+  fi
+  echo "passed serialized ownership transfer: second stale request rejected, owner=$owner, gm_count=$gm_count"
+  rm -rf "$tmp"
+}
+
+run_expected_stale_owner_race
+run_expected_serialized_owner_transfer
