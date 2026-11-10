@@ -185,3 +185,21 @@ Não remover o fallback nem revogar tabelas/ACLs enquanto não houver decisão e
 ### Incompatibilidade estrutural entre fichas legadas e SRD
 
 Além dos nomes, os modelos não são intercambiáveis por estrutura. `vinculo_character_sheets` contém `classe`, `cultura`, `armadura`, `escudo`, `bonus_ca`, `bonus_rm`, `ready`, `preserve_pv`, `pv_atual` e `pm_atual`. Já `srd_character_sheets` contém `classe_id`, `raca_id`, `nivel`, `atributos`, `pericias`, `talentos`, `magias_preparadas`, `idiomas_conhecidos`, `identidade`, `pv_atual` e dados SRD; não possui os campos legados `ready/preserve_pv/bonus_ca/bonus_rm`. Portanto, nem mesmo trocar `public.character_sheets` por `vinculo_character_sheets` corrigiria o fluxo para D&D 3.5. Os endpoints legados de reabertura e bônus exigiriam uma nova especificação de regras D&D e RPC própria, não um rename.
+
+
+## Confirmação do fluxo principal de criação D&D 3.5
+
+O botão do lobby encaminha para `ficha.html?mode=criar&ruleset=dnd35&raca=...&classe=...`. Nesse modo, `ficha.html` carrega os catálogos SRD e a função `salvarFichaSRD35` chama `public.finalizar_criacao_personagem_srd` (OID 25213), não o formulário antigo de Vínculo.
+
+A RPC wrapper é SECURITY INVOKER e chama, na mesma transação:
+1. `criar_personagem_srd_completo` com identidade/atributos/perícias/talentos;
+2. `salvar_idiomas_personagem_srd`;
+3. `salvar_talentos_bonus_classe_inicial_srd`;
+4. `salvar_dominios_personagem_srd` quando aplicável;
+5. `salvar_grimorio_srd` quando aplicável;
+6. `finalizar_equipamento_inicial_srd`.
+
+As rotinas internas fazem a criação/validação sobre `characters`, `srd_character_sheets`, catálogos SRD e `srd_character_equipment`; a função de equipamento inicial usa `srd_equipment`. Não confundir com a função antiga de mesmo tema `save_sheet` ou com `finalizar_equipamento_inicial_srd` isolada. O wrapper atual é o caminho principal do lobby e sua atomicidade é importante: qualquer falha em idiomas, talentos, domínios, grimório ou equipamento reverte a criação inteira.
+
+Esse caminho atual não usa `vinculo_character_sheets`, `vinculo_inventory` ou `vinculo_items`. A existência de fallback antigo em `ficha.html` não significa que ele seja o fluxo primário.
+
