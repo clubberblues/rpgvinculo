@@ -116,3 +116,6 @@ CI #208 [42743669088](https://github.com/clubberblues/rpgvinculo/actions/runs/42
 ### Exclusão de campanha em duas fases
 
 O harness também reproduz a inversão potencial entre `preparar_exclusao_campanha_propria` (campanha → marcador `priv.campaign_deletion_cleanup`) e `finalizar_exclusao_campanha_propria` (marcador → campanha). A reprodução é sintética e usa a tabela descartável `lock_fixture.campaign_deletion_cleanup`; não executa os wrappers nem as implementações privadas reais.
+
+
+- CI #212 [42744027422](https://github.com/clubberblues/rpgvinculo/actions/runs/42744027422) concluiu **success** no commit `5da5948f1478a69a77d4644bb5dd86eaf021359e`. O log confirma o nono cenário de inversão: campanha → cleanup versus cleanup → campanha, reproduzindo o ciclo do fluxo de exclusão em duas fases. Os oito padrões anteriores, o controle positivo, o fixture de lifecycle e os demais cenários de autorização também passaram. O commit posterior alterou somente documentação.
