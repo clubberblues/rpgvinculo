@@ -210,3 +210,14 @@ Catálogo público: 41 funções authenticated mencionam `my_role` em comparaç�
 ### Cobertura sintética de ficha GM
 
 Adicionar aos endpoints da segunda camada os casos `gm_reopen_sheet` e `gm_set_bonus`: ambos modificam ficha sem campaign lock após a autorização GM. O novo fixture modela reabertura e alteração de bônus após revogação concorrente; a correção candidata é campaign → revalidar GM/vínculo → character → sheet. Ainda é necessário inspecionar as assinaturas e efeitos colaterais completos antes de gerar SQL de migração.
+
+
+### Auditoria complementar de endpoints GM — 2026-11-10
+
+- `gm_grant` (OID 18752) checa GM antes de `characters FOR UPDATE`, sem campaign lock/revalidação. Correção candidata: campaign → revalidar GM/vínculo → character → inventário/ouro/XP/log.
+- Defeito funcional: o corpo instalado consulta `public.items` e `public.inventory`, relações inexistentes no catálogo atual; existem `public.vinculo_items` e `public.vinculo_inventory`. O ramo de concessão de item é incompatível com o schema instalado; não foi invocado remotamente nem corrigido por causa da reconciliação de migrations pendente.
+- `srd_remove_campaign_condition/effect` (OIDs 24806/24897) checam GM e atualizam tabelas sem lock da campanha. Aplicadores (24805/24896) checam GM antes de chamar helpers que depois bloqueiam campanha, sem revalidar. Campaign-first e recheck após lock para os quatro.
+- `media_gc` (18760) checa GM sem lock, exclui metadados de mídia não referenciada por layers e devolve paths para remoção no Storage pelo navegador. FK layers→media preserva integridade referencial; não elimina stale authorization nem a não atomicidade banco/Storage. Candidato: campaign-first, recheck e remoção de Storage idempotente/reconciliável.
+- `gm_get_code` (18746) é leitura; definir separadamente se exige revogação linearizável.
+- Fixtures sintéticos adicionados para corrida/rejeição de `gm_grant` e remoção de condição/efeito. Eles testam a ordem/autorização, não executam as RPCs reais nem validam o ramo de item incompatível com o schema.
+- Nenhuma mutação Supabase. Detalhes e limites em `docs/GM_ENDPOINT_AUDIT_2026-11-10.md`.
