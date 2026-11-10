@@ -113,7 +113,31 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM npc_fixture_sequences WHERE actor_character_id=678) THEN
     RAISE EXCEPTION 'RESTRICT dependency fixture missing';
   END IF;
-END $$;
+END $;
+
+-- Exercise the JSON reference guard itself: the character row has no FK from
+-- cba_data, so the deletion contract must reject it explicitly.
+DO $
+DECLARE rejected boolean := false;
+BEGIN
+  BEGIN
+    IF EXISTS (
+      SELECT 1
+      FROM npc_fixture_campaigns c
+      CROSS JOIN LATERAL jsonb_array_elements(c.cba_data->'tokens') t
+      WHERE t->>'sourceCharacterId'='678'
+    ) THEN
+      RAISE EXCEPTION USING ERRCODE='P0001', MESSAGE='source_character_has_linked_tokens';
+    END IF;
+    DELETE FROM npc_fixture_characters WHERE id=678;
+  EXCEPTION WHEN SQLSTATE 'P0001' THEN
+    IF SQLERRM <> 'source_character_has_linked_tokens' THEN RAISE; END IF;
+    rejected := true;
+  END;
+  IF NOT rejected OR NOT EXISTS (SELECT 1 FROM npc_fixture_characters WHERE id=678) THEN
+    RAISE EXCEPTION 'source deletion was not blocked while JSON token references exist';
+  END IF;
+END $;
 
 -- Model the atomic "remove NPC token" contract for npc-a only:
 -- remove scene/initiative entries, clear token-scoped rows, cancel pending work,
@@ -218,6 +242,21 @@ SET cba_data=jsonb_set(
   ),'[]'::jsonb)
 )
 WHERE id=129;
+-- Even after JSON references are gone, the real FK contract blocks source
+-- deletion while a persisted NPC attack sequence still references it.
+DO $
+DECLARE blocked boolean := false;
+BEGIN
+  BEGIN
+    DELETE FROM npc_fixture_characters WHERE id=678;
+  EXCEPTION WHEN foreign_key_violation THEN
+    blocked := true;
+  END;
+  IF NOT blocked OR NOT EXISTS (SELECT 1 FROM npc_fixture_characters WHERE id=678) THEN
+    RAISE EXCEPTION 'NPC sequence FK did not protect the source character';
+  END IF;
+END $;
+
 DELETE FROM npc_fixture_sequences WHERE actor_character_id=678;
 DELETE FROM npc_fixture_characters WHERE id=678;
 
