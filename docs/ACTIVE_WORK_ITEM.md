@@ -255,3 +255,15 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - Snapshot Storage: 44 objetos órfãos em bucket público `midia` (33 caminhos de campanha e 11 capas), sem campanha correspondente; zero objetos encontrados em `mesa-media` sob esses prefixos e zero marcadores cleanup pendentes. Não foi feita limpeza.
 - O finalizador não valida a ausência de objetos Storage antes de apagar a campanha. A origem dos órfãos não está provada; inventariar e classificar antes de qualquer exclusão.
 
+
+
+
+
+## Atualização — divergência de limpeza entre lobby e mesa
+
+- Corrigido no branch: a exclusão pelo lobby agora lista/remove arquivos de `midia` e `mesa-media`, além das capas; a mesa já fazia a limpeza nos dois buckets.
+- `scripts/check-static.mjs` agora valida esse contrato para evitar regressão.
+- Snapshot atual: `mesa-media` existe, é privado e está vazio. O bug não deixou arquivos privados órfãos observáveis nesta consulta.
+- Risco restante de banco: o RPC finalizador não exige que `storage.objects` esteja vazio; chamada direta autenticada pode pular a limpeza. O marcador bloqueia writes no bucket `midia`, mas não no `mesa-media`, cuja política atual apenas exige papel GM. A solução precisa fechar o upload/update privado durante o marcador e validar os prefixos vazios no finalizador.
+- Os 44 arquivos públicos órfãos totalizam 55.708.560 bytes (~53,1 MiB), criados entre 20/10 e 03/11/2026. Não houve remoção.
+
