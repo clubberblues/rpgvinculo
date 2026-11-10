@@ -426,3 +426,11 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - Migration aditiva preparada na branch: `supabase/migrations/20261110150000_fix_invoker_maneuver_catalog_helper_permissions.sql`. Altera somente SECURITY INVOKER → DEFINER nas duas assinaturas, preserva o search_path fixo e restringe EXECUTE a authenticated/service_role; as duas funções mantêm verificações explícitas de autenticação e papel GM.
 - Verificação pós-migration: `supabase/verification/verify_maneuver_catalog_rpc_security.sql`.
 - **Não aplicada em produção.** Exigir validação SQL pós-migration e testes autenticados negativos/positivos antes de deploy.
+
+### Endurecimento focalizado de EXECUTE (2026-11-10)
+
+- Migration `20261110150000_fix_invoker_maneuver_catalog_helper_permissions.sql`: corrige as duas RPCs GM que dependem de helpers `priv.*` sem EXECUTE authenticated, convertendo-as para SECURITY DEFINER com owner postgres, search_path fixo e guards auth.uid()/GM preservados.
+- Migration `20261110160000_revoke_public_feat_saving_throw_helper.sql`: remove EXECUTE herdado de PUBLIC/anon de `priv.srd_feat_saving_throw_modifier(jsonb,text)`; mantém authenticated/service_role. O único consumidor identificado é o motor interno SECURITY DEFINER `priv.srd_saving_throw_bonus`.
+- Verificações: `verify_maneuver_catalog_rpc_security.sql` e `verify_passive_feat_helper_acl.sql`.
+- Fixture isolado `tests/sql/maneuver_catalog_security_fixture.sql` aplica ambas as migrations e testa chamadas GM positivas, jogador negativo, anon negativo e chamadas internas do motor. Workflow PostgreSQL atualizado para executar o fixture.
+- Estado: branch apenas; sem alteração remota. Aguardar CI e depois regressão autenticada real antes de implantação.
