@@ -261,3 +261,20 @@ Foi confirmada uma falha adicional na comparação OLD/NEW:
 - Token único legítimo continua atualizável em metadados não geométricos.
 - Solicitação e finalização não podem ficar presas por duplicidade introduzida via salvamento geral.
 
+
+
+### TOCTOU confirmado entre detecção sem ameaça e gravação do movimento
+
+O caminho normal de jogador e Mestre tem duas chamadas RPC separadas quando o detector não encontra ameaça:
+
+1. `srd_solicitar_movimento_com_aoo_srd` (OID 26964) bloqueia campanha, calcula a detecção e retorna `continue_with_existing_movement_rpc=true` sem mover o token.
+2. O frontend então chama `mover_token_player_cba` (OID 20522) ou `mover_token_gm_cba_srd` (OID 21615), em uma segunda transação.
+
+A trava de campanha da primeira chamada termina antes da segunda chamada. Entre elas, outro writer pode alterar posição, facção, alcance, equipamento ou incluir uma criatura que passe a ameaçar o trajeto. O RPC de movimento direto revalida turno, deslocamento, ocupação e condições, mas não recalcula AOO. Portanto, mesmo que nenhum bypass direto seja usado, o fluxo normal tem uma janela TOCTOU: a conclusão de “sem ameaça” pode ficar obsoleta antes da gravação.
+
+O frontend foi confirmado em `mesa.html`: jogador e GM chamam a solicitação e, no retorno sem pending, chamam imediatamente o respectivo RPC de movimento. Isso não torna as duas operações atômicas.
+
+**Correção obrigatória:** a orquestradora deve fazer detecção e commit do movimento sem ameaça na mesma transação, mantendo o lock de campanha até a gravação; em caso de ameaça, deve criar pending e não mover. O retorno precisa conter o resultado do movimento já persistido, sem instruir o cliente a fazer uma segunda escrita. Para evitar corridas de equipamento/ficha, os writers dessas fontes também precisam adquirir campaign-first e revalidar pending, ou o motor deve adotar snapshot imutável com dados suficientes para resolver a reação.
+
+**Regressão:** duas sessões concorrentes — sessão A solicita movimento sem ameaça; sessão B altera uma fonte de ameaça antes da escrita. O resultado permitido é serialização (A move primeiro com snapshot atual ou B altera primeiro e A detecta AOO); não pode existir janela em que A usa detecção antiga e grava depois da mudança de B.
+
