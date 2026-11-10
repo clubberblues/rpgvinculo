@@ -12,19 +12,21 @@ As funções instaladas foram lidas diretamente por OID:
 | OID | Função | Papel |
 |---:|---|---|
 | 20522 | `public.mover_token_player_cba(bigint,text,integer,integer)` | endpoint público de movimento do jogador |
-| 27366 | `priv.mover_token_player_cba_impl(...)` | implementação que valida e grava a nova posição |
+| 27366 | `priv.mover_token_player_cba_impl(...)` | implementação que valida e grava a nova posição do jogador |
+| 21615 | `public.mover_token_gm_cba_srd(bigint,text,integer,integer)` | endpoint público de movimento do Mestre |
+| 27306 | `priv.mover_token_gm_cba_srd_impl(...)` | implementação de movimento sob controle do Mestre |
 | 26923 | `public.srd_detectar_saida_alcance_ameacado_srd(...)` | detector de saída de área ameaçada |
 | 26964 | `public.srd_solicitar_movimento_com_aoo_srd(...)` | registra uma movimentação pendente quando há ameaça |
 | 27038 | `public.srd_finalizar_movimento_aoo_pendente_srd(...)` | conclui o movimento após as reações |
 
-O wrapper público OID 20522 e a implementação OID 27366 têm EXECUTE para `authenticated`, não para `anon`. A implementação de movimento não chama o detector OID 26923 nem a RPC de solicitação OID 26964: ela valida turno, propriedade, deslocamento, condições, ocupação e economia de ações, e grava diretamente as coordenadas.
+O wrapper público OID 20522 e a implementação OID 27366 têm EXECUTE para `authenticated`, não para `anon`. As duas implementações de movimento (OIDs 27366 e 27306) não chamam o detector OID 26923 nem a RPC de solicitação OID 26964. Ambas têm EXECUTE para `authenticated`, não para `anon`. Cada uma valida seu escopo (jogador ou Mestre), turno, deslocamento, condições, ocupação e economia de ações, e grava diretamente as coordenadas.
 
 O fluxo protegido existe, mas é separado:
 1. `srd_solicitar_movimento_com_aoo_srd` bloqueia a campanha, valida controlador/turno, chama o detector e cria uma linha pendente se houver ameaça.
 2. Reações são resolvidas.
 3. `srd_finalizar_movimento_aoo_pendente_srd` valida pendências/ataques, bloqueia campanha, confere turno e posição original, ativa o GUC transacional `app.srd_aoo_pending_commit` e só então chama a RPC de movimento.
 
-O trigger `priv.srd_guard_pending_aoo_movement` bloqueia mudanças de posição quando já existe uma pendência AOO, exceto quando o GUC corresponde ao pending que está sendo finalizado. Entretanto, ele não exige que uma pendência exista antes de qualquer movimento. Portanto, uma chamada autenticada direta ao endpoint OID 20522, quando ainda não existe pending, pode gravar movimento sem executar a detecção AOO. A proteção atual impede contornar uma reação já pendente; não impede ignorar a criação da pendência.
+O trigger `priv.srd_guard_pending_aoo_movement` bloqueia mudanças de posição quando já existe uma pendência AOO, exceto quando o GUC corresponde ao pending que está sendo finalizado. Entretanto, ele não exige que uma pendência exista antes de qualquer movimento. Portanto, uma chamada autenticada direta aos endpoints OID 20522 ou 21615, quando ainda não existe pending, pode gravar movimento sem executar a detecção AOO. A proteção atual impede contornar uma reação já pendente; não impede ignorar a criação da pendência.
 
 **Conclusão:** a integridade da regra não pode depender exclusivamente de o frontend chamar primeiro a RPC de solicitação. O endpoint que efetivamente grava movimento precisa impor o contrato no servidor.
 
@@ -33,7 +35,7 @@ O trigger `priv.srd_guard_pending_aoo_movement` bloqueia mudanças de posição 
 A próxima refatoração deve tornar o caminho de movimento uma única autoridade transacional:
 
 1. Identificar e validar campanha, token, controlador, propriedade e turno.
-2. Bloquear a campanha e manter a ordem de locks já aprovada para o domínio AOO; revalidar estado e origem após o lock.
+2. Bloquear a campanha e definir explicitamente a ordem parcial de locks do domínio AOO, reconciliando-a com os callers de pending/ataque/ficha já inventariados; a ordem final ainda não está aprovada. Revalidar estado e origem após o lock.
 3. Calcular destino, deslocamento, footprint e ameaças usando os mesmos helpers usados pelo restante do motor.
 4. Se houver ameaça, criar pending e **não** atualizar coordenadas nem consumir deslocamento até as reações terminarem.
 5. Se não houver ameaça, aplicar movimento dentro da mesma transação.
@@ -45,7 +47,7 @@ Não basta adicionar uma chamada ao detector no frontend ou em um preflight sepa
 
 ## Segundo defeito: footprint Colossal inconsistente
 
-A implementação de movimento OID 27366 calcula footprint do personagem Colossal como **5 quadrados**. O detector AOO OID 26923 calcula footprint Colossal como **6 quadrados**. A implementação de movimento GM OID 27306 também usa 5, enquanto o helper canônico `priv.srd_token_grid_footprint` e o detector usam 6.
+As implementações de movimento do jogador OID 27366 e do Mestre OID 27306 calculam footprint Colossal como **5 quadrados**. O detector AOO OID 26923 calcula footprint Colossal como **6 quadrados**. O helper canônico `priv.srd_token_grid_footprint` e o detector usam 6.
 
 Isso permite divergência entre ocupação/movimento e alcance ameaçado. A refatoração deve eliminar os CASEs duplicados e usar um único helper de footprint em movimento de jogador, Mestre, detecção AOO e demais consumidores.
 
@@ -54,7 +56,7 @@ Isso permite divergência entre ocupação/movimento e alcance ameaçado. A refa
 - Jogador autenticado chama diretamente a RPC de movimento sem passar pela solicitação: deve criar pending se houver ameaça e não mover o token.
 - Jogador autenticado move sem ameaça: movimento é aplicado uma única vez.
 - Movimento com ameaça: posição e gasto de deslocamento permanecem inalterados até todas as reações atingirem estado terminal; depois o movimento é aplicado uma única vez.
-- Pending ativo impede movimento direto alternativo, edição concorrente de cena e finalização duplicada.
+- Pending ativo impede movimento direto alternativo, alteração concorrente das coordenadas/remoção do token e finalização duplicada.
 - Alteração de turno/round, posição de origem, ownership ou estado da campanha invalida a finalização.
 - GM consegue mover NPC/monstro e token de jogador sob controle, respeitando o mesmo contrato AOO.
 - Fora de combate, movimento autorizado continua funcionando sem criar pending.
