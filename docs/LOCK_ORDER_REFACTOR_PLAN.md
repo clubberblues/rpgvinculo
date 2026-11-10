@@ -127,3 +127,6 @@ Direção candidata:
 ### Complemento de escopo single-target (2026-11-10)
 
 A inspeção de mesa.html confirmou que Míssil Mágico usa o wrapper autenticado OID 25191 (personagem → ficha → campanha, por helpers internos), enquanto as demais magias manuais single-target usam OID 24658 (personagem → campanha → ficha). Ambos devem entrar na Fase D e ser testados separadamente. Os helpers internos OIDs 24356, 20410 e 24656 não têm EXECUTE autenticado no snapshot; isso não é falha por si só, pois são invocados pelos wrappers SECURITY DEFINER autenticados.
+
+
+A cura multialvo usa o wrapper autenticado OID 24661, que adquire personagem → campanha antes de delegar ao helper OID 24659, que bloqueia ficha. Não confundir com dano/efeito multialvo (OIDs 25246/25109), que bloqueiam personagem → ficha antes da campanha. A Fase D deve manter contratos de teste separados por branch e reordenar todos os entrypoints para campaign-first, sem depender da ordem herdada pelo wrapper.
