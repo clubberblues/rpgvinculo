@@ -9,7 +9,7 @@ CREATE TABLE lock_fixture.campaigns (
 );
 CREATE TABLE lock_fixture.effects (
   id integer PRIMARY KEY,
-  campaign_id integer NOT NULL REFERENCES lock_fixture.campaigns(id),
+  campaign_id integer NOT NULL REFERENCES lock_fixture.campaigns(id) ON DELETE CASCADE,
   active boolean NOT NULL
 );
 INSERT INTO lock_fixture.campaigns (id,round_number) VALUES (1, 1);
@@ -17,24 +17,24 @@ INSERT INTO lock_fixture.effects VALUES (1, 1, true);
 
 CREATE TABLE lock_fixture.characters (
   id integer PRIMARY KEY,
-  campaign_id integer NOT NULL REFERENCES lock_fixture.campaigns(id)
+  campaign_id integer NOT NULL REFERENCES lock_fixture.campaigns(id) ON DELETE CASCADE
 );
 INSERT INTO lock_fixture.characters VALUES (1, 1);
 
 CREATE TABLE lock_fixture.weapon_instances (
   id integer PRIMARY KEY,
-  campaign_id integer NOT NULL REFERENCES lock_fixture.campaigns(id)
+  campaign_id integer NOT NULL REFERENCES lock_fixture.campaigns(id) ON DELETE CASCADE
 );
 INSERT INTO lock_fixture.weapon_instances VALUES (1,1);
 
 CREATE TABLE lock_fixture.pending_movements (
   id integer PRIMARY KEY,
-  campaign_id integer NOT NULL REFERENCES lock_fixture.campaigns(id),
+  campaign_id integer NOT NULL REFERENCES lock_fixture.campaigns(id) ON DELETE CASCADE,
   status text NOT NULL
 );
 CREATE TABLE lock_fixture.aoo_attacks (
   id integer PRIMARY KEY,
-  pending_id integer NOT NULL REFERENCES lock_fixture.pending_movements(id),
+  pending_id integer NOT NULL REFERENCES lock_fixture.pending_movements(id) ON DELETE CASCADE,
   status text NOT NULL
 );
 INSERT INTO lock_fixture.pending_movements VALUES (1,1,'waiting_reactions');
@@ -42,28 +42,28 @@ INSERT INTO lock_fixture.aoo_attacks VALUES (1,1,'awaiting_damage');
 
 CREATE TABLE lock_fixture.feature_resources (
   id integer PRIMARY KEY,
-  character_id integer NOT NULL REFERENCES lock_fixture.characters(id),
+  character_id integer NOT NULL REFERENCES lock_fixture.characters(id) ON DELETE CASCADE,
   uses_spent integer NOT NULL
 );
 INSERT INTO lock_fixture.feature_resources VALUES (1, 1, 0);
 
 CREATE TABLE lock_fixture.sheets (
   id integer PRIMARY KEY,
-  character_id integer NOT NULL REFERENCES lock_fixture.characters(id),
+  character_id integer NOT NULL REFERENCES lock_fixture.characters(id) ON DELETE CASCADE,
   pv integer NOT NULL
 );
 INSERT INTO lock_fixture.sheets VALUES (1, 1, 10);
 
 CREATE TABLE lock_fixture.npc_sequences (
   id integer PRIMARY KEY,
-  campaign_id integer NOT NULL REFERENCES lock_fixture.campaigns(id),
+  campaign_id integer NOT NULL REFERENCES lock_fixture.campaigns(id) ON DELETE CASCADE,
   status text NOT NULL
 );
 INSERT INTO lock_fixture.npc_sequences VALUES (1,1,'active');
 
 CREATE TABLE lock_fixture.npc_attempts (
   id integer PRIMARY KEY,
-  sequence_id integer NOT NULL REFERENCES lock_fixture.npc_sequences(id),
+  sequence_id integer NOT NULL REFERENCES lock_fixture.npc_sequences(id) ON DELETE CASCADE,
   status text NOT NULL
 );
 INSERT INTO lock_fixture.npc_attempts VALUES (1,1,'pending_resolution');
@@ -191,7 +191,7 @@ INSERT INTO lock_fixture.gm_gate_removals VALUES (1,'target-a',true,true);
 -- Production prepare locks campaign then upserts this row; finalize locks this
 -- row first and then campaign. This is intentionally disposable.
 CREATE TABLE lock_fixture.campaign_deletion_cleanup (
-  campaign_id integer PRIMARY KEY REFERENCES lock_fixture.campaigns(id),
+  campaign_id integer PRIMARY KEY REFERENCES lock_fixture.campaigns(id) ON DELETE CASCADE,
   owner_id text NOT NULL,
   requested_at timestamptz NOT NULL DEFAULT now()
 );
@@ -203,7 +203,7 @@ VALUES (1,'owner-a');
 -- This models the required lock handshake, not the Supabase Storage API.
 CREATE TABLE lock_fixture.storage_objects (
   path text PRIMARY KEY,
-  campaign_id integer NOT NULL REFERENCES lock_fixture.campaigns(id)
+  campaign_id integer NOT NULL REFERENCES lock_fixture.campaigns(id) ON DELETE CASCADE
 );
 CREATE FUNCTION lock_fixture.upload_if_allowed(p_campaign_id integer,p_path text)
 RETURNS boolean LANGUAGE plpgsql VOLATILE AS $$
