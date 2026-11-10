@@ -239,3 +239,8 @@ A leitura do catálogo remoto confirmou ausência de `public.items`, `public.inv
 A exclusão de personagem já usa cascades/triggers para spells, talentos, condições, notas/inventário Vínculo, ficha SRD, equipamento e instâncias de arma. A exceção explícita é FK RESTRICT de `srd_npc_attack_sequences.actor_character_id`; snapshot atual tem zero linhas. Não duplicar DELETEs manuais sem verificar o grafo inteiro.
 
 Para a exclusão ativa do lobby, manter o ajuste de iniciativa, mas reordenar para MVCC campaign_id → campanha FOR UPDATE → revalidar dono e vínculo → personagem FOR UPDATE → mutação de combate/exclusão. Caminho sem campanha e corrida de associação precisam contrato separado. Detalhes e origem não reconciliada das relações antigas em `docs/GM_ENDPOINT_AUDIT_2026-11-10.md`.
+
+
+### Cópia de equipamento para NPC: fluxo autenticado ativo
+
+`mesa.html` chama `clonar_equipamento_ficha_para_token` (OID 26515) depois de `adicionar_token_cba_completo`. O clone verifica GM antes de ler o token/cena e inserir equipamento/instâncias, sem campaign lock/revalidação. Não depende das relações legadas `items/inventory`; classificar apenas como stale GM authorization e sincronização de snapshot, separado da correção de schema. Candidato: campaign FOR UPDATE → revalidar GM + token/sourceCharacterId + propriedade da ficha → validar origem → copiar equipamento/instâncias. A criação do token e a cópia são duas RPCs; falha da segunda deixa token já criado e é reportada ao usuário.
