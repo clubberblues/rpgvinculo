@@ -321,3 +321,7 @@ A varredura remota de funções que contêm regras de tamanho encontrou outros w
 
 **Testes SRD:** comparar footprints de todos os tamanhos (incluindo Colossal 6×6) nos caminhos de mover jogador/GM, AOO, ataque físico normal/furtivo, toque/Imposição das Mãos, Derrubar, Encontrão e colisão de ocupação; confirmar que as mesmas posições produzem a mesma distância e adjacência em todos os caminhos.
 
+
+
+CI adicional no HEAD de auditoria `041f0b5c3dd7c132b57ba6611a423bb26965e9eb`: Static validation #84, aplicação JS #132, mesa JS #387 e PostgreSQL fixture #293 [42751317308](https://github.com/clubberblues/rpgvinculo/actions/runs/42751317308) em **success**. O log #293 confirmou novamente a reprodução de duplicata do mover e alteração geométrica de outro token durante pending. Nenhum RPC Supabase real foi chamado.
+
