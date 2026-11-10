@@ -14,7 +14,7 @@ REVOKE ALL ON FUNCTION public.srd_consultar_modificadores_manobra_srd(
 ) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.srd_consultar_modificadores_manobra_srd(
   bigint, text, text, text, boolean, boolean
-) TO authenticated, service_role;
+) TO authenticated;
 
 ALTER FUNCTION public.srd_listar_ataques_naturais_oportunidade_srd(
   bigint, text
@@ -27,6 +27,6 @@ REVOKE ALL ON FUNCTION public.srd_listar_ataques_naturais_oportunidade_srd(
 ) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.srd_listar_ataques_naturais_oportunidade_srd(
   bigint, text
-) TO authenticated, service_role;
+) TO authenticated;
 
 COMMIT;
