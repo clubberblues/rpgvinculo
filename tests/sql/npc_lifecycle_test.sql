@@ -100,7 +100,7 @@ INSERT INTO npc_fixture_aoo_pending VALUES
 
 -- Source deletion must be rejected while any campaign JSON token still references it,
 -- including references in campaigns other than characters.campaign_id.
-DO $$
+DO $fixture$
 DECLARE linked_count integer;
 BEGIN
   SELECT count(*) INTO linked_count
@@ -113,11 +113,11 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM npc_fixture_sequences WHERE actor_character_id=678) THEN
     RAISE EXCEPTION 'RESTRICT dependency fixture missing';
   END IF;
-END $;
+END $fixture$;
 
 -- Exercise the JSON reference guard itself: the character row has no FK from
 -- cba_data, so the deletion contract must reject it explicitly.
-DO $
+DO $fixture$
 DECLARE rejected boolean := false;
 BEGIN
   BEGIN
@@ -137,7 +137,7 @@ BEGIN
   IF NOT rejected OR NOT EXISTS (SELECT 1 FROM npc_fixture_characters WHERE id=678) THEN
     RAISE EXCEPTION 'source deletion was not blocked while JSON token references exist';
   END IF;
-END $;
+END $fixture$;
 
 -- Model the atomic "remove NPC token" contract for npc-a only:
 -- remove scene/initiative entries, clear token-scoped rows, cancel pending work,
@@ -182,7 +182,7 @@ WHERE campaign_id=129 AND (mover_token_id='npc-a' OR turn_actor_id='npc-a')
 DELETE FROM npc_fixture_sequences WHERE campaign_id=129 AND actor_token_id='npc-a';
 -- Attempts are removed only by the sequence FK cascade.
 
-DO $$
+DO $fixture$
 BEGIN
   IF EXISTS (
     SELECT 1 FROM npc_fixture_campaigns c
@@ -215,10 +215,10 @@ BEGIN
   ) OR NOT EXISTS (SELECT 1 FROM npc_fixture_equipment WHERE token_id='npc-other') THEN
     RAISE EXCEPTION 'unrelated token state was modified';
   END IF;
-END $$;
+END $fixture$;
 
 -- The remaining npc-b reference still prevents source-character deletion.
-DO $$
+DO $fixture$
 DECLARE linked_count integer;
 BEGIN
   SELECT count(*) INTO linked_count
@@ -228,7 +228,7 @@ BEGIN
   IF linked_count <> 1 THEN
     RAISE EXCEPTION 'expected one remaining source reference, found %',linked_count;
   END IF;
-END $$;
+END $fixture$;
 
 -- Remove the final linked token, then delete the source. The RESTRICT sequence
 -- dependency must also be explicitly handled before deleting the source record.
@@ -260,7 +260,7 @@ END $npc$;
 DELETE FROM npc_fixture_sequences WHERE actor_character_id=678;
 DELETE FROM npc_fixture_characters WHERE id=678;
 
-DO $$
+DO $fixture$
 BEGIN
   IF EXISTS (SELECT 1 FROM npc_fixture_characters WHERE id=678) THEN
     RAISE EXCEPTION 'source character was not deleted after all guards/dependencies cleared';
@@ -270,6 +270,6 @@ BEGIN
     CROSS JOIN LATERAL jsonb_array_elements(c.cba_data->'tokens') t
     WHERE t->>'sourceCharacterId'='678'
   ) THEN RAISE EXCEPTION 'dangling sourceCharacterId remains'; END IF;
-END $$;
+END $fixture$;
 
 ROLLBACK;
