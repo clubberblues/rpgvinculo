@@ -91,6 +91,8 @@ GRANT EXECUTE ON FUNCTION public.srd_listar_ataques_naturais_oportunidade_srd(bi
 -- Apply the same migration that will be deployed in production.
 \i supabase/migrations/20261110150000_fix_invoker_maneuver_catalog_helper_permissions.sql
 \i supabase/verification/verify_maneuver_catalog_rpc_security.sql
+\i supabase/migrations/20261110160000_revoke_public_feat_saving_throw_helper.sql
+\i supabase/verification/verify_passive_feat_helper_acl.sql
 
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',true);
