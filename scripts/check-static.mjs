@@ -90,6 +90,18 @@ for (const required of ['registrar_iniciativa_d20', 'iniciar_iniciativa_com_dado
   if (!mesa.includes(required)) reportFailure('mesa.html is missing the manual-roll flow contract: ' + required);
 }
 
+// Product invariant: both campaign-deletion entry points must clean public and private Storage.
+const lobby = readFileSync(resolve(root, 'lobby.html'), 'utf8');
+for (const required of [
+  "listarArquivosStorageRecursivo('midia','campaigns/'+id,0)",
+  "listarArquivosStorageRecursivo('mesa-media','campaigns/'+id,0)",
+  "{bucket:'midia',paths:caminhos.midia||[]}",
+  "{bucket:'mesa-media',paths:caminhos.mesaMedia||[]}",
+  "var totalMediaPaths=mediaPaths.midia.length+mediaPaths.mesaMedia.length"
+]) {
+  if (!lobby.includes(required)) reportFailure('lobby.html campaign deletion is missing Storage cleanup contract: ' + required);
+}
+
 const activePageSource = htmlFiles.map((file) => readFileSync(resolve(root, file), 'utf8')).join('\n');
 if (/\.rpc\s*\(\s*['"`]roll_dice['"`]/.test(activePageSource)) {
   reportFailure('An active page calls server-side roll_dice; action rolls must come from the user-clicked Dice UI.');
