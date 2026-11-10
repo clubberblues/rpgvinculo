@@ -136,3 +136,12 @@ O harness contém um modelo de finalizador que adquire locks na ordem campaign �
 
 
 A fixture modela deliberadamente ausência de FK entre marcador/campanha e objeto Storage/campanha. O novo caso cria campanha ausente + marcador residual + objeto órfão, exige recusa do finalizador e preservação do marcador, remove o objeto e só então aceita retry.
+
+## Reproducer isolado da guarda de movimento AOO
+
+- `aoo_guard_duplicate_identity_repro.sql` copia para um schema descartável o algoritmo atual de `priv.srd_guard_pending_aoo_movement` (OID 26962).
+- Confirma que uma alteração direta das coordenadas do único token mover é bloqueada e que uma atualização de metadados não geométricos é permitida.
+- Reproduz duas lacunas conhecidas: (a) duplicar a identidade do token mover, mantendo a primeira cópia na origem e deslocando a segunda, passa pela busca `LIMIT 1`; (b) a geometria de outro token pode mudar enquanto há pending.
+- **Interpretação do CI:** este é um reproducer de vulnerabilidade conhecida, não um teste de aprovação de segurança. Um run verde significa que a fixture conseguiu reproduzir o comportamento documentado do algoritmo copiado. Quando a implementação for corrigida, o fixture deverá ser convertido em regressão negativa (as tentativas devem ser rejeitadas).
+- O fixture não importa nem executa a função instalada, não chama RPC, não acessa Auth/PostgREST e não conecta ao Supabase. A cópia precisa ser comparada com o corpo remoto quando o trigger mudar.
+
