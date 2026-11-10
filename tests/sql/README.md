@@ -38,3 +38,12 @@ Esses cenários reproduzem a forma transacional observada em gm_transfer/priv.ne
 - Workflow PostgreSQL #72 [42730159992](https://github.com/clubberblues/rpgvinculo/actions/runs/42730159992) concluiu com sucesso no commit documental anterior; executou footprint e oito padrões de inversão + controle positivo.
 - Workflow #100 [42731471362](https://github.com/clubberblues/rpgvinculo/actions/runs/42731471362) concluiu success no commit `dd38946efd5cd9ef58ec8ef33b492227793141e7`. Logs confirmam footprint helper, oito inversões sintéticas, um controle positivo, reprodução TOCTOU com dois GM após duas transferências stale e controle campaign-first em que a segunda transferência é rejeitada e permanece um único GM. O commit posterior só alterou documentação; os arquivos de teste permanecem iguais.
 - O harness permanece uma validação sintética, não um teste de integração das RPCs Supabase.
+
+
+### Papel GM em mutações de inventário
+
+O harness inclui dois cenários sintéticos adicionais para endpoints que validam `members.role='GM'` antes de bloquear a campanha:
+- Reprodução: a sessão A valida GM, a sessão B revoga o papel, e A continua a alteração de inventário usando a validação obsoleta.
+- Controle campaign-first: a sessão que revoga o papel bloqueia campanha primeiro; a sessão stale espera, relê o papel após obter o lock e é rejeitada.
+
+Modela a janela observada nos corpos instalados de `entregar_item_srd` (OID 20556), `entregar_item_token_srd` (OID 21668) e `equipar_item_token_srd` (OID 21670). Não executa essas RPCs, nem comprova exploração em produção.
