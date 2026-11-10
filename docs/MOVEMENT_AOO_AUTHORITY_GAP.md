@@ -168,3 +168,15 @@ A futura orquestradora deve oferecer explicitamente os dois modos de exploraçã
 
 Não redirecionar movimento livre do Mestre para a implementação atual GM de combate, pois ela rejeita campanhas fora de COMBATE. Essa diferença precisa de teste próprio antes de revogar qualquer wrapper legado.
 
+
+
+## Evidência de CI da atualização documental
+
+No commit `fc2f008e59e980305990e9083058f2b2e76c7750`, o GitHub Actions executou:
+- Static validation #62: **success**.
+- Validate application JavaScript #110: **success**.
+- Validate mesa JavaScript #365: **success**.
+- PostgreSQL fixture tests #271 [42749952496](https://github.com/clubberblues/rpgvinculo/actions/runs/42749952496): **success**.
+
+Os commits posteriores que ampliaram este documento alteraram somente documentação; os fixtures e scripts não mudaram. Isso não valida as funções RPC reais, triggers, Auth/PostgREST nem concorrência no Supabase. Nenhuma escrita foi executada no banco remoto.
+
