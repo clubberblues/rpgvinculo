@@ -389,3 +389,9 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - Nem toda referência a `gridX/gridY` é escrita geométrica; é necessário classificar os diffs efetivos de cada corpo. Entretanto, escritores de cena/perfil/spawn sem referência a pending no corpo não podem ser presumidos seguros apenas porque o trigger atual existe.
 - O trigger é o único trigger de `campaigns.cba_data` encontrado. A arquitetura precisa fechar o conjunto de writers, centralizar autorização e freeze/invalidação atômica das dependências AOO. A ACL interna `priv.*` precisa ser analisada junto com exposição de schema e wrappers públicos; `has_function_privilege` isolado não prova exposição PostgREST.
 - Detalhes em `docs/MOVEMENT_AOO_AUTHORITY_GAP.md`. Consultas somente leitura; nenhuma RPC/migration/ACL/registro de produção alterado.
+
+
+### Atualização — ACL do schema interno `priv` (2026-11-10)
+
+- Catálogo remoto confirmou USAGE do schema `priv` para authenticated e EXECUTE authenticated em implementações internas `SECURITY DEFINER` (incluindo OIDs 27306, 27366 e 27169). Isso amplia a superfície SQL autenticada e requer revisão urgente de grants. Não foi possível confirmar nesta sessão se `priv` está incluído nos schemas expostos pelo PostgREST; `pgrst.db_schemas` não apareceu em `pg_settings`. Não declarar endpoint REST explorável sem essa confirmação.
+- Proposta: remover USAGE/EXECUTE de papéis cliente do schema interno após inventariar dependências, mantendo wrappers públicos controlados. Nenhuma ACL alterada. Detalhes em `docs/MOVEMENT_AOO_AUTHORITY_GAP.md`.
