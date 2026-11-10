@@ -655,3 +655,11 @@ A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24
 - `finalizar_equipamento_inicial_srd`, `salvar_talentos_bonus_classe_inicial_srd`, `salvar_dominios_personagem_srd` alteram ficha sem campaign lock; devem rejeitar alterações estruturais durante combate/pending ou passar por serialização campaign-first.
 - `excluir_ficha_propria` bloqueia personagem antes da campanha e pode alterar iniciativa; `usar_pocao_cura_srd_manual` altera inventário/PV/condição sem lock explícito de campanha. Revisar ambos.
 - Não presumir que todas as rotas geram deadlock; separar ações de mesa e alterações de ficha fora de combate. Nenhuma mutação remota executada.
+
+
+### CBA: escritores com lock e exceção de spawn (2026-11-10)
+
+- A maioria dos escritores de `campaigns.cba_data` identificados usa lock da campanha antes de gravar, incluindo movimento, dano, AOO, turno, perfil de combate e equipamento de token.
+- `adicionar_token_cba_completo` é exceção: authenticated EXECUTE, atualiza a cena sem lock explícito de campanha e permite spawn durante combate. Exigir lock, revalidar GM/estado/pending e definir política de inserção durante combate.
+- Presença de lock em `alterar_pv_token_cba` ainda não prova validação correta; revisar permissão e pending após lock. Helpers internos de Fúria/sincronização de PV dependem de callers que já seguram campanha.
+- Lacunas centrais continuam nas mutações relacionais de ficha/condição/efeito e ações de classe/magia. Nenhuma mutação remota executada.
