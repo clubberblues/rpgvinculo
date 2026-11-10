@@ -123,3 +123,31 @@ Para personagem vinculado a campanha: leitura MVCC para localizar `campaign_id` 
 
 O fixture de lock-cycle já testa o padrão character → campaign versus campaign → character; agora está associado ao endpoint ativo. Nenhum teste de integração executou `excluir_ficha_propria` no banco remoto. O estado do schema foi consultado read-only. Correções devem ser criadas como migrations novas somente após reconciliação das 681 migrations locais versus 966 linhas remotas e revisão do SQL manual fora do ledger.
 
+
+
+## Refinamento do inventário de RPCs legadas e cópia para token
+
+### Varredura de referências: distinção entre relações e falsos positivos
+
+A varredura foi refinada para exigir contexto SQL de FROM/JOIN/UPDATE/INSERT/DELETE, evitando contar palavras como `"items"` em JSON ou comentários como referências a relações. Foram encontrados 17 corpos de função com referências efetivas às relações antigas:
+- Oito com EXECUTE authenticated: `calc_ca`, `calc_desl`, `calc_sheet`, `excluir_ficha_propria`, `gm_grant`, `gm_reopen_sheet`, `gm_set_bonus`, `sell_price`.
+- Nove com EXECUTE restrito a service_role (incluindo helpers/rotinas antigas): `priv.new_sheet`, `answer_roll`, `confirm_sheet`, `learn_abilities_for_level`, `learn_spell`, `long_rest`, `roll_death_save`, `save_sheet`, `short_rest`.
+
+A rotina `priv.new_sheet` não está ligada a nenhum trigger no snapshot. `save_sheet` também tem referências antigas, mas não é callable por authenticated no ACL atual. `finalizar_equipamento_inicial_srd` e `clonar_equipamento_ficha_para_token` foram falsos positivos da busca ampla: usam `srd_equipment` e tabelas SRD atuais; a palavra items aparece em nomes de variáveis/JSON ou comentários, não em FROM/UPDATE de uma tabela legada.
+
+### Cópia de equipamento para token NPC — fluxo ativo
+
+`mesa.html` chama `public.clonar_equipamento_ficha_para_token` após criar token NPC vinculado a uma ficha do Mestre. O endpoint (OID 26515) verifica papel GM em `members` antes de consultar a cena e inserir `srd_cba_token_equipment`/ `srd_cba_token_weapon_instances`, sem bloquear `campaigns` nem revalidar o papel depois de um lock. A função não usa as relações legadas ausentes; o problema aqui é autorização obsoleta e sincronização concorrente da cena/equipamento. Como a criação do token e a cópia são duas RPCs separadas, o token pode já estar criado quando a segunda operação falhar (o frontend já mostra aviso nesse caso).
+
+Correção candidata: localizar e bloquear campanha primeiro → revalidar GM, token NPC, sourceCharacterId e propriedade da ficha → bloquear/validar ficha de origem → copiar equipamento e instâncias. Não misturar essa correção com a substituição de tabelas legadas.
+
+### Impacto e prioridade
+
+1. `excluir_ficha_propria`: endpoint ativo no lobby e falha garantida na primeira relação antiga.
+2. `gm_reopen_sheet`/`gm_set_bonus`: authenticated, mas sem call site literal nas páginas atuais; UPDATE em `character_sheets` inexistente.
+3. `gm_grant`: ouro/XP independem do branch antigo; concessão de item falha na consulta a `items`/inserção em `inventory`.
+4. `calc_sheet`, `calc_ca`, `calc_desl`, `sell_price`: authenticated, mas sem call site literal nas páginas atuais; dependências antigas.
+5. Nove rotinas service_role-only: revisar se ainda fazem parte de qualquer integração de serviço antes de revogar/substituir; não tratá-las como endpoints de jogador/Mestre.
+
+Nenhuma dessas funções foi invocada remotamente. O inventário e os ACLs foram consultados read-only.
+
