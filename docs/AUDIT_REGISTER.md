@@ -543,3 +543,10 @@ A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24
 
 
 - **Nova confirmação read-only no catálogo Supabase (2026-11-10):** as funções AOO não compartilham ordem de locks. `srd_resolver_ataque_oportunidade_srd` OID 27025 e `srd_registrar_ocultacao_ataque_oportunidade_impl` OID 27254 bloqueiam attack → pending → campaign; `srd_reservar_reacao_movimento_aoo_impl` OID 27256 e `srd_resolver_encontrao_srd` OID 27169 bloqueiam pending → campaign. Solicitação/finalização são campaign-first. Isso confirma inversão estrutural e risco de deadlock, sem demonstrar deadlock ocorrido. Protocolo e regressões atualizados em `docs/LOCK_ORDER_PROTOCOL_DRAFT.md`.
+
+
+### AOO — inventário ampliado de escritores CBA (2026-11-10)
+- Catálogo remoto read-only identificou escritores adicionais de `campaigns.cba_data`: movimento GM/jogador OID 27306/27366; salvamento geral OID 20077; spawn completo OID 21726; perfil facção/alcance OID 26922; avanço de turno OID 20074; ataque físico v2 OID 24744/25562; Imposição das Mãos OID 25509; finalização AOO OID 27038; Encontrão OID 27169, além de rotas de PV/equipamento/efeitos.
+- Referência textual a coordenadas não prova que a função altere geometria; ainda é necessário classificar diffs efetivos por função. O trigger ligado a `cba_data` é único e não substitui contrato comum para todos os writers.
+- Arquitetura futura deve centralizar ou fechar o conjunto de escritores, com política explícita para pending ativo (freeze ou invalidar/recalcular dependências AOO). Booleano `has_function_privilege` em `priv.*` não prova exposição PostgREST sem verificar grants do schema e wrappers.
+- Sem alteração de produção. Evidência detalhada: `docs/MOVEMENT_AOO_AUTHORITY_GAP.md`.
