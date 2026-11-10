@@ -102,6 +102,12 @@ Ordem interna por dependências:
 
 **Aceite:** critérios de lançamento atendidos e limitações conhecidas documentadas.
 
+## Bloqueio P1 do motor de movimento — 2026-11-10
+
+A autoridade de movimento AOO precisa ser corrigida antes de ampliar combate: os endpoints autenticados de movimento direto do jogador e do Mestre podem gravar coordenadas sem passar pela solicitação AOO. O frontend faz a sequência correta hoje, mas o servidor não a impõe. Também há divergência de footprint Colossal (movimento usa 5; helper canônico/detector usam 6). Evidência, OIDs, contrato e testes de aceite em [MOVEMENT_AOO_AUTHORITY_GAP.md](MOVEMENT_AOO_AUTHORITY_GAP.md).
+
+**Prioridade da Fase 3:** tratar a unificação server-side de detecção AOO + pending + commit e o footprint compartilhado como bloqueio P1 do módulo de movimento. Fechar antes a ordem parcial de locks com pending/attack/ficha; não aplicar migration remota enquanto a reconciliação do histórico não tiver aceite.
+
 ## Priorização de descobertas
 - **P0:** segurança, perda/corrupção de dados, exposição indevida.
 - **P1:** bloqueio de fluxo essencial ou falha que impede uso.
