@@ -133,3 +133,6 @@ O teste usa uma função/tabela fictícia no schema lock_fixture. Não chama RLS
 ### Zero-check e retry do finalizador de campanha
 
 O harness contém um modelo de finalizador que adquire locks na ordem campaign → cleanup, revalida o proprietário e o marcador, e só conclui quando a tabela fictícia de objetos Storage está vazia. A fixture verifica proprietário incorreto, recusa com objeto restante preservando campanha+marcador, e retry bem-sucedido depois da remoção do objeto. Isso não valida `storage.objects`, RLS, Storage API nem a RPC de produção; comprova apenas o contrato esperado no modelo PostgreSQL descartável.
+
+
+A fixture modela deliberadamente ausência de FK entre marcador/campanha e objeto Storage/campanha. O novo caso cria campanha ausente + marcador residual + objeto órfão, exige recusa do finalizador e preservação do marcador, remove o objeto e só então aceita retry.
