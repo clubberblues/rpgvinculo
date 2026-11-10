@@ -853,3 +853,14 @@ Uma consulta read-only a `pg_get_functiondef` no Supabase, extraindo em ordem te
 
 **Cobertura obrigatória:** concorrência resolver ataque × finalizar movimento; reservar reação × cancelar pending; resolver Encontrão × encerrar reação; registrar ocultação × finalizar movimento; e duas reações simultâneas para o mesmo pending. Cada cenário deve verificar ausência de deadlock, transição idempotente, status terminal consistente e nenhuma coordenada/dano parcialmente persistidos.
 
+
+
+### Refinamento da cadeia de cancelamento/encerramento AOO
+
+A inspeção integral dos corpos instalados esclareceu duas funções que não bloqueiam a campanha:
+
+- `priv.srd_cancelar_movimento_aoo_pendente_impl` (OID 27268) bloqueia pending e depois atualiza ataques associados (UPDATE adquire row lock implicitamente), finalizando pending; não lê/bloqueia `public.campaigns`. É pending → attack, sem campaign lock.
+- `priv.srd_encerrar_reacao_aoo_pendente_impl` (OID 27269) bloqueia pending; se o GM cancelar ataque iniciado, bloqueia attack depois. Também não lê/bloqueia `public.campaigns`. É pending → attack condicional, sem campaign lock.
+- Portanto, não classificar essas duas como pending → campaign. O problema é diferente: cancelamento/encerramento não serializam com o lock da campanha usado pela solicitação/finalização e a autorização GM é verificada antes do lock pending. A correção precisa campaign-first e revalidar estado/GM, depois pending → attack.
+- As quatro inversões com campaign efetivamente bloqueada permanecem: OIDs 27025, 27254, 27256 e 27169, detalhadas acima.
+
