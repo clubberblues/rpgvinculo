@@ -196,3 +196,11 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - O fallback sem ficha SRD ainda usa `vinculo_character_sheets`, mas tenta acessar `inventory` e `character_notes`, que não existem no schema atual. A criação legada sem `ruleset=dnd35` também continua no código.
 - Snapshot atual: 5 personagens, todos com ficha SRD; zero sem SRD e zero legados vinculados a campanha. Portanto, não há personagem atual usando esse fallback.
 - Não remover/revogar sem plano de compatibilidade; manter criação principal no caminho D&D 3.5 e planejar desativação controlada do fallback.
+
+
+## Fluxo principal D&D 3.5 de criação confirmado
+
+- Lobby encaminha para `ficha.html?mode=criar&ruleset=dnd35&raca=...&classe=...`.
+- `salvarFichaSRD35` chama `finalizar_criacao_personagem_srd` (OID 25213), wrapper SECURITY INVOKER que executa criação, perícias/talentos, idiomas, talentos bônus, domínios, grimório e equipamento inicial em uma única transação.
+- O fluxo usa tabelas/catálogos SRD e `srd_character_equipment`, não o modelo Vínculo legado.
+- Manter atomicidade desse wrapper nas futuras mudanças; fallback antigo não é o caminho primário.
