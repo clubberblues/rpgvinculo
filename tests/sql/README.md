@@ -128,3 +128,8 @@ O fim de lock_cycle_test.sh modela o contrato campaign KEY SHARE no caminho de u
 - Se a preparação grava o marcador primeiro, o upload aguarda o lock, relê o marcador e é rejeitado sem inserir objeto.
 
 O teste usa uma função/tabela fictícia no schema lock_fixture. Não chama RLS, Storage API, buckets, policies, RPCs nem dados Supabase reais. Serve para validar a compatibilidade dos locks PostgreSQL; não substitui o teste concorrente com dois usuários autenticados e upload real exigido em docs/STORAGE_ACCESS_CONTRACT.md.
+
+
+### Zero-check e retry do finalizador de campanha
+
+O harness contém um modelo de finalizador que adquire locks na ordem campaign → cleanup, revalida o proprietário e o marcador, e só conclui quando a tabela fictícia de objetos Storage está vazia. A fixture verifica proprietário incorreto, recusa com objeto restante preservando campanha+marcador, e retry bem-sucedido depois da remoção do objeto. Isso não valida `storage.objects`, RLS, Storage API nem a RPC de produção; comprova apenas o contrato esperado no modelo PostgreSQL descartável.
