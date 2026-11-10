@@ -358,3 +358,13 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - Proposta corrigida: Edge Function coordenadora autenticada pelo proprietário, com service_role somente em secret server-side, pagina e remove todos os objetos via Storage API, repete a listagem até vazio e só então chama finalizadora interna. A RPC mantém zero-check de metadados como defesa em profundidade. `EXECUTE` da finalizadora deve ser revogado para PUBLIC/anon/authenticated e concedido somente ao canal interno necessário; cliente não chama diretamente.
 - Código upstream atual `storage/src/storage/uploader.ts` mostra preflight de permissão, gravação dos bytes e autorização final na transação de metadados; o lock de campanha precisa ser obtido na autorização final, não apenas no preflight. Em caso de falha de autorização final, código tenta remover o objeto físico. Confirmar isso com a versão hosted e teste real antes de confiar na garantia.
 - Especificação detalhada em `docs/STORAGE_ACCESS_CONTRACT.md`. Nenhum Edge Function foi criado/deployado; nenhuma ACL, RPC, migration, policy ou dado de produção alterado.
+
+
+## P1 confirmado — autoridade do movimento/AOO (2026-11-10)
+
+- Nova leitura somente de catálogo do Supabase confirmou que os endpoints autenticados de movimento direto do jogador (OID 20522 / implementação 27366) e do Mestre (OID 21615 / implementação 27306) não chamam o detector AOO nem a RPC que cria movimento pendente.
+- O frontend atual chama primeiro `srd_solicitar_movimento_com_aoo_srd` nos fluxos de jogador (mesa.html:2313) e Mestre (mesa.html:5414), mas isso é uma sequência de cliente, não uma garantia do servidor. Os endpoints diretos continuam EXECUTE authenticated. O trigger bloqueia deslocamento quando já há pending; não obriga criar pending antes do primeiro movimento.
+- O helper canônico `priv.srd_token_grid_footprint` (OID 27073) retorna 6 para Colossal. As duas implementações de movimento retornam 5; detector AOO retorna 6. A mesma regra de footprint está duplicada e divergente.
+- Evidência e contrato de correção: [MOVEMENT_AOO_AUTHORITY_GAP.md](MOVEMENT_AOO_AUTHORITY_GAP.md).
+- Próxima implementação prioritária: unificar solicitação/detecção/commit no servidor para jogador e Mestre, preservando o pending AOO, e substituir os CASEs duplicados pelo helper canônico. Antes de codificar, fechar a ordem parcial de locks com pending/attack/ficha e criar testes descartáveis que exercitem chamada direta e concorrência.
+- Não foi executada nenhuma RPC de jogo, nem alteração no Supabase. Não tocar TESTE 2. A reconciliação do histórico de migrations continua bloqueando migration/deploy em produção.
