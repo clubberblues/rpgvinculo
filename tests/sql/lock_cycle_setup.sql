@@ -84,3 +84,22 @@ INSERT INTO lock_fixture.ownership_members VALUES
   (1,'owner-a','GM'),
   (1,'player-b','PLAYER'),
   (1,'player-c','PLAYER');
+
+
+-- Synthetic stale-GM-role race for inventory mutations; never connected to Supabase.
+CREATE TABLE lock_fixture.gm_gate_campaigns (id integer PRIMARY KEY);
+CREATE TABLE lock_fixture.gm_gate_members (
+  campaign_id integer NOT NULL REFERENCES lock_fixture.gm_gate_campaigns(id),
+  user_id text NOT NULL,
+  role text NOT NULL,
+  PRIMARY KEY (campaign_id,user_id)
+);
+CREATE TABLE lock_fixture.gm_gate_inventory (
+  campaign_id integer NOT NULL,
+  user_id text NOT NULL,
+  item_count integer NOT NULL DEFAULT 0,
+  PRIMARY KEY (campaign_id,user_id)
+);
+INSERT INTO lock_fixture.gm_gate_campaigns VALUES (1);
+INSERT INTO lock_fixture.gm_gate_members VALUES (1,'gm-a','GM');
+INSERT INTO lock_fixture.gm_gate_inventory VALUES (1,'player-x',0);
