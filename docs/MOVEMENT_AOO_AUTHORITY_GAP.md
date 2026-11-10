@@ -287,3 +287,20 @@ O frontend foi confirmado em `mesa.html`: jogador e GM chamam a solicitação e,
 - Static validation, aplicação JS e mesa JS também passaram nos runs associados ao commit subsequente.
 - Limite: o teste copia o corpo/algoritmo do trigger para um schema descartável. Não executa a função instalada, RPC, Auth/PostgREST nem o banco remoto. Um resultado verde confirma a reprodução do comportamento, não uma correção.
 
+
+
+### O conjunto de armas da reação é consultado depois do snapshot e pode mudar
+
+A revisão dos RPCs de consulta/início de ataque confirmou que a pending não fixa a arma que gerou a ameaça:
+
+- O detector OID 26923 grava em cada ameaça somente faixas `min_ft/max_ft/source` (por exemplo `equipped_weapon`), sem `instance_id`, `equipment_id`, mão ou dados exatos da arma.
+- `public.srd_consultar_armas_aoo_srd` (OID 27044) consulta o inventário e as instâncias equipadas no momento da abertura da fila, não a lista de armas existente quando a pending foi criada.
+- `public.srd_iniciar_ataque_oportunidade_srd` (OID 27022) volta a ler a instância atual e valida que está equipada, mas não verifica se aquela instância estava presente no snapshot que provocou a ameaça.
+- Como `equipar_item_srd` e `entregar_item_srd` podem alterar equipamento durante pending sem guarda, uma arma pode ser desequipada (invalidando a reação) ou uma arma nova pode ser equipada e selecionada para um ataque cuja ameaça não foi calculada com ela.
+
+**Impacto SRD:** a reação deve usar as opções de arma que estavam efetivamente equipadas e ameaçavam o trajeto no instante em que o movimento foi solicitado. O estado atual da ficha não pode substituir silenciosamente esse snapshot.
+
+**Correção:** incluir no snapshot, por token ameaçador, a lista exata de instâncias/armas elegíveis e seus parâmetros mecânicos (instance_id, equipment_id, hand_slot, reach/threat_min, dados necessários para resolver); ou bloquear alterações de equipamento até pending terminar e ainda comparar com snapshot. O resolver deve aceitar somente uma arma do snapshot, não qualquer arma atualmente equipada.
+
+**Regressões:** desequipar a arma que gerou ameaça durante pending; equipar nova arma de alcance durante pending; tentar selecionar instância não presente no snapshot; manter a arma original equipada e concluir ataque. As duas primeiras devem ser rejeitadas ou invalidar/recalcular pending atomicamente; a terceira sempre deve ser rejeitada.
+
