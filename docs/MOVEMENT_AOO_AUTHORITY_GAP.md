@@ -278,3 +278,12 @@ O frontend foi confirmado em `mesa.html`: jogador e GM chamam a solicitação e,
 
 **Regressão:** duas sessões concorrentes — sessão A solicita movimento sem ameaça; sessão B altera uma fonte de ameaça antes da escrita. O resultado permitido é serialização (A move primeiro com snapshot atual ou B altera primeiro e A detecta AOO); não pode existir janela em que A usa detecção antiga e grava depois da mudança de B.
 
+
+
+## CI do reproducer de identidade/guard (2026-11-10)
+
+- Workflow PostgreSQL #284 [42751013687](https://github.com/clubberblues/rpgvinculo/actions/runs/42751013687) e #285 [42751022904](https://github.com/clubberblues/rpgvinculo/actions/runs/42751022904): **success**.
+- Log de #285 confirmou os quatro comportamentos previstos: alteração direta da posição do único mover bloqueada; atualização de metadados permitida; duplicata de identidade com a segunda cópia deslocada aceita pelo algoritmo copiado; alteração da posição de outro token aceita enquanto pending está ativo.
+- Static validation, aplicação JS e mesa JS também passaram nos runs associados ao commit subsequente.
+- Limite: o teste copia o corpo/algoritmo do trigger para um schema descartável. Não executa a função instalada, RPC, Auth/PostgREST nem o banco remoto. Um resultado verde confirma a reprodução do comportamento, não uma correção.
+
