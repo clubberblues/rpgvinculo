@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.end_turn(bigint) FROM authenticated;
