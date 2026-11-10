@@ -727,3 +727,14 @@ A leitura das implementações privadas corrigiu uma generalização anterior so
 ### Revalidação de papel GM em mutações de inventário
 
 Três endpoints autenticados leem o papel GM antes de adquirir o lock de campanha (ou sem adquiri-lo): `public.entregar_item_srd` (OID 20556), `public.entregar_item_token_srd` (OID 21668) e `public.equipar_item_token_srd` (OID 21670). O primeiro não bloqueia campanha; os dois de token bloqueiam campanha apenas depois da consulta ao papel. A transferência `gm_transfer` (OID 18749) altera owner/membership. Assim, uma operação iniciada por um GM pode validar papel antigo, esperar/concorrer com transferência e continuar após a revogação. Para os endpoints token, o lock posterior da campanha não corrige a validação anterior: é necessário reler e revalidar o papel depois de adquirir o lock. Para entrega de ficha, adotar o mesmo padrão campaign-first, revalidando papel e pertencimento do alvo antes dos locks de inventário. Trata-se de janela TOCTOU de autorização, não deadlock reproduzido; ainda não há teste concorrente de RPC real.
+
+
+#### Extensão do inventário de endpoints GM (grants verificados)
+
+A matriz de EXECUTE authenticated confirma também:
+
+- `public.equipar_item_srd_maos` (OID 26390) delega ao impl privado `equipar_arma_instancia_personagem_impl` (OID 26441), que bloqueia personagem e consulta papel GM sem bloquear campanha. O caminho de jogador-proprietário não depende do papel GM; o caminho de GM pode usar papel revogado durante a transação.
+- `public.equipar_arma_instancia_token` (OID 26444) delega ao impl OID 26443, que consulta papel GM antes de bloquear campanha e não o revalida depois do lock.
+- `public.clonar_equipamento_ficha_para_token` (OID 26515) consulta papel GM, depois lê origem/token e altera inventário/instâncias sem bloquear campanha nem revalidar papel. É candidato adicional à mesma janela de autorização e a uma corrida de snapshot/sincronização do inventário do token.
+
+Esses endpoints têm EXECUTE authenticated e não anon no snapshot. A lista de rotas para análise de revogação GM passa a incluir OIDs 20556, 21668, 21670, 26390→26441, 26444→26443 e 26515. A regra de correção deve ser aplicada por domínio e autorização: para mutação de token/campanha, campaign FOR UPDATE antes de ler/revalidar role e token; para mutação de ficha PC, character/campaign lock order coerente com o protocolo e revalidação da autorização GM sob a serialização escolhida. Não inserir campaign lock depois de character/sheet.
