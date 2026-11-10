@@ -304,3 +304,20 @@ A revisão dos RPCs de consulta/início de ataque confirmou que a pending não f
 
 **Regressões:** desequipar a arma que gerou ameaça durante pending; equipar nova arma de alcance durante pending; tentar selecionar instância não presente no snapshot; manter a arma original equipada e concluir ataque. As duas primeiras devem ser rejeitadas ou invalidar/recalcular pending atomicamente; a terceira sempre deve ser rejeitada.
 
+
+
+### Footprint Colossal: divergência também alcança ataques e Imposição das Mãos
+
+A varredura remota de funções que contêm regras de tamanho encontrou outros writers ativos que ainda codificam Colossal como 5 quadrados e não chamam o helper canônico:
+
+- `priv.mover_token_gm_cba_srd_impl` (OID 27306) e `priv.mover_token_player_cba_impl` (OID 27366): footprint Colossal 5.
+- `public.aplicar_dano_token_ataque_srd_v2` (OID 24744) e overload com ataque furtivo (OID 25562): calculam distância entre footprints e tratam Colossal como 5; não chamam `priv.srd_token_grid_footprint`. O overload de 11 argumentos (OID 25562) tem authenticated EXECUTE e callsite ativo em `mesa.html`.
+- `public.usar_imposicao_maos_mortos_vivos_srd` (OID 25509): também contém footprint duplicado com Colossal 5; authenticated EXECUTE e callsite ativo em `mesa.html`.
+- Em contraste, helper OID 27073 e detector AOO OID 26923 usam 6 para Colossal.
+
+**Impacto:** alcance, adjacência, ocupação e deslocamento podem discordar conforme a rota de regra usada. A divergência não é apenas visual nem exclusiva de AOO; alcança ataques físicos e toque de Imposição das Mãos.
+
+**Correção:** centralizar a resolução de footprint em helper único e usá-lo em movimento, detecção AOO, ataques corpo a corpo, toque, manobras e validação de ocupação. Não basta corrigir somente os dois RPCs de movimento.
+
+**Testes SRD:** comparar footprints de todos os tamanhos (incluindo Colossal 6×6) nos caminhos de mover jogador/GM, AOO, ataque físico normal/furtivo, toque/Imposição das Mãos, Derrubar, Encontrão e colisão de ocupação; confirmar que as mesmas posições produzem a mesma distância e adjacência em todos os caminhos.
+
