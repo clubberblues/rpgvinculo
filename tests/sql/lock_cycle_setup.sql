@@ -66,3 +66,21 @@ CREATE TABLE lock_fixture.npc_attempts (
   status text NOT NULL
 );
 INSERT INTO lock_fixture.npc_attempts VALUES (1,1,'pending_resolution');
+
+
+-- Synthetic ownership-transfer race fixture; never connected to Supabase.
+CREATE TABLE lock_fixture.ownership_campaigns (
+  id integer PRIMARY KEY,
+  owner_id text NOT NULL
+);
+CREATE TABLE lock_fixture.ownership_members (
+  campaign_id integer NOT NULL REFERENCES lock_fixture.ownership_campaigns(id),
+  user_id text NOT NULL,
+  role text NOT NULL,
+  PRIMARY KEY (campaign_id,user_id)
+);
+INSERT INTO lock_fixture.ownership_campaigns VALUES (1,'owner-a');
+INSERT INTO lock_fixture.ownership_members VALUES
+  (1,'owner-a','GM'),
+  (1,'player-b','PLAYER'),
+  (1,'player-c','PLAYER');
