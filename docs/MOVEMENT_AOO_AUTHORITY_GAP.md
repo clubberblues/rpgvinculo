@@ -325,3 +325,28 @@ A varredura remota de funções que contêm regras de tamanho encontrou outros w
 
 CI adicional no HEAD de auditoria `041f0b5c3dd7c132b57ba6611a423bb26965e9eb`: Static validation #84, aplicação JS #132, mesa JS #387 e PostgreSQL fixture #293 [42751317308](https://github.com/clubberblues/rpgvinculo/actions/runs/42751317308) em **success**. O log #293 confirmou novamente a reprodução de duplicata do mover e alteração geométrica de outro token durante pending. Nenhum RPC Supabase real foi chamado.
 
+
+
+### Precisão adicional sobre o trigger atual e identidade de tokens
+
+A inspeção integral do corpo remoto do trigger `priv.srd_guard_pending_aoo_movement` (OID 26962) confirma estes limites:
+
+- O trigger retorna imediatamente quando não existe pending com status `waiting_reactions` ou `ready_to_commit`. Portanto, não protege nenhum movimento enquanto a detecção AOO ainda não criou o pending.
+- Quando há pending, ele localiza somente o token mover por `id = pending.mover_token_id OR key = pending.mover_token_id`. Não compara nem congela posições dos tokens ameaçadores.
+- Só rejeita remoção do token mover ou alteração de `gridX/gridY` desse token. Não valida identidade estável, duplicidade de `id/key`, tamanho/footprint, alcance, facção, ocupação ou mudança de ameaça.
+- A autorização de commit atual é um GUC de sessão/transação `app.srd_aoo_pending_commit` comparado ao pending_id. O finalizador define esse valor antes de chamar os wrappers. A nova arquitetura precisa preservar esse caminho interno, mas restringir o contexto à campanha, pending, token e destino corretos; não se deve reutilizar um sinalizador amplo como autorização genérica.
+- O índice parcial `srd_aoo_one_pending_movement_per_campaign` garante no máximo um pending ativo por campanha para os dois status. A consulta do trigger escolhe o mais recente, mas a unicidade é a proteção estrutural efetiva contra dois pendings ativos.
+
+### Salvamento geral: identidade e merge
+
+`salvar_cena_cba` mescla os tokens enviados com os tokens existentes. Um token existente é considerado representado se algum token enviado tiver o mesmo `id` **ou** o mesmo `key`; os existentes não representados são anexados ao final. A função não valida que cada identidade seja única nem que `id` e `key` continuem pareados.
+
+Isso evita que simplesmente omitir um token do payload o remova, mas deixa a identidade do token dependente de duas chaves mutáveis e de uma regra OR. O trigger atual também usa essa mesma regra OR para encontrar o mover. Antes de implementar a guarda global, estabelecer uma chave canônica imutável por token e definir migração/compatibilidade para tokens legados; rejeitar colisões, duplicatas e tentativa de trocar identidade durante combate. Testes devem cobrir:
+- payload que altera só `id`, só `key`, ambos, ou cruza `id` de um token com `key` de outro;
+- token duplicado com novo `id/key` que tenta representar a mesma ficha/source;
+- payload parcial que omite tokens;
+- token removido e recriado com nova identidade;
+- consistência do `turn_order`, pending AOO, referências de ficha/NPC e logs após qualquer alteração de identidade.
+
+**Importante:** não foi demonstrado que trocar identidade permite mover diretamente o mesmo token pendente — a guarda atual tende a tratar isso como remoção e rejeitar. A falha comprovada é a ausência de proteção global sobre coordenadas e geometria; os casos de duplicação/colisão são riscos adicionais que exigem regressão específica, não uma exploração confirmada.
+
