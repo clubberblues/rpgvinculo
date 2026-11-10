@@ -132,4 +132,110 @@ BEGIN
 END;
 $function$;
 
+
+ALTER FUNCTION public.iniciar_sequencia_ataque_iterativo_srd(
+  bigint,text,text,text,uuid,text,text
+) SECURITY DEFINER;
+ALTER FUNCTION public.iniciar_sequencia_ataque_iterativo_srd(
+  bigint,text,text,text,uuid,text,text
+) SET search_path TO pg_catalog, public, priv, pg_temp;
+
+CREATE OR REPLACE FUNCTION public.iniciar_sequencia_ataque_iterativo_srd(
+  p_campaign_id bigint,
+  p_character_id text,
+  p_target_token_id text,
+  p_attack_type text,
+  p_weapon_instance_id uuid,
+  p_weapon_hand_slot text,
+  p_weapon_end text
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO pg_catalog, public, priv, pg_temp
+AS $function$
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'É necessário estar autenticado.';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.characters ch
+    JOIN public.members m
+      ON m.campaign_id=ch.campaign_id
+     AND m.user_id=ch.user_id
+     AND m.role='PLAYER'
+    WHERE ch.id::text=btrim(p_character_id)
+      AND ch.campaign_id=p_campaign_id
+      AND ch.user_id=auth.uid()
+  ) THEN
+    RAISE EXCEPTION 'A ficha atacante não pertence ao jogador nesta campanha.';
+  END IF;
+  RETURN priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(
+    p_campaign_id,p_character_id,p_target_token_id,p_attack_type,
+    p_weapon_instance_id,p_weapon_hand_slot,p_weapon_end
+  );
+END;
+$function$;
+
+ALTER FUNCTION public.iniciar_sequencia_ataque_iterativo_srd(
+  bigint,text,text,text,uuid,text,text,integer
+) SECURITY DEFINER;
+ALTER FUNCTION public.iniciar_sequencia_ataque_iterativo_srd(
+  bigint,text,text,text,uuid,text,text,integer
+) SET search_path TO pg_catalog, public, priv, pg_temp;
+
+CREATE OR REPLACE FUNCTION public.iniciar_sequencia_ataque_iterativo_srd(
+  p_campaign_id bigint,
+  p_character_id text,
+  p_target_token_id text,
+  p_attack_type text,
+  p_weapon_instance_id uuid,
+  p_weapon_hand_slot text,
+  p_weapon_end text,
+  p_power_attack_penalty integer
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO pg_catalog, public, priv, pg_temp
+AS $function$
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'É necessário estar autenticado.';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1
+    FROM public.characters ch
+    JOIN public.members m
+      ON m.campaign_id=ch.campaign_id
+     AND m.user_id=ch.user_id
+     AND m.role='PLAYER'
+    WHERE ch.id::text=btrim(p_character_id)
+      AND ch.campaign_id=p_campaign_id
+      AND ch.user_id=auth.uid()
+  ) THEN
+    RAISE EXCEPTION 'A ficha atacante não pertence ao jogador nesta campanha.';
+  END IF;
+  RETURN priv.iniciar_sequencia_ataque_iterativo_srd_8_impl(
+    p_campaign_id,p_character_id,p_target_token_id,p_attack_type,
+    p_weapon_instance_id,p_weapon_hand_slot,p_weapon_end,p_power_attack_penalty
+  );
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.iniciar_sequencia_ataque_iterativo_srd(
+  bigint,text,text,text,uuid,text,text
+) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.iniciar_sequencia_ataque_iterativo_srd(
+  bigint,text,text,text,uuid,text,text
+) TO authenticated, service_role;
+
+REVOKE ALL ON FUNCTION public.iniciar_sequencia_ataque_iterativo_srd(
+  bigint,text,text,text,uuid,text,text,integer
+) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.iniciar_sequencia_ataque_iterativo_srd(
+  bigint,text,text,text,uuid,text,text,integer
+) TO authenticated, service_role;
+
 COMMIT;
