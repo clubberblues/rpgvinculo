@@ -10,6 +10,9 @@ export PGHOST PGPORT PGUSER PGDATABASE PGPASSWORD
 
 psql -v ON_ERROR_STOP=1 -f tests/sql/lock_cycle_setup.sql
 
+# Disposable AOO guard behavioral reproducer (copies the current trigger algorithm).
+psql -v ON_ERROR_STOP=1 -f tests/sql/aoo_guard_duplicate_identity_repro.sql
+
 # Disposable NPC token lifecycle contract (separate from lock-cycle RPC models).
 psql -v ON_ERROR_STOP=1 -f tests/sql/npc_lifecycle_test.sql
 
