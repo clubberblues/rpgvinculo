@@ -230,3 +230,12 @@ Adicionar aos endpoints da segunda camada os casos `gm_reopen_sheet` e `gm_set_b
 - Limpeza instalada inclui cascades de vinculo_inventory/vinculo_character_notes, trigger BEFORE DELETE da ficha SRD e trigger AFTER DELETE do equipamento SRD. Mapear todas as dependências antes de corrigir/remover instruções.
 - Correção candidata: MVCC campaign_id → campaign FOR UPDATE → revalidar propriedade/vínculo → character FOR UPDATE → ajuste da ordem de iniciativa/exclusão. Definir caminho de ficha sem campanha e corrida com associação/join.
 - O fixture genérico campaign↔character já representa o padrão; documentação associa agora o endpoint/call site ao cenário. Não executar a RPC nem alterar o banco até reconciliação de migrations.
+
+
+### Compatibilidade de schema e limpeza da ficha
+
+A leitura do catálogo remoto confirmou ausência de `public.items`, `public.inventory`, `public.character_notes` e `public.character_sheets`; as tabelas atuais incluem `vinculo_items`, `vinculo_inventory`, `vinculo_character_notes`, `vinculo_character_sheets` e `srd_character_sheets`. RPCs instaladas ainda dependem das relações ausentes: `excluir_ficha_propria` (chamada no lobby), `gm_reopen_sheet`, `gm_set_bonus`, `calc_sheet`, `calc_ca`, `calc_desl`, `sell_price` e `gm_grant`. `save_sheet` também depende delas, mas EXECUTE está restrito a service_role.
+
+A exclusão de personagem já usa cascades/triggers para spells, talentos, condições, notas/inventário Vínculo, ficha SRD, equipamento e instâncias de arma. A exceção explícita é FK RESTRICT de `srd_npc_attack_sequences.actor_character_id`; snapshot atual tem zero linhas. Não duplicar DELETEs manuais sem verificar o grafo inteiro.
+
+Para a exclusão ativa do lobby, manter o ajuste de iniciativa, mas reordenar para MVCC campaign_id → campanha FOR UPDATE → revalidar dono e vínculo → personagem FOR UPDATE → mutação de combate/exclusão. Caminho sem campanha e corrida de associação precisam contrato separado. Detalhes e origem não reconciliada das relações antigas em `docs/GM_ENDPOINT_AUDIT_2026-11-10.md`.
