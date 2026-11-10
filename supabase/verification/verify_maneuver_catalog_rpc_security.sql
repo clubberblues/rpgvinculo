@@ -32,6 +32,7 @@ BEGIN
     RAISE EXCEPTION 'GM maneuver wrapper lost explicit authentication/GM authorization';
   END IF;
   IF NOT has_function_privilege('authenticated',v_oid,'EXECUTE')
+     OR NOT has_function_privilege('service_role',v_oid,'EXECUTE')
      OR has_function_privilege('anon',v_oid,'EXECUTE')
      OR EXISTS (SELECT 1 FROM aclexplode(coalesce((SELECT proacl FROM pg_proc WHERE oid=v_oid),acldefault('f',(SELECT proowner FROM pg_proc WHERE oid=v_oid)))) a WHERE a.grantee=0 AND a.privilege_type='EXECUTE') THEN
     RAISE EXCEPTION 'Unexpected EXECUTE grants on GM maneuver wrapper';
@@ -63,6 +64,7 @@ BEGIN
     RAISE EXCEPTION 'GM natural attack wrapper lost explicit authentication/GM authorization';
   END IF;
   IF NOT has_function_privilege('authenticated',v_oid,'EXECUTE')
+     OR NOT has_function_privilege('service_role',v_oid,'EXECUTE')
      OR has_function_privilege('anon',v_oid,'EXECUTE')
      OR EXISTS (SELECT 1 FROM aclexplode(coalesce((SELECT proacl FROM pg_proc WHERE oid=v_oid),acldefault('f',(SELECT proowner FROM pg_proc WHERE oid=v_oid)))) a WHERE a.grantee=0 AND a.privilege_type='EXECUTE') THEN
     RAISE EXCEPTION 'Unexpected EXECUTE grants on GM natural attack wrapper';
