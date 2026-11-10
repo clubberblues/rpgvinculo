@@ -472,3 +472,15 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - O workflow de replay integral ainda está em execução para esse HEAD; execuções anteriores falharam no bootstrap antes de aplicar a primeira migration, por ausência de `public.campaigns`. Aguardando o resultado do run atual.
 - A validação verde da fixture não é integração PostgREST/Auth real e não demonstra correção das rotas AOO em produção. As quatro lacunas permanecem reproduzidas no algoritmo atual.
 - Nenhuma migration/ACL/trigger/função/policy/dado/campanha remota foi alterada; nenhum deploy ou merge.
+
+
+### Revalidação CI e reconciliação do baseline — 2026-11-10 (20:45 UTC)
+
+- HEAD validado: `fbcacb756a2118fef53bbb420323c23008f7609d`.
+- GitHub Actions nesse HEAD: Static validation, Validate application JavaScript, Validate mesa JavaScript e PostgreSQL fixture tests concluíram **success** (runs 42891256841, 42891257044, 42891257182 e 42891256731).
+- Replay integral (run 42891256703) falhou no passo de inicialização/replay local, antes de qualquer migration subsequente: a primeira migration `20261031160944_srd35_action_economy.sql` referencia `public.campaigns`, inexistente no stack vazio. A etapa de replay foi ignorada após a falha.
+- Reconsulta read-only a `supabase_migrations.schema_migrations` confirmou **966 versões aplicadas** no projeto remoto, da versão `20261031160944` até `20261109005941`. Consulta ao catálogo confirmou que `public.campaigns`, `characters`, `members`, `srd_character_sheets`, `srd_equipment` e `srd_feats` existem no banco remoto.
+- A branch auditada contém **969 arquivos de migration**: 966 que correspondem ao ledger remoto e três candidatas locais (1500/1600/1700) não aplicadas. Assim, referências anteriores a “966 arquivos locais” estão superadas pela contagem atual da branch; o número 966 descreve o ledger remoto aplicado.
+- Diagnóstico refinado: o projeto remoto tem schema-base anterior/externo ao ledger versionado; o replay vazio não consegue reconstruí-lo a partir das 966 migrations incrementais. Não criar bootstrap mínimo artificial. Recuperar dump/schema-only ou outra fonte histórica verificável, identificar objetos pré-ledger e só então reconstruir o bootstrap em ambiente descartável.
+- A inspeção adicional do detector AOO confirma dependências relacionais externas ao JSON CBA: fichas (raça/classe/talentos), instâncias/equipamento de armas e condições usadas na reserva de reação. O contrato deve versionar/validar essas fontes ou invalidar atomicamente o pending; congelar apenas `campaigns.cba_data` é insuficiente.
+- Nenhuma alteração foi aplicada ao Supabase remoto; nenhum deploy ou merge. As quatro suites verdes validam JavaScript/estática e fixtures PostgreSQL sintéticas, não integração Auth/PostgREST ou execução real das RPCs AOO.
