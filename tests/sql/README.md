@@ -108,3 +108,6 @@ O teste é intencionalmente sintético: não executa `excluir_ficha_propria`, ne
 
 - GitHub Actions #198 [42742904531](https://github.com/clubberblues/rpgvinculo/actions/runs/42742904531) concluiu **success** no commit `cb8c2f6c2ad923a92abb562df56296c30ec2d41d`. O log confirma o bloco temporário do lifecycle (10 tabelas temporárias, verificações DO, limpeza seletiva e ROLLBACK) antes dos testes de concorrência.
 - O teste continua sendo modelo de contrato, não integração com as RPCs reais.
+
+
+CI #208 [42743669088](https://github.com/clubberblues/rpgvinculo/actions/runs/42743669088) concluiu **success** no commit `cc1c5c7c179e289afd96a097c763884aa55bc63d`. O log confirma 12 assertions com CHECK, incluindo a sequência NPC remanescente que mantém a ficha-fonte referenciada e a definição da FK `ON DELETE RESTRICT`; a transação termina em ROLLBACK. O fixture usa 11 tabelas temporárias e não executa RPCs reais.
