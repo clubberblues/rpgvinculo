@@ -47,3 +47,6 @@ O harness inclui dois cenários sintéticos adicionais para endpoints que valida
 - Controle campaign-first: a sessão que revoga o papel bloqueia campanha primeiro; a sessão stale espera, relê o papel após obter o lock e é rejeitada.
 
 Modela a janela observada nos corpos instalados de `entregar_item_srd` (OID 20556), `entregar_item_token_srd` (OID 21668) e `equipar_item_token_srd` (OID 21670). Não executa essas RPCs, nem comprova exploração em produção.
+
+
+Nota de execução (2026-11-10): os primeiros runs #116 e #117 falharam no harness novo, não nos oito testes de deadlock existentes. A sincronização inicial usava advisory-lock polling que podia monopolizar a barreira e expirar; foi substituída por eventos de fixture confirmados em commits/autocommit e por duas conexões independentes. O controle campaign-first usa o lock real da linha de campanha e espera a transação de revogação. A nova versão está sendo reexecutada; considerar o cenário pendente até CI verde.
