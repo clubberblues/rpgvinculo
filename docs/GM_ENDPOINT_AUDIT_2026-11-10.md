@@ -247,3 +247,27 @@ Nenhuma RPC foi invocada para testar a exposição; nenhuma alteração remota f
 ### Classificação do risco e preservação do contrato de execução
 
 A exposição identificada é principalmente de integridade do fluxo/regras de criação, não evidência de IDOR: as duas sobrecargas verificam `auth.uid()` e criam o personagem para o próprio usuário. Não foi encontrado call site no frontend atual; a chamada ativa é ao agregador. O problema é que qualquer cliente autenticado pode chamar o helper público e deixar uma ficha parcial sem passar por todas as etapas da transação agregada. Nenhum dos cinco personagens atuais apresenta os sinais agregados de criação incompleta. A recomendação de esconder os helpers deve ser validada com o contrato do wrapper: como o agregador está INVOKER, não revogar EXECUTE sem torná-lo uma fronteira segura (por exemplo, SECURITY DEFINER com autenticação obrigatória, search_path fixo, referências qualificadas e revisão de todos os helpers chamados).
+
+
+## Dependência de tokens NPC ao excluir ficha — referência JSON sem FK
+
+A leitura completa de `excluir_ficha_propria` confirma que a função:
+- bloqueia a linha `characters` primeiro;
+- só bloqueia uma campanha se `characters.campaign_id` não for NULL;
+- atualiza apenas `campaigns.combat_data` para retirar a ficha da iniciativa;
+- não pesquisa nem altera `campaigns.cba_data->tokens[*].sourceCharacterId`.
+
+A auditoria read-only do snapshot encontrou **3 tokens NPC em 2 campanhas** referenciando **2 personagens existentes**; ambos os personagens de origem têm `campaign_id IS NULL`. Assim, a função atual não bloquearia as campanhas 129/131 por meio de `campaign_id` e, após a correção dos nomes de tabelas, poderia excluir a ficha deixando `sourceCharacterId` pendurado no JSON da cena.
+
+Esse campo é consumido por rotinas SRD de NPC (descanso longo vinculado, fúria, ataques iterativos, resistência, sincronização de PV/condições). Sem a ficha de origem, essas rotinas podem falhar com “ficha de origem não encontrada”; o token ainda pode existir visualmente e manter seu snapshot de equipamento, mas perder operações que dependem da ficha.
+
+### Decisão necessária antes de corrigir a exclusão
+
+Não apagar/limpar automaticamente os tokens sem regra de produto. Duas políticas possíveis:
+1. **Bloquear exclusão enquanto houver NPCs vinculados**, informando ao jogador/Mestre quais tokens precisam ser desvinculados ou convertidos em NPCs independentes.
+2. **Desvincular de forma transacional**, preservando no token todos os atributos, PV, equipamento e capacidades necessários para funcionar sem ficha de origem; isso exige provar que o snapshot contém os dados usados por todas as RPCs SRD.
+
+Qualquer opção deve consultar todas as campanhas cujo JSON de tokens contém o `sourceCharacterId`, obter os campaign locks em ordem ascendente de ID, revalidar os links após os locks e só então bloquear/excluir a personagem. A associação via JSON não possui FK e não pode ser inferida apenas de `characters.campaign_id`.
+
+O dado atual é pequeno e verificável (3 links, 2 fichas-fonte); nenhuma dessas fichas foi excluída ou modificada. O defeito de nomes antigos já impede a exclusão hoje, mas não deve ser “corrigido” sem também tratar esta dependência.
+
