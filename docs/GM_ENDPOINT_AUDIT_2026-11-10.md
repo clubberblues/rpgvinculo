@@ -493,3 +493,24 @@ Matriz mínima de integração antes de aplicar migration: GM pode uploadar/ler/
 
 
 A integridade de associação do proprietário foi consultada no snapshot: 3 campanhas, 3 proprietários também presentes em `public.members` com papel GM, nenhum proprietário ausente. O trigger `enforce_campaign_member_role` mantém a regra owner→GM no fluxo de alteração. Ainda assim, o predicado novo deve autorizar `campaigns.owner_id` explicitamente ou documentar/testar a invariável do trigger, em vez de depender implicitamente dela.
+
+
+## Atualização — mutações GM que alteram geometria e ameaças AOO (2026-11-10)
+
+### Salvamento geral da cena — OID 20077
+
+`public.salvar_cena_cba(bigint,jsonb)` tem SECURITY DEFINER e authenticated EXECUTE, valida papel GM e bloqueia a campanha. Recebe o array de tokens do cliente e mescla os objetos por id/key, mas não valida unicidade de identidades nem diferencia campos geométricos de metadados. O trigger AOO atual só bloqueia a mudança de coordenadas do primeiro token correspondente ao mover pendente; não protege outros tokens, facção, alcance, tamanho, monsterStats ou sourceCharacterId. A fixture isolada em `tests/sql/aoo_guard_duplicate_identity_repro.sql` reproduz a duplicata e a mudança de coordenada de outro token.
+
+### Spawn e perfil de combate — OIDs 21726 e 26922
+
+- `public.adicionar_token_cba_completo` (OID 21726) tem authenticated EXECUTE e é GM-only. Delega ao helper que valida célula de origem e adiciona token, mas não consulta pending AOO nem valida footprint completo para tokens grandes. Pode introduzir uma nova criatura ameaçadora durante reação pendente.
+- `public.srd_configurar_perfil_combate_token_srd` (OID 26922) tem authenticated EXECUTE e é GM-only; bloqueia campanha, mas não verifica pending. Altera combat_faction e melee_reach_ft, ambos usados pelo detector AOO.
+
+### Entrega de equipamento — OID 20556
+
+`public.entregar_item_srd` tem authenticated EXECUTE e é GM-only. Pode marcar automaticamente arma como equipada quando a ficha não possui mochila. A função altera srd_character_equipment; o trigger sync_character_weapon_instances_from_inventory cria instâncias quando a quantidade aumenta. O fluxo não bloqueia/revalida a campanha nem verifica pending, podendo alterar as armas que o detector e o picker AOO consideram elegíveis.
+
+**Contrato proposto:** durante pending, rejeitar spawn e mutações de perfil/equipamento que alterem ameaças, ou invalidar/cancelar e recalcular pending de forma atômica. Para qualquer writer de cena, validar identidade única e congelar geometria/facção/alcance/fontes do snapshot, preservando atualizações não geométricas legítimas. Ver `docs/MOVEMENT_AOO_AUTHORITY_GAP.md`.
+
+Nenhuma dessas RPCs foi executada; consultas ao Supabase foram somente leitura. O fixture reproduz somente o algoritmo copiado do trigger, não os endpoints instalados.
+
