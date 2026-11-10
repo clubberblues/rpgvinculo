@@ -557,3 +557,8 @@ A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24
 - Correção candidata: revogar USAGE/EXECUTE para papéis cliente após inventário de dependências e manter wrappers públicos autorizadores. Nenhuma ACL alterada. Evidência em `docs/MOVEMENT_AOO_AUTHORITY_GAP.md`.
 
 - **Ressalva da remediação `priv`:** revogação em bloco de USAGE/EXECUTE não é segura; wrappers públicos invoker chamam diretamente funções internas. Necessário converter/reprojetar cadeia de chamadas após revisão de search_path/ownership/autorização, com testes de regressão, antes de restringir grants. Nenhuma mudança aplicada.
+
+
+### Schema `priv` — dependências públicas quantificadas (2026-11-10)
+- 70 funções internas `priv.*` distintas chamadas a partir de `public`; 35 funções públicas `SECURITY INVOKER` distintas chamam `priv.*` e têm EXECUTE para authenticated. O escopo inclui movimento, AOO, ataques iterativos NPC, dano, ações de turno, avanço de nível e descanso.
+- Revogar USAGE/EXECUTE em bloco quebraria cadeias invoker; conversão em lote também não é segura. Exigir matriz por assinatura, autorização, owner e search_path e migração/testes individuais antes de restringir schema. Sem alteração de ACL/função. Ver `docs/MOVEMENT_AOO_AUTHORITY_GAP.md`.
