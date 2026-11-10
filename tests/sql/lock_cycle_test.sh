@@ -862,6 +862,27 @@ run_expected_campaign_first_gm_condition_effect_removal_rejection() {
   rm -rf "$tmp"
 }
 
+# Mirrors the installed two-phase campaign deletion flow:
+# prepare locks campaign then upserts cleanup; finalize locks cleanup then campaign.
+run_expected_deadlock "campaign deletion prepare campaign -> cleanup versus finalize cleanup -> campaign" "
+SET deadlock_timeout='100ms'; SET lock_timeout='5s';
+BEGIN;
+UPDATE lock_fixture.campaigns SET round_number=round_number+1 WHERE id=1;
+SELECT pg_sleep(0.6);
+INSERT INTO lock_fixture.campaign_deletion_cleanup(campaign_id,owner_id)
+VALUES (1,'owner-a')
+ON CONFLICT (campaign_id) DO UPDATE
+SET owner_id=EXCLUDED.owner_id,requested_at=now();
+COMMIT;
+" "
+SET deadlock_timeout='100ms'; SET lock_timeout='5s';
+BEGIN;
+SELECT campaign_id FROM lock_fixture.campaign_deletion_cleanup WHERE campaign_id=1 FOR UPDATE;
+SELECT pg_sleep(0.3);
+UPDATE lock_fixture.campaigns SET round_number=round_number+1 WHERE id=1;
+COMMIT;
+"
+
 run_expected_stale_gm_grant_after_revocation
 run_expected_campaign_first_gm_grant_rejection
 run_expected_stale_gm_condition_effect_removal_after_revocation
