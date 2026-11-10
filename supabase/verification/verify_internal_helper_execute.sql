@@ -39,6 +39,34 @@ BEGIN
     RAISE EXCEPTION 'Private 7-argument helper lost its defense-in-depth ownership guard';
   END IF;
 
+  -- No SECURITY INVOKER caller may depend on the helpers whose direct
+  -- authenticated EXECUTE was removed above.
+  IF EXISTS (
+    SELECT 1
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid=p.pronamespace
+    WHERE NOT p.prosecdef
+      AND NOT (
+        n.nspname='priv'
+        AND p.proname IN (
+          'srd_condition_has_flag',
+          'srd_feat_saving_throw_modifier',
+          'srd_parse_natural_attack_list',
+          'iniciar_sequencia_ataque_iterativo_srd_7_impl',
+          'iniciar_sequencia_ataque_iterativo_srd_8_impl'
+        )
+      )
+      AND (
+        p.prosrc ILIKE '%priv.srd_condition_has_flag%'
+        OR p.prosrc ILIKE '%priv.srd_feat_saving_throw_modifier%'
+        OR p.prosrc ILIKE '%priv.srd_parse_natural_attack_list%'
+        OR p.prosrc ILIKE '%priv.iniciar_sequencia_ataque_iterativo_srd_7_impl%'
+        OR p.prosrc ILIKE '%priv.iniciar_sequencia_ataque_iterativo_srd_8_impl%'
+      )
+  ) THEN
+    RAISE EXCEPTION 'A SECURITY INVOKER caller still depends on a restricted internal helper';
+  END IF;
+
   -- Both public entry points are SECURITY DEFINER only after checking the
   -- authenticated player's character ownership and campaign membership.
   FOREACH v_oid IN ARRAY ARRAY[
