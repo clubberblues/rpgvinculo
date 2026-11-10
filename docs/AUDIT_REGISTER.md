@@ -605,3 +605,12 @@ A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24
 - `ficha.html` chama o wrapper ativo de avanço de nível. A implementação interna bloqueia personagem → ficha e atualiza nível/atributos/talentos/progressão de classe sem lock de campanha nem guarda real de combate. Talento Ataque Desarmado Aprimorado e classe Monge são entradas do detector AOO; avanço durante pending pode alterar elegibilidade/ameaça.
 - Metadados de idiomas e PV derivados foram separados das premissas de ameaça; não congelar toda escrita de ficha/inventário. Refatoração deve ser por campo/efeito, campaign-first, com invalidação atômica quando uma premissa AOO mudar.
 - Evidência e limites registrados em `docs/ACTIVE_WORK_ITEM.md`. Consulta read-only; nenhuma mudança remota.
+
+
+### Writers de condição/efeito que alteram elegibilidade AOO (2026-11-10)
+
+- O helper de flags usado na reserva AOO consulta condições, efeitos ativos e estado de Confusão. A reserva verifica flags que tornam o reator inelegível, incluindo `no_actions`, `helpless`, `stunned`, `unconscious`, `disabled` e `no_aoo_against_unengaged`.
+- As funções de aplicação de condição/efeito já bloqueiam `campaigns` antes da mutação. Em contraste, `public.srd_remove_campaign_condition` e `public.srd_remove_campaign_effect` atualizam suas tabelas sem lock de campanha ou tratamento de pending; a remoção de efeito é um bypass direto de elegibilidade tão relevante quanto remoção de condição.
+- `public.srd_resolve_dying_round` mantém ordem personagem → ficha → campanha → condição, incompatível com campaign-first e potencial fonte de deadlock concorrente com operações de combate.
+- O contrato deve serializar escritores de condições/efeitos por campanha e tratar alterações internas como parte da transação de reação; sem trigger AOO nessas tabelas, a consistência hoje depende dos contratos RPC.
+- Nenhuma alteração remota ou execução funcional realizada; evidência estática documentada em `docs/ACTIVE_WORK_ITEM.md`.
