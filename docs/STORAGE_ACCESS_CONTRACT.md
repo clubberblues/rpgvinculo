@@ -107,3 +107,18 @@ Leitura direta das definições instaladas em PostgreSQL, sem executar as RPCs:
 - A resposta deleted: true não prova que os objetos foram removidos. O estado de Storage é independente da transação PostgreSQL e precisa de verificação explícita antes da exclusão definitiva.
 
 Esses pontos foram confirmados por leitura de pg_get_functiondef e has_function_privilege no projeto remoto. Não foram feitas chamadas às RPCs nem alterações de banco. A correção proposta neste documento deve resolver conjuntamente: ordem campaign → cleanup nos dois caminhos, revalidação pós-lock, verificação server-side dos objetos restantes e retry seguro. A limpeza feita apenas pelo navegador não pode ser tratada como pré-condição confiável para o finalizador.
+
+
+## Serialização contra uploads concorrentes — requisito de implementação
+
+A simples verificação de que não existe marcador de cleanup dentro da policy não fecha a corrida. O helper atual priv.can_write_midia consulta campanhas e o marcador sem bloquear a campanha. Um upload pode passar pela policy antes de a preparação inserir o marcador e confirmar a linha em storage.objects depois da listagem/limpeza do navegador.
+
+Contrato de lock recomendado para o novo helper de escrita de assets de campanha (proposta, não implementada):
+
+1. Extrair e validar campaign_id do path.
+2. Obter a linha da campanha com SELECT ... FOR KEY SHARE (helper VOLATILE, SECURITY DEFINER com search_path fixo), validar owner/GM e manter o lock até o commit da transação Storage.
+3. Só então verificar ausência do marcador de cleanup e autorizar INSERT/UPDATE.
+4. Fazer preparação e finalização adquirirem campaign FOR UPDATE antes do lock do marcador. FOR UPDATE conflita com FOR KEY SHARE: se o upload começou primeiro, a preparação aguarda o commit e depois cria o marcador; se a preparação começou primeiro, o upload aguarda e então observa o marcador e é negado.
+5. O finalizador, após campaign FOR UPDATE e lock/revalidação do marcador, verifica zero objetos. Assim nenhum upload autorizado pode atravessar a verificação final; deletes concorrentes apenas reduzem o conjunto e, se ainda estiverem visíveis, causam falha segura/retry.
+
+Aplicar o mesmo princípio a todos os prefixes de campanha graváveis, inclusive capas no bucket midia e assets CBA no bucket mesa-media. Não bloquear somente a campanha no finalizador: o lock correspondente no caminho de INSERT/UPDATE é a outra metade da garantia. Validar o comportamento com duas sessões reais e Storage API, porque fixture SQL isolada não reproduz o ciclo completo do serviço Storage.
