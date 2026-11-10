@@ -1,4 +1,3 @@
--- Registra ativação e encerramento da Fúria no log público da campanha.
 CREATE OR REPLACE FUNCTION public.usar_furia_barbaro_srd(p_character_id text, p_action text DEFAULT 'start'::text)
  RETURNS jsonb
  LANGUAGE plpgsql

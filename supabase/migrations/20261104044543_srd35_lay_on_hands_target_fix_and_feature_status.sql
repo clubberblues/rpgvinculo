@@ -1,4 +1,4 @@
--- Atualiza o seletor de alvos da Imposição das Mãos e descreve a regra de classe.
+-- Corrige seleção de token JSONB, devolve a cena atualizada e registra a regra de Imposição das Mãos.
 CREATE OR REPLACE FUNCTION public.usar_habilidade_classe_srd(p_character_id text, p_feature_key text, p_target_token_key text DEFAULT NULL::text, p_amount integer DEFAULT NULL::integer)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -173,15 +173,19 @@ BEGIN
 END;
 $function$
 ;
+
 UPDATE public.srd_class_level_features
 SET mechanics=COALESCE(mechanics,'{}'::jsonb)||jsonb_build_object(
  'engine_status','implemented',
  'implemented_features',jsonb_build_array('divine_grace','lay_on_hands'),
  'pending_features','[]'::jsonb,
  'engine_rule',jsonb_build_object(
-   'kind','active_feature','key','lay_on_hands',
+   'kind','active_feature',
+   'key','lay_on_hands',
    'resource_pool','paladin_level * max(0, charisma_modifier)',
-   'reset','long_rest','action','standard','target','touch'
+   'reset','long_rest',
+   'action','standard',
+   'target','touch'
  )
 )
 WHERE class_id='paladino' AND class_level=2

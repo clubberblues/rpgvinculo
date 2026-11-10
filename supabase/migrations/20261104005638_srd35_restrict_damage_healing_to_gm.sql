@@ -1,5 +1,3 @@
--- Restrict HP damage and healing to the campaign GM.
--- Players must not be able to modify another participant's HP through legacy RPCs.
 CREATE OR REPLACE FUNCTION public.apply_damage(p_alvo bigint,p_qtd integer,p_tipo text DEFAULT 'Impacto')
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
 DECLARE d public.tokens; v_role text; v_now integer; v_max integer; v_kind text;

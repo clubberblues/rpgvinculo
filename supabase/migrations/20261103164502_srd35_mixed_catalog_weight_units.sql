@@ -1,4 +1,3 @@
--- Some legacy catalog entries are already metric; convert only imported SRD-pound rows.
 CREATE OR REPLACE FUNCTION public.srd35_deslocamento_personagem(p_character_id text, p_base_speed_m numeric)
  RETURNS numeric
  LANGUAGE plpgsql

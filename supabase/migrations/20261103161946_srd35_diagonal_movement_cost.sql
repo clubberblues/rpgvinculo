@@ -1,4 +1,3 @@
--- Apply the D&D 3.5 alternating diagonal movement cost (5 ft / 10 ft).
 CREATE OR REPLACE FUNCTION public.mover_token_player_cba(p_campaign_id bigint, p_character_id text, p_grid_x integer, p_grid_y integer)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -185,4 +184,3 @@ BEGIN
   );
 END;
 $function$
-

@@ -1,4 +1,4 @@
--- Expande a resolução genérica de dano em área para quatro magias SRD.
+
 WITH rules(spell_id,damage_type,max_dice,damage_die,save_type,save_result,spell_resistance) AS (
   VALUES
     ('srd35_burning_hands','fire',5,4,'reflex','half',true),

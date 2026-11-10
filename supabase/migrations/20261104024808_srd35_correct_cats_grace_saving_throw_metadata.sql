@@ -1,5 +1,4 @@
--- D&D 3.5 SRD: Cat's Grace uses a Will save (harmless), not Reflex.
--- The canonical spell source already records "Will negates (harmless)".
+
 DO $correct_cats_grace_save_metadata$
 DECLARE
   v_save text;

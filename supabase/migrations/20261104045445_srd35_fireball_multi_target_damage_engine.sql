@@ -1,4 +1,3 @@
--- Resolução multialvo, dano de área com rolagem compartilhada e regra verificada de Bola de Fogo.
 CREATE OR REPLACE FUNCTION public.conjurar_magia_efeitos_multialvo(p_character_id text, p_spell_id text, p_slot_level smallint, p_target_token_keys text[])
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -165,11 +164,17 @@ BEGIN
 END;
 $function$
 ;
-CREATE OR REPLACE FUNCTION public.conjurar_magia_dano_multialvo_srd(p_character_id text, p_spell_id text, p_slot_level smallint, p_target_token_keys text[], p_roll_results integer[])
- RETURNS jsonb
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'priv', 'pg_temp'
+CREATE OR REPLACE FUNCTION public.conjurar_magia_dano_multialvo_srd(
+  p_character_id text,
+  p_spell_id text,
+  p_slot_level smallint,
+  p_target_token_keys text[],
+  p_roll_results integer[]
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public','priv','pg_temp'
 AS $function$
 DECLARE
   v_campaign_id bigint;
@@ -258,7 +263,7 @@ BEGIN
 
   SELECT sp.* INTO v_spell FROM public.srd_spells sp WHERE sp.id=p_spell_id;
   IF NOT FOUND OR COALESCE(v_spell.dados_tecnicos->>'target_mode','')<>'multiple_targets_pending'
-     OR COALESCE(v_spell.dados_tecnicos->>'engine_status','') NOT IN ('ready_multi_target','partial_multi_target') THEN
+     OR COALESCE(v_spell.dados_tecnicos->>'engine_status','')<>'ready_multi_target' THEN
     RAISE EXCEPTION 'A magia não possui resolução automática de dano em múltiplos alvos.';
   END IF;
   IF p_slot_level IS NULL OR p_slot_level<>v_spell.circulo THEN RAISE EXCEPTION 'O espaço deve corresponder ao círculo da magia.'; END IF;
@@ -396,16 +401,19 @@ BEGIN
     'slots_total',v_slot_total,'slots_remaining',v_slots_remaining,'cba_data',v_cba_data,'multiple_targets',true
   );
 END;
-$function$
-;
+$function$;
+
 REVOKE ALL ON FUNCTION public.conjurar_magia_dano_multialvo_srd(text,text,smallint,text[],integer[]) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.conjurar_magia_dano_multialvo_srd(text,text,smallint,text[],integer[]) TO authenticated;
 
+
+-- Normaliza as expressões já extraídas do texto SRD para a coluna consumida pelo cliente.
 UPDATE public.srd_spell_effects
 SET damage_expression=parameters->'typed_effect'->>'damage_expression'
 WHERE damage_expression IS NULL
   AND NULLIF(parameters->'typed_effect'->>'damage_expression','') IS NOT NULL;
 
+-- Fireball: dano de área com uma única rolagem compartilhada e resistência individual por alvo.
 UPDATE public.srd_spell_effects
 SET verification_status='verified_srd',
     damage_expression='1d6',

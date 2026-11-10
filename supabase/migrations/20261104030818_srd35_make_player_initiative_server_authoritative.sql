@@ -1,3 +1,4 @@
+
 CREATE OR REPLACE FUNCTION public.registrar_iniciativa_d20(
   p_campaign_id BIGINT,
   p_personagem_id TEXT,

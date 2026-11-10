@@ -1,6 +1,4 @@
--- SRD and audit catalogs are read-only in the client application.
--- No current ficha/mesa/lobby/dice page writes these tables directly.
--- Keep anonymous/authenticated reads and preserve service-role maintenance.
+
 REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER
 ON TABLE
   public.monsters,

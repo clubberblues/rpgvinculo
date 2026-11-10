@@ -1,6 +1,4 @@
--- Keep private campaign log entries visible only to the GM.
--- Players and observers can read public entries, chat, and publish their own
--- public roll/system messages, but cannot forge GM test requests.
+
 DROP POLICY IF EXISTS campaign_log_read ON public.campaign_log;
 CREATE POLICY campaign_log_read
 ON public.campaign_log

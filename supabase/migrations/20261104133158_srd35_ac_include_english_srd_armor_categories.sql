@@ -1,4 +1,3 @@
--- Inclui categorias SRD em inglês (Light/Medium/Heavy armor e Shield) no cálculo de CA.
 CREATE OR REPLACE FUNCTION public.srd_calcular_ca_personagem_srd(p_campaign_id bigint, p_character_id text, p_attack_context text DEFAULT 'normal'::text)
  RETURNS jsonb
  LANGUAGE plpgsql

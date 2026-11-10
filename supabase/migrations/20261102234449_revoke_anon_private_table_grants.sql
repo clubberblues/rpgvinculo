@@ -1,6 +1,3 @@
--- Private game-state tables are accessible only to authenticated users.
--- RLS remains the row-level authorization layer for signed-in users.
--- Revoke the broad legacy anon grants as defense in depth.
 REVOKE ALL PRIVILEGES ON TABLE
   public.campaign_log,
   public.character_talents,

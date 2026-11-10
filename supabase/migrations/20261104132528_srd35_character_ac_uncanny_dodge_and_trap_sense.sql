@@ -1,9 +1,13 @@
--- Calcula CA dinâmica de personagens, incluindo Esquiva Sobrenatural e Sentido para Armadilhas.
-CREATE OR REPLACE FUNCTION public.srd_calcular_ca_personagem_srd(p_campaign_id bigint, p_character_id text, p_attack_context text DEFAULT 'normal'::text)
- RETURNS jsonb
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'pg_catalog', 'public', 'priv', 'pg_temp'
+CREATE OR REPLACE FUNCTION public.srd_calcular_ca_personagem_srd(
+  p_campaign_id bigint,
+  p_character_id text,
+  p_attack_context text DEFAULT 'normal'
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path TO 'pg_catalog','public','priv','pg_temp'
 AS $function$
 DECLARE
   v_sheet public.srd_character_sheets%ROWTYPE;
@@ -167,7 +171,7 @@ BEGIN
     'attack_context',v_context
   );
 END;
-$function$
-;
+$function$;
+
 REVOKE ALL ON FUNCTION public.srd_calcular_ca_personagem_srd(bigint,text,text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.srd_calcular_ca_personagem_srd(bigint,text,text) TO authenticated;

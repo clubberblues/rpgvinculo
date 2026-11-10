@@ -1,9 +1,13 @@
--- Deriva níveis de magia por classe a partir do campo SRD "Level" e lê o nível real da classe conjuradora.
-CREATE OR REPLACE FUNCTION public._srd35_spell_level_for_class(p_levels text, p_class_key text, p_fallback integer DEFAULT 0)
- RETURNS integer
- LANGUAGE plpgsql
- IMMUTABLE
- SET search_path TO 'pg_catalog', 'public', 'pg_temp'
+
+CREATE OR REPLACE FUNCTION public._srd35_spell_level_for_class(
+  p_levels text,
+  p_class_key text,
+  p_fallback integer DEFAULT 0
+)
+RETURNS integer
+LANGUAGE plpgsql
+IMMUTABLE
+SET search_path TO 'pg_catalog','public','pg_temp'
 AS $function$
 DECLARE
   v_key text:=lower(COALESCE(p_class_key,''));
@@ -28,13 +32,19 @@ BEGIN
   END IF;
   RETURN GREATEST(0,COALESCE(p_fallback,0));
 END;
-$function$
-;
-CREATE OR REPLACE FUNCTION public._srd35_character_class_level(p_character_id text, p_class_key text, p_primary_class_id text, p_total_level integer)
- RETURNS integer
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'pg_catalog', 'public', 'pg_temp'
+$function$;
+
+CREATE OR REPLACE FUNCTION public._srd35_character_class_level(
+  p_character_id text,
+  p_class_key text,
+  p_primary_class_id text,
+  p_total_level integer
+)
+RETURNS integer
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path TO 'pg_catalog','public','pg_temp'
 AS $function$
 DECLARE
   v_level integer;
@@ -52,10 +62,11 @@ BEGIN
   IF v_primary_key=p_class_key THEN RETURN GREATEST(0,COALESCE(p_total_level,0)); END IF;
   RETURN 0;
 END;
-$function$
-;
+$function$;
+
 REVOKE ALL ON FUNCTION public._srd35_spell_level_for_class(text,text,integer) FROM PUBLIC,anon,authenticated;
 REVOKE ALL ON FUNCTION public._srd35_character_class_level(text,text,text,integer) FROM PUBLIC,anon,authenticated;
+
 UPDATE public.srd_spells s
 SET dados_tecnicos=jsonb_set(
   COALESCE(s.dados_tecnicos,'{}'::jsonb),

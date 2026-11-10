@@ -1,9 +1,7 @@
--- Apply D&D 3.5 encumbrance and class movement features to character token speed.
-CREATE OR REPLACE FUNCTION public.srd35_deslocamento_personagem(p_character_id text, p_base_speed_m numeric)
- RETURNS numeric
- LANGUAGE plpgsql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
+CREATE OR REPLACE FUNCTION public.srd35_deslocamento_personagem(p_character_id text,p_base_speed_m numeric)
+RETURNS numeric
+LANGUAGE plpgsql STABLE SECURITY DEFINER
+SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
   v_attrs JSONB; v_race_id TEXT; v_race_name TEXT; v_size TEXT; v_class_key TEXT;
@@ -75,8 +73,7 @@ BEGIN
   END IF;
   RETURN ROUND(v_speed,2);
 END;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION public.mover_token_player_cba(p_campaign_id bigint, p_character_id text, p_grid_x integer, p_grid_y integer)
  RETURNS jsonb

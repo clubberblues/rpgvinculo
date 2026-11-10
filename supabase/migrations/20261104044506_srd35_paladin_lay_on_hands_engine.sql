@@ -1,4 +1,4 @@
--- Recursos diários de habilidades de classe e motor de Imposição das Mãos.
+-- Recursos diários de habilidades de classe com consumo persistente.
 CREATE TABLE IF NOT EXISTS public.srd_character_feature_resources (
   character_id bigint NOT NULL REFERENCES public.characters(id) ON DELETE CASCADE,
   feature_key text NOT NULL,
@@ -11,11 +11,16 @@ CREATE TABLE IF NOT EXISTS public.srd_character_feature_resources (
 ALTER TABLE public.srd_character_feature_resources ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE public.srd_character_feature_resources FROM PUBLIC,anon,authenticated;
 
-CREATE OR REPLACE FUNCTION public.usar_habilidade_classe_srd(p_character_id text, p_feature_key text, p_target_token_key text DEFAULT NULL::text, p_amount integer DEFAULT NULL::integer)
- RETURNS jsonb
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'pg_catalog', 'public', 'priv', 'pg_temp'
+CREATE OR REPLACE FUNCTION public.usar_habilidade_classe_srd(
+  p_character_id text,
+  p_feature_key text,
+  p_target_token_key text DEFAULT NULL,
+  p_amount integer DEFAULT NULL
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'pg_catalog','public','priv','pg_temp'
 AS $function$
 DECLARE
   v_character public.characters%ROWTYPE;
@@ -39,7 +44,6 @@ DECLARE
   v_target_kind text:='character';
   v_target_id text;
   v_target_name text;
-  v_scene jsonb;
   v_feature public.srd_character_feature_resources%ROWTYPE;
 BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Autenticação obrigatória.'; END IF;
@@ -101,7 +105,7 @@ BEGIN
     IF NOT FOUND THEN RAISE EXCEPTION 'Campanha do personagem não encontrada.'; END IF;
 
     v_tokens:=CASE WHEN jsonb_typeof(v_campaign.cba_data->'tokens')='array' THEN v_campaign.cba_data->'tokens' ELSE '[]'::jsonb END;
-    SELECT COUNT(*)::integer,MIN(t.ordinality),(array_agg(t.token ORDER BY t.ordinality))[1]
+    SELECT COUNT(*)::integer,MIN(t.ordinality),MIN(t.token)
       INTO v_token_count,v_token_index,v_token
     FROM jsonb_array_elements(v_tokens) WITH ORDINALITY AS t(token,ordinality)
     WHERE t.token->>'id'=BTRIM(p_target_token_key) OR t.token->>'key'=BTRIM(p_target_token_key);
@@ -159,8 +163,7 @@ BEGIN
     v_tokens:=jsonb_set(v_tokens,ARRAY[(v_token_index-1)::text],v_token,false);
     UPDATE public.campaigns
        SET cba_data=COALESCE(cba_data,'{}'::jsonb)||jsonb_build_object('tokens',v_tokens)
-     WHERE id=v_character.campaign_id
-     RETURNING cba_data INTO v_scene;
+     WHERE id=v_character.campaign_id;
     v_hp:=LEAST(v_max_hp,v_hp+v_healing);
   END IF;
 
@@ -179,15 +182,15 @@ BEGIN
     'pv_max',v_max_hp,
     'resource_pool',v_pool,
     'resource_spent',v_spent+v_healing,
-    'resource_remaining',v_pool-v_spent-v_healing,
-    'cba_data',v_scene
+    'resource_remaining',v_pool-v_spent-v_healing
   );
 END;
-$function$
-;
+$function$;
+
 REVOKE ALL ON FUNCTION public.usar_habilidade_classe_srd(text,text,text,integer) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.usar_habilidade_classe_srd(text,text,text,integer) TO authenticated;
 
+-- Descanso longo recupera os recursos diários das habilidades de classe.
 CREATE OR REPLACE FUNCTION public.descanso_longo_personagem_srd(p_campaign_id bigint, p_character_id text)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -211,5 +214,4 @@ BEGIN
  UPDATE public.srd_character_feature_resources SET uses_spent=0,resource_spent=0,last_reset_at=clock_timestamp() WHERE character_id=(SELECT id FROM public.characters WHERE id::text=BTRIM(p_character_id));
  UPDATE public.srd_character_sheets SET pv_atual=v_new_hp WHERE character_id::TEXT=BTRIM(p_character_id) RETURNING magias_preparadas INTO v_spell_state;
  RETURN jsonb_build_object('character_id',BTRIM(p_character_id),'pv_atual',v_new_hp,'pv_max',v_max,'cura',v_new_hp-COALESCE(v_hp,v_max),'magias_repostas',TRUE,'recursos_classe_repostos',TRUE,'descanso_em',clock_timestamp());
-END; $function$
-;
+END; $function$;

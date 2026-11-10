@@ -1,5 +1,3 @@
--- Keep the normalized class-level track synchronized with the D&D 3.5 level-up RPC.
--- Also persist cumulative skill-point costs by skill for the single-class progression path.
 CREATE OR REPLACE FUNCTION public.concluir_avanco_nivel_personagem_srd(p_campaign_id bigint, p_character_id text, p_hit_die_roll integer, p_skill_ranks jsonb DEFAULT '{}'::jsonb, p_feats jsonb DEFAULT '[]'::jsonb, p_attribute text DEFAULT NULL::text)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -498,4 +496,3 @@ BEGIN
   );
 END;
 $function$
-

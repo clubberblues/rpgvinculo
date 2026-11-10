@@ -1,12 +1,15 @@
--- Motor SRD 3.5 da Fúria do Bárbaro.
--- Os PV adicionais são derivados do aumento temporário de Constituição, não PV temporários:
--- são adicionados aos PV atuais e máximos e removidos ao terminar a Fúria.
+-- Barbarian rage: per-class uses, morale modifiers, Constitution-derived hit points,
+-- round expiry, encounter fatigue, and encounter-end cleanup.
 
-CREATE OR REPLACE FUNCTION priv.srd_end_barbarian_rage(p_campaign_id bigint, p_character_id text, p_apply_fatigue boolean DEFAULT true)
- RETURNS jsonb
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'pg_catalog', 'public', 'priv', 'pg_temp'
+CREATE OR REPLACE FUNCTION priv.srd_end_barbarian_rage(
+  p_campaign_id bigint,
+  p_character_id text,
+  p_apply_fatigue boolean DEFAULT true
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'pg_catalog','public','priv','pg_temp'
 AS $function$
 DECLARE
   v_effect public.srd_campaign_effects%ROWTYPE;
@@ -55,11 +58,10 @@ BEGIN
       THEN GREATEST(1,COALESCE(v_sheet.nivel,1)) ELSE 0 END
     )
       INTO v_barbarian_level
-      FROM public.srd_character_sheets sh
-      LEFT JOIN public.srd_character_class_levels cl ON cl.character_id=sh.character_id
+      FROM public.srd_character_class_levels cl
       LEFT JOIN public.srd_classes cls ON cls.id=cl.class_id
-     WHERE sh.character_id=v_sheet.character_id
-     GROUP BY sh.character_id,sh.classe_id,sh.nivel;
+     WHERE cl.character_id=v_sheet.character_id
+     GROUP BY v_sheet.character_id,v_sheet.classe_id,v_sheet.nivel;
 
     UPDATE public.srd_character_sheets
        SET pv_max=GREATEST(1,COALESCE(pv_max,1)-v_hp_bonus),
@@ -105,14 +107,16 @@ BEGIN
     'fatigue_applied',p_apply_fatigue AND COALESCE(v_barbarian_level,0)<17
   );
 END;
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.usar_furia_barbaro_srd(p_character_id text, p_action text DEFAULT 'start'::text)
- RETURNS jsonb
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'pg_catalog', 'public', 'priv', 'pg_temp'
+CREATE OR REPLACE FUNCTION public.usar_furia_barbaro_srd(
+  p_character_id text,
+  p_action text DEFAULT 'start'
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'pg_catalog','public','priv','pg_temp'
 AS $function$
 DECLARE
   v_character public.characters%ROWTYPE;
@@ -160,19 +164,18 @@ BEGIN
   IF NOT FOUND THEN RAISE EXCEPTION 'Ficha SRD do personagem não encontrada.'; END IF;
 
   SELECT COALESCE(
-      MAX(cl.class_level) FILTER (WHERE cls.class_key='barbarian'),
-      CASE WHEN NOT EXISTS (
-        SELECT 1 FROM public.srd_character_class_levels any_level
-         WHERE any_level.character_id=v_sheet.character_id
-      ) AND v_sheet.classe_id='barbaro'
-      THEN GREATEST(1,COALESCE(v_sheet.nivel,1)) ELSE 0 END
-    )
-      INTO v_barbarian_level
-      FROM public.srd_character_sheets sh
-      LEFT JOIN public.srd_character_class_levels cl ON cl.character_id=sh.character_id
-      LEFT JOIN public.srd_classes cls ON cls.id=cl.class_id
-     WHERE sh.character_id=v_sheet.character_id
-     GROUP BY sh.character_id,sh.classe_id,sh.nivel;
+    MAX(cl.class_level) FILTER (WHERE cls.class_key='barbarian'),
+    CASE WHEN NOT EXISTS (
+      SELECT 1 FROM public.srd_character_class_levels any_level
+       WHERE any_level.character_id=v_sheet.character_id
+    ) AND v_sheet.classe_id='barbaro'
+    THEN GREATEST(1,COALESCE(v_sheet.nivel,1)) ELSE 0 END
+  )
+    INTO v_barbarian_level
+    FROM public.srd_character_class_levels cl
+    LEFT JOIN public.srd_classes cls ON cls.id=cl.class_id
+   WHERE cl.character_id=v_sheet.character_id
+   GROUP BY v_sheet.character_id,v_sheet.classe_id,v_sheet.nivel;
 
   IF COALESCE(v_barbarian_level,0)<1 THEN
     RAISE EXCEPTION 'Fúria exige pelo menos 1 nível efetivo de Bárbaro.';
@@ -335,14 +338,13 @@ BEGIN
     'expires_round',v_round+v_duration
   );
 END;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION public.srd_expire_campaign_conditions(p_campaign_id bigint)
- RETURNS integer
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'pg_catalog', 'public', 'priv', 'pg_temp'
+RETURNS integer
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'pg_catalog','public','priv','pg_temp'
 AS $function$
 DECLARE
   v_round integer;
@@ -391,14 +393,16 @@ BEGIN
 
   RETURN v_count+v_effect_count+v_rage_count;
 END;
-$function$
-;
+$function$;
 
-CREATE OR REPLACE FUNCTION public.alternar_estado_campanha(p_campaign_id bigint, p_novo_estado text)
- RETURNS jsonb
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'priv', 'pg_temp'
+CREATE OR REPLACE FUNCTION public.alternar_estado_campanha(
+  p_campaign_id bigint,
+  p_novo_estado text
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public','priv','pg_temp'
 AS $function$
 DECLARE
   v_role text;
@@ -446,14 +450,13 @@ BEGIN
   UPDATE public.campaigns SET state=v_novo_estado,combat_data=v_combat WHERE id=p_campaign_id;
   RETURN jsonb_build_object('state',v_novo_estado,'combat_data',v_combat);
 END;
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION public.end_combat(cid bigint)
- RETURNS jsonb
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'priv', 'pg_temp'
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public','priv','pg_temp'
 AS $function$
 DECLARE
   v_rage record;
@@ -477,8 +480,7 @@ BEGIN
   PERFORM priv.log(cid,'COMBATE_ENCERRADO',jsonb_build_object('por',auth.uid()));
   RETURN jsonb_build_object('ok',true);
 END;
-$function$
-;
+$function$;
 
 REVOKE ALL ON FUNCTION public.usar_furia_barbaro_srd(text,text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.usar_furia_barbaro_srd(text,text) TO authenticated;

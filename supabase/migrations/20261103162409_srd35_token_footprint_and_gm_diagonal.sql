@@ -1,4 +1,3 @@
--- Validate full token footprints and use alternating diagonal movement for GM/player movement.
 CREATE OR REPLACE FUNCTION public.mover_token_player_cba(p_campaign_id bigint, p_character_id text, p_grid_x integer, p_grid_y integer)
  RETURNS jsonb
  LANGUAGE plpgsql

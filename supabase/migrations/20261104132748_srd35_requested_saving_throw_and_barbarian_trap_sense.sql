@@ -1,5 +1,3 @@
--- Resolve testes de resistência solicitados pelo Mestre com o d20 manual do jogador.
--- Inclui Trap Sense em Reflexos contra armadilhas.
 CREATE OR REPLACE FUNCTION priv.srd_saving_throw_bonus(p_campaign_id bigint, p_target_kind text, p_target_id text, p_save_type text, p_context text DEFAULT NULL::text)
  RETURNS integer
  LANGUAGE plpgsql
@@ -135,11 +133,16 @@ END;
 $function$
 ;
 
-CREATE OR REPLACE FUNCTION public.srd_resolve_requested_saving_throw_srd(p_campaign_id bigint, p_character_id text, p_request_id text, p_d20 integer)
- RETURNS jsonb
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'pg_catalog', 'public', 'priv', 'pg_temp'
+CREATE OR REPLACE FUNCTION public.srd_resolve_requested_saving_throw_srd(
+  p_campaign_id bigint,
+  p_character_id text,
+  p_request_id text,
+  p_d20 integer
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'pg_catalog','public','priv','pg_temp'
 AS $function$
 DECLARE
   v_character public.characters%ROWTYPE;
@@ -237,7 +240,7 @@ BEGIN
 
   RETURN v_result;
 END;
-$function$
-;
+$function$;
+
 REVOKE ALL ON FUNCTION public.srd_resolve_requested_saving_throw_srd(bigint,text,text,integer) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.srd_resolve_requested_saving_throw_srd(bigint,text,text,integer) TO authenticated;

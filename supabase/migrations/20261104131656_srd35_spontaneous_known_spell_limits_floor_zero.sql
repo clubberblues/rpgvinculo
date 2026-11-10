@@ -1,5 +1,3 @@
--- Valores -1 na progressão indicam círculo inacessível; devem equivaler a zero
--- ao validar quantidades máximas de magias conhecidas.
 CREATE OR REPLACE FUNCTION public.salvar_grimorio_srd(p_character_id text, p_estado jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql

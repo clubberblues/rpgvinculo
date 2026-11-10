@@ -1,6 +1,4 @@
--- D&D 3.5 SRD: Slow uses a Will save, not a Reflex save.
--- The canonical spell source fields and engine resolver already specified Will;
--- this corrects the normalized effect metadata so every consumer agrees.
+
 DO $correct_slow_save_metadata$
 DECLARE
   v_save text;

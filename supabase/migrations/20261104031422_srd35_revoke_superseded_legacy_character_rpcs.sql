@@ -1,3 +1,4 @@
+
 -- Retire legacy character/sheet/spell RPC entry points superseded by the SRD 3.5 flow.
 -- Current ficha/mesa/lobby clients do not call these functions; internal owner calls remain possible.
 REVOKE ALL ON FUNCTION public.apply_condition(BIGINT,TEXT,TEXT,TEXT) FROM PUBLIC,anon,authenticated;

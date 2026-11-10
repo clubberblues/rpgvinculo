@@ -1,5 +1,3 @@
--- A Fúria aplica flags de efeito ao mesmo resolvedor usado pelas condições.
--- Isso impede conjuração enquanto a Fúria estiver ativa e evita acumular Fatigado + Exausto.
 CREATE OR REPLACE FUNCTION priv.srd_condition_has_flag(p_campaign_id bigint, p_target_kind text, p_target_id text, p_flag text)
  RETURNS boolean
  LANGUAGE sql
@@ -17,8 +15,7 @@ AS $function$
       AND e.target_id=p_target_id AND e.active
       AND COALESCE(e.effect_data->'flags'->>p_flag,'false')='true'
   );
-$function$
-;
+$function$;
 
 CREATE OR REPLACE FUNCTION priv.srd_end_barbarian_rage(p_campaign_id bigint, p_character_id text, p_apply_fatigue boolean DEFAULT true)
  RETURNS jsonb

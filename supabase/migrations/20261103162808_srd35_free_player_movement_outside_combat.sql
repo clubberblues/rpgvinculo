@@ -1,5 +1,3 @@
--- Permit authenticated players to move their own tokens freely outside combat.
--- During combat, keep initiative ownership and D&D 3.5 movement limits authoritative.
 CREATE OR REPLACE FUNCTION public.mover_token_player_cba(p_campaign_id bigint, p_character_id text, p_grid_x integer, p_grid_y integer)
  RETURNS jsonb
  LANGUAGE plpgsql

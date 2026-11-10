@@ -1,3 +1,4 @@
+
 -- Current clients use the v2/v3 SRD and CBA endpoints. Revoke direct client
 -- access to superseded RPCs; SECURITY DEFINER owners can still call them
 -- internally where compatibility code requires it.
