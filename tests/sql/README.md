@@ -64,3 +64,8 @@ A mesma família inclui `gm_transfer` e o início de iniciativa (`iniciar_inicia
 ### Trigger de papel na transferência de propriedade
 
 Fixture adicional replica a lógica do trigger `enforce_campaign_member_role` e a ordem atual de `gm_transfer`: primeiro altera os papéis dos membros, depois altera `owner_id`. O teste espera confirmar que o trigger mantém o antigo owner como GM e rebaixa o novo para PLAYER. Um controle executa a transferência owner-first sob lock da campanha e espera os papéis coerentes. É um modelo fiel da lógica instalada, mas não chama a RPC real nem altera o banco remoto.
+
+
+### Revalidação GM depois de esperar pelo lock da campanha
+
+Fixture reproduz o padrão dos wrappers `srd_apply_campaign_condition`/`srd_apply_campaign_effect`: a sessão A lê role=GM, depois aguarda para adquirir o lock da campanha; sessão B adquire o lock, rebaixa GM para PLAYER e confirma; A adquire o lock e, sem revalidar o papel, grava efeito. O controle adquire primeiro o lock e só então verifica role, rejeitando a chamada antiga. É modelo sintético da ordem observada nos corpos das funções; não invoca RPCs reais.
