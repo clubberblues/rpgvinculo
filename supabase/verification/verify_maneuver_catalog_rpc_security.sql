@@ -27,7 +27,7 @@ BEGIN
   IF NOT has_function_privilege('authenticated',v_oid,'EXECUTE')
      OR NOT has_function_privilege('service_role',v_oid,'EXECUTE')
      OR has_function_privilege('anon',v_oid,'EXECUTE')
-     OR EXISTS (SELECT 1 FROM aclexplode((SELECT proacl FROM pg_proc WHERE oid=v_oid)) a WHERE a.grantee=0 AND a.privilege_type='EXECUTE') THEN
+     OR EXISTS (SELECT 1 FROM aclexplode(coalesce((SELECT proacl FROM pg_proc WHERE oid=v_oid),acldefault('f',(SELECT proowner FROM pg_proc WHERE oid=v_oid)))) a WHERE a.grantee=0 AND a.privilege_type='EXECUTE') THEN
     RAISE EXCEPTION 'Unexpected EXECUTE grants on GM maneuver wrapper';
   END IF;
 
@@ -52,7 +52,7 @@ BEGIN
   IF NOT has_function_privilege('authenticated',v_oid,'EXECUTE')
      OR NOT has_function_privilege('service_role',v_oid,'EXECUTE')
      OR has_function_privilege('anon',v_oid,'EXECUTE')
-     OR EXISTS (SELECT 1 FROM aclexplode((SELECT proacl FROM pg_proc WHERE oid=v_oid)) a WHERE a.grantee=0 AND a.privilege_type='EXECUTE') THEN
+     OR EXISTS (SELECT 1 FROM aclexplode(coalesce((SELECT proacl FROM pg_proc WHERE oid=v_oid),acldefault('f',(SELECT proowner FROM pg_proc WHERE oid=v_oid)))) a WHERE a.grantee=0 AND a.privilege_type='EXECUTE') THEN
     RAISE EXCEPTION 'Unexpected EXECUTE grants on GM natural attack wrapper';
   END IF;
 END $$;
