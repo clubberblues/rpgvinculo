@@ -37,7 +37,7 @@ REVOKE ALL ON FUNCTION priv.srd_grid_footprint_distance_ft(integer,integer,integ
 
 CREATE OR REPLACE FUNCTION priv.srd_token_grid_footprint(p_campaign_id bigint,p_token_id text)
 RETURNS integer LANGUAGE sql STABLE
-AS $ SELECT 1 $;
+AS $$ SELECT 1 $$;
 REVOKE ALL ON FUNCTION priv.srd_token_grid_footprint(bigint,text) FROM PUBLIC, authenticated, anon;
 
 CREATE OR REPLACE FUNCTION priv.srd_parse_natural_attack_list(text)
