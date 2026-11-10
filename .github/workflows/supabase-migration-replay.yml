@@ -1,0 +1,100 @@
+name: Replay full Supabase migration baseline
+
+on:
+  pull_request:
+    paths:
+      - "supabase/migrations/**"
+      - ".github/workflows/supabase-migration-replay.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  replay-local-baseline:
+    name: Replay 966 applied migrations on disposable local Supabase
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pinned Supabase CLI
+        uses: supabase/setup-cli@v3
+        with:
+          version: 3.0.0
+
+      - name: Create isolated local Supabase workdir
+        shell: bash
+        run: |
+          set -euo pipefail
+          workdir="$(mktemp -d "${RUNNER_TEMP}/supabase-migration-replay.XXXXXX")"
+          cd "$workdir"
+          supabase init
+          mkdir -p supabase/migrations
+          cp -a "$GITHUB_WORKSPACE/supabase/migrations/." supabase/migrations/
+          count="$(find supabase/migrations -maxdepth 1 -type f -name '*.sql' | wc -l | tr -d ' ')"
+          test "$count" = "966"
+          echo "SUPABASE_WORKDIR=$workdir" >> "$GITHUB_ENV"
+          echo "Prepared $count version-controlled migrations in an isolated directory."
+
+      - name: Start disposable local stack only
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$SUPABASE_WORKDIR"
+          # No access token, project ref, --remote, --linked, or database URL is supplied.
+          # Keep Postgres, Auth, and Storage; omit UI/edge/analytics services.
+          supabase start --exclude studio,imgproxy,edge-runtime,logflare,vector,mailpit,realtime,postgres-meta,kong,postgrest,supavisor
+
+      - name: Replay every migration locally
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$SUPABASE_WORKDIR"
+          supabase db reset --local --no-seed
+
+      - name: Verify migration history and critical engine objects
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$SUPABASE_WORKDIR"
+          eval "$(supabase status -o env)"
+          count="$(psql "$DB_URL" -XAt -v ON_ERROR_STOP=1 -c 'select count(*) from supabase_migrations.schema_migrations;')"
+          versions="$(psql "$DB_URL" -XAt -v ON_ERROR_STOP=1 -c 'select count(distinct version) from supabase_migrations.schema_migrations;')"
+          test "$count" = "966"
+          test "$versions" = "966"
+          psql "$DB_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
+          DO $$
+          BEGIN
+            IF to_regclass('priv.srd_aoo_pending_movements') IS NULL THEN
+              RAISE EXCEPTION 'Missing priv.srd_aoo_pending_movements';
+            END IF;
+            IF to_regclass('priv.srd_aoo_attacks') IS NULL THEN
+              RAISE EXCEPTION 'Missing priv.srd_aoo_attacks';
+            END IF;
+            IF to_regprocedure('priv.srd_token_grid_footprint(bigint,text)') IS NULL THEN
+              RAISE EXCEPTION 'Missing canonical token footprint helper';
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'srd_solicitar_movimento_com_aoo_srd') THEN
+              RAISE EXCEPTION 'Missing AOO movement request RPC';
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'srd_finalizar_movimento_aoo_pendente_srd') THEN
+              RAISE EXCEPTION 'Missing AOO movement finalizer RPC';
+            END IF;
+            IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'usar_furia_barbaro_srd') THEN
+              RAISE EXCEPTION 'Missing Barbarian rage activation function';
+            END IF;
+          END
+          $$;
+          SQL
+          echo "Migration history replayed: $count rows, $versions distinct versions."
+
+      - name: Stop disposable local stack
+        if: always()
+        shell: bash
+        run: |
+          if [ -n "${SUPABASE_WORKDIR:-}" ] && [ -d "$SUPABASE_WORKDIR" ]; then
+            cd "$SUPABASE_WORKDIR"
+            supabase stop --no-backup || true
+          fi
