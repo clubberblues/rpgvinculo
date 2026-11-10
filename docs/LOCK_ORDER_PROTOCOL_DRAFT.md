@@ -702,3 +702,14 @@ Limite da evidência: análise estática dos corpos instalados e grants, sem exe
 O frontend de ficha chama também `public.descanso_longo_npc_vinculado_srd` (OID 26801, EXECUTE authenticated), wrapper SQL que delega a `priv.descanso_longo_npc_vinculado_srd_impl` (OID 26808). A implementação bloqueia `campaigns FOR UPDATE` e valida estado antes de bloquear token derivado do snapshot, personagem e ficha; depois ressincroniza campanha sob o lock já retido. Portanto, não generalizar a falha do descanso PC para NPC: o caminho NPC já serializa a transição de combate. Ainda requer teste de integração de autoridade/estado, mas não apresenta a mesma janela de leitura sem lock observada em OID 24366.
 
 Call sites confirmados no frontend principal: `ficha.html` chama descanso PC ou NPC vinculado; `mesa.html` chama a poção manual e `alternar_estado_campanha`. Nenhum call site de `srd_remove_campaign_condition` foi localizado nas três páginas consultadas; manter como endpoint authenticated legado até confirmar consumidores externos.
+
+
+### Triggers de inventário → instâncias de arma (2026-11-10)
+
+A inspeção de `pg_trigger` confirmou efeitos transitivos que precisam integrar qualquer ordem de locks:
+
+- `public.srd_character_equipment` tem trigger AFTER INSERT/DELETE/UPDATE OF quantidade `sync_character_weapon_instances_from_inventory` (função private OID 26446). Para armas, cria ou remove linhas em `public.srd_character_weapon_instances` e depois atualiza equipado/hand_slot na própria linha do inventário. Prefixo transacional: lock implícito da linha de inventário → instâncias de arma → atualização reentrante da linha de inventário.
+- `public.srd_cba_token_equipment` tem trigger equivalente `sync_token_weapon_instances_from_inventory` (private OID 26447), que cria/remove `srd_cba_token_weapon_instances` e sincroniza equipado/hand_slot no inventário do token.
+- Não há trigger de usuário instalado diretamente em `srd_character_weapon_instances` ou `srd_cba_token_weapon_instances` no snapshot consultado. Isso não exclui FK, índices únicos ou locks adquiridos pelo SQL chamado.
+
+Essas arestas são consequência de INSERT/DELETE/UPDATE de quantidade e não aparecem no corpo do RPC chamador. O inventário de locks já deve tratar equipamento → instância de arma como aresta real herdada por trigger, mas não inferir ciclo sem cruzar com os locks efetivos dos endpoints de ataque. Nenhuma alteração remota.
