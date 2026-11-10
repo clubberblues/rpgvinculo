@@ -244,7 +244,7 @@ SET cba_data=jsonb_set(
 WHERE id=129;
 -- Even after JSON references are gone, the real FK contract blocks source
 -- deletion while a persisted NPC attack sequence still references it.
-DO $
+DO $npc$
 DECLARE blocked boolean := false;
 BEGIN
   BEGIN
@@ -255,7 +255,7 @@ BEGIN
   IF NOT blocked OR NOT EXISTS (SELECT 1 FROM npc_fixture_characters WHERE id=678) THEN
     RAISE EXCEPTION 'NPC sequence FK did not protect the source character';
   END IF;
-END $;
+END $npc$;
 
 DELETE FROM npc_fixture_sequences WHERE actor_character_id=678;
 DELETE FROM npc_fixture_characters WHERE id=678;
