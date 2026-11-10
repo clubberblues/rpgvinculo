@@ -78,3 +78,8 @@ A limpeza atual já tem mecanismos de schema: `vinculo_inventory` e `vinculo_cha
 Outras rotinas legadas com referências às relações ausentes: `calc_ca` (18881), `calc_desl` (18882), `calc_sheet` (18883), `sell_price` (19287), além de `gm_grant` (18752). `save_sheet` (18889) também referencia `public.items/inventory`, mas no snapshot seu EXECUTE está restrito a `service_role`. `calc_sheet`, `calc_ca`, `calc_desl` e `sell_price` têm EXECUTE authenticated; buscas em todas as seis páginas HTML do repositório não encontraram call sites para essas funções. `gm_reopen_sheet/gm_set_bonus` chamam `calc_sheet`, mas também não têm call site literal nas páginas consultadas.
 
 O fixture existente campaign → character versus character → campaign cobre o padrão de lock; o endpoint de exclusão foi associado explicitamente a esse cenário. Nenhuma chamada de exclusão foi executada no banco remoto e nenhum dado foi alterado.
+
+
+### Efeito indireto em `gm_reopen_sheet` e `gm_set_bonus`
+
+As duas RPCs atualizam `character_sheets` e depois retornam `public.calc_sheet(p_char)`. O corpo instalado de `calc_sheet` (OID 18883) consulta `public.inventory` e `public.items`, ambos ausentes no catálogo. Para fichas com registro existente, essa chamada final falha e a transação reverte também a alteração de reabertura/bônus. Assim, além do TOCTOU GM já testado, essas duas rotas têm incompatibilidade funcional indireta. Sem call site literal nas páginas HTML consultadas; classificar como superfície RPC authenticated até confirmar consumidor.
