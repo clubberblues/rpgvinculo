@@ -197,3 +197,46 @@ A correção não deve simplesmente remover a guarda. O resolver de Encontrão p
 
 **Regressão obrigatória:** resolver Encontrão com acompanhamento desmarcado e marcado; quando o teste resistido e o deslocamento permitirem, o defensor deve ser empurrado e o atacante deve acompanhá-lo; quando não houver espaço/deslocamento, o acompanhamento deve ser bloqueado de forma válida sem abortar indevidamente a resolução. Em todos os casos, pending/ataques e coordenadas devem terminar em estado consistente e idempotente.
 
+
+
+### Dependências reais da detecção AOO e ameaça mutável durante pending
+
+A inspeção do corpo completo de `public.srd_detectar_saida_alcance_ameacado_srd` (OID 26923) mostrou que o conjunto de ameaças não depende somente de coordenadas e `combat_faction`. Para cada token adversário, a função calcula footprint e faixas de ameaça a partir de:
+
+- coordenadas `gridX/gridY`, tamanho e facção do token;
+- `melee_reach_ft` configurado no token;
+- raça/tamanho da ficha ligada por `sourceCharacterId` (ou ID do próprio token player);
+- armas equipadas em `srd_character_weapon_instances` e `srd_character_equipment`, incluindo `reach_ft`, `threat_min_ft`, `weapon_melee` e `threatens_squares`;
+- ataques naturais extraídos de `monsterStats.ataques/full_attack`;
+- ataque desarmado quando a ficha vinculada é Monge ou possui Ataque Desarmado Aprimorado.
+
+O detector grava esses dados no snapshot `pending.threats`, incluindo token, faixas, alcance, facção e passos ameaçados. A finalização de movimento verifica origem/turno/round, mas não recalcula a lista completa nem compara as dependências atuais com o snapshot. O resolver de ataque AOO, por sua vez, revalida se a arma usada continua equipada. Portanto, uma alteração de equipamento pode invalidar uma reação já reservada ou alterar quem deveria ameaçar o caminho.
+
+#### Writers autenticados que alteram dependências do snapshot
+
+- `public.equipar_item_srd` (OID 20555, authenticated EXECUTE, SECURITY INVOKER) permite ao dono da ficha ou ao GM equipar/desequipar. Para armas, delega a `public.equipar_item_srd_maos` (OID 26390) → `public.equipar_arma_instancia_personagem` (OID 26442) → `private.equipar_arma_instancia_personagem_impl` (OID 26441). A implementação bloqueia personagem e instância, mas não campanha nem pending; altera `srd_character_weapon_instances.equipado/hand_slot` e sincroniza `srd_character_equipment`.
+- `public.entregar_item_srd` (OID 20556, authenticated EXECUTE, SECURITY DEFINER, GM-only) insere/atualiza `srd_character_equipment` e pode marcar o item como equipado automaticamente quando não há mochila. Não bloqueia campanha/pending.
+- `public.srd_configurar_perfil_combate_token_srd` (OID 26922, authenticated EXECUTE, GM-only) altera facção e alcance corpo a corpo do token sob lock da campanha, mas o trigger atual só guarda coordenadas/remoção do token mover.
+- `public.salvar_cena_cba` (OID 20077, authenticated EXECUTE, GM-only) aceita o objeto JSON do token existente com campos substituídos, permitindo alterar `combat_faction`, `melee_reach_ft`, `monsterStats`, `tamanho` e `sourceCharacterId`, além das coordenadas.
+- `public.adicionar_token_cba_completo` (OID 21726, authenticated EXECUTE, GM-only) cria token via `adicionar_token_cba`; a nova criatura pode entrar no conjunto de ameaças enquanto pending está aberto.
+
+A UI atual chama `equipar_item_srd` no inventário da ficha. Logo, a mudança de arma não é apenas uma possibilidade teórica de API: há um callsite de frontend. O equipamento de NPC/monstro via `equipar_item_token_srd` (OID 21670) grava `srd_cba_token_equipment`, mas o detector atual não consulta essa tabela para compor `threat_ranges`; não classificar essa operação como mutador direto do snapshot sem outra dependência demonstrada.
+
+#### Política necessária para pending
+
+A proteção deve cobrir duas classes diferentes:
+
+1. **Geometria da cena:** posições, footprint, facção, alcance e inclusão/remoção de tokens. Congelar enquanto houver pending, salvo deslocamentos específicos da manobra autorizada.
+2. **Fontes externas de ameaça:** equipamento/instâncias, raça/tamanho de ficha, classe/talentos que habilitam ataque desarmado e dados de ataques naturais. Para essas fontes, escolher explicitamente entre bloquear mudanças enquanto pending existir ou invalidar/cancelar o pending e recalcular as ameaças antes de continuar. O resolver não deve aceitar uma reação cuja arma deixou de estar equipada nem concluir movimento com um snapshot obsoleto.
+
+O guard atual em `priv.srd_guard_pending_aoo_movement` consulta somente a pending do movimento e compara a existência/posição do token mover. Não protege os demais tokens nem as tabelas de equipamento/ficha que alimentam o detector.
+
+#### Novos testes de regressão
+
+- Com pending ativo por ameaça de arma de alcance, o dono tenta desequipar/trocar a arma via RPC: operação deve ser rejeitada ou pending invalidada de modo atômico e explícito; não deixar ataque/resolução preso.
+- GM entrega arma automaticamente equipada ao personagem ameaçador durante pending: rejeitar ou invalidar/recalcular.
+- GM altera facção, alcance, tamanho, `monsterStats` ou `sourceCharacterId` de token ameaçador pelo salvamento geral: rejeitar ou invalidar/recalcular.
+- Spawn de token hostil durante pending: rejeitar ou invalidar/recalcular.
+- Mudança de atributos não relacionados à ameaça (ex.: PV) deve continuar possível quando não afeta as dependências do snapshot.
+- Resolver ataque AOO e finalizar movimento devem verificar que o conjunto de ameaças e os dados mecânicos usados ainda correspondem ao snapshot, ou consumir um snapshot imutável com dependências bloqueadas.
+
