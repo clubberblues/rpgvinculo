@@ -555,3 +555,5 @@ A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24
 ### Segurança — grants do schema interno `priv` (2026-11-10)
 - Supabase remoto: authenticated tem USAGE no schema `priv` e EXECUTE em funções internas SECURITY DEFINER, incluindo OIDs 27306, 27366 e 27169. ACL inclui `authenticated=X`. Risco confirmado na camada SQL; exposição REST/PostgREST não foi provada, pois a configuração `pgrst.db_schemas` não foi obtida.
 - Correção candidata: revogar USAGE/EXECUTE para papéis cliente após inventário de dependências e manter wrappers públicos autorizadores. Nenhuma ACL alterada. Evidência em `docs/MOVEMENT_AOO_AUTHORITY_GAP.md`.
+
+- **Ressalva da remediação `priv`:** revogação em bloco de USAGE/EXECUTE não é segura; wrappers públicos invoker chamam diretamente funções internas. Necessário converter/reprojetar cadeia de chamadas após revisão de search_path/ownership/autorização, com testes de regressão, antes de restringir grants. Nenhuma mudança aplicada.
