@@ -364,3 +364,16 @@ Isso eleva duplicação de identidade de risco hipotético a **bypass reproduzid
 
 O README registra os runs PostgreSQL #284, #285 e #293 como success, com reprodução da duplicata e da alteração geométrica do outro token. São resultados sintéticos intencionais: verde significa que a vulnerabilidade conhecida foi reproduzida, não que a segurança esteja corrigida. Quando a implementação mudar, converter a fixture em regressão negativa, exigindo rejeição dos dois casos.
 
+
+
+### Inventário ampliado de escritores da cena — catálogo remoto (2026-11-10)
+
+Consulta read-only a `pg_proc` ampliou o inventário para além das RPCs explicitamente nomeadas como movimento. Foram identificadas rotas que atualizam `campaigns.cba_data` e devem ser classificadas pelo efeito real no JSON (a presença de `gridX/gridY` no corpo não prova, sozinha, que a função os modifica):
+
+- Movimento direto: `priv.mover_token_gm_cba_srd_impl` (OID 27306) e `priv.mover_token_player_cba_impl` (OID 27366), ambos `SECURITY DEFINER`, com `EXECUTE` para authenticated no catálogo. Ambos não mencionam pending no corpo; dependem do trigger e por isso não impõem detecção AOO antes do primeiro deslocamento.
+- Escrita geral: `public.salvar_cena_cba` (OID 20077), authenticated EXECUTE; `public.adicionar_token_cba_completo` (OID 21726), authenticated EXECUTE; `public.srd_configurar_perfil_combate_token_srd` (OID 26922), authenticated EXECUTE. São escritores de cena/perfil que precisam validar pending e integridade do conjunto completo de tokens.
+- Outros caminhos de escrita de cena incluem `public.avancar_turno` (OID 20074), `public.aplicar_dano_token_ataque_srd_v2` (OID 24744 e overload OID 25562), `public.usar_imposicao_maos_mortos_vivos_srd` (OID 25509), `public.srd_finalizar_movimento_aoo_pendente_srd` (OID 27038) e `priv.srd_resolver_encontrao_srd` (OID 27169). Alguns contêm termos de coordenadas por leitura/validação, portanto cada corpo deve ser classificado por diff JSON efetivo antes de rotular como escritor geométrico.
+- As funções internas `priv.*` são `SECURITY DEFINER`; a consulta `has_function_privilege(authenticated, ...)` não substitui a inspeção de exposição PostgREST/schema usage e ACL efetiva. A exposição real deve ser determinada pelo wrapper público e pelos grants de schema, não inferida apenas do booleano de privilégio.
+- O trigger `trg_srd_guard_pending_aoo_movement` é o único trigger de `campaigns` ligado a `cba_data` identificado na consulta. Os outros triggers da tabela são ligados a `combat_data`; não há guarda global independente para writers de cena.
+
+**Implicação arquitetural:** o contrato futuro deve ser centralizado na fronteira de escrita de `campaigns.cba_data` (ou em um conjunto fechado de writers com helper obrigatório), não em uma lista parcial de RPCs de movimento. Cada writer deve declarar se altera coordenadas, identidade, footprint, facção/alcance, inventário/armas ou apenas estado não geométrico; pending ativo exige freeze ou invalidação/recalculo atômico de toda dependência AOO. Nenhuma mudança remota foi aplicada.
