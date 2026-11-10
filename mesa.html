@@ -2290,7 +2290,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(file.size>20*1024*1024){await window.vttUI.alert('A imagem deve ter até 20 MB.');return;}
     try{var token=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key)===key;});if(!token)throw new Error('O token não está mais no mapa.');
       var ext=(file.type.split('/')[1]||'png').split('+')[0].replace(/[^a-z0-9]/gi,'')||'png';var path='campaigns/'+String(MESA_ID)+'/tokens/'+encodeURIComponent(String(token.id))+'-'+Date.now()+'-'+Math.random().toString(36).slice(2,8)+'.'+ext;
-      var up=await sb.storage.from('mesa-media').upload(path,file,{upsert:false,contentType:file.type});if(up.error)throw new Error(up.error.message);var signed=await sb.storage.from('mesa-media').createSignedUrl(path,86400);if(signed.error||!signed.data||!signed.data.signedUrl)throw new Error((signed.error&&signed.error.message)||'O armazenamento não forneceu um endereço seguro para a imagem.');
+      var up=await sb.storage.from('mesa-media').upload(path,file,{upsert:false,contentType:file.type});if(up.error)throw new Error(up.error.message);var signed=await sb.storage.from('mesa-media').createSignedUrl(path,86400);if(signed.error||!signed.data||!signed.data.signedUrl){await descartarUploadPrivadoCBA(path);throw new Error((signed.error&&signed.error.message)||'O armazenamento não forneceu um endereço seguro para a imagem.');}
       token.imagem=signed.data.signedUrl;token.imagemPath=path;cbaSignedMediaCache[path]={url:signed.data.signedUrl,expiresAt:Date.now()+23*60*60*1000};cbaState.tokens=cbaPublishedState.tokens.map(function(t){return Object.assign({},t);});var saved=await gravarCBAnaCampanha(serializarEstadoCBA(cbaPublishedState));campanha.cba_data=saved;aplicarCBAnaMesa(saved,false);await enviarMensagemChat('🖼️ O Mestre atualizou o retrato de '+token.nome+'.','sistema',{evento:'token_retrato_atualizado',token_id:String(token.id)});
     }catch(error){console.error('Falha ao salvar retrato do token:',error);await window.vttUI.alert('Não foi possível salvar o retrato: '+(error.message||error));}
   }
@@ -5331,6 +5331,15 @@ async function abrirModalEquipamentos(){
     return job;
   }
 
+  async function descartarUploadPrivadoCBA(path){
+    if(!path)return false;
+    try{
+      var removido=await sb.storage.from('mesa-media').remove([String(path)]);
+      if(removido.error){console.warn('Não foi possível remover upload privado sem referência:',path,removido.error);return false;}
+      return true;
+    }catch(error){console.warn('Falha ao remover upload privado sem referência:',path,error);return false;}
+  }
+
   async function assinarMidiaPrivadaCBA(path){
     var key=String(path||'');
     if(!key)return '';
@@ -5446,7 +5455,10 @@ async function abrirModalEquipamentos(){
     var up=await sb.storage.from('mesa-media').upload(path,blob,{upsert:false,contentType:contentType});
     if(up.error)throw new Error('Upload ao armazenamento privado falhou: '+up.error.message);
     var signed=await sb.storage.from('mesa-media').createSignedUrl(path,86400);
-    if(signed.error||!signed.data||!signed.data.signedUrl)throw new Error((signed.error&&signed.error.message)||'O Storage não retornou uma URL segura para a imagem.');
+    if(signed.error||!signed.data||!signed.data.signedUrl){
+      await descartarUploadPrivadoCBA(path);
+      throw new Error((signed.error&&signed.error.message)||'O Storage não retornou uma URL segura para a imagem.');
+    }
     cbaSignedMediaCache[path]={url:signed.data.signedUrl,expiresAt:Date.now()+23*60*60*1000};
     return {url:signed.data.signedUrl,path:path};
   }
