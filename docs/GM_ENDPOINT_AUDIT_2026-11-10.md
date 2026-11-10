@@ -60,3 +60,21 @@ OID 18746. É leitura, não mutação; `priv.need_gm` não bloqueia campanha. De
 ## CI #170 — cobertura sintética aprovada
 
 GitHub Actions [run #170](https://github.com/clubberblues/rpgvinculo/actions/runs/42739191233), SHA `3c7144a5894e161d90dfa82762c040a97955e652`, concluiu SUCCESS. Os logs confirmam stale GM grant após revogação e rejeição campaign-first, stale condition/effect removal e rejeição campaign-first, além da cobertura de ficha GM. As exceções de autorização dos controles negativos eram esperadas. Testes sintéticos não executam RPCs remotas nem verificam o caminho de concessão de item.
+
+
+## Achado adicional — exclusão de ficha ativa no lobby
+
+`public.excluir_ficha_propria(text)` (OID 20219) tem `SECURITY DEFINER` e `EXECUTE authenticated`; `lobby.html` chama essa RPC diretamente quando o usuário confirma a exclusão da ficha. A leitura do corpo instalado e do catálogo atual confirmou dois nomes de relação obsoletos no caminho executado:
+
+- `public.character_notes` não existe; a tabela atual é `public.vinculo_character_notes`.
+- `public.inventory` não existe; a tabela atual é `public.vinculo_inventory`.
+
+A primeira instrução `DELETE FROM public.character_notes` falha antes da exclusão da linha `characters`; a transação inteira reverte, logo a ação de exclusão do lobby não conclui no schema atual. O `DELETE FROM public.inventory` também é inválido, embora não seja alcançado depois da primeira falha.
+
+A limpeza atual já tem mecanismos de schema: `vinculo_inventory` e `vinculo_character_notes` possuem FK para `characters` com `ON DELETE CASCADE`; o trigger BEFORE DELETE remove `srd_character_sheets` e o AFTER DELETE remove `srd_character_equipment`, cujo trigger remove instâncias de armas. Preservar e testar essas cadeias antes de simplificar o corpo; não presumir que todo dado SRD seja removido apenas pelo cascade sem conferir todas as relações.
+
+**Concorrência:** a função bloqueia `characters FOR UPDATE` primeiro e, se `campaign_id` não for NULL, bloqueia `campaigns FOR UPDATE` depois. O call site ativo no lobby torna essa inversão character → campaign alcançável contra writers campaign-first → character do combate. Correção candidata: leitura MVCC para obter campaign_id → campaign FOR UPDATE → revalidar propriedade/vínculo → character FOR UPDATE → atualizar ordem de iniciativa e excluir. Para ficha sem campanha, preservar um caminho sem lock de campanha e definir como serializar associação/join concorrente.
+
+Outras rotinas legadas com referências às relações ausentes: `calc_ca` (18881), `calc_desl` (18882), `calc_sheet` (18883), `sell_price` (19287), além de `gm_grant` (18752). `save_sheet` (18889) também referencia `public.items/inventory`, mas no snapshot seu EXECUTE está restrito a `service_role`. `calc_sheet`, `calc_ca`, `calc_desl` e `sell_price` têm EXECUTE authenticated; buscas em todas as seis páginas HTML do repositório não encontraram call sites para essas funções. `gm_reopen_sheet/gm_set_bonus` chamam `calc_sheet`, mas também não têm call site literal nas páginas consultadas.
+
+O fixture existente campaign → character versus character → campaign cobre o padrão de lock; o endpoint de exclusão foi associado explicitamente a esse cenário. Nenhuma chamada de exclusão foi executada no banco remoto e nenhum dado foi alterado.
