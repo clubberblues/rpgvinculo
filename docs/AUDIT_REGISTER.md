@@ -566,3 +566,11 @@ A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24
 - ACL interna: 40 funções `priv.*` com EXECUTE authenticated, 39 SECURITY DEFINER. Exceção: `priv.srd_feat_saving_throw_modifier(jsonb,text)` OID 26355 tem grant PUBLIC/EXECUTE e é chamada também por anon; parece helper read-only de cálculo de talentos, mas precisa decisão explícita. Nenhum CREATE de authenticated/anon em public/priv. Sem alteração de grants.
 
 - `priv` ownership: 94 funções com owner postgres, 88 SECURITY DEFINER. Helper invoker `srd_parse_natural_attack_list(text)` OID 27228 também tem EXECUTE authenticated; demais cinco helpers invoker observados não têm EXECUTE cliente. Config PostgREST não pôde ser obtida via current_setting (NULL), logo exposição REST de `priv` não comprovada.
+
+
+### CI concluído e incompatibilidade invoker/priv (2026-11-10)
+
+- PR #74 / HEAD `e32716894d3388478d416e63a31926a811810395`: 4 workflows concluídos com sucesso (validação estática, JS aplicação, JS mesa, PostgreSQL fixtures); replay completo das 966 migrations falhou na inicialização do stack descartável, ao aplicar `20261031160944_srd35_action_economy.sql`, por `relation public.campaigns does not exist`. Nenhuma migration foi efetivamente reproduzida; a causa continua sendo a ausência de bootstrap histórico confiável.
+- O job de fixtures confirmou assertions de footprint, reproduziu bypass por identidade duplicada do mover, e executou ciclos de lock/concorrência e controles de autorização isolados. Os logs exibem deadlocks e autorizações obsoletas como resultados intencionais das reproduções; os controles campaign-first passaram. Isso não equivale a teste das RPCs reais no Supabase remoto.
+- Catálogo remoto: duas RPCs invoker de manobra/ataques naturais têm EXECUTE authenticated, mas chamam helper(s) `priv` sem EXECUTE para authenticated: `srd_consultar_modificadores_manobra_srd` (OID 27119) e `srd_listar_ataques_naturais_oportunidade_srd` (OID 27229). A incompatibilidade é objetiva no catálogo; confirmar erro ponta a ponta em sessão autenticada antes de corrigir. Nenhuma ACL/função alterada.
+- Evidência detalhada e proposta de correção específica em `docs/MOVEMENT_AOO_AUTHORITY_GAP.md`.
