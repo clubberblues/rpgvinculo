@@ -218,3 +218,44 @@ BEGIN
   VALUES (p_path,p_campaign_id);
   RETURN true;
 END $$;
+
+
+-- Candidate finalizer contract: campaign -> cleanup lock order, owner recheck,
+-- and zero-object guard. This is a synthetic model, not the production RPC.
+CREATE FUNCTION lock_fixture.finalize_campaign_if_storage_empty(
+  p_campaign_id integer,
+  p_owner_id text
+) RETURNS boolean
+LANGUAGE plpgsql VOLATILE AS $$
+DECLARE
+  v_owner text;
+  v_marker_owner text;
+BEGIN
+  SELECT 'owner-a' INTO v_owner
+  FROM lock_fixture.campaigns
+  WHERE id=p_campaign_id
+  FOR UPDATE;
+  IF NOT FOUND OR v_owner IS DISTINCT FROM p_owner_id THEN
+    RETURN false;
+  END IF;
+
+  SELECT owner_id INTO v_marker_owner
+  FROM lock_fixture.campaign_deletion_cleanup
+  WHERE campaign_id=p_campaign_id
+  FOR UPDATE;
+  IF NOT FOUND OR v_marker_owner IS DISTINCT FROM p_owner_id THEN
+    RETURN false;
+  END IF;
+
+  IF EXISTS (
+    SELECT 1 FROM lock_fixture.storage_objects
+    WHERE campaign_id=p_campaign_id
+  ) THEN
+    RETURN false;
+  END IF;
+
+  DELETE FROM lock_fixture.campaign_deletion_cleanup
+  WHERE campaign_id=p_campaign_id AND owner_id=p_owner_id;
+  DELETE FROM lock_fixture.campaigns WHERE id=p_campaign_id;
+  RETURN true;
+END $$;
