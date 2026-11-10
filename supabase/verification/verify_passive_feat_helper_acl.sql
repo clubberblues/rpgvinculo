@@ -9,7 +9,7 @@ BEGIN
   IF NOT (SELECT prosecdef FROM pg_proc WHERE oid=v_oid) THEN
     RAISE EXCEPTION 'Passive feat save helper must retain SECURITY DEFINER';
   END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_proc p, unnest(p.proconfig) cfg WHERE p.oid=v_oid AND cfg='search_path=pg_catalog, public, priv, pg_temp') THEN
+  IF NOT EXISTS (SELECT 1 FROM pg_proc p CROSS JOIN LATERAL unnest(p.proconfig) AS u(config) WHERE p.oid=v_oid AND u.config='search_path=pg_catalog, public, priv, pg_temp') THEN
     RAISE EXCEPTION 'Passive feat save helper search_path changed unexpectedly';
   END IF;
   IF NOT has_function_privilege('authenticated',v_oid,'EXECUTE')
