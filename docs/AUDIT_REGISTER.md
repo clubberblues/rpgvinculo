@@ -623,3 +623,11 @@ A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24
 - Os caminhos NPC via `usar_furia_barbaro_npc_srd`, descanso longo, expiração de condições, mudança de estado e trigger de rodada obtêm campaign lock antes de chamar os helpers; não generalizar a falha a todos os caminhos.
 - CI no commit `1959849`: JS ficha/lobby, JS mesa e fixtures PostgreSQL passaram; inicialização do stack descartável para replay de migrations falhou antes do replay começar.
 - Correção requerida: campanha primeiro e revalidação de autorização/estado/turno, depois personagem/ficha/efeito/recurso; testes de concorrência reais/isolados antes de considerar resolvido. Nenhuma execução mutável remota.
+
+
+### Condições de combate: descanso de jogador e resistência a magia (2026-11-10)
+
+- `descanso_longo_personagem_srd` altera condições de fadiga/exaustão e recursos após bloquear personagem/ficha, mas lê campanha sem lock. Pode competir com início de combate e não participa da serialização por campanha.
+- `srd_resolve_pending_spell_save` bloqueia pedido de resistência antes da campanha e, no ramo de quebra de condição, atualiza diretamente a condição sem campaign lock. A cadeia de aplicação de efeitos ainda exige revisão transitiva para ordenar campanha antes de pedido/condição.
+- `srd_resolve_dying_round` confirma ordem personagem → ficha → campanha → condição, incluindo rodada consultada somente depois de segurar os locks anteriores. Refatorar para campaign-first e revalidar turno/rodada após lock.
+- Inventário de writers deve incluir descansos, resistências, estabilização e efeitos derivados, não só rotas GM de administração. Nenhuma execução mutável remota.
