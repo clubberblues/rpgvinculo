@@ -356,3 +356,124 @@ SQL
 
 run_expected_stale_owner_race
 run_expected_serialized_owner_transfer
+
+# GM-role TOCTOU in authenticated inventory RPCs. This models the stale role
+# check before the campaign lock; it does not execute the Supabase RPCs.
+run_expected_stale_gm_inventory_race() {
+  local tmp role item_count sa sb
+  tmp="$(mktemp -d)"
+  psql -v ON_ERROR_STOP=1 >"$tmp/a.log" 2>&1 <<'SQL' &
+BEGIN;
+DO $$
+DECLARE v_role text;
+BEGIN
+  SELECT role INTO v_role FROM lock_fixture.gm_gate_members
+   WHERE campaign_id=1 AND user_id='gm-a';
+  IF v_role IS DISTINCT FROM 'GM' THEN RAISE EXCEPTION 'initial GM check failed'; END IF;
+END $$;
+DO $gate$
+DECLARE v_attempt integer:=0; v_acquired boolean;
+BEGIN
+  LOOP
+    v_acquired:=pg_try_advisory_lock(8675311);
+    IF NOT v_acquired THEN EXIT; END IF;
+    PERFORM pg_advisory_unlock(8675311);
+    v_attempt:=v_attempt+1;
+    IF v_attempt>100 THEN RAISE EXCEPTION 'timed out waiting for GM revocation'; END IF;
+    PERFORM pg_sleep(0.02);
+  END LOOP;
+END $gate$;
+UPDATE lock_fixture.gm_gate_inventory SET item_count=item_count+1
+ WHERE campaign_id=1 AND user_id='player-x';
+COMMIT;
+SQL
+  local a=$!
+  sleep 0.1
+  psql -v ON_ERROR_STOP=1 >"$tmp/b.log" 2>&1 <<'SQL' &
+BEGIN;
+SELECT pg_advisory_lock(8675311);
+UPDATE lock_fixture.gm_gate_members SET role='PLAYER'
+ WHERE campaign_id=1 AND user_id='gm-a';
+COMMIT;
+SELECT pg_advisory_unlock(8675311);
+SQL
+  local b=$!
+  set +e
+  wait "$a"; sa=$?
+  wait "$b"; sb=$?
+  set -e
+  role="$(psql -Atq -c "SELECT role FROM lock_fixture.gm_gate_members WHERE campaign_id=1 AND user_id='gm-a'")"
+  item_count="$(psql -Atq -c "SELECT item_count FROM lock_fixture.gm_gate_inventory WHERE campaign_id=1 AND user_id='player-x'")"
+  if [[ "$sa" -ne 0 || "$sb" -ne 0 || "$role" != "PLAYER" || "$item_count" != "1" ]]; then
+    echo "FAIL: stale GM role check race was not reproduced"
+    cat "$tmp/a.log" "$tmp/b.log"
+    echo "role=$role item_count=$item_count statuses=$sa/$sb"
+    rm -rf "$tmp"
+    exit 1
+  fi
+  echo "passed synthetic stale GM inventory authorization race: role=$role, inventory_change=$item_count"
+  rm -rf "$tmp"
+}
+
+run_expected_serialized_gm_inventory_rejection() {
+  local tmp role item_count sa sb
+  tmp="$(mktemp -d)"
+  psql -v ON_ERROR_STOP=1 -c "UPDATE lock_fixture.gm_gate_members SET role='GM' WHERE campaign_id=1 AND user_id='gm-a'; UPDATE lock_fixture.gm_gate_inventory SET item_count=0 WHERE campaign_id=1 AND user_id='player-x';" >/dev/null
+  psql -v ON_ERROR_STOP=1 >"$tmp/a.log" 2>&1 <<'SQL' &
+BEGIN;
+SELECT id FROM lock_fixture.gm_gate_campaigns WHERE id=1 FOR UPDATE;
+UPDATE lock_fixture.gm_gate_members SET role='PLAYER'
+ WHERE campaign_id=1 AND user_id='gm-a';
+DO $gate$
+DECLARE v_attempt integer:=0; v_acquired boolean;
+BEGIN
+  LOOP
+    v_acquired:=pg_try_advisory_lock(8675312);
+    IF NOT v_acquired THEN EXIT; END IF;
+    PERFORM pg_advisory_unlock(8675312);
+    v_attempt:=v_attempt+1;
+    IF v_attempt>100 THEN RAISE EXCEPTION 'timed out waiting for stale GM request'; END IF;
+    PERFORM pg_sleep(0.02);
+  END LOOP;
+END $gate$;
+COMMIT;
+SQL
+  local a=$!
+  sleep 0.1
+  psql -v ON_ERROR_STOP=1 >"$tmp/b.log" 2>&1 <<'SQL' &
+BEGIN;
+SELECT pg_advisory_lock(8675312);
+SELECT id FROM lock_fixture.gm_gate_campaigns WHERE id=1 FOR UPDATE;
+DO $$
+DECLARE v_role text;
+BEGIN
+  SELECT role INTO v_role FROM lock_fixture.gm_gate_members
+   WHERE campaign_id=1 AND user_id='gm-a';
+  IF v_role IS DISTINCT FROM 'GM' THEN RAISE EXCEPTION 'GM authorization lost'; END IF;
+END $$;
+UPDATE lock_fixture.gm_gate_inventory SET item_count=item_count+1
+ WHERE campaign_id=1 AND user_id='player-x';
+COMMIT;
+SELECT pg_advisory_unlock(8675312);
+SQL
+  local b=$!
+  set +e
+  wait "$a"; sa=$?
+  wait "$b"; sb=$?
+  set -e
+  role="$(psql -Atq -c "SELECT role FROM lock_fixture.gm_gate_members WHERE campaign_id=1 AND user_id='gm-a'")"
+  item_count="$(psql -Atq -c "SELECT item_count FROM lock_fixture.gm_gate_inventory WHERE campaign_id=1 AND user_id='player-x'")"
+  if [[ "$sa" -ne 0 || "$sb" -eq 0 || "$role" != "PLAYER" || "$item_count" != "0" ]] ||
+     ! grep -qi 'GM authorization lost' "$tmp/b.log"; then
+    echo "FAIL: campaign-first stale GM request was not rejected"
+    cat "$tmp/a.log" "$tmp/b.log"
+    echo "role=$role item_count=$item_count statuses=$sa/$sb"
+    rm -rf "$tmp"
+    exit 1
+  fi
+  echo "passed campaign-first GM authorization control: stale request rejected, role=$role, inventory_change=$item_count"
+  rm -rf "$tmp"
+}
+
+run_expected_stale_gm_inventory_race
+run_expected_serialized_gm_inventory_rejection
