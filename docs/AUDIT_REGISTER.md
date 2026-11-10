@@ -488,3 +488,5 @@ A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24
 - **Próxima ação:** fechar grafo transitivo dos writers/callers e helpers/triggers; depois implementar fatias pequenas com teste real das RPCs em PostgreSQL descartável e plano de rollback.
 
 - **Achado adicional condicionado:** public.gm_transfer (OID 18749), SECURITY DEFINER com EXECUTE authenticated, valida owner por leitura sem lock via priv.need_owner e depois altera papéis/owner_id; chamadas concorrentes podem reutilizar uma validação de propriedade obsoleta. Sem call site direto localizado nas páginas principais. Registrar como corrida de autorização a testar antes de manter/alterar o endpoint; não é deadlock reproduzido.
+
+- **Regressão de transferência:** CI PostgreSQL #100 [42731471362](https://github.com/clubberblues/rpgvinculo/actions/runs/42731471362) passou os dois cenários sintéticos de TOCTOU/campaign-first. A simulação reproduziu a dupla transferência stale e demonstrou que lock da campanha + revalidação rejeita a segunda chamada. Não executou gm_transfer remoto.
