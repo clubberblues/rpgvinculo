@@ -317,3 +317,12 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - Commits desta unidade: c97e36a8d3ad9a8852e85b861d1a22cae2468949 (finalizador/bypass), dbd6580f24ce895cced69d70596d48418d7ea3c1 (lock handshake), dded40b0b2c3626badbf6b0d74d4a7ba67f97678 (setup fixture), bfa6c1d223a515811fe675f50b35fe5287f1164f e 7ca8e00fe55fc6530642fc2099d3c392a0b6033d (teste), 054d8b92a7f928937ead19ee08ed25eac95900cb e 2df3a62565d36ef470208566fa610d6fbe597ba5 (documentação).
 - A fixture testa apenas a semântica de locks PostgreSQL em tabelas descartáveis. Não executa Storage API, RLS, RPCs ou bucket real; integração autenticada continua bloqueadora antes de migration/deploy.
 - Nenhuma alteração Supabase foi aplicada. TESTE 2 permanece intocado.
+
+
+## Atualização — zero-check e retry do finalizador (2026-11-10)
+
+- Ampliado o modelo SQL descartável para incluir owner_id na campanha e uma função-modelo de finalização que bloqueia campanha → cleanup, revalida proprietário/marcador, exige Storage vazio e preserva campanha+marcador se ainda houver objetos.
+- Adicionado teste de três resultados: proprietário incorreto rejeitado; objeto restante impede exclusão e preserva estado para retry; após remoção do objeto, retry conclui.
+- Documentação atualizada em docs/STORAGE_ACCESS_CONTRACT.md e tests/sql/README.md. Commits: 55ee0dd6442e108ef89fa726cecb29ee5d1c8461, 2913e395ad73465a45b9d1e3b38cdc868cf50b60, f3ec4daef3752c7ffbff23bf6f49ecd633e08a2a, d4537d0567ed6a70c641004665643afbd0a3a2c8, 4027bcb46c5956802d1e579cad7ac046e61b2fc8.
+- A fixture ainda é somente modelo de semântica transacional; não consulta `storage.objects`, não usa RLS/Storage API e não executa RPC de produção. Teste real em ambiente Supabase descartável continua necessário.
+- Nenhuma alteração foi aplicada ao projeto Supabase de produção, nenhum arquivo Storage foi apagado e a campanha TESTE 2 continua intocada.
