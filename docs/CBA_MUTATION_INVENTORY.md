@@ -620,3 +620,19 @@ A leitura integral de public.salvar_cena_cba(bigint,jsonb) e do fluxo de publica
 **Cenário concreto:** dois clientes carregam a mesma revisão. Cliente A altera posição de um token e salva. Cliente B, ainda com o snapshot antigo, altera retrato ou metadado desse mesmo token e salva depois. O lock serializa as duas transações, mas a segunda grava a versão antiga do token inteiro, podendo restaurar a posição anterior. O mesmo vale para campos de cena fora de tokens. A preservação de tokens ausentes não protege campos de tokens que aparecem em ambos os snapshots.
 
 **Classificação:** risco de lost update confirmado pela implementação, distinto de deadlock. Não foi reproduzido em duas sessões contra produção e não há evidência de que o sistema atualmente faça reconciliação otimista. A correção deve ser desenhada separadamente do protocolo de locks: preferir RPCs de mutação granular para ações frequentes (posição/PV/metadados) ou controle otimista por revisão (expected_version + incremento atômico), com merge explícito e tratamento de conflito no frontend. Não substituir silenciosamente por merge JSONB genérico, pois arrays de tokens exigem semântica por identidade e operações de exclusão precisam ser explícitas.
+
+
+## Complemento — o salvamento geral também pode alterar coordenadas
+
+A leitura posterior do corpo remoto de `public.salvar_cena_cba` (OID 20077) confirmou que ele é um writer genérico capaz de substituir objetos de tokens recebidos pelo cliente, incluindo `gridX/gridY`. O endpoint é `SECURITY DEFINER`, executável por `authenticated` e exige papel GM, mas não valida se a posição de um token existente foi alterada nem chama o detector AOO.
+
+Em `mesa.html`, o wrapper `gravarCBAnaCampanha` usa esse RPC para várias operações não relacionadas a movimento (imagem/retrato, `spellState`, criação de NPC, dados de iniciativa, mapa/grade e hidratação de monstros). O fallback de sincronização da posição do token também o utiliza fora do ramo de movimento do GM durante combate. A existência desses usos legítimos impede uma solução simplista que bloqueie qualquer UPDATE de `cba_data`.
+
+**Conclusão adicional:** a autoridade de movimento precisa ser imposta no limite comum de persistência, comparando OLD/NEW das coordenadas dos tokens existentes e permitindo mudanças somente quando uma função de movimento/manobra validada pelo servidor fornece autorização transacional estreita. A comparação deve usar identidade estável e tratar explicitamente remoção/recriação; atualizações de outros campos devem continuar permitidas quando não alterarem geometria ou o conjunto de ameaças.
+
+O trigger atual é executado antes do UPDATE feito por `salvar_cena_cba`, mas só barra o token mover quando já existe pending AOO. Portanto, uma chamada autenticada direta ao salvamento geral durante combate pode mover token sem pending. Revogar apenas os dois wrappers diretos de movimento não fecha essa rota.
+
+A correção deve ainda considerar mutações geométricas legítimas internas do motor, como manobras que reposicionam tokens, e não apenas os dois RPCs de deslocamento. O inventário lexical de funções que mencionam `gridX/gridY` não prova, isoladamente, que todas escrevem coordenadas; cada mutador real precisa ser classificado por efeito e caller antes de fechar o trigger.
+
+**Novos critérios de regressão:** tentativa de mover token existente via `salvar_cena_cba` em combate deve falhar; atualizar somente metadados deve continuar funcionando; adicionar/remover/recriar token não pode ser usado para contornar a comparação; manobras com reposicionamento devem funcionar somente por seus próprios entrypoints autorizados; todos os escritores reais de coordenadas precisam ser cobertos em fixture de integração.
+
