@@ -427,3 +427,28 @@ O finalizador privado `priv.finalizar_exclusao_campanha_propria` valida owner e 
 
 Não apagar esses objetos automaticamente: IDs sem campanha podem pertencer a arquivos históricos que precisam de classificação/backup. Próxima ação segura é gerar inventário por path, tipo e data, identificar se cada objeto é capa/mapa e obter decisão de retenção antes de qualquer remoção. Nenhum objeto, campanha ou marcador foi alterado.
 
+
+
+
+
+### Correção de exclusão pelo lobby e proteção Storage pendente
+
+A inspeção dos dois callsites revelou divergência real:
+- `mesa.html` coleta e remove `campaigns/{id}/` de `midia` e `mesa-media`, além de capas em `midia/capas_mesas/`.
+- `lobby.html` coletava apenas `midia` e capas, ignorando `mesa-media/campaigns/{id}/`. O finalizador SQL apagaria a campanha mesmo que arquivos privados permanecessem.
+
+Correção no branch de auditoria: o helper do lobby agora coleta os dois buckets, remove lotes por bucket e contabiliza ambos no status. O validador estático `scripts/check-static.mjs` agora exige os dois prefixos, os dois buckets de remoção e a contagem combinada. Isso ainda precisa passar no CI sobre o commit que contém o validador.
+
+O snapshot atual tem bucket privado `mesa-media` (não público), limite de 50 MiB e zero objetos registrados. Logo, o bug é uma falha de fluxo confirmada pelo código, mas não há objetos privados órfãos observados no snapshot atual.
+
+**Lacuna de integridade no banco:** `priv.finalizar_exclusao_campanha_propria(bigint)` não consulta `storage.objects`. Um usuário autenticado que seja proprietário e tenha criado o marcador pode chamar diretamente o RPC finalizador, sem executar a remoção Storage no cliente. O marcador impede novos uploads em `midia` por `priv.can_write_midia`, mas as políticas de `mesa-media` usam `priv.pasta_gm(name)`, que só verifica papel GM e não bloqueia upload/update enquanto há marcador. Portanto, há também uma corrida de upload privado durante a exclusão. Correção de banco candidata: criar predicados separados para INSERT/UPDATE e DELETE em `mesa-media`, bloquear novos writes enquanto houver `campaign_deletion_cleanup`, manter DELETE autorizado ao GM durante a limpeza e fazer o finalizador validar zero objetos em ambos os buckets nos prefixos da campanha e zero capas correspondentes antes de excluir a linha. A validação deve ocorrer depois de locks campaign → cleanup e revalidar owner/marcador. Não aplicar até migration history/ACL e testes de Storage serem reconciliados.
+
+### Inventário de Storage órfão — tamanho e intervalo
+
+Os 44 objetos órfãos do bucket público `midia` somam **55.708.560 bytes (~53,1 MiB)**:
+- 33 arquivos em `campaigns/{id}/`: 32.223.141 bytes.
+- 11 capas em `capas_mesas/mesa-{id}-`: 23.485.419 bytes.
+- Datas de criação observadas: 20/10/2026 a 03/11/2026.
+- O único objeto `capas_mesas` que não é órfão pertence à campanha atualmente existente (ID 129); não foi incluído na contagem órfã.
+- Não foi feita inspeção/download do conteúdo binário, e nenhum objeto foi removido. Como o bucket é público, o risco observado é retenção pública de mídia histórica, não exposição de um bucket privado.
+
