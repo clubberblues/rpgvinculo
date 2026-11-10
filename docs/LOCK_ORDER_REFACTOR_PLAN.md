@@ -152,3 +152,10 @@ Nota de escopo: o descanso longo de NPC vinculado (wrapper OID 26801 → impleme
 
 
 Complemento transacional: triggers AFTER INSERT/DELETE/UPDATE OF quantidade de `srd_character_equipment` e `srd_cba_token_equipment` materializam/removem instâncias de arma e sincronizam campos do inventário (funções private OIDs 26446/26447). Assim, operações de inventário adquirem locks transitivos em weapon instances; incluir essas arestas no grafo e nos testes de PC/NPC, sem concluir deadlock apenas pela existência do trigger.
+
+
+### Equipamento: ordem por domínio e autorização GM
+
+- PC weapon equip (OID 26441): character → weapon instance → inventory row. Token weapon equip (OID 26443): campaign → token weapon instance → token inventory row. Manter ordens distintas por domínio.
+- Inventory quantity triggers (OIDs 26446/26447) produzem inventory row → weapon instances. No snapshot de writers authenticated, nenhum caminho reduz quantidade de arma; os decrementos encontrados são consumo de poção. Não classificar como ciclo ativo até existir writer que reduza/exclua arma; manter o ramo negativo como requisito de teste futuro.
+- Entrega de item PC (OID 20556) valida papel GM sem lock de campanha. Entrega/equipamento de item em token (OIDs 21668/21670) validam papel antes do lock de campanha. Como `gm_transfer` altera owner/membership, essas validações podem ficar obsoletas. Candidato: campaign FOR UPDATE → revalidar role GM e alvo → mutação de inventário/trigger; teste concorrente de revogação/transferência versus entrega/equipamento.
