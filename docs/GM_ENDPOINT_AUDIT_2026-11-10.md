@@ -375,3 +375,8 @@ O fixture é uma especificação executável de invariantes em tabelas temporár
 - Risco de consistência: exclusão SQL e remoção Storage são duas operações não atômicas. Se a remoção Storage falhar depois do delete da campanha, arquivos órfãos permanecem; se arquivos forem removidos antes e a transação SQL falhar, referências quebradas podem permanecer. O fluxo atual interrompe e mostra erro no retorno de Storage, mas não há compensação transacional garantida. Correção futura: job/outbox de limpeza idempotente com estado persistente e retry, não confiar em exclusão síncrona como se fosse transação única.
 - As RPCs `srd_remove_campaign_condition` (OID 24806) e `srd_remove_campaign_effect` (OID 24897) validam `my_role='GM'` antes do UPDATE e não bloqueiam a campanha. Além da janela de revogação concorrente já registrada, a mutação direta não está serializada com transição/rodada da campanha. O mesmo problema de validação prévia afeta `srd_apply_campaign_condition/effect` (OIDs 24805/24896), cujos helpers internos bloqueiam a campanha depois da checagem externa. Correção candidata: entrypoint campaign-first, revalidar papel/estado depois do lock e só então alterar condição/efeito.
 - Nenhuma função, política Storage, bucket, linha de mídia ou arquivo foi alterado.
+
+
+### CI do contrato de lifecycle
+
+O GitHub Actions #198 [42742904531](https://github.com/clubberblues/rpgvinculo/actions/runs/42742904531) concluiu **success** no commit `cb8c2f6c2ad923a92abb562df56296c30ec2d41d`. O log mostra o fixture de lifecycle executando criação de tabelas temporárias, verificações, remoções seletivas e ROLLBACK, seguido pelos testes sintéticos de concorrência. Isso valida o fixture PostgreSQL isolado; não executa as RPCs de produção nem altera dados Supabase.
