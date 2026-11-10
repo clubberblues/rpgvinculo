@@ -589,3 +589,10 @@ A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24
 - Um helper passivo de talentos tinha EXECUTE herdado de PUBLIC, tornando-o também executável por anon; chamador SQL catalogal identificado é função SECURITY DEFINER interna; grants explícitos de authenticated/service_role foram preservados. Migration proposta remove somente o grant PUBLIC e preserva authenticated/service_role no helper, e preserva os grants authenticated/service_role já existentes nas RPCs GM.
 - Adicionados dois scripts de verificação e um fixture PostgreSQL que aplica as migrations e testa o modelo de privilégio isoladamente; workflow de fixtures atualizado.
 - Nada aplicado em produção. A execução do CI no HEAD atual e as chamadas reais autenticadas permanecem pendentes.
+
+### EXECUTE interno: condição, talentos, parser e ataque iterativo (2026-11-10)
+
+- A revisão de helpers com EXECUTE authenticated encontrou três funções sem contexto de autorização que não precisavam ser chamadas diretamente pelo cliente: leitura booleana de flags de condições, cálculo passivo de modificadores de resistência e parser de ataques naturais. Seus chamadores identificados são funções SECURITY DEFINER/triggers.
+- Também foi identificado que os helpers SECURITY DEFINER de sequência iterativa 7/8 argumentos estavam diretamente executáveis por authenticated. O helper de 7 args não validava usuário/propriedade antes de acessar arma; o de 8 args consultava ficha/arma antes de delegar a validação.
+- Migration proposta remove EXECUTE cliente desses cinco helpers, preserva service_role, e move a fronteira autenticada para wrappers públicos com checagem explícita de usuário, propriedade e membership PLAYER.
+- Fixture isolado e script de verificação ampliados. Nenhuma ACL/função foi alterada no banco remoto; schema REST PostgREST ainda não foi confirmado.
