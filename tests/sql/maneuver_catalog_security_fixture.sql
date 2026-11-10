@@ -113,13 +113,13 @@ GRANT EXECUTE ON FUNCTION priv.srd_feat_saving_throw_modifier(jsonb,text) TO aut
 CREATE OR REPLACE FUNCTION priv.srd_saving_throw_bonus(bigint,text,text,text,text)
 RETURNS integer LANGUAGE sql STABLE SECURITY DEFINER
 SET search_path TO pg_catalog, public, priv, pg_temp
-AS $ SELECT priv.srd_feat_saving_throw_modifier('[]'::jsonb,'fortitude') $;
+AS $$ SELECT priv.srd_feat_saving_throw_modifier('[]'::jsonb,'fortitude') $$;
 REVOKE ALL ON FUNCTION priv.srd_saving_throw_bonus(bigint,text,text,text,text) FROM PUBLIC, authenticated, anon;
 
 CREATE OR REPLACE FUNCTION priv.fixture_saving_throw_caller(bigint,text,text,text,text)
 RETURNS integer LANGUAGE sql STABLE SECURITY DEFINER
 SET search_path TO pg_catalog, public, priv, pg_temp
-AS $ SELECT priv.srd_saving_throw_bonus($1,$2,$3,$4,$5) $;
+AS $$ SELECT priv.srd_saving_throw_bonus($1,$2,$3,$4,$5) $$;
 GRANT EXECUTE ON FUNCTION priv.fixture_saving_throw_caller(bigint,text,text,text,text) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.srd_consultar_modificadores_manobra_srd(
