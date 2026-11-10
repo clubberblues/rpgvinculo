@@ -279,3 +279,12 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - A política SELECT usa `public.can_read_media`, dependente de linha em `public.media`; a tabela e `public.layers` estão vazias e não há trigger de Storage que crie esses metadados. O CBA faz upload e cria signed URL sem inserir `public.media`.
 - O contrato de Storage privado precisa de revisão integrada (path, GM, membros/visibilidade, marcador de exclusão, upload, signed URL e remoção). Nenhuma policy ou função de produção foi alterada.
 
+
+
+
+## Especificação formal — Storage privado CBA
+
+- Criado `docs/STORAGE_ACCESS_CONTRACT.md` com path canônico, matriz GM/jogador/externo, autorização durante exclusão, validação final sem objetos, signed URLs e 12 testes de integração.
+- Corrigida a descrição das policies: INSERT/UPDATE/DELETE usam `priv.pasta_gm`; SELECT usa `public.can_read_media`. A função de escrita rejeita `campaigns/{id}/...` porque interpreta o primeiro segmento como ID numérico; a leitura exige metadados ausentes em `public.media`.
+- Snapshot de integridade: 3/3 donos das campanhas também constam em `public.members` como GM; a especificação ainda exige autorização explícita do owner ou teste formal da invariável.
+- Nenhuma policy, função ou dado de produção foi alterado. Próxima dependência é reconciliação de migrations e teste Storage/RLS real antes de qualquer aplicação.
