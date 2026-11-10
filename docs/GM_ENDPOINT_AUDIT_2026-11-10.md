@@ -271,3 +271,11 @@ Qualquer opção deve consultar todas as campanhas cujo JSON de tokens contém o
 
 O dado atual é pequeno e verificável (3 links, 2 fichas-fonte); nenhuma dessas fichas foi excluída ou modificada. O defeito de nomes antigos já impede a exclusão hoje, mas não deve ser “corrigido” sem também tratar esta dependência.
 
+
+
+### Efeito da duplicidade de links no painel de ficha
+
+No snapshot, um personagem-fonte está ligado a dois tokens NPC na mesma campanha (campanha 129); outro personagem-fonte está ligado a um token em outra campanha (131). `ficha.html` procura o token vinculado na campanha selecionada e interrompe ações de descanso longo/Fúria quando encontra mais de um, com mensagem de ambiguidade. Portanto, para a ficha-fonte que tem dois tokens, esses controles no painel da ficha não conseguem escolher qual token controlar. As ações abertas diretamente no painel de cada token em `mesa.html` recebem o token_id e continuam sendo o caminho não ambíguo.
+
+A política de exclusão/desvinculação precisa considerar também a multiplicidade: uma ficha pode ser fonte de vários tokens em uma ou várias campanhas. Se a regra permitir vários clones, os controles de ficha precisam permitir escolher o token ou operar em escopo de ficha (com semântica compartilhada claramente definida); não escolher arbitrariamente o primeiro.
+
