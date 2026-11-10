@@ -69,7 +69,7 @@ Isso permite divergência entre ocupação/movimento e alcance ameaçado. A refa
 ## Restrições de implantação
 
 - Não alterar funções, migrations, grants ou dados do projeto de produção nesta etapa.
-- O histórico de migrations permanece sem reconciliação completa; qualquer migration de correção precisa aguardar baseline reproduzível e revisão de dependências.
+- O baseline de migrations foi recuperado do ledger e alinhado byte a byte (966/966); variantes locais divergentes e arquivos não aplicados foram preservados em quarentena. Qualquer nova migration de correção ainda precisa aguardar reprodução das 966 migrations em stack Supabase local descartável e revisão de dependências/locks.
 - Não usar TESTE 2 como ambiente de mutação.
 - Os OIDs são evidência do snapshot de 2026-11-10 e devem ser revalidados imediatamente antes de qualquer migration.
 
