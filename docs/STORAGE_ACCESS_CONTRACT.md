@@ -122,3 +122,8 @@ Contrato de lock recomendado para o novo helper de escrita de assets de campanha
 5. O finalizador, após campaign FOR UPDATE e lock/revalidação do marcador, verifica zero objetos. Assim nenhum upload autorizado pode atravessar a verificação final; deletes concorrentes apenas reduzem o conjunto e, se ainda estiverem visíveis, causam falha segura/retry.
 
 Aplicar o mesmo princípio a todos os prefixes de campanha graváveis, inclusive capas no bucket midia e assets CBA no bucket mesa-media. Não bloquear somente a campanha no finalizador: o lock correspondente no caminho de INSERT/UPDATE é a outra metade da garantia. Validar o comportamento com duas sessões reais e Storage API, porque fixture SQL isolada não reproduz o ciclo completo do serviço Storage.
+
+
+## Fixture sintético do lock de upload
+
+O harness descartável agora modela a garantia de serialização com duas interleavings: (a) upload adquire campaign KEY SHARE antes da preparação, então a preparação aguarda o commit do upload antes de inserir o marcador; (b) preparação adquire campaign FOR UPDATE e grava o marcador antes, então o upload aguarda e é rejeitado ao reler o marcador. O modelo usa uma função PL/pgSQL VOLATILE e uma tabela de objetos fictícia. Ele valida a compatibilidade dos locks PostgreSQL, mas não executa policy RLS, Storage API, upload binário ou finalizador Supabase real; integração autenticada continua obrigatória.
