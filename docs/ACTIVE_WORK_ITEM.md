@@ -4,7 +4,7 @@
 
 - Frente ativa: auditoria read-only de concorrência/ordem de locks dos fluxos AOO, ficha, magia, recursos de classe e ataques iterativos.
 - Branch: `audit/lock-order-rage-removal-2026-11-09`.
-- PR #74: [docs: auditar inversões de locks em AOO, conjuração e ataques iterativos](https://github.com/clubberblues/rpgvinculo/pull/74), aberto, draft, não mesclado. Head observado: `8d7e2ee61ee2194060b06ea05e7cef577d32c119`.
+- PR #74: [docs: auditar inversões de locks em AOO, conjuração e ataques iterativos](https://github.com/clubberblues/rpgvinculo/pull/74), aberto, draft, não mesclado. Head observado: `e42f0e8e6d98ceaa4c9f4e6769875116f5026a02`.
 - O PR contém apenas documentação e fixtures SQL descartáveis: `docs/LOCK_ORDER_PROTOCOL_DRAFT.md`, `docs/CBA_MUTATION_INVENTORY.md`, `tests/sql/README.md`, `tests/sql/lock_cycle_setup.sql`, `tests/sql/lock_cycle_test.sh`.
 - CI PostgreSQL #72 [42730159992](https://github.com/clubberblues/rpgvinculo/actions/runs/42730159992) concluiu success no commit `027fa057a0f6ccd3a111e2a3a97b50e45f8b1f5d`. Setup, PostgreSQL descartável, checkout, cliente, fixtures e teardown passaram. Commits posteriores só alteraram documentação; nenhum fixture/workflow mudou após o teste.
 - O harness tem oito padrões sintéticos de inversão + um controle positivo. Não executa RPCs, triggers nem dados de produção; não prova deadlock real.
