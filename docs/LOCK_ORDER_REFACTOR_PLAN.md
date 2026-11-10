@@ -146,3 +146,6 @@ Incluir descanso longo (OID 24366) e poção de cura manual (OID 24655) como mut
 Direção candidata: MVCC localizar campanha → `campaigns FOR UPDATE` → revalidar vínculo/owner/estado → locks de personagem/ficha/equipamento/recursos conforme a ordem específica do inventário. A decisão de gastar ação da poção deve ocorrer dentro da mesma serialização da transição, não por leitura anterior sem lock. Não mover o lock de campanha para dentro de `srd_sync_character_vital_condition`: helper sem lock próprio, com pré-condição campaign-first explícita no caller, evita lock implícito campanha-after-sheet.
 
 **Aceite:** testes concorrentes com RPCs reais em PostgreSQL descartável para descanso × início de combate, poção × início de combate, poção em combate × ação já consumida e duas poções × última unidade; confirmar que estado, ação, inventário, PV, magias, recursos e condições não divergem.
+
+
+Nota de escopo: o descanso longo de NPC vinculado (wrapper OID 26801 → implementação privada OID 26808) já bloqueia campanha e valida estado antes de personagem/ficha. A correção de estado da Fase D deve priorizar o descanso PC (OID 24366); preservar e testar separadamente o caminho NPC existente, sem reordená-lo por suposição.
