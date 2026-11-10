@@ -76,3 +76,8 @@ Fixture reproduz o padrão dos wrappers `srd_apply_campaign_condition`/`srd_appl
 Fixture reproduz `gm_set_code`: owner antigo valida autorização, aguarda, ocorre transferência e o owner antigo ainda altera o código. Controle usa campaign FOR UPDATE e revalida owner após o lock, rejeitando a mutação. O teste não executa a RPC instalada; modela a ordem SQL e o gate de propriedade.
 
 O mesmo harness também modela `gm_set_role`: owner antigo valida, transfere-se a propriedade e a alteração de papel ainda é aplicada. O controle campaign-first espera o lock e rejeita a autorização antiga. Os fixtures continuam sintéticos e descartáveis.
+
+
+### Ficha GM: reabertura e bônus
+
+O fixture de ficha modela as mutações de `gm_reopen_sheet` e `gm_set_bonus`: o GM valida papel, perde o papel durante uma transferência/revogação serializada na campanha e, no cenário vulnerável, ainda altera os dados da ficha. O controle adquire campaign FOR UPDATE antes da validação definitiva e rejeita a operação antiga. É um teste sintético da ordem/garantia, não uma chamada à RPC de produção.
