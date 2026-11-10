@@ -597,3 +597,18 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - O problema não é a magia em si: é a ordem de espera entre a ficha e a campanha. A correção deve obter campanha primeiro, revalidar dono/membership/combate e então bloquear ficha do conjurador/alvos, mantendo a ordem determinística para múltiplos alvos (IDs ordenados).
 - A Fúria de personagem (`usar_furia_barbaro_srd`) segue a mesma ordem personagem → ficha → campanha, já registrada acima; agrupar com as conjurações na futura refatoração de fronteira de combate.
 - Análise estática do catálogo remoto; nenhuma magia foi conjurada e nenhuma mudança remota foi feita.
+
+
+### Outras ações de classe e recursos: ficha antes da campanha (2026-11-10)
+
+- A varredura de RPCs autenticadas que bloqueiam `srd_character_sheets` identificou novos caminhos de combate fora de campaign-first:
+  - `public.usar_habilidade_classe_srd(text,text,text,integer)` bloqueia personagem, ficha e recurso de classe antes da campanha; em seguida pode bloquear ficha do alvo. É uma rota genérica de habilidades e pode cobrir cura/efeitos de classe.
+  - `public.usar_imposicao_maos_mortos_vivos_srd(text,text,integer,integer)` bloqueia personagem, ficha e recurso de classe antes da campanha, depois altera token/CBA e PV/condições. É uma mutação de combate direta.
+  - `public.conceder_xp_personagem_srd(bigint,text,integer)` bloqueia personagem e ficha antes de atualizar progressão/nível; precisa confirmar se o caminho pode ocorrer durante combate e se altera entradas AOO (raça/classe/talentos). Tratar como writer de ficha com guarda de combate ausente até validação.
+  - `public.descanso_longo_personagem_srd` bloqueia personagem/ficha antes de campanha (já registrado), remove condições e repõe recursos.
+  - `public.finalizar_equipamento_inicial_srd`, `public.salvar_talentos_bonus_classe_inicial_srd` e `public.salvar_dominios_personagem_srd` alteram ficha/progressão sem lock da campanha; precisam impedir edição de fontes de ameaça enquanto combate/pending AOO estiver ativo, ou validar/inutilizar snapshot de forma atômica.
+  - `public.excluir_ficha_propria` bloqueia personagem antes da campanha e pode mexer na iniciativa/estado da campanha; requer ordem campaign-first para evitar corrida com turno/combate.
+- Nem todas essas rotas necessariamente geram deadlock hoje: algumas são preparação de ficha ou progressão fora do combate. A correção deve distinguir ações de mesa (que exigem serialização da campanha) de edição de personagem fora de combate (que deve rejeitar se estiver em combate/pending), em vez de aplicar um bloqueio global cego.
+- `public.alterar_pv_personagem` e `public.conceder_xp_personagem_srd` recebem `p_campaign_id`, mas a classificação lexical não detectou um `campaigns FOR UPDATE` anterior; inspecionar corpo completo/ordem efetiva antes de fechar o mapa.
+- `public.usar_pocao_cura_srd_manual` consome item e atualiza PV sem campaign lock explícito, e chama consumo de ação após ler estado da campanha sem lock. É outra rota de cura que pode tocar condição vital e inventário; precisa campaign-first e revalidação do turno.
+- Somente leitura de catálogo; nenhuma RPC executada, nenhuma ficha, token ou campanha alterada.
