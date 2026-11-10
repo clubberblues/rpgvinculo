@@ -122,3 +122,8 @@ Direção candidata:
 - Não altera TESTE 2 ou outras campanhas.
 - Não aplica mudanças no Supabase conectado.
 - Não aprova merge ou deploy por si só.
+
+
+### Complemento de escopo single-target (2026-11-10)
+
+A inspeção de mesa.html confirmou que Míssil Mágico usa o wrapper autenticado OID 25191 (personagem → ficha → campanha, por helpers internos), enquanto as demais magias manuais single-target usam OID 24658 (personagem → campanha → ficha). Ambos devem entrar na Fase D e ser testados separadamente. Os helpers internos OIDs 24356, 20410 e 24656 não têm EXECUTE autenticado no snapshot; isso não é falha por si só, pois são invocados pelos wrappers SECURITY DEFINER autenticados.
