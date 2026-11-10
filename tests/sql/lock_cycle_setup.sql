@@ -152,3 +152,13 @@ CREATE TABLE lock_fixture.owner_gate_codes (
   code text NOT NULL
 );
 INSERT INTO lock_fixture.owner_gate_codes VALUES (1,'1111');
+
+-- Synthetic stale-GM sheet mutation fixture for gm_reopen_sheet/gm_set_bonus.
+CREATE TABLE lock_fixture.gm_gate_sheets (
+  campaign_id integer NOT NULL,
+  character_id text NOT NULL,
+  is_open boolean NOT NULL DEFAULT false,
+  bonus integer NOT NULL DEFAULT 0,
+  PRIMARY KEY (campaign_id,character_id)
+);
+INSERT INTO lock_fixture.gm_gate_sheets VALUES (1,'character-a',false,0);
