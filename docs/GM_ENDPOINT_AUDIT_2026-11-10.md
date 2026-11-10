@@ -289,3 +289,8 @@ A política de exclusão/desvinculação precisa considerar também a multiplici
 ### Não existe ação explícita de desvincular no tabuleiro atual
 
 A busca no `mesa.html` não encontrou ação explícita que remova/limpe `sourceCharacterId` de um token (nem função chamada “desvincular”). O Mestre pode editar a cena por outros fluxos, mas não há um controle de produto claro para converter o NPC vinculado em independente. Assim, a política “bloquear exclusão até desvincular” exige primeiro construir esse fluxo de desvinculação ou um procedimento de limpeza seguro; não presumir que o usuário já tenha uma ação disponível.
+
+
+### Remoção individual de token também não está disponível
+
+A varredura do menu/painel de `mesa.html` não encontrou ação de remover/excluir token nem RPC de desvinculação. A única ação de exclusão encontrada é a exclusão definitiva da campanha, cujo aviso diz preservar as fichas e remover a mesa/histórico; isso é amplo demais para servir como procedimento normal de desvincular um NPC. Portanto, bloquear a exclusão da ficha-fonte sem antes construir um fluxo de remoção/desvinculação deixaria o usuário sem solução granular. O plano precisa incluir uma ação de Mestre para remover token NPC (com confirmação e atualização atômica de `cba_data`, iniciativa, efeitos/condições, pending actions e referências auxiliares) ou uma operação de detach/snapshot validada.
