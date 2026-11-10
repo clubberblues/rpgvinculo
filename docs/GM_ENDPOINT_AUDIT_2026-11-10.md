@@ -458,7 +458,7 @@ Os 44 objetos órfãos do bucket público `midia` somam **55.708.560 bytes (~53,
 
 ### Políticas do bucket privado — incompatibilidade de path confirmada
 
-O helper efetivo das quatro políticas de `mesa-media` é `priv.pasta_gm(name)`. Ele executa `storage.foldername(name)[1]`, exige que o primeiro segmento seja numérico e chama `public.my_role(id)`. Mas o frontend grava mapas e retratos em `campaigns/{campaign_id}/...`. A consulta direta do helper Storage confirmou:
+As três policies de escrita de `mesa-media` — INSERT (`mesa_media_enviar`), UPDATE (`mesa_media_trocar`) e DELETE (`mesa_media_apagar`) — chamam `priv.pasta_gm(name)`. A policy SELECT (`mesa_media_ler`) chama `public.can_read_media(name)`. A função `priv.pasta_gm` executa `storage.foldername(name)[1]`, exige que o primeiro segmento seja numérico e chama `public.my_role(id)`. Mas o frontend grava mapas e retratos em `campaigns/{campaign_id}/...`. A consulta direta do helper Storage confirmou:
 - `storage.foldername('campaigns/129/test.png') = ['campaigns','129']`
 - segmento [1] = `campaigns` (não numérico);
 - segmento [2] = `129`.
@@ -490,3 +490,6 @@ Não corrigir somente o índice do segmento e considerar o recurso pronto. O con
 
 Matriz mínima de integração antes de aplicar migration: GM pode uploadar/ler/atualizar/remover; jogador membro pode ler assets publicados, mas não gravar/remover; usuário externo não pode listar/ler/gravar/remover; novo upload é negado durante cleanup; delete continua permitido durante cleanup; finalizador rejeita quando qualquer objeto/capa persiste; após remoção via Storage API, finalizador conclui; teste concorrente tenta upload enquanto finalização ocorre. A suíte PostgreSQL sintética atual não substitui essa validação Storage/RLS real.
 
+
+
+A integridade de associação do proprietário foi consultada no snapshot: 3 campanhas, 3 proprietários também presentes em `public.members` com papel GM, nenhum proprietário ausente. O trigger `enforce_campaign_member_role` mantém a regra owner→GM no fluxo de alteração. Ainda assim, o predicado novo deve autorizar `campaigns.owner_id` explicitamente ou documentar/testar a invariável do trigger, em vez de depender implicitamente dela.
