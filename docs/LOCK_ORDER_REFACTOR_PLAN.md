@@ -171,3 +171,10 @@ Além de `gm_transfer`, os endpoints authenticated `gm_set_role` (OID 18748) e `
 ### Bloqueador de transferência: trigger de papel
 
 `gm_transfer` (OID 18749) altera membership antes de atualizar `campaigns.owner_id`, mas `enforce_campaign_member_role` (OID 21603) força o owner atual a GM e impede qualquer outro membro de receber GM. A ordem atual pode deixar owner_id no novo usuário enquanto membership preserva o antigo GM e rebaixa o novo para PLAYER. O snapshot atual tem 3 campanhas e todas mantêm owner=GM e exatamente um GM; não há inconsistência observada nos registros existentes. Novo teste fixture reproduz a ordem atual e valida controle owner-first, com lock de campanha. A correção candidata deve atualizar owner_id antes dos papéis, tudo sob campaign FOR UPDATE e na mesma transação.
+
+
+### Matriz de endpoints GM a revalidar depois do lock
+
+Além de inventário e iniciativa, a varredura identificou endpoints ativos que verificam GM antes de `campaigns FOR UPDATE`: `alternar_estado_campanha` (20103), `salvar_cena_cba` (20077), `adicionar_combatente_iniciativa` (20078), `mover_combatente_iniciativa` (20080), `iniciar_iniciativa_com_dados` (20577), `srd_configurar_perfil_combate_token_srd` (26922), `srd_configurar_rodada_surpresa_srd` (27092), `usar_furia_barbaro_npc_srd` (26656), `entregar_item_token_srd` (21668) e `equipar_item_token_srd` (21670). O frontend principal chama esses fluxos em `mesa.html`/ `ficha.html`.
+
+Correção comum: obter campaign FOR UPDATE antes da autorização definitiva; revalidar papel GM após o lock; só então executar mutação. Preservar locks de domínio subsequentes e evitar que helpers adquiram campanha depois de personagem/ficha. Incluir testes concorrentes de transferência × alternância de estado, transferência × CBA snapshot, transferência × iniciativa, transferência × perfil/rodada surpresa/Fúria NPC e transferência × inventário token.
