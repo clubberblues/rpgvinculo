@@ -17,27 +17,27 @@ GRANT USAGE ON SCHEMA auth, priv TO authenticated, anon;
 
 CREATE OR REPLACE FUNCTION auth.uid()
 RETURNS uuid LANGUAGE sql STABLE
-AS $$$ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$$;
+AS $ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $;
 GRANT EXECUTE ON FUNCTION auth.uid() TO PUBLIC;
 
 CREATE OR REPLACE FUNCTION public.my_role(cid bigint)
 RETURNS text LANGUAGE sql STABLE
-AS $$$ SELECT current_setting('fixture.campaign_role',true) $$$;
+AS $ SELECT current_setting('fixture.campaign_role',true) $;
 GRANT EXECUTE ON FUNCTION public.my_role(bigint) TO authenticated, anon;
 
 CREATE OR REPLACE FUNCTION priv.srd35_maneuver_profile(bigint,text)
 RETURNS jsonb LANGUAGE sql STABLE
-AS $$$ SELECT jsonb_build_object('ok',true) $$$;
+AS $ SELECT jsonb_build_object('ok',true) $;
 REVOKE ALL ON FUNCTION priv.srd35_maneuver_profile(bigint,text) FROM PUBLIC, authenticated, anon;
 
 CREATE OR REPLACE FUNCTION priv.srd_grid_footprint_distance_ft(integer,integer,integer,integer,integer,integer)
 RETURNS integer LANGUAGE sql IMMUTABLE
-AS $$$ SELECT 5 $$$;
+AS $ SELECT 5 $;
 REVOKE ALL ON FUNCTION priv.srd_grid_footprint_distance_ft(integer,integer,integer,integer,integer,integer) FROM PUBLIC, authenticated, anon;
 
 CREATE OR REPLACE FUNCTION priv.srd_token_grid_footprint(bigint,text)
 RETURNS integer LANGUAGE sql STABLE
-AS $$$ SELECT 1 $$$;
+AS $ SELECT 1 $;
 REVOKE ALL ON FUNCTION priv.srd_token_grid_footprint(bigint,text) FROM PUBLIC, authenticated, anon;
 
 CREATE OR REPLACE FUNCTION priv.srd_parse_natural_attack_list(text)
@@ -61,6 +61,10 @@ GRANT EXECUTE ON FUNCTION priv.fixture_condition_caller(bigint,text,text,text) T
 
 CREATE TABLE public.characters(id text, campaign_id bigint, user_id uuid);
 CREATE TABLE public.members(campaign_id bigint, user_id uuid, role text);
+CREATE TABLE public.srd_character_weapon_instances(instance_id uuid, character_id text, equipment_id text, equipado boolean, hand_slot text);
+CREATE TABLE public.srd_equipment(id text, detalhes jsonb);
+CREATE TABLE public.srd_character_equipment(character_id text, equipment_id text, equipado boolean, hand_slot text);
+CREATE TABLE public.srd_attack_sequences(id uuid, weapon_hand_slot text, weapon_end text);
 
 CREATE OR REPLACE FUNCTION priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(
  bigint,text,text,text,uuid,text,text
@@ -68,6 +72,30 @@ CREATE OR REPLACE FUNCTION priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(
 SET search_path TO public, priv, pg_temp
 AS $$ SELECT '{}'::jsonb $$;
 GRANT EXECUTE ON FUNCTION priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(bigint,text,text,text,uuid,text,text)
+TO authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION priv.iniciar_sequencia_ataque_iterativo_srd_8_impl(
+ bigint,text,text,text,uuid,text,text,integer
+) RETURNS jsonb LANGUAGE sql SECURITY DEFINER
+SET search_path TO public, priv, pg_temp
+AS $ SELECT '{}'::jsonb $;
+GRANT EXECUTE ON FUNCTION priv.iniciar_sequencia_ataque_iterativo_srd_8_impl(bigint,text,text,text,uuid,text,text,integer)
+TO authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.iniciar_sequencia_ataque_iterativo_srd(
+ bigint,text,text,text,uuid,text,text
+) RETURNS jsonb LANGUAGE sql SECURITY INVOKER
+SET search_path TO pg_catalog, public, priv, pg_temp
+AS $ SELECT '{}'::jsonb $;
+GRANT EXECUTE ON FUNCTION public.iniciar_sequencia_ataque_iterativo_srd(bigint,text,text,text,uuid,text,text)
+TO authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.iniciar_sequencia_ataque_iterativo_srd(
+ bigint,text,text,text,uuid,text,text,integer
+) RETURNS jsonb LANGUAGE sql SECURITY INVOKER
+SET search_path TO pg_catalog, public, priv, pg_temp
+AS $ SELECT '{}'::jsonb $;
+GRANT EXECUTE ON FUNCTION public.iniciar_sequencia_ataque_iterativo_srd(bigint,text,text,text,uuid,text,text,integer)
 TO authenticated, service_role;
 
 
@@ -86,7 +114,7 @@ AS $$ SELECT priv.srd_feat_saving_throw_modifier('[]'::jsonb,'fortitude') $$;
 CREATE OR REPLACE FUNCTION public.srd_consultar_modificadores_manobra_srd(
   bigint,text,text,text,boolean,boolean
 ) RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER
-AS $$fn$
+AS $fn$
 BEGIN
   IF auth.uid() IS NULL OR public.my_role($1) IS DISTINCT FROM 'GM' THEN
     RAISE EXCEPTION 'Somente o Mestre';
@@ -96,11 +124,11 @@ BEGIN
   PERFORM priv.srd_token_grid_footprint($1,$2);
   RETURN '{"ok":true}'::jsonb;
 END
-$fn$$;
+$fn$;
 
 CREATE OR REPLACE FUNCTION public.srd_listar_ataques_naturais_oportunidade_srd(bigint,text)
 RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER
-AS $$fn$
+AS $fn$
 BEGIN
   IF auth.uid() IS NULL OR public.my_role($1) IS DISTINCT FROM 'GM' THEN
     RAISE EXCEPTION 'Somente o Mestre';
@@ -109,7 +137,7 @@ BEGIN
   PERFORM priv.srd_parse_natural_attack_list('bite');
   RETURN '{"ok":true}'::jsonb;
 END
-$fn$$;
+$fn$;
 
 GRANT EXECUTE ON FUNCTION public.srd_consultar_modificadores_manobra_srd(bigint,text,text,text,boolean,boolean) TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.srd_listar_ataques_naturais_oportunidade_srd(bigint,text) TO authenticated, service_role;
@@ -158,9 +186,31 @@ BEGIN
     PERFORM priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(
       1,'not-owned','target','atk-corpo','11111111-1111-4111-8111-111111111111'::uuid,'main_hand',NULL
     );
-    RAISE EXCEPTION 'Authenticated unexpectedly passed iterative attack ownership guard';
+    RAISE EXCEPTION 'Authenticated unexpectedly called private 7-argument helper';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    PERFORM priv.iniciar_sequencia_ataque_iterativo_srd_8_impl(
+      1,'not-owned','target','atk-corpo','11111111-1111-4111-8111-111111111111'::uuid,'main_hand',NULL,0
+    );
+    RAISE EXCEPTION 'Authenticated unexpectedly called private 8-argument helper';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    PERFORM public.iniciar_sequencia_ataque_iterativo_srd(
+      1,'not-owned','target','atk-corpo','11111111-1111-4111-8111-111111111111'::uuid,'main_hand',NULL
+    );
+    RAISE EXCEPTION 'Public 7-argument wrapper unexpectedly accepted unowned character';
   EXCEPTION WHEN raise_exception THEN
-    IF SQLERRM='Authenticated unexpectedly passed iterative attack ownership guard' THEN RAISE; END IF;
+    IF SQLERRM='Public 7-argument wrapper unexpectedly accepted unowned character' THEN RAISE; END IF;
+  END;
+  BEGIN
+    PERFORM public.iniciar_sequencia_ataque_iterativo_srd(
+      1,'not-owned','target','atk-corpo','11111111-1111-4111-8111-111111111111'::uuid,'main_hand',NULL,0
+    );
+    RAISE EXCEPTION 'Public 8-argument wrapper unexpectedly accepted unowned character';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM='Public 8-argument wrapper unexpectedly accepted unowned character' THEN RAISE; END IF;
   END;
   BEGIN
     PERFORM priv.srd35_maneuver_profile(1,'a');
