@@ -4,11 +4,11 @@
 
 | Métrica | Quantidade |
 |---|---:|
-| Arquivos em supabase/migrations | 966 |
-| Registros remotos | 966 |
-| Arquivos byte a byte idênticos a statements[1] | 966 |
+| Arquivos em supabase/migrations (branch atual) | 969 |
+| Registros remotos em `schema_migrations` | 966 |
+| Arquivos correspondentes byte a byte às versões remotas (`statements[1]`) | 966 |
 | Versões remotas sem arquivo local | 0 |
-| Arquivos locais sem versão remota na pasta de migrations | 0 |
+| Arquivos locais sem versão remota na pasta de migrations | 3 (candidatas de segurança, ainda não aplicadas) |
 | Variantes locais de versões aplicadas preservadas em arquivo | 103 |
 | Migrations locais sem versão remota preservadas em quarentena | 41 |
 | Nomes duplicados no ledger remoto | 2 |
@@ -22,7 +22,7 @@ A inspeção de `information_schema.columns` confirmou que `supabase_migrations.
 - Foram recuperados 326 arquivos ausentes, usando timestamp, nome e SQL de statements[1]: 72 de movimento/manobras/AOO e 254 de outros domínios.
 - A comparação byte a byte identificou 103 variantes locais de versões já aplicadas. As 103 foram preservadas em docs/migration_reconciliation/local_variants/ e os caminhos de supabase/migrations foram alinhados ao SQL do ledger. A análise por tokens identificou 13 diferenças semânticas; os 90 restantes eram equivalentes após normalização de comentários, espaços, casts redundantes em defaults e terminadores.
 - Os 41 arquivos locais sem versão remota foram preservados em docs/migration_reconciliation/unapplied_local/ e retirados de supabase/migrations para impedir que um db push os aplicasse por engano. Nenhum conteúdo foi descartado.
-- A pasta supabase/migrations agora contém exatamente 966 arquivos, um por versão remota, e todos os 966 hashes Git coincidem byte a byte com statements[1].
+- Na conclusão da reconciliação, `supabase/migrations` continha exatamente 966 arquivos, um por versão remota, e todos os 966 hashes Git coincidiam byte a byte com `statements[1]`.
 - Toda a recuperação e reconciliação ocorreu somente no GitHub. Nenhuma migration foi executada, reaplicada ou alterada no Supabase remoto.
 
 ## Inventário histórico anterior à recuperação — snapshot de 2026-11-09
@@ -488,3 +488,23 @@ A listagem da raiz e de `supabase/` foi revisada para localizar uma base SQL ant
 
 **Próxima ação técnica sem tocar produção:** recuperar uma definição estrutural confiável do schema-base (backup/schema-only dump, histórico SQL do projeto ou export do catálogo atual com trilha de proveniência); comparar com o catálogo remoto e separar objetos pré-migration dos criados pelas 966 migrations. Um `pg_dump --schema-only` do estado atual é evidência útil para comparação, mas sozinho não prova qual era o schema antes da primeira migration. Depois, reconstruir o bootstrap histórico em branch/stack descartável e executar replay integral + comparação de catálogo.
 
+
+
+## Delta posterior à reconciliação — 2026-11-10
+
+A reconciliação histórica de 966 versões permanece válida para o conjunto já aplicado no projeto. Depois dela, três migrations de endurecimento foram adicionadas à branch e ainda não existem no ledger remoto:
+
+- `20261110150000_fix_invoker_maneuver_catalog_helper_permissions.sql`
+- `20261110160000_revoke_public_feat_saving_throw_helper.sql`
+- `20261110170000_lock_down_internal_helper_execute.sql`
+
+Estado verificado por consulta read-only:
+
+- Branch: 969 arquivos SQL em `supabase/migrations`.
+- Supabase remoto: 966 versões distintas, da `20261031160944` à `20261109005941`.
+- Delta: exatamente as três migrations acima, ainda pendentes.
+- Nenhuma dessas migrations foi aplicada no projeto remoto.
+
+O workflow de replay foi corrigido para derivar a contagem esperada dos arquivos presentes, em vez de manter o número histórico 966 fixo. A execução no commit anterior falhou antes de iniciar o stack porque a contagem havia ficado desatualizada. Uma tentativa anterior de replay em banco vazio também confirmou que a primeira migration pressupõe `public.campaigns` já existente. O repositório ainda não contém um bootstrap confiável desse schema.
+
+**Regra:** não inventar schema mínimo nem executar as três migrations no remoto. O replay integral só pode ser considerado válido depois de recuperar um bootstrap/schema-only dump com proveniência e reproduzir o estado completo em PostgreSQL descartável.
