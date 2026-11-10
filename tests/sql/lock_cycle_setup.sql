@@ -184,3 +184,15 @@ CREATE TABLE lock_fixture.gm_gate_removals (
   PRIMARY KEY (campaign_id,target_id)
 );
 INSERT INTO lock_fixture.gm_gate_removals VALUES (1,'target-a',true,true);
+
+
+-- Synthetic model of the two-phase campaign deletion marker lock order.
+-- Production prepare locks campaign then upserts this row; finalize locks this
+-- row first and then campaign. This is intentionally disposable.
+CREATE TABLE lock_fixture.campaign_deletion_cleanup (
+  campaign_id integer PRIMARY KEY REFERENCES lock_fixture.campaigns(id),
+  owner_id text NOT NULL,
+  requested_at timestamptz NOT NULL DEFAULT now()
+);
+INSERT INTO lock_fixture.campaign_deletion_cleanup(campaign_id,owner_id)
+VALUES (1,'owner-a');
