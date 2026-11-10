@@ -51,8 +51,8 @@ BEGIN
     RAISE EXCEPTION 'É necessário estar autenticado.';
   END IF;
 
-  -- This helper is also directly executable by authenticated clients. Check
-  -- character ownership and campaign membership before reading/locking gear.
+  -- Keep this ownership check as defense in depth even though direct
+  -- authenticated EXECUTE is revoked and clients enter through the public wrapper.
   IF NOT EXISTS (
     SELECT 1
     FROM public.characters ch
