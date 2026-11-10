@@ -1,4 +1,4 @@
-# Arquitetura de CI e testes — estado observado em 2026-11-09
+# Arquitetura de CI e testes — estado observado em 2026-11-10
 
 ## Workflows existentes
 
@@ -8,14 +8,13 @@
 | `mesa-syntax-check.yml` | push/PR em mesa ou workflow | Sintaxe de JavaScript inline em `mesa.html`, Node 20 | Não valida fluxo funcional, banco ou concorrência |
 | `validate-static.yml` | push/PR em HTML/JS/scripts e dispatch | Sintaxe de 5 páginas + `vinculo-ui.js`; invariantes do dado manual e chamadas proibidas de `roll_dice`; Node 22 | Sobrepõe parte dos dois workflows de sintaxe; não valida SQL |
 | `pages-smoke-check.yml` | push em páginas públicas e dispatch | HTTP 200, título, idioma, viewport e corpo não vazio via Playwright 1.55.0 | Só roda contra GitHub Pages publicado; não autentica, não interage com Supabase e não altera dados |
-
 | `postgres-fixture-tests.yml` | PR/push em `tests/sql/**` e dispatch | Executa fixtures SQL sintéticas em PostgreSQL 17 descartável | Não executa RPCs reais, Auth, PostgREST ou RLS do projeto |
 | `supabase-migration-replay.yml` | PR em `supabase/migrations/**` e dispatch | Inicializa Supabase local descartável e tenta reproduzir todas as migrations versionadas | Bloqueado pela ausência de bootstrap/schema-base; não conecta ao remoto |
 
 ## Observações confirmadas
 
 - Existem seis workflows no repositório.
-- Não existe `supabase/config.toml`, `package.json`, diretório `tests/` nem configuração Playwright/Vitest/Jest dedicada ao banco.
+- Não existe `supabase/config.toml` versionado nem `package.json`; há fixtures em `tests/sql/`, mas não uma configuração Playwright/Vitest/Jest dedicada ao banco.
 - O smoke test instala Playwright no próprio job sem lockfile de dependências.
 - Node 20 é usado em dois workflows; Node 22 em `validate-static`. A versão de Node não está centralizada.
 - A verificação de dado manual é um contrato de produto importante: impede regressões que façam rolagens automáticas e confirma a integração de iniciativa/ataque com o dado físico/3D.
