@@ -191,7 +191,9 @@ INSERT INTO lock_fixture.gm_gate_removals VALUES (1,'target-a',true,true);
 -- Production prepare locks campaign then upserts this row; finalize locks this
 -- row first and then campaign. This is intentionally disposable.
 CREATE TABLE lock_fixture.campaign_deletion_cleanup (
-  campaign_id integer PRIMARY KEY REFERENCES lock_fixture.campaigns(id) ON DELETE CASCADE,
+  -- Intentionally no FK: production cleanup marker has no campaign FK and may
+  -- survive an interrupted/legacy finalization for explicit retry.
+  campaign_id integer PRIMARY KEY,
   owner_id text NOT NULL,
   requested_at timestamptz NOT NULL DEFAULT now()
 );
@@ -231,15 +233,21 @@ LANGUAGE plpgsql VOLATILE AS $$
 DECLARE
   v_owner text;
   v_marker_owner text;
+  v_campaign_exists boolean;
 BEGIN
+  -- Preserve the global order when the campaign still exists.
   SELECT owner_id INTO v_owner
   FROM lock_fixture.campaigns
   WHERE id=p_campaign_id
   FOR UPDATE;
-  IF NOT FOUND OR v_owner IS DISTINCT FROM p_owner_id THEN
+  v_campaign_exists := FOUND;
+
+  IF v_campaign_exists AND v_owner IS DISTINCT FROM p_owner_id THEN
     RETURN false;
   END IF;
 
+  -- A residual marker can outlive a missing campaign; lock and validate it
+  -- only after the campaign lookup/lock attempt.
   SELECT owner_id INTO v_marker_owner
   FROM lock_fixture.campaign_deletion_cleanup
   WHERE campaign_id=p_campaign_id
@@ -255,8 +263,10 @@ BEGIN
     RETURN false;
   END IF;
 
+  IF v_campaign_exists THEN
+    DELETE FROM lock_fixture.campaigns WHERE id=p_campaign_id;
+  END IF;
   DELETE FROM lock_fixture.campaign_deletion_cleanup
   WHERE campaign_id=p_campaign_id AND owner_id=p_owner_id;
-  DELETE FROM lock_fixture.campaigns WHERE id=p_campaign_id;
   RETURN true;
 END $$;
