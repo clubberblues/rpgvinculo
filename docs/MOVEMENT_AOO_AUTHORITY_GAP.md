@@ -396,3 +396,17 @@ A proposta de revogar `USAGE` do schema `priv` para authenticated não pode ser 
 - fluxos AOO/manobras como `public.srd_reservar_ataque_oportunidade_srd` OID 26917, `public.srd_reservar_reacao_movimento_aoo_srd` OID 26971, `public.srd_iniciar_encontrao_srd` OID 27171, `public.srd_resolver_encontrao_srd` OID 27172, `public.srd_iniciar_derrubar_com_aoo_srd` OID 27144, `public.srd_resolver_derrubar_apos_aoo_srd` OID 27145, e `public.srd_finalizar_movimento_aoo_pendente_srd` (wrapper é SECURITY DEFINER, mas foi incluído na cadeia para validação).
 
 O catálogo também retornou outras RPCs públicas invoker que dependem de `priv` em combate/NPC/ataque iterativo. Portanto, revogar USAGE/EXECUTE imediatamente pode quebrar operações legítimas. A correção segura exige classificar todas as RPCs públicas invoker que chamam `priv`, converter wrappers para SECURITY DEFINER somente após revisar `search_path`, autorização e ownership, ou mover a lógica interna para um mecanismo que não exija privilégio do chamador; então restringir o schema e validar todas as jornadas. O achado é uma exposição/grant excessivo confirmado, mas o remédio precisa preservar a cadeia invoker existente.
+
+
+### Mapeamento quantitativo da cadeia `public → priv` (2026-11-10)
+
+Nova consulta ao catálogo remoto, restringindo a resolução dos alvos ao schema `priv`, confirmou que a cadeia é muito maior que os wrappers de movimento/AOO inicialmente exemplificados:
+
+- 70 funções distintas no schema `priv` são chamadas por funções `public`.
+- 35 funções públicas distintas com `SECURITY INVOKER` chamam implementações em `priv`; essas funções invoker têm `EXECUTE` para authenticated (a consulta anterior encontrou 40 linhas de chamadas, contando múltiplas chamadas/overloads).
+- Existem também wrappers públicos `SECURITY DEFINER` com `search_path` fixado; na amostra agregada, não foi encontrado caller definer sem `search_path` explícito.
+- Entre os wrappers invoker estão movimento GM/jogador, ataque iterativo NPC, dano NPC/GM, avanço de nível, ações de turno, descanso NPC e rotas AOO/manobras. Portanto, a transição para um schema realmente privado é uma migração de arquitetura de RPC, não uma simples mudança de grants.
+
+**Estratégia de migração segura (proposta):** (1) materializar uma matriz exata por assinatura com owner, `prosecdef`, `proconfig`, grants, chamadas internas e consumidor frontend; (2) para cada wrapper invoker cliente, avaliar a conversão para `SECURITY DEFINER` com owner controlado, `search_path` fixo e autorização explícita antes de qualquer acesso; (3) manter invoker apenas quando não houver dependência de privilégio no schema interno ou redesenhar a API; (4) revogar EXECUTE cliente das implementações internas e USAGE do schema `priv` somente depois de converter toda a cadeia e testar todos os fluxos; (5) executar regressão negativa com chamadas diretas aos nomes `priv.*` para confirmar negação e regressão positiva via wrappers públicos. Não converter automaticamente os 35 wrappers em lote: cada um precisa de revisão de autorização e do comportamento atual.
+
+Nenhuma alteração de ACL ou função foi aplicada. A lista e os números são um retrato do catálogo remoto no momento da consulta.
