@@ -1,5 +1,5 @@
--- Narrow direct EXECUTE on internal helpers and add the missing caller guard
--- to the 7-argument iterative-attack implementation.
+-- Narrow direct EXECUTE on internal helpers and route iterative attacks through
+-- authenticated, ownership-checked public wrappers.
 BEGIN;
 
 REVOKE EXECUTE ON FUNCTION priv.srd_condition_has_flag(bigint,text,text,text)
@@ -15,6 +15,16 @@ GRANT EXECUTE ON FUNCTION priv.srd_feat_saving_throw_modifier(jsonb,text)
 REVOKE EXECUTE ON FUNCTION priv.srd_parse_natural_attack_list(text)
   FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION priv.srd_parse_natural_attack_list(text)
+  TO service_role;
+
+REVOKE EXECUTE ON FUNCTION priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(bigint,text,text,text,uuid,text,text)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(bigint,text,text,text,uuid,text,text)
+  TO service_role;
+
+REVOKE EXECUTE ON FUNCTION priv.iniciar_sequencia_ataque_iterativo_srd_8_impl(bigint,text,text,text,uuid,text,text,integer)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION priv.iniciar_sequencia_ataque_iterativo_srd_8_impl(bigint,text,text,text,uuid,text,text,integer)
   TO service_role;
 
 CREATE OR REPLACE FUNCTION priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(
