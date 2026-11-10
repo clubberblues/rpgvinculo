@@ -391,3 +391,6 @@ Consulta read-only atual confirmou:
 - O agregador invoker depende hoje do privilégio EXECUTE do usuário autenticado no helper. Revogar a permissão diretamente, sem mudar o modelo de execução do agregador, quebraria a criação legítima.
 
 Correção candidata, ainda não implementada: tornar o agregador o único entrypoint autenticado e privilegiado com checagem explícita de `auth.uid()`, `SECURITY DEFINER`, `search_path` fixo e referências qualificadas; em seguida revogar EXECUTE authenticated dos dois overloads internos (ou movê-los para schema não exposto) e conceder execução somente ao owner/role interna necessária. A migration deve preservar a assinatura chamada por `ficha.html`, verificar ACL efetiva herdada de PUBLIC/default privileges e testar transação completa/rollback de todas as escolhas. Não aplicar antes de reconciliar o histórico das migrations e validar os outros callers SQL transitivos.
+
+
+- CI #208 [42743669088](https://github.com/clubberblues/rpgvinculo/actions/runs/42743669088) concluiu **success** no commit `cc1c5c7c179e289afd96a097c763884aa55bc63d`. O log confirma 12 assertions aprovadas em 11 tabelas temporárias, inclusive a sequência NPC remanescente vinculada à ficha-fonte e a FK `ON DELETE RESTRICT`, com ROLLBACK ao final. A validação continua sintética, sem executar RPCs de produção.
