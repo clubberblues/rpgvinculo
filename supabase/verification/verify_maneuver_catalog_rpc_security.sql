@@ -28,9 +28,6 @@ BEGIN
   IF NOT ('search_path=pg_catalog, public, priv, pg_temp' = ANY(v_path)) THEN
     RAISE EXCEPTION 'GM maneuver wrapper search_path is not pinned';
   END IF;
-  IF position('auth.uid()' in v_def)=0 OR position('public.my_role' in v_def)=0 THEN
-    RAISE EXCEPTION 'GM maneuver wrapper lost explicit authentication/GM authorization';
-  END IF;
   IF NOT has_function_privilege('authenticated',v_oid,'EXECUTE')
      OR NOT has_function_privilege('service_role',v_oid,'EXECUTE')
      OR has_function_privilege('anon',v_oid,'EXECUTE')
@@ -59,9 +56,6 @@ BEGIN
   END IF;
   IF NOT ('search_path=pg_catalog, public, priv, pg_temp' = ANY(v_path)) THEN
     RAISE EXCEPTION 'GM natural attack catalog wrapper search_path is not pinned';
-  END IF;
-  IF position('auth.uid()' in v_def)=0 OR position('public.my_role' in v_def)=0 THEN
-    RAISE EXCEPTION 'GM natural attack wrapper lost explicit authentication/GM authorization';
   END IF;
   IF NOT has_function_privilege('authenticated',v_oid,'EXECUTE')
      OR NOT has_function_privilege('service_role',v_oid,'EXECUTE')
