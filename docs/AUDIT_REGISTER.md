@@ -534,3 +534,9 @@ A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24
 
 
 - **Bypass reproduzido em fixture descartável:** tests/sql/aoo_guard_duplicate_identity_repro.sql copia o trigger remoto e confirma que dois tokens com a mesma identidade (id/key) passam quando a primeira cópia permanece na origem e a segunda muda de coordenadas; o LIMIT 1 só compara a primeira. A mesma fixture confirma que outro token (ameaçador) pode mudar coordenadas enquanto o mover está pendente. Runs #284/#285/#293 passaram como reproduções intencionais, não como correção de segurança. Não executa a RPC instalada nem comprova exploração via API.
+
+
+### CI — replay de migrations e harness de AOO (2026-11-10)
+- PostgreSQL fixtures run [42808666665](https://github.com/clubberblues/rpgvinculo/actions/runs/42808666665): success. Logs confirmiram reprodução de duplicação de identidade do mover, alteração de coordenadas do ameaçador durante pending, footprint, lifecycle NPC e testes sintéticos de lock/autorização/Storage. A fixture AOO é reproducer intencional, não aprovação de segurança.
+- Replay integral [42808666675](https://github.com/clubberblues/rpgvinculo/actions/runs/42808666675): failure na primeira migration 20261031160944, SQLSTATE 42P01, relation public.campaigns does not exist. O stack era local descartável e foi parado pelo cleanup; nenhuma credencial/projeto Supabase remoto foi configurado.
+- Root cause e plano de recuperação em docs/MIGRATION_RECONCILIATION.md. PR segue draft e não mesclado.
