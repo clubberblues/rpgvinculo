@@ -442,3 +442,15 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - Helpers iterativos de ataque de 7/8 argumentos deixaram de ser API cliente. Wrappers públicos 7/8 foram convertidos em SECURITY DEFINER, com search_path fixo e checagem de usuário, propriedade da ficha e membership PLAYER antes de chamar os helpers.
 - O helper de 7 argumentos também recebeu checagem redundante de propriedade antes de ler/bloquear arma.
 - Fixture e verificação atualizados. Estado permanece branch-only; CI e regressão real autenticada ainda pendentes.
+
+
+## Atualização de execução — 2026-11-10 (segurança de helpers e CI)
+
+- Head da branch no fechamento desta atualização: `baa126724cdb2dc641197ace28458fea9ccdf29f`.
+- PR #74 permanece aberto, draft e não mesclado.
+- A branch contém 969 migrations: 966 correspondem exatamente ao ledger remoto e três candidatas novas (1500/1600/1700) permanecem não aplicadas.
+- O workflow de replay foi ajustado para derivar a contagem de migrations do diretório. O replay integral continua bloqueado pela ausência do bootstrap/schema-base anterior às migrations incrementais; não criar schema mínimo fictício.
+- No CI do commit `d35f8f4`, validação estática, JavaScript da aplicação e JavaScript da mesa passaram. A fixture PostgreSQL falhou por uma asserção textual incorreta (`FROM public.members` em vez de `JOIN public.members`); a verificação foi corrigida e reforçada para validar ownership, campaign_id, papel PLAYER e search_path do helper interno.
+- A fixture foi ampliada para negar acesso ao helper por authenticated, negar ficha alheia, campanha incorreta, identidade de usuário incorreta e ausência de membership PLAYER, mantendo um controle positivo de service_role para ficha própria.
+- Commits posteriores foram gravados pela API do GitHub, mas não há Actions run associado ao head atual. Portanto, essas correções ainda não têm resultado de CI confirmado; o run antigo não é evidência de validação do head atual.
+- Nenhuma migration, ACL, função, policy, dado ou campanha foi alterada no Supabase remoto. Não houve deploy ou merge.
