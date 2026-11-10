@@ -308,3 +308,12 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - Contrato, matriz de autorização, integração Storage API, compensação de upload e esses novos achados foram consolidados em docs/STORAGE_ACCESS_CONTRACT.md. Commit documental: c97e36a8d3ad9a8852e85b861d1a22cae2468949.
 - Nenhuma RPC foi chamada; nenhuma migration, função, ACL, policy, dado ou arquivo Storage de produção foi alterado. TESTE 2 permanece intocado.
 - Próxima unidade: fechar o contrato transacional do finalizador (campaign → cleanup, revalidação, Storage zero-check e retry), mapear concorrência upload/finalização e desenhar testes Storage API autenticados em projeto descartável. Não implantar até reconciliar migrations.
+
+
+## Atualização — contrato de concorrência Storage/cleanup (2026-11-10)
+
+- Refinado o risco: verificar apenas ausência do marcador na policy não impede upload que já passou na checagem de autorização de confirmar depois da limpeza. O caminho de INSERT/UPDATE precisa manter campaign KEY SHARE durante a transação Storage; preparação/finalização usam campaign FOR UPDATE antes do marcador. Assim, upload anterior termina antes de o marcador ser criado; upload posterior espera e observa o marcador.
+- Documentado o contrato em docs/STORAGE_ACCESS_CONTRACT.md. Adicionado modelo descartável PL/pgSQL VOLATILE + tabela fictícia em tests/sql/lock_cycle_setup.sql e duas interleavings concorrentes no lock_cycle_test.sh; README deixa explícito que não executa RLS nem Storage API real.
+- Commits desta unidade: c97e36a8d3ad9a8852e85b861d1a22cae2468949 (finalizador/bypass), dbd6580f24ce895cced69d70596d48418d7ea3c1 (lock handshake), ddded40b2b3626badbf6b0d74d4a7ba67f97678 (setup fixture), bfa6c1d223a515811fe675f50b35fe5287f1164f e 7ca8e00fe55fc6530642fc2099d3c392a0b6033d (teste), 054d8b92a7f928937ead19ee08ed25eac95900cb e 2df3a62565d36ef470208566fa610d6fbe597ba5 (documentação).
+- A fixture testa apenas a semântica de locks PostgreSQL em tabelas descartáveis. Não executa Storage API, RLS, RPCs ou bucket real; integração autenticada continua bloqueadora antes de migration/deploy.
+- Nenhuma alteração Supabase foi aplicada. TESTE 2 permanece intocado.
