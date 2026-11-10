@@ -631,3 +631,11 @@ A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24
 - `srd_resolve_pending_spell_save` bloqueia pedido de resistência antes da campanha e, no ramo de quebra de condição, atualiza diretamente a condição sem campaign lock. A cadeia de aplicação de efeitos ainda exige revisão transitiva para ordenar campanha antes de pedido/condição.
 - `srd_resolve_dying_round` confirma ordem personagem → ficha → campanha → condição, incluindo rodada consultada somente depois de segurar os locks anteriores. Refatorar para campaign-first e revalidar turno/rodada após lock.
 - Inventário de writers deve incluir descansos, resistências, estabilização e efeitos derivados, não só rotas GM de administração. Nenhuma execução mutável remota.
+
+
+### Magias pendentes: ordem pedido → campanha (2026-11-10)
+
+- `priv.srd_apply_pending_spell_resolution` bloqueia o pedido de magia e depois a campanha; as RPCs públicas de resistência a magia/resistência de salvamento também bloqueiam o pedido primeiro e podem delegar a esse helper.
+- `srd_resolve_pending_spell_save` também encerra condição diretamente sem lock da campanha no ramo de quebra de condição. Isso altera a fonte consultada pela elegibilidade AOO.
+- Divergência do protocolo campaign-first confirmada por leitura estática; ainda não foi demonstrado ciclo de deadlock real para um mesmo pedido, portanto registrar como risco/ordem inconsistente, não como deadlock ocorrido.
+- Refatorar para campaign lock → revalidar pedido → lock do pedido → aplicar consequência, mantendo resolução idempotente. Nenhuma mutação remota executada.
