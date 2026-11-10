@@ -360,46 +360,32 @@ run_expected_serialized_owner_transfer
 # GM-role TOCTOU in authenticated inventory RPCs. This models stale role
 # validation around the campaign lock; it does not execute Supabase RPCs.
 run_expected_stale_gm_inventory_race() {
-  local tmp role item_count sa sb
+  local tmp role item_count sa sb seen
   tmp="$(mktemp -d)"
-  psql -v ON_ERROR_STOP=1 >"$tmp/a.log" 2>&1 <<'SQL' &
-DO $$
-DECLARE v_role text;
-BEGIN
-  SELECT role INTO v_role FROM lock_fixture.gm_gate_members
-   WHERE campaign_id=1 AND user_id='gm-a';
-  IF v_role IS DISTINCT FROM 'GM' THEN RAISE EXCEPTION 'initial GM check failed'; END IF;
-END $$;
-INSERT INTO lock_fixture.gm_gate_events(event_name) VALUES ('stale-role-checked');
-DO $gate$
-DECLARE v_attempt integer:=0;
-BEGIN
-  LOOP
-    EXIT WHEN EXISTS (SELECT 1 FROM lock_fixture.gm_gate_events WHERE event_name='gm-revoked');
-    v_attempt:=v_attempt+1;
-    IF v_attempt>150 THEN RAISE EXCEPTION 'timed out waiting for GM revocation'; END IF;
-    PERFORM pg_sleep(0.02);
-  END LOOP;
-END $gate$;
-UPDATE lock_fixture.gm_gate_inventory SET item_count=item_count+1
- WHERE campaign_id=1 AND user_id='player-x';
-SQL
+  (
+    psql -v ON_ERROR_STOP=1 -c "DO \$\$ DECLARE v_role text; BEGIN SELECT role INTO v_role FROM lock_fixture.gm_gate_members WHERE campaign_id=1 AND user_id='gm-a'; IF v_role IS DISTINCT FROM 'GM' THEN RAISE EXCEPTION 'initial GM check failed'; END IF; END \$\$;"
+    psql -v ON_ERROR_STOP=1 -c "INSERT INTO lock_fixture.gm_gate_events(event_name) VALUES ('stale-role-checked')"
+    seen=""
+    for _ in $(seq 1 150); do
+      seen="$(psql -Atq -c "SELECT EXISTS(SELECT 1 FROM lock_fixture.gm_gate_events WHERE event_name='gm-revoked')")"
+      [[ "$seen" == "t" ]] && break
+      sleep 0.02
+    done
+    [[ "$seen" == "t" ]] || { echo "timed out waiting for GM revocation"; exit 1; }
+    psql -v ON_ERROR_STOP=1 -c "UPDATE lock_fixture.gm_gate_inventory SET item_count=item_count+1 WHERE campaign_id=1 AND user_id='player-x'"
+  ) >"$tmp/a.log" 2>&1 &
   local a=$!
-  psql -v ON_ERROR_STOP=1 >"$tmp/b.log" 2>&1 <<'SQL' &
-DO $gate$
-DECLARE v_attempt integer:=0;
-BEGIN
-  LOOP
-    EXIT WHEN EXISTS (SELECT 1 FROM lock_fixture.gm_gate_events WHERE event_name='stale-role-checked');
-    v_attempt:=v_attempt+1;
-    IF v_attempt>150 THEN RAISE EXCEPTION 'timed out waiting for stale role check'; END IF;
-    PERFORM pg_sleep(0.02);
-  END LOOP;
-END $gate$;
-UPDATE lock_fixture.gm_gate_members SET role='PLAYER'
- WHERE campaign_id=1 AND user_id='gm-a';
-INSERT INTO lock_fixture.gm_gate_events(event_name) VALUES ('gm-revoked');
-SQL
+  (
+    seen=""
+    for _ in $(seq 1 150); do
+      seen="$(psql -Atq -c "SELECT EXISTS(SELECT 1 FROM lock_fixture.gm_gate_events WHERE event_name='stale-role-checked')")"
+      [[ "$seen" == "t" ]] && break
+      sleep 0.02
+    done
+    [[ "$seen" == "t" ]] || { echo "timed out waiting for stale role check"; exit 1; }
+    psql -v ON_ERROR_STOP=1 -c "UPDATE lock_fixture.gm_gate_members SET role='PLAYER' WHERE campaign_id=1 AND user_id='gm-a'"
+    psql -v ON_ERROR_STOP=1 -c "INSERT INTO lock_fixture.gm_gate_events(event_name) VALUES ('gm-revoked')"
+  ) >"$tmp/b.log" 2>&1 &
   local b=$!
   set +e
   wait "$a"; sa=$?
@@ -422,31 +408,10 @@ run_expected_serialized_gm_inventory_rejection() {
   local tmp role item_count sa sb
   tmp="$(mktemp -d)"
   psql -v ON_ERROR_STOP=1 -c "UPDATE lock_fixture.gm_gate_members SET role='GM' WHERE campaign_id=1 AND user_id='gm-a'; UPDATE lock_fixture.gm_gate_inventory SET item_count=0 WHERE campaign_id=1 AND user_id='player-x'; DELETE FROM lock_fixture.gm_gate_events;" >/dev/null
-  psql -v ON_ERROR_STOP=1 >"$tmp/a.log" 2>&1 <<'SQL' &
-BEGIN;
-SELECT id FROM lock_fixture.gm_gate_campaigns WHERE id=1 FOR UPDATE;
-SELECT pg_sleep(0.4);
-UPDATE lock_fixture.gm_gate_members SET role='PLAYER'
- WHERE campaign_id=1 AND user_id='gm-a';
-COMMIT;
-SQL
+  psql -v ON_ERROR_STOP=1 -c "BEGIN; SELECT id FROM lock_fixture.gm_gate_campaigns WHERE id=1 FOR UPDATE; SELECT pg_sleep(0.4); UPDATE lock_fixture.gm_gate_members SET role='PLAYER' WHERE campaign_id=1 AND user_id='gm-a'; COMMIT;" >"$tmp/a.log" 2>&1 &
   local a=$!
   sleep 0.1
-  psql -v ON_ERROR_STOP=1 >"$tmp/b.log" 2>&1 <<'SQL' &
-SELECT pg_sleep(0.1);
-BEGIN;
-SELECT id FROM lock_fixture.gm_gate_campaigns WHERE id=1 FOR UPDATE;
-DO $$
-DECLARE v_role text;
-BEGIN
-  SELECT role INTO v_role FROM lock_fixture.gm_gate_members
-   WHERE campaign_id=1 AND user_id='gm-a';
-  IF v_role IS DISTINCT FROM 'GM' THEN RAISE EXCEPTION 'GM authorization lost'; END IF;
-END $$;
-UPDATE lock_fixture.gm_gate_inventory SET item_count=item_count+1
- WHERE campaign_id=1 AND user_id='player-x';
-COMMIT;
-SQL
+  psql -v ON_ERROR_STOP=1 -c "SELECT pg_sleep(0.1); BEGIN; SELECT id FROM lock_fixture.gm_gate_campaigns WHERE id=1 FOR UPDATE; DO \$\$ DECLARE v_role text; BEGIN SELECT role INTO v_role FROM lock_fixture.gm_gate_members WHERE campaign_id=1 AND user_id='gm-a'; IF v_role IS DISTINCT FROM 'GM' THEN RAISE EXCEPTION 'GM authorization lost'; END IF; END \$\$; UPDATE lock_fixture.gm_gate_inventory SET item_count=item_count+1 WHERE campaign_id=1 AND user_id='player-x'; COMMIT;" >"$tmp/b.log" 2>&1 &
   local b=$!
   set +e
   wait "$a"; sa=$?
