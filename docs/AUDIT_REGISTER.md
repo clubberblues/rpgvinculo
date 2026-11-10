@@ -520,3 +520,7 @@ A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24
 
 - **P1 mecânico — snapshot de armas incompleto:** OID 26923 grava source/range sem instância; consulta OID 27044 lista equipamento atual; início OID 27022 aceita instância atual equipada sem provar que estava equipada no gatilho. Mudanças por OIDs 20555/20556 durante pending podem invalidar/criar elegibilidade AOO. Correção exige snapshot de arma exata ou freeze de equipamento. Evidência em MOVEMENT_AOO_AUTHORITY_GAP.md.
 
+
+
+- **P1/P2 mecânico — footprint duplicado Colossal:** OIDs 24744/25562 (ataque físico, overload ativo na mesa) e 25509 (Imposição das Mãos/toque, callsite ativo) ainda calculam Colossal=5 e não usam helper; OIDs 27073/26923 usam 6. A centralização deve alcançar ataques e toque, não apenas movimento. Evidência em MOVEMENT_AOO_AUTHORITY_GAP.md.
+
