@@ -574,3 +574,11 @@ A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24
 - O job de fixtures confirmou assertions de footprint, reproduziu bypass por identidade duplicada do mover, e executou ciclos de lock/concorrência e controles de autorização isolados. Os logs exibem deadlocks e autorizações obsoletas como resultados intencionais das reproduções; os controles campaign-first passaram. Isso não equivale a teste das RPCs reais no Supabase remoto.
 - Catálogo remoto: duas RPCs invoker de manobra/ataques naturais têm EXECUTE authenticated, mas chamam helper(s) `priv` sem EXECUTE para authenticated: `srd_consultar_modificadores_manobra_srd` (OID 27119) e `srd_listar_ataques_naturais_oportunidade_srd` (OID 27229). A incompatibilidade é objetiva no catálogo; confirmar erro ponta a ponta em sessão autenticada antes de corrigir. Nenhuma ACL/função alterada.
 - Evidência detalhada e proposta de correção específica em `docs/MOVEMENT_AOO_AUTHORITY_GAP.md`.
+
+
+### Correção de autorização em catálogo de manobras (2026-11-10)
+
+- Identificada incompatibilidade específica de privilégio: dois wrappers públicos SECURITY INVOKER chamam helpers `priv.*` sem EXECUTE authenticated. A sobrecarga de 6 argumentos da consulta de manobras é afetada no ramo Derrubar; o catálogo de ataques naturais é afetado ao construir perfil.
+- A origem está nas migrations de 08/11 que criaram esses wrappers como invoker. A análise refinada não encontrou outros wrappers públicos invoker com dependência direta sem EXECUTE authenticated na amostra de chamadas diretas resolvidas.
+- Migration focalizada e script de verificação foram adicionados ao branch de auditoria; nenhum SQL foi executado no banco remoto. A conversão para SECURITY DEFINER preserva os guards auth.uid()/GM e search_path fixo, sem abrir EXECUTE dos helpers internos ao cliente.
+- Regressão autenticada e revisão final ainda pendentes; não declarar corrigido em produção.
