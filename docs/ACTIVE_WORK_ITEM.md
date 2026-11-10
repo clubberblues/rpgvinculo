@@ -298,3 +298,13 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - GC atrasado, com varredura de `backgroundPath` e `tokens[].imagemPath`, janela de retenção e teste de concorrência permanece necessário.
 - O validador estático exige a função de compensação e sua chamada. CI do commit `e8d08c72fd8923ec54ce017700cae9fd3fc89d82` está em execução; ainda não registrar como aprovado até concluir.
 - A compensação depende de policy DELETE Storage corrigida: a policy atual usa `priv.pasta_gm`, que rejeita o path `campaigns/{id}/...`. Nenhuma policy de produção foi alterada.
+
+
+## Atualização — Storage privado e finalização de campanha (2026-11-10)
+
+- Confirmado read-only no banco remoto: policies de mesa-media usam priv.pasta_gm para INSERT/UPDATE/DELETE, mas o frontend grava em campaigns/{id}/...; o helper interpreta o primeiro segmento como ID numérico e rejeita esse caminho. SELECT usa public.can_read_media e exige registro em public.media, ausente para os assets CBA atuais. Portanto, upload, assinatura/leitura e remoção de assets CBA não têm contrato compatível no snapshot atual.
+- Confirmados OIDs e grants: preparar (wrapper 24881 / impl 24885) e finalizar (wrapper 24882 / impl 24886) são executáveis por authenticated, não anon. Preparação bloqueia campaign → cleanup; finalização bloqueia cleanup → campaign. A ordem está invertida.
+- O finalizador não verifica storage.objects nem exige que os objetos e capas tenham sido removidos. O proprietário pode chamar diretamente após preparar e excluir a campanha deixando objetos órfãos; resposta deleted=true não comprova limpeza do Storage.
+- Contrato, matriz de autorização, integração Storage API, compensação de upload e esses novos achados foram consolidados em docs/STORAGE_ACCESS_CONTRACT.md. Commit documental: c97e36a8d3ad9a8852e85b861d1a22cae2468949.
+- Nenhuma RPC foi chamada; nenhuma migration, função, ACL, policy, dado ou arquivo Storage de produção foi alterado. TESTE 2 permanece intocado.
+- Próxima unidade: fechar o contrato transacional do finalizador (campaign → cleanup, revalidação, Storage zero-check e retry), mapear concorrência upload/finalização e desenhar testes Storage API autenticados em projeto descartável. Não implantar até reconciliar migrations.
