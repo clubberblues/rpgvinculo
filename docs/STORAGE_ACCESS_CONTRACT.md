@@ -81,3 +81,15 @@ Os testes devem usar Storage API real e usuários separados (owner/GM, player, e
 - Gerar migration via fluxo Supabase CLI suportado e validar em banco descartável primeiro.
 - Rodar advisors, testes Storage/RLS e fixtures de exclusão.
 - Não alterar o projeto de produção até que a migration e o plano de rollback estejam revisados.
+
+
+
+## Retenção e falhas intermediárias no upload
+
+Auditoria adicional dos callsites de `mesa.html`:
+- Mapa e retrato são enviados primeiro ao Storage, depois recebem signed URL e, por fim, a referência é persistida em `campaigns.cba_data`.
+- Se a criação da signed URL falhar depois do upload, o arquivo novo ficava sem referência. Foi adicionada compensação `descartarUploadPrivadoCBA(path)` para tentar remover esse objeto nos dois fluxos.
+- A compensação usa Storage API `remove`, registra aviso se a remoção falhar e preserva o erro original. No estado atual, a policy DELETE também chama `priv.pasta_gm` e rejeita o path `campaigns/{id}/...`; portanto, a compensação só poderá ser confirmada depois da correção de policy e de um teste Storage real.
+- Se o RPC de gravação da cena falhar depois do upload, não removemos automaticamente o arquivo: falha de rede pode deixar o resultado da transação ambíguo, e remover pode quebrar uma referência que tenha sido persistida. Esse caso precisa de GC compensatório com janela de retenção e verificação do JSONB atual.
+- Substituir mapa ou retrato também deixa o arquivo anterior sem referência. Não foi adicionada remoção imediata: duas abas podem manter snapshots diferentes, e uma aba antiga ainda pode persistir referência ao asset anterior. A solução correta é GC atrasado que varre referências atuais de `backgroundPath` e `tokens[].imagemPath`, respeita uma janela de segurança e só então remove via Storage API.
+- A compensação cobre somente falha de signed URL anterior à gravação da cena; não é transação distribuída e não substitui GC de assets órfãos.
