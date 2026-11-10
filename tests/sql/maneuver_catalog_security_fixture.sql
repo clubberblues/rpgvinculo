@@ -175,6 +175,11 @@ BEGIN
     RAISE EXCEPTION 'SECURITY DEFINER condition caller failed';
   END IF;
   BEGIN
+    PERFORM priv.srd_saving_throw_bonus(1,'character','1','fortitude','base');
+    RAISE EXCEPTION 'Authenticated unexpectedly executed private saving throw engine helper';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
     PERFORM priv.srd_feat_saving_throw_modifier('[]'::jsonb,'fortitude');
     RAISE EXCEPTION 'Authenticated unexpectedly executed passive feat helper directly';
   EXCEPTION WHEN insufficient_privilege THEN NULL;
