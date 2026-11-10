@@ -474,3 +474,19 @@ CI sobre o código do lobby + validador estático:
 - PostgreSQL fixtures #220 [42744608913](https://github.com/clubberblues/rpgvinculo/actions/runs/42744608913): **success**, commit `31882ee88881e5cc335b35f4de0e5544fe4e1661`; nove inversões sintéticas e os demais fixtures passaram.
 - Syntax check #59 [42744608931](https://github.com/clubberblues/rpgvinculo/actions/runs/42744608931): **success**, mesmo commit.
 
+
+
+
+
+### Contrato de correção proposto para assets privados CBA
+
+Não corrigir somente o índice do segmento e considerar o recurso pronto. O contrato deve ser consistente nas políticas, no RPC finalizador e nos dois callsites:
+1. **Path único:** aceitar somente `campaigns/{campaign_id}/...`; extrair o ID com regex ancorada no começo e validar que a campanha existe. Não depender de `storage.foldername(name)[1]` quando o primeiro segmento é literalmente `campaigns`.
+2. **Upload/update:** somente GM da campanha; negar enquanto existir `priv.campaign_deletion_cleanup` para a campanha.
+3. **Read/signed URL:** permitir aos membros autorizados da campanha para os assets que o CBA publica (mapa de fundo e imagens de token), sem depender de linha em `public.media`. A galeria antiga baseada em `public.media` deve manter seu contrato próprio.
+4. **Delete:** GM pode remover arquivos da própria campanha, inclusive durante a exclusão pendente; não permitir remoção por usuário externo. Usar Storage API `remove`, nunca DELETE SQL em `storage.objects`.
+5. **Finalização:** sob lock campanha → cleanup, revalidar owner e marcador e exigir ausência de objetos em `mesa-media/campaigns/{id}/`, `midia/campaigns/{id}/` e capas `midia/capas_mesas/mesa-{id}-`. Se restar qualquer objeto, falhar sem apagar campanha nem marcador, para permitir retry.
+6. **URLs assinadas:** o CBA usa TTL de 86.400 s e cache local de 23 h. Avaliar TTL menor para limitar o tempo de acesso de um ex-membro após remoção/revogação; URLs já emitidas continuam sendo bearer tokens até expirar.
+
+Matriz mínima de integração antes de aplicar migration: GM pode uploadar/ler/atualizar/remover; jogador membro pode ler assets publicados, mas não gravar/remover; usuário externo não pode listar/ler/gravar/remover; novo upload é negado durante cleanup; delete continua permitido durante cleanup; finalizador rejeita quando qualquer objeto/capa persiste; após remoção via Storage API, finalizador conclui; teste concorrente tenta upload enquanto finalização ocorre. A suíte PostgreSQL sintética atual não substitui essa validação Storage/RLS real.
+
