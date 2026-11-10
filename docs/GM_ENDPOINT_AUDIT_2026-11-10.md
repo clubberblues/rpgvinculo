@@ -341,3 +341,8 @@ A ordem character → campaign da RPC atual continua incompatível com operaçõ
 ### Limites desta etapa
 
 Consultas foram exclusivamente read-only. Nenhum token, ficha, sequência, condição, efeito, inventário, campanha, ACL ou migration foi alterado. Nenhuma RPC de produção foi invocada. A proposta acima é contrato de desenho para fixture e futura migration, não implementação pronta nem autorização para alterar o banco remoto.
+
+
+### Snapshot relacional atual dos três NPCs vinculados
+
+Nova consulta read-only cruzou cada NPC de `campaigns.cba_data.tokens` com ficha-fonte e estado relacional. Os três tokens observados (dois na campanha 129 apontando para o personagem 678; um na campanha 131 apontando para o personagem 681) continuam com `sourceCharacterId` válido e ambos os personagens-fonte têm `characters.campaign_id IS NULL`. Para esses três tokens, a amostra atual retornou zero linhas de equipamento/instâncias de armas, zero sequências de ataque NPC, zero condições/efeitos como alvo, zero magias pendentes ativas e zero movimentos AOO pendentes. Isso reduz o estado órfão observado agora, mas não remove a necessidade de tratar todas essas dependências na RPC futura: a consulta é apenas um snapshot e novas ações podem criar registros depois.
