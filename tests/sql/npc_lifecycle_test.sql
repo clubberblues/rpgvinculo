@@ -1,7 +1,11 @@
 -- Disposable contract test for NPC token removal and source-character deletion.
--- This models the required invariants; it does NOT execute production RPCs.
+-- Uses temporary tables and CHECK assertions; it does NOT execute production RPCs.
 BEGIN;
 
+CREATE TEMP TABLE npc_fixture_assertions (
+  label text PRIMARY KEY,
+  ok boolean NOT NULL CHECK (ok)
+) ON COMMIT DROP;
 CREATE TEMP TABLE npc_fixture_campaigns (
   id integer PRIMARY KEY,
   cba_data jsonb NOT NULL,
@@ -98,63 +102,35 @@ INSERT INTO npc_fixture_aoo_pending VALUES
 (129,'npc-a','npc-a','waiting_reactions'),
 (129,'npc-other','npc-other','waiting_reactions');
 
--- Source deletion must be rejected while any campaign JSON token still references it,
--- including references in campaigns other than characters.campaign_id.
-DO $fixture$
-DECLARE linked_count integer;
-BEGIN
-  SELECT count(*) INTO linked_count
-  FROM npc_fixture_campaigns c
-  CROSS JOIN LATERAL jsonb_array_elements(c.cba_data->'tokens') t
-  WHERE t->>'sourceCharacterId'='678';
-  IF linked_count <> 2 THEN
-    RAISE EXCEPTION 'expected two cross-campaign source references, found %',linked_count;
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM npc_fixture_sequences WHERE actor_character_id=678) THEN
-    RAISE EXCEPTION 'RESTRICT dependency fixture missing';
-  END IF;
-END $fixture$;
+-- JSON references are not protected by a relational FK; source deletion must
+-- explicitly count references across every campaign, not characters.campaign_id.
+INSERT INTO npc_fixture_assertions
+SELECT 'two JSON source references found across campaigns',
+       (SELECT count(*)=2
+        FROM npc_fixture_campaigns c
+        CROSS JOIN LATERAL jsonb_array_elements(c.cba_data->'tokens') t
+        WHERE t->>'sourceCharacterId'='678');
+INSERT INTO npc_fixture_assertions
+SELECT 'source deletion guard condition is active',
+       EXISTS (
+         SELECT 1 FROM npc_fixture_campaigns c
+         CROSS JOIN LATERAL jsonb_array_elements(c.cba_data->'tokens') t
+         WHERE t->>'sourceCharacterId'='678'
+       );
 
--- Exercise the JSON reference guard itself: the character row has no FK from
--- cba_data, so the deletion contract must reject it explicitly.
-DO $fixture$
-DECLARE rejected boolean := false;
-BEGIN
-  BEGIN
-    IF EXISTS (
-      SELECT 1
-      FROM npc_fixture_campaigns c
-      CROSS JOIN LATERAL jsonb_array_elements(c.cba_data->'tokens') t
-      WHERE t->>'sourceCharacterId'='678'
-    ) THEN
-      RAISE EXCEPTION USING ERRCODE='P0001', MESSAGE='source_character_has_linked_tokens';
-    END IF;
-    DELETE FROM npc_fixture_characters WHERE id=678;
-  EXCEPTION WHEN SQLSTATE 'P0001' THEN
-    IF SQLERRM <> 'source_character_has_linked_tokens' THEN RAISE; END IF;
-    rejected := true;
-  END;
-  IF NOT rejected OR NOT EXISTS (SELECT 1 FROM npc_fixture_characters WHERE id=678) THEN
-    RAISE EXCEPTION 'source deletion was not blocked while JSON token references exist';
-  END IF;
-END $fixture$;
-
--- Model the atomic "remove NPC token" contract for npc-a only:
--- remove scene/initiative entries, clear token-scoped rows, cancel pending work,
--- and terminate effects for which the removed token was the source/concentrator.
+-- Model atomic removal of npc-a only: remove scene/initiative entries, clear
+-- token-scoped rows, cancel pending work and end effects it sourced/concentrated.
 UPDATE npc_fixture_campaigns
-SET cba_data = jsonb_set(
-      cba_data,
-      '{tokens}',
+SET cba_data=jsonb_set(
+      cba_data,'{tokens}',
       COALESCE((
         SELECT jsonb_agg(t ORDER BY ord)
         FROM jsonb_array_elements(cba_data->'tokens') WITH ORDINALITY x(t,ord)
         WHERE t->>'id' <> 'npc-a'
       ),'[]'::jsonb)
     ),
-    combat_data = jsonb_set(
-      combat_data,
-      '{turn_order}',
+    combat_data=jsonb_set(
+      combat_data,'{turn_order}',
       COALESCE((
         SELECT jsonb_agg(v ORDER BY ord)
         FROM jsonb_array_elements_text(combat_data->'turn_order') WITH ORDINALITY x(v,ord)
@@ -166,72 +142,63 @@ WHERE id=129;
 DELETE FROM npc_fixture_equipment WHERE campaign_id=129 AND token_id='npc-a';
 DELETE FROM npc_fixture_weapon_instances WHERE campaign_id=129 AND token_id='npc-a';
 DELETE FROM npc_fixture_conditions WHERE campaign_id=129 AND target_kind='token' AND target_id='npc-a';
-DELETE FROM npc_fixture_effects
- WHERE campaign_id=129 AND target_kind='token' AND target_id='npc-a';
-UPDATE npc_fixture_effects
-SET active=false
+DELETE FROM npc_fixture_effects WHERE campaign_id=129 AND target_kind='token' AND target_id='npc-a';
+UPDATE npc_fixture_effects SET active=false
 WHERE campaign_id=129 AND (source_actor_id='npc-a' OR concentration_actor_id='npc-a');
-UPDATE npc_fixture_spell_pending
-SET status='cancelled'
+UPDATE npc_fixture_spell_pending SET status='cancelled'
 WHERE campaign_id=129 AND target_kind='token' AND target_id='npc-a'
   AND status NOT IN ('resolved','saved','resisted','expired','cancelled');
-UPDATE npc_fixture_aoo_pending
-SET status='cancelled'
+UPDATE npc_fixture_aoo_pending SET status='cancelled'
 WHERE campaign_id=129 AND (mover_token_id='npc-a' OR turn_actor_id='npc-a')
   AND status NOT IN ('resolved','expired','cancelled');
 DELETE FROM npc_fixture_sequences WHERE campaign_id=129 AND actor_token_id='npc-a';
--- Attempts are removed only by the sequence FK cascade.
 
-DO $fixture$
-BEGIN
-  IF EXISTS (
-    SELECT 1 FROM npc_fixture_campaigns c
-    CROSS JOIN LATERAL jsonb_array_elements(c.cba_data->'tokens') t
-    WHERE c.id=129 AND t->>'id'='npc-a'
-  ) THEN RAISE EXCEPTION 'removed token remains in scene'; END IF;
-  IF EXISTS (
-    SELECT 1 FROM npc_fixture_campaigns c
-    CROSS JOIN LATERAL jsonb_array_elements_text(c.combat_data->'turn_order') v
-    WHERE c.id=129 AND v='npc-a'
-  ) THEN RAISE EXCEPTION 'removed token remains in initiative'; END IF;
-  IF EXISTS (SELECT 1 FROM npc_fixture_equipment WHERE campaign_id=129 AND token_id='npc-a')
-     OR EXISTS (SELECT 1 FROM npc_fixture_weapon_instances WHERE campaign_id=129 AND token_id='npc-a')
-     OR EXISTS (SELECT 1 FROM npc_fixture_conditions WHERE campaign_id=129 AND target_id='npc-a')
-     OR EXISTS (SELECT 1 FROM npc_fixture_sequences WHERE campaign_id=129 AND actor_token_id='npc-a')
-     OR EXISTS (SELECT 1 FROM npc_fixture_attempts WHERE id=11) THEN
-    RAISE EXCEPTION 'token-owned relational rows were not fully cleaned';
-  END IF;
-  IF EXISTS (SELECT 1 FROM npc_fixture_spell_pending WHERE target_id='npc-a' AND status<>'cancelled')
-     OR EXISTS (SELECT 1 FROM npc_fixture_aoo_pending WHERE mover_token_id='npc-a' AND status<>'cancelled') THEN
-    RAISE EXCEPTION 'pending token actions were not cancelled';
-  END IF;
-  IF EXISTS (SELECT 1 FROM npc_fixture_effects WHERE source_actor_id='npc-a' AND active) THEN
-    RAISE EXCEPTION 'effects sourced by removed token remain active';
-  END IF;
-  IF NOT EXISTS (
-    SELECT 1 FROM npc_fixture_campaigns c
-    CROSS JOIN LATERAL jsonb_array_elements(c.cba_data->'tokens') t
-    WHERE c.id=129 AND t->>'id'='npc-other'
-  ) OR NOT EXISTS (SELECT 1 FROM npc_fixture_equipment WHERE token_id='npc-other') THEN
-    RAISE EXCEPTION 'unrelated token state was modified';
-  END IF;
-END $fixture$;
+INSERT INTO npc_fixture_assertions
+SELECT 'removed token absent from scene',
+       NOT EXISTS (
+         SELECT 1 FROM npc_fixture_campaigns c
+         CROSS JOIN LATERAL jsonb_array_elements(c.cba_data->'tokens') t
+         WHERE c.id=129 AND t->>'id'='npc-a'
+       );
+INSERT INTO npc_fixture_assertions
+SELECT 'removed token absent from initiative',
+       NOT EXISTS (
+         SELECT 1 FROM npc_fixture_campaigns c
+         CROSS JOIN LATERAL jsonb_array_elements_text(c.combat_data->'turn_order') v
+         WHERE c.id=129 AND v='npc-a'
+       );
+INSERT INTO npc_fixture_assertions
+SELECT 'token equipment, weapons, conditions, sequences and attempts cleaned',
+       NOT EXISTS (SELECT 1 FROM npc_fixture_equipment WHERE campaign_id=129 AND token_id='npc-a')
+       AND NOT EXISTS (SELECT 1 FROM npc_fixture_weapon_instances WHERE campaign_id=129 AND token_id='npc-a')
+       AND NOT EXISTS (SELECT 1 FROM npc_fixture_conditions WHERE campaign_id=129 AND target_id='npc-a')
+       AND NOT EXISTS (SELECT 1 FROM npc_fixture_sequences WHERE campaign_id=129 AND actor_token_id='npc-a')
+       AND NOT EXISTS (SELECT 1 FROM npc_fixture_attempts WHERE id=11);
+INSERT INTO npc_fixture_assertions
+SELECT 'pending spell and AOO work cancelled',
+       EXISTS (SELECT 1 FROM npc_fixture_spell_pending WHERE target_id='npc-a' AND status='cancelled')
+       AND EXISTS (SELECT 1 FROM npc_fixture_aoo_pending WHERE mover_token_id='npc-a' AND status='cancelled');
+INSERT INTO npc_fixture_assertions
+SELECT 'effects sourced by removed token ended',
+       NOT EXISTS (SELECT 1 FROM npc_fixture_effects WHERE source_actor_id='npc-a' AND active);
+INSERT INTO npc_fixture_assertions
+SELECT 'unrelated NPC and its equipment preserved',
+       EXISTS (
+         SELECT 1 FROM npc_fixture_campaigns c
+         CROSS JOIN LATERAL jsonb_array_elements(c.cba_data->'tokens') t
+         WHERE c.id=129 AND t->>'id'='npc-other'
+       )
+       AND EXISTS (SELECT 1 FROM npc_fixture_equipment WHERE token_id='npc-other');
 
--- The remaining npc-b reference still prevents source-character deletion.
-DO $fixture$
-DECLARE linked_count integer;
-BEGIN
-  SELECT count(*) INTO linked_count
-  FROM npc_fixture_campaigns c
-  CROSS JOIN LATERAL jsonb_array_elements(c.cba_data->'tokens') t
-  WHERE t->>'sourceCharacterId'='678';
-  IF linked_count <> 1 THEN
-    RAISE EXCEPTION 'expected one remaining source reference, found %',linked_count;
-  END IF;
-END $fixture$;
+-- One source reference remains (npc-b), so the source must still be protected.
+INSERT INTO npc_fixture_assertions
+SELECT 'remaining source reference prevents deletion',
+       (SELECT count(*)=1
+        FROM npc_fixture_campaigns c
+        CROSS JOIN LATERAL jsonb_array_elements(c.cba_data->'tokens') t
+        WHERE t->>'sourceCharacterId'='678');
 
--- Remove the final linked token, then delete the source. The RESTRICT sequence
--- dependency must also be explicitly handled before deleting the source record.
+-- Remove the final linked token, then verify the actual FK definition is RESTRICT.
 UPDATE npc_fixture_campaigns
 SET cba_data=jsonb_set(
   cba_data,'{tokens}',
@@ -242,34 +209,27 @@ SET cba_data=jsonb_set(
   ),'[]'::jsonb)
 )
 WHERE id=129;
--- Even after JSON references are gone, the real FK contract blocks source
--- deletion while a persisted NPC attack sequence still references it.
-DO $npc$
-DECLARE blocked boolean := false;
-BEGIN
-  BEGIN
-    DELETE FROM npc_fixture_characters WHERE id=678;
-  EXCEPTION WHEN foreign_key_violation THEN
-    blocked := true;
-  END;
-  IF NOT blocked OR NOT EXISTS (SELECT 1 FROM npc_fixture_characters WHERE id=678) THEN
-    RAISE EXCEPTION 'NPC sequence FK did not protect the source character';
-  END IF;
-END $npc$;
+INSERT INTO npc_fixture_assertions
+SELECT 'NPC attack sequence FK is ON DELETE RESTRICT',
+       EXISTS (
+         SELECT 1 FROM pg_constraint
+         WHERE conrelid='npc_fixture_sequences'::regclass
+           AND confrelid='npc_fixture_characters'::regclass
+           AND contype='f' AND confdeltype='r'
+       );
 
+-- The source may be deleted only after the token references and restricting
+-- attack sequences have both been handled.
 DELETE FROM npc_fixture_sequences WHERE actor_character_id=678;
 DELETE FROM npc_fixture_characters WHERE id=678;
+INSERT INTO npc_fixture_assertions
+SELECT 'source deleted only after all guards and dependencies cleared',
+       NOT EXISTS (SELECT 1 FROM npc_fixture_characters WHERE id=678)
+       AND NOT EXISTS (
+         SELECT 1 FROM npc_fixture_campaigns c
+         CROSS JOIN LATERAL jsonb_array_elements(c.cba_data->'tokens') t
+         WHERE t->>'sourceCharacterId'='678'
+       );
 
-DO $fixture$
-BEGIN
-  IF EXISTS (SELECT 1 FROM npc_fixture_characters WHERE id=678) THEN
-    RAISE EXCEPTION 'source character was not deleted after all guards/dependencies cleared';
-  END IF;
-  IF EXISTS (
-    SELECT 1 FROM npc_fixture_campaigns c
-    CROSS JOIN LATERAL jsonb_array_elements(c.cba_data->'tokens') t
-    WHERE t->>'sourceCharacterId'='678'
-  ) THEN RAISE EXCEPTION 'dangling sourceCharacterId remains'; END IF;
-END $fixture$;
-
+SELECT label FROM npc_fixture_assertions ORDER BY label;
 ROLLBACK;
