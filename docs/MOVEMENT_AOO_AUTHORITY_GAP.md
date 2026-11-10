@@ -69,3 +69,22 @@ Isso permite divergência entre ocupação/movimento e alcance ameaçado. A refa
 - O histórico de migrations permanece sem reconciliação completa; qualquer migration de correção precisa aguardar baseline reproduzível e revisão de dependências.
 - Não usar TESTE 2 como ambiente de mutação.
 - Os OIDs são evidência do snapshot de 2026-11-10 e devem ser revalidados imediatamente antes de qualquer migration.
+
+
+## Confirmação do encadeamento no frontend
+
+A leitura de `mesa.html` na branch `main` confirma que os dois fluxos normais já chamam primeiro a solicitação AOO durante combate ativo:
+- Jogador: linha 2313 chama `srd_solicitar_movimento_com_aoo_srd(..., p_controller: 'player')`; se retornar pending, a interface interrompe o fluxo; caso contrário, chama `mover_token_player_cba` na linha 2326.
+- Mestre: linha 5414 chama a mesma solicitação com `p_controller: 'gm'`; se houver pending, abre a fila AOO; caso contrário, chama `mover_token_gm_cba_srd` na linha 5426.
+
+Isso delimita o defeito: não é ausência do fluxo AOO na interação comum da interface. É uma lacuna de autoridade no backend, pois os dois RPCs que gravam a posição também estão diretamente executáveis por `authenticated` e não impõem a solicitação AOO. Uma chamada direta, uma futura tela ou outro consumidor pode contornar a sequência do frontend.
+
+A correção deve preservar o caminho atual de UX, mas mover a garantia para os endpoints/transação de gravação. O preflight do frontend pode continuar para feedback antecipado; não pode ser a única barreira.
+
+## Evidência de footprint canônico
+
+A comparação do snapshot confirmou:
+- `priv.srd_token_grid_footprint` e `public.srd_detectar_saida_alcance_ameacado_srd`: Colossal = 6.
+- `priv.mover_token_player_cba_impl` e `priv.mover_token_gm_cba_srd_impl`: Colossal = 5.
+
+O helper canônico já existe, então a correção deve reutilizá-lo em vez de criar outro mapeamento de tamanho. A alteração precisa revisar todos os consumidores diretos de footprint para evitar regressões em ocupação, colisão e distância.
