@@ -939,7 +939,7 @@ COMMIT;
 SQL
   a=$!
   sleep 0.1
-  psql -v ON_ERROR_STOP=1 >"$tmp/upload-after.log" 2>&1 <<'SQL' &
+  psql -Atq -v ON_ERROR_STOP=1 >"$tmp/upload-after.log" 2>&1 <<'SQL' &
 BEGIN;
 SELECT lock_fixture.upload_if_allowed(1,'campaigns/1/upload-after.png');
 COMMIT;
@@ -951,7 +951,7 @@ SQL
   set -e
   count="$(psql -Atq -c "SELECT count(*) FROM lock_fixture.storage_objects WHERE campaign_id=1")"
   marker="$(psql -Atq -c "SELECT count(*) FROM lock_fixture.campaign_deletion_cleanup WHERE campaign_id=1")"
-  result="$(grep -Eo 'f|t' "$tmp/upload-after.log" | tail -n 1 || true)"
+  result="$(tr -d '[:space:]' < "$tmp/upload-after.log")"
   if [[ "$sa" -ne 0 || "$sb" -ne 0 || "$count" != "0" || "$marker" != "1" || "$result" != "f" ]]; then
     echo "FAIL: upload after cleanup marker was not rejected"
     cat "$tmp/prepare-first.log" "$tmp/upload-after.log"
