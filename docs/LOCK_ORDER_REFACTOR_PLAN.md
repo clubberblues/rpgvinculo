@@ -183,3 +183,8 @@ Correção comum: obter campaign FOR UPDATE antes da autorização definitiva; r
 #### Completar endpoints de owner: código de acesso
 
 A mesma dependência de `priv.need_owner` (OID 18742) aparece em `public.gm_set_code` (OID 18747), EXECUTE authenticated. A função valida owner/active por `need_owner` e depois altera `campaign_codes` sem lock de campanha. Assim, o antigo proprietário também pode alterar o código de entrada depois de uma transferência concorrente se a autorização tiver sido validada antes da revogação. A matriz de operações owner-first passa a incluir `gm_set_code`, `gm_set_role`, `gm_kick` e `gm_transfer`; o helper não deve ganhar lock implícito sem auditar callers.
+
+
+### Estado de verificação do bloco owner-admin
+
+A consulta de dependências confirmou que `priv.need_owner` só é chamado por `gm_set_code`, `gm_set_role`, `gm_transfer` e `gm_kick` no catálogo atual. Tratar os quatro na mesma mudança. A suíte sintética atual já cobre corrida de transferência, expulsão após perda de ownership e a incompatibilidade com trigger; acrescentar casos dedicados para mudança de código e alteração de papel antes de aprovar a refatoração. CI #141 (SHA `cf1ba84`) passou integralmente.
