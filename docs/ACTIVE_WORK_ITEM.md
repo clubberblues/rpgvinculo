@@ -417,3 +417,12 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - Os fixtures aprovados incluem helpers de footprint e reproduções sintéticas de inversões de locks, corridas de autorização e bypass de identidade AOO. Os logs mostram deadlocks/violações de autorização intencionais nos cenários de reprodução, seguidos de controles campaign-first que rejeitam as operações obsoletas. Isso valida os fixtures isolados, não prova que as RPCs remotas estejam corrigidas nem que houve deadlock em produção.
 - Nova verificação do catálogo confirmou que `public.srd_consultar_modificadores_manobra_srd` (OID 27119) e `public.srd_listar_ataques_naturais_oportunidade_srd` (OID 27229) são invoker com EXECUTE authenticated, mas tentam chamar `priv.srd35_maneuver_profile` (OID 26884), sem EXECUTE authenticated; a primeira também chama helpers de footprint sem EXECUTE authenticated. Forte indicação de falha funcional nessas duas rotas; precisa confirmação por chamada autenticada controlada. Detalhes e correção proposta em `docs/MOVEMENT_AOO_AUTHORITY_GAP.md`.
 - Nenhuma função, ACL, migration, trigger, campanha ou dado de produção foi alterado.
+
+
+### Remediação focalizada de wrappers invoker (2026-11-10)
+
+- Causa confirmada nas migrations originais: os wrappers de contexto de Derrubar (sobrecarga de 6 args) e catálogo de ataques naturais foram criados SECURITY INVOKER, mas dependem de helpers privados sem EXECUTE para authenticated.
+- Consulta catalogal refinada encontrou exatamente duas funções públicas invoker com dependência direta sem EXECUTE para authenticated entre as funções analisadas: `srd_consultar_modificadores_manobra_srd(..., boolean, boolean)` (falha no ramo trip/Derrubar) e `srd_listar_ataques_naturais_oportunidade_srd(bigint,text)` (falha sempre ao buscar perfil). Encontrão usa a sobrecarga de 5 args SECURITY DEFINER; não generalizar o defeito para toda consulta de manobra.
+- Migration aditiva preparada na branch: `supabase/migrations/20261110150000_fix_invoker_maneuver_catalog_helper_permissions.sql`. Altera somente SECURITY INVOKER → DEFINER nas duas assinaturas, preserva o search_path fixo e restringe EXECUTE a authenticated/service_role; as duas funções mantêm verificações explícitas de autenticação e papel GM.
+- Verificação pós-migration: `supabase/verification/verify_maneuver_catalog_rpc_security.sql`.
+- **Não aplicada em produção.** Exigir validação SQL pós-migration e testes autenticados negativos/positivos antes de deploy.
