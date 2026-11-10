@@ -149,3 +149,6 @@ Direção candidata: MVCC localizar campanha → `campaigns FOR UPDATE` → reva
 
 
 Nota de escopo: o descanso longo de NPC vinculado (wrapper OID 26801 → implementação privada OID 26808) já bloqueia campanha e valida estado antes de personagem/ficha. A correção de estado da Fase D deve priorizar o descanso PC (OID 24366); preservar e testar separadamente o caminho NPC existente, sem reordená-lo por suposição.
+
+
+Complemento transacional: triggers AFTER INSERT/DELETE/UPDATE OF quantidade de `srd_character_equipment` e `srd_cba_token_equipment` materializam/removem instâncias de arma e sincronizam campos do inventário (funções private OIDs 26446/26447). Assim, operações de inventário adquirem locks transitivos em weapon instances; incluir essas arestas no grafo e nos testes de PC/NPC, sem concluir deadlock apenas pela existência do trigger.
