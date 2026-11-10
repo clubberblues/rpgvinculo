@@ -588,3 +588,12 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - Isso não prova deadlock observado: não foi identificado nesta varredura um ciclo completo com outro caller que bloqueie a campanha e depois exatamente o mesmo pedido de magia. É, porém, uma divergência do protocolo campaign-first e precisa ser normalizada antes de declarar o conjunto de writers consistente.
 - A correção deve ler os dados do pedido sem lock, adquirir campaign lock, revalidar status/expiração/alvo, então bloquear o pedido e só depois aplicar dano/condição/efeito. Manter idempotência da resolução e garantir que duas respostas concorrentes não apliquem o efeito duas vezes.
 - Consulta somente leitura; nenhuma resistência, magia ou pedido pendente foi executado/modificado.
+
+
+### Conjuração de magia também inverte a ordem campanha → ficha (2026-11-10)
+
+- Leitura dos fragmentos de lock confirma que as RPCs authenticated `public.conjurar_magia_efeitos_multialvo(...)` e `public.conjurar_magia_dano_multialvo_srd(...)` bloqueiam primeiro a ficha do personagem e depois a linha de `public.campaigns` (`cba_data FOR UPDATE`). Em alvos player, alguns ramos também bloqueiam ficha do alvo depois. Isso diverge do protocolo campaign-first e pode competir com avanço de turno/dano/AOO que segura campanha antes de ficha.
+- `public.conjurar_magia_srd_manual(...)` segue padrão parecido em alguns ramos, mas o catálogo consultado não dá EXECUTE authenticated direto; tratar como implementação/caminho delegado até confirmar wrapper e callsites. `public.conjurar_missil_magico_srd(...)` também bloqueia personagem → ficha → campanha, mas não tem EXECUTE authenticated direto no catálogo consultado; não classificar como endpoint cliente sem identificar o wrapper/callsite.
+- O problema não é a magia em si: é a ordem de espera entre a ficha e a campanha. A correção deve obter campanha primeiro, revalidar dono/membership/combate e então bloquear ficha do conjurador/alvos, mantendo a ordem determinística para múltiplos alvos (IDs ordenados).
+- A Fúria de personagem (`usar_furia_barbaro_srd`) segue a mesma ordem personagem → ficha → campanha, já registrada acima; agrupar com as conjurações na futura refatoração de fronteira de combate.
+- Análise estática do catálogo remoto; nenhuma magia foi conjurada e nenhuma mudança remota foi feita.
