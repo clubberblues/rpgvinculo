@@ -85,8 +85,9 @@ INSERT INTO npc_fixture_campaigns VALUES
 
 INSERT INTO npc_fixture_sequences VALUES
 (1,129,678,'npc-a','active'),
-(2,129,681,'npc-other','active');
-INSERT INTO npc_fixture_attempts VALUES (11,1,'pending'),(22,2,'pending');
+(2,129,681,'npc-other','active'),
+(3,129,678,'npc-b','active');
+INSERT INTO npc_fixture_attempts VALUES (11,1,'pending'),(22,2,'pending'),(33,3,'pending');
 INSERT INTO npc_fixture_equipment VALUES
 (129,'npc-a','sword'),(129,'npc-other','shield');
 INSERT INTO npc_fixture_weapon_instances VALUES
@@ -209,6 +210,9 @@ SET cba_data=jsonb_set(
   ),'[]'::jsonb)
 )
 WHERE id=129;
+INSERT INTO npc_fixture_assertions
+SELECT 'final linked NPC sequence still references source character',
+       EXISTS (SELECT 1 FROM npc_fixture_sequences WHERE actor_character_id=678 AND actor_token_id='npc-b');
 INSERT INTO npc_fixture_assertions
 SELECT 'NPC attack sequence FK is ON DELETE RESTRICT',
        EXISTS (
