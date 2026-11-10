@@ -325,6 +325,27 @@ BEGIN
   EXCEPTION WHEN raise_exception THEN
     IF SQLERRM='Private iterative helper unexpectedly accepted an owned character under the wrong campaign' THEN RAISE; END IF;
   END;
+  PERFORM set_config('request.jwt.claim.sub','22222222-2222-4222-8222-222222222222',true);
+  BEGIN
+    PERFORM priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(
+      1,'owned-character','target','atk-corpo',
+      '33333333-3333-4333-8333-333333333333'::uuid,'main_hand',NULL
+    );
+    RAISE EXCEPTION 'Private iterative helper unexpectedly accepted another user identity';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM='Private iterative helper unexpectedly accepted another user identity' THEN RAISE; END IF;
+  END;
+  PERFORM set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',true);
+  DELETE FROM public.members WHERE campaign_id=1;
+  BEGIN
+    PERFORM priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(
+      1,'owned-character','target','atk-corpo',
+      '33333333-3333-4333-8333-333333333333'::uuid,'main_hand',NULL
+    );
+    RAISE EXCEPTION 'Private iterative helper unexpectedly accepted missing PLAYER membership';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM='Private iterative helper unexpectedly accepted missing PLAYER membership' THEN RAISE; END IF;
+  END;
 END
 $service$;
 RESET ROLE;
