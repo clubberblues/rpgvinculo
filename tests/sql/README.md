@@ -102,3 +102,9 @@ O fixture de ficha modela as mutações de `gm_reopen_sheet` e `gm_set_bonus`: o
 - modelar a FK `ON DELETE RESTRICT` de sequência NPC para personagem.
 
 O teste é intencionalmente sintético: não executa `excluir_ficha_propria`, nenhuma RPC de remoção (que ainda não existe), triggers reais, RLS, nem banco Supabase. Ele valida invariantes e a transação-modelo, não uma implementação de produção. A migration/RPC futura deverá adaptar os estados terminais e as relações ao schema efetivo, e incluir autorização GM e lock campaign-first com revalidação.
+
+
+### CI do fixture de lifecycle
+
+- GitHub Actions #198 [42742904531](https://github.com/clubberblues/rpgvinculo/actions/runs/42742904531) concluiu **success** no commit `cb8c2f6c2ad923a92abb562df56296c30ec2d41d`. O log confirma o bloco temporário do lifecycle (10 tabelas temporárias, verificações DO, limpeza seletiva e ROLLBACK) antes dos testes de concorrência.
+- O teste continua sendo modelo de contrato, não integração com as RPCs reais.
