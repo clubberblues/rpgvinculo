@@ -145,7 +145,7 @@ UPDATE aoo_fixture.campaigns
 SET cba_data=jsonb_set(cba_data,'{tokens,2,gridX}','5'::jsonb)
 WHERE id=1;
 
-DO $$
+DO $
 DECLARE x text;
 BEGIN
   SELECT t->>'gridX' INTO x
@@ -154,6 +154,49 @@ BEGIN
   IF x<>'5' THEN RAISE EXCEPTION 'Expected threat-token movement gap was not reproduced'; END IF;
   RAISE NOTICE 'known gap reproduced: non-mover token geometry changed while pending';
 END;
-$$;
+$;
+
+-- The guard also permits changes to threat-defining faction and melee reach.
+UPDATE aoo_fixture.campaigns
+SET cba_data=jsonb_set(
+  jsonb_set(cba_data,'{tokens,2,combat_faction}','"ally"'::jsonb,true),
+  '{tokens,2,melee_reach_ft}','0'::jsonb,true
+)
+WHERE id=1;
+
+DO $
+DECLARE faction text; reach text;
+BEGIN
+  SELECT t->>'combat_faction',t->>'melee_reach_ft' INTO faction,reach
+  FROM jsonb_array_elements((SELECT cba_data->'tokens' FROM aoo_fixture.campaigns WHERE id=1)) t
+  WHERE t->>'id'='threat';
+  IF faction<>'ally' OR reach<>'0' THEN
+    RAISE EXCEPTION 'Expected threat-profile mutation gap was not reproduced';
+  END IF;
+  RAISE NOTICE 'known gap reproduced: faction and melee reach changed while pending';
+END;
+$;
+
+-- A newly spawned token can also enter the scene while the movement is pending.
+UPDATE aoo_fixture.campaigns
+SET cba_data=jsonb_set(
+  cba_data,'{tokens}',
+  (cba_data->'tokens') || jsonb_build_array(
+    jsonb_build_object('id','new-threat','key','new-threat','gridX',7,'gridY',1,
+      'combat_faction','hostile','melee_reach_ft',10)
+  ),true
+)
+WHERE id=1;
+
+DO $
+DECLARE n integer;
+BEGIN
+  SELECT count(*)::integer INTO n
+  FROM jsonb_array_elements((SELECT cba_data->'tokens' FROM aoo_fixture.campaigns WHERE id=1)) t
+  WHERE t->>'id'='new-threat';
+  IF n<>1 THEN RAISE EXCEPTION 'Expected token-spawn gap was not reproduced'; END IF;
+  RAISE NOTICE 'known gap reproduced: new threatening token added while pending';
+END;
+$;
 
 ROLLBACK;
