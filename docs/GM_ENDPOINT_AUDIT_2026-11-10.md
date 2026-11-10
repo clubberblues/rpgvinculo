@@ -380,3 +380,14 @@ O fixture é uma especificação executável de invariantes em tabelas temporár
 ### CI do contrato de lifecycle
 
 O GitHub Actions #198 [42742904531](https://github.com/clubberblues/rpgvinculo/actions/runs/42742904531) concluiu **success** no commit `cb8c2f6c2ad923a92abb562df56296c30ec2d41d`. O log mostra o fixture de lifecycle executando criação de tabelas temporárias, verificações, remoções seletivas e ROLLBACK, seguido pelos testes sintéticos de concorrência. Isso valida o fixture PostgreSQL isolado; não executa as RPCs de produção nem altera dados Supabase.
+
+
+### Criação de personagem — ACL dos helpers confirmada no catálogo atual
+
+Consulta read-only atual confirmou:
+- `finalizar_criacao_personagem_srd` OID 25213 é `SECURITY INVOKER`, tem EXECUTE para authenticated e anon negado. Faz `auth.uid()` check e chama o overload de sete argumentos do helper, seguido de idiomas, talentos bônus de classe, domínios, grimório e equipamento inicial.
+- `criar_personagem_srd_completo` OID 24809 (sete argumentos, identidade) e OID 20270 (seis argumentos, sem identidade) são ambos `SECURITY DEFINER`, têm EXECUTE diretamente para authenticated e anon negado, e ambos apenas verificam `auth.uid() IS NOT NULL`. O helper de sete argumentos valida identidade e cria personagem/ficha, perícias/talentos e trilha de classe, mas não conclui idiomas, bônus de classe, domínios, grimório e equipamento. O helper de seis argumentos nem sequer exige identidade.
+- O endpoint público de criação atualmente é o agregador; o acesso direto aos helpers permite contornar o contrato completo de criação. Isso é integridade de fluxo, não IDOR: os helpers criam para o usuário autenticado, mas podem deixar a ficha incompleta.
+- O agregador invoker depende hoje do privilégio EXECUTE do usuário autenticado no helper. Revogar a permissão diretamente, sem mudar o modelo de execução do agregador, quebraria a criação legítima.
+
+Correção candidata, ainda não implementada: tornar o agregador o único entrypoint autenticado e privilegiado com checagem explícita de `auth.uid()`, `SECURITY DEFINER`, `search_path` fixo e referências qualificadas; em seguida revogar EXECUTE authenticated dos dois overloads internos (ou movê-los para schema não exposto) e conceder execução somente ao owner/role interna necessária. A migration deve preservar a assinatura chamada por `ficha.html`, verificar ACL efetiva herdada de PUBLIC/default privileges e testar transação completa/rollback de todas as escolhas. Não aplicar antes de reconciliar o histórico das migrations e validar os outros callers SQL transitivos.
