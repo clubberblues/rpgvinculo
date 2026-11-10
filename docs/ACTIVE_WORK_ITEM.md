@@ -381,3 +381,11 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 
 
 - **Nova confirmação read-only no catálogo Supabase (2026-11-10):** as funções AOO não compartilham ordem de locks. `srd_resolver_ataque_oportunidade_srd` OID 27025 e `srd_registrar_ocultacao_ataque_oportunidade_impl` OID 27254 bloqueiam attack → pending → campaign; `srd_reservar_reacao_movimento_aoo_impl` OID 27256 e `srd_resolver_encontrao_srd` OID 27169 bloqueiam pending → campaign. Solicitação/finalização são campaign-first. Isso confirma inversão estrutural e risco de deadlock, sem demonstrar deadlock ocorrido. Protocolo e regressões atualizados em `docs/LOCK_ORDER_PROTOCOL_DRAFT.md`.
+
+
+### Atualização — inventário ampliado de writers CBA (2026-11-10)
+
+- Consulta read-only a `pg_proc` identificou um conjunto mais amplo de funções que atualizam `campaigns.cba_data`: movimento direto GM/jogador (OID 27306/27366), salvamento geral (20077), spawn completo de token (21726), configuração de facção/alcance (26922), avanço de turno (20074), ataques físicos v2 (24744/25562), Imposição das Mãos (25509), finalização AOO (27038) e Encontrão (27169), além de escritores de PV/equipamento/efeitos.
+- Nem toda referência a `gridX/gridY` é escrita geométrica; é necessário classificar os diffs efetivos de cada corpo. Entretanto, escritores de cena/perfil/spawn sem referência a pending no corpo não podem ser presumidos seguros apenas porque o trigger atual existe.
+- O trigger é o único trigger de `campaigns.cba_data` encontrado. A arquitetura precisa fechar o conjunto de writers, centralizar autorização e freeze/invalidação atômica das dependências AOO. A ACL interna `priv.*` precisa ser analisada junto com exposição de schema e wrappers públicos; `has_function_privilege` isolado não prova exposição PostgREST.
+- Detalhes em `docs/MOVEMENT_AOO_AUTHORITY_GAP.md`. Consultas somente leitura; nenhuma RPC/migration/ACL/registro de produção alterado.
