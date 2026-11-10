@@ -29,6 +29,15 @@ BEGIN
     END IF;
   END LOOP;
 
+  v_oid:=to_regprocedure(
+    'priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(bigint,text,text,text,uuid,text,text)'
+  );
+  IF position('auth.uid()' in (SELECT prosrc FROM pg_proc WHERE oid=v_oid))=0
+     OR position('public.members' in (SELECT prosrc FROM pg_proc WHERE oid=v_oid))=0
+     OR position('public.characters' in (SELECT prosrc FROM pg_proc WHERE oid=v_oid))=0 THEN
+    RAISE EXCEPTION 'Private 7-argument helper lost its defense-in-depth ownership guard';
+  END IF;
+
   -- Both public entry points are SECURITY DEFINER only after checking the
   -- authenticated player's character ownership and campaign membership.
   FOREACH v_oid IN ARRAY ARRAY[
