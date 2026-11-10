@@ -109,7 +109,14 @@ GRANT EXECUTE ON FUNCTION priv.srd_feat_saving_throw_modifier(jsonb,text) TO aut
 CREATE OR REPLACE FUNCTION priv.srd_saving_throw_bonus(bigint,text,text,text,text)
 RETURNS integer LANGUAGE sql STABLE SECURITY DEFINER
 SET search_path TO pg_catalog, public, priv, pg_temp
-AS $$ SELECT priv.srd_feat_saving_throw_modifier('[]'::jsonb,'fortitude') $$;
+AS $ SELECT priv.srd_feat_saving_throw_modifier('[]'::jsonb,'fortitude') $;
+REVOKE ALL ON FUNCTION priv.srd_saving_throw_bonus(bigint,text,text,text,text) FROM PUBLIC, authenticated, anon;
+
+CREATE OR REPLACE FUNCTION priv.fixture_saving_throw_caller(bigint,text,text,text,text)
+RETURNS integer LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path TO pg_catalog, public, priv, pg_temp
+AS $ SELECT priv.srd_saving_throw_bonus($1,$2,$3,$4,$5) $;
+GRANT EXECUTE ON FUNCTION priv.fixture_saving_throw_caller(bigint,text,text,text,text) TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.srd_consultar_modificadores_manobra_srd(
   bigint,text,text,text,boolean,boolean
@@ -161,7 +168,7 @@ BEGIN
   IF public.srd_listar_ataques_naturais_oportunidade_srd(1,'monster')->>'ok' <> 'true' THEN
     RAISE EXCEPTION 'GM natural attack wrapper did not return success';
   END IF;
-  IF priv.srd_saving_throw_bonus(1,'character','1','fortitude','base') <> 0 THEN
+  IF priv.fixture_saving_throw_caller(1,'character','1','fortitude','base') <> 0 THEN
     RAISE EXCEPTION 'SECURITY DEFINER saving throw engine caller failed';
   END IF;
   IF NOT priv.fixture_condition_caller(1,'token','monster','cannot_attack') THEN
