@@ -24,7 +24,7 @@ Nenhuma fase deve ser repetida integralmente sem evidência de mudança ou lacun
 - [x] Mapear fontes canônicas atuais e registrar campos pendentes em DATA_MODEL.md; [ ] fechar decisões restantes de XP/ouro e valores derivados.
 - [x] Criar proposta inicial de ActionRequest/ActionResult, catálogo inicial de erros/eventos e estratégia de adoção em ACTION_CONTRACTS.md; ainda não implementada e decisões de persistência/versionamento permanecem abertas.
 - [ ] Fechar contratos por fluxo e cruzamento completo de argumentos/tipos JavaScript ↔ PostgreSQL.
-- [ ] Definir política implementável de transações, idempotência e concorrência (locks e idempotência de ataques/pending já mapeados; revisar avanço de turno e conjuração manual).
+- [ ] Definir política implementável de transações, idempotência e concorrência (auditoria de locks e proposta faseada registradas em [LOCK_ORDER_PROTOCOL_DRAFT.md](LOCK_ORDER_PROTOCOL_DRAFT.md) e [LOCK_ORDER_REFACTOR_PLAN.md](LOCK_ORDER_REFACTOR_PLAN.md); ainda falta fechar grafo transitivo, ordem por domínio, integração real e migração segura).
 - [x] Definir limites de domínio SRD/Vínculo e separar catálogos/regras.
 - [ ] Fechar estratégia de testes e implantação (CI estático é a primeira camada; integração/E2E e deploy permanecem pendentes).
 - [x] Registrar proposta inicial de contratos de ação e resultado em [ACTION_CONTRACTS.md](ACTION_CONTRACTS.md), sem alterar contratos RPC existentes.
