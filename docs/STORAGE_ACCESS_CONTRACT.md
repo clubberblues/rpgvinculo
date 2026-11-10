@@ -132,3 +132,17 @@ O harness descartável agora modela a garantia de serialização com duas interl
 ## Fixture sintético do finalizador e retry
 
 O harness descartável agora inclui uma implementação-modelo que bloqueia campanha primeiro, revalida proprietário e marcador, consulta se ainda existem objetos no Storage fictício e só então remove marcador/campanha. O teste verifica três resultados: usuário diferente do proprietário é rejeitado; Storage não vazio impede finalização e preserva campanha + marcador para retry; após remoção dos objetos, nova tentativa conclui. O modelo não chama Storage API nem substitui a validação da função remota; apenas fixa o contrato transacional esperado.
+
+
+## Algoritmo transacional proposto para o finalizador
+
+A função remota atual foi relida integralmente. Ela bloqueia o marcador primeiro, depois a campanha; se a campanha já não existir, ainda remove o marcador e retorna `deleted: true`. O algoritmo proposto substitui esse comportamento sem fazer limpeza Storage dentro da transação PostgreSQL:
+
+1. Exigir `auth.uid()` não nulo e validar `p_campaign_id`.
+2. Tentar localizar a campanha por PK com `FOR UPDATE`. Se existir, validar `campaigns.owner_id = auth.uid()` antes de continuar. Isso estabelece o primeiro lock e serializa com uploads que mantenham `FOR KEY SHARE` na mesma linha.
+3. Bloquear o marcador `priv.campaign_deletion_cleanup` com `FOR UPDATE`; exigir que exista e que `owner_id = auth.uid()`. Se não houver campanha, o marcador ainda deve ser validado, mas nenhum novo upload pode ser autorizado porque o registro de campanha não existe.
+4. Consultar `storage.objects` e recusar (exceção, sem apagar marcador) se existir qualquer objeto em: bucket `midia`, prefixo `campaigns/{id}/`; bucket `mesa-media`, prefixo `campaigns/{id}/`; ou bucket `midia`, prefixo `capas_mesas/mesa-{id}-`. Comparar prefixos ancorados com `left(name, char_length(prefix)) = prefix`, sem wildcard de usuário.
+5. Somente com zero objetos, excluir a campanha se ainda existir e excluir o marcador do proprietário. Retornar sucesso apenas após essas verificações; a transação torna as duas exclusões atômicas.
+6. Se campanha ausente e marcador válido, a mesma checagem zero-object decide idempotência: zero objetos permite remover marcador residual e retornar sucesso; qualquer objeto mantém marcador e exige investigação/limpeza. Nunca retornar sucesso apenas porque a campanha está ausente.
+
+A checagem deve usar os nomes reais de buckets/prefixos e o mesmo contrato de lock adotado pelas policies de INSERT/UPDATE. O helper de escrita deve ser VOLATILE e adquirir `FOR KEY SHARE` até o commit da transação Storage. Validar essa retenção do lock com uploads reais concorrentes antes de confiar na garantia. A função finalizadora continua SECURITY DEFINER apenas se estritamente necessário para consultar Storage e apagar estado protegido; manter `search_path` fixo, referências qualificadas, verificação explícita de `auth.uid()` e EXECUTE somente para authenticated.
