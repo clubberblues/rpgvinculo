@@ -66,6 +66,23 @@ CREATE TABLE public.srd_equipment(id text, detalhes jsonb);
 CREATE TABLE public.srd_character_equipment(character_id text, equipment_id text, equipado boolean, hand_slot text);
 CREATE TABLE public.srd_attack_sequences(id uuid, weapon_hand_slot text, weapon_end text);
 
+CREATE OR REPLACE FUNCTION public.iniciar_sequencia_ataque_iterativo_srd(
+ p_campaign_id bigint,p_character_id text,p_target_token_id text,p_attack_type text,p_weapon_instance_id uuid
+) RETURNS jsonb LANGUAGE sql SECURITY DEFINER
+SET search_path TO pg_catalog, public, priv, pg_temp
+AS $ SELECT jsonb_build_object('sequence_id','22222222-2222-4222-8222-222222222222') $;
+
+INSERT INTO public.characters(id,campaign_id,user_id)
+VALUES ('owned-character',1,'11111111-1111-4111-8111-111111111111');
+INSERT INTO public.members(campaign_id,user_id,role)
+VALUES (1,'11111111-1111-4111-8111-111111111111','PLAYER');
+INSERT INTO public.srd_character_weapon_instances(instance_id,character_id,equipment_id,equipado,hand_slot)
+VALUES ('33333333-3333-4333-8333-333333333333','owned-character','weapon-1',true,'main_hand');
+INSERT INTO public.srd_equipment(id,detalhes)
+VALUES ('weapon-1','{"weapon_double":false}'::jsonb);
+INSERT INTO public.srd_character_equipment(character_id,equipment_id,equipado,hand_slot)
+VALUES ('owned-character','weapon-1',true,'main_hand');
+
 CREATE OR REPLACE FUNCTION priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(
  p_campaign_id bigint,p_character_id text,p_target_token_id text,p_attack_type text,
  p_weapon_instance_id uuid,p_weapon_hand_slot text,p_weapon_end text
@@ -228,6 +245,18 @@ BEGIN
   EXCEPTION WHEN raise_exception THEN
     IF SQLERRM='Public 8-argument wrapper unexpectedly accepted unowned character' THEN RAISE; END IF;
   END;
+  IF public.iniciar_sequencia_ataque_iterativo_srd(
+    1,'owned-character','target','atk-corpo',
+    '33333333-3333-4333-8333-333333333333'::uuid,'main_hand',NULL
+  )->>'weapon_hand_slot' <> 'main_hand' THEN
+    RAISE EXCEPTION 'Owned character 7-argument iterative attack did not succeed';
+  END IF;
+  IF public.iniciar_sequencia_ataque_iterativo_srd(
+    1,'owned-character','target','atk-corpo',
+    '33333333-3333-4333-8333-333333333333'::uuid,'main_hand',NULL,0
+  ) IS NULL THEN
+    RAISE EXCEPTION 'Owned character 8-argument iterative attack did not return';
+  END IF;
   BEGIN
     PERFORM priv.srd35_maneuver_profile(1,'a');
     RAISE EXCEPTION 'Authenticated unexpectedly executed private helper';
