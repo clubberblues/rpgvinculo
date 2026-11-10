@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   replay-local-baseline:
-    name: Replay 966 applied migrations on disposable local Supabase
+    name: Replay all version-controlled migrations on disposable local Supabase
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
@@ -34,8 +34,9 @@ jobs:
           mkdir -p supabase/migrations
           cp -a "$GITHUB_WORKSPACE/supabase/migrations/." supabase/migrations/
           count="$(find supabase/migrations -maxdepth 1 -type f -name '*.sql' | wc -l | tr -d ' ')"
-          test "$count" = "966"
+          test "$count" -gt 0
           echo "SUPABASE_WORKDIR=$workdir" >> "$GITHUB_ENV"
+          echo "SUPABASE_MIGRATION_COUNT=$count" >> "$GITHUB_ENV"
           echo "Prepared $count version-controlled migrations in an isolated directory."
 
       - name: Start disposable local stack only
@@ -62,8 +63,8 @@ jobs:
           eval "$(supabase status -o env)"
           count="$(psql "$DB_URL" -XAt -v ON_ERROR_STOP=1 -c 'select count(*) from supabase_migrations.schema_migrations;')"
           versions="$(psql "$DB_URL" -XAt -v ON_ERROR_STOP=1 -c 'select count(distinct version) from supabase_migrations.schema_migrations;')"
-          test "$count" = "966"
-          test "$versions" = "966"
+          test "$count" = "$SUPABASE_MIGRATION_COUNT"
+          test "$versions" = "$SUPABASE_MIGRATION_COUNT"
           psql "$DB_URL" -X -v ON_ERROR_STOP=1 <<'SQL'
           DO $$
           BEGIN
