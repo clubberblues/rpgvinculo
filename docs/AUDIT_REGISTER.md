@@ -829,3 +829,9 @@ Exigir campaign-first e política de invalidação/revalidação do pending AOO 
 
 
 CI: no commit `c912f498f0555747709c8675bcffbf3f7635044d`, passaram validação estática (`42944067699`), JS aplicação (`42944067629`), JS mesa (`42944067654`) e fixtures PostgreSQL (`42944067709`). A reconstrução integral falhou ao inicializar o stack descartável (`42944067641`): rate limit temporário Docker e, em seguida, erro `public.campaigns` ausente na primeira migration versionada (`SQLSTATE 42P01`); replay/verificação foram pulados. Não é falha no banco remoto. Os commits documentais seguintes ainda não tinham execução própria concluída na última consulta.
+
+### Escopo ampliado do ciclo de locks AOO; lookup ambíguo de token
+
+A definição instalada de `public.srd_resolver_ataque_oportunidade_srd` e das duas RPCs `srd_aplicar_dano_ataque_oportunidade_*` confirma attack → pending → campaign. O cancelamento individual continua pending → attack. Assim, resolver ataque e aplicar dano também podem formar o ciclo de espera com cancelamento/encerramento concorrente, além da confirmação crítica. Risco estrutural inferido do código; não houve teste de concorrência nem deadlock observado.
+
+O resolver localiza atacante e alvo por `id OR key` com `LIMIT 1`, sem garantir uma única correspondência. Como a fixture de cena já reproduz colisão/duplicação de identidade aceita pelo salvamento, essa RPC pode resolver usando uma cópia arbitrária. Corrigir identidade da cena no writer e rejeitar duplicidade no resolver.
