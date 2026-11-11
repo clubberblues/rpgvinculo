@@ -808,3 +808,6 @@ A leitura do código PL/pgSQL instalado confirmou: (1) finalização de moviment
 Essas são inversões/janelas de autorização estáticas confirmadas, não deadlocks observados em produção. Nenhuma RPC foi executada no banco remoto.
 
 A árvore do commit inicial rastreável (`bd9ba612`, 2026-10-31 14:13 UTC) tem 26 arquivos e 10 SQL, sem criação do core `campaigns`/`characters`/`members`. Os SQL antigos já pressupõem esse core; o repositório não preserva dump/schema-base restaurável. Recuperar export/backup/histórico externo confiável, sem inventar bootstrap artificial.
+
+
+A busca por proveniência foi ampliada às branches `audit/reconcile-supabase-migration-history`, `audit/restore-remote-migration-history`, `chore/archive-unversioned-supabase-sql` e `fix/restore-production-migration-history`. Nenhuma contém dump/schema-only ou bootstrap do core; apenas migrations incrementais/arquivadas e material de reconciliação. Isso não exclui backup fora do GitHub.
