@@ -925,3 +925,10 @@ No commit `e18941910f54d2bf537384e3fb1eb2b20ead257c`, as verificações estátic
 A auditoria das constraints/indexes confirmou unicidade global de attack_id/pending_id/reaction_id, unicidade de attack por reaction_id, idempotência de ataque/dano, um pending ativo por campanha e unicidade do ledger por ordinal e trigger. Porém, não existem índices únicos compostos `(campaign_id,pending_id)` e `(campaign_id,reaction_id)` nos pais nem FKs compostas correspondentes no ataque. Logo, os relacionamentos FK atuais não impõem a mesma campanha em todos os três registros.
 
 As rotas de início (arma, desarmado e ataque natural de monstro) autenticadas usam `LIMIT 1` para selecionar reação no array `pending_reactions`, sem contar duplicatas. O wrapper de ataque natural com índice delega à rota de 4 argumentos; não deve ser auditado como implementação independente de lock. As rotas-base mantêm pending → campaign e validação GM antes dos locks, sem revalidar o papel após adquirir campanha.
+
+
+### Confirmação crítica não valida o ciclo de vida do pending (2026-11-11)
+
+A definição instalada de `public.srd_confirmar_critico_ataque_oportunidade_srd` confirma o estado do ataque (`awaiting_critical_confirmation`), mas depois atualiza `priv.srd_aoo_pending_movements` por `pending_id` sem exigir que o pending ainda esteja `waiting_reactions` e sem exigir que a reação vinculada esteja única e em `hit_pending_damage` (estado anterior esperado após o acerto). A subconsulta da posição usa `LIMIT 1`; se não encontrar reação, o caminho JSONB nulo faz a transação abortar; se encontrar entrada em estado diferente, ela é sobrescrita.
+
+Isso torna mais grave a inversão attack → pending contra cancelamento pending → attack: se a confirmação for retomada após o cancelamento ter sido revertido por deadlock, pode avançar ataque/reação sem validar o estado atual do movimento. Corrigir em conjunto: campaign → pending → attack; após os locks, revalidar pending ativo, ataque aguardando confirmação, e exatamente uma reação vinculada no estado anterior esperado; só então transicionar ambos atomicamente. Não foi executada concorrência no remoto.
