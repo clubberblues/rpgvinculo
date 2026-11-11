@@ -971,6 +971,6 @@ Executar duas sessões sincronizadas no mesmo `pending_id`/`attack_id`:
 2. Sessão B inicia cancelamento do movimento, segura o lock de `srd_aoo_pending_movements` e tenta cancelar ataques.
 3. Confirmar que a implementação corrigida serializa ambas em campaign → pending → attack, sem deadlock, e que apenas um desfecho coerente prevalece.
 
-Critérios: sem `awaiting_damage` em ataque pertencente a pending cancelado/expirado; sem reação marcada `attack_started` após cancelamento; sem sucesso retornado quando a reação correspondente não foi atualizada; replays idempotentes.
+Critérios: sem `awaiting_damage` em ataque pertencente a pending cancelado/expirado; sem reação marcada `attack_started` após cancelamento; rejeitar transições cujo status anterior da reação não seja o esperado; replays idempotentes.
 
 A implementação atual possui a ordem inversa exata (confirmação: attack → pending; cancelamento: pending → attack). O ciclo é risco estrutural demonstrado pelo código, não ocorrência observada em produção.
