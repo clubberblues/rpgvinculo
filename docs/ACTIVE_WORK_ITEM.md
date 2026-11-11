@@ -679,3 +679,12 @@ Essas ordens são evidência estática de inversões com operações campaign-fi
 - `priv.srd_reservar_ataque_oportunidade_impl` (OID 27261) é um controle positivo: bloqueia campaign primeiro e depois registra a reserva no ledger de reação.
 - `public.srd_registrar_rolagem_ataque_oportunidade_srd` (OID 27024) bloqueia somente a linha de attack para gravar a rolagem/idempotência; `public.srd_confirmar_critico_ataque_oportunidade_srd` (OID 27027) também é attack-only. Esses caminhos não adquirem depois pending/campaign no corpo consultado, portanto não criam por si só a inversão attack→campaign; ainda precisam manter idempotência e estado terminal.
 - O mapa atualizado reforça que as correções devem tratar o ciclo inteiro de vida do ataque: iniciar, rolar, confirmar crítico/ocultação, aplicar dano, encerrar/cancelar e finalizar movimento. Não basta corrigir apenas o resolver.
+
+
+### Novo ponto de hardening — sinalizador de commit usado pela prévia AOO (2026-11-10)
+
+- O trigger AFTER INSERT `priv.srd_validate_aoo_pending_movement_preview()` define `app.srd_aoo_pending_commit` com `set_config(..., true)` antes do bloco interno que simula o movimento e força rollback.
+- Como a definição do sinalizador fica fora do sub-bloco revertido, o valor pode permanecer ativo no restante da transação externa depois que a prévia retorna. O guard de movimento usa esse valor como autorização para deslocar o token mover enquanto existe pending.
+- O único chamador direto identificado, `public.srd_solicitar_movimento_com_aoo_srd` (OID 26964), termina logo após o INSERT; portanto não foi demonstrada exploração no caminho atual. Ainda assim, o escopo é excessivo para futuras chamadas aninhadas/wrappers e deve ser fechado.
+- Na correção, salvar/restaurar o valor anterior do GUC em todos os caminhos, restringir a exceção ao pending/campanha/token/destino exatos e consumi-la uma única vez. Manter a prévia com rollback: ela valida o caminho real sem persistir o movimento.
+- Achado estático do catálogo remoto; nenhuma mutação ou teste de escrita foi executado no Supabase remoto.
