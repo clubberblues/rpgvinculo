@@ -750,3 +750,10 @@ No commit `6c1d1e95c1d3f083ebc82f09bf0a547b8880a60c`, validação estática, Jav
 - Log: `supabase start` tenta aplicar automaticamente `20261031160944_srd35_action_economy.sql`; a criação de `public.consumir_acao_turno_srd` falha porque `public.campaigns` não existe (`42P01`).
 - Interpretação: a primeira migration versionada depende de schema-base não incluído no conjunto atual. Isso não indica falha no Supabase remoto. A solução correta é recuperar o schema-base/histórico confiável, não adicionar uma tabela mínima artificial.
 - No mesmo SHA `fa4b33f`, static validation, application JS, mesa JS e PostgreSQL fixture tests passaram; replay integral falhou na inicialização.
+
+
+### 2026-11-11 — matriz inicial de escritores AOO
+
+A varredura lexical dos corpos de funções encontrou escritores diretos de pending em helpers de cancelamento/encerramento, iniciadores e resolvers de manobra, reserva de reação, ocultação, finalização e solicitação de movimento; escritores diretos de ataques em cancelamento/encerramento, ocultação, estado global, aplicação de dano, crítico, início/rolagem/resolução; e um escritor direto do ledger, o helper de reserva de ataque.
+
+A matriz completa está no item de trabalho ativo. Limite importante: é inventário lexical, não grafo transitivo; helpers, triggers e SQL dinâmico exigem rastreamento separado. Não confundir funções `priv` com endpoints REST; a exposição HTTP do schema não foi confirmada.
