@@ -952,3 +952,12 @@ Plano de teste concreto: executar com duas sessões independentes cada par (1) r
 O papel `authenticated` possui `USAGE` em `priv` e `EXECUTE` direto em 40 funções do schema. O `pg_default_acl` do owner `postgres` concede EXECUTE automaticamente a `authenticated` e `service_role` para novas funções em `priv`. Isso explica por que implementações que parecem internas têm privilégios diretos. O schema pode ou não estar exposto pelo PostgREST; a configuração ativa não ficou acessível no catálogo SQL consultado (`pgrst.db_schemas` NULL, sem override de role/database). Tratar como risco de privilégios no banco, com exposição HTTP ainda não comprovada.
 
 Antes de revogar, inventariar chamadas entre rotinas e verificar schemas REST efetivos. Meta: wrappers públicos autorizados como API, helpers internos sem EXECUTE de `authenticated` quando não precisarem ser chamados diretamente; default privileges restritos e grants explícitos. Alteração somente em migration revisada e testada, não aplicada no remoto.
+
+
+### Evidência de implementação para o protocolo de locks e autorização (2026-11-11)
+
+A revisão direta do PL/pgSQL remoto confirma dois ciclos potenciais: finalização bloqueia pending → campaign; confirmação crítica bloqueia attack → atualiza pending; cancelamento/encerramento bloqueiam pending → attack. O protocolo alvo deve eliminar as ordens inversas e fazer todos os endpoints de mutação AOO adquirirem campaign → pending → attack/ledger → ficha/equipamento, revalidando autorização, combate, turno e estado após o lock de campanha.
+
+A finalização também não restaura o valor anterior de `app.srd_aoo_pending_commit` em caso de exceção e limpa apenas no sucesso. O futuro helper deve salvar/restaurar o GUC anterior com `set_config(..., true)` em bloco protegido, e validar o pending_id, campanha, mover e destino esperados. A sobrecarga de ataque natural deve herdar o contrato do endpoint interno e não introduzir uma segunda mutação fora da mesma cadeia de locks.
+
+Não há evidência de deadlock real nem teste de concorrência no banco remoto; são riscos demonstrados pela ordem de aquisição de locks no código.
