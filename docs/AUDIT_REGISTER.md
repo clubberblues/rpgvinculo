@@ -868,3 +868,12 @@ Recomendação: reforçar no schema com chaves únicas compostas e FKs compostas
 ### Unicidade da reação no array pending não é garantida pelos iniciadores
 
 As RPCs de início de ataque (arma e desarmado) procuram `pending_reactions` pelo `reactor_token_id` com `LIMIT 1`; não verificam contagem exata de entradas. Elas validam o status e `reservation_id` da primeira ocorrência e consultam o ledger relacional, cuja unicidade não impõe unicidade dentro do array JSON. Repetir a mesma validação de contagem única nas etapas de início, resolver e dano; não confiar apenas no ledger para sanear o snapshot JSON.
+
+
+### CI e restrições AOO — confirmação em 2026-11-11
+
+HEAD auditado `e18941910f54d2bf537384e3fb1eb2b20ead257c`: static, application JS, mesa JS e PostgreSQL fixtures success; replay das 969 migrations failure. A falha ocorre antes da sequência de migrations: `public.campaigns` não existe no banco local vazio quando a primeira migration versionada executa. As etapas posteriores foram ignoradas. O problema permanece schema-base histórico ausente; não se deve inventar bootstrap.
+
+As constraints/indexes atuais oferecem PKs globais, unicidade de `reaction_id` em ataques, idempotência de rolagem/dano, um pending ativo por campanha e unicidade de ledger por campanha/fase/rodada/ator/ordinal e trigger. Falta, porém, vínculo composto de campanha entre ataque, pending e ledger: as FKs usam apenas IDs globais. Reforçar com unique keys compostas nos pais e FKs compostas no ataque (ou validação equivalente).
+
+As três implementações-base de início de ataque (arma, desarmado e ataque natural de monstro) selecionam reação em `pending_reactions` com `LIMIT 1` sem exigir correspondência única. Todas devem rejeitar arrays duplicados/inconsistentes antes de iniciar. O wrapper de seleção de ataque natural delega à implementação-base, então correções devem ocorrer na base e não ser duplicadas no wrapper.
