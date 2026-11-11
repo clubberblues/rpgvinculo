@@ -757,3 +757,8 @@ No commit `6c1d1e95c1d3f083ebc82f09bf0a547b8880a60c`, validação estática, Jav
 A varredura lexical dos corpos de funções encontrou escritores diretos de pending em helpers de cancelamento/encerramento, iniciadores e resolvers de manobra, reserva de reação, ocultação, finalização e solicitação de movimento; escritores diretos de ataques em cancelamento/encerramento, ocultação, estado global, aplicação de dano, crítico, início/rolagem/resolução; e um escritor direto do ledger, o helper de reserva de ataque.
 
 A matriz completa está no item de trabalho ativo. Limite importante: é inventário lexical, não grafo transitivo; helpers, triggers e SQL dinâmico exigem rastreamento separado. Não confundir funções `priv` com endpoints REST; a exposição HTTP do schema não foi confirmada.
+
+
+### 2026-11-11 — histórico de `ready_to_commit` esclarecido
+
+As migrations 20261108170021 e 20261108193147 incluíram explicitamente `ready_to_commit` como estado cancelável/resumível. Não remover como resíduo. Existe assimetria: cancelamento, encerramento de combate e bloqueio de avanço aceitam o estado; finalização e encerramento individual de reação não. Nenhum produtor instalado foi localizado e a tabela não tinha linhas nesse estado no snapshot remoto. Exige decisão de compatibilidade antes de alterar constraints, índices ou consumidores.
