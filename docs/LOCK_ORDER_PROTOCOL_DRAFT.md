@@ -961,3 +961,16 @@ A revisão direta do PL/pgSQL remoto confirma dois ciclos potenciais: finalizaç
 A finalização também não restaura o valor anterior de `app.srd_aoo_pending_commit` em caso de exceção e limpa apenas no sucesso. O futuro helper deve salvar/restaurar o GUC anterior com `set_config(..., true)` em bloco protegido, e validar o pending_id, campanha, mover e destino esperados. A sobrecarga de ataque natural deve herdar o contrato do endpoint interno e não introduzir uma segunda mutação fora da mesma cadeia de locks.
 
 Não há evidência de deadlock real nem teste de concorrência no banco remoto; são riscos demonstrados pela ordem de aquisição de locks no código.
+
+
+### Caso de teste obrigatório: confirmação crítica concorrente com cancelamento
+
+Executar duas sessões sincronizadas no mesmo `pending_id`/`attack_id`:
+
+1. Sessão A inicia `srd_confirmar_critico_ataque_oportunidade_srd`, segura o lock da linha `srd_aoo_attacks` e tenta atualizar pending.
+2. Sessão B inicia cancelamento do movimento, segura o lock de `srd_aoo_pending_movements` e tenta cancelar ataques.
+3. Confirmar que a implementação corrigida serializa ambas em campaign → pending → attack, sem deadlock, e que apenas um desfecho coerente prevalece.
+
+Critérios: sem `awaiting_damage` em ataque pertencente a pending cancelado/expirado; sem reação marcada `attack_started` após cancelamento; sem sucesso retornado quando a reação correspondente não foi atualizada; replays idempotentes.
+
+A implementação atual possui a ordem inversa exata (confirmação: attack → pending; cancelamento: pending → attack). O ciclo é risco estrutural demonstrado pelo código, não ocorrência observada em produção.
