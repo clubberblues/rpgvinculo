@@ -675,3 +675,27 @@ A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24
 - `public.srd_remove_campaign_condition` (OID 24806) e `public.srd_remove_campaign_effect` (OID 24897) validam GM e escrevem diretamente em condições/efeitos sem campaign lock; ambos alteram flags consultadas pela elegibilidade AOO.
 - `public.usar_pocao_cura_srd_manual` (OID 24655) lê estado da campanha sem lock e só consome ação quando já observou COMBATE. A transição concorrente EXPLORACAO→COMBATE pode fazer a poção aplicar cura/consumir item sem custo de ação; serializar campanha antes de inventário/ficha e revalidar estado.
 - Evidência: corpos instalados consultados por leitura SQL; wrappers/callers identificados por busca no catálogo. Nenhuma RPC foi executada e nenhuma alteração remota foi feita.
+
+
+## 2026-11-10 — consolidação da ordem de locks AOO e correção do inventário CBA
+
+### Ordem efetiva encontrada no catálogo remoto
+
+- Reserva de reação: pending → campaign (`priv.srd_reservar_reacao_movimento_aoo_impl`, OID 27256).
+- Início de ataque AOO com arma, desarmado e ataque natural legado: pending → campaign (OIDs 27022, 27065, 27055). A sobrecarga natural OID 27231 delega para o fluxo legado.
+- Registro de ocultação: attack → pending → campaign (OID 27254).
+- Resolução de ataque: attack → pending → campaign (OID 27025).
+- Finalização de movimento: pending → campaign (OID 27038).
+- Levantar-se após AOO: pending → campaign (OID 27152).
+- Cancelamento: pending → attack (OID 27268), sem campaign lock explícito.
+- Encerramento de reação: pending → attack condicional (OID 27269), sem campaign lock explícito.
+
+Essas inversões são risco estrutural de deadlock com rotas campaign-first; não são prova de deadlocks ocorridos. Protocolo de destino: campaign → pending → attack/ledger, com autorização revalidada sob lock. Aplicar a helpers, wrappers e overloads como uma única cadeia transacional.
+
+### Correção formal do achado de spawn
+
+A afirmação anterior de que `public.adicionar_token_cba_completo` (OID 21726) não adquiria campaign lock foi corrigida após rastrear a chamada transitiva. O wrapper chama `public.adicionar_token_cba` (OID 20075), que adquire `campaigns FOR UPDATE`; o wrapper herda o lock na mesma transação. Não adicionar lock redundante. Permanecem duas lacunas: autorização GM não revalidada depois do lock e ausência de política explícita para spawn enquanto há pending AOO/combate.
+
+### CI após os commits de documentação
+
+No commit `6c1d1e95c1d3f083ebc82f09bf0a547b8880a60c`, validação estática, JavaScript de mesa, JavaScript da aplicação e fixtures PostgreSQL concluíram com sucesso. O workflow de replay das 969 migrations falhou antes de executar o replay, na etapa de inicialização do stack descartável; o log registra `relation "public.campaigns" does not exist` ao aplicar a primeira migration incremental. O problema permanece no bootstrap do ambiente vazio, não é evidência de falha no banco remoto. Nenhuma alteração foi feita no banco de produção.
