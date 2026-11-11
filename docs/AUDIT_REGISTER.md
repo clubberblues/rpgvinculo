@@ -799,3 +799,12 @@ Advisor reportou 7 tabelas RLS-enabled sem policy, incluindo `priv.srd_aoo_attac
 O Advisor reporta 99 funções SECURITY DEFINER em `public` como RPCs REST executáveis por `authenticated`; não reporta funções `priv` como RPCs. Dentre as 99, 15 assinaturas AOO foram listadas: aplicar dano (normal e monstro), confirmar crítico, consultar armas/ataque/movimento pendente, finalizar movimento, iniciar ataques desarmado/arma/natural (incluindo overloads), listar movimentos, registrar rolagem, resolver ataque e solicitar movimento.
 
 Este alerta é de hardening, não prova de vulnerabilidade isoladamente. Entretanto, como o AOO já tem TOCTOU e inversões de locks confirmadas, cada RPC exposta precisa de autorização revalidada sob campaign lock e validação transitiva dos helpers antes de release.
+
+
+### 2026-11-11 — verificação direta de RPCs AOO e origem do schema-base
+
+A leitura do código PL/pgSQL instalado confirmou: (1) finalização de movimento bloqueia pending antes de campaign e verifica GM antes do lock de campanha, sem revalidar papel depois; limpa o GUC de commit somente no caminho de sucesso e só aceita `waiting_reactions`; (2) confirmação crítica bloqueia attack e atualiza pending sem lock explícito do pending/campaign, criando ordem attack → pending frente a cancelamento pending → attack; (3) solicitação de movimento GM valida papel antes do campaign lock e não revalida sob lock, enquanto o fluxo de jogador valida dono/turno sob lock; (4) início de ataque natural legado também valida GM antes dos locks pending → campaign, e a sobrecarga de 5 argumentos delega à de 4.
+
+Essas são inversões/janelas de autorização estáticas confirmadas, não deadlocks observados em produção. Nenhuma RPC foi executada no banco remoto.
+
+A árvore do commit inicial rastreável (`bd9ba612`, 2026-10-31 14:13 UTC) tem 26 arquivos e 10 SQL, sem criação do core `campaigns`/`characters`/`members`. Os SQL antigos já pressupõem esse core; o repositório não preserva dump/schema-base restaurável. Recuperar export/backup/histórico externo confiável, sem inventar bootstrap artificial.
