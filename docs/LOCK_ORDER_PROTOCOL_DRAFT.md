@@ -886,3 +886,19 @@ Evidência: definições instaladas do trigger, do guard `priv.srd_guard_pending
 - Portanto, no código instalado consultado, `ready_to_commit` é um estado permitido e protegido, porém sem produtor identificado. Não o tratar como etapa funcional existente nem remover a compatibilidade antes de verificar histórico/migrations e eventuais escritores externos.
 - Ao consolidar a máquina, escolher explicitamente uma das opções: remover esse estado de constraint/índice/guard após provar que não há dados/consumidores legados; ou implementar a transição e atualizar finalização/cancelamento para aceitá-la com semântica terminal consistente.
 - A consulta foi somente leitura; não foram alterados status nem dados de campanha.
+
+
+### Extensão do grafo AOO — início de ataques, finalização e Derrubar (2026-11-10)
+
+A inspeção ampliada dos fluxos instalados confirmou que a inversão não está restrita às funções já listadas:
+
+- public.srd_iniciar_ataque_oportunidade_srd (OID 27022), public.srd_iniciar_ataque_oportunidade_desarmado_srd (OID 27065) e public.srd_iniciar_ataque_oportunidade_monstro_srd (OID 27055) bloqueiam primeiro srd_aoo_pending_movements, depois campaigns, e em seguida a reserva no ledger. A sobrecarga natural OID 27231 delega ao fluxo OID 27055 e herda a ordem. As três rotas validam GM antes do lock da campanha e não repetem a autorização sob lock.
+- public.srd_finalizar_movimento_aoo_pendente_srd (OID 27038) também bloqueia pending antes de campaign. Portanto, a finalização normal compete em ordem inversa com operações campaign-first; não basta tratar apenas início/resolução de ataque.
+- A manobra Derrubar tem uma cadeia própria: public.srd_resolver_derrubar_apos_aoo_srd (OID 27145) → priv.srd_resolver_derrubar_apos_aoo_srd (OID 27136) bloqueia pending e depois chama public.srd_resolver_derrubar_srd (OID 27129) → priv.srd_resolver_derrubar_srd_api (OID 27130) → priv.srd_resolver_derrubar_srd (OID 27120), que bloqueia campaign. Ordem efetiva pending → campaign na mesma transação, apesar de o lock de campanha estar em helper transitivo.
+- O iniciador de Derrubar public.srd_iniciar_derrubar_com_aoo_srd (OID 27144) → priv.srd_iniciar_derrubar_com_aoo_srd (OID 27131) segue campaign-first antes de inserir o pending; é um controle positivo para o início da manobra.
+- O resolver de Derrubar define app.srd_trip_aoo_pending_id e depois o limpa para string vazia tanto no caminho normal quanto no tratamento de erro, em vez de salvar/restaurar o valor anterior. O helper usa esse GUC para autorizar a resolução da manobra e concluir o pending. Assim como o GUC de commit de movimento, o escopo precisa ser limitado e restaurado, sem depender de pressupor que nenhum chamador aninhado já tinha um valor.
+- A finalização normal define app.srd_aoo_pending_commit e limpa para vazio apenas no caminho de sucesso; um erro posterior pode deixar o valor transacional configurado até o rollback da transação externa. O desenho deve salvar/restaurar o valor anterior em bloco protegido e vincular a exceção ao pending/campanha/token/destino.
+
+A varredura também confirma que ready_to_commit aparece em constraints/guardas e checks, mas não foi encontrado produtor no código PL/pgSQL instalado. Não remover o estado antes de conferir histórico e consumidores externos.
+
+Evidência: definições e cadeias transitivas consultadas no catálogo remoto via leitura SQL. Nenhuma RPC de combate foi executada; nenhum token, pending, campanha, ACL ou migration remota foi alterado.
