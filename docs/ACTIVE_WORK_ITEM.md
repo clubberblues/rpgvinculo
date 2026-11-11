@@ -663,3 +663,11 @@ Essas ordens são evidência estática de inversões com operações campaign-fi
 - A classificação anterior de `adicionar_token_cba_completo` como writer sem campaign lock foi incorreta: o helper `adicionar_token_cba` adquire esse lock e o wrapper herda-o durante a transação.
 - Mantém-se o achado de autorização GM validada antes do lock sem revalidação e ausência de regra explícita para spawn durante pending AOO. O próximo desenho deve corrigir esses dois pontos, não adicionar um segundo lock redundante.
 - Essa correção substitui as afirmações anteriores de ausência de lock direto/herdado para essa rota.
+
+
+### ACL e exposição PostgREST — limite da evidência (2026-11-10)
+
+- O catálogo remoto mostra `USAGE` no schema `priv` para `authenticated` e nenhuma para `anon`; 40 funções de `priv` têm EXECUTE para authenticated. No schema `private`, authenticated tem USAGE e 6 funções têm EXECUTE.
+- `current_setting('pgrst.db_schemas', true)` e `pgrst.db_extra_search_path` retornaram NULL nesta conexão. Também não foram encontrados overrides correspondentes em `pg_db_role_setting` para database/authenticator.
+- Isso **não comprova** que `priv`/ `private` estejam expostos pela API: a lista de schemas PostgREST pode ser configurada no serviço fora dessas configurações SQL consultadas. Não classificar essas funções como RPC acessível via HTTP até confirmar a configuração efetiva do projeto. Manter o risco como “permissões SQL authenticated concedidas; exposição API não confirmada”.
+- A checagem foi read-only; nenhuma ACL, schema ou configuração foi alterada.
