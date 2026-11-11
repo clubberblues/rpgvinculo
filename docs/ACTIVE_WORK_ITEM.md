@@ -824,3 +824,20 @@ Conclusão: o repositório rastreável desde sua primeira revisão não preserva
 
 
 Complemento da busca histórica: também foram inspecionadas as árvores das branches `audit/reconcile-supabase-migration-history`, `audit/restore-remote-migration-history`, `chore/archive-unversioned-supabase-sql` e `fix/restore-production-migration-history`. Elas contêm variantes incrementais, arquivos arquivados e documentos de reconciliação, mas nenhum dump/schema-only ou SQL que crie o core `campaigns`/`characters`/`members`. A busca em branches conhecidas não localizou a fonte; ainda pode existir backup externo, branch remota não listada ou export manual do projeto Supabase.
+
+### Ciclo de lock concreto: confirmação crítica × cancelamento de movimento (2026-11-11)
+
+A inspeção integral de `public.srd_confirmar_critico_ataque_oportunidade_srd` e `priv.srd_cancelar_movimento_aoo_pendente_impl` confirma um ciclo de locks específico:
+
+- Confirmação crítica: `SELECT ... FROM priv.srd_aoo_attacks FOR UPDATE` adquire primeiro a linha do ataque; depois o `UPDATE priv.srd_aoo_pending_movements` adquire implicitamente a linha do pending.
+- Cancelamento: `SELECT ... FROM priv.srd_aoo_pending_movements FOR UPDATE` adquire primeiro o pending; depois `UPDATE priv.srd_aoo_attacks` adquire implicitamente a linha do ataque.
+
+Se as duas transações concorrentes tratarem o mesmo ataque/pending, uma pode segurar attack e esperar pending, enquanto a outra segura pending e espera attack. Isso demonstra um ciclo de espera possível no código (risco de deadlock), mas não prova ocorrência em produção; nenhum teste concorrente foi executado.
+
+A confirmação crítica também não lê/bloqueia a linha pending antes da alteração, não confere que o pending continue em `waiting_reactions`, nem valida que a reação correspondente ainda esteja em estado `attack_started`/`hit_pending_damage`. O `UPDATE` do pending não verifica `ROW_COUNT`; portanto, o endpoint pode atualizar o ataque para `awaiting_damage` e retornar sucesso sem confirmar a atualização correspondente do estado da reação se o elemento/linha esperado não for encontrado. O FK attack→pending garante existência referencial enquanto a linha existir, mas não garante consistência entre os estados das duas máquinas.
+
+A correção deve fazer ambas as rotas obterem campaign → pending → attack, revalidar o status do pending e a identidade/estado da reação sob os locks, e verificar que exatamente a reação esperada foi atualizada antes de retornar sucesso. A transição attack + pending deve ser atômica e idempotente.
+
+### CI atualizado — commit cfd924f
+
+No commit `cfd924f48cf3792d77030abb099c06493b1d1ba1`, Static validation, Validate application JavaScript, Validate mesa JavaScript e PostgreSQL fixture tests concluíram sucesso. `Replay full Supabase migration baseline` falhou durante `Start disposable local Supabase stack only`, antes de executar as etapas separadas de replay/verificação. O log mostra uma limitação transitória de download Docker (`toomanyrequests: Rate exceeded`, seguida de retry) e, durante inicialização automática do banco, a primeira migration falhou ao resolver `public.campaigns` ausente (`SQLSTATE 42P01`). A causa estrutural já conhecida continua sendo ausência do schema-base no banco descartável; a limitação Docker é ruído adicional da inicialização. Não é falha no Supabase remoto.
