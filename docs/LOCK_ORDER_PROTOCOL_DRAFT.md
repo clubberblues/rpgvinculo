@@ -974,3 +974,17 @@ Executar duas sessões sincronizadas no mesmo `pending_id`/`attack_id`:
 Critérios: sem `awaiting_damage` em ataque pertencente a pending cancelado/expirado; sem reação marcada `attack_started` após cancelamento; rejeitar transições cujo status anterior da reação não seja o esperado; replays idempotentes.
 
 A implementação atual possui a ordem inversa exata (confirmação: attack → pending; cancelamento: pending → attack). O ciclo é risco estrutural demonstrado pelo código, não ocorrência observada em produção.
+
+
+### Família completa de operações attack-first contra cancelamento pending-first
+
+Leitura direta das definições instaladas confirmou que as rotas seguintes bloqueiam `srd_aoo_attacks` antes de `srd_aoo_pending_movements` e `campaigns`:
+
+- `public.srd_resolver_ataque_oportunidade_srd`;
+- `public.srd_aplicar_dano_ataque_oportunidade_srd`;
+- `public.srd_aplicar_dano_ataque_oportunidade_monstro_srd`;
+- `public.srd_confirmar_critico_ataque_oportunidade_srd` (attack e depois update em pending).
+
+`priv.srd_cancelar_movimento_aoo_pendente_impl` e `priv.srd_encerrar_reacao_aoo_pendente_impl` começam por bloquear pending e depois alteram attack. A família completa tem inversão attack ↔ pending e deve convergir para campaign → pending → attack. A possibilidade de deadlock é estática; validar em duas sessões concorrentes isoladas antes de qualquer deploy.
+
+O resolver também usa `id OR key LIMIT 1` para encontrar atacante/alvo no CBA, sem verificar unicidade. A fixture de duplicação de identidade mostra que essa ambiguidade pode chegar ao cálculo de ataque; o resolver deve exigir uma correspondência inequívoca para cada token.
