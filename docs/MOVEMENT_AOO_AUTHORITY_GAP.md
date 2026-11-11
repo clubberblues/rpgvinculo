@@ -525,3 +525,16 @@ Inventário read-only dos triggers não internos nas tabelas relevantes:
 Implicação arquitetural: a correção precisa escolher explicitamente um contrato consistente entre (a) snapshot imutável completo, incluindo versão/hash das fontes de ficha/equipamento/condições e validação dessa versão em cada reação/commit; ou (b) triggers de invalidação/cancelamento atômico em todas as fontes relevantes, com protocolo de locks compatível com campaign-first. Um trigger só em `campaigns.cba_data` nunca consegue garantir sozinho a estabilidade de dados relacionais externos.
 
 Não é correto bloquear qualquer alteração dessas tabelas de forma indiscriminada: reações AOO legítimas podem alterar PV/condições durante o pending. O contrato deve distinguir mudanças que alteram elegibilidade/alcance/ameaça das mudanças de consequência (dano, PV, estados terminais), ou cancelar e recalcular de forma transacional e explícita.
+
+
+### Escritores relacionais que alteram elegibilidade AOO — atualização 2026-11-11
+
+Além dos escritores de ficha/equipamento já inventariados, três rotas autenticadas expostas alteram diretamente condições/efeitos que participam da elegibilidade AOO sem obter lock da campanha:
+
+- `public.srd_remove_campaign_condition(bigint,text,text,text)`: valida GM e desativa condição ativa diretamente, sem campaign lock nem política de pending.
+- `public.srd_remove_campaign_effect(bigint,bigint)`: valida GM e desativa efeito diretamente, também sem campaign lock. Como `priv.srd_condition_has_flag` agrega flags de `srd_campaign_effects.effect_data`, esse caminho pode mudar elegibilidade sem serialização.
+- `public.srd_resolve_pending_spell_save(uuid,integer)`: bloqueia o pedido de resistência, mas no ramo `condition_break` desativa diretamente `srd_campaign_conditions` após ler a rodada sem campaign lock. Não delega nesse ramo ao helper de aplicação que serializa pela campanha.
+
+Esses três caminhos devem ser integrados ao protocolo campaign-first e à regra de snapshot AOO. Uma alteração de flag que torna um reator incapaz/habilitado deve rejeitar-se enquanto pending estiver ativo ou invalidar/recalcular o pending atomicamente. A regra não deve bloquear consequências normais de uma reação já em resolução.
+
+A análise de `srd_resolve_pending_spell_save` foi feita pela definição instalada no catálogo remoto; não houve chamada à RPC nem mutação de condição no Supabase de produção.
