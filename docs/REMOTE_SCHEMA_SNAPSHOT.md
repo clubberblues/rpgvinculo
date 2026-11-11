@@ -7303,3 +7303,8 @@ As 16 sequences encontradas estão em `public`, todas pertencem a `postgres`, us
 ### Tipos e views
 
 - Nenhum enum, domínio, range, tipo composto independente ou view/materialized view foi encontrado nos schemas `public`, `priv` e `private` consultados.
+
+
+## Observação para reconstrução de baseline
+
+Este snapshot contém metadados descritivos do schema remoto e não contém linhas de dados. Não é um dump de restauração. A inspeção de SQLs legados confirma que os arquivos `srd35_schema_reconciliation.sql`, `cba_iniciativa_migration.sql`, `srd35_rule_engine_foundation_migration.sql` e `vtt_dnd35_final_migration.sql` dependem de tabelas centrais pré-existentes; nenhum deles é bootstrap inicial de `public.campaigns`, `public.characters` e `public.members`. Use este documento somente para comparação, nunca como script de bootstrap automático.
