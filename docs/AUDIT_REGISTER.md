@@ -733,3 +733,12 @@ No commit `6c1d1e95c1d3f083ebc82f09bf0a547b8880a60c`, validação estática, Jav
 - public.avancar_turno (OID 20074, authenticated) é campaign-first e bloqueia avanço enquanto existir pending AOO ativo. PLAYER tem revalidação de propriedade/turno sob lock; GM não tem revalidação de membership após o lock.
 - public.end_combat (OID 19091) altera os mesmos registros, mas não possui EXECUTE authenticated/anon no catálogo consultado; não é endpoint direto confirmado.
 - Somente leitura do catálogo remoto; nenhuma transição de campanha ou combate foi executada.
+
+
+### 2026-11-10 — invariantes de dados AOO
+
+- Pending tem cinco estados permitidos e índice parcial único por campanha para `waiting_reactions`/`ready_to_commit`.
+- Ataques vinculam pending e ledger por FK e têm unicidade por reação e por chaves de idempotência de rolagem/dano.
+- Ledger impede duplicação pelo ordinal e pela chave de trigger na mesma campanha/fase/rodada/ator.
+- As três tabelas estavam vazias no momento da consulta remota; sem pending `ready_to_commit`. Isto é fotografia atual, não evidência de ausência de uso histórico.
+- Os testes de integração devem cobrir reservas simultâneas, replay de rolagem/dano, terminalização coerente e ausência de ataques abertos após cancelamento/expiração.
