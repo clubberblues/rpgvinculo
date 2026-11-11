@@ -559,3 +559,8 @@ Portanto, a ausência de guarda não é apenas uma hipótese sobre o schema `pri
 As duas RPCs de aplicação de dano exigem ataque `awaiting_damage` e pending `waiting_reactions`, mas não exigem que a entrada da reação associada esteja única e especificamente em `hit_pending_damage`. O update da lista usa `LIMIT 1` e substitui o status encontrado por `damage_applied`; estado inesperado pode ser sobrescrito. Se não houver correspondência, o caminho JSONB nulo aborta a transação.
 
 O resolver de ataque encontra alvo por `id OR key`; as RPCs de dano encontram apenas por `id`. Isso é uma inconsistência entre etapas da mesma ação. Unificar o identificador canônico e validar correspondência única em todas as rotas. As RPCs de dano também mantêm a ordem de locks attack → pending → campaign, conflitante com cancelamento pending → attack.
+
+
+### Reação duplicada no array do pending
+
+As rotas de início de ataque com arma e desarmado selecionam a primeira reação do reator via `LIMIT 1`, sem garantir que exista uma única ocorrência no array JSON. O ledger tem restrições de unicidade próprias, mas não impede duplicação do conteúdo JSON de `pending_reactions`. Padronizar uma validação explícita de exatamente uma entrada para `reactor_token_id` e `reservation_id` em todas as transições.
