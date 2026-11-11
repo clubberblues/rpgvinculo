@@ -538,3 +538,10 @@ Além dos escritores de ficha/equipamento já inventariados, três rotas autenti
 Esses três caminhos devem ser integrados ao protocolo campaign-first e à regra de snapshot AOO. Uma alteração de flag que torna um reator incapaz/habilitado deve rejeitar-se enquanto pending estiver ativo ou invalidar/recalcular o pending atomicamente. A regra não deve bloquear consequências normais de uma reação já em resolução.
 
 A análise de `srd_resolve_pending_spell_save` foi feita pela definição instalada no catálogo remoto; não houve chamada à RPC nem mutação de condição no Supabase de produção.
+
+
+### Resolver AOO herda a lacuna de identidade do CBA
+
+`public.srd_resolver_ataque_oportunidade_srd` localiza atacante e alvo em `cba_data.tokens` com predicado `token.id = id_armazenado OR token.key = id_armazenado LIMIT 1`. Não valida contagem de correspondências nem exige unicidade do par de identidade. A fixture anterior demonstrou que `salvar_cena_cba` aceita colisões/duplicações de `id`/`key`; por isso, uma cena ambígua pode fazer o cálculo de ataque escolher uma cópia sem sinalizar inconsistência.
+
+A mesma RPC adquire locks attack → pending → campaign. Junto aos endpoints de aplicação de dano, isso confirma que a inversão contra cancelamento pending → attack é uma família de rotas, não apenas a confirmação crítica. Exigir campaign → pending → attack e identidade única/estável antes de calcular/resolver o ataque.
