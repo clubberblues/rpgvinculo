@@ -663,3 +663,15 @@ A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24
 - `adicionar_token_cba_completo` é exceção: authenticated EXECUTE, atualiza a cena sem lock explícito de campanha e permite spawn durante combate. Exigir lock, revalidar GM/estado/pending e definir política de inserção durante combate.
 - Presença de lock em `alterar_pv_token_cba` ainda não prova validação correta; revisar permissão e pending após lock. Helpers internos de Fúria/sincronização de PV dependem de callers que já seguram campanha.
 - Lacunas centrais continuam nas mutações relacionais de ficha/condição/efeito e ações de classe/magia. Nenhuma mutação remota executada.
+
+
+## 2026-11-10 — novos caminhos de resolução e controle de autoridade
+
+- `public.srd_resolver_levantar_caido_apos_aoo_srd` (OID 27157) delega ao helper authenticated `priv.srd_resolver_levantar_caido_apos_aoo_srd` (OID 27152). O helper bloqueia pending AOO antes da campanha; divergência campaign-first e risco de ciclo com finalização/cancelamento. A correção deve ler pending sem lock, obter campaign lock, revalidar e então bloquear pending.
+- `public.srd_resolve_confusion_turn_srd` (OID 27277) delega ao helper authenticated `priv.srd_resolve_confusion_turn_impl` (OID 27273), que segue campanha → condição e usa request_id para idempotência. Registrar como controle positivo; ainda conferir exposição efetiva de `priv` no Data API.
+- `public.srd_resolve_npc_dying_round` (OID 26859) também usa campanha-first antes de condição/sincronização vital, controle positivo frente ao caminho PC.
+- `public.srd_configurar_rodada_surpresa_srd` (OID 27092) valida GM antes de bloquear campanha e não repete a autorização após o lock. Revalidar papel sob lock para evitar TOCTOU.
+- `public.adicionar_token_cba_completo` (OID 21726) não é ausência total de lock: delega a `public.adicionar_token_cba` (OID 20075), que bloqueia campanha; porém a validação GM do helper ocorre antes do lock e não é repetida, e não há política de pending/combate para spawn.
+- `public.srd_remove_campaign_condition` (OID 24806) e `public.srd_remove_campaign_effect` (OID 24897) validam GM e escrevem diretamente em condições/efeitos sem campaign lock; ambos alteram flags consultadas pela elegibilidade AOO.
+- `public.usar_pocao_cura_srd_manual` (OID 24655) lê estado da campanha sem lock e só consome ação quando já observou COMBATE. A transição concorrente EXPLORACAO→COMBATE pode fazer a poção aplicar cura/consumir item sem custo de ação; serializar campanha antes de inventário/ficha e revalidar estado.
+- Evidência: corpos instalados consultados por leitura SQL; wrappers/callers identificados por busca no catálogo. Nenhuma RPC foi executada e nenhuma alteração remota foi feita.
