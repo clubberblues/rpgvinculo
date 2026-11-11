@@ -866,3 +866,10 @@ Correção proposta: campaign → pending spell request → condição/efeito, r
 - Replay full Supabase migration baseline: failure (`42944067641`) no estágio `Start disposable local stack only`; as etapas explícitas de replay/verificação foram puladas. Log mostra rate limit temporário do registry Docker e, depois, falha da primeira migration `20261031160944_srd35_action_economy.sql` por ausência de `public.campaigns` (`SQLSTATE 42P01`). A falha não é no Supabase remoto; confirma que o banco descartável não tem o schema-base pré-ledger.
 
 O commit documental atual é posterior a `c912f49`; os resultados acima são a última execução completa consultada para o conjunto anterior de documentação. Nenhuma alteração de código funcional foi feita nesta continuação.
+
+
+### Confirmação de mais rotas no ciclo attack/pending e identidade ambígua no resolver (2026-11-11)
+
+A leitura integral de `public.srd_resolver_ataque_oportunidade_srd` confirma a ordem attack → pending → campaign: bloqueia `priv.srd_aoo_attacks FOR UPDATE`, depois `priv.srd_aoo_pending_movements FOR UPDATE`, depois `public.campaigns FOR UPDATE`. Os endpoints autenticados `srd_aplicar_dano_ataque_oportunidade_srd` e `_monstro_srd` também bloqueiam attack → pending → campaign. Portanto, o ciclo com `priv.srd_cancelar_movimento_aoo_pendente_impl` (pending → attack) não se limita à confirmação crítica: pode ocorrer em resolução de ataque e aplicação de dano se competirem com cancelamento/encerramento do mesmo pending. Ainda é risco estático, não deadlock observado.
+
+Também confirmei que o resolver procura ator e alvo em `campaigns.cba_data` usando `id = ... OR key = ... LIMIT 1`, sem contar correspondências nem exigir identidade única. A fixture já demonstrou que `salvar_cena_cba` pode deixar passar duplicação/colisão de `id` e `key`; assim, o resolver pode escolher uma das cópias sem detectar ambiguidade. Exigir identidade estável e única antes de resolver qualquer ataque, e usar a mesma regra em todos os escritores/leitores da cena.
