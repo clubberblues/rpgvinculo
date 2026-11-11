@@ -856,3 +856,10 @@ As definições instaladas de `srd_aplicar_dano_ataque_oportunidade_srd` e `_mon
 Há também divergência de identidade: o resolver aceita token por `id OR key`, enquanto ambas as RPCs de dano localizam o alvo apenas por `id`. Isso pode fazer a resolução reconhecer um alvo que a etapa de dano não encontra. Padronizar identidade canônica e exigir correspondência única em todas as rotas.
 
 As RPCs de dano mantêm ordem attack → pending → campaign, reforçando a inversão contra cancelamento pending → attack. Achado estático; sem execução de dano/teste concorrente remoto.
+
+
+### FKs AOO sem vínculo composto de campanha
+
+No catálogo remoto, `srd_aoo_attacks.pending_id` e `reaction_id` referenciam apenas os IDs globais das tabelas-pai. Não há FK composta validando que `campaign_id` do ataque seja igual ao `campaign_id` do movimento pendente e do ledger de reação. As RPCs analisadas filtram campanha, então não foi demonstrado caminho cliente para criar vínculo cruzado; ainda assim, o banco não impõe essa invariável se uma linha inconsistente for criada por outro writer.
+
+Recomendação: reforçar no schema com chaves únicas compostas e FKs compostas, ou mecanismo equivalente, e incluir fixture negativa que tente associar ataque a pending/ledger de campanha diferente.
