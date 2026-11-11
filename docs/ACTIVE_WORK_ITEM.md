@@ -705,3 +705,10 @@ A auditoria do catálogo remoto expandiu o grafo de chamadas:
 - Derrubar após reação (OID 27136) bloqueia pending e delega, pela cadeia pública/API, ao helper OID 27120 que bloqueia campaign: inversão transitiva pending → campaign. O iniciador de Derrubar (OID 27131) é campaign-first.
 - O GUC app.srd_trip_aoo_pending_id é limpo para vazio em vez de restaurar o valor anterior. O GUC app.srd_aoo_pending_commit no finalizador normal é limpo somente no caminho de sucesso. Ambos precisam de escopo transacional estreito e restauração em sucesso/erro.
 - A correção de lock deve incluir as cadeias transitivas e a finalização, não apenas os resolvers de ataque previamente mapeados.
+
+
+### Transições globais da máquina AOO — encerramento de combate
+
+- alternar_estado_campanha (OID 20103, authenticated) bloqueia campanha primeiro e, ao encerrar combate, cancela ataques ativos e expira pendings, convertendo reações abertas em skipped. Ordem compatível com campaign-first; autorização GM não é repetida depois do lock.
+- avancar_turno (OID 20074, authenticated) bloqueia campanha primeiro e impede avançar enquanto houver pending AOO ativo. Para PLAYER revalida dono/turno sob lock; para GM não revalida membership após o lock.
+- end_combat (OID 19091) escreve nos mesmos registros, mas não tem EXECUTE authenticated/anon no snapshot; não o considerar endpoint cliente direto.
