@@ -756,3 +756,13 @@ Próximo artefato de implementação deve ser um grafo transitivo de writers com
 As migrations `20261108170021_srd_aoo_pending_movement_lifecycle_guards.sql` e `20261108193147_support_cancelling_resumable_aoo_states.sql` incluem explicitamente `ready_to_commit` como estado cancelável/resumível. Assim, não é seguro classificá-lo como mero estado acidental ou removê-lo sem compatibilidade histórica.
 
 A falha está na assimetria: cancelamento, encerramento global e bloqueio de avanço de turno aceitam os dois estados; finalização do movimento e encerramento individual de reação aceitam somente `waiting_reactions`. Não foi encontrado produtor atual para `ready_to_commit` e não havia registros nele no snapshot consultado, mas isso não elimina a intenção histórica. Definir retomada completa ou remoção coordenada após provar ausência de dependências.
+
+
+### 2026-11-11 — rastreamento de produtores, consumidores e lock order AOO
+
+- Varredura das definições instaladas em `public` e `priv` por `ready_to_commit`: nenhum produtor foi encontrado. As referências restantes são consumidores (guards, listagem, bloqueio de turno, cancelamento/expiração). O estado existe no contrato/índice e nas migrations históricas, mas não tem atribuição atual localizada. Tratar como legado a reconciliar; não apagar isoladamente.
+- Os iniciadores de Derrubar, Encontrão e Levantar-se adquirem `campaigns FOR UPDATE` antes de inserir pending, alinhados ao padrão campaign-first.
+- Finalização normal continua pendente-first e depois campanha; cancelamento e encerramento individual também bloqueiam pending antes de attack, sem lock de campanha. São lacunas diretas no protocolo, não apenas hipóteses de ciclo.
+- `ready_to_commit` é cancelável/expirável e bloqueia avanço de turno, mas não pode ser finalizado nem ter reação individual encerrada. Contrato inconsistente e sem produtor atual identificado.
+- Plano de concorrência ampliado: cinco cenários AOO reais já priorizados, mais finalizar×cancelar, finalizar×fim de combate e replay idempotente de rolagem/dano. Devem usar duas sessões e RPCs reais em banco descartável, com asserts de locks, idempotência e consistência terminal.
+- CI no HEAD `131e717`: static, JavaScript da aplicação, JavaScript da mesa e fixtures PostgreSQL passaram. Replay integral falhou na etapa de inicialização do stack descartável, antes de replay: primeira migration `20261031160944_srd35_action_economy.sql` falha ao criar `public.consumir_acao_turno_srd` porque `public.campaigns` não existe (`42P01`).
