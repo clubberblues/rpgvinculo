@@ -819,3 +819,10 @@ A leitura integral de `srd_confirmar_critico_ataque_oportunidade_srd` e `priv.sr
 A confirmação crítica não valida o status atual do pending nem o estado anterior da reação antes de alterar o ataque. O update da reação procura por `reservation_id` e sobrescreve o status para `hit_pending_damage` sem precondição. Teste SQL read-only mostrou que, quando a reserva não existe em um array não vazio, o caminho JSONB nulo gera erro e aborta a transação (não há sucesso silencioso); quando existe em estado inesperado, a função ainda pode sobrescrever esse estado. Corrigir com ordem campaign → pending → attack e validação explícita da transição permitida sob lock.
 
 No CI do commit `cfd924f`, passaram static validation, JS de aplicação, JS da mesa e fixtures PostgreSQL. A reconstrução completa falhou na inicialização do stack descartável: houve rate limit temporário ao baixar imagem Docker, seguido de retry; depois a primeira migration falhou porque `public.campaigns` não existe no banco vazio. Replay e verificação subsequentes foram pulados. Isso não indica falha no banco remoto.
+
+
+### `srd_resolve_pending_spell_save` altera condição de combate sem campaign lock
+
+A RPC autenticada `public.srd_resolve_pending_spell_save(uuid,integer)` bloqueia primeiro o pedido em `priv.srd_pending_spell_resolutions`. No ramo `condition_break`, lê a rodada da campanha sem `FOR UPDATE` e atualiza diretamente `public.srd_campaign_conditions` para desativar a condição quando a resistência é bem-sucedida; não delega a `priv.srd_apply_pending_spell_resolution`, que obtém o lock da campanha. Como `priv.srd_condition_has_flag` consulta condições que controlam `stunned`, `helpless`, `unconscious` e `no_actions`, esta rota pode mudar a elegibilidade de reação AOO sem serialização com movimento pendente. Não foi executada; conclusão estática.
+
+Exigir campaign-first e política de invalidação/revalidação do pending AOO para condições que alteram elegibilidade, preservando as consequências legítimas de uma reação.
