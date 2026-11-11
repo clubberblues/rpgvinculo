@@ -855,3 +855,14 @@ A leitura integral de `public.srd_resolve_pending_spell_save(uuid,integer)` conf
 Como `priv.srd_condition_has_flag` usa `srd_campaign_conditions` para flags como `stunned`, `helpless`, `unconscious` e `no_actions`, a remoção de uma condição que corresponda a essas flags pode alterar a elegibilidade de reação AOO enquanto um movimento está pendente. O escritor não serializa com o pending AOO nem invalida/recalcula a decisão de elegibilidade já capturada. Não foi executado; achado estático do PL/pgSQL instalado.
 
 Correção proposta: campaign → pending spell request → condição/efeito, revalidar status/rodada e serializar a mudança de condição com o pending AOO; ou invalidar atomicamente o pending se a condição afetar um ator/ameaça envolvido. Não congelar indiscriminadamente condições que sejam consequência legítima de uma reação em curso.
+
+
+### CI mais recente confirmado — commit c912f49 (2026-11-11)
+
+- Static validation: success (`42944067699`).
+- Validate application JavaScript: success (`42944067629`).
+- Validate mesa JavaScript: success (`42944067654`).
+- PostgreSQL fixture tests: success (`42944067709`).
+- Replay full Supabase migration baseline: failure (`42944067641`) no estágio `Start disposable local stack only`; as etapas explícitas de replay/verificação foram puladas. Log mostra rate limit temporário do registry Docker e, depois, falha da primeira migration `20261031160944_srd35_action_economy.sql` por ausência de `public.campaigns` (`SQLSTATE 42P01`). A falha não é no Supabase remoto; confirma que o banco descartável não tem o schema-base pré-ledger.
+
+O commit documental atual é posterior a `c912f49`; os resultados acima são a última execução completa consultada para o conjunto anterior de documentação. Nenhuma alteração de código funcional foi feita nesta continuação.
