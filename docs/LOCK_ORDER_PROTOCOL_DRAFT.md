@@ -988,3 +988,12 @@ Leitura direta das definições instaladas confirmou que as rotas seguintes bloq
 `priv.srd_cancelar_movimento_aoo_pendente_impl` e `priv.srd_encerrar_reacao_aoo_pendente_impl` começam por bloquear pending e depois alteram attack. A família completa tem inversão attack ↔ pending e deve convergir para campaign → pending → attack. A possibilidade de deadlock é estática; validar em duas sessões concorrentes isoladas antes de qualquer deploy.
 
 O resolver também usa `id OR key LIMIT 1` para encontrar atacante/alvo no CBA, sem verificar unicidade. A fixture de duplicação de identidade mostra que essa ambiguidade pode chegar ao cálculo de ataque; o resolver deve exigir uma correspondência inequívoca para cada token.
+
+
+### Controle positivo de identidade/lock para manobra de levantar-se
+
+A implementação instalada `priv.srd_iniciar_levantar_caido_srd` oferece um padrão útil para correção: bloqueia `public.campaigns FOR UPDATE` antes de validar a cena; conta correspondências do token por `id OR key` e exige exatamente uma (`v_count<>1` rejeita ausente ou duplicado); verifica combate/turno e ausência de outro pending antes de criar o novo pending. Isso mostra que o banco já usa validação inequívoca de token em uma rota AOO relacionada. Replicar a regra de contagem única no resolver de ataque e nos escritores da cena, sem confundir o caso de `id`/`key` legítimos com aliases da mesma entidade.
+
+### CI de fixtures e bloqueio do replay — HEAD 4e5d239
+
+Fixtures PostgreSQL isoladas: sucesso. Static/app/mesa JS: sucesso. Replay completo: falha antes da aplicação das migrations, durante inicialização do stack descartável; primeira migration requer `public.campaigns`, ausente no banco vazio. O erro não prova regressão no banco remoto nem valida as migrations posteriores. Continuar sem fabricar bootstrap mínimo: obter schema-base histórico confiável.
