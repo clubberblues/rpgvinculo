@@ -749,3 +749,10 @@ A varredura de definições PL/pgSQL em `public` e `priv` localizou os escritore
 A listagem é lexical: não captura writers transitivos, SQL dinâmico, triggers ou funções que atualizam tabelas por helpers. Exemplos: resolver Derrubar após AOO não aparece como escritor direto de pending, mas chama helper que altera pending; `public.end_combat` aparece como writer e não possui EXECUTE para authenticated/anon no catálogo. Não interpretar a listagem como lista de endpoints HTTP. `priv` tem permissões SQL `authenticated` em algumas funções, mas exposição efetiva do schema via PostgREST continua não confirmada.
 
 Próximo artefato de implementação deve ser um grafo transitivo de writers com uma linha por rota cliente/trigger/helper, não apenas uma matriz lexical por nome de tabela.
+
+
+### Correção de interpretação: `ready_to_commit` tem suporte histórico intencional
+
+As migrations `20261108170021_srd_aoo_pending_movement_lifecycle_guards.sql` e `20261108193147_support_cancelling_resumable_aoo_states.sql` incluem explicitamente `ready_to_commit` como estado cancelável/resumível. Assim, não é seguro classificá-lo como mero estado acidental ou removê-lo sem compatibilidade histórica.
+
+A falha está na assimetria: cancelamento, encerramento global e bloqueio de avanço de turno aceitam os dois estados; finalização do movimento e encerramento individual de reação aceitam somente `waiting_reactions`. Não foi encontrado produtor atual para `ready_to_commit` e não havia registros nele no snapshot consultado, mas isso não elimina a intenção histórica. Definir retomada completa ou remoção coordenada após provar ausência de dependências.
