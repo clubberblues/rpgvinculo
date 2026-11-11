@@ -742,3 +742,11 @@ No commit `6c1d1e95c1d3f083ebc82f09bf0a547b8880a60c`, validação estática, Jav
 - Ledger impede duplicação pelo ordinal e pela chave de trigger na mesma campanha/fase/rodada/ator.
 - As três tabelas estavam vazias no momento da consulta remota; sem pending `ready_to_commit`. Isto é fotografia atual, não evidência de ausência de uso histórico.
 - Os testes de integração devem cobrir reservas simultâneas, replay de rolagem/dano, terminalização coerente e ausência de ataques abertos após cancelamento/expiração.
+
+
+### 2026-11-11 — diagnóstico final do CI de migrations
+
+- Job 42931233897 falhou na etapa de inicialização do stack descartável, não na etapa separada de replay.
+- Log: `supabase start` tenta aplicar automaticamente `20261031160944_srd35_action_economy.sql`; a criação de `public.consumir_acao_turno_srd` falha porque `public.campaigns` não existe (`42P01`).
+- Interpretação: a primeira migration versionada depende de schema-base não incluído no conjunto atual. Isso não indica falha no Supabase remoto. A solução correta é recuperar o schema-base/histórico confiável, não adicionar uma tabela mínima artificial.
+- No mesmo SHA `fa4b33f`, static validation, application JS, mesa JS e PostgreSQL fixture tests passaram; replay integral falhou na inicialização.
