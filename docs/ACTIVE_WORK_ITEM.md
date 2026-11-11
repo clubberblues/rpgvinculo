@@ -712,3 +712,10 @@ A auditoria do catálogo remoto expandiu o grafo de chamadas:
 - alternar_estado_campanha (OID 20103, authenticated) bloqueia campanha primeiro e, ao encerrar combate, cancela ataques ativos e expira pendings, convertendo reações abertas em skipped. Ordem compatível com campaign-first; autorização GM não é repetida depois do lock.
 - avancar_turno (OID 20074, authenticated) bloqueia campanha primeiro e impede avançar enquanto houver pending AOO ativo. Para PLAYER revalida dono/turno sob lock; para GM não revalida membership após o lock.
 - end_combat (OID 19091) escreve nos mesmos registros, mas não tem EXECUTE authenticated/anon no snapshot; não o considerar endpoint cliente direto.
+
+
+### Cobertura real dos testes de concorrência AOO — limite confirmado (2026-11-10)
+
+- A leitura de tests/sql/lock_cycle_test.sh confirmou que o harness atual reproduz padrões genéricos: campaign ↔ pending, pending ↔ attack e campaign ↔ attack → pending → campaign. Também executa a reprodução isolada da guarda espacial.
+- Esses cenários são modelos sintéticos de locks, não chamadas das RPCs AOO reais. Não simulam ainda, com os nomes/efeitos completos, resolver ataque × finalizar movimento, reservar reação × cancelar pending, Encontrão × encerrar reação, ocultação × finalização e duas reservas simultâneas para o mesmo pending.
+- Portanto, os fixtures existentes demonstram que os padrões de lock invertido geram deadlock no PostgreSQL descartável, mas não validam a correção nem a idempotência/estados terminais das RPCs de produção. Os cinco pares específicos continuam como gate de integração antes de implementar migrations.
