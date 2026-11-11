@@ -945,3 +945,10 @@ Lock/cadeia efetiva adicional:
 - A leitura da função `priv.srd_iniciar_levantar_caido_srd` confirmou que ela lê condições e ficha/elegibilidade depois do campaign lock, enquanto alterações externas de condições ainda precisam obedecer a mesma serialização.
 
 Plano de teste concreto: executar com duas sessões independentes cada par (1) resolver ataque × finalizar movimento; (2) reservar reação × cancelar pending; (3) Encontrão × encerrar reação; (4) registrar ocultação × finalizar movimento; (5) duas reservas concorrentes para mesmo ator/trigger; acrescentar (6) finalizar vs cancelar; (7) encerramento do combate vs finalizar; (8) replay de rolagem/dano e pending terminal. As assertions devem cobrir timeout/deadlock, exatamente um ledger por chave, exatamente um terminal state, ataques nunca órfãos/abertos após cancelamento e nenhum movimento/dano parcial.
+
+
+### Nova dimensão de segurança a resolver antes da migração AOO
+
+O papel `authenticated` possui `USAGE` em `priv` e `EXECUTE` direto em 40 funções do schema. O `pg_default_acl` do owner `postgres` concede EXECUTE automaticamente a `authenticated` e `service_role` para novas funções em `priv`. Isso explica por que implementações que parecem internas têm privilégios diretos. O schema pode ou não estar exposto pelo PostgREST; a configuração ativa não ficou acessível no catálogo SQL consultado (`pgrst.db_schemas` NULL, sem override de role/database). Tratar como risco de privilégios no banco, com exposição HTTP ainda não comprovada.
+
+Antes de revogar, inventariar chamadas entre rotinas e verificar schemas REST efetivos. Meta: wrappers públicos autorizados como API, helpers internos sem EXECUTE de `authenticated` quando não precisarem ser chamados diretamente; default privileges restritos e grants explícitos. Alteração somente em migration revisada e testada, não aplicada no remoto.
