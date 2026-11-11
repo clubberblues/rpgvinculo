@@ -792,3 +792,10 @@ Não foi possível provar exposição HTTP: `pgrst.db_schemas` não está visív
 Security Advisor reportou 99 funções `SECURITY DEFINER` executáveis por `authenticated` como RPCs REST, identificadas no schema `public`; não reportou funções `priv` como RPCs. Isso reforça, sem provar de forma absoluta, que `priv` não está na allowlist REST atual. No banco, porém, `authenticated` continua com USAGE e EXECUTE em 40 funções `priv`, devido também ao default ACL amplo.
 
 Advisor reportou 7 tabelas RLS-enabled sem policy, incluindo `priv.srd_aoo_attacks` e `priv.srd_aoo_pending_movements`, além de cinco tabelas públicas de ataques/recursos. Tratar como revisão de hardening, não como falha funcional confirmada. Nenhuma permissão/policy foi alterada.
+
+
+### 2026-11-11 — lista de RPCs AOO sinalizadas pelo Security Advisor
+
+O Advisor reporta 99 funções SECURITY DEFINER em `public` como RPCs REST executáveis por `authenticated`; não reporta funções `priv` como RPCs. Dentre as 99, 15 assinaturas AOO foram listadas: aplicar dano (normal e monstro), confirmar crítico, consultar armas/ataque/movimento pendente, finalizar movimento, iniciar ataques desarmado/arma/natural (incluindo overloads), listar movimentos, registrar rolagem, resolver ataque e solicitar movimento.
+
+Este alerta é de hardening, não prova de vulnerabilidade isoladamente. Entretanto, como o AOO já tem TOCTOU e inversões de locks confirmadas, cada RPC exposta precisa de autorização revalidada sob campaign lock e validação transitiva dos helpers antes de release.
