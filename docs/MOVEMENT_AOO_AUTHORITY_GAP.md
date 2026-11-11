@@ -552,3 +552,10 @@ A mesma RPC adquire locks attack → pending → campaign. Junto aos endpoints d
 `ficha.html` chama diretamente a RPC `concluir_avanco_nivel_personagem_srd_v2`. A definição pública autenticada delega à implementação `priv.concluir_avanco_nivel_personagem_srd`, que bloqueia personagem e ficha, mas não campanha; também não verifica se a campanha está em combate nem se existe pending AOO. A implementação altera nível/classe, atributos, talentos e perícias, dados usados para derivar ameaça e elegibilidade de ataques de oportunidade.
 
 Portanto, a ausência de guarda não é apenas uma hipótese sobre o schema `priv`: existe um caminho público usado pelo frontend. Adicionar campaign-first, revalidar estado e bloquear ou invalidar atomicamente pending antes de permitir o avanço. Não foi feita chamada de avanço nem mutação no banco.
+
+
+### Dano AOO: reação precisa estar no estado esperado e token usa identidade divergente
+
+As duas RPCs de aplicação de dano exigem ataque `awaiting_damage` e pending `waiting_reactions`, mas não exigem que a entrada da reação associada esteja única e especificamente em `hit_pending_damage`. O update da lista usa `LIMIT 1` e substitui o status encontrado por `damage_applied`; estado inesperado pode ser sobrescrito. Se não houver correspondência, o caminho JSONB nulo aborta a transação.
+
+O resolver de ataque encontra alvo por `id OR key`; as RPCs de dano encontram apenas por `id`. Isso é uma inconsistência entre etapas da mesma ação. Unificar o identificador canônico e validar correspondência única em todas as rotas. As RPCs de dano também mantêm a ordem de locks attack → pending → campaign, conflitante com cancelamento pending → attack.
