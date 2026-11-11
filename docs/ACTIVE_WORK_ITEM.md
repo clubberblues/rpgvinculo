@@ -719,3 +719,13 @@ A auditoria do catálogo remoto expandiu o grafo de chamadas:
 - A leitura de tests/sql/lock_cycle_test.sh confirmou que o harness atual reproduz padrões genéricos: campaign ↔ pending, pending ↔ attack e campaign ↔ attack → pending → campaign. Também executa a reprodução isolada da guarda espacial.
 - Esses cenários são modelos sintéticos de locks, não chamadas das RPCs AOO reais. Não simulam ainda, com os nomes/efeitos completos, resolver ataque × finalizar movimento, reservar reação × cancelar pending, Encontrão × encerrar reação, ocultação × finalização e duas reservas simultâneas para o mesmo pending.
 - Portanto, os fixtures existentes demonstram que os padrões de lock invertido geram deadlock no PostgreSQL descartável, mas não validam a correção nem a idempotência/estados terminais das RPCs de produção. Os cinco pares específicos continuam como gate de integração antes de implementar migrations.
+
+
+### Estrutura relacional e invariantes AOO confirmados (2026-11-10)
+
+- Pending: status possíveis `waiting_reactions`, `ready_to_commit`, `committed`, `cancelled`, `expired`; índice parcial único limita a um movimento ativo por campanha considerando os dois primeiros estados.
+- Ataques: FK para pending e ledger; estados limitados a aguardando rolagem, confirmação crítica, chance de falha, dano, erro, dano aplicado ou cancelado. Chaves únicas cobrem reação, idempotência de dano e chave opcional de rolagem.
+- Ledger: duas restrições únicas impedem duplicar reação pelo número ordinal ou pela chave de gatilho dentro da mesma campanha/fase/rodada/ator.
+- As tabelas de pending, ataques e ledger estavam vazias na consulta ao Supabase remoto. Não inferir que os fluxos não são usados; apenas não havia linhas no momento observado.
+
+Próximos testes reais precisam verificar concorrência e repetição idempotente nessas chaves, além de impedir que ataques permaneçam abertos após pending cancelado/expirado.
