@@ -617,7 +617,7 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 ### Escritores CBA: confirmar campanha-first e exceção de spawn (2026-11-10)
 
 - Nova varredura de funções que executam `UPDATE public.campaigns` com `cba_data` mostra que a maioria dos escritores de combate identificados adquire `campaigns FOR UPDATE` antes de alterar tokens: movimento GM/jogador, dano, AOO, configuração de perfil, avançar turno, consumo de ação, descanso de NPC, equipamento de token e Encontrão.
-- Exceção importante: `public.adicionar_token_cba_completo(bigint,jsonb)` tem authenticated EXECUTE e atualiza `campaigns.cba_data` sem lock explícito da campanha; já estava identificado como rota de spawn durante combate. Precisa obter campaign lock, revalidar GM/estado/pending e aplicar regra de spawn (rejeitar durante pending; definir política de combate para spawn normal).
+- Correção da classificação anterior: `public.adicionar_token_cba_completo(bigint,jsonb)` herda o `campaigns FOR UPDATE` de `public.adicionar_token_cba` (OID 20075), chamado na mesma transação. Portanto, não é writer sem lock; a lacuna remanescente é validar novamente a autorização GM depois do lock e definir política explícita para spawn durante pending/combate.
 - `public.alterar_pv_token_cba` tem lock de campanha visível, mas ainda requer confirmar se a checagem de permissão/identidade e pending ocorre após o lock. Não presumir segurança só pela presença de `FOR UPDATE`.
 - `public.srd_end_barbarian_rage_token` e `priv.srd_sync_linked_npc_token_vitals` são helpers sem EXECUTE authenticated direto e devem ser chamados somente por writers que já mantêm o lock da campanha; revisar callsites transitivos, não conceder acesso direto.
 - Conclusão provisória: a fronteira CBA tem writers relativamente mais centralizados em campaign lock; as maiores lacunas restantes estão em mutações relacionais de ficha/condição/efeito e endpoints de classe/magia que bloqueiam ficha antes da campanha. Ainda é necessário testar identidade duplicada e freeze/invalidação de snapshot AOO.
@@ -641,3 +641,25 @@ PR #74 permanece open, draft, unmerged, mergeable=true, head `f7c497004ca5069a46
 - `public.srd_configurar_rodada_surpresa_srd` (OID 27092) bloqueia campanha antes de alterar a rodada e condições, mas valida papel GM antes do lock e não repete a validação após adquirir a linha. Registrar como TOCTOU de autorização a fechar com os demais endpoints administrativos: revalidar GM sob campaign lock.
 - O wrapper público de levantamento existe no catálogo e delega ao helper interno; a busca textual nas páginas principais `mesa.html` e `lobby.html` não encontrou chamada direta, portanto não afirmamos callsite de frontend. A rota permanece autenticada e acessível por RPC.
 - Consulta somente leitura de catálogo e código versionado; nenhuma RPC foi executada, nenhum dado/ACL/função/migration remota foi alterado.
+
+
+### Consolidação — ordem efetiva dos locks AOO (2026-11-10)
+
+A revisão dos corpos instalados confirmou que não basta identificar a existência de `FOR UPDATE`: o que importa é a ordem de aquisição na mesma transação.
+
+- `priv.srd_reservar_reacao_movimento_aoo_impl` (OID 27256): pending → campaign.
+- `public.srd_iniciar_ataque_oportunidade_srd` (OID 27022), `public.srd_iniciar_ataque_oportunidade_desarmado_srd` (OID 27065) e a implementação legada de ataque natural `public.srd_iniciar_ataque_oportunidade_monstro_srd` (OID 27055): pending → campaign. A sobrecarga natural OID 27231 delega para a implementação legada, então a ordem herdada também precisa ser considerada.
+- `priv.srd_registrar_ocultacao_ataque_oportunidade_impl` (OID 27254): attack → pending → campaign.
+- `public.srd_resolver_ataque_oportunidade_srd` (OID 27025): attack → pending → campaign.
+- `public.srd_finalizar_movimento_aoo_pendente_srd` (OID 27038): pending → campaign.
+- `priv.srd_resolver_levantar_caido_apos_aoo_srd` (OID 27152): pending → campaign.
+- `priv.srd_cancelar_movimento_aoo_pendente_impl` (OID 27268): pending → attack (sem campaign lock explícito).
+- `priv.srd_encerrar_reacao_aoo_pendente_impl` (OID 27269): pending → attack condicional (sem campaign lock explícito).
+
+Essas ordens são evidência estática de inversões com operações campaign-first; não provam que deadlocks já ocorreram. A correção deve migrar todas as rotas para campanha → pending → attack/ledger, inclusive os helpers e overloads transitivos. Nas rotas de cancelamento/encerramento, o campaign lock deve ser adquirido antes de qualquer lock em pending/attack, e a autorização GM deve ser revalidada depois dele. As rotas que hoje fazem pending/attack primeiro não devem ser corrigidas isoladamente sem revisar os chamadores, para evitar lock duplicado ou ordem contraditória.
+
+### Correção de inventário CBA — spawn
+
+- A classificação anterior de `adicionar_token_cba_completo` como writer sem campaign lock foi incorreta: o helper `adicionar_token_cba` adquire esse lock e o wrapper herda-o durante a transação.
+- Mantém-se o achado de autorização GM validada antes do lock sem revalidação e ausência de regra explícita para spawn durante pending AOO. O próximo desenho deve corrigir esses dois pontos, não adicionar um segundo lock redundante.
+- Essa correção substitui as afirmações anteriores de ausência de lock direto/herdado para essa rota.
