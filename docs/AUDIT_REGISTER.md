@@ -877,3 +877,10 @@ HEAD auditado `e18941910f54d2bf537384e3fb1eb2b20ead257c`: static, application JS
 As constraints/indexes atuais oferecem PKs globais, unicidade de `reaction_id` em ataques, idempotência de rolagem/dano, um pending ativo por campanha e unicidade de ledger por campanha/fase/rodada/ator/ordinal e trigger. Falta, porém, vínculo composto de campanha entre ataque, pending e ledger: as FKs usam apenas IDs globais. Reforçar com unique keys compostas nos pais e FKs compostas no ataque (ou validação equivalente).
 
 As três implementações-base de início de ataque (arma, desarmado e ataque natural de monstro) selecionam reação em `pending_reactions` com `LIMIT 1` sem exigir correspondência única. Todas devem rejeitar arrays duplicados/inconsistentes antes de iniciar. O wrapper de seleção de ataque natural delega à implementação-base, então correções devem ocorrer na base e não ser duplicadas no wrapper.
+
+
+### Confirmação crítica — falta precondição no pending/reação
+
+`public.srd_confirmar_critico_ataque_oportunidade_srd` valida `awaiting_critical_confirmation` no ataque, mas não valida o status do pending antes de alterar `pending_reactions`; filtra apenas por `pending_id`. Também atualiza a reação selecionada por `reservation_id` com `LIMIT 1`, sem exigir uma ocorrência única nem estado anterior `hit_pending_damage`. A ausência da entrada gera erro transacional por caminho JSONB nulo; uma entrada existente em estado inesperado pode ser sobrescrita.
+
+Esta omissão combina com a inversão attack → pending contra cancelamento pending → attack. A confirmação precisa adquirir campaign → pending → attack e validar o ciclo de vida de ambos e a transição única da reação sob lock.
