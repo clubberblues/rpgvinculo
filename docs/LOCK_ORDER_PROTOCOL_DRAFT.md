@@ -877,3 +877,12 @@ A inspeção do trigger instalado `priv.srd_validate_aoo_pending_movement_previe
 - A correção deve guardar o valor anterior, limitar a autorização ao sub-bloco da prévia/commit e restaurá-lo em caminho normal e excepcional. Melhor ainda: substituir o GUC amplo por um mecanismo de autorização vinculado a pending + campanha + token + destino e consumido uma única vez. Não remover o trigger de prévia: ele valida o caminho real de movimento antes de aceitar a solicitação.
 
 Evidência: definições instaladas do trigger, do guard `priv.srd_guard_pending_aoo_movement()` (OID 26962) e busca de chamadas ao RPC de solicitação no catálogo. Consulta somente leitura; nenhum pending, token ou GUC foi alterado no banco remoto.
+
+
+### Máquina de estados AOO — estado `ready_to_commit` sem produtor instalado (2026-11-10)
+
+- A constraint de `priv.srd_aoo_pending_movements.status` permite `waiting_reactions`, `ready_to_commit`, `committed`, `cancelled` e `expired`; o índice parcial de pending ativo e o guard espacial também tratam `ready_to_commit` como ativo.
+- A varredura dos corpos PL/pgSQL instalados em `public` e `priv` encontrou referências a `ready_to_commit` em verificações/guardas/cancelamento, mas **nenhuma atribuição que leve um pending a esse status**. Os caminhos atuais de conclusão de movimento, levantamento e Encontrão escrevem diretamente `committed`; o finalizador normal aceita apenas `waiting_reactions`.
+- Portanto, no código instalado consultado, `ready_to_commit` é um estado permitido e protegido, porém sem produtor identificado. Não o tratar como etapa funcional existente nem remover a compatibilidade antes de verificar histórico/migrations e eventuais escritores externos.
+- Ao consolidar a máquina, escolher explicitamente uma das opções: remover esse estado de constraint/índice/guard após provar que não há dados/consumidores legados; ou implementar a transição e atualizar finalização/cancelamento para aceitá-la com semântica terminal consistente.
+- A consulta foi somente leitura; não foram alterados status nem dados de campanha.
