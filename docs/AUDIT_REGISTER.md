@@ -847,3 +847,12 @@ A correção deve serializar campaign-first e rejeitar avanço enquanto combate/
 ### Estado de CI confirmado — 2026-11-11
 
 No HEAD `4e5d2390462501190652c04f851f04d8a1a7a6cc`: validação estática, JS da aplicação, JS da mesa e fixtures SQL isoladas concluíram com sucesso. O replay de migrations falhou ao iniciar o stack descartável; log contém `toomanyrequests: Rate exceeded` e depois `relation public.campaigns does not exist` na primeira migration versionada. As etapas de replay e verificação de objetos foram ignoradas. A fixture aprovada não substitui replay completo nem testes concorrentes AOO.
+
+
+### RPCs de dano AOO — invariantes de estado e identidade
+
+As definições instaladas de `srd_aplicar_dano_ataque_oportunidade_srd` e `_monstro_srd` verificam `awaiting_damage` no ataque e `waiting_reactions` no pending, mas não verificam que a reação vinculada ao `reaction_id` esteja presente uma única vez e em `hit_pending_damage`. A atualização usa `LIMIT 1` e pode sobrescrever um status de reação inesperado; se não houver entrada, o caminho JSONB nulo faz a transação falhar.
+
+Há também divergência de identidade: o resolver aceita token por `id OR key`, enquanto ambas as RPCs de dano localizam o alvo apenas por `id`. Isso pode fazer a resolução reconhecer um alvo que a etapa de dano não encontra. Padronizar identidade canônica e exigir correspondência única em todas as rotas.
+
+As RPCs de dano mantêm ordem attack → pending → campaign, reforçando a inversão contra cancelamento pending → attack. Achado estático; sem execução de dano/teste concorrente remoto.
