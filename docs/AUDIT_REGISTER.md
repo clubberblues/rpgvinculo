@@ -771,3 +771,10 @@ A leitura do catálogo confirma que não existe atribuição atual localizada de
 Iniciadores de Derrubar, Encontrão e Levantar-se são campaign-first. Em contraste, finalização do movimento é pending-first → campaign; cancelamento e encerramento individual são pending-first → attack e não bloqueiam campanha. As três rotas precisam ser harmonizadas antes de testes de carga ou alterações de produção.
 
 CI no commit `131e717`: validação estática, JS da aplicação, JS da mesa e fixtures PostgreSQL passaram; replay integral falhou ao inicializar stack descartável porque `public.campaigns` não existe quando a primeira migration incremental é aplicada. Não é falha observada no banco remoto.
+
+
+### 2026-11-11 — busca por origem do schema-base
+
+Os candidatos SQL legados não criam o core: `srd35_schema_reconciliation.sql` começa alterando tabelas SRD existentes; `cba_iniciativa_migration.sql` altera `public.campaigns`; `srd35_rule_engine_foundation_migration.sql` cria módulos que referenciam `campaigns`/`characters`; `vtt_dnd35_final_migration.sql` também assume essas tabelas. O snapshot remoto descreve o schema, mas declara expressamente que não é dump restaurável. Não foi localizada uma migration de bootstrap que crie `public.campaigns` antes da primeira migration versionada.
+
+Conclusão: a falha de CI tem causa estrutural confirmada: falta versionar a origem do schema-base pré-ledger. Não fabricar tabelas mínimas; localizar backup/schema-only SQL ou histórico confiável e reconstruir bootstrap a partir dele.
