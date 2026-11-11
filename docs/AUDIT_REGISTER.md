@@ -699,3 +699,11 @@ A afirmação anterior de que `public.adicionar_token_cba_completo` (OID 21726) 
 ### CI após os commits de documentação
 
 No commit `6c1d1e95c1d3f083ebc82f09bf0a547b8880a60c`, validação estática, JavaScript de mesa, JavaScript da aplicação e fixtures PostgreSQL concluíram com sucesso. O workflow de replay das 969 migrations falhou antes de executar o replay, na etapa de inicialização do stack descartável; o log registra `relation "public.campaigns" does not exist` ao aplicar a primeira migration incremental. O problema permanece no bootstrap do ambiente vazio, não é evidência de falha no banco remoto. Nenhuma alteração foi feita no banco de produção.
+
+
+## 2026-11-10 — qualificação da exposição dos schemas internos
+
+- No banco, `authenticated` possui USAGE em `priv` e EXECUTE em 40 funções; possui USAGE em `private` e EXECUTE em 6 funções. `anon` não possui USAGE nesses schemas.
+- As configurações SQL consultadas (`current_setting('pgrst.db_schemas', true)`, `pgrst.db_extra_search_path` e overrides em `pg_db_role_setting`) não informaram schemas adicionais.
+- Isso não revela a lista efetiva configurada no serviço PostgREST/Supabase. Portanto, a exposição HTTP de `priv` e `private` permanece **não confirmada**; não afirmar que os helpers com EXECUTE authenticated são diretamente chamáveis via API até obter essa configuração.
+- Somente leitura de catálogo e configurações SQL; nenhuma ACL ou configuração foi modificada.
