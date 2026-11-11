@@ -864,3 +864,16 @@ A inspeção integral dos corpos instalados esclareceu duas funções que não b
 - Portanto, não classificar essas duas como pending → campaign. O problema é diferente: cancelamento/encerramento não serializam com o lock da campanha usado pela solicitação/finalização e a autorização GM é verificada antes do lock pending. A correção precisa campaign-first e revalidar estado/GM, depois pending → attack.
 - As quatro inversões com campaign efetivamente bloqueada permanecem: OIDs 27025, 27254, 27256 e 27169, detalhadas acima.
 
+
+
+### Trigger de prévia AOO — escopo do sinalizador transacional (2026-11-10)
+
+A inspeção do trigger instalado `priv.srd_validate_aoo_pending_movement_preview()` (AFTER INSERT em `priv.srd_aoo_pending_movements`) revelou um detalhe de segurança/robustez que precisa entrar no desenho da correção:
+
+- O trigger chama `set_config('app.srd_aoo_pending_commit', new.pending_id::text, true)` **antes** de abrir o bloco interno que executa a prévia de movimento e provoca o rollback controlado.
+- O rollback do bloco interno desfaz a atualização simulada de `campaigns.cba_data`, mas o `set_config(..., true)` foi feito fora desse sub-bloco; portanto o valor pode permanecer ativo no restante da transação externa após o trigger retornar.
+- O guard de movimento aceita o valor quando ele corresponde ao pending ativo, sem um segundo vínculo explícito ao token/destino/única operação de commit. Assim, o sinalizador é mais amplo do que o necessário enquanto estiver definido.
+- O único chamador direto identificado para o INSERT é `public.srd_solicitar_movimento_com_aoo_srd` (OID 26964), que retorna logo após inserir o pending; não foi encontrada escrita posterior na mesma função. Portanto, **não há evidência de exploração funcional no fluxo atual**, mas a permanência do GUC cria uma condição perigosa para wrappers futuros, chamadas aninhadas ou novos escritores na mesma transação.
+- A correção deve guardar o valor anterior, limitar a autorização ao sub-bloco da prévia/commit e restaurá-lo em caminho normal e excepcional. Melhor ainda: substituir o GUC amplo por um mecanismo de autorização vinculado a pending + campanha + token + destino e consumido uma única vez. Não remover o trigger de prévia: ele valida o caminho real de movimento antes de aceitar a solicitação.
+
+Evidência: definições instaladas do trigger, do guard `priv.srd_guard_pending_aoo_movement()` (OID 26962) e busca de chamadas ao RPC de solicitação no catálogo. Consulta somente leitura; nenhum pending, token ou GUC foi alterado no banco remoto.
