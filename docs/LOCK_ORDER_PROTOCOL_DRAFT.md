@@ -1004,3 +1004,8 @@ Fixtures PostgreSQL isoladas: sucesso. Static/app/mesa JS: sucesso. Replay compl
 As RPCs `srd_aplicar_dano_ataque_oportunidade_*` verificam o estado do ataque e do pending, mas não validam a entrada da reação correspondente como exatamente uma ocorrência em `hit_pending_damage`. A atualização JSONB seleciona a reação por `reservation_id` com `LIMIT 1` e substitui o status; não há precondição de transição. Ausência de entrada gera erro transacional por caminho nulo, mas estado inesperado presente pode ser sobrescrito.
 
 As RPCs de dano localizam o alvo somente por `id`, ao passo que o resolver aceita `id OR key`. Essa divergência precisa ser removida com identidade canônica única e validação de contagem. Corrigir junto ao protocolo campaign → pending → attack, antes de liberar as rotas.
+
+
+### Integridade de campanha nas relações AOO
+
+As FKs atuais de `priv.srd_aoo_attacks` apontam `pending_id` e `reaction_id` apenas para as PKs globais, sem exigir igualdade de `campaign_id` entre ataque, movimento e ledger. A consistência é deixada para as funções PL/pgSQL. Incluir proteção no schema contra relações cruzadas entre campanhas; a fixture deve tentar construir uma linha com IDs válidos de campanhas distintas e confirmar rejeição.
