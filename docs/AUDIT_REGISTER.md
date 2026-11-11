@@ -842,3 +842,8 @@ O resolver localiza atacante e alvo por `id OR key` com `LIMIT 1`, sem garantir 
 O frontend `ficha.html` chama a RPC pública autenticada `public.concluir_avanco_nivel_personagem_srd_v2`, que delega para `priv.concluir_avanco_nivel_personagem_srd`. A implementação bloqueia personagem → ficha, sem lock de campanha, sem checagem de combate e sem checagem de pending AOO. Ela altera classe/nível, atributos, talentos, perícias e PV. Isso pode mudar premissas de ameaça/elegibilidade de AOO durante uma reação reservada.
 
 A correção deve serializar campaign-first e rejeitar avanço enquanto combate/pending estiver ativo, ou invalidar/recalcular o pending de modo atômico. A exposição via RPC pública está confirmada pelo callsite; não é necessário presumir que o schema `priv` esteja na allowlist REST. A migration local `20261110170000` não revoga EXECUTE desse helper e ainda não está no ledger remoto consultado.
+
+
+### Estado de CI confirmado — 2026-11-11
+
+No HEAD `4e5d2390462501190652c04f851f04d8a1a7a6cc`: validação estática, JS da aplicação, JS da mesa e fixtures SQL isoladas concluíram com sucesso. O replay de migrations falhou ao iniciar o stack descartável; log contém `toomanyrequests: Rate exceeded` e depois `relation public.campaigns does not exist` na primeira migration versionada. As etapas de replay e verificação de objetos foram ignoradas. A fixture aprovada não substitui replay completo nem testes concorrentes AOO.
