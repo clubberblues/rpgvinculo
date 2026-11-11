@@ -909,3 +909,10 @@ Correção: campaign → pending → attack; validar reação única em `hit_pen
 Consulta direta a `pg_constraint` confirmou que `priv.srd_aoo_attacks.pending_id` referencia somente `priv.srd_aoo_pending_movements(pending_id)` e `reaction_id` referencia somente `priv.srd_aoo_reaction_ledger(reaction_id)`. Não existe FK composta que obrigue `attacks.campaign_id` a coincidir com a campanha do pending e do ledger. As chaves primárias globais impedem IDs duplicados, mas não impedem que uma linha de ataque carregue `campaign_id` diferente do pending/reaction apontado.
 
 Os caminhos RPC examinados filtram por campaign_id e normalmente constroem relações na mesma campanha; portanto, isso é uma lacuna de integridade defensiva do schema, não evidência de exploração atual. Adicionar unicidade composta nos pais e FKs compostas (ou validação equivalente por trigger/constraints) para garantir que ataque, pending e reação pertençam à mesma campanha. Manter também as unicidades atuais de reação e idempotência.
+
+
+### Iniciadores de ataque também não exigem reação única no JSON do pending (2026-11-11)
+
+Leitura integral das RPCs autenticadas `srd_iniciar_ataque_oportunidade_srd` e `srd_iniciar_ataque_oportunidade_desarmado_srd`: ambas selecionam a reação em `pending_reactions` por `reactor_token_id` com `LIMIT 1`, sem contar correspondências. Depois verificam status `reserved` e igualdade do `reservation_id`, e consultam o ledger com campanha/ator/rodada. A unicidade do ledger protege a linha relacional, mas não impede entradas duplicadas do mesmo reator no array JSON do pending. Uma duplicação pode levar a escolher uma entrada arbitrária ou rejeitar a reserva válida dependendo da ordem do array.
+
+O mesmo padrão de `LIMIT 1` sem contagem aparece no resolver e na atualização de dano. A correção deve validar uma única entrada por `reactor_token_id`/`reservation_id` antes de iniciar, resolver ou aplicar dano, e rejeitar arrays inconsistentes sem selecionar uma cópia arbitrária. Não foi alterado dado remoto.
