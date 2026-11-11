@@ -930,3 +930,18 @@ Implicação para os testes: incluir asserts concorrentes de que duas reservas p
 A leitura das migrations históricas ajusta a interpretação do estado: `20261108170021_srd_aoo_pending_movement_lifecycle_guards.sql` já permitia cancelar `waiting_reactions` e `ready_to_commit`, e a migration `20261108193147_support_cancelling_resumable_aoo_states.sql` preservou explicitamente esse suporte para cancelamento. Portanto, `ready_to_commit` não é um typo nem deve ser removido como resíduo sem análise de compatibilidade; foi intencionalmente considerado estado cancelável/resumível.
 
 A inconsistência confirmada é entre consumidores: cancelar movimento e encerrar combate aceitam/expiram os dois estados; `avancar_turno` bloqueia nos dois; já `srd_finalizar_movimento_aoo_pendente_srd` e `srd_encerrar_reacao_aoo_pendente_impl` aceitam apenas `waiting_reactions`. Não foi localizado produtor instalado que atribua `ready_to_commit`, e a tabela estava sem linhas nesse estado no momento da consulta. Ainda assim, o contrato histórico exige decisão explícita: ou definir o significado/fluxo de retomada e completar os consumidores; ou provar que não há dados/consumidores legados antes de retirar o estado de todos os contratos. Não remover apenas da constraint/índice.
+
+
+### Fechamento do rastreamento de estados e manobras AOO (2026-11-11)
+
+Consulta direta às definições instaladas em `pg_proc` procurando `ready_to_commit` não encontrou produtor que atribua esse valor. Os únicos corpos que o mencionam fazem leitura/guarda/listagem, cancelamento ou expiração. A constraint aceita o estado e o índice parcial o trata como ativo, mas nenhum writer instalado localizado o produz. Isto confirma estado legado sem produtor atual, não autoriza removê-lo enquanto versões/migrations e dados antigos não forem reconciliados.
+
+Lock/cadeia efetiva adicional:
+
+- `priv.srd_iniciar_derrubar_com_aoo_srd`, `priv.srd_iniciar_encontrao_srd` e `priv.srd_iniciar_levantar_caido_srd` bloqueiam `campaigns FOR UPDATE` antes de inserir pending; são campaign-first. Os wrappers públicos devem continuar delegando sem adquirir locks prévios.
+- `public.srd_finalizar_movimento_aoo_pendente_srd` bloqueia pending primeiro e só depois `campaigns FOR UPDATE`; continua inversão confirmada. Além disso, aceita apenas `waiting_reactions` apesar de cancelamento/expiração reconhecer `ready_to_commit`.
+- `priv.srd_cancelar_movimento_aoo_pendente_impl` e `priv.srd_encerrar_reacao_aoo_pendente_impl` bloqueiam pending e depois attack (no cancelamento, UPDATE de ataques adquire o lock implicitamente), sem obter lock da campanha. São rotas pendente-first e devem ser migradas para o protocolo campaign-first em uma mesma transação; revalidar papel/estado após campaign lock.
+- A reserva de reação também parte do pending; o protocolo tem de ordenar campanha → pending → ledger/attack e todas as rotas transitivas têm de respeitar essa ordem.
+- A leitura da função `priv.srd_iniciar_levantar_caido_srd` confirmou que ela lê condições e ficha/elegibilidade depois do campaign lock, enquanto alterações externas de condições ainda precisam obedecer a mesma serialização.
+
+Plano de teste concreto: executar com duas sessões independentes cada par (1) resolver ataque × finalizar movimento; (2) reservar reação × cancelar pending; (3) Encontrão × encerrar reação; (4) registrar ocultação × finalizar movimento; (5) duas reservas concorrentes para mesmo ator/trigger; acrescentar (6) finalizar vs cancelar; (7) encerramento do combate vs finalizar; (8) replay de rolagem/dano e pending terminal. As assertions devem cobrir timeout/deadlock, exatamente um ledger por chave, exatamente um terminal state, ataques nunca órfãos/abertos após cancelamento e nenhum movimento/dano parcial.
