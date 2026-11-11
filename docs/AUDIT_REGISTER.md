@@ -863,3 +863,8 @@ As RPCs de dano mantêm ordem attack → pending → campaign, reforçando a inv
 No catálogo remoto, `srd_aoo_attacks.pending_id` e `reaction_id` referenciam apenas os IDs globais das tabelas-pai. Não há FK composta validando que `campaign_id` do ataque seja igual ao `campaign_id` do movimento pendente e do ledger de reação. As RPCs analisadas filtram campanha, então não foi demonstrado caminho cliente para criar vínculo cruzado; ainda assim, o banco não impõe essa invariável se uma linha inconsistente for criada por outro writer.
 
 Recomendação: reforçar no schema com chaves únicas compostas e FKs compostas, ou mecanismo equivalente, e incluir fixture negativa que tente associar ataque a pending/ledger de campanha diferente.
+
+
+### Unicidade da reação no array pending não é garantida pelos iniciadores
+
+As RPCs de início de ataque (arma e desarmado) procuram `pending_reactions` pelo `reactor_token_id` com `LIMIT 1`; não verificam contagem exata de entradas. Elas validam o status e `reservation_id` da primeira ocorrência e consultam o ledger relacional, cuja unicidade não impõe unicidade dentro do array JSON. Repetir a mesma validação de contagem única nas etapas de início, resolver e dano; não confiar apenas no ledger para sanear o snapshot JSON.
