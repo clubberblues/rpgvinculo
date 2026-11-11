@@ -811,3 +811,11 @@ A árvore do commit inicial rastreável (`bd9ba612`, 2026-10-31 14:13 UTC) tem 2
 
 
 A busca por proveniência foi ampliada às branches `audit/reconcile-supabase-migration-history`, `audit/restore-remote-migration-history`, `chore/archive-unversioned-supabase-sql` e `fix/restore-production-migration-history`. Nenhuma contém dump/schema-only ou bootstrap do core; apenas migrations incrementais/arquivadas e material de reconciliação. Isso não exclui backup fora do GitHub.
+
+### Ciclo de lock attack ↔ pending confirmado em duas RPCs públicas
+
+A leitura integral de `srd_confirmar_critico_ataque_oportunidade_srd` e `priv.srd_cancelar_movimento_aoo_pendente_impl` confirmou inversão recíproca: confirmação crítica bloqueia attack com `FOR UPDATE` e depois atualiza pending; cancelamento bloqueia pending com `FOR UPDATE` e depois atualiza attack. Duas transações concorrentes no mesmo par podem formar ciclo de espera (deadlock possível). Não foi observado deadlock real nem executado teste de concorrência.
+
+A confirmação crítica também não valida o status atual do pending nem o estado/identidade da reação correspondente antes de alterar o ataque. Não verifica `ROW_COUNT` do update em `pending_reactions`, permitindo que a resposta indique `awaiting_damage` sem comprovar a transição correspondente da reação. Corrigir com ordem campaign → pending → attack, validação sob lock e verificação explícita da atualização da reação.
+
+No CI do commit `cfd924f`, passaram static validation, JS de aplicação, JS da mesa e fixtures PostgreSQL. A reconstrução completa falhou na inicialização do stack descartável: houve rate limit temporário ao baixar imagem Docker, seguido de retry; depois a primeira migration falhou porque `public.campaigns` não existe no banco vazio. Replay e verificação subsequentes foram pulados. Isso não indica falha no banco remoto.
