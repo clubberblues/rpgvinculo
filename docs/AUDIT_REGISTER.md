@@ -725,3 +725,11 @@ No commit `6c1d1e95c1d3f083ebc82f09bf0a547b8880a60c`, validação estática, Jav
 - app.srd_trip_aoo_pending_id é limpo para vazio em vez de restaurar o valor anterior; app.srd_aoo_pending_commit no finalizador normal não é restaurado em caminho de erro. Requerem escopo/restauração robustos.
 - A validação GM nos iniciadores de ataque ocorre antes do lock da campanha e não é repetida sob lock.
 - Somente leitura de catálogo remoto. Nenhuma RPC de combate, token ou campanha foi alterada.
+
+
+### 2026-11-10 — transições globais da máquina AOO
+
+- public.alternar_estado_campanha (OID 20103, authenticated) é campaign-first e, ao sair de combate, cancela ataques e expira pendings AOO, marcando reações em aberto como skipped. GM é validado antes do lock e não revalidado depois.
+- public.avancar_turno (OID 20074, authenticated) é campaign-first e bloqueia avanço enquanto existir pending AOO ativo. PLAYER tem revalidação de propriedade/turno sob lock; GM não tem revalidação de membership após o lock.
+- public.end_combat (OID 19091) altera os mesmos registros, mas não possui EXECUTE authenticated/anon no catálogo consultado; não é endpoint direto confirmado.
+- Somente leitura do catálogo remoto; nenhuma transição de campanha ou combate foi executada.
