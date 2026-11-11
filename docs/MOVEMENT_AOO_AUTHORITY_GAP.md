@@ -545,3 +545,10 @@ A análise de `srd_resolve_pending_spell_save` foi feita pela definição instal
 `public.srd_resolver_ataque_oportunidade_srd` localiza atacante e alvo em `cba_data.tokens` com predicado `token.id = id_armazenado OR token.key = id_armazenado LIMIT 1`. Não valida contagem de correspondências nem exige unicidade do par de identidade. A fixture anterior demonstrou que `salvar_cena_cba` aceita colisões/duplicações de `id`/`key`; por isso, uma cena ambígua pode fazer o cálculo de ataque escolher uma cópia sem sinalizar inconsistência.
 
 A mesma RPC adquire locks attack → pending → campaign. Junto aos endpoints de aplicação de dano, isso confirma que a inversão contra cancelamento pending → attack é uma família de rotas, não apenas a confirmação crítica. Exigir campaign → pending → attack e identidade única/estável antes de calcular/resolver o ataque.
+
+
+### Avanço de nível: callsite cliente e ausência de guarda de combate
+
+`ficha.html` chama diretamente a RPC `concluir_avanco_nivel_personagem_srd_v2`. A definição pública autenticada delega à implementação `priv.concluir_avanco_nivel_personagem_srd`, que bloqueia personagem e ficha, mas não campanha; também não verifica se a campanha está em combate nem se existe pending AOO. A implementação altera nível/classe, atributos, talentos e perícias, dados usados para derivar ameaça e elegibilidade de ataques de oportunidade.
+
+Portanto, a ausência de guarda não é apenas uma hipótese sobre o schema `priv`: existe um caminho público usado pelo frontend. Adicionar campaign-first, revalidar estado e bloquear ou invalidar atomicamente pending antes de permitir o avanço. Não foi feita chamada de avanço nem mutação no banco.
