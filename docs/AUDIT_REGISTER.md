@@ -785,3 +785,10 @@ Conclusão: a falha de CI tem causa estrutural confirmada: falta versionar a ori
 O catálogo remoto confirma `USAGE` no schema `priv` para `authenticated`, EXECUTE em 40 funções `priv` e privilégios padrão de EXECUTE para `authenticated`/`service_role` em todas as novas funções criadas por `postgres` nesse schema. A regra padrão é ampla e pode conceder acesso futuro inadvertidamente. O inventário AOO inclui implementações internas de cancelar, encerrar reação, reservar reação, iniciar manobras e resolver manobras com EXECUTE direto.
 
 Não foi possível provar exposição HTTP: `pgrst.db_schemas` não está visível via current_setting nem em configurações persistidas de role/database consultadas. Portanto, registrar como risco de privilégio no banco e possível superfície REST condicional, não como vulnerabilidade REST confirmada. Próximo passo é confirmar allowlist PostgREST ativa e revisar as 40 rotinas, depois migrar para privilégios explícitos mínimos. Nenhum GRANT/REVOKE foi executado no remoto.
+
+
+### 2026-11-11 — Security Advisor e escopo REST
+
+Security Advisor reportou 99 funções `SECURITY DEFINER` executáveis por `authenticated` como RPCs REST, identificadas no schema `public`; não reportou funções `priv` como RPCs. Isso reforça, sem provar de forma absoluta, que `priv` não está na allowlist REST atual. No banco, porém, `authenticated` continua com USAGE e EXECUTE em 40 funções `priv`, devido também ao default ACL amplo.
+
+Advisor reportou 7 tabelas RLS-enabled sem policy, incluindo `priv.srd_aoo_attacks` e `priv.srd_aoo_pending_movements`, além de cinco tabelas públicas de ataques/recursos. Tratar como revisão de hardening, não como falha funcional confirmada. Nenhuma permissão/policy foi alterada.
