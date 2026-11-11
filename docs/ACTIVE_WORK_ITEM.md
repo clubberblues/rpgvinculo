@@ -695,3 +695,13 @@ Essas ordens são evidência estática de inversões com operações campaign-fi
 - `ready_to_commit` aparece na constraint do pending, no índice de pendings ativos e no guard de movimento; porém a varredura das funções PL/pgSQL instaladas em `public` e `priv` não encontrou nenhum writer que atribua esse estado. O finalizador padrão aceita somente `waiting_reactions`; as manobras concluem diretamente em `committed`.
 - Tratar como estado reservado/legado sem produtor identificado. Antes de removê-lo ou ativá-lo, conferir histórico das migrations e eventuais escritores externos; se mantido, definir a transição e os consumidores da máquina de estados.
 - Apenas catálogo remoto consultado; nenhuma escrita no banco.
+
+
+### Próxima extensão AOO — Derrubar e locks herdados (2026-11-10)
+
+A auditoria do catálogo remoto expandiu o grafo de chamadas:
+
+- Ataques AOO com arma/desarmado/natural (OIDs 27022, 27065, 27055) e finalização do movimento (OID 27038) seguem pending → campaign; início de ataque também bloqueia ledger depois. GM é validado antes do lock e não revalidado depois.
+- Derrubar após reação (OID 27136) bloqueia pending e delega, pela cadeia pública/API, ao helper OID 27120 que bloqueia campaign: inversão transitiva pending → campaign. O iniciador de Derrubar (OID 27131) é campaign-first.
+- O GUC app.srd_trip_aoo_pending_id é limpo para vazio em vez de restaurar o valor anterior. O GUC app.srd_aoo_pending_commit no finalizador normal é limpo somente no caminho de sucesso. Ambos precisam de escopo transacional estreito e restauração em sucesso/erro.
+- A correção de lock deve incluir as cadeias transitivas e a finalização, não apenas os resolvers de ataque previamente mapeados.
