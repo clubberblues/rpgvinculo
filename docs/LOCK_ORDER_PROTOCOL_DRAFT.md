@@ -1009,3 +1009,8 @@ As RPCs de dano localizam o alvo somente por `id`, ao passo que o resolver aceit
 ### Integridade de campanha nas relações AOO
 
 As FKs atuais de `priv.srd_aoo_attacks` apontam `pending_id` e `reaction_id` apenas para as PKs globais, sem exigir igualdade de `campaign_id` entre ataque, movimento e ledger. A consistência é deixada para as funções PL/pgSQL. Incluir proteção no schema contra relações cruzadas entre campanhas; a fixture deve tentar construir uma linha com IDs válidos de campanhas distintas e confirmar rejeição.
+
+
+### Confirmação crítica deve validar pending e transição de reação
+
+A RPC de confirmação crítica atualiza a reação em `pending_reactions` sem condicionar a atualização a `pending.status='waiting_reactions'` e sem validar o estado anterior da reação (`hit_pending_damage`). Seleciona a posição por `reservation_id` com `LIMIT 1`. Deve validar exatamente uma ocorrência, estado anterior esperado e pending ativo sob locks na ordem campaign → pending → attack; em seguida alterar ataque e reação na mesma transação. Não aceitar estado terminal/retomável por inferência.
