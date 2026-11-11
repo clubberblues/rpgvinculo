@@ -707,3 +707,11 @@ No commit `6c1d1e95c1d3f083ebc82f09bf0a547b8880a60c`, validação estática, Jav
 - As configurações SQL consultadas (`current_setting('pgrst.db_schemas', true)`, `pgrst.db_extra_search_path` e overrides em `pg_db_role_setting`) não informaram schemas adicionais.
 - Isso não revela a lista efetiva configurada no serviço PostgREST/Supabase. Portanto, a exposição HTTP de `priv` e `private` permanece **não confirmada**; não afirmar que os helpers com EXECUTE authenticated são diretamente chamáveis via API até obter essa configuração.
 - Somente leitura de catálogo e configurações SQL; nenhuma ACL ou configuração foi modificada.
+
+
+### Extensão da cadeia AOO — dano e reserva
+
+- `public.srd_aplicar_dano_ataque_oportunidade_srd` (OID 27036) e `public.srd_aplicar_dano_ataque_oportunidade_monstro_srd` (OID 27058): attack → pending → campaign → ficha do alvo. Confirmada a inversão de ordem no caminho de dano.
+- `priv.srd_reservar_ataque_oportunidade_impl` (OID 27261): campaign → ledger de reação, exemplo positivo.
+- `public.srd_registrar_rolagem_ataque_oportunidade_srd` (OID 27024) e `public.srd_confirmar_critico_ataque_oportunidade_srd` (OID 27027): lock somente na linha de attack no corpo analisado; não adquirem pending/campaign posteriormente.
+- Escopo de correção deve cobrir início, reserva, rolagem, crítico/ocultação, dano, cancelamento/encerramento e commit do movimento como uma única máquina transacional.
