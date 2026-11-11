@@ -729,3 +729,10 @@ A auditoria do catálogo remoto expandiu o grafo de chamadas:
 - As tabelas de pending, ataques e ledger estavam vazias na consulta ao Supabase remoto. Não inferir que os fluxos não são usados; apenas não havia linhas no momento observado.
 
 Próximos testes reais precisam verificar concorrência e repetição idempotente nessas chaves, além de impedir que ataques permaneçam abertos após pending cancelado/expirado.
+
+
+### CI — causa exata da falha no replay integral (2026-11-11)
+
+O job `Replay full Supabase migration baseline` no commit `fa4b33f` falhou na etapa `Start disposable local Supabase stack only`, antes das etapas separadas de replay e verificação. O log mostra o stack subindo e, ao inicializar migrations automaticamente, tentando aplicar primeiro `20261031160944_srd35_action_economy.sql`; a primeira função `public.consumir_acao_turno_srd` falha ao resolver `public.campaigns`, que não existe no banco descartável vazio (`SQLSTATE 42P01`). Logo, não é uma falha de execução de toda a sequência nem evidência de erro no banco remoto: o conjunto versionado começa com uma migration incremental que pressupõe schema-base pré-existente. O passo seguinte é recuperar a origem confiável desse schema-base e preparar bootstrap fiel em ambiente descartável; não inventar tabela `campaigns` mínima para fazer o CI passar.
+
+No mesmo commit, validação estática, JS da aplicação, JS da mesa e fixtures PostgreSQL concluíram com sucesso. A fixture PostgreSQL não substitui a reconstrução integral nem testes de concorrência das RPCs reais.
