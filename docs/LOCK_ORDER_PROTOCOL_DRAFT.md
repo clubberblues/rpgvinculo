@@ -902,3 +902,12 @@ A inspeção ampliada dos fluxos instalados confirmou que a inversão não está
 A varredura também confirma que ready_to_commit aparece em constraints/guardas e checks, mas não foi encontrado produtor no código PL/pgSQL instalado. Não remover o estado antes de conferir histórico e consumidores externos.
 
 Evidência: definições e cadeias transitivas consultadas no catálogo remoto via leitura SQL. Nenhuma RPC de combate foi executada; nenhum token, pending, campanha, ACL ou migration remota foi alterado.
+
+
+### Transições globais que encerram ou bloqueiam a máquina AOO (2026-11-10)
+
+- public.alternar_estado_campanha (OID 20103, EXECUTE authenticated) é campaign-first: bloqueia a campanha e, ao sair de COMBATE, cancela ataques ativos e marca pendings waiting_reactions/ready_to_commit como expired; reações ainda abertas passam a skipped. É um encerramento global legítimo da máquina AOO, não uma inversão de lock pending/campaign. Porém, a função lê/valida membership GM antes do FOR UPDATE e não repete a autorização depois do lock: TOCTOU de autoridade permanece.
+- public.avancar_turno (OID 20074, EXECUTE authenticated) também bloqueia campaign antes de verificar se existe pending ativo, e rejeita avanço até o Mestre concluir/cancelar o movimento. É controle positivo para serialização AOO. A role é lida antes do lock; o ramo PLAYER revalida que o turno pertence à própria ficha depois do lock, mas o ramo GM não revalida membership sob lock.
+- public.end_combat (OID 19091) também atualiza ataques e pendings AOO, mas não tem EXECUTE para authenticated/anon no snapshot consultado; não tratá-lo como RPC direta do cliente sem outro wrapper autorizado.
+
+O grafo final precisa incluir transições globais de combate além dos endpoints individuais de reação. Revalidar membership/GM depois do campaign lock em alternar_estado_campanha e avancar_turno, preservando a regra de que o turno não avança enquanto houver pending ativo.
