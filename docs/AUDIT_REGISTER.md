@@ -835,3 +835,10 @@ CI: no commit `c912f498f0555747709c8675bcffbf3f7635044d`, passaram validação e
 A definição instalada de `public.srd_resolver_ataque_oportunidade_srd` e das duas RPCs `srd_aplicar_dano_ataque_oportunidade_*` confirma attack → pending → campaign. O cancelamento individual continua pending → attack. Assim, resolver ataque e aplicar dano também podem formar o ciclo de espera com cancelamento/encerramento concorrente, além da confirmação crítica. Risco estrutural inferido do código; não houve teste de concorrência nem deadlock observado.
 
 O resolver localiza atacante e alvo por `id OR key` com `LIMIT 1`, sem garantir uma única correspondência. Como a fixture de cena já reproduz colisão/duplicação de identidade aceita pelo salvamento, essa RPC pode resolver usando uma cópia arbitrária. Corrigir identidade da cena no writer e rejeitar duplicidade no resolver.
+
+
+### Avanço de nível confirmado como rota de alteração de snapshot AOO
+
+O frontend `ficha.html` chama a RPC pública autenticada `public.concluir_avanco_nivel_personagem_srd_v2`, que delega para `priv.concluir_avanco_nivel_personagem_srd`. A implementação bloqueia personagem → ficha, sem lock de campanha, sem checagem de combate e sem checagem de pending AOO. Ela altera classe/nível, atributos, talentos, perícias e PV. Isso pode mudar premissas de ameaça/elegibilidade de AOO durante uma reação reservada.
+
+A correção deve serializar campaign-first e rejeitar avanço enquanto combate/pending estiver ativo, ou invalidar/recalcular o pending de modo atômico. A exposição via RPC pública está confirmada pelo callsite; não é necessário presumir que o schema `priv` esteja na allowlist REST. A migration local `20261110170000` não revoga EXECUTE desse helper e ainda não está no ledger remoto consultado.
