@@ -715,3 +715,13 @@ No commit `6c1d1e95c1d3f083ebc82f09bf0a547b8880a60c`, validação estática, Jav
 - `priv.srd_reservar_ataque_oportunidade_impl` (OID 27261): campaign → ledger de reação, exemplo positivo.
 - `public.srd_registrar_rolagem_ataque_oportunidade_srd` (OID 27024) e `public.srd_confirmar_critico_ataque_oportunidade_srd` (OID 27027): lock somente na linha de attack no corpo analisado; não adquirem pending/campaign posteriormente.
 - Escopo de correção deve cobrir início, reserva, rolagem, crítico/ocultação, dano, cancelamento/encerramento e commit do movimento como uma única máquina transacional.
+
+
+### 2026-11-10 — extensão da auditoria AOO a Derrubar e início/finalização
+
+- Confirmada a ordem pending → campaign nos três iniciadores de ataque AOO (arma, desarmado e ataque natural; OIDs 27022, 27065, 27055), com bloqueio do ledger após a campanha. A sobrecarga natural OID 27231 delega à implementação OID 27055.
+- public.srd_finalizar_movimento_aoo_pendente_srd (OID 27038) também bloqueia pending antes da campanha.
+- Derrubar após AOO (priv OID 27136) bloqueia pending e depois delega à cadeia pública/API até priv.srd_resolver_derrubar_srd (OID 27120), que bloqueia campaign. Inversão transitiva confirmada. O iniciador de Derrubar (priv OID 27131) bloqueia campanha antes de inserir pending.
+- app.srd_trip_aoo_pending_id é limpo para vazio em vez de restaurar o valor anterior; app.srd_aoo_pending_commit no finalizador normal não é restaurado em caminho de erro. Requerem escopo/restauração robustos.
+- A validação GM nos iniciadores de ataque ocorre antes do lock da campanha e não é repetida sob lock.
+- Somente leitura de catálogo remoto. Nenhuma RPC de combate, token ou campanha foi alterada.
