@@ -778,3 +778,10 @@ CI no commit `131e717`: validação estática, JS da aplicação, JS da mesa e f
 Os candidatos SQL legados não criam o core: `srd35_schema_reconciliation.sql` começa alterando tabelas SRD existentes; `cba_iniciativa_migration.sql` altera `public.campaigns`; `srd35_rule_engine_foundation_migration.sql` cria módulos que referenciam `campaigns`/`characters`; `vtt_dnd35_final_migration.sql` também assume essas tabelas. O snapshot remoto descreve o schema, mas declara expressamente que não é dump restaurável. Não foi localizada uma migration de bootstrap que crie `public.campaigns` antes da primeira migration versionada.
 
 Conclusão: a falha de CI tem causa estrutural confirmada: falta versionar a origem do schema-base pré-ledger. Não fabricar tabelas mínimas; localizar backup/schema-only SQL ou histórico confiável e reconstruir bootstrap a partir dele.
+
+
+### 2026-11-11 — privilégios padrão e superfície `priv`
+
+O catálogo remoto confirma `USAGE` no schema `priv` para `authenticated`, EXECUTE em 40 funções `priv` e privilégios padrão de EXECUTE para `authenticated`/`service_role` em todas as novas funções criadas por `postgres` nesse schema. A regra padrão é ampla e pode conceder acesso futuro inadvertidamente. O inventário AOO inclui implementações internas de cancelar, encerrar reação, reservar reação, iniciar manobras e resolver manobras com EXECUTE direto.
+
+Não foi possível provar exposição HTTP: `pgrst.db_schemas` não está visível via current_setting nem em configurações persistidas de role/database consultadas. Portanto, registrar como risco de privilégio no banco e possível superfície REST condicional, não como vulnerabilidade REST confirmada. Próximo passo é confirmar allowlist PostgREST ativa e revisar as 40 rotinas, depois migrar para privilégios explícitos mínimos. Nenhum GRANT/REVOKE foi executado no remoto.
