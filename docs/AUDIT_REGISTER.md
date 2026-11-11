@@ -762,3 +762,12 @@ A matriz completa está no item de trabalho ativo. Limite importante: é invent�
 ### 2026-11-11 — histórico de `ready_to_commit` esclarecido
 
 As migrations 20261108170021 e 20261108193147 incluíram explicitamente `ready_to_commit` como estado cancelável/resumível. Não remover como resíduo. Existe assimetria: cancelamento, encerramento de combate e bloqueio de avanço aceitam o estado; finalização e encerramento individual de reação não. Nenhum produtor instalado foi localizado e a tabela não tinha linhas nesse estado no snapshot remoto. Exige decisão de compatibilidade antes de alterar constraints, índices ou consumidores.
+
+
+### 2026-11-11 — confirmação de estado legado e locks das rotas de manobra
+
+A leitura do catálogo confirma que não existe atribuição atual localizada de `ready_to_commit`; as ocorrências nas funções instaladas são consumidores. O estado permanece na constraint e no índice ativo por compatibilidade histórica, então não remover sem reconciliação.
+
+Iniciadores de Derrubar, Encontrão e Levantar-se são campaign-first. Em contraste, finalização do movimento é pending-first → campaign; cancelamento e encerramento individual são pending-first → attack e não bloqueiam campanha. As três rotas precisam ser harmonizadas antes de testes de carga ou alterações de produção.
+
+CI no commit `131e717`: validação estática, JS da aplicação, JS da mesa e fixtures PostgreSQL passaram; replay integral falhou ao inicializar stack descartável porque `public.campaigns` não existe quando a primeira migration incremental é aplicada. Não é falha observada no banco remoto.
