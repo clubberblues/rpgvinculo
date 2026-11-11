@@ -923,3 +923,10 @@ Leitura do catálogo e contagens read-only:
 - No instante da consulta remota, as três tabelas tinham zero linhas (pending, ataques e ledger); também não havia pending `ready_to_commit`. Isto informa apenas o estado atual observado, não prova ausência de uso histórico nem substitui testes funcionais.
 
 Implicação para os testes: incluir asserts concorrentes de que duas reservas para o mesmo ator/trigger convergem para um único ledger entry; rolagem e dano repetidos com a mesma chave não duplicam resultado; cancelamento/expiração não deixam ataques ativos; e o índice de um pending ativo por campanha rejeita criação concorrente. Validar também comportamento quando o pending já está terminal.
+
+
+### Revisão histórica de `ready_to_commit` — assimetria entre operações (2026-11-11)
+
+A leitura das migrations históricas ajusta a interpretação do estado: `20261108170021_srd_aoo_pending_movement_lifecycle_guards.sql` já permitia cancelar `waiting_reactions` e `ready_to_commit`, e a migration `20261108193147_support_cancelling_resumable_aoo_states.sql` preservou explicitamente esse suporte para cancelamento. Portanto, `ready_to_commit` não é um typo nem deve ser removido como resíduo sem análise de compatibilidade; foi intencionalmente considerado estado cancelável/resumível.
+
+A inconsistência confirmada é entre consumidores: cancelar movimento e encerrar combate aceitam/expiram os dois estados; `avancar_turno` bloqueia nos dois; já `srd_finalizar_movimento_aoo_pendente_srd` e `srd_encerrar_reacao_aoo_pendente_impl` aceitam apenas `waiting_reactions`. Não foi localizado produtor instalado que atribua `ready_to_commit`, e a tabela estava sem linhas nesse estado no momento da consulta. Ainda assim, o contrato histórico exige decisão explícita: ou definir o significado/fluxo de retomada e completar os consumidores; ou provar que não há dados/consumidores legados antes de retirar o estado de todos os contratos. Não remover apenas da constraint/índice.
