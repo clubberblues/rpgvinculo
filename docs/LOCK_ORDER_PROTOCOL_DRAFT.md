@@ -997,3 +997,10 @@ A implementação instalada `priv.srd_iniciar_levantar_caido_srd` oferece um pad
 ### CI de fixtures e bloqueio do replay — HEAD 4e5d239
 
 Fixtures PostgreSQL isoladas: sucesso. Static/app/mesa JS: sucesso. Replay completo: falha antes da aplicação das migrations, durante inicialização do stack descartável; primeira migration requer `public.campaigns`, ausente no banco vazio. O erro não prova regressão no banco remoto nem valida as migrations posteriores. Continuar sem fabricar bootstrap mínimo: obter schema-base histórico confiável.
+
+
+### Dano AOO: estado da reação e identidade do alvo
+
+As RPCs `srd_aplicar_dano_ataque_oportunidade_*` verificam o estado do ataque e do pending, mas não validam a entrada da reação correspondente como exatamente uma ocorrência em `hit_pending_damage`. A atualização JSONB seleciona a reação por `reservation_id` com `LIMIT 1` e substitui o status; não há precondição de transição. Ausência de entrada gera erro transacional por caminho nulo, mas estado inesperado presente pode ser sobrescrito.
+
+As RPCs de dano localizam o alvo somente por `id`, ao passo que o resolver aceita `id OR key`. Essa divergência precisa ser removida com identidade canônica única e validação de contagem. Corrigir junto ao protocolo campaign → pending → attack, antes de liberar as rotas.
