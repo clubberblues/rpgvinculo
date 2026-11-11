@@ -688,3 +688,10 @@ Essas ordens são evidência estática de inversões com operações campaign-fi
 - O único chamador direto identificado, `public.srd_solicitar_movimento_com_aoo_srd` (OID 26964), termina logo após o INSERT; portanto não foi demonstrada exploração no caminho atual. Ainda assim, o escopo é excessivo para futuras chamadas aninhadas/wrappers e deve ser fechado.
 - Na correção, salvar/restaurar o valor anterior do GUC em todos os caminhos, restringir a exceção ao pending/campanha/token/destino exatos e consumi-la uma única vez. Manter a prévia com rollback: ela valida o caminho real sem persistir o movimento.
 - Achado estático do catálogo remoto; nenhuma mutação ou teste de escrita foi executado no Supabase remoto.
+
+
+### Estado AOO não alcançável identificado no catálogo (2026-11-10)
+
+- `ready_to_commit` aparece na constraint do pending, no índice de pendings ativos e no guard de movimento; porém a varredura das funções PL/pgSQL instaladas em `public` e `priv` não encontrou nenhum writer que atribua esse estado. O finalizador padrão aceita somente `waiting_reactions`; as manobras concluem diretamente em `committed`.
+- Tratar como estado reservado/legado sem produtor identificado. Antes de removê-lo ou ativá-lo, conferir histórico das migrations e eventuais escritores externos; se mantido, definir a transição e os consumidores da máquina de estados.
+- Apenas catálogo remoto consultado; nenhuma escrita no banco.
