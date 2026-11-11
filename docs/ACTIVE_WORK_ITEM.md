@@ -891,3 +891,14 @@ A migração local `20261110170000_lock_down_internal_helper_execute.sql` ainda 
 Execuções concluídas para `4e5d2390462501190652c04f851f04d8a1a7a6cc`: validação estática, JavaScript da aplicação, JavaScript da mesa e fixtures PostgreSQL passaram. O job `Replay full Supabase migration baseline` falhou em `Start disposable local stack only`; a etapa de replay nem começou. Log: tentativa de pull com `toomanyrequests: Rate exceeded`, depois primeira migration `20261031160944_srd35_action_economy.sql` falha com `relation public.campaigns does not exist` (SQLSTATE 42P01). Portanto, não é falha de uma migration posterior nem validação contra produção. O bloqueio de reconstrução do schema-base permanece.
 
 A fixture PostgreSQL passou no commit atual, mas continua sendo uma reprodução isolada das invariantes específicas cobertas; não demonstra correção das lacunas AOO nem replay completo do banco.
+
+
+### Aplicação de dano AOO: validação incompleta da reação e identidade divergente (2026-11-11)
+
+Leitura integral das RPCs públicas autenticadas `srd_aplicar_dano_ataque_oportunidade_srd` e `_monstro_srd` confirmou:
+
+1. Ambas validam `attack.status='awaiting_damage'` e `pending.status='waiting_reactions'`, mas não exigem que a reação correspondente (`reservation_id = attack.reaction_id`) exista exatamente uma vez e esteja em `hit_pending_damage`. Ao atualizar `pending_reactions`, localizam a entrada com `LIMIT 1` e substituem seu status por `damage_applied`, sem precondição de status da reação. Se a entrada não existir, a expressão do caminho JSONB fica nula e a transação aborta; não é sucesso silencioso. Se existir em estado inesperado, porém, pode ser sobrescrita.
+2. As duas funções localizam o token alvo na cena apenas por `token.id = attack.target_token_id`, enquanto `srd_resolver_ataque_oportunidade_srd` aceita `id OR key` e usa `LIMIT 1`. Assim, um token que foi resolvido via `key` pode não ser encontrado na etapa de dano. A função natural também faz lookup por `id` apenas. Padronizar identidade única e o mesmo predicado/validação em iniciar, resolver, dano e writers CBA.
+3. A ordem de locks segue attack → pending → campaign, ampliando o ciclo concorrente já documentado contra cancelamento pending → attack.
+
+Correção: campaign → pending → attack; validar reação única em `hit_pending_damage` sob lock; rejeitar estados divergentes sem sobrescrevê-los; usar identidade canônica única em todas as etapas. Não foi aplicado dano nem executado teste de concorrência no banco remoto.
