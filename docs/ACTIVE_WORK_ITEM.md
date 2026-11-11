@@ -884,3 +884,10 @@ A implementação privada bloqueia `public.characters` e depois `public.srd_char
 Não confundir com uma chamada REST direta ao schema `priv`: essa exposição ainda não foi confirmada. O wrapper público `public.concluir_avanco_nivel_personagem_srd_v2` é suficiente para confirmar que o fluxo é alcançável pelo cliente autenticado. A rota deve rejeitar avanço durante combate/pending ou adquirir campaign lock antes de personagem/ficha, revalidar XP/nível/ownership e invalidar/recalcular pending quando houver mudança de premissas. A sequência atual personagem → ficha também contraria o protocolo campaign-first proposto.
 
 A migração local `20261110170000_lock_down_internal_helper_execute.sql` ainda não fecha essa rota: revoga EXECUTE de cinco helpers específicos, mas não da implementação de avanço de nível. Além disso, a migration ainda não consta no ledger remoto consultado anteriormente; não foi aplicada em produção.
+
+
+### CI do commit 4e5d239 — fixtures aprovadas; replay falha antes das migrations (2026-11-11)
+
+Execuções concluídas para `4e5d2390462501190652c04f851f04d8a1a7a6cc`: validação estática, JavaScript da aplicação, JavaScript da mesa e fixtures PostgreSQL passaram. O job `Replay full Supabase migration baseline` falhou em `Start disposable local stack only`; a etapa de replay nem começou. Log: tentativa de pull com `toomanyrequests: Rate exceeded`, depois primeira migration `20261031160944_srd35_action_economy.sql` falha com `relation public.campaigns does not exist` (SQLSTATE 42P01). Portanto, não é falha de uma migration posterior nem validação contra produção. O bloqueio de reconstrução do schema-base permanece.
+
+A fixture PostgreSQL passou no commit atual, mas continua sendo uma reprodução isolada das invariantes específicas cobertas; não demonstra correção das lacunas AOO nem replay completo do banco.
