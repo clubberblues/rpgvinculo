@@ -911,3 +911,15 @@ Evidência: definições e cadeias transitivas consultadas no catálogo remoto v
 - public.end_combat (OID 19091) também atualiza ataques e pendings AOO, mas não tem EXECUTE para authenticated/anon no snapshot consultado; não tratá-lo como RPC direta do cliente sem outro wrapper autorizado.
 
 O grafo final precisa incluir transições globais de combate além dos endpoints individuais de reação. Revalidar membership/GM depois do campaign lock em alternar_estado_campanha e avancar_turno, preservando a regra de que o turno não avança enquanto houver pending ativo.
+
+
+### Invariantes físicas do ledger AOO e estado remoto observado (2026-11-10)
+
+Leitura do catálogo e contagens read-only:
+
+- `priv.srd_aoo_pending_movements.status` aceita `waiting_reactions`, `ready_to_commit`, `committed`, `cancelled`, `expired`; índice parcial único permite apenas um pending por campanha nos dois estados ativos (`waiting_reactions`, `ready_to_commit`).
+- `priv.srd_aoo_attacks` possui chave primária por ataque, FK para pending e ledger, status limitado a `awaiting_attack_roll`, `awaiting_critical_confirmation`, `awaiting_miss_chance`, `awaiting_damage`, `miss`, `damage_applied`, `cancelled`; tem unicidade para `reaction_id`, `damage_idempotency_key` e chave opcional de idempotência da rolagem.
+- `priv.srd_aoo_reaction_ledger` possui unicidade por campanha/fase/rodada/ator/número da reação e por campanha/fase/rodada/ator/trigger_key, prevenindo duplicação lógica de reserva sob a mesma chave.
+- No instante da consulta remota, as três tabelas tinham zero linhas (pending, ataques e ledger); também não havia pending `ready_to_commit`. Isto informa apenas o estado atual observado, não prova ausência de uso histórico nem substitui testes funcionais.
+
+Implicação para os testes: incluir asserts concorrentes de que duas reservas para o mesmo ator/trigger convergem para um único ledger entry; rolagem e dano repetidos com a mesma chave não duplicam resultado; cancelamento/expiração não deixam ataques ativos; e o índice de um pending ativo por campanha rejeita criação concorrente. Validar também comportamento quando o pending já está terminal.
