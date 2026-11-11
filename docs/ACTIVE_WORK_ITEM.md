@@ -841,3 +841,17 @@ A correção deve fazer ambas as rotas obterem campaign → pending → attack, 
 ### CI atualizado — commit cfd924f
 
 No commit `cfd924f48cf3792d77030abb099c06493b1d1ba1`, Static validation, Validate application JavaScript, Validate mesa JavaScript e PostgreSQL fixture tests concluíram sucesso. `Replay full Supabase migration baseline` falhou durante `Start disposable local Supabase stack only`, antes de executar as etapas separadas de replay/verificação. O log mostra uma limitação transitória de download Docker (`toomanyrequests: Rate exceeded`, seguida de retry) e, durante inicialização automática do banco, a primeira migration falhou ao resolver `public.campaigns` ausente (`SQLSTATE 42P01`). A causa estrutural já conhecida continua sendo ausência do schema-base no banco descartável; a limitação Docker é ruído adicional da inicialização. Não é falha no Supabase remoto.
+
+
+### Escritor adicional de elegibilidade AOO sem serialização de campanha
+
+A leitura integral de `public.srd_resolve_pending_spell_save(uuid,integer)` confirma uma rota autenticada que pode alterar condições relevantes para AOO sem obter lock da campanha:
+
+- Primeiro bloqueia `priv.srd_pending_spell_resolutions FOR UPDATE`.
+- Valida o jogador-alvo/Mestre depois desse lock.
+- No ramo `v_pending.condition_break`, lê a rodada em `public.campaigns` sem `FOR UPDATE` e, se a resistência for bem-sucedida, desativa diretamente a condição em `public.srd_campaign_conditions`; se falhar, atualiza apenas as notas da condição.
+- Esse ramo não chama `priv.srd_apply_pending_spell_resolution`, portanto não herda o campaign lock dessa implementação.
+
+Como `priv.srd_condition_has_flag` usa `srd_campaign_conditions` para flags como `stunned`, `helpless`, `unconscious` e `no_actions`, a remoção de uma condição que corresponda a essas flags pode alterar a elegibilidade de reação AOO enquanto um movimento está pendente. O escritor não serializa com o pending AOO nem invalida/recalcula a decisão de elegibilidade já capturada. Não foi executado; achado estático do PL/pgSQL instalado.
+
+Correção proposta: campaign → pending spell request → condição/efeito, revalidar status/rodada e serializar a mudança de condição com o pending AOO; ou invalidar atomicamente o pending se a condição afetar um ator/ameaça envolvido. Não congelar indiscriminadamente condições que sejam consequência legítima de uma reação em curso.
