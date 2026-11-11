@@ -671,3 +671,11 @@ Essas ordens são evidência estática de inversões com operações campaign-fi
 - `current_setting('pgrst.db_schemas', true)` e `pgrst.db_extra_search_path` retornaram NULL nesta conexão. Também não foram encontrados overrides correspondentes em `pg_db_role_setting` para database/authenticator.
 - Isso **não comprova** que `priv`/ `private` estejam expostos pela API: a lista de schemas PostgREST pode ser configurada no serviço fora dessas configurações SQL consultadas. Não classificar essas funções como RPC acessível via HTTP até confirmar a configuração efetiva do projeto. Manter o risco como “permissões SQL authenticated concedidas; exposição API não confirmada”.
 - A checagem foi read-only; nenhuma ACL, schema ou configuração foi alterada.
+
+
+### Extensão do mapa AOO — dano e reserva de reação (2026-11-10)
+
+- `public.srd_aplicar_dano_ataque_oportunidade_srd` (OID 27036) e `public.srd_aplicar_dano_ataque_oportunidade_monstro_srd` (OID 27058) seguem attack → pending → campaign e depois podem bloquear a ficha do alvo. São caminhos de resolução com a mesma inversão estrutural já vista no resolver do ataque.
+- `priv.srd_reservar_ataque_oportunidade_impl` (OID 27261) é um controle positivo: bloqueia campaign primeiro e depois registra a reserva no ledger de reação.
+- `public.srd_registrar_rolagem_ataque_oportunidade_srd` (OID 27024) bloqueia somente a linha de attack para gravar a rolagem/idempotência; `public.srd_confirmar_critico_ataque_oportunidade_srd` (OID 27027) também é attack-only. Esses caminhos não adquirem depois pending/campaign no corpo consultado, portanto não criam por si só a inversão attack→campaign; ainda precisam manter idempotência e estado terminal.
+- O mapa atualizado reforça que as correções devem tratar o ciclo inteiro de vida do ataque: iniciar, rolar, confirmar crítico/ocultação, aplicar dano, encerrar/cancelar e finalizar movimento. Não basta corrigir apenas o resolver.
