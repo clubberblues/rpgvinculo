@@ -736,3 +736,16 @@ Próximos testes reais precisam verificar concorrência e repetição idempotent
 O job `Replay full Supabase migration baseline` no commit `fa4b33f` falhou na etapa `Start disposable local Supabase stack only`, antes das etapas separadas de replay e verificação. O log mostra o stack subindo e, ao inicializar migrations automaticamente, tentando aplicar primeiro `20261031160944_srd35_action_economy.sql`; a primeira função `public.consumir_acao_turno_srd` falha ao resolver `public.campaigns`, que não existe no banco descartável vazio (`SQLSTATE 42P01`). Logo, não é uma falha de execução de toda a sequência nem evidência de erro no banco remoto: o conjunto versionado começa com uma migration incremental que pressupõe schema-base pré-existente. O passo seguinte é recuperar a origem confiável desse schema-base e preparar bootstrap fiel em ambiente descartável; não inventar tabela `campaigns` mínima para fazer o CI passar.
 
 No mesmo commit, validação estática, JS da aplicação, JS da mesa e fixtures PostgreSQL concluíram com sucesso. A fixture PostgreSQL não substitui a reconstrução integral nem testes de concorrência das RPCs reais.
+
+
+### Inventário lexical dos escritores das três tabelas AOO (2026-11-11)
+
+A varredura de definições PL/pgSQL em `public` e `priv` localizou os escritores diretos mais relevantes:
+
+- Pending: `priv.srd_cancelar_movimento_aoo_pendente_impl`, `priv.srd_encerrar_reacao_aoo_pendente_impl`, `priv.srd_iniciar_derrubar_com_aoo_srd`, `priv.srd_iniciar_encontrao_srd`, `priv.srd_iniciar_levantar_caido_srd`, `priv.srd_registrar_ocultacao_ataque_oportunidade_impl`, `priv.srd_reservar_reacao_movimento_aoo_impl`, `priv.srd_resolver_encontrao_srd`, `priv.srd_resolver_levantar_caido_apos_aoo_srd`, `priv.srd_resolver_derrubar_srd`, `public.alternar_estado_campanha`, `public.srd_finalizar_movimento_aoo_pendente_srd` e `public.srd_solicitar_movimento_com_aoo_srd`.
+- Attacks: `priv.srd_cancelar_movimento_aoo_pendente_impl`, `priv.srd_encerrar_reacao_aoo_pendente_impl`, `priv.srd_registrar_ocultacao_ataque_oportunidade_impl`, `public.alternar_estado_campanha`, as duas rotas públicas de aplicar dano, confirmar crítico, iniciar ataque (arma/desarmado/natural), registrar rolagem e resolver ataque.
+- Ledger: `priv.srd_reservar_ataque_oportunidade_impl`.
+
+A listagem é lexical: não captura writers transitivos, SQL dinâmico, triggers ou funções que atualizam tabelas por helpers. Exemplos: resolver Derrubar após AOO não aparece como escritor direto de pending, mas chama helper que altera pending; `public.end_combat` aparece como writer e não possui EXECUTE para authenticated/anon no catálogo. Não interpretar a listagem como lista de endpoints HTTP. `priv` tem permissões SQL `authenticated` em algumas funções, mas exposição efetiva do schema via PostgREST continua não confirmada.
+
+Próximo artefato de implementação deve ser um grafo transitivo de writers com uma linha por rota cliente/trigger/helper, não apenas uma matriz lexical por nome de tabela.
