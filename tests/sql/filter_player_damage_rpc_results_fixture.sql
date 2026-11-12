@@ -79,7 +79,7 @@ BEGIN
   IF r->'cba_data'->'tokens' @> '[{"id":"hidden"}]'::jsonb THEN RAISE EXCEPTION 'Equipment RPC leaked hidden token.'; END IF;
   r:=public.srd_configurar_perfil_combate_token_srd(987654323,'hidden','hostile',5);
   IF r->'cba_data'->'tokens' @> '[{"id":"hidden"}]'::jsonb THEN RAISE EXCEPTION 'Combat profile RPC leaked hidden token.'; END IF;
-  r:=public.conjurar_magia_dano_multialvo_srd('pc-1','spell',1,ARRAY['hidden'],ARRAY[4]);
+  r:=public.conjurar_magia_dano_multialvo_srd('pc-1','spell',1::smallint,ARRAY['hidden'],ARRAY[4]);
   IF r->'cba_data'->'tokens' @> '[{"id":"hidden"}]'::jsonb THEN RAISE EXCEPTION 'Spell damage RPC leaked hidden token.'; END IF;
   r:=public.usar_habilidade_classe_srd('pc-1','lay_on_hands','hidden',4);
   IF r->'cba_data'->'tokens' @> '[{"id":"hidden"}]'::jsonb THEN RAISE EXCEPTION 'Class feature RPC leaked hidden token.'; END IF;
