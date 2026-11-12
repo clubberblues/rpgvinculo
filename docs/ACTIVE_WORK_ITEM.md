@@ -1093,3 +1093,9 @@ A revisão read-only avançou para privilégios, RLS, funções privilegiadas, A
 - `mesa.html` faz upload de token/fundo em `mesa-media` e imediatamente chama `createSignedUrl`; também assina `backgroundPath` e `imagemPath` ao renderizar. Supabase exige SELECT em `storage.objects` para criar signed URL. A função de autorização retorna false para paths de token nas três campanhas atuais. O fluxo privado está, portanto, bloqueado até ligar a autorização ao CBA; o bucket privado está vazio.
 - Não abrir SELECT a todos os membros sem decisão: assinar a imagem completa do mapa pode revelar áreas encobertas pela névoa. Escolher entre metadata/layers, autorização por path/CBA com visibilidade, ou tiles/crops server-side. Nenhum upload real ou mudança remota foi feito.
 - Detalhes em `docs/FOUNDATION_SECURITY_REVIEW.md`.
+
+
+### Fixture de default ACL — segunda execução aprovada (2026-11-12 UTC)
+
+- A fixture corrigida `tests/sql/priv_default_acl_fixture.sql` passou no CI PostgreSQL run `43136928379`. Ela confirma que revogar PUBLIC globalmente para funções futuras, junto dos revokes de authenticated em tabelas/sequences/funções futuras de priv, impede novos grants automáticos; service_role permanece e ACLs de funções existentes não são alteradas.
+- A correção ainda não foi transformada em migration, pois o Supabase CLI/repositório local não está disponível nesta sessão e a validação de replay integral continua bloqueada pelo schema-base ausente. Não aplicar no remoto.
