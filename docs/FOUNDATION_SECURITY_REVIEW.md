@@ -273,3 +273,13 @@ Além dos nove itens de aceite listados acima, a fundação não deve ser consid
 18. Testar fluxos integrados com sessões GM/jogador/não membro e concorrência real em banco descartável.
 
 Esses itens são bloqueios reais ou decisões de produto; não devem ser marcados como concluídos por documentação isolada.
+
+
+## Atualização de evidências — 2026-11-12
+
+- A consulta read-only mais recente a `pg_default_acl` não encontrou entradas customizadas globais nem específicas para `priv`. Isso contradiz a fotografia histórica descrita no início deste documento; até reconciliar a origem/instante dessa divergência, tratar a ausência atual como observação mais recente, não afirmar que os defaults inseguros estão registrados no banco ativo.
+- A migration candidata `20261112100000_harden_priv_default_privileges.sql` continua útil como defesa preventiva para futuras funções criadas por `postgres`, removendo EXECUTE padrão de PUBLIC e removendo concessões automáticas de authenticated/anon no schema `priv`. Ela não altera ACLs de objetos existentes e ainda não foi aplicada.
+- A consulta read-only dos helpers internos confirmou que, antes das migrations `20261110150000`–`170000`, os grants antigos ainda aparecem: authenticated mantém EXECUTE direto em helpers internos e wrappers de catálogo permanecem SECURITY INVOKER. As verificações versionadas precisam ser executadas após as migrations em ambiente descartável antes de qualquer aplicação remota.
+- **Nova lacuna de autorização confirmada:** a sobrecarga de seis argumentos `public.criar_personagem_srd_completo(text,text,text,jsonb,jsonb,jsonb)` permanece SECURITY DEFINER e executável por authenticated. Ela não recebe `p_identidade` e não executa as validações específicas do fluxo atual. O wrapper ativo `finalizar_criacao_personagem_srd` chama a sobrecarga de sete argumentos; a busca nos corpos SQL remotos não encontrou outros chamadores da versão antiga. Foi adicionada a migration candidata `20261112110000_revoke_legacy_character_creation_rpc.sql`, fixture `tests/sql/legacy_character_creation_acl_fixture.sql` e verificação `supabase/verification/verify_legacy_character_creation_rpc_acl.sql`. Nenhuma delas foi executada no banco ativo.
+- O workflow PostgreSQL foi atualizado para incluir a nova fixture. O conector GitHub não retornou runs/status associados aos commits mais recentes; a execução e o resultado permanecem **não confirmados**.
+- O Security Advisor atual mantém avisos de 99 funções SECURITY DEFINER executáveis por authenticated e sete tabelas RLS-enabled sem policy. Não revogar em massa: classificar cada endpoint, proprietário, guards e callsites. A ausência de grants diretos nas tabelas internas continua exigindo confirmação em testes autenticados.
