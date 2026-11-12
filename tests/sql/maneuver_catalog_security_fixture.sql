@@ -1,5 +1,6 @@
 -- Isolated regression fixture for the exact SECURITY DEFINER remediation migration.
--- Uses disposable PostgreSQL roles/schemas and never touches application data.
+-- Uses a disposable PostgreSQL database and never touches application data.
+-- The included migrations commit; fixture objects remain only until the CI container is discarded.
 \set ON_ERROR_STOP on
 BEGIN;
 
