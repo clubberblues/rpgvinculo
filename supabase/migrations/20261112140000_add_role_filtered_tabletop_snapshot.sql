@@ -148,7 +148,17 @@ BEGIN
         IF v_index = v_current THEN
           v_new_current := jsonb_array_length(v_order);
         END IF;
-        v_order := v_order || jsonb_build_array(v_item);
+        -- Initiative entries are also projected: a visible actor must not
+        -- carry arbitrary hidden metadata into a player's response.
+        v_order := v_order || jsonb_build_array(jsonb_build_object(
+          'id', v_item->'id',
+          'nome', v_item->'nome',
+          'tipo', v_item->'tipo',
+          'is_monster', v_item->'is_monster',
+          'valor', v_item->'valor',
+          'd20', v_item->'d20',
+          'dex_mod', v_item->'dex_mod'
+        ));
       ELSIF v_index = v_current THEN
         v_new_current := 0;
       END IF;
@@ -170,10 +180,7 @@ BEGIN
       'owner_id', v_campaign.owner_id,
       'state', v_campaign.state,
       'active', v_campaign.active,
-      'location_id', v_campaign.location_id,
-      'briefing', v_campaign.briefing,
-      'capa_url', v_campaign.capa_url,
-      'capa_transform', v_campaign.capa_transform
+      'active', v_campaign.active
     ),
     'cba_data', v_scene,
     'combat_data', v_combat,
