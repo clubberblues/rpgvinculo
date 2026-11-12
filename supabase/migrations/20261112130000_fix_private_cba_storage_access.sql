@@ -72,17 +72,8 @@ BEGIN
     RETURN NOT (v_cleanup AND p_write AND NOT p_delete);
   END IF;
 
-  SELECT EXISTS (
-    SELECT 1 FROM public.members m
-    WHERE m.campaign_id = v_campaign_id
-      AND m.user_id = v_user
-      AND m.role = 'GM'
-  ) INTO v_is_gm;
-
-  IF v_is_gm THEN
-    RETURN NOT (v_cleanup AND p_write AND NOT p_delete);
-  END IF;
-
+  -- The active mesa contract grants GM authority only to the campaign owner.
+  -- Historical members.role='GM' values do not grant control privileges.
   IF v_cleanup OR p_write THEN
     RETURN false;
   END IF;
