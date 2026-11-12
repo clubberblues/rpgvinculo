@@ -115,10 +115,8 @@ BEGIN
     -- background URL/path at all; unknown scene metadata is always withheld.
     v_scene := jsonb_build_object(
       'version', coalesce(v_scene->'version', '1'::jsonb),
-      'background', CASE WHEN lower(coalesce(v_scene->>'fogEnabled','false')) = 'true'
-                         THEN '""'::jsonb ELSE coalesce(v_scene->'background','""'::jsonb) END,
-      'backgroundPath', CASE WHEN lower(coalesce(v_scene->>'fogEnabled','false')) = 'true'
-                             THEN '""'::jsonb ELSE coalesce(v_scene->'backgroundPath','""'::jsonb) END,
+      'background', coalesce(v_scene->'background','""'::jsonb),
+      'backgroundPath', coalesce(v_scene->'backgroundPath','""'::jsonb),
       'fogEnabled', lower(coalesce(v_scene->>'fogEnabled','false')) = 'true',
       'imgScale', coalesce(v_scene->'imgScale', '1'::jsonb),
       'gridSize', coalesce(v_scene->'gridSize', '50'::jsonb),
@@ -126,6 +124,9 @@ BEGIN
       'gridOpacity', coalesce(v_scene->'gridOpacity', '0.3'::jsonb),
       'tokens', v_order
     );
+    IF lower(coalesce(v_scene->>'fogEnabled','false')) = 'true' THEN
+      v_scene := v_scene - 'background' - 'backgroundPath';
+    END IF;
 
     -- Initiative is projected to visible/owned combatants only. Private
     -- pending reactions, hidden actor metadata and action-economy internals
