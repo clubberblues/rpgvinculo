@@ -91,3 +91,10 @@ Consulta read-only ao Supabase em 2026-11-12 confirmou:
 - A migration candidata `20261112140000` foi endurecida: o snapshot de jogador agora reconstrói a cena por allowlist, projeta cada token visível/pertencente para os campos usados pela mesa, projeta cada ator visível na iniciativa e limita o objeto campaign a id/nome/owner/state/active. Metadados desconhecidos de GM não são mais propagados por cópia do JSONB integral.
 - A fixture agora inclui segredos sintéticos no nível da campanha, cena, token visível e ator de iniciativa; jogador deve receber nenhum deles, enquanto o proprietário GM continua recebendo os dados completos de cena/combate.
 - Essa alteração reduz vazamento acidental por campos JSONB futuros, mas não substitui o corte de SELECT direto nem a filtragem das demais respostas RPC. Resultado CI da nova fixture/migration ainda pendente.
+
+
+## Projeção de controles de turno e RPC de avanço — 2026-11-12
+
+- O snapshot de jogador preserva agora somente `action_economy.by_character` do próprio personagem, e apenas quando a rodada do estado de ações coincide com a rodada atual. `movement_usage` é retornado somente quando pertence a uma ficha do usuário; `expected_character_ids` é filtrado para as fichas do próprio usuário. Isso mantém o painel de ações e a prévia de movimento sem revelar os estados dos demais.
+- A migration candidata `20261112160000` também envolve `avancar_turno(bigint)`: a implementação original retorna o objeto `combat_data` diretamente no topo do JSONB, não dentro de uma chave `combat_data`. O wrapper envolve o retorno para executar o filtro recursivo e depois devolve a projeção no formato original, preservando o contrato do frontend.
+- A fixture modela o retorno top-level real, testa que jogador não recebe reações/atores ocultos e que o GM mantém o estado completo. O CI dessa extensão ainda está pendente; não considerar aprovada antes do resultado.
