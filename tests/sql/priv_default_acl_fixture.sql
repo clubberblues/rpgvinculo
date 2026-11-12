@@ -1,7 +1,7 @@
 -- Regression fixture for the exact internal-schema default ACL migration.
 -- Runs only in a disposable PostgreSQL CI database. The included migration commits;
 -- the whole database is discarded with the CI service container.
-\\set ON_ERROR_STOP on
+\set ON_ERROR_STOP on
 
 DO $roles$
 BEGIN
@@ -44,8 +44,8 @@ END
 $pre$;
 
 -- Apply the exact migration shipped to production.
-\\i supabase/migrations/20261112100000_harden_priv_default_privileges.sql
-\\i supabase/verification/verify_priv_default_acl.sql
+\i supabase/migrations/20261112100000_harden_priv_default_privileges.sql
+\i supabase/verification/verify_priv_default_acl.sql
 
 CREATE TABLE priv.after_table (id integer);
 CREATE SEQUENCE priv.after_seq;
