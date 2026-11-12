@@ -1,12 +1,20 @@
 -- Authorize private CBA assets using the actual campaigns/{id}/... path.
--- Reads are available to campaign members; writes/deletes are GM-only.
--- Write authorization locks the campaign row until the Storage metadata transaction
--- commits, serializing upload completion against campaign deletion preparation.
+-- Players read only the active map and explicitly visible token portraits.
+-- GM writes/deletes are serialized against campaign deletion via FOR KEY SHARE.
+-- Deletes remain possible during cleanup; new reads/writes do not.
 BEGIN;
+
+DROP POLICY IF EXISTS mesa_media_ler ON storage.objects;
+DROP POLICY IF EXISTS mesa_media_enviar ON storage.objects;
+DROP POLICY IF EXISTS mesa_media_trocar ON storage.objects;
+DROP POLICY IF EXISTS mesa_media_apagar ON storage.objects;
+
+DROP FUNCTION IF EXISTS priv.cba_media_campaign_access(text, boolean);
 
 CREATE OR REPLACE FUNCTION priv.cba_media_campaign_access(
   p_name text,
-  p_write boolean DEFAULT false
+  p_write boolean DEFAULT false,
+  p_delete boolean DEFAULT false
 ) RETURNS boolean
 LANGUAGE plpgsql
 VOLATILE
@@ -20,13 +28,12 @@ DECLARE
   v_cba_data jsonb;
   v_is_gm boolean;
   v_is_member boolean;
+  v_cleanup boolean;
 BEGIN
-  IF v_user IS NULL OR p_name IS NULL THEN
+  IF v_user IS NULL OR p_name IS NULL OR (p_delete AND NOT p_write) THEN
     RETURN false;
   END IF;
 
-  -- Reject alternate prefixes, missing filenames, traversal, empty segments
-  -- and Windows separators before converting the campaign id.
   IF p_name !~ '^campaigns/[0-9]+/.+$'
      OR p_name LIKE '%//%'
      OR p_name ~ '(^|/)\.\.?(/|$)'
@@ -55,16 +62,13 @@ BEGIN
     RETURN false;
   END IF;
 
-  -- A cleanup marker closes new reads and all writes while deletion is pending.
-  IF EXISTS (
+  SELECT EXISTS (
     SELECT 1 FROM priv.campaign_deletion_cleanup d
     WHERE d.campaign_id = v_campaign_id
-  ) THEN
-    RETURN false;
-  END IF;
+  ) INTO v_cleanup;
 
   IF v_owner_id = v_user THEN
-    RETURN true;
+    RETURN NOT v_cleanup OR p_delete;
   END IF;
 
   SELECT EXISTS (
@@ -75,10 +79,10 @@ BEGIN
   ) INTO v_is_gm;
 
   IF v_is_gm THEN
-    RETURN true;
+    RETURN NOT v_cleanup OR p_delete;
   END IF;
 
-  IF p_write THEN
+  IF v_cleanup OR p_write THEN
     RETURN false;
   END IF;
 
@@ -92,9 +96,6 @@ BEGIN
     RETURN false;
   END IF;
 
-  -- Players may read the active map and explicitly visible token portraits only.
-  -- The current token JSON has no visibility flag, so those portraits remain
-  -- GM-only until the server-side fog/visibility contract is implemented.
   IF v_cba_data->>'backgroundPath' = p_name THEN
     RETURN true;
   END IF;
@@ -111,46 +112,41 @@ BEGIN
 END
 $function$;
 
-REVOKE ALL ON FUNCTION priv.cba_media_campaign_access(text, boolean)
+REVOKE ALL ON FUNCTION priv.cba_media_campaign_access(text, boolean, boolean)
   FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION priv.cba_media_campaign_access(text, boolean)
+GRANT EXECUTE ON FUNCTION priv.cba_media_campaign_access(text, boolean, boolean)
   TO authenticated;
-
-DROP POLICY IF EXISTS mesa_media_ler ON storage.objects;
-DROP POLICY IF EXISTS mesa_media_enviar ON storage.objects;
-DROP POLICY IF EXISTS mesa_media_trocar ON storage.objects;
-DROP POLICY IF EXISTS mesa_media_apagar ON storage.objects;
 
 CREATE POLICY mesa_media_ler ON storage.objects
   FOR SELECT TO authenticated
   USING (
     bucket_id = 'mesa-media'
-    AND priv.cba_media_campaign_access(name, false)
+    AND priv.cba_media_campaign_access(name, false, false)
   );
 
 CREATE POLICY mesa_media_enviar ON storage.objects
   FOR INSERT TO authenticated
   WITH CHECK (
     bucket_id = 'mesa-media'
-    AND priv.cba_media_campaign_access(name, true)
+    AND priv.cba_media_campaign_access(name, true, false)
   );
 
 CREATE POLICY mesa_media_trocar ON storage.objects
   FOR UPDATE TO authenticated
   USING (
     bucket_id = 'mesa-media'
-    AND priv.cba_media_campaign_access(name, true)
+    AND priv.cba_media_campaign_access(name, true, false)
   )
   WITH CHECK (
     bucket_id = 'mesa-media'
-    AND priv.cba_media_campaign_access(name, true)
+    AND priv.cba_media_campaign_access(name, true, false)
   );
 
 CREATE POLICY mesa_media_apagar ON storage.objects
   FOR DELETE TO authenticated
   USING (
     bucket_id = 'mesa-media'
-    AND priv.cba_media_campaign_access(name, true)
+    AND priv.cba_media_campaign_access(name, true, true)
   );
 
 COMMIT;
