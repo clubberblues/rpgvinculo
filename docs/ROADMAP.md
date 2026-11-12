@@ -3,6 +3,10 @@
 ## Como ler este roadmap
 O roadmap é organizado por dependências e resultados verificáveis, não por quantidade de sessões. Uma fase pode atravessar várias conversas. Sessões são janelas de execução; o projeto e suas prioridades permanecem contínuos.
 
+**Regra operacional:** executar cada fase como um estágio completo. Não interromper para relatar microtarefas; avançar por diagnóstico, implementação autorizada, integração, testes e documentação até atingir o aceite da fase ou encontrar um impedimento externo/uma autorização necessária. Só então apresentar relatório consolidado. Ao atingir limite de sessão, registrar o ponto exato de retomada em `ACTIVE_WORK_ITEM.md`. Uma fase não é concluída por documentação isolada nem por testes sintéticos que não cubram o comportamento real.
+
+As seis frentes de produto (fundação, motor de regras, sistemas de personagem, mesa/multiplayer, conteúdo e experiência do usuário) são acompanhadas pelas fases técnicas abaixo: arquitetura/contratos (Fase 1) como pré-requisito; fundação (Fase 2); regras e conteúdo mecânico (Fase 3); personagem (Fase 4); mesa/multiplayer (Fase 5); experiência (Fase 6); estabilização/liberação (Fase 7). Conteúdo é transversal e não deve ser tratado como uma etapa isolada que bloqueia o restante do produto.
+
 Nenhuma fase deve ser repetida integralmente sem evidência de mudança ou lacuna.
 
 ## Fase 0 — Consolidação e reconciliação
