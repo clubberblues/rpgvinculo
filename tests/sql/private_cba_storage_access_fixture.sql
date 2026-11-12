@@ -13,9 +13,11 @@ CREATE SCHEMA IF NOT EXISTS storage;
 CREATE SCHEMA IF NOT EXISTS priv;
 CREATE TABLE IF NOT EXISTS public.campaigns(
   id bigint PRIMARY KEY,
-  owner_id uuid NOT NULL,
+  owner_id uuid,
   cba_data jsonb
 );
+ALTER TABLE public.campaigns ADD COLUMN IF NOT EXISTS owner_id uuid;
+ALTER TABLE public.campaigns ADD COLUMN IF NOT EXISTS cba_data jsonb;
 CREATE TABLE IF NOT EXISTS public.members(
   campaign_id bigint NOT NULL,
   user_id uuid NOT NULL,
