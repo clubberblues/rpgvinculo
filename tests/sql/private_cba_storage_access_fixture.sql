@@ -26,7 +26,6 @@ CREATE TABLE IF NOT EXISTS public.members(
 CREATE TABLE IF NOT EXISTS priv.campaign_deletion_cleanup(campaign_id bigint PRIMARY KEY);
 CREATE TABLE IF NOT EXISTS storage.objects(bucket_id text NOT NULL,name text NOT NULL);
 ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
 
 GRANT USAGE ON SCHEMA public,auth,storage,priv TO authenticated,anon;
 GRANT SELECT ON public.campaigns,public.members TO authenticated,anon;
@@ -89,9 +88,6 @@ BEGIN
   END IF;
   IF (SELECT count(*) FROM storage.objects WHERE bucket_id='mesa-media') <> 2 THEN
     RAISE EXCEPTION 'RLS did not limit player reads to the map and explicitly visible token asset.';
-  END IF;
-  IF (SELECT count(*) FROM storage.objects WHERE bucket_id='mesa-media') <> 2 THEN
-    RAISE EXCEPTION 'RLS did not limit player reads to map and explicitly visible token assets.';
   END IF;
 END
 $player$;
