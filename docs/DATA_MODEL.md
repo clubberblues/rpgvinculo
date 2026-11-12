@@ -109,3 +109,16 @@ A separação SRD/Vínculo é um limite de domínio: compartilhar identidade e i
 
 ## Estado observado dos dados de personagens — 2026-11-09
 Consulta agregada somente de leitura: 5 personagens no total; 5 com registro srd_character_sheets; 0 sem ficha SRD; 0 com registro vinculo_character_sheets. Isso confirma que, no snapshot atual, o caminho ativo de personagens é D&D 3.5. Não significa que o domínio Vínculo deva ser descartado; o código legado e as tabelas vinculo_* permanecem como domínio separado, mas sua integração de ficha não está ativa nos registros atuais.
+
+
+## Decisão de fonte canônica — XP e ouro SRD (2026-11-11)
+
+Consulta read-only ao schema e aos caminhos ativos do D&D 3.5:
+
+- **XP:** `public.characters.xp` é a fonte canônica do total de XP e do cálculo de nível disponível. A RPC ativa `public.conceder_xp_personagem_srd` atualiza esse campo e espelha o mesmo total em `public.srd_character_sheets.xp`; a ficha SRD mantém o espelho para leitura local/compatibilidade. O fluxo de criação inicializa ambos em zero. Não usar o XP da ficha como autoridade independente nem atualizar somente um dos dois campos.
+- **Ouro SRD:** `public.srd_character_sheets.ouro` é a fonte canônica, pois é NUMERIC e preserva frações de peça de ouro. `public.characters.ouro` é INTEGER e, no fluxo ativo de equipamento inicial SRD, recebe `FLOOR(ouro_restante)`; portanto, é apenas um espelho inteiro de compatibilidade e não pode sobrescrever o saldo SRD preciso.
+- Evidência do caminho: `finalizar_equipamento_inicial_srd` grava o saldo exato em `srd_character_sheets.ouro` e o piso inteiro em `characters.ouro`. `srd35_deslocamento_personagem` consulta o ouro da ficha SRD ao calcular peso transportado. O endpoint legado `gm_grant` altera `characters.ouro/xp` e tabelas de inventário do domínio legado; não foi encontrado call site para ele em `mesa.html` no HEAD auditado. Não conectá-lo automaticamente ao fluxo SRD.
+- Fotografia agregada do banco em 2026-11-11: 5 personagens com ficha SRD; XP de characters e ficha coincidem em 5/5; ouro diverge em 5/5, com total de 288 inteiros em characters e 292,50 em fichas SRD. A diferença observada é compatível com a perda de frações no espelho inteiro, mas não se deve corrigir registros existentes por inferência.
+- **PV, PM e valores derivados:** continuam sem uma regra global única declarada. Alguns são persistidos na ficha/token e sincronizados por resolvers/triggers; outros são calculados por funções. Cada campo ainda precisa de contrato próprio (fonte, fórmula, cache, invalidação e direção de sincronização). Não generalizar a decisão de XP/ouro para esses campos.
+
+Esta decisão é arquitetural para o domínio SRD; não altera dados, RPCs, migrations nem o domínio Vínculo. Antes de qualquer migração futura, validar todos os leitores e escritores do saldo SRD e criar teste de regressão para frações de ouro.
