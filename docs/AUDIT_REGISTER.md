@@ -955,3 +955,8 @@ Os quatro entrypoints ativos `index.html`, `lobby.html`, `mesa.html` e `ficha.ht
 ### Backup Free e snapshot de schema local (2026-11-11)
 
 A organização Supabase está no plano Free; backups automáticos diários só estão disponíveis em Pro/Team/Enterprise. Free deve exportar regularmente via CLI e manter cópias fora do projeto. Nenhum backup/restauração foi confirmado e não há ferramenta de listagem de backups disponível. Não fazer alterações remotas antes de backup recuperável. Foi criado `scripts/export-current-schema.ps1` para exportar schema-only do estado atual para pasta irmã ao repo, exigindo CLI linkada e Docker; não inclui Auth/Storage/arquivos e não é o bootstrap pré-ledger. Dados/Auth e Storage precisam de export separado e restauração testada. Nenhum backup foi gerado nesta sessão.
+
+
+### CBA — dados privados não isolados por jogador (2026-11-11)
+
+RLS `campaigns_member_read` permite a qualquer membro ler a linha completa da campanha, incluindo `cba_data` e `combat_data`; `mesa.html` usa select('*') e refresh direto de cba_data. Todos os jogadores recebem tokens/posições completos, sem estado oculto/fog por usuário no modelo atual. Overlay visual não protege segredos. Implementação futura de fog exige snapshot server-side filtrado e separação GM-privado/jogador-visível, além de tiles/crops para não revelar a imagem completa. Relacionado ao bloqueio de assinatura em `mesa-media`.
