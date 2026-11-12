@@ -939,3 +939,14 @@ A fixture `tests/sql/priv_default_acl_fixture.sql` passou no CI PostgreSQL run `
 ### Dependência Supabase JS — pinagem dos entrypoints ativos (2026-11-11)
 
 Os quatro entrypoints ativos `index.html`, `lobby.html`, `mesa.html` e `ficha.html` foram atualizados para carregar `@supabase/supabase-js@2.119.0` em vez do alias flutuante `@2`. A versão 2.119.0 é a release estável vigente em 2026-11-11. `lobby_atualizado.html` mantém `@2`, mas é fluxo legado sem link no caminho ativo. Verificar CI no novo HEAD.
+
+
+## Fundação — continuação final desta janela (2026-11-11/12)
+
+- Storage privado CBA: policy `mesa_media_ler` depende de `public.can_read_media(name)`, que exige registros em `public.media/layers`; ambas as tabelas estão vazias e nenhum writer/trigger as popula. O frontend faz upload em `mesa-media` e chama `createSignedUrl`, que exige SELECT em `storage.objects`; a função retorna false para paths de token. Upload/assinatura de imagens privadas está bloqueado. Corrigir autorização sem abrir o mapa completo por URL e sem ignorar névoa de guerra.
+- CBA ativo não persiste fog/reveals: normalizador/serializador contém fundo, caminho, escala, grid e tokens, sem estado de névoa. Fog por jogador/todos não está implementada no modelo atual; overlay no cliente não protege o mapa completo.
+- Data API typegen do Supabase contém as duas sobrecargas `criar_personagem_srd_completo` e o wrapper final, confirmando exposição REST das rotas de criação parcial; helpers priv/private não aparecem no typegen. A allowlist do Dashboard ainda precisa confirmação. Desde 2026-10-30 novas tabelas não são automaticamente expostas aos Data/GraphQL APIs.
+- Fixture `tests/sql/priv_default_acl_fixture.sql` passou no CI run `43136928379` após modelar o default global PUBLIC EXECUTE. O desenho corrigido revoga PUBLIC globalmente para funções futuras e authenticated em tabelas/sequences/funções futuras de priv; preserva service_role e grants existentes. Migration ainda não criada/aplicada.
+- Supabase JS foi fixado em `2.119.0` nos quatro entrypoints ativos. CI no commit de código `63fc9d6` passou static, JS app, JS mesa e fixtures; replay integral falhou ao iniciar stack e aplicar a primeira migration porque `public.campaigns` não existe no banco vazio (SQLSTATE 42P01). Nenhuma migration foi aplicada.
+- PostgreSQL remoto é `17.6.1.166`; o changelog Supabase registra 17.11.0.003 com correções de 44 CVEs. Verificar atualização gerenciada no Dashboard, sem upgrade nesta janela.
+- Fog, mídia, Data API, criação parcial, default ACL e bootstrap estão detalhados em `docs/FOUNDATION_SECURITY_REVIEW.md` e `docs/ACTIVE_WORK_ITEM.md`. Nenhuma alteração de produção foi feita.
