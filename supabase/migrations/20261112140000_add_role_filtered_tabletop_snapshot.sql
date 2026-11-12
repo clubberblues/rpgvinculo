@@ -38,23 +38,18 @@ BEGIN
     RAISE EXCEPTION 'Campanha não encontrada.' USING ERRCODE = 'P0002';
   END IF;
 
-  SELECT EXISTS (
-    SELECT 1 FROM public.members m
-     WHERE m.campaign_id = p_campaign_id AND m.user_id = v_user
-  ) INTO v_is_gm;
-
   IF v_campaign.owner_id = v_user THEN
     v_is_gm := true;
   ELSE
-    IF NOT v_is_gm THEN
+    IF NOT EXISTS (
+      SELECT 1 FROM public.members m
+       WHERE m.campaign_id = p_campaign_id AND m.user_id = v_user
+    ) THEN
       RAISE EXCEPTION 'Você não participa desta campanha.' USING ERRCODE = '42501';
     END IF;
-    SELECT EXISTS (
-      SELECT 1 FROM public.members m
-       WHERE m.campaign_id = p_campaign_id
-         AND m.user_id = v_user
-         AND upper(coalesce(m.role,'')) = 'GM'
-    ) INTO v_is_gm;
+    -- The active mesa client treats only campaigns.owner_id as the GM.
+    -- Legacy members.role='GM' must not disclose hidden state.
+    v_is_gm := false;
   END IF;
 
   SELECT coalesce(array_agg(ch.id::text), ARRAY[]::text[])
