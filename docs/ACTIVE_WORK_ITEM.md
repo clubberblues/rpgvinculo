@@ -1012,3 +1012,10 @@ A revisão read-only avançou para privilégios, RLS, funções privilegiadas, A
 - Catálogo: 110 foreign keys, todas validadas; nenhum índice inválido/inapto ou constraint não validada.
 - Três FKs sem índice no lado filho: `priv.srd_pending_spell_resolutions.condition_break_instance_id`, `priv.srd_pending_spell_resolutions.condition_id` e `public.srd_npc_attack_sequences.campaign_id`. Tabelas estavam vazias/volume baixo; avaliar com planos de consulta e os 51 índices não utilizados antes de criar índices.
 - Sem alterações remotas. Detalhes em `docs/FOUNDATION_SECURITY_REVIEW.md`.
+
+
+### Schemas internos — grants e marcadores de autorização (2026-11-11)
+
+- `private`: authenticated tem USAGE e EXECUTE em seis funções (rotinas de equipamento), todas SECURITY DEFINER com search_path fixo e verificações explícitas de auth.uid()/papel; duas funções de trigger sem EXECUTE direto. Anon não tem USAGE/EXECUTE. REST exposure ainda precisa ser confirmado no Dashboard.
+- Das 99 funções SECURITY DEFINER públicas executáveis por authenticated, 96 mencionam auth.uid(), 39 my_role() e cinco priv.need_gm() (sobreposição); todas têm algum desses marcadores. É triagem lexical, não prova de autorização correta.
+- Detalhes em `docs/FOUNDATION_SECURITY_REVIEW.md`; sem alterações remotas.
