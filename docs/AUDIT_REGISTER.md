@@ -884,3 +884,16 @@ As três implementações-base de início de ataque (arma, desarmado e ataque na
 `public.srd_confirmar_critico_ataque_oportunidade_srd` valida `awaiting_critical_confirmation` no ataque, mas não valida o status do pending antes de alterar `pending_reactions`; filtra apenas por `pending_id`. Também atualiza a reação selecionada por `reservation_id` com `LIMIT 1`, sem exigir uma ocorrência única nem estado anterior `hit_pending_damage`. A ausência da entrada gera erro transacional por caminho JSONB nulo; uma entrada existente em estado inesperado pode ser sobrescrita.
 
 Esta omissão combina com a inversão attack → pending contra cancelamento pending → attack. A confirmação precisa adquirir campaign → pending → attack e validar o ciclo de vida de ambos e a transição única da reação sob lock.
+
+
+## Fundação — segurança, privilégios padrão e Storage (2026-11-11)
+
+A revisão read-only do projeto Supabase identificou que os privilégios padrão do owner `postgres` no schema interno `priv` concedem automaticamente todos os privilégios de tabelas e EXECUTE de funções a `authenticated` (e também privilégios de sequences). Isso é excessivo para um schema interno e deve ser corrigido por migration versionada, após confirmar o grafo de chamadores. Não foi alterado remotamente.
+
+O Security Advisor lista 99 funções `SECURITY DEFINER` públicas executáveis por authenticated; nenhuma função pública desse tipo é executável por anon no ACL atual. Há 39 funções SECURITY DEFINER no schema priv com EXECUTE para authenticated e uma função helper com EXECUTE para anon, mas anon não tem USAGE no schema priv; exposição REST direta não foi demonstrada. Todas as 150 funções SECURITY DEFINER públicas têm search_path fixo com pg_temp. Não revogar grants em massa sem classificar os endpoints e wrappers.
+
+Duas tabelas priv estão sem RLS (`throttle`, `srd_aoo_reaction_ledger`), mas ACL atual não concede acesso direto a anon/authenticated. Cinco tabelas públicas e duas privadas têm RLS sem políticas e também não concedem acesso direto a esses roles; padrão efetivo atual é negar acesso direto. O Security Advisor reporta proteção contra senhas comprometidas desabilitada.
+
+Storage: bucket `midia` é público e contém 135 objetos, incluindo 33 em `campaigns/`, 12 capas, 53 retratos, 21 headers e 6 avatars; uma das três campanhas aponta para capa pública. O frontend usa esse bucket para imagens públicas de perfil/ficha/capas, enquanto tokens/mapas novos usam bucket privado `mesa-media` e URLs assinadas; este bucket privado estava vazio. Não tornar tudo privado nem manter tudo público sem classificar referências. `public.media` está vazia, logo os 33 objetos de campanha não têm metadados legados para mapeamento automático.
+
+Health Advisor sem avisos; Performance Advisor sinalizou 51 índices não utilizados, sem remoção recomendada sem observação de carga representativa. Detalhes e aceite pendente em `docs/FOUNDATION_SECURITY_REVIEW.md`. Nenhuma mudança remota foi feita.
