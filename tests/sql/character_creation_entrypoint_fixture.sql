@@ -10,7 +10,7 @@ $roles$;
 CREATE OR REPLACE FUNCTION public.finalizar_criacao_personagem_srd(
  text,text,text,jsonb,jsonb,jsonb,jsonb,jsonb,jsonb,text[],jsonb,text,jsonb,jsonb
 ) RETURNS text LANGUAGE sql SECURITY INVOKER
-AS $$ SELECT 'fixture'::text $$;
+AS $ SELECT current_user::text $;
 
 CREATE OR REPLACE FUNCTION public.criar_personagem_srd_completo(
  text,text,text,jsonb,jsonb,jsonb
@@ -34,4 +34,18 @@ GRANT EXECUTE ON FUNCTION public.criar_personagem_srd_completo(
 
 \i supabase/migrations/20261112120000_lock_down_character_creation_entrypoint.sql
 \i supabase/verification/verify_character_creation_entrypoint.sql
+
+SET ROLE authenticated;
+DO $runtime$
+DECLARE v_owner text;
+BEGIN
+  v_owner := public.finalizar_criacao_personagem_srd(
+    NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL
+  );
+  IF v_owner <> 'postgres' THEN
+    RAISE EXCEPTION 'Finalizer did not execute with its trusted owner; current_user=%',v_owner;
+  END IF;
+END
+$runtime$;
+RESET ROLE;
 SELECT 'character creation entrypoint fixture passed' AS result;
