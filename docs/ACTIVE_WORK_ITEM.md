@@ -1234,3 +1234,13 @@ O script salva o snapshot schema-only fora do repo, sem enviar dados ou segredos
 
 - Nova consulta read-only ao ledger confirma que as sete migrations candidatas (20261110150000–20261112130000) continuam ausentes do histórico remoto. O `pg_default_acl` ainda concede automaticamente a `authenticated` privilégios de tabela, sequence e EXECUTE em funções no schema `priv`; portanto a migration candidata `20261112100000` ainda não corrigiu o banco ativo. Não aplicar sem ambiente restaurável e validação de dependências.
 - A contagem atual do catálogo confirma 99 funções `SECURITY DEFINER` públicas executáveis por `authenticated`, alinhada ao Security Advisor.
+
+## Continuação da fundação — 2026-11-12 (isolamento CBA)
+
+- Criada migration candidata `20261112140000_add_role_filtered_tabletop_snapshot.sql`, com helper interno SECURITY DEFINER e wrapper invoker. A projeção permite snapshot integral a GM/proprietário; jogador recebe apenas tokens visíveis/da própria ficha e iniciativa filtrada, sem reações pendentes nem economia de ações interna. A resposta normaliza JSON inválido e valida membership. **Ainda não é chamada pelo frontend e não encerra a exposição.**
+- Criado fixture `tests/sql/role_filtered_tabletop_snapshot_fixture.sql` e incluído no workflow de PostgreSQL fixtures. O workflow foi disparado no commit anterior enquanto esta fixture era atualizada; resultado final para o HEAD mais recente ainda não foi confirmado.
+- Criado `docs/CBA_SECURITY_CUTOVER_PLAN.md` com contrato, sequência de corte e evidência atual.
+- Varredura de `mesa.html` encontrou 11 leitores diretos de `campaigns` que selecionam `*`, `cba_data` ou `combat_data` (linhas 1345, 1732, 1866, 2319, 2332, 2704, 2823, 2952, 5429, 6083, 6113) e subscription Realtime da linha 6860 que consome row payload completo.
+- Consulta read-only ao Supabase confirmou grants diretos de SELECT em `campaigns.cba_data` e `campaigns.combat_data` para authenticated e presença de `campaigns` na publicação `supabase_realtime`. Também há dezenas de RPCs com referências aos JSONB privados e respostas que precisam de revisão individual.
+- **Não revogar colunas nem remover publicação ainda:** isso quebraria o cliente e RPCs legados. O snapshot é uma primeira primitive; a próxima etapa é migrar os 11 leitores, substituir Realtime e revisar todos os retornos de RPC antes do corte de privilégios.
+- A migration não foi aplicada no Supabase. Nenhum dado de campanha foi alterado. Fundação continua NÃO concluída.
