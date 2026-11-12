@@ -52,6 +52,13 @@ CREATE OR REPLACE FUNCTION public.usar_habilidade_classe_srd(p_character_id text
 RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,pg_temp
 AS $ SELECT jsonb_build_object('cba_data',(SELECT cba_data FROM public.campaigns c JOIN public.characters ch ON ch.campaign_id=c.id WHERE ch.id::text=p_character_id),'combat_data',(SELECT combat_data FROM public.campaigns c JOIN public.characters ch ON ch.campaign_id=c.id WHERE ch.id::text=p_character_id),'feature_key',p_feature_key) $;
 
+CREATE OR REPLACE FUNCTION public.srd_finalizar_movimento_aoo_pendente_srd(p_campaign_id bigint,p_pending_id uuid)
+RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,pg_temp
+AS $ SELECT jsonb_build_object('committed',true,'movement_result',jsonb_build_object(
+  'cba_data',(SELECT cba_data FROM public.campaigns WHERE id=p_campaign_id),
+  'combat_data',(SELECT combat_data FROM public.campaigns WHERE id=p_campaign_id)
+)) $;
+
 \ir ../../supabase/migrations/20261112160000_filter_player_damage_rpc_results.sql
 
 SET ROLE authenticated;
@@ -75,6 +82,9 @@ BEGIN
   IF r->'cba_data'->'tokens' @> '[{"id":"hidden"}]'::jsonb THEN RAISE EXCEPTION 'Spell damage RPC leaked hidden token.'; END IF;
   r:=public.usar_habilidade_classe_srd('pc-1','lay_on_hands','hidden',4);
   IF r->'cba_data'->'tokens' @> '[{"id":"hidden"}]'::jsonb THEN RAISE EXCEPTION 'Class feature RPC leaked hidden token.'; END IF;
+  r:=public.srd_finalizar_movimento_aoo_pendente_srd(987654323,'00000000-0000-0000-0000-000000000123');
+  IF r->'movement_result'->'cba_data'->'tokens' @> '[{"id":"hidden"}]'::jsonb THEN RAISE EXCEPTION 'Nested movement RPC leaked hidden token.'; END IF;
+  IF r->'movement_result'->'combat_data' ? 'pending_reactions' THEN RAISE EXCEPTION 'Nested movement RPC leaked private combat state.'; END IF;
 END
 $player$;
 RESET ROLE;
