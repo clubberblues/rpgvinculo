@@ -74,7 +74,33 @@ BEGIN
         OR t.value->>'sourceCharacterId' = ANY(v_owned_ids)
         OR t.value->>'id' = ANY(v_owned_ids);
 
-    SELECT coalesce(jsonb_agg(t.value ORDER BY t.ordinality), '[]'::jsonb)
+    -- Project visible tokens onto the exact client contract. Do not pass
+    -- unknown GM-only metadata through merely because a token is visible.
+    SELECT coalesce(jsonb_agg(jsonb_build_object(
+        'key', t.value->'key',
+        'id', t.value->'id',
+        'nome', t.value->'nome',
+        'imagem', t.value->'imagem',
+        'imagemPath', t.value->'imagemPath',
+        'tipo', t.value->'tipo',
+        'detalhe', t.value->'detalhe',
+        'hp', t.value->'hp',
+        'maxHp', t.value->'maxHp',
+        'dexMod', t.value->'dexMod',
+        'bonusIniciativa', t.value->'bonusIniciativa',
+        'monsterId', t.value->'monsterId',
+        'ac', t.value->'ac',
+        'baseAc', t.value->'baseAc',
+        'sourceCharacterId', t.value->'sourceCharacterId',
+        'attackBonus', t.value->'attackBonus',
+        'damageDice', t.value->'damageDice',
+        'spellState', t.value->'spellState',
+        'monsterStats', t.value->'monsterStats',
+        'srdSourceUrl', t.value->'srdSourceUrl',
+        'gridX', t.value->'gridX',
+        'gridY', t.value->'gridY',
+        'visivel', t.value->'visivel'
+      ) ORDER BY t.ordinality), '[]'::jsonb)
       INTO v_order
       FROM jsonb_array_elements(
         CASE WHEN jsonb_typeof(v_scene->'tokens') = 'array'
@@ -84,11 +110,22 @@ BEGIN
         OR t.value->>'sourceCharacterId' = ANY(v_owned_ids)
         OR t.value->>'id' = ANY(v_owned_ids);
 
-    v_scene := v_scene || jsonb_build_object('tokens', v_order);
-    -- Until revealed tiles/crops are persisted, never hand a fog-enabled full map to players.
-    IF lower(coalesce(v_scene->>'fogEnabled','false')) = 'true' THEN
-      v_scene := v_scene - 'backgroundPath' - 'background' - 'backgroundUrl';
-    END IF;
+    -- The player scene is an allowlist, not a copy of the full GM JSONB.
+    -- Until revealed tiles/crops are persisted, a fog-enabled scene gets no
+    -- background URL/path at all; unknown scene metadata is always withheld.
+    v_scene := jsonb_build_object(
+      'version', coalesce(v_scene->'version', '1'::jsonb),
+      'background', CASE WHEN lower(coalesce(v_scene->>'fogEnabled','false')) = 'true'
+                         THEN '""'::jsonb ELSE coalesce(v_scene->'background','""'::jsonb) END,
+      'backgroundPath', CASE WHEN lower(coalesce(v_scene->>'fogEnabled','false')) = 'true'
+                             THEN '""'::jsonb ELSE coalesce(v_scene->'backgroundPath','""'::jsonb) END,
+      'fogEnabled', lower(coalesce(v_scene->>'fogEnabled','false')) = 'true',
+      'imgScale', coalesce(v_scene->'imgScale', '1'::jsonb),
+      'gridSize', coalesce(v_scene->'gridSize', '50'::jsonb),
+      'gridRatio', v_scene->'gridRatio',
+      'gridOpacity', coalesce(v_scene->'gridOpacity', '0.3'::jsonb),
+      'tokens', v_order
+    );
 
     -- Initiative is projected to visible/owned combatants only. Private
     -- pending reactions, hidden actor metadata and action-economy internals
