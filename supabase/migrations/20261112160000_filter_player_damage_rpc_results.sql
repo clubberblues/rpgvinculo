@@ -266,4 +266,27 @@ $wrapper$;
 REVOKE ALL ON FUNCTION public.srd_finalizar_movimento_aoo_pendente_srd(bigint,uuid) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.srd_finalizar_movimento_aoo_pendente_srd(bigint,uuid) TO authenticated;
 
+
+-- Turn advancement is callable by any active campaign member and returns
+-- the full combat_data object. Route it through the same role projection.
+ALTER FUNCTION public.avancar_turno(bigint) SET SCHEMA priv;
+REVOKE ALL ON FUNCTION priv.avancar_turno(bigint) FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.avancar_turno(p_campaign_id bigint)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public, priv, auth
+AS $wrapper$
+DECLARE
+  v_result jsonb;
+BEGIN
+  v_result := priv.avancar_turno(p_campaign_id);
+  RETURN priv.cba_filter_rpc_result(v_result,p_campaign_id);
+END
+$wrapper$;
+
+REVOKE ALL ON FUNCTION public.avancar_turno(bigint) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.avancar_turno(bigint) TO authenticated;
+
 COMMIT;
