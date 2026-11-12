@@ -135,4 +135,63 @@ GRANT EXECUTE ON FUNCTION public.aplicar_dano_token_ataque_srd_v2(bigint,text,te
 GRANT EXECUTE ON FUNCTION public.aplicar_dano_token_ataque_srd_v2(bigint,text,text,integer,integer,integer,text,text,integer,integer,integer)
   TO authenticated;
 
+-- Extend the same filtered-result boundary to other authenticated CBA mutations.
+ALTER FUNCTION public.alterar_pv_token_cba(bigint,text,integer,integer) SET SCHEMA priv;
+REVOKE ALL ON FUNCTION priv.alterar_pv_token_cba(bigint,text,integer,integer) FROM PUBLIC, anon, authenticated;
+ALTER FUNCTION public.equipar_item_token_srd(bigint,text,text,boolean) SET SCHEMA priv;
+REVOKE ALL ON FUNCTION priv.equipar_item_token_srd(bigint,text,text,boolean) FROM PUBLIC, anon, authenticated;
+ALTER FUNCTION public.srd_configurar_perfil_combate_token_srd(bigint,text,text,integer) SET SCHEMA priv;
+REVOKE ALL ON FUNCTION priv.srd_configurar_perfil_combate_token_srd(bigint,text,text,integer) FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.alterar_pv_token_cba(p_campaign_id bigint, p_token_id text, p_variacao integer, p_pv_max integer)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public, priv, auth
+AS $wrapper$
+DECLARE
+  v_result jsonb;
+BEGIN
+  v_result := priv.alterar_pv_token_cba(p_campaign_id,p_token_id,p_variacao,p_pv_max);
+  RETURN priv.cba_filter_rpc_result(v_result,p_campaign_id);
+END
+$wrapper$;
+
+REVOKE ALL ON FUNCTION public.alterar_pv_token_cba(bigint,text,integer,integer) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.alterar_pv_token_cba(bigint,text,integer,integer) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.equipar_item_token_srd(p_campaign_id bigint, p_token_id text, p_equipment_id text, p_equipado boolean)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public, priv, auth
+AS $wrapper$
+DECLARE
+  v_result jsonb;
+BEGIN
+  v_result := priv.equipar_item_token_srd(p_campaign_id,p_token_id,p_equipment_id,p_equipado);
+  RETURN priv.cba_filter_rpc_result(v_result,p_campaign_id);
+END
+$wrapper$;
+
+REVOKE ALL ON FUNCTION public.equipar_item_token_srd(bigint,text,text,boolean) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.equipar_item_token_srd(bigint,text,text,boolean) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.srd_configurar_perfil_combate_token_srd(p_campaign_id bigint, p_token_id text, p_combat_faction text, p_melee_reach_ft integer)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public, priv, auth
+AS $wrapper$
+DECLARE
+  v_result jsonb;
+BEGIN
+  v_result := priv.srd_configurar_perfil_combate_token_srd(p_campaign_id,p_token_id,p_combat_faction,p_melee_reach_ft);
+  RETURN priv.cba_filter_rpc_result(v_result,p_campaign_id);
+END
+$wrapper$;
+
+REVOKE ALL ON FUNCTION public.srd_configurar_perfil_combate_token_srd(bigint,text,text,integer) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.srd_configurar_perfil_combate_token_srd(bigint,text,text,integer) TO authenticated;
+
 COMMIT;
