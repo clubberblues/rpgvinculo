@@ -1,6 +1,6 @@
 -- Run after 20261112130000_fix_private_cba_storage_access.sql.
 DO $$
-DECLARE v_oid oid := to_regprocedure('priv.cba_media_campaign_access(text,boolean)');
+DECLARE v_oid oid := to_regprocedure('priv.cba_media_campaign_access(text,boolean,boolean)');
 BEGIN
   IF v_oid IS NULL THEN RAISE EXCEPTION 'CBA Storage authorization helper is missing.'; END IF;
   IF NOT (SELECT prosecdef AND provolatile='v' FROM pg_proc WHERE oid=v_oid) THEN
