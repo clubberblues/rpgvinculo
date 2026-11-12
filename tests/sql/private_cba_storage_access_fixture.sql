@@ -19,9 +19,11 @@ $$ SELECT NULLIF(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
 CREATE FUNCTION storage.foldername(p_name text) RETURNS text[] LANGUAGE sql IMMUTABLE AS
 $$ SELECT string_to_array(regexp_replace(p_name,'/[^/]+$',''),'/') $$;
 
-INSERT INTO public.campaigns VALUES
- (41,'11111111-1111-1111-1111-111111111111'),
- (42,'22222222-2222-2222-2222-222222222222');
+INSERT INTO public.campaigns(id,owner_id,cba_data) VALUES
+ (41,'11111111-1111-1111-1111-111111111111',
+  '{"backgroundPath":"campaigns/41/cba-map.png","tokens":[{"imagemPath":"campaigns/41/tokens/visible.png","visivel":true},{"imagemPath":"campaigns/41/tokens/hidden.png"}]}'::jsonb),
+ (42,'22222222-2222-2222-2222-222222222222',
+  '{"backgroundPath":"campaigns/42/cba-map.png","tokens":[]}'::jsonb);
 INSERT INTO public.members VALUES
  (41,'33333333-3333-3333-3333-333333333333','PLAYER'),
  (41,'44444444-4444-4444-4444-444444444444','GM');
