@@ -83,7 +83,8 @@ BEGIN
   END IF;
   IF priv.cba_media_campaign_access('campaigns/41/../secret.png',false)
      OR priv.cba_media_campaign_access('campaigns/41//secret.png',false)
-     OR priv.cba_media_campaign_access('41/secret.png',false) THEN
+     OR priv.cba_media_campaign_access('41/secret.png',false)
+     OR priv.cba_media_campaign_access('campaigns/41/folder/',false) THEN
     RAISE EXCEPTION 'Malformed or traversal path was accepted.';
   END IF;
   IF (SELECT count(*) FROM storage.objects WHERE bucket_id='mesa-media') <> 2 THEN
