@@ -50,6 +50,7 @@ Nenhuma fase deve ser repetida integralmente sem evidência de mudança ou lacun
 - [ ] Validar integridade relacional e transações críticas.
 - [ ] Validar eventos, logs, Realtime e recuperação de estado.
 - [ ] Estabelecer ambiente/campanha descartável e contas de teste.
+- [x] Fixar `@supabase/supabase-js@2.119.0` nos quatro entrypoints ativos; a página `lobby_atualizado.html` permanece legada e sem link no fluxo atual.
 - [ ] Automatizar verificações de regressão disponíveis.
 
 **Estado após revisão read-only de 2026-11-11:** segurança e Storage detalhados em `docs/FOUNDATION_SECURITY_REVIEW.md`; nenhuma correção remota foi aplicada. O replay de migrations segue bloqueado pela ausência do schema-base `public.campaigns`.
