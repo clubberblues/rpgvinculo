@@ -66,7 +66,7 @@ SELECT set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001'
 DO $$
 DECLARE s jsonb;
 BEGIN
-  s := public.obter_snapshot_seguro_mesa(1);
+  s := public.obter_snapshot_seguro_mesa(987654321);
   IF s->>'viewer_is_gm' <> 'true' THEN RAISE EXCEPTION 'owner should receive GM snapshot'; END IF;
   IF NOT (s->'cba_data'->'tokens' @> '[{"id":"enemy-hidden"}]'::jsonb) THEN RAISE EXCEPTION 'GM snapshot lost hidden token'; END IF;
   IF NOT (s->'combat_data' ? 'pending_reactions') THEN RAISE EXCEPTION 'GM snapshot lost private combat data'; END IF;
