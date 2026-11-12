@@ -257,3 +257,19 @@ Documentação oficial: [Database Backups](https://supabase.com/docs/guides/plat
 A policy `campaigns_member_read` permite SELECT da linha inteira da campanha para qualquer usuário autenticado com membership; os grants incluem SELECT de `cba_data` e `combat_data`. O frontend da mesa usa `select('*')` e vários refreshes diretos de `cba_data`. Assim, cada jogador recebe o JSON completo de tokens/posições e dados da cena. O modelo atual não contém campo de token oculto nem estado de fog por jogador; mesmo que um overlay visual seja adicionado no cliente, o jogador poderá inspecionar o JSON completo e baixar o fundo completo se conseguir uma URL.
 
 Isso é incompatível com fog of war/monstros ocultos como controle de segurança. Não resolver apenas com CSS/overlay. O desenho futuro precisa separar estado GM-privado de estado visível aos jogadores e entregar a estes um snapshot filtrado por RPC/view server-side; o acesso à imagem do mapa deve entregar apenas tiles/crops revelados, ou declarar explicitamente que fog é somente visual e não secreta informação. Essa decisão deve preceder a implementação da névoa e da policy de mídia privada.
+
+
+## Gates adicionais de aceite da fundação (consolidados)
+
+Além dos nove itens de aceite listados acima, a fundação não deve ser considerada concluída até:
+10. Encapsular as sobrecargas de criação SRD para que apenas o wrapper atômico completo seja RPC cliente; testar rollback e rejeição das rotas parciais.
+11. Remover grants por coluna residuais de PV atual/equipamento equipado e decidir o destino do grant de campanha no fluxo legado; manter somente campos de apresentação necessários.
+12. Separar CBA GM-privado de snapshot jogador-visível, porque hoje qualquer membro lê o JSON completo de tokens/posições.
+13. Conectar autorização de mídia privada ao modelo CBA e definir tiles/crops/visibilidade do mapa; testar upload, assinatura e negação de assets não revelados.
+14. Serializar entrada por código e alocação de personagem com locks/revalidação da membership/campanha.
+15. Restringir a policy legada de `public.tokens` antes de reativar a tabela e aposentar os caminhos Vínculo não utilizados com plano de compatibilidade.
+16. Confirmar política de descoberta pública de campanhas e papéis GM/PLAYER/OBSERVER.
+17. Confirmar backups manuais recuperáveis, política de senha Auth e versão PostgreSQL gerenciada.
+18. Testar fluxos integrados com sessões GM/jogador/não membro e concorrência real em banco descartável.
+
+Esses itens são bloqueios reais ou decisões de produto; não devem ser marcados como concluídos por documentação isolada.
