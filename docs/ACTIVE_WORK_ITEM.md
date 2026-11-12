@@ -1078,3 +1078,10 @@ A revisão read-only avançou para privilégios, RLS, funções privilegiadas, A
 - Policy `characters_create_unassigned` permite INSERT autenticado de personagem sem campanha; grants por coluna incluem `xp` e `ouro`. O fluxo legado `window.criarFicha` insere diretamente e escreve em `vinculo_character_sheets`; o modo SRD atual usa RPC atômica e não depende desse INSERT.
 - `ficha.html` mantém modo legado acessível por URL sem `ruleset=dnd35`; `lobby_atualizado.html` está no repo sem link no index atual. Aposentar/arquivar legado e reduzir INSERT direto em characters sem perder dados antigos; não remover agora sem plano de compatibilidade.
 - Detalhes em `docs/FOUNDATION_SECURITY_REVIEW.md`.
+
+
+### Default ACL — correção do desenho após teste isolado (2026-11-11)
+
+- A primeira fixture PostgreSQL falhou e revelou que revogar EXECUTE de authenticated apenas no default ACL de `priv` não remove EXECUTE herdado de PUBLIC. O catálogo remoto confirma PUBLIC EXECUTE em helper priv; o default global de funções está ativo.
+- O plano foi corrigido: revogar EXECUTE de PUBLIC globalmente para funções futuras, além de revogar authenticated em tabelas/sequences/funções futuras do schema `priv`. Grants existentes permanecem; funções públicas futuras precisarão de GRANT explícito quando houver necessidade de acesso anon. Service_role permanece.
+- Fixture `tests/sql/priv_default_acl_fixture.sql` foi atualizada para provar comportamento global, preservação de grants existentes e service_role. Novo CI pendente. Migration ainda não foi criada/aplicada; aguardar teste e revisar compatibilidade de futuras funções públicas.
