@@ -1,4 +1,5 @@
--- Isolated regression fixture for the proposed internal-schema default ACL hardening.
+-- Isolated regression fixture for internal-schema default ACL hardening.
+-- It models PostgreSQL's default PUBLIC EXECUTE on newly created functions.
 -- Runs in a disposable PostgreSQL database and rolls back every object/role change.
 BEGIN;
 
@@ -38,13 +39,18 @@ DO $$
 BEGIN
   IF NOT has_table_privilege('authenticated', 'priv_fixture.before_table', 'SELECT')
      OR NOT has_sequence_privilege('authenticated', 'priv_fixture.before_seq', 'USAGE')
-     OR NOT has_function_privilege('authenticated', 'priv_fixture.before_fn()', 'EXECUTE') THEN
-    RAISE EXCEPTION 'Fixture precondition failed: authenticated did not receive the simulated broad defaults.';
+     OR NOT has_function_privilege('authenticated', 'priv_fixture.before_fn()', 'EXECUTE')
+     OR NOT has_function_privilege('anon', 'priv_fixture.before_fn()', 'EXECUTE') THEN
+    RAISE EXCEPTION 'Fixture precondition failed: simulated broad defaults were not present.';
   END IF;
 END
 $$;
 
--- Exact remediation proposed for the production schema priv.
+-- The per-schema revokes close table/sequence grants and authenticated's
+-- schema-specific function grant. PUBLIC function EXECUTE must be revoked
+-- globally because PostgreSQL adds global defaults to schema defaults.
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres
+  REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA priv_fixture
   REVOKE ALL ON TABLES FROM authenticated;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA priv_fixture
@@ -61,14 +67,20 @@ DO $$
 BEGIN
   IF has_table_privilege('authenticated', 'priv_fixture.after_table', 'SELECT')
      OR has_sequence_privilege('authenticated', 'priv_fixture.after_seq', 'USAGE')
-     OR has_function_privilege('authenticated', 'priv_fixture.after_fn()', 'EXECUTE') THEN
-    RAISE EXCEPTION 'Default ACL hardening failed: authenticated received access to a newly created internal object.';
+     OR has_function_privilege('authenticated', 'priv_fixture.after_fn()', 'EXECUTE')
+     OR has_function_privilege('anon', 'priv_fixture.after_fn()', 'EXECUTE') THEN
+    RAISE EXCEPTION 'Default ACL hardening failed: a new internal object remained directly accessible.';
   END IF;
 
   IF NOT has_table_privilege('service_role', 'priv_fixture.after_table', 'SELECT')
      OR NOT has_sequence_privilege('service_role', 'priv_fixture.after_seq', 'USAGE')
      OR NOT has_function_privilege('service_role', 'priv_fixture.after_fn()', 'EXECUTE') THEN
     RAISE EXCEPTION 'Default ACL hardening changed service_role privileges unexpectedly.';
+  END IF;
+
+  -- Default-ACL changes do not revoke privileges from existing functions.
+  IF NOT has_function_privilege('anon', 'priv_fixture.before_fn()', 'EXECUTE') THEN
+    RAISE EXCEPTION 'Changing defaults unexpectedly revoked an existing function grant.';
   END IF;
 END
 $$;
