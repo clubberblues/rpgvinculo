@@ -208,3 +208,10 @@ Correção requer decisão de segurança antes de codificar: (a) preencher `publ
 
 
 A confirmação de exposição foi refinada com os tipos gerados pelo próprio Supabase para o Data API: `Database.public.Functions` contém as duas sobrecargas de `criar_personagem_srd_completo` (seis e sete argumentos), bem como `finalizar_criacao_personagem_srd`. Isso confirma que as sobrecargas estão no schema da API e não é apenas uma concessão ACL sem endpoint. O helper `priv.srd_feat_saving_throw_modifier` não aparece nos tipos públicos gerados, consistente com o schema `priv` não estar exposto na Data API atual. A allowlist ainda deve ser confirmada no Dashboard, mas a exposição do helper de criação público está confirmada.
+
+
+## Data API: exposição de schemas e novos objetos
+
+A geração de tipos Supabase para o Data API contém 202 nomes de funções do schema `public`, incluindo os fluxos ativos e as duas sobrecargas de criação; não contém as funções internas `priv/private` consultadas. Isso é evidência de que `public` é o schema API ativo e que `priv/private` não estão no schema cache público gerado. Ainda assim, a configuração explícita de schemas expostos deve ser confirmada no Dashboard; `current_setting('pgrst.db_schemas', true)` e settings persistidos por role não forneceram valor.
+
+A mudança do Supabase de 2026-10-30 deixou de expor automaticamente novas tabelas nos Data/GraphQL APIs. Portanto, grants padrão em `public` não garantem, sozinhos, que uma tabela nova esteja no schema API. Cada migration futura que criar tabela/RPC usada pelo frontend precisa validar (a) schema exposto, (b) grants mínimos, (c) RLS/policies e (d) presença nos tipos gerados. Referência: [Supabase changelog — tables not exposed automatically](https://supabase.com/changelog/45329-breaking-change-tables-not-exposed-to-data-and-graphql-api-automatically).
