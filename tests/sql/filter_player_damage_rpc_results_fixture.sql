@@ -45,6 +45,13 @@ CREATE OR REPLACE FUNCTION public.srd_configurar_perfil_combate_token_srd(p_camp
 RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,pg_temp
 AS $ SELECT jsonb_build_object('cba_data',(SELECT cba_data FROM public.campaigns WHERE id=p_campaign_id),'combat_data',(SELECT combat_data FROM public.campaigns WHERE id=p_campaign_id),'ok',true) $;
 
+CREATE OR REPLACE FUNCTION public.conjurar_magia_dano_multialvo_srd(p_character_id text,p_spell_id text,p_slot_level smallint,p_target_token_keys text[],p_roll_results integer[])
+RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,pg_temp
+AS $ SELECT jsonb_build_object('cba_data',(SELECT cba_data FROM public.campaigns c JOIN public.characters ch ON ch.campaign_id=c.id WHERE ch.id::text=p_character_id),'combat_data',(SELECT combat_data FROM public.campaigns c JOIN public.characters ch ON ch.campaign_id=c.id WHERE ch.id::text=p_character_id),'spell_id',p_spell_id) $;
+CREATE OR REPLACE FUNCTION public.usar_habilidade_classe_srd(p_character_id text,p_feature_key text,p_target_token_key text,p_amount integer)
+RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,pg_temp
+AS $ SELECT jsonb_build_object('cba_data',(SELECT cba_data FROM public.campaigns c JOIN public.characters ch ON ch.campaign_id=c.id WHERE ch.id::text=p_character_id),'combat_data',(SELECT combat_data FROM public.campaigns c JOIN public.characters ch ON ch.campaign_id=c.id WHERE ch.id::text=p_character_id),'feature_key',p_feature_key) $;
+
 \ir ../../supabase/migrations/20261112160000_filter_player_damage_rpc_results.sql
 
 SET ROLE authenticated;
@@ -64,6 +71,10 @@ BEGIN
   IF r->'cba_data'->'tokens' @> '[{"id":"hidden"}]'::jsonb THEN RAISE EXCEPTION 'Equipment RPC leaked hidden token.'; END IF;
   r:=public.srd_configurar_perfil_combate_token_srd(987654323,'hidden','hostile',5);
   IF r->'cba_data'->'tokens' @> '[{"id":"hidden"}]'::jsonb THEN RAISE EXCEPTION 'Combat profile RPC leaked hidden token.'; END IF;
+  r:=public.conjurar_magia_dano_multialvo_srd('pc-1','spell',1,ARRAY['hidden'],ARRAY[4]);
+  IF r->'cba_data'->'tokens' @> '[{"id":"hidden"}]'::jsonb THEN RAISE EXCEPTION 'Spell damage RPC leaked hidden token.'; END IF;
+  r:=public.usar_habilidade_classe_srd('pc-1','lay_on_hands','hidden',4);
+  IF r->'cba_data'->'tokens' @> '[{"id":"hidden"}]'::jsonb THEN RAISE EXCEPTION 'Class feature RPC leaked hidden token.'; END IF;
 END
 $player$;
 RESET ROLE;
