@@ -27,7 +27,7 @@ DELETE FROM public.members WHERE campaign_id=987654321;
 DELETE FROM public.campaigns WHERE id=987654321;
 INSERT INTO public.campaigns(id,name,owner_id,cba_data,combat_data)
 VALUES (987654321,'Fixture','00000000-0000-0000-0000-000000000001',
-'{"backgroundPath":"campaigns/1/map.png","tokens":[
+'{"backgroundPath":"campaigns/987654321/map.png","fogEnabled":true,"tokens":[
  {"id":"pc-1","sourceCharacterId":"pc-1","nome":"Meu herói"},
  {"id":"enemy-hidden","nome":"Inimigo oculto","visivel":false},
  {"id":"npc-visible","nome":"Aliado visível","visivel":true}
@@ -64,6 +64,7 @@ BEGIN
   IF s->'cba_data'->'tokens' @> '[{"id":"enemy-hidden"}]'::jsonb THEN RAISE EXCEPTION 'hidden token leaked'; END IF;
   IF NOT (s->'cba_data'->'tokens' @> '[{"id":"pc-1"}]'::jsonb) THEN RAISE EXCEPTION 'owned token missing'; END IF;
   IF NOT (s->'cba_data'->'tokens' @> '[{"id":"npc-visible"}]'::jsonb) THEN RAISE EXCEPTION 'visible token missing'; END IF;
+  IF s->'cba_data' ? 'backgroundPath' THEN RAISE EXCEPTION 'full fogged map path leaked to player'; END IF;
   IF s->'combat_data' ? 'pending_reactions' OR s->'combat_data' ? 'action_economy' THEN RAISE EXCEPTION 'private combat internals leaked'; END IF;
   IF s->'combat_data'->'turn_order' @> '[{"id":"enemy-hidden"}]'::jsonb THEN RAISE EXCEPTION 'hidden initiative actor leaked'; END IF;
 END $$;
@@ -77,6 +78,7 @@ BEGIN
   s := public.obter_snapshot_seguro_mesa(987654321);
   IF s->>'viewer_is_gm' <> 'true' THEN RAISE EXCEPTION 'owner should receive GM snapshot'; END IF;
   IF NOT (s->'cba_data'->'tokens' @> '[{"id":"enemy-hidden"}]'::jsonb) THEN RAISE EXCEPTION 'GM snapshot lost hidden token'; END IF;
+  IF s->'cba_data'->>'backgroundPath' <> 'campaigns/987654321/map.png' THEN RAISE EXCEPTION 'GM snapshot lost map path'; END IF;
   IF NOT (s->'combat_data' ? 'pending_reactions') THEN RAISE EXCEPTION 'GM snapshot lost private combat data'; END IF;
 END $$;
 RESET ROLE;
