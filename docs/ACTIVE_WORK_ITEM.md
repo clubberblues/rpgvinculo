@@ -1085,3 +1085,11 @@ A revisão read-only avançou para privilégios, RLS, funções privilegiadas, A
 - A primeira fixture PostgreSQL falhou e revelou que revogar EXECUTE de authenticated apenas no default ACL de `priv` não remove EXECUTE herdado de PUBLIC. O catálogo remoto confirma PUBLIC EXECUTE em helper priv; o default global de funções está ativo.
 - O plano foi corrigido: revogar EXECUTE de PUBLIC globalmente para funções futuras, além de revogar authenticated em tabelas/sequences/funções futuras do schema `priv`. Grants existentes permanecem; funções públicas futuras precisarão de GRANT explícito quando houver necessidade de acesso anon. Service_role permanece.
 - Fixture `tests/sql/priv_default_acl_fixture.sql` foi atualizada para provar comportamento global, preservação de grants existentes e service_role. Novo CI pendente. Migration ainda não foi criada/aplicada; aguardar teste e revisar compatibilidade de futuras funções públicas.
+
+
+### Bloqueio funcional do Storage privado da mesa — 2026-11-11
+
+- Policy `mesa_media_ler` chama `public.can_read_media(name)`; a função exige linha em `public.media` e, para jogador, layer visível em `public.layers`. Ambas as tabelas estão vazias e nenhum writer/trigger de metadata foi encontrado.
+- `mesa.html` faz upload de token/fundo em `mesa-media` e imediatamente chama `createSignedUrl`; também assina `backgroundPath` e `imagemPath` ao renderizar. Supabase exige SELECT em `storage.objects` para criar signed URL. A função de autorização retorna false para paths de token nas três campanhas atuais. O fluxo privado está, portanto, bloqueado até ligar a autorização ao CBA; o bucket privado está vazio.
+- Não abrir SELECT a todos os membros sem decisão: assinar a imagem completa do mapa pode revelar áreas encobertas pela névoa. Escolher entre metadata/layers, autorização por path/CBA com visibilidade, ou tiles/crops server-side. Nenhum upload real ou mudança remota foi feito.
+- Detalhes em `docs/FOUNDATION_SECURITY_REVIEW.md`.
