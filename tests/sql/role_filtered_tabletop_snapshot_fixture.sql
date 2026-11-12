@@ -34,7 +34,10 @@ VALUES (987654321,'Fixture','00000000-0000-0000-0000-000000000001','GM-only brie
 ]}',
 '{"active":true,"round":2,"current_turn":1,
  "turn_order":[{"id":"pc-1"},{"id":"enemy-hidden","secret":"hidden"},{"id":"npc-visible","nome":"Aliado visível","valor":12,"secret":"visible-actor-secret"}],
- "pending_reactions":[{"secret":"private"}],"action_economy":{"secret":"private"}}');
+ "expected_character_ids":["pc-1","enemy-hidden"],
+ "action_economy":{"round":2,"by_character":{"pc-1":{"padrao":true},"enemy-hidden":{"rapida":true}}},
+ "movement_usage":{"character_id":"pc-1","round":2,"current_turn":0,"moved_squares":2},
+ "pending_reactions":[{"secret":"private"}],"private_engine_state":{"secret":"private"}}');
 INSERT INTO public.members VALUES
  (987654321,'00000000-0000-0000-0000-000000000001','GM'),
  (987654321,'00000000-0000-0000-0000-000000000002','PLAYER');
@@ -69,7 +72,12 @@ BEGIN
   IF s->'campaign' ? 'briefing' THEN RAISE EXCEPTION 'GM-only campaign briefing leaked'; END IF;
   IF (s->'combat_data'->'turn_order'->1) ? 'secret' THEN RAISE EXCEPTION 'unknown initiative metadata leaked'; END IF;
   IF (s->'cba_data'->'tokens'->1) ? 'internal_token_secret' THEN RAISE EXCEPTION 'unknown GM-only token metadata leaked'; END IF;
-  IF s->'combat_data' ? 'pending_reactions' OR s->'combat_data' ? 'action_economy' THEN RAISE EXCEPTION 'private combat internals leaked'; END IF;
+  IF s->'combat_data' ? 'pending_reactions' OR s->'combat_data' ? 'private_engine_state' THEN RAISE EXCEPTION 'private combat internals leaked'; END IF;
+  IF s->'combat_data'->'action_economy'->'by_character' ? 'enemy-hidden' THEN RAISE EXCEPTION 'another character action flags leaked'; END IF;
+  IF NOT (s->'combat_data'->'action_economy'->'by_character' ? 'pc-1') THEN RAISE EXCEPTION 'owned character action flags missing'; END IF;
+  IF s->'combat_data'->'expected_character_ids' @> '["enemy-hidden"]'::jsonb THEN RAISE EXCEPTION 'another character initiative request leaked'; END IF;
+  IF NOT (s->'combat_data'->'expected_character_ids' @> '["pc-1"]'::jsonb) THEN RAISE EXCEPTION 'owned initiative request missing'; END IF;
+  IF s->'combat_data'->'movement_usage'->>'character_id' <> 'pc-1' OR s->'combat_data'->'movement_usage'->>'moved_squares' <> '2' THEN RAISE EXCEPTION 'owned movement preview missing'; END IF;
   IF s->'combat_data'->'turn_order' @> '[{"id":"enemy-hidden"}]'::jsonb THEN RAISE EXCEPTION 'hidden initiative actor leaked'; END IF;
 END $$;
 RESET ROLE;
@@ -86,6 +94,7 @@ BEGIN
   IF NOT (s->'cba_data'->'tokens' @> '[{"id":"npc-visible","internal_token_secret":"only-for-gm"}]'::jsonb) THEN RAISE EXCEPTION 'GM snapshot lost private token metadata'; END IF;
   IF s->'cba_data'->>'backgroundPath' <> 'campaigns/987654321/map.png' THEN RAISE EXCEPTION 'GM snapshot lost map path'; END IF;
   IF NOT (s->'combat_data' ? 'pending_reactions') THEN RAISE EXCEPTION 'GM snapshot lost private combat data'; END IF;
+  IF NOT (s->'combat_data'->'action_economy'->'by_character' ? 'enemy-hidden') THEN RAISE EXCEPTION 'GM snapshot lost other character action flags'; END IF;
 END $$;
 RESET ROLE;
 
