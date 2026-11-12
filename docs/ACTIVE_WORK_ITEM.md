@@ -1019,3 +1019,10 @@ A revisão read-only avançou para privilégios, RLS, funções privilegiadas, A
 - `private`: authenticated tem USAGE e EXECUTE em seis funções (rotinas de equipamento), todas SECURITY DEFINER com search_path fixo e verificações explícitas de auth.uid()/papel; duas funções de trigger sem EXECUTE direto. Anon não tem USAGE/EXECUTE. REST exposure ainda precisa ser confirmado no Dashboard.
 - Das 99 funções SECURITY DEFINER públicas executáveis por authenticated, 96 mencionam auth.uid(), 39 my_role() e cinco priv.need_gm() (sobreposição); todas têm algum desses marcadores. É triagem lexical, não prova de autorização correta.
 - Detalhes em `docs/FOUNDATION_SECURITY_REVIEW.md`; sem alterações remotas.
+
+
+### Storage — limites de upload (2026-11-11)
+
+- Bucket público `midia` não define limite de tamanho nem allowlist MIME. Os 135 objetos atuais são imagens (94 PNG, 22 JPEG, 19 WebP), ~190,59 MiB no total; maior objeto 15,76 MiB. Upload de capa aceita `image/*` e envia original sem limite explícito; políticas limitam caminho/propriedade, não tamanho/MIME.
+- Bucket privado `mesa-media` tem 50 MiB e allowlist imagem/vídeo/áudio; os fluxos vistos usam imagens e limitam token image a 20 MiB. Bucket vazio. Avaliar allowlist raster e limite real antes de alterar.
+- Proposta inicial para `midia`: considerar 20 MiB (cobre o maior objeto atual) e formatos raster usados; não aplicar sem confirmar arquivos/mapas maiores e preservar URLs. Detalhes em `FOUNDATION_SECURITY_REVIEW.md`.
