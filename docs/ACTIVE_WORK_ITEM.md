@@ -1,6 +1,16 @@
 # VTT D&D 3.5 — item de trabalho ativo
 
-## ESTADO ATUAL — LEIA PRIMEIRO (2026-11-11)
+## ESTADO ATUAL — LEIA PRIMEIRO (2026-11-12)
+
+- **Frente ativa:** concluir a fundação do VTT D&D 3.5. O usuário autorizou as mudanças necessárias no repositório para concluir esta fundação; manter validação, reversibilidade e segurança como critérios obrigatórios.
+- **Fundação:** NÃO concluída. Permanecem bloqueios de baseline reproduzível, isolamento CBA/fog, Storage privado, autorização de endpoints, locks transacionais e testes autenticados/E2E.
+- **PR #74:** branch `audit/lock-order-rage-removal-2026-11-09`, draft segundo o último estado conhecido; sem merge ou deploy. A branch está 714 commits à frente de main e deve ser tratada como uma unidade de integração grande, não como pronta para merge.
+- **Mudanças recentes no repositório:** migrations candidatas de segurança `20261110150000`, `20261110160000`, `20261110170000`, `20261112100000` e `20261112110000`; fixtures SQL e verificações correspondentes. A migration `20261112110000_revoke_legacy_character_creation_rpc.sql` retira EXECUTE da sobrecarga antiga de seis argumentos de `criar_personagem_srd_completo`, mantendo o fluxo atual de sete argumentos. A consulta remota confirmou que o wrapper ativo `finalizar_criacao_personagem_srd` chama a sobrecarga de sete argumentos e que nenhum outro corpo SQL remoto referenciou a antiga.
+- **Validação atual:** a consulta remota confirmou que as migrations candidatas ainda não foram aplicadas no banco ativo. Os fixtures novos foram ligados ao workflow PostgreSQL, mas o conector não retornou runs/status para o HEAD atual; portanto, não afirmar que passaram. O ambiente desta sessão não possui PostgreSQL/psql/Docker para executar os fixtures localmente.
+- **Bloqueios prioritários:** recuperar schema-base histórico para replay; executar e corrigir fixtures no CI; fechar o isolamento server-side do CBA/fog e a autorização de Storage; resolver contratos de locks e writers; revisar as 99 RPCs SECURITY DEFINER individualmente; executar integração autenticada e E2E; validar recuperação/backups e configurações do Dashboard antes de qualquer mudança remota.
+- **Regra de continuidade:** não repetir auditorias concluídas. Avançar por estágios completos, registrar somente resultados comprovados e manter as alterações remotas/deploy separadas do trabalho de branch até haver validação e plano de recuperação.
+
+---
 
 - **Frente ativa:** concluir a fundação do VTT D&D 3.5. Não tratar Anão Bárbaro N1 como meta; é apenas um caso de teste histórico. Não iniciar expansão de funcionalidades antes dos gates da fundação.
 - **Fundação:** NÃO concluída. O trabalho desta janela foi auditoria de segurança, acesso, Storage, Auth, Realtime, integridade, Data API e CI. Achados e aceite completo em `docs/FOUNDATION_SECURITY_REVIEW.md`; plano em `docs/ROADMAP.md`.
