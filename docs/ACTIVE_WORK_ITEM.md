@@ -1041,3 +1041,10 @@ A revisão read-only avançou para privilégios, RLS, funções privilegiadas, A
 - authenticated não tem UPDATE de tabela inteira nas tabelas centrais, mas há grants por coluna: `srd_character_sheets.pv_atual` e `srd_character_equipment.equipado` (dono/GM via RLS), além de `characters.campaign_id`. O frontend ativo usa RPC para PV/equipamento; não foram encontrados updates diretos dessas colunas. São grants residuais que permitem contornar regras do motor e devem ser revogados após confirmar compatibilidade. `campaigns.capa_url` é atualização direta ativa pelo GM e deve permanecer.
 - `lobby_atualizado.html` é uma página legada sem referência no index ou páginas ativas; usa Vínculo e atualiza `characters.campaign_id` diretamente. `ficha.html` conserva fluxo de criação legado separado, enquanto o modo SRD usa `finalizar_criacao_personagem_srd`. Não remover arquivos/dados até confirmar política de arquivamento, mas não confundir esses caminhos com o produto D&D 3.5 ativo.
 - A revisão completa dos grants por coluna, caminhos ativos e recomendação de revogação está em `docs/FOUNDATION_SECURITY_REVIEW.md`. Nenhum grant remoto foi alterado.
+
+
+### Criação SRD — helper parcial exposto (2026-11-11)
+
+- A sobrecarga de sete argumentos `public.criar_personagem_srd_completo` também tem EXECUTE authenticated. O wrapper final `finalizar_criacao_personagem_srd` (SECURITY INVOKER) chama esse helper e depois grava idiomas, talentos bônus, domínios, grimório e equipamento inicial.
+- Não há call site frontend direto para as duas sobrecargas. Uma chamada direta de sete argumentos cria somente parte do estado; a de seis argumentos ainda omite validações de identidade. Ambas permitem caminho alternativo de criação parcial/incompleta.
+- Corrigir a arquitetura: encapsular os helpers e tornar o wrapper final uma fronteira SECURITY DEFINER com search_path fixo + auth.uid() validado, ou solução equivalente; então revogar EXECUTE direto das sobrecargas. Exige revisão de chamadores e teste de transação/rollback; nenhuma alteração remota.
