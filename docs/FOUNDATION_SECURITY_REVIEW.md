@@ -250,3 +250,10 @@ Plano gratuito de proteção:
 5. Testar restauração em ambiente descartável antes de autorizar qualquer alteração remota.
 
 Documentação oficial: [Database Backups](https://supabase.com/docs/guides/platform/backups) e [Supabase CLI db dump](https://supabase.com/docs/reference/cli/supabase-db-dump). Nenhum backup foi gerado nesta sessão, porque o ambiente de execução não tem Supabase CLI/Docker nem acesso aos arquivos locais do usuário.
+
+
+### CBA completo é legível por todos os membros — não há filtro de visibilidade
+
+A policy `campaigns_member_read` permite SELECT da linha inteira da campanha para qualquer usuário autenticado com membership; os grants incluem SELECT de `cba_data` e `combat_data`. O frontend da mesa usa `select('*')` e vários refreshes diretos de `cba_data`. Assim, cada jogador recebe o JSON completo de tokens/posições e dados da cena. O modelo atual não contém campo de token oculto nem estado de fog por jogador; mesmo que um overlay visual seja adicionado no cliente, o jogador poderá inspecionar o JSON completo e baixar o fundo completo se conseguir uma URL.
+
+Isso é incompatível com fog of war/monstros ocultos como controle de segurança. Não resolver apenas com CSS/overlay. O desenho futuro precisa separar estado GM-privado de estado visível aos jogadores e entregar a estes um snapshot filtrado por RPC/view server-side; o acesso à imagem do mapa deve entregar apenas tiles/crops revelados, ou declarar explicitamente que fog é somente visual e não secreta informação. Essa decisão deve preceder a implementação da névoa e da policy de mídia privada.
