@@ -1730,10 +1730,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
           else message='🩸 '+String(item.nome||'O NPC')+' não estabilizou (D100 '+d100+') e perdeu 1 PV. PV atual: '+outcome.pv_atual+'.';
           var sent=await enviarMensagemChat(message,'sistema',{evento:'npc_stabilization',token_id:String(item.id),source_character_id:String(item.sourceCharacterId),d100:d100,pv_atual:outcome.pv_atual,condition:outcome.condition});
           if(sent&&sent.error)console.warn('Estabilização aplicada, mas o evento não foi publicado no chat:',sent.error.message);
-          var fresh=await sb.from('campaigns').select('cba_data').eq('id',MESA_ID).single();
-          if(fresh.error)throw new Error('A estabilização foi aplicada, mas não foi possível atualizar o tabuleiro: '+fresh.error.message);
-          campanha.cba_data=fresh.data.cba_data;
-          aplicarCBAnaMesa(campanha.cba_data,false);
+          await atualizarSnapshotSeguroMesa();
           var refreshed=normalizarCBAData(campanha.cba_data);
           var updated=(refreshed&&Array.isArray(refreshed.tokens)?refreshed.tokens:[]).find(function(token){return String(token.id)===String(item.id);});
           if(updated)abrirPainelControleNPC35(updated);
@@ -1864,13 +1861,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
 
 
   async function atualizarCenaAOO(){
-    var fresh=await sb.from('campaigns').select('cba_data,combat_data').eq('id',Number(MESA_ID)).single();
-    if(fresh.error)throw new Error('Não foi possível atualizar a cena após a reação: '+fresh.error.message);
-    campanha.cba_data=fresh.data.cba_data;
-    cbaPublishedState=normalizarCBAData(fresh.data.cba_data);
-    if(fresh.data.combat_data)combatDataState=fresh.data.combat_data;
-    aplicarCBAnaMesa(fresh.data.cba_data,false);
-    renderizarIniciativa(combatDataState);
+    await atualizarSnapshotSeguroMesa();
     await carregarPersonagens();
   }
 
@@ -2317,9 +2308,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         });
         if(request.error)throw new Error(request.error.message);
         if(request.data&&request.data.pending){
-          var freshPending=await sb.from('campaigns').select('cba_data').eq('id',Number(MESA_ID)).single();
-          if(freshPending.error)throw new Error(freshPending.error.message);
-          campanha.cba_data=freshPending.data.cba_data;cbaPublishedState=normalizarCBAData(freshPending.data.cba_data);aplicarCBAnaMesa(freshPending.data.cba_data,false);
+          await atualizarSnapshotSeguroMesa();
           document.getElementById('iniciativa-status').textContent='Movimento interrompido: o Mestre precisa resolver os ataques de oportunidade antes da conclusão.';
           return;
         }
@@ -2330,7 +2319,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       aplicarCBAnaMesa(result.data.cba_data,false);
       var remain=result.data.movement_remaining_m;
       document.getElementById('iniciativa-status').textContent=remain==null?'Posição atualizada no Grid. Movimento livre durante a exploração.':'Movimento restante neste turno: '+Number(remain).toLocaleString('pt-BR')+' m.';
-      var combatRefresh=await sb.from('campaigns').select('combat_data').eq('id',MESA_ID).maybeSingle();if(!combatRefresh.error&&combatRefresh.data){combatDataState=combatRefresh.data.combat_data||combatDataState;renderizarIniciativa(combatDataState);}
+      try{await atualizarSnapshotSeguroMesa();}catch(refreshError){console.warn('Movimento confirmado; snapshot seguro indisponível:',refreshError);}
     }catch(err){
       alert('Movimento não permitido: '+err.message);
       if(campanha&&campanha.cba_data) aplicarCBAnaMesa(campanha.cba_data,false);
@@ -2821,9 +2810,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
       rollChunk(0);
     }
     async function refreshSceneAfterDamage(){
-      var fresh=await sb.from('campaigns').select('cba_data').eq('id',Number(MESA_ID)).single();
-      if(fresh.error)throw new Error(fresh.error.message);
-      campanha.cba_data=fresh.data.cba_data;aplicarCBAnaMesa(fresh.data.cba_data,false);
+      await atualizarSnapshotSeguroMesa();
     }
     function continueSequence(nextIndex){
       if(nextIndex>attacksTotal){document.getElementById('iniciativa-status').textContent='Ataque Total concluído · '+own.ch.nome+'.';return;}
@@ -2950,7 +2937,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     var diceCount=Number(match[1]),faces=Number(match[2]);if(diceCount<1||diceCount>10||faces<2||faces>100)throw new Error('Expressão de dano fora dos limites.');
     var busy=false;
     function roll(title,formula,callback){abrirDado(title,async function(total,values){if(!Array.isArray(values)||!values.length)throw new Error('O dado não retornou os resultados individuais.');return await callback(total,values.map(Number));},true,true,formula);}
-    async function refreshScene(){var result=await sb.from('campaigns').select('cba_data').eq('id',campaignId).single();if(result.error)throw new Error('Falha ao atualizar a cena: '+result.error.message);campanha.cba_data=result.data.cba_data;aplicarCBAnaMesa(result.data.cba_data,false);if(target.tipo==='player')renderCards();}
+    async function refreshScene(){await atualizarSnapshotSeguroMesa();if(target.tipo==='player')renderCards();}
     async function run(){
       if(busy)return;busy=true;
       try{
@@ -5427,9 +5414,7 @@ async function abrirModalEquipamentos(){
         });
         if(request.error)throw new Error(request.error.message||'A movimentação não foi permitida.');
         if(request.data&&request.data.pending){
-          var freshPending=await sb.from('campaigns').select('cba_data').eq('id',Number(MESA_ID)).single();
-          if(freshPending.error)throw new Error(freshPending.error.message);
-          campanha.cba_data=freshPending.data.cba_data;cbaPublishedState=normalizarCBAData(freshPending.data.cba_data);aplicarCBAnaMesa(freshPending.data.cba_data,false);
+          await atualizarSnapshotSeguroMesa();
           document.getElementById('iniciativa-status').textContent='Movimento interrompido por ameaça: resolva a fila de Ataques de Oportunidade.';
           abrirPainelFilaAOO();return;
         }
@@ -6081,10 +6066,7 @@ async function abrirModalEquipamentos(){
               (dyingOutcome.dead?'☠️ '+nome+' morreu ao atingir -10 PV (D100 '+d100+').':
               '🩸 '+nome+' não estabilizou (D100 '+d100+') e perdeu 1 PV. PV atual: '+dyingOutcome.pv_atual+'.');
             await enviarMensagemChat(dyingText,'rolagem',{request_id:requestKey,token_id:tokenId,d100:d100,pv_atual:dyingOutcome.pv_atual,condition:dyingOutcome.condition,stabilization:true});
-            var freshCampaign=await sb.from('campaigns').select('cba_data').eq('id',MESA_ID).single();
-            if(freshCampaign.error)throw new Error('Rolagem aplicada, mas não foi possível atualizar o tabuleiro: '+freshCampaign.error.message);
-            campanha.cba_data=freshCampaign.data.cba_data;
-            aplicarCBAnaMesa(campanha.cba_data,false);
+            await atualizarSnapshotSeguroMesa();
           }else{
             var d20=Number(resultado);
             if(!Number.isInteger(d20)||d20<1||d20>20)throw new Error('O resultado precisa ser um d20 entre 1 e 20.');
@@ -6111,11 +6093,8 @@ async function abrirModalEquipamentos(){
     if((campanha.state||'') !== 'COMBATE'){ alert('Mude a mesa para COMBATE antes de solicitar iniciativa.'); return; }
     iniciativaBusy=true;
     try{
-      var atual=await sb.from('campaigns').select('state,cba_data').eq('id',MESA_ID).single();
-      if(atual.error) throw new Error(atual.error.message);
-      if((atual.data.state||'')!=='COMBATE') throw new Error('A campanha saiu do modo COMBATE.');
-      campanha.state=atual.data.state;
-      campanha.cba_data=atual.data.cba_data;
+      await atualizarSnapshotSeguroMesa();
+      if((campanha.state||'')!=='COMBATE') throw new Error('A campanha saiu do modo COMBATE.');
       var charsResult=await sb.from('characters').select('id,user_id,nome').eq('campaign_id',MESA_ID);
       if(charsResult.error) throw new Error('Não foi possível atualizar as fichas da mesa: '+charsResult.error.message);
       var membersResult=await sb.from('members').select('user_id,role').eq('campaign_id',MESA_ID);
