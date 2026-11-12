@@ -1034,3 +1034,10 @@ A revisão read-only avançou para privilégios, RLS, funções privilegiadas, A
 - A sobrecarga antiga de seis argumentos permanece SECURITY DEFINER com EXECUTE para authenticated. Não recebe nem valida identidade/tendência/idade e não foi encontrada nos três arquivos ativos; é um caminho alternativo menos rigoroso para criar personagem diretamente via RPC.
 - Recomendada revogação do EXECUTE authenticated dessa assinatura (ou remoção após compatibilidade), mantendo a versão atual. Requer migration versionada e teste negativo/positivo; nenhuma alteração remota foi feita.
 - Detalhes em `docs/FOUNDATION_SECURITY_REVIEW.md`.
+
+
+### Grants por coluna e rotas legadas — 2026-11-11
+
+- authenticated não tem UPDATE de tabela inteira nas tabelas centrais, mas há grants por coluna: `srd_character_sheets.pv_atual` e `srd_character_equipment.equipado` (dono/GM via RLS), além de `characters.campaign_id`. O frontend ativo usa RPC para PV/equipamento; não foram encontrados updates diretos dessas colunas. São grants residuais que permitem contornar regras do motor e devem ser revogados após confirmar compatibilidade. `campaigns.capa_url` é atualização direta ativa pelo GM e deve permanecer.
+- `lobby_atualizado.html` é uma página legada sem referência no index ou páginas ativas; usa Vínculo e atualiza `characters.campaign_id` diretamente. `ficha.html` conserva fluxo de criação legado separado, enquanto o modo SRD usa `finalizar_criacao_personagem_srd`. Não remover arquivos/dados até confirmar política de arquivamento, mas não confundir esses caminhos com o produto D&D 3.5 ativo.
+- A revisão completa dos grants por coluna, caminhos ativos e recomendação de revogação está em `docs/FOUNDATION_SECURITY_REVIEW.md`. Nenhum grant remoto foi alterado.
