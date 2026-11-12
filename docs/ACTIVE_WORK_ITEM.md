@@ -1145,3 +1145,11 @@ A revisão read-only avançou para privilégios, RLS, funções privilegiadas, A
 
 - Constraint permite GM/PLAYER/OBSERVER; trigger garante owner=GM e bloqueia promoção de outro membro. Snapshot tem 3 GM/3 PLAYER, nenhum OBSERVER. Lobby ativo não oferece entrada como observador; mesa apenas ordena esse papel na lista.
 - Roadmap ajustado para validar GM/PLAYER e decidir se OBSERVER é requisito futuro ou legado, sem expandir escopo automaticamente.
+
+
+### Backup/recuperação — plano Free é bloqueio de segurança (2026-11-11)
+
+- Organização do projeto está no plano Supabase Free. Documentação oficial: backups automáticos diários só em Pro/Team/Enterprise; Free deve exportar com CLI e manter cópias fora do projeto. PITR é pago e não será usado. Nenhum backup/restauração recente foi confirmado e a ferramenta não expõe a lista de backups.
+- Não fazer DDL/DML remoto antes de existir cópia recuperável. Foi criado `scripts/export-current-schema.ps1` para gerar snapshot schema-only do banco atual fora do repositório, usando o link local e Docker Desktop. O dump exclui Auth/Storage/extension schemas e não é bootstrap pré-ledger nem backup completo.
+- Ainda será necessário exportar dados/Auth e objetos Storage separadamente, verificar hashes e testar restauração. Nenhum backup foi gerado nesta sessão porque o ambiente não tem acesso ao CLI/Docker/local do usuário.
+- Documentação e instruções em `docs/FOUNDATION_SECURITY_REVIEW.md`.
