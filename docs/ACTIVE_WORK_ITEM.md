@@ -1257,3 +1257,13 @@ O script salva o snapshot schema-only fora do repo, sem enviar dados ou segredos
 - O harness Storage API real existe e sua sintaxe passou, mas o teste HTTP ainda não foi executado porque não há JWTs de staging nem campanha descartável configurada.
 - A migration de snapshot passou fixture PostgreSQL isolada, mas permanece sem integração com `mesa.html`; os 11 leitores diretos, o Realtime de `campaigns` e as respostas integrais de RPC ainda impedem o corte de privilégios.
 - Nenhuma migration foi aplicada ao Supabase ativo, nenhum dado remoto foi alterado, e não houve merge/deploy. Fundação continua NÃO concluída.
+
+## Cutover CBA/Reatime — validação adicional 2026-11-12
+
+- Migration candidata `20261112150000_broadcast_campaign_refresh.sql`: trigger de campanha publica somente `{campaign_id}` em Broadcast privado `campaign:{id}`; policy RLS em `realtime.messages` limita assinatura a owner/membros. A API `realtime.send(jsonb,text,text,boolean)` foi confirmada no projeto ativo; authenticated já possui USAGE em `realtime` e SELECT em `realtime.messages`. Não foi verificada a configuração Dashboard “Allow public access”; validar antes de aplicar.
+- `mesa.html` inicializa via snapshot filtrado, substitui todos os refreshes diretos e remove o listener Postgres Changes de `campaigns`; agora recebe apenas sinal Broadcast e busca novo snapshot.
+- `ficha.html` substituiu os três SELECTs diretos de `cba_data` usados para localizar NPC vinculado por snapshot filtrado.
+- Varredura atual em `mesa.html`, `ficha.html`, `lobby.html` e `index.html`: zero consultas diretas que selecionam `cba_data/combat_data` ou `*` de campaigns; zero subscriptions da tabela `campaigns` nesses arquivos. A publicação Realtime ainda contém `campaigns`, e precisa ser removida somente depois da auditoria de todos os consumidores.
+- CI run `43200396841`: fixtures PostgreSQL **success**, incluindo snapshot por papel, mapa com fog, Storage policy e novo Broadcast privado. No mesmo commit, static validation, JavaScript de mesa e JavaScript da aplicação: **success**.
+- **Ainda não fechado:** dezenas de RPCs SECURITY DEFINER continuam retornando `cba_data/combat_data` no payload JSONB. Isso continua sendo uma via de exfiltração, mesmo com leitura direta e Realtime da mesa substituídos. A próxima frente é corrigir retornos e permissões de cada RPC usado por jogadores, sem quebrar mecânicas.
+- Nenhuma migration foi aplicada ao Supabase ativo; nenhuma alteração remota de ACL, policy ou publicação foi feita. O teste Storage HTTP real continua aguardando staging/JWTs. Fog completo (tiles/crops/reveals) ainda não existe. Fundação continua NÃO concluída.
