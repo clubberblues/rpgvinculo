@@ -125,7 +125,7 @@ BEGIN
 
     v_combat := jsonb_build_object(
       'active', lower(coalesce(v_combat->>'active','false')) IN ('true','t','1'),
-      'round', CASE WHEN coalesce(v_combat->>'round','') ~ '^[0-9]+
+      'round', CASE WHEN coalesce(v_combat->>'round','') ~ '^[0-9]+$' THEN greatest(1, (v_combat->>'round')::integer) ELSE 1 END,
       'current_turn', v_new_current,
       'turn_order', v_order
     );
