@@ -1,88 +1,78 @@
--- Isolated regression fixture for internal-schema default ACL hardening.
--- It models PostgreSQL's default PUBLIC EXECUTE on newly created functions.
--- Runs in a disposable PostgreSQL database and rolls back every object/role change.
+-- Regression fixture for the exact internal-schema default ACL migration.
+-- Runs only in disposable PostgreSQL CI and rolls back all objects/default ACLs.
+\\set ON_ERROR_STOP on
 BEGIN;
 
-DO $$
+DO $roles$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
-    CREATE ROLE authenticated NOLOGIN;
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'service_role') THEN
-    CREATE ROLE service_role NOLOGIN;
-  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN CREATE ROLE authenticated NOLOGIN; END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon NOLOGIN; END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='service_role') THEN CREATE ROLE service_role NOLOGIN; END IF;
 END
-$$;
+$roles$;
 
-CREATE SCHEMA priv_fixture;
+CREATE SCHEMA IF NOT EXISTS priv;
+GRANT USAGE ON SCHEMA priv TO authenticated, anon, service_role;
 
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA priv_fixture
+-- Reproduce the overly broad defaults that existed before the migration.
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA priv
   GRANT ALL ON TABLES TO authenticated;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA priv_fixture
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA priv
   GRANT ALL ON SEQUENCES TO authenticated;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA priv_fixture
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA priv
   GRANT EXECUTE ON FUNCTIONS TO authenticated;
-
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA priv_fixture
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA priv
   GRANT ALL ON TABLES TO service_role;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA priv_fixture
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA priv
   GRANT ALL ON SEQUENCES TO service_role;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA priv_fixture
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA priv
   GRANT EXECUTE ON FUNCTIONS TO service_role;
 
-CREATE TABLE priv_fixture.before_table (id integer);
-CREATE SEQUENCE priv_fixture.before_seq;
-CREATE FUNCTION priv_fixture.before_fn() RETURNS integer
-LANGUAGE sql AS 'SELECT 1';
+CREATE TABLE priv.before_table (id integer);
+CREATE SEQUENCE priv.before_seq;
+CREATE FUNCTION priv.before_fn() RETURNS integer LANGUAGE sql AS 'SELECT 1';
 
-DO $$
+DO $pre$
 BEGIN
-  IF NOT has_table_privilege('authenticated', 'priv_fixture.before_table', 'SELECT')
-     OR NOT has_sequence_privilege('authenticated', 'priv_fixture.before_seq', 'USAGE')
-     OR NOT has_function_privilege('authenticated', 'priv_fixture.before_fn()', 'EXECUTE')
-     OR NOT has_function_privilege('anon', 'priv_fixture.before_fn()', 'EXECUTE') THEN
-    RAISE EXCEPTION 'Fixture precondition failed: simulated broad defaults were not present.';
+  IF NOT has_table_privilege('authenticated','priv.before_table','SELECT')
+     OR NOT has_sequence_privilege('authenticated','priv.before_seq','USAGE')
+     OR NOT has_function_privilege('authenticated','priv.before_fn()','EXECUTE')
+     OR NOT has_function_privilege('anon','priv.before_fn()','EXECUTE') THEN
+    RAISE EXCEPTION 'Fixture precondition failed: broad default ACLs were not reproduced.';
   END IF;
 END
-$$;
+$pre$;
 
--- The per-schema revokes close table/sequence grants and authenticated's
--- schema-specific function grant. PUBLIC function EXECUTE must be revoked
--- globally because PostgreSQL adds global defaults to schema defaults.
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres
-  REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA priv_fixture
-  REVOKE ALL ON TABLES FROM authenticated;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA priv_fixture
-  REVOKE ALL ON SEQUENCES FROM authenticated;
-ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA priv_fixture
-  REVOKE EXECUTE ON FUNCTIONS FROM authenticated;
+-- Apply the exact migration shipped to production.
+\\i supabase/migrations/20261112100000_harden_priv_default_privileges.sql
 
-CREATE TABLE priv_fixture.after_table (id integer);
-CREATE SEQUENCE priv_fixture.after_seq;
-CREATE FUNCTION priv_fixture.after_fn() RETURNS integer
-LANGUAGE sql AS 'SELECT 2';
+CREATE TABLE priv.after_table (id integer);
+CREATE SEQUENCE priv.after_seq;
+CREATE FUNCTION priv.after_fn() RETURNS integer LANGUAGE sql AS 'SELECT 2';
 
-DO $$
+DO $post$
 BEGIN
-  IF has_table_privilege('authenticated', 'priv_fixture.after_table', 'SELECT')
-     OR has_sequence_privilege('authenticated', 'priv_fixture.after_seq', 'USAGE')
-     OR has_function_privilege('authenticated', 'priv_fixture.after_fn()', 'EXECUTE')
-     OR has_function_privilege('anon', 'priv_fixture.after_fn()', 'EXECUTE') THEN
-    RAISE EXCEPTION 'Default ACL hardening failed: a new internal object remained directly accessible.';
+  IF has_table_privilege('authenticated','priv.after_table','SELECT')
+     OR has_sequence_privilege('authenticated','priv.after_seq','USAGE')
+     OR has_function_privilege('authenticated','priv.after_fn()','EXECUTE')
+     OR has_function_privilege('anon','priv.after_fn()','EXECUTE') THEN
+    RAISE EXCEPTION 'New internal object remained directly accessible to anon/authenticated.';
   END IF;
 
-  IF NOT has_table_privilege('service_role', 'priv_fixture.after_table', 'SELECT')
-     OR NOT has_sequence_privilege('service_role', 'priv_fixture.after_seq', 'USAGE')
-     OR NOT has_function_privilege('service_role', 'priv_fixture.after_fn()', 'EXECUTE') THEN
-    RAISE EXCEPTION 'Default ACL hardening changed service_role privileges unexpectedly.';
+  IF NOT has_table_privilege('service_role','priv.after_table','SELECT')
+     OR NOT has_sequence_privilege('service_role','priv.after_seq','USAGE')
+     OR NOT has_function_privilege('service_role','priv.after_fn()','EXECUTE') THEN
+    RAISE EXCEPTION 'Migration failed to preserve trusted service_role defaults.';
   END IF;
 
-  -- Default-ACL changes do not revoke privileges from existing functions.
-  IF NOT has_function_privilege('anon', 'priv_fixture.before_fn()', 'EXECUTE') THEN
-    RAISE EXCEPTION 'Changing defaults unexpectedly revoked an existing function grant.';
+  -- ALTER DEFAULT PRIVILEGES must not revoke ACLs from existing objects.
+  IF NOT has_table_privilege('authenticated','priv.before_table','SELECT')
+     OR NOT has_sequence_privilege('authenticated','priv.before_seq','USAGE')
+     OR NOT has_function_privilege('authenticated','priv.before_fn()','EXECUTE') THEN
+    RAISE EXCEPTION 'Migration unexpectedly changed privileges on existing objects.';
   END IF;
 END
-$$;
+$post$;
 
 ROLLBACK;
+SELECT 'priv default ACL migration fixture passed' AS result;
