@@ -998,3 +998,10 @@ A revisão read-only avançou para privilégios, RLS, funções privilegiadas, A
 - Policies centrais de campaigns/members/characters/fichas/equipamentos foram verificadas por leitura do catálogo. Updates diretos ativos de retrato/transformação/header ficam restritos ao dono; capa da campanha ao GM. Fichas/equipamentos são consultados diretamente e campos mecânicos são majoritariamente alterados por RPC.
 - Exceção: `public.tokens` permite INSERT/UPDATE/DELETE por qualquer membro da campanha. Tabela está vazia e sem call site direto nas páginas principais; a mesa atual usa `campaigns.cba_data`. Manter como dívida de legado e endurecer antes de reativar.
 - Detalhes em `docs/FOUNDATION_SECURITY_REVIEW.md`; nenhuma policy ou dado foi alterado.
+
+
+### Realtime — configuração estática confirmada (2026-11-11)
+
+- A publicação `supabase_realtime` inclui as nove tabelas usadas pelas assinaturas de `mesa.html`: campanha, chat, personagens, membros, fichas SRD, equipamentos, equipamento de token, condições e efeitos. Configuração e call sites estão alinhados estaticamente.
+- A entrega efetiva, isolamento RLS, filtros, reconexão e concorrência ainda não foram testados com sessões GM/jogador simultâneas. Tabelas legadas `tokens` e `vinculo_character_sheets` continuam na publicação; não remover sem confirmar clientes antigos.
+- Detalhes em `docs/FOUNDATION_SECURITY_REVIEW.md`. Nenhuma configuração remota foi alterada.
