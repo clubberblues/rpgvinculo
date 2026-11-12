@@ -1,7 +1,8 @@
 \set ON_ERROR_STOP on
 BEGIN;
 
-DO $ BEGIN CREATE ROLE authenticated; EXCEPTION WHEN duplicate_object THEN NULL; END $;
+DO $role$ BEGIN CREATE ROLE authenticated; EXCEPTION WHEN duplicate_object THEN NULL; END $role$;
+DO $role$ BEGIN CREATE ROLE anon; EXCEPTION WHEN duplicate_object THEN NULL; END $role$;
 CREATE SCHEMA IF NOT EXISTS auth;
 CREATE SCHEMA IF NOT EXISTS priv;
 CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid
