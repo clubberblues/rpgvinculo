@@ -232,3 +232,21 @@ Fotografia read-only: 8 usuários Auth e 8 perfis; nenhum usuário sem perfil, p
 ## Matriz de papéis de campanha
 
 A constraint de `public.members.role` permite `GM`, `PLAYER` e `OBSERVER`; o trigger garante que o proprietário seja GM e impede que outros usuários se promovam a GM. No snapshot há três GM e três PLAYER, nenhum OBSERVER. A mesa apenas ordena OBSERVER abaixo dos demais; `lobby.html` não apresenta fluxo ativo para entrar como observador. Para o escopo atual Mestre/Jogadores, validar GM/PLAYER como papéis obrigatórios e decidir se OBSERVER é funcionalidade futura ou legado; não ampliar o produto sem requisito.
+
+
+## Backup e recuperação — plano Free
+
+A organização Supabase do projeto está no plano `free`. Segundo a documentação oficial, backups automáticos diários estão disponíveis para planos Pro/Team/Enterprise; projetos Free devem exportar regularmente com Supabase CLI e manter cópias fora do projeto. PITR é add-on pago e não será usado.
+
+A ferramenta não expõe a lista de backups do projeto, e não foi possível confirmar um backup/restauração recente. Isso é um bloqueio de segurança para qualquer migration ou alteração de produção: não executar DDL/DML remoto sem cópia recuperável.
+
+Foi criado `scripts/export-current-schema.ps1` para gerar, sem enviar ao GitHub, um snapshot SQL do schema atual em uma pasta irmã ao repositório. Usa o link Supabase já configurado e exige Docker Desktop iniciado; o dump padrão do CLI é schema-only e exclui schemas gerenciados (Auth/Storage) e extensões. O snapshot atual ajuda a preparar uma base local no estado presente e a validar migrations novas, mas **não é o bootstrap pré-ledger** e não substitui backup de dados/usuários/objetos Storage.
+
+Plano gratuito de proteção:
+1. Executar o script de snapshot de schema e guardar o SQL/manifest localmente fora do repositório público.
+2. Gerar também uma cópia lógica de dados e preservar Auth conforme o procedimento oficial/escopo suportado pela CLI; não presumir que o schema dump inclui auth.users.
+3. Exportar os objetos dos buckets separadamente; backup SQL não contém os arquivos Storage. Atualmente `midia` tem 135 objetos e `mesa-media` está vazio.
+4. Verificar hashes, tamanho e existência dos arquivos; manter pelo menos uma segunda cópia local/offline.
+5. Testar restauração em ambiente descartável antes de autorizar qualquer alteração remota.
+
+Documentação oficial: [Database Backups](https://supabase.com/docs/guides/platform/backups) e [Supabase CLI db dump](https://supabase.com/docs/reference/cli/supabase-db-dump). Nenhum backup foi gerado nesta sessão, porque o ambiente de execução não tem Supabase CLI/Docker nem acesso aos arquivos locais do usuário.
