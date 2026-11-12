@@ -39,7 +39,7 @@ Nenhuma fase deve ser repetida integralmente sem evidência de mudança ou lacun
 
 ## Fase 2 — Fundação operacional
 **Objetivo:** assegurar que identidade, autorização, persistência e sincronização suportem os módulos.
-- [ ] Validar matriz de papéis Mestre/Jogador/Observador.
+- [ ] Validar matriz de papéis Mestre/Jogador; decidir se OBSERVER é requisito futuro ou legado (o banco aceita, mas o lobby ativo não oferece entrada como observador).
 - [ ] Avaliar proteção de senha vazada no Auth; revisar política de visibilidade do bucket público `midia` (135 objetos, incluindo 33 em `campaigns/`) e limites MIME/tamanho; 51 índices marcados como não utilizados ficam sem remoção até análise de tráfego e planos.
 - [ ] Validar RLS, RPCs e propriedade por fluxo; revisar as 99 SECURITY DEFINER acessíveis a authenticated e confirmar schemas internos `priv/private` no Dashboard. Endurecer default privileges de `priv`: hoje novas tabelas/sequences/funções recebem privilégios automáticos para `authenticated`.
 - [ ] Encapsular as duas sobrecargas `criar_personagem_srd_completo`: ambas ainda executáveis diretamente, inclusive uma versão antiga sem validação de identidade e uma versão atual que permite criação parcial fora do wrapper final.
