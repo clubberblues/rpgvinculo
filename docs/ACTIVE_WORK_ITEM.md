@@ -1048,3 +1048,12 @@ A revisão read-only avançou para privilégios, RLS, funções privilegiadas, A
 - A sobrecarga de sete argumentos `public.criar_personagem_srd_completo` também tem EXECUTE authenticated. O wrapper final `finalizar_criacao_personagem_srd` (SECURITY INVOKER) chama esse helper e depois grava idiomas, talentos bônus, domínios, grimório e equipamento inicial.
 - Não há call site frontend direto para as duas sobrecargas. Uma chamada direta de sete argumentos cria somente parte do estado; a de seis argumentos ainda omite validações de identidade. Ambas permitem caminho alternativo de criação parcial/incompleta.
 - Corrigir a arquitetura: encapsular os helpers e tornar o wrapper final uma fronteira SECURITY DEFINER com search_path fixo + auth.uid() validado, ou solução equivalente; então revogar EXECUTE direto das sobrecargas. Exige revisão de chamadores e teste de transação/rollback; nenhuma alteração remota.
+
+
+### Campanhas e convites — janelas de concorrência (2026-11-11)
+
+- Fluxo atual de lobby identificado: `lobby_list_v2`, `create_campaign`, `entrar_campanha_aberta`, `entrar_campanha_com_codigo`, `sentar_personagem_na_mesa`. Trigger de membership impede promoção indevida a GM.
+- `entrar_campanha_aberta` usa `FOR SHARE` na campanha; `entrar_campanha_com_codigo` valida campanha ativa sem lock; `sentar_personagem_na_mesa` valida membership sem serializar com remoção/desativação. Requer campaign-first/lock e revalidação sob lock para fechar TOCTOU.
+- `lobby_list_v2` lista todas as campanhas ativas a qualquer usuário autenticado, sem filtrar membership, mas esconde o código de convite de não donos. Confirmar se a descoberta pública é política desejada ou se é necessário flag de visibilidade.
+- `join_campaign(p_code)` e `lobby_atualizado.html` são legados; considerar revogação da RPC antiga depois de confirmar compatibilidade.
+- Sem alterações remotas; detalhes em `docs/FOUNDATION_SECURITY_REVIEW.md`.
