@@ -46,7 +46,9 @@ INSERT INTO public.campaigns(id,owner_id,cba_data) VALUES
  (41,'11111111-1111-1111-1111-111111111111',
   '{"backgroundPath":"campaigns/41/cba-map.png","tokens":[{"imagemPath":"campaigns/41/tokens/visible.png","visivel":true},{"imagemPath":"campaigns/41/tokens/hidden.png"}]}'::jsonb),
  (42,'22222222-2222-2222-2222-222222222222',
-  '{"backgroundPath":"campaigns/42/cba-map.png","tokens":[]}'::jsonb)
+  '{"backgroundPath":"campaigns/42/cba-map.png","tokens":[]}'::jsonb),
+ (43,'22222222-2222-2222-2222-222222222222',
+  '{"backgroundPath":"campaigns/43/cba-map.png","fogEnabled":true,"tokens":[]}'::jsonb)
 ON CONFLICT (id) DO UPDATE SET owner_id=EXCLUDED.owner_id,cba_data=EXCLUDED.cba_data;
 
 INSERT INTO public.members VALUES
