@@ -961,3 +961,11 @@ Isso torna mais grave a inversão attack → pending contra cancelamento pending
 - O snapshot atual (5 fichas, todas com ledger, soma dos níveis de classe igual ao nível total) contém apenas linhas nível 1; portanto não prova que multiclasse esteja funcionando. Não há evidência de dano aos personagens atuais, mas o contrato é insuficiente para o escopo completo D&D 3.5.
 - Registrar como bloqueio de arquitetura do motor de regras/progressão: separar nível total e nível por classe, permitir escolha de classe a cada avanço, calcular progressões/benefícios por classe e registrar corretamente `taken_at_character_level`. Não corrigir apenas na interface; requer contrato de servidor, validação de pré-requisitos e testes de progressão multiclasse.
 - Detalhes adicionados a `docs/DATA_MODEL.md`. Nenhuma alteração de código ou banco foi feita.
+
+
+### Contrato de magias e talento Maestria em Magia — 2026-11-11
+
+- O fluxo ativo de grimório salva estado de magias em `srd_character_sheets.magias_preparadas` JSONB versionado. As tabelas normalizadas `srd_character_known_spells`, `srd_character_prepared_spells`, `srd_character_spell_slot_state` e `srd_character_spellbook` estão vazias no snapshot.
+- A busca read-only em funções encontrou somente uma referência a `srd_character_spellbook`: a implementação de avanço consulta essa tabela para validar o talento Maestria em Magia. O salvamento ativo do grimório não a popula e não foi encontrado writer ativo. A escolha do talento tem, portanto, uma dependência sem caminho de preenchimento demonstrado.
+- Decisão a fechar no motor de regras: manter JSONB como fonte atual e sincronizar/derivar spellbook transacionalmente, ou validar Maestria em Magia diretamente contra o JSONB. Não criar duas fontes independentes nem preencher as tabelas normalizadas em paralelo.
+- Detalhes registrados em `docs/DATA_MODEL.md`. Nenhum dado ou schema remoto foi alterado.
