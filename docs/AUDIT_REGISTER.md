@@ -929,3 +929,8 @@ A primeira fixture isolada para endurecimento de `priv` falhou: revogar authenti
 ### Storage privado CBA — autorização de signed URL não conectada (2026-11-11)
 
 A policy `mesa_media_ler` chama `public.can_read_media(name)`, que exige registro em `public.media` e layer visível em `public.layers`; ambas as tabelas estão vazias e nenhum writer/trigger foi encontrado. O frontend `mesa.html` faz upload para `mesa-media` e imediatamente chama `createSignedUrl`; o Supabase exige SELECT em `storage.objects` para criar signed URL. A função retorna false para paths de token em todas as campanhas atuais. O fluxo de upload/assinatura privada está bloqueado; bucket `mesa-media` vazio. A correção deve definir autorização por metadata/layer ou path/CBA sem revelar mapas completos por URL assinada e contornar a névoa de guerra. Nenhuma mudança remota; sem teste real de upload.
+
+
+### Fixture default ACL — sucesso após correção (2026-11-12 UTC)
+
+A fixture `tests/sql/priv_default_acl_fixture.sql` passou no CI PostgreSQL run `43136928379` após modelar o default global PUBLIC EXECUTE. O teste prova que a revogação global para funções futuras + revokes específicos no schema priv bloqueia acesso automático a novos objetos, preserva service_role e não revoga grants existentes. A migration de produção ainda não foi criada/aplicada; replay integral segue bloqueado pelo schema-base ausente.
