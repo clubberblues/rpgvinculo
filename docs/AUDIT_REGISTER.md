@@ -924,3 +924,8 @@ Exceção legada: `public.tokens` permite INSERT/UPDATE/DELETE a qualquer membro
 ### Default ACL — fixture revelou herança de PUBLIC (2026-11-11)
 
 A primeira fixture isolada para endurecimento de `priv` falhou: revogar authenticated somente no default ACL por schema não remove EXECUTE herdado de PUBLIC para funções futuras. O catálogo remoto confirma PUBLIC EXECUTE em `priv.srd_feat_saving_throw_modifier`. O desenho corrigido inclui `ALTER DEFAULT PRIVILEGES FOR ROLE postgres REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC` global para funções futuras, além dos revokes por schema para authenticated em tabelas/sequences/funções de `priv`. Grants existentes permanecem; endpoints públicos existentes não são revogados por mudança de default. Fixture atualizada em `tests/sql/priv_default_acl_fixture.sql` para verificar comportamento, preservação de service_role e ACLs existentes. Novo CI ainda pendente; migration não criada/aplicada.
+
+
+### Storage privado CBA — autorização de signed URL não conectada (2026-11-11)
+
+A policy `mesa_media_ler` chama `public.can_read_media(name)`, que exige registro em `public.media` e layer visível em `public.layers`; ambas as tabelas estão vazias e nenhum writer/trigger foi encontrado. O frontend `mesa.html` faz upload para `mesa-media` e imediatamente chama `createSignedUrl`; o Supabase exige SELECT em `storage.objects` para criar signed URL. A função retorna false para paths de token em todas as campanhas atuais. O fluxo de upload/assinatura privada está bloqueado; bucket `mesa-media` vazio. A correção deve definir autorização por metadata/layer ou path/CBA sem revelar mapas completos por URL assinada e contornar a névoa de guerra. Nenhuma mudança remota; sem teste real de upload.
