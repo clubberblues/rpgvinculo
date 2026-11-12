@@ -79,3 +79,12 @@ O Security Advisor informa que a proteção contra senhas comprometidas (HaveIBe
 ## Limites desta revisão
 
 Nenhuma tabela, função, ACL, policy, configuração Auth, arquivo Storage, campanha, personagem, migration remota ou deploy foi alterado. Os resultados descrevem o estado observado e não provam que todos os caminhos de aplicação foram exercitados.
+
+
+## Revisão direcionada das políticas das tabelas centrais
+
+As políticas de `campaigns`, `members`, `characters`, `srd_character_sheets` e `srd_character_equipment` condicionam leitura/escrita a usuário dono, membro da campanha ou GM conforme a operação. A ficha SRD permite leitura e atualização direta ao dono/GM, mas os campos mecânicos do frontend consultado são salvos principalmente por RPCs; a política precisa ser mantida alinhada com os escritores server-side.
+
+Foi encontrada uma exceção de legado em `public.tokens`: as políticas INSERT/UPDATE/DELETE permitem qualquer membro da campanha, sem exigir papel GM. A tabela estava vazia (zero linhas) e não foi encontrado call site direto em `mesa.html`, `ficha.html` ou `lobby.html` no branch auditado; a mesa atual mantém tokens em `campaigns.cba_data`. Tratar a política como legado dormente, mas restringir a GM antes de reativar ou inserir dados nessa tabela. Não alterar agora para evitar quebrar um fluxo não localizado.
+
+O frontend atual atualiza diretamente `characters.retrato_url`, `characters.foto_transform` e `characters.header_bg_url`, protegidos por política de proprietário; atualiza `campaigns.capa_url`, protegida por política GM; consulta diretamente fichas/equipamentos. Não foi encontrado uso direto de `public.tokens` ou `public.scenes` nos três arquivos principais.
