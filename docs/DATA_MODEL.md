@@ -134,3 +134,13 @@ A implementação instalada de avanço ainda não oferece contrato multiclasse:
 - O upsert registra `taken_at_character_level=1` na primeira linha, em vez do nível total em que a classe foi adquirida.
 
 Consequência: o ledger atual não implementa corretamente a escolha de classe a cada nível exigida pelo D&D 3.5 multiclasse, nem preserva o nível de personagem em que cada classe foi adquirida. Não criar workaround no frontend. O contrato futuro deve distinguir nível total, nível por classe, classe escolhida no avanço, pré-requisitos de classe/prestígio, BBA/salvamentos por progressão e características por nível; validar a ordem de níveis e a retroatividade aplicável conforme as regras. Não há evidência de dano a personagens existentes no snapshot atual, que contém somente níveis iniciais de uma classe.
+
+
+## Estado de magias — JSONB ativo e dependência órfã de grimório (2026-11-11)
+
+- O caminho ativo observado de ficha salva o estado de magias conhecidas, preparadas, usos e espaços de domínio em `srd_character_sheets.magias_preparadas` (JSONB versionado), por meio de `salvar_grimorio_srd`. Manter esse JSONB como fonte operacional atual até existir migração completa e testada.
+- As tabelas normalizadas `srd_character_known_spells`, `srd_character_prepared_spells` e `srd_character_spell_slot_state` estão vazias no snapshot e não foram encontradas em corpos de funções consultados; não tratá-las como fontes ativas nem preencher em paralelo sem contrato de migração.
+- `srd_character_spellbook` também está vazia. A implementação de avanço de nível consulta essa tabela para validar as magias escolhidas no talento Maestria em Magia, mas `salvar_grimorio_srd` grava o JSONB da ficha e não popula o spellbook. A busca de funções encontrou apenas a leitura no avanço; não foi identificado writer ativo para essa tabela. Portanto, a seleção de Maestria em Magia tem uma dependência sem caminho de preenchimento demonstrado e deve ser corrigida antes de considerar o talento integrado.
+- Decisão futura: ou derivar/atualizar o grimório a partir do JSONB no mesmo fluxo transacional e validar os IDs conhecidos, ou remover a dependência do spellbook e validar diretamente contra o estado canônico; não manter duas fontes independentes.
+
+Fotografia somente de leitura em 2026-11-11: zero linhas nas quatro tabelas normalizadas/grimório citadas. Nenhuma tabela, ficha ou magia foi alterada.
