@@ -227,3 +227,8 @@ O projeto está em PostgreSQL `17.6.1.166`. O changelog do Supabase registra a a
 O trigger `auth.users.on_auth_user_created` chama `public.handle_new_user` SECURITY DEFINER com search_path fixo. Ele usa `raw_user_meta_data.username` apenas como nome de exibição (ou parte local do email como fallback), nunca como papel/autorização; erros de criação do perfil são capturados e não cancelam o signup. `public.enforce_campaign_member_role` força o proprietário a GM e impede promoção de outros membros. `my_role` e `sou_membro` derivam o usuário de `auth.uid()`. Anon/authenticated têm USAGE, mas não CREATE nos schemas public/priv/private/storage, reduzindo risco de objetos maliciosos no search_path.
 
 Fotografia read-only: 8 usuários Auth e 8 perfis; nenhum usuário sem perfil, perfil órfão, username duplicado ou vazio. A amostra atual está consistente; o trigger ainda precisa de monitoramento porque engole erros de criação de perfil e pode permitir contas sem perfil em falhas futuras.
+
+
+## Matriz de papéis de campanha
+
+A constraint de `public.members.role` permite `GM`, `PLAYER` e `OBSERVER`; o trigger garante que o proprietário seja GM e impede que outros usuários se promovam a GM. No snapshot há três GM e três PLAYER, nenhum OBSERVER. A mesa apenas ordena OBSERVER abaixo dos demais; `lobby.html` não apresenta fluxo ativo para entrar como observador. Para o escopo atual Mestre/Jogadores, validar GM/PLAYER como papéis obrigatórios e decidir se OBSERVER é funcionalidade futura ou legado; não ampliar o produto sem requisito.
