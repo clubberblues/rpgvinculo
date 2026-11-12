@@ -63,4 +63,5 @@ jobs:
           psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/character_creation_entrypoint_fixture.sql
           psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/private_cba_storage_access_fixture.sql
           psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/role_filtered_tabletop_snapshot_fixture.sql
+          psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/campaign_refresh_broadcast_fixture.sql
           bash tests/sql/lock_cycle_test.sh
