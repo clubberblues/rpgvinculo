@@ -176,3 +176,10 @@ O fluxo atual de lobby chama `lobby_list_v2`, `create_campaign`, `entrar_campanh
 A RPC `lobby_list_v2` retorna metadados de todas as campanhas ativas para qualquer usuário autenticado, mesmo não membro; o código de convite só é retornado ao proprietário. O frontend mostra essas campanhas e permite tentativa de entrada aberta ou por código. Isso parece corresponder a um lobby de descoberta, mas expõe nome, mestre, cidade, briefing, capa, estado e contagem de participantes. Confirmar a política de produto: se campanhas devem ser descobertas publicamente, documentar esse contrato; se forem privadas, adicionar sinalizador de descoberta e filtrar por membro/owner.
 
 A RPC antiga `join_campaign(p_code)` e a página `lobby_atualizado.html` pertencem ao fluxo legado; a página atual usa as duas RPCs novas. A assinatura antiga continua executável por authenticated e deve ser considerada para revogação após confirmar compatibilidade. Não houve mutação nem teste concorrente nesta revisão.
+
+
+## Integridade dos registros de campanha e personagem — fotografia atual
+
+No snapshot read-only: 3 campanhas, 6 memberships, 3 memberships GM, 5 personagens e 5 fichas SRD. Todas as campanhas têm seu proprietário como GM; não há membership GM de não proprietário; nenhum personagem vinculado está sem membership do dono; nenhuma ficha SRD órfã ou personagem sem ficha SRD foi encontrado; não há ledger de classe órfão. Não foram encontradas duplicatas de membership por campanha/usuário, códigos de convite por campanha, códigos de convite globais, fichas por personagem ou níveis por personagem/classe.
+
+Esses resultados são positivos para os dados atuais, mas a amostra é pequena e não prova integridade sob concorrência. Constraints/uniques e testes concorrentes continuam necessários.
