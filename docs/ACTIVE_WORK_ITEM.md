@@ -1106,3 +1106,10 @@ A revisão read-only avançou para privilégios, RLS, funções privilegiadas, A
 - O normalizador/serializador CBA ativo em `mesa.html` persiste apenas fundo, caminho do fundo, escala, grid e tokens. Não há campo de névoa/revelação no snapshot nem controles de revelar por jogador/todos no fluxo ativo consultado.
 - Portanto, a névoa de guerra por jogador/todos ainda não está implementada no modelo CBA atual. Ao projetá-la, persistir estado autoritativo por campanha e separar visibilidade individual/global. A URL assinada do fundo completo permite baixar a imagem inteira; overlay no navegador não protege regiões não reveladas. Isso precisa ser resolvido junto à política do bucket privado, possivelmente com tiles/crops server-side ou declaração explícita de fog apenas visual.
 - Detalhes de armazenamento em `docs/FOUNDATION_SECURITY_REVIEW.md`; nenhuma mudança remota.
+
+
+### Dependência Supabase JS — versão fixada nos fluxos ativos (2026-11-11)
+
+- Os quatro entrypoints ativos `index.html`, `lobby.html`, `mesa.html` e `ficha.html` agora fixam o CDN em `@supabase/supabase-js@2.119.0` (release estável publicado em 2026-11-04), em vez de resolver automaticamente a última versão 2.x.
+- `lobby_atualizado.html` permanece com a referência antiga `@2`, mas é página legada sem link no fluxo ativo; não foi alterada nesta rodada. A versão fixada corresponde à versão que o alias @2 resolvia no momento da atualização.
+- CI de sintaxe/JS precisa concluir no novo HEAD; nenhum pacote pago ou build tool foi introduzido.
