@@ -919,3 +919,8 @@ Exceção legada: `public.tokens` permite INSERT/UPDATE/DELETE a qualquer membro
 - Realtime publication inclui as nove tabelas das assinaturas de mesa; alinhamento estático confirmado, entrega real com duas sessões ainda não testada.
 - Integridade atual positiva: 3 campanhas, 6 memberships, 5 personagens/5 fichas; sem memberships duplicadas, GM não proprietário, personagem sem membership, fichas órfãs ou ledger órfão. 110 FKs validadas; três FKs sem índice no lado filho em tabelas de baixo volume.
 - Detalhes, evidências e plano de aceite em `docs/FOUNDATION_SECURITY_REVIEW.md`. Nenhuma alteração de schema, ACL, policy, Auth, Storage ou dado remoto.
+
+
+### Default ACL — fixture revelou herança de PUBLIC (2026-11-11)
+
+A primeira fixture isolada para endurecimento de `priv` falhou: revogar authenticated somente no default ACL por schema não remove EXECUTE herdado de PUBLIC para funções futuras. O catálogo remoto confirma PUBLIC EXECUTE em `priv.srd_feat_saving_throw_modifier`. O desenho corrigido inclui `ALTER DEFAULT PRIVILEGES FOR ROLE postgres REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC` global para funções futuras, além dos revokes por schema para authenticated em tabelas/sequences/funções de `priv`. Grants existentes permanecem; endpoints públicos existentes não são revogados por mudança de default. Fixture atualizada em `tests/sql/priv_default_acl_fixture.sql` para verificar comportamento, preservação de service_role e ACLs existentes. Novo CI ainda pendente; migration não criada/aplicada.
