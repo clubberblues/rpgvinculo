@@ -1127,3 +1127,8 @@ A revisão read-only avançou para privilégios, RLS, funções privilegiadas, A
 - Typegen oficial do Supabase retorna 202 nomes de funções no schema público, incluindo criação SRD e endpoints usados pela mesa; helpers de `priv/private` não aparecem. Isso confirma o caminho público das RPCs, mas a allowlist de schemas deve ser confirmada no Dashboard, pois `pgrst.db_schemas` e overrides por role não forneceram valor.
 - Desde 2026-10-30, novas tabelas não são automaticamente expostas aos Data/GraphQL APIs. Para cada migration futura, validar exposição, grants, RLS/policies e typegen; não inferir exposição apenas pelo schema `public` ou por default ACL.
 - Referência oficial registrada em `docs/FOUNDATION_SECURITY_REVIEW.md`.
+
+
+### Manutenção PostgreSQL — verificar atualização gerenciada (2026-11-11)
+
+- Projeto reporta PostgreSQL `17.6.1.166`; changelog Supabase registra PostgreSQL `17.11.0.003` em 2026-09-25 com correções de 44 CVEs. Verificar no Dashboard se há atualização recomendada/disponível, após revisar extensões e índices. Nenhuma atualização foi iniciada.
