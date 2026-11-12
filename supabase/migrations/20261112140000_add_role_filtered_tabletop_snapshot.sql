@@ -90,6 +90,10 @@ BEGIN
         OR t.value->>'id' = ANY(v_owned_ids);
 
     v_scene := v_scene || jsonb_build_object('tokens', v_order);
+    -- Until revealed tiles/crops are persisted, never hand a fog-enabled full map to players.
+    IF lower(coalesce(v_scene->>'fogEnabled','false')) = 'true' THEN
+      v_scene := v_scene - 'backgroundPath' - 'background' - 'backgroundUrl';
+    END IF;
 
     -- Initiative is projected to visible/owned combatants only. Private
     -- pending reactions, hidden actor metadata and action-economy internals
@@ -120,7 +124,7 @@ BEGIN
     END LOOP;
 
     v_combat := jsonb_build_object(
-      'active', coalesce((v_combat->>'active')::boolean, false),
+      'active', lower(coalesce(v_combat->>'active','false')) IN ('true','t','1'),
       'round', CASE WHEN coalesce(v_combat->>'round','') ~ '^[0-9]+
       'current_turn', v_new_current,
       'turn_order', v_order
