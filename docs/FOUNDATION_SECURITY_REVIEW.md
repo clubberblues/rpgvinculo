@@ -56,7 +56,7 @@ O código atual usa `midia` para avatares, fotos de personagem, fundos de ficha 
 
 ## Configuração de autenticação
 
-O Security Advisor informa que a proteção contra senhas comprometidas (HaveIBeenPwned) está desabilitada. A ferramenta disponível não permite ler/alterar essa opção de Auth. Deve ser revisada no Dashboard e habilitada após confirmar a política de senha desejada. Não foi alterada.
+O Security Advisor informa que a proteção contra senhas comprometidas (HaveIBeenPwned) está desabilitada. A ferramenta disponível não permite ler/alterar essa opção de Auth. Conferir no Dashboard se o recurso está disponível no plano Free; não contratar upgrade pago para isso. Se indisponível, registrar a limitação e manter as demais proteções de senha/autenticação sem custo. Não foi alterada.
 
 ## Advisor e desempenho
 
@@ -70,7 +70,7 @@ O Security Advisor informa que a proteção contra senhas comprometidas (HaveIBe
 2. Corrigir os privilégios padrão do schema interno `priv` por migration versionada, testada em ambiente descartável.
 3. Classificar os grants existentes de funções `priv` e os 99 endpoints públicos SECURITY DEFINER sem revogação em massa.
 4. Confirmar schemas expostos do PostgREST no Dashboard; `current_setting('pgrst.db_schemas', true)` retornou NULL, logo a allowlist não foi confirmada por SQL.
-5. Revisar e habilitar proteção contra senhas comprometidas no Auth.
+5. Verificar disponibilidade da proteção contra senhas comprometidas no plano Free; habilitar se já incluída, sem upgrade pago, ou registrar a limitação.
 6. Classificar os 33 objetos públicos `campaigns/` e os demais ativos do bucket `midia`; definir quais são intencionalmente públicos e migrar os privados sem quebrar URLs.
 7. Validar RLS e storage com sessões autenticadas de GM, jogador e usuário sem vínculo, além de testes de negação.
 8. Completar o protocolo de locks, consistência dos escritores e testes de concorrência em ambiente descartável.
