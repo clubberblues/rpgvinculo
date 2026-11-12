@@ -1,7 +1,7 @@
 -- Regression fixture for the exact internal-schema default ACL migration.
--- Runs only in disposable PostgreSQL CI and rolls back all objects/default ACLs.
+-- Runs only in a disposable PostgreSQL CI database. The included migration commits;
+-- the whole database is discarded with the CI service container.
 \\set ON_ERROR_STOP on
-BEGIN;
 
 DO $roles$
 BEGIN
@@ -75,5 +75,4 @@ BEGIN
 END
 $post$;
 
-ROLLBACK;
 SELECT 'priv default ACL migration fixture passed' AS result;
