@@ -1,6 +1,18 @@
-# Vínculo RPG — item de trabalho ativo
+# VTT D&D 3.5 — item de trabalho ativo
 
-## Estado consolidado — 2026-11-10
+## ESTADO ATUAL — LEIA PRIMEIRO (2026-11-11)
+
+- **Frente ativa:** concluir a fundação do VTT D&D 3.5. Não tratar Anão Bárbaro N1 como meta; é apenas um caso de teste histórico. Não iniciar expansão de funcionalidades antes dos gates da fundação.
+- **Fundação:** NÃO concluída. O trabalho desta janela foi auditoria de segurança, acesso, Storage, Auth, Realtime, integridade, Data API e CI. Achados e aceite completo em `docs/FOUNDATION_SECURITY_REVIEW.md`; plano em `docs/ROADMAP.md`.
+- **PR #74:** aberto, draft, sem merge/deploy. Branch `audit/lock-order-rage-removal-2026-11-09`. HEAD observado nesta atualização: `fd49b013bb8e663aa190d34503021cca66350c90`. Não alterar produção.
+- **CI do código mais recente:** static validation, JS da aplicação, JS da mesa e fixtures SQL passaram no commit de código `63fc9d6`; replay integral de migrations falhou antes de aplicar qualquer migration porque o stack vazio não possui `public.campaigns` (SQLSTATE 42P01). No HEAD documental atual, os jobs de JS/static já passaram; fixture e replay ainda estavam em execução na última consulta.
+- **Bloqueios prioritários:** (1) projeto Supabase Free sem backups automáticos; não fazer mutação remota sem backup recuperável; (2) schema-base pré-ledger não foi recuperado; (3) helper de criação SRD expõe caminhos parciais; (4) Storage privado CBA falha na autorização de signed URL; (5) jogadores leem o CBA completo, sem isolamento de tokens/mapa ocultos; (6) default ACL de `priv` e grants residuais precisam de migrations testadas; (7) entrada de campanha tem janelas TOCTOU; (8) Auth/Storage/Data API e versão PostgreSQL ainda precisam de verificações no Dashboard.
+- **Próxima ação externa mínima:** no PC com o checkout linkado e Docker disponível, executar `powershell -ExecutionPolicy Bypass -File .\\scripts\\export-current-schema.ps1`. O script salva snapshot schema-only fora do repositório; não inclui dados/Auth/Storage e não é o bootstrap pré-ledger. Depois precisamos validar backup recuperável de dados/Auth e Storage e usar o snapshot para preparar ambiente local no estado atual.
+- **Regra de continuidade:** retomar do delta registrado aqui e em `docs/ACTIVE_WORK_ITEM.md`; não repetir auditorias já concluídas. Trabalhar por estágios completos, sem relatórios de micro-etapas. Nenhuma alteração remota, merge ou deploy foi realizada nesta janela.
+
+---
+
+## Histórico de auditoria AOO — 2026-11-10 (referência; não é a frente atual)
 
 - Frente ativa: auditoria read-only de concorrência/ordem de locks dos fluxos AOO, ficha, magia, recursos de classe e ataques iterativos.
 - Branch: `audit/lock-order-rage-removal-2026-11-09`.
@@ -25,7 +37,7 @@
 - Recuperação/reconciliação do ledger concluída no GitHub: supabase_migrations.schema_migrations preserva statements[1] para as 966 versões. A pasta supabase/migrations agora contém 966 arquivos, todos byte a byte idênticos ao ledger; zero versões remotas ausentes e zero migrations locais pendentes. As 103 variantes locais divergentes foram preservadas em docs/migration_reconciliation/local_variants/; 41 arquivos sem versão remota foram preservados em docs/migration_reconciliation/unapplied_local/. Entre os 103, 13 diferenças semânticas foram identificadas e arquivadas; as outras 90 eram diferenças de comentário/formatação/casts/terminadores. Nenhuma migration foi aplicada no Supabase. Detalhe em MIGRATION_RECONCILIATION.md.
 - Ledger remoto reconciliado byte a byte: 966 migrations aplicadas correspondem às 966 versões remotas. A branch atual contém 969 arquivos, incluindo três candidatas locais não aplicadas. Isso não constitui baseline de instalação limpa: a primeira migration depende de `public.campaigns`, ausente no stack vazio. As variantes divergentes e migrations não aplicadas foram preservadas, sem descarte. Antes de criar/aplicar nova migration, recuperar schema-base histórico e validar bootstrap + replay em ambiente local descartável; o repo não possui `supabase/config.toml`.
 
-## Próxima unidade de trabalho
+## Próxima unidade histórica — AOO (retomar após desbloquear a fundação)
 
 1. Fechar o contrato comum de autoridade para toda mudança de coordenadas em `campaigns.cba_data`: wrappers diretos de movimento, `salvar_cena_cba` e demais writers; distinguir alterações de posição de atualizações legítimas de metadados e fechar identidade estável do token.
 2. Fechar grafo transitivo de todos os writers que alteram campanha, ficha, pending, ataque, ledger, recurso, condição e log; separar lock adquirido diretamente, lock herdado e leitura MVCC.
