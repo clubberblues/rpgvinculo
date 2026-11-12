@@ -122,3 +122,15 @@ Consulta read-only ao schema e aos caminhos ativos do D&D 3.5:
 - **PV, PM e valores derivados:** continuam sem uma regra global única declarada. Alguns são persistidos na ficha/token e sincronizados por resolvers/triggers; outros são calculados por funções. Cada campo ainda precisa de contrato próprio (fonte, fórmula, cache, invalidação e direção de sincronização). Não generalizar a decisão de XP/ouro para esses campos.
 
 Esta decisão é arquitetural para o domínio SRD; não altera dados, RPCs, migrations nem o domínio Vínculo. Antes de qualquer migração futura, validar todos os leitores e escritores do saldo SRD e criar teste de regressão para frações de ouro.
+
+
+## Progressão de classe e multiclasse — lacuna de contrato (2026-11-11)
+
+A tabela `srd_character_class_levels` comporta linhas por personagem/classe e deve representar o nível em cada classe; `srd_character_sheets.nivel` representa o nível total do personagem. No snapshot agregado atual, 5/5 fichas têm ledger e a soma dos níveis por classe coincide com o nível total; todas as 5 linhas observadas são nível 1, portanto isso não valida progressão multiclasse.
+
+A implementação instalada de avanço ainda não oferece contrato multiclasse:
+- `public.concluir_avanco_nivel_personagem_srd_v2` não recebe a classe escolhida para o novo nível.
+- `priv.concluir_avanco_nivel_personagem_srd` lê sempre `srd_character_sheets.classe_id`, calcula o avanço usando `sheet.nivel + 1` como nível da classe e faz upsert somente dessa classe.
+- O upsert registra `taken_at_character_level=1` na primeira linha, em vez do nível total em que a classe foi adquirida.
+
+Consequência: o ledger atual não implementa corretamente a escolha de classe a cada nível exigida pelo D&D 3.5 multiclasse, nem preserva o nível de personagem em que cada classe foi adquirida. Não criar workaround no frontend. O contrato futuro deve distinguir nível total, nível por classe, classe escolhida no avanço, pré-requisitos de classe/prestígio, BBA/salvamentos por progressão e características por nível; validar a ordem de níveis e a retroatividade aplicável conforme as regras. Não há evidência de dano a personagens existentes no snapshot atual, que contém somente níveis iniciais de uma classe.
