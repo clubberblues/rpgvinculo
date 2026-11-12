@@ -969,3 +969,12 @@ Isso torna mais grave a inversão attack → pending contra cancelamento pending
 - A busca read-only em funções encontrou somente uma referência a `srd_character_spellbook`: a implementação de avanço consulta essa tabela para validar o talento Maestria em Magia. O salvamento ativo do grimório não a popula e não foi encontrado writer ativo. A escolha do talento tem, portanto, uma dependência sem caminho de preenchimento demonstrado.
 - Decisão a fechar no motor de regras: manter JSONB como fonte atual e sincronizar/derivar spellbook transacionalmente, ou validar Maestria em Magia diretamente contra o JSONB. Não criar duas fontes independentes nem preencher as tabelas normalizadas em paralelo.
 - Detalhes registrados em `docs/DATA_MODEL.md`. Nenhum dado ou schema remoto foi alterado.
+
+
+## Ponto de retomada consolidado — 2026-11-11
+
+- PR #74 HEAD atual: `adb1335230d610843c27a08b0d0bea71baa43b8c`; 621 commits, aberto, draft, não mesclado.
+- Última CI executada sobre código idêntico (commit `df40874c2ad68fda6d4e342b29f5a17b25e2c9ce`; commits posteriores nesta rodada alteraram somente documentação): validação estática, JS da aplicação, JS da mesa e fixtures PostgreSQL **success**; replay integral **failure** antes de aplicar qualquer migration, porque o schema vazio não possui `public.campaigns`. O erro é de bootstrap ausente, não de uma migration aplicada. Não mascarar nem fabricar baseline.
+- O trabalho desta rodada refinou a arquitetura/contratos com fontes canônicas de XP/ouro SRD, revarredura JS↔RPC, lacunas de progressão multiclasse e dependência não preenchida de Maestria em Magia. Referências: `DATA_MODEL.md`, `RPC_INVENTORY.md` e `ROADMAP.md`.
+- **Estágio de arquitetura/contratos (Fase 1) NÃO concluído.** Pendências de aceite: fonte/ciclo de atualização de PV/PM/atributos derivados; suporte multiclasse e spellbook; tipos/overloads em runtime e testes autenticados; fechamento do grafo transitivo de locks e idempotência; configuração de schemas expostos ainda precisa de confirmação pelo Dashboard; baseline histórico confiável para replay.
+- Retomar por essas pendências específicas. Não repetir as auditorias já registradas, não abrir nova frente de funcionalidades, não criar branch/projeto Supabase pago, não tocar produção e não mesclar/deployar.
