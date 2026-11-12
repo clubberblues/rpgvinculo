@@ -40,6 +40,7 @@ END
 $before$;
 
 \i supabase/migrations/20261112110000_revoke_legacy_character_creation_rpc.sql
+\i supabase/verification/verify_legacy_character_creation_rpc_acl.sql
 
 DO $after$
 DECLARE
