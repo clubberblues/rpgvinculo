@@ -194,4 +194,52 @@ $wrapper$;
 REVOKE ALL ON FUNCTION public.srd_configurar_perfil_combate_token_srd(bigint,text,text,integer) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.srd_configurar_perfil_combate_token_srd(bigint,text,text,integer) TO authenticated;
 
+-- Character-scoped mutation RPCs resolve their campaign from the owned character.
+ALTER FUNCTION public.conjurar_magia_dano_multialvo_srd(text,text,smallint,text[],integer[]) SET SCHEMA priv;
+REVOKE ALL ON FUNCTION priv.conjurar_magia_dano_multialvo_srd(text,text,smallint,text[],integer[]) FROM PUBLIC, anon, authenticated;
+ALTER FUNCTION public.usar_habilidade_classe_srd(text,text,text,integer) SET SCHEMA priv;
+REVOKE ALL ON FUNCTION priv.usar_habilidade_classe_srd(text,text,text,integer) FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.conjurar_magia_dano_multialvo_srd(p_character_id text, p_spell_id text, p_slot_level smallint, p_target_token_keys text[], p_roll_results integer[])
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public, priv, auth
+AS $wrapper$
+DECLARE
+  v_campaign_id bigint;
+  v_result jsonb;
+BEGIN
+  SELECT campaign_id INTO v_campaign_id
+    FROM public.characters
+   WHERE id::text = p_character_id;
+  v_result := priv.conjurar_magia_dano_multialvo_srd(p_character_id,p_spell_id,p_slot_level,p_target_token_keys,p_roll_results);
+  RETURN priv.cba_filter_rpc_result(v_result,v_campaign_id);
+END
+$wrapper$;
+
+REVOKE ALL ON FUNCTION public.conjurar_magia_dano_multialvo_srd(text,text,smallint,text[],integer[]) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.conjurar_magia_dano_multialvo_srd(text,text,smallint,text[],integer[]) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.usar_habilidade_classe_srd(p_character_id text, p_feature_key text, p_target_token_key text, p_amount integer)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public, priv, auth
+AS $wrapper$
+DECLARE
+  v_campaign_id bigint;
+  v_result jsonb;
+BEGIN
+  SELECT campaign_id INTO v_campaign_id
+    FROM public.characters
+   WHERE id::text = p_character_id;
+  v_result := priv.usar_habilidade_classe_srd(p_character_id,p_feature_key,p_target_token_key,p_amount);
+  RETURN priv.cba_filter_rpc_result(v_result,v_campaign_id);
+END
+$wrapper$;
+
+REVOKE ALL ON FUNCTION public.usar_habilidade_classe_srd(text,text,text,integer) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.usar_habilidade_classe_srd(text,text,text,integer) TO authenticated;
+
 COMMIT;
