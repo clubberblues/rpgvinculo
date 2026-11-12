@@ -53,6 +53,7 @@ Nenhuma fase deve ser repetida integralmente sem evidência de mudança ou lacun
 - [x] Fixar `@supabase/supabase-js@2.119.0` nos quatro entrypoints ativos; a página `lobby_atualizado.html` permanece legada e sem link no fluxo atual.
 - [ ] Confirmar schemas expostos do Data API no Dashboard; desde 2026-10-30 novas tabelas não são expostas automaticamente, então validar schema cache/grants/RLS por migration.
 - [ ] Verificar atualização gerenciada do PostgreSQL `17.6.1.166` para a linha `17.11.0.003` (changelog Supabase registra 44 CVEs corrigidos); não atualizar sem revisar extensões/índices e janela.
+- [ ] Criar e testar backup local recuperável antes de qualquer alteração de produção. Organização está no plano Free sem backups diários automáticos; usar exportação CLI/armazenamento local gratuito e preservar Storage separadamente.
 - [ ] Automatizar verificações de regressão disponíveis.
 
 **Estado após revisão read-only de 2026-11-11:** segurança e Storage detalhados em `docs/FOUNDATION_SECURITY_REVIEW.md`; nenhuma correção remota foi aplicada. O replay de migrations segue bloqueado pela ausência do schema-base `public.campaigns`.
