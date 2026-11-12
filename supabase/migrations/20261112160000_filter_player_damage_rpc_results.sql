@@ -242,4 +242,28 @@ $wrapper$;
 REVOKE ALL ON FUNCTION public.usar_habilidade_classe_srd(text,text,text,integer) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.usar_habilidade_classe_srd(text,text,text,integer) TO authenticated;
 
+-- Pending-movement completion nests the mover RPC result; the recursive
+-- filter protects private scene/combat JSON even when nested in movement_result.
+ALTER FUNCTION public.srd_finalizar_movimento_aoo_pendente_srd(bigint,uuid) SET SCHEMA priv;
+REVOKE ALL ON FUNCTION priv.srd_finalizar_movimento_aoo_pendente_srd(bigint,uuid) FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.srd_finalizar_movimento_aoo_pendente_srd(
+  p_campaign_id bigint, p_pending_id uuid
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public, priv, auth
+AS $wrapper$
+DECLARE
+  v_result jsonb;
+BEGIN
+  v_result := priv.srd_finalizar_movimento_aoo_pendente_srd(p_campaign_id,p_pending_id);
+  RETURN priv.cba_filter_rpc_result(v_result,p_campaign_id);
+END
+$wrapper$;
+
+REVOKE ALL ON FUNCTION public.srd_finalizar_movimento_aoo_pendente_srd(bigint,uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.srd_finalizar_movimento_aoo_pendente_srd(bigint,uuid) TO authenticated;
+
 COMMIT;
