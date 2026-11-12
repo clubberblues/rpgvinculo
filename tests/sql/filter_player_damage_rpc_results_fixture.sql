@@ -84,9 +84,9 @@ BEGIN
   r:=public.usar_habilidade_classe_srd('pc-1','lay_on_hands','hidden',4);
   IF r->'cba_data'->'tokens' @> '[{"id":"hidden"}]'::jsonb THEN RAISE EXCEPTION 'Class feature RPC leaked hidden token.'; END IF;
   r:=public.avancar_turno(987654323);
-  IF r->'combat_data' ? 'pending_reactions' THEN RAISE EXCEPTION 'Turn advancement leaked private reactions.'; END IF;
-  IF r->'combat_data'->'turn_order' @> '[{"id":"hidden"}]'::jsonb THEN RAISE EXCEPTION 'Turn advancement leaked hidden initiative actor.'; END IF;
-  IF NOT (r->'combat_data'->'turn_order' @> '[{"id":"pc-1"}]'::jsonb) THEN RAISE EXCEPTION 'Turn advancement lost owned actor.'; END IF;
+  IF r ? 'pending_reactions' THEN RAISE EXCEPTION 'Turn advancement leaked private reactions.'; END IF;
+  IF r->'turn_order' @> '[{"id":"hidden"}]'::jsonb THEN RAISE EXCEPTION 'Turn advancement leaked hidden initiative actor.'; END IF;
+  IF NOT (r->'turn_order' @> '[{"id":"pc-1"}]'::jsonb) THEN RAISE EXCEPTION 'Turn advancement lost owned actor.'; END IF;
   r:=public.srd_finalizar_movimento_aoo_pendente_srd(987654323,'00000000-0000-0000-0000-000000000123');
   IF r->'movement_result'->'cba_data'->'tokens' @> '[{"id":"hidden"}]'::jsonb THEN RAISE EXCEPTION 'Nested movement RPC leaked hidden token.'; END IF;
   IF r->'movement_result'->'combat_data' ? 'pending_reactions' THEN RAISE EXCEPTION 'Nested movement RPC leaked private combat state.'; END IF;
@@ -103,7 +103,7 @@ BEGIN
   IF NOT (r->'cba_data'->'tokens' @> '[{"id":"hidden"}]'::jsonb) THEN RAISE EXCEPTION 'Owner lost hidden token in RPC result.'; END IF;
   IF NOT (r->'combat_data' ? 'pending_reactions') THEN RAISE EXCEPTION 'Owner lost private combat state in RPC result.'; END IF;
   r:=public.avancar_turno(987654323);
-  IF NOT (r->'combat_data' ? 'pending_reactions') THEN RAISE EXCEPTION 'Owner lost private combat state through turn advancement.'; END IF;
+  IF NOT (r ? 'pending_reactions') THEN RAISE EXCEPTION 'Owner lost private combat state through turn advancement.'; END IF;
 END
 $owner$;
 RESET ROLE;
