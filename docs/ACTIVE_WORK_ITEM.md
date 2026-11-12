@@ -1057,3 +1057,10 @@ A revisão read-only avançou para privilégios, RLS, funções privilegiadas, A
 - `lobby_list_v2` lista todas as campanhas ativas a qualquer usuário autenticado, sem filtrar membership, mas esconde o código de convite de não donos. Confirmar se a descoberta pública é política desejada ou se é necessário flag de visibilidade.
 - `join_campaign(p_code)` e `lobby_atualizado.html` são legados; considerar revogação da RPC antiga depois de confirmar compatibilidade.
 - Sem alterações remotas; detalhes em `docs/FOUNDATION_SECURITY_REVIEW.md`.
+
+
+### Integridade de campanhas/personagens — snapshot positivo (2026-11-11)
+
+- 3 campanhas, 6 memberships, 3 GM memberships, 5 personagens e 5 fichas SRD. Todos os donos estão registrados como GM; nenhum GM não proprietário; nenhum personagem vinculado sem membership do dono; nenhuma ficha órfã ou personagem sem ficha SRD; nenhum ledger de classe órfão.
+- Sem duplicatas observadas de membership, código de convite, ficha SRD ou nível por classe. Amostra pequena; não substitui testes de concorrência.
+- Detalhes em `docs/FOUNDATION_SECURITY_REVIEW.md`.
