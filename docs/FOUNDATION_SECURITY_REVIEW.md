@@ -298,3 +298,15 @@ CI PostgreSQL descartável no commit `3e31951e48dd46edece6c71028b5143972dbd89b` 
 O workflow de replay integral continua falhando antes da primeira migration, pois o stack vazio não contém a tabela base `public.campaigns` usada por `20261031160944_srd35_action_economy.sql` (SQLSTATE 42P01). Isso demonstra que o repositório ainda não contém o bootstrap histórico necessário; não demonstra falha das migrations candidatas. A recuperação de schema-base continua bloqueadora.
 
 **Não considerar a fundação aprovada ainda:** o teste CBA é PostgreSQL sintético e não valida o Storage API hospedado, URLs assinadas, comportamento de upload final `completeUpload` nem concorrência real Storage × exclusão. O estado completo de `campaigns.cba_data/combat_data` também continua legível para membros via política de linha; o snapshot filtrado de CBA/fog server-side ainda não foi implementado. Nenhuma migration foi aplicada remotamente e nenhuma campanha/arquivo de Storage foi alterado.
+
+## Revalidação do Security Advisor e da tabela legada tokens — 2026-11-12
+
+Consulta read-only ao projeto ativo, após as migrations candidatas da branch ainda não aplicadas:
+
+- Security Advisor atual: 7 avisos informativos de tabelas com RLS sem policy, 99 avisos de funções `SECURITY DEFINER` executáveis por `authenticated` e 1 aviso de proteção contra senhas comprometidas desabilitada. Health Advisor: nenhum aviso.
+- Os sete objetos sem policies permanecem os mesmos listados acima. O alerta é compatível com negação por padrão, pois não há grants diretos para os papéis cliente no snapshot anterior; manter revisão de chamadores e privilégios antes de criar policies.
+- Revalidação de `public.tokens`: RLS está habilitado; há quatro policies. As policies de INSERT, UPDATE e DELETE usam apenas vínculo em `members`, mas **authenticated não possui privilégios de tabela INSERT, UPDATE ou DELETE** no ACL efetivo consultado. SELECT está concedido e limitado a campanhas em que o usuário é membro. A tabela continua com zero linhas. Portanto, a preocupação histórica de escrita direta por qualquer membro não está atualmente explorável via privilégios SQL observados; não criar migration de alteração de policy sem primeiro verificar consumidores legados e grants futuros.
+- Os 99 avisos SECURITY DEFINER são avisos de superfície, não prova individual de falha. A revisão deve continuar por endpoint e por fluxo; revogação em massa seria incompatível com o cliente atual.
+- A proteção de senha comprometida permanece desabilitada. A ferramenta de consulta não permite verificar nem alterar a configuração do Auth; é necessário conferir no Dashboard, sem contratar upgrade.
+
+Nenhuma configuração, ACL, policy ou dado foi alterado durante esta revalidação.
