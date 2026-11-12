@@ -128,3 +128,12 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA priv
 ```
 
 Isso altera somente os privilégios padrão para objetos futuros criados pelo owner `postgres`; não revoga grants de objetos existentes. A migration deve ser criada com `supabase migration new`, testada contra um schema reproduzido e acompanhada de teste que prove que uma tabela/função recém-criada em `priv` não fica acessível diretamente a authenticated. Não executar no remoto antes dessa validação.
+
+
+### Limites efetivos de upload — risco de abuso/custo
+
+No bucket `midia`, `file_size_limit` e `allowed_mime_types` estão nulos. Os 135 objetos atuais são todos imagens (94 PNG, 22 JPEG, 19 WebP), totalizam aproximadamente 190,59 MiB; o maior tem 15,76 MiB. O frontend limita alguns fluxos por recorte, mas o upload de capa aceita `image/*` e envia o arquivo original sem limite de tamanho explícito. A política de Storage restringe caminho/proprietário, não tamanho ou MIME. Isso permite que um usuário autenticado autorizado no caminho envie arquivos muito grandes ou formatos não desejados, aumentando custo e superfície de conteúdo.
+
+O bucket privado `mesa-media` define limite de 50 MiB e allowlist que inclui imagens, vídeo e áudio; os fluxos de upload encontrados na mesa aceitam apenas imagens e limitam a imagem do token a 20 MiB. O bucket estava vazio. Rever se vídeo/áudio são realmente necessários; se não, restringir MIME e tamanho ao uso real.
+
+Plano recomendado: definir limite de tamanho compatível com capas/retratos (avaliar 20 MiB, pois o maior objeto atual tem 15,76 MiB), aceitar somente formatos raster realmente usados, validar também no cliente para UX e preservar leitura dos arquivos existentes. Não aplicar limite antes de confirmar se há mapas/arquivos maiores fora do bucket público.
