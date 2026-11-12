@@ -3,6 +3,8 @@
 -- removed before column-level access to campaigns.cba_data/combat_data is revoked.
 BEGIN;
 
+GRANT USAGE ON SCHEMA priv TO authenticated;
+
 CREATE OR REPLACE FUNCTION priv.cba_visible_tabletop_snapshot(p_campaign_id bigint)
 RETURNS jsonb
 LANGUAGE plpgsql
