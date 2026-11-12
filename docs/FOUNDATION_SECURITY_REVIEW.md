@@ -215,3 +215,8 @@ A confirmação de exposição foi refinada com os tipos gerados pelo próprio S
 A geração de tipos Supabase para o Data API contém 202 nomes de funções do schema `public`, incluindo os fluxos ativos e as duas sobrecargas de criação; não contém as funções internas `priv/private` consultadas. Isso é evidência de que `public` é o schema API ativo e que `priv/private` não estão no schema cache público gerado. Ainda assim, a configuração explícita de schemas expostos deve ser confirmada no Dashboard; `current_setting('pgrst.db_schemas', true)` e settings persistidos por role não forneceram valor.
 
 A mudança do Supabase de 2026-10-30 deixou de expor automaticamente novas tabelas nos Data/GraphQL APIs. Portanto, grants padrão em `public` não garantem, sozinhos, que uma tabela nova esteja no schema API. Cada migration futura que criar tabela/RPC usada pelo frontend precisa validar (a) schema exposto, (b) grants mínimos, (c) RLS/policies e (d) presença nos tipos gerados. Referência: [Supabase changelog — tables not exposed automatically](https://supabase.com/changelog/45329-breaking-change-tables-not-exposed-to-data-and-graphql-api-automatically).
+
+
+## Manutenção da versão PostgreSQL
+
+O projeto está em PostgreSQL `17.6.1.166`. O changelog do Supabase registra a atualização PostgreSQL 17.11.0.003 (2026-09-25), com correções de 44 CVEs e ajustes de índices/extensões; o aviso de timezone destacado afeta Vancouver/Edmonton/Casablanca, não a região Brasil. A versão atual do projeto está atrás dessa linha de manutenção. Conferir no Dashboard se a atualização gerenciada está disponível/recomendada e revisar extensões/índices antes de agendar; nenhuma atualização foi iniciada.
