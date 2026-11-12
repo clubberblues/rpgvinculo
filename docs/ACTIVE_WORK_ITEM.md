@@ -1201,3 +1201,16 @@ O script salva o snapshot schema-only fora do repo, sem enviar dados ou segredos
 - Consulta read-only adicional confirmou que ambas estão no schema `priv`, cujo USAGE é concedido a authenticated, mas anon não tem USAGE; authenticated e anon não têm SELECT/INSERT/UPDATE/DELETE diretos em nenhuma das duas tabelas. Portanto, a mensagem genérica do Advisor de exposição integral via anon/authenticated não é confirmada pelos privilégios efetivos observados.
 - Não ativar RLS cegamente: primeiro revisar todas as funções SECURITY DEFINER e chamadas internas que usam essas tabelas, proprietários e grants efetivos. O alerta permanece como item de revisão de defesa em profundidade, não como prova de exposição pública atual.
 - Alternativa de validação sem exportação local: continuar usando CI PostgreSQL descartável para fixtures e verificações isoladas; para replay incremental real das três migrations pendentes é necessária uma cópia descartável do schema compatível. Branch Supabase não será criado sem cotação de custo e autorização explícita; o usuário não dispõe de orçamento para recursos pagos.
+
+
+## Implementação de fundação — default ACL interno (2026-11-12)
+
+- Criada migration `20261112100000_harden_priv_default_privileges.sql`: revoga EXECUTE padrão de PUBLIC para funções futuras criadas por postgres; remove defaults de acesso de authenticated/anon para tabelas, sequences e funções futuras em `priv`; preserva defaults explícitos de service_role. A migration altera somente default ACL para objetos futuros; não revoga permissões de objetos existentes.
+- A inspeção remota read-only não encontrou entradas em `pg_default_acl` para `priv` nem defaults globais customizados. A migration é uma barreira preventiva para novas funções internas, não correção de uma concessão default atualmente registrada.
+- Atualizado `tests/sql/priv_default_acl_fixture.sql` para executar a migration real e verificar: pré-condições de defaults amplos, bloqueio de novos objetos para anon/authenticated, manutenção de service_role e não alteração de ACLs de objetos existentes.
+- Atualizado workflow PostgreSQL para executar em pushes nas branches `audit/**` e incluir alterações em migrations/verification, além de fixtures. Até o último fetch desta sessão, o conector GitHub não retornou workflow run/status para os commits, portanto o fixture ainda não está declarado aprovado. A execução real permanece pendente.
+- Commit da migration: `858f734575d6acff3e0183e41c257c9ff40992b4`.
+- Commit do fixture: `5a34feacda4c9f58094424a1a9e0ba09c9758bf4`.
+- Commit do workflow: `3384dcb498cb7b82debf04fafa5db5dfd90f92c3`.
+- Não aplicado no Supabase remoto; sem DDL/DML em produção, sem merge e sem deploy.
+- Próximo: confirmar execução do workflow e corrigir qualquer falha; então avançar para o próximo gate de segurança sem ampliar privilégios públicos.
