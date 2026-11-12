@@ -25,15 +25,15 @@ ALTER TABLE public.characters ADD COLUMN IF NOT EXISTS user_id uuid;
 DELETE FROM public.characters WHERE campaign_id=987654321;
 DELETE FROM public.members WHERE campaign_id=987654321;
 DELETE FROM public.campaigns WHERE id=987654321;
-INSERT INTO public.campaigns(id,name,owner_id,cba_data,combat_data)
-VALUES (987654321,'Fixture','00000000-0000-0000-0000-000000000001',
+INSERT INTO public.campaigns(id,name,owner_id,briefing,cba_data,combat_data)
+VALUES (987654321,'Fixture','00000000-0000-0000-0000-000000000001','GM-only briefing',
 '{"backgroundPath":"campaigns/987654321/map.png","fogEnabled":true,"gm_secret":"only-for-gm","tokens":[
  {"id":"pc-1","sourceCharacterId":"pc-1","nome":"Meu herói"},
  {"id":"enemy-hidden","nome":"Inimigo oculto","visivel":false},
  {"id":"npc-visible","nome":"Aliado visível","visivel":true,"internal_token_secret":"only-for-gm"}
 ]}',
 '{"active":true,"round":2,"current_turn":1,
- "turn_order":[{"id":"pc-1"},{"id":"enemy-hidden","secret":"hidden"},{"id":"npc-visible"}],
+ "turn_order":[{"id":"pc-1"},{"id":"enemy-hidden","secret":"hidden"},{"id":"npc-visible","nome":"Aliado visível","valor":12,"secret":"visible-actor-secret"}],
  "pending_reactions":[{"secret":"private"}],"action_economy":{"secret":"private"}}');
 INSERT INTO public.members VALUES
  (987654321,'00000000-0000-0000-0000-000000000001','GM'),
@@ -66,6 +66,8 @@ BEGIN
   IF NOT (s->'cba_data'->'tokens' @> '[{"id":"npc-visible"}]'::jsonb) THEN RAISE EXCEPTION 'visible token missing'; END IF;
   IF s->'cba_data' ? 'backgroundPath' THEN RAISE EXCEPTION 'full fogged map path leaked to player'; END IF;
   IF s->'cba_data' ? 'gm_secret' THEN RAISE EXCEPTION 'unknown GM-only scene metadata leaked'; END IF;
+  IF s->'campaign' ? 'briefing' THEN RAISE EXCEPTION 'GM-only campaign briefing leaked'; END IF;
+  IF (s->'combat_data'->'turn_order'->1) ? 'secret' THEN RAISE EXCEPTION 'unknown initiative metadata leaked'; END IF;
   IF (s->'cba_data'->'tokens'->1) ? 'internal_token_secret' THEN RAISE EXCEPTION 'unknown GM-only token metadata leaked'; END IF;
   IF s->'combat_data' ? 'pending_reactions' OR s->'combat_data' ? 'action_economy' THEN RAISE EXCEPTION 'private combat internals leaked'; END IF;
   IF s->'combat_data'->'turn_order' @> '[{"id":"enemy-hidden"}]'::jsonb THEN RAISE EXCEPTION 'hidden initiative actor leaked'; END IF;
