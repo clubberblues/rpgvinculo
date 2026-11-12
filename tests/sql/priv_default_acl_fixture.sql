@@ -45,6 +45,7 @@ $pre$;
 
 -- Apply the exact migration shipped to production.
 \\i supabase/migrations/20261112100000_harden_priv_default_privileges.sql
+\\i supabase/verification/verify_priv_default_acl.sql
 
 CREATE TABLE priv.after_table (id integer);
 CREATE SEQUENCE priv.after_seq;
