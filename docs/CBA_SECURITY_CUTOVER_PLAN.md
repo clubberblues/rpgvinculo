@@ -50,3 +50,7 @@ Consulta read-only ao Supabase em 2026-11-12 confirmou:
 - As definições instaladas de dezenas de RPCs leem e retornam uma ou ambas as colunas. A revisão por endpoint não está concluída.
 - Não foi feita mudança remota. A migration nova não foi aplicada.
 - O teste SQL da primitive não equivale a teste autenticado real do PostgREST/Realtime, nem a teste de fluxo no navegador.
+
+## Verificação versionada
+
+`supabase/verification/verify_role_filtered_tabletop_snapshot.sql` confirma presença/ACL do novo RPC e reporta explicitamente se SELECT direto das colunas privadas e publicação Realtime ainda permanecem ativos. É um verificador de transição; não declara corte concluído nem revoga acesso.
