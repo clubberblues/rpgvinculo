@@ -191,3 +191,10 @@ Novo contrato:
 - as quatro policies do bucket `mesa-media` passam a usar o helper novo. Bucket `midia` e seus assets públicos não são alterados.
 
 Fixture `tests/sql/private_cba_storage_access_fixture.sql` e verificação `supabase/verification/verify_private_cba_storage_access.sql` cobrem acesso de jogador/GM, isolamento entre campanhas, path traversal, visibilidade de retrato, bloqueio durante cleanup, RLS SELECT e remoção pelo GM durante cleanup. O fixture é sintético: não substitui Storage API hospedada nem prova que o lock é mantido pelo caminho final de autorização de `completeUpload`. Não aplicar remotamente até CI e teste integrado de upload/download/delete confirmarem o contrato.
+
+## Corte de mapa com fog habilitado — candidato 2026-11-12
+
+- A migration `20261112130000` agora nega ao jogador a leitura do arquivo de fundo integral quando `cba_data.fogEnabled=true`. O GM mantém acesso. O snapshot seguro `20261112140000` também omite `backgroundPath`, `background` e `backgroundUrl` nessa condição.
+- Isso é fail-closed, não é implementação completa de fog: sem tiles/crops/reveals persistidos, jogadores não recebem o mapa de fundo enquanto fog estiver ligado. A interface ainda precisa oferecer revelação e o backend precisa fornecer somente os recortes autorizados.
+- Fixture Storage foi ampliado para negar leitura de mapa integral com fog. Fixture do snapshot verifica que o caminho não aparece para jogador e continua disponível ao GM.
+- Criado `tests/integration/storage-cba-api.mjs` para exercitar a Storage HTTP API real com JWTs separados de GM, jogador e usuário externo em staging descartável. Não foi executado: faltam credenciais de teste/ambiente staging configurado. Não usar campanha de produção nem service-role key.
