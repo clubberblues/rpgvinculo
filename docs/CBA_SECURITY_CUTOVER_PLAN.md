@@ -54,3 +54,14 @@ Consulta read-only ao Supabase em 2026-11-12 confirmou:
 ## Verificação versionada
 
 `supabase/verification/verify_role_filtered_tabletop_snapshot.sql` confirma presença/ACL do novo RPC e reporta explicitamente se SELECT direto das colunas privadas e publicação Realtime ainda permanecem ativos. É um verificador de transição; não declara corte concluído nem revoga acesso.
+
+## Implementação incremental do cutover — 2026-11-12
+
+- `mesa.html` agora inicializa e atualiza o estado por `obter_snapshot_seguro_mesa`; os 10 refreshes que antes liam `cba_data/combat_data` diretamente foram substituídos. A leitura inicial `select('*')` também foi removida.
+- Os três leitores de `campaigns.cba_data` em `ficha.html` (descanso, Fúria e equipamento de NPC vinculado) agora usam o snapshot filtrado.
+- A subscription `postgres_changes` da linha de `campaigns` foi removida de `mesa.html`. A mesa agora escuta o canal privado `campaign:{id}` e, ao receber o evento, busca um snapshot filtrado; não recebe row payload.
+- Migration candidata `20261112150000_broadcast_campaign_refresh.sql` instala trigger que envia somente `{campaign_id}` via `realtime.send(..., private=true)` e policy de leitura em `realtime.messages` para owner/membros. A fixture `tests/sql/campaign_refresh_broadcast_fixture.sql` verifica payload mínimo e negação para externo.
+- A auditoria estática atual encontrou zero consultas diretas a `campaigns.* / cba_data / combat_data` e zero subscriptions da tabela `campaigns` nos três arquivos `mesa.html`, `ficha.html` e `lobby.html`.
+- A publicação `supabase_realtime` ainda contém `campaigns`; não removê-la até revisar todos os outros consumidores/arquivos e confirmar a configuração de private channels no Dashboard (Allow public access desativado).
+- **Bloqueio remanescente:** vários RPCs de mutação ainda retornam `cba_data` ou `combat_data` diretamente. A resposta HTTP desses RPCs pode expor tokens ocultos mesmo que o cliente depois faça refresh seguro. É necessário revisar e corrigir cada endpoint antes de revogar SELECT de coluna.
+- O helper de snapshot e a migration de Broadcast ainda são candidatas não aplicadas. Nenhum corte de ACL foi feito.
