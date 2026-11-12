@@ -1248,3 +1248,12 @@ O script salva o snapshot schema-only fora do repo, sem enviar dados ou segredos
 - O contrato de fog foi endurecido de forma fail-closed para cenas com `fogEnabled=true`: o snapshot de jogador não retorna caminho/URL do mapa integral e a policy Storage candidata nega leitura do mapa completo; GM continua com acesso. `mesa.html` agora preserva `fogEnabled` ao normalizar/serializar a cena. Ainda não há sistema de tiles/crops/reveals nem controle visual para o Mestre; portanto fog funcional completo continua pendente.
 - Criado `tests/integration/storage-cba-api.mjs` e instruções em `tests/integration/README.md` para testar a Storage HTTP API real com JWTs separados em staging, incluindo signed URL + download, upload GM, bloqueio de upsert/delete do jogador e usuário externo. Não executado por ausência de credenciais/ambiente staging; nenhuma credencial foi adicionada ao repo.
 - A fixture de snapshot teve duas falhas CI corrigidas durante a execução: bloco DO dollar-quoted e colisão com tabela `campaigns` criada por fixture anterior; também foi corrigido truncamento da cláusula de validação de rodada na migration. A validação do HEAD após essas correções está em andamento; não registrar como aprovada até o job concluir.
+
+## Validação confirmada — 2026-11-12
+
+- CI run PostgreSQL fixtures `43199374127`: **success** no commit `b700f0b2`. Incluiu fixture do snapshot por papel, fixture Storage com negação de mapa integral quando fog está habilitado, e os fixtures anteriores de ACL/criação de personagem/locks. O teste de sintaxe do harness Storage HTTP também passou.
+- No mesmo snapshot, validação estática, JavaScript da mesa e JavaScript da aplicação: **success**.
+- Replay completo do Supabase continua **failure** no run `43199375599`, antes da primeira migration: `20261031160944_srd35_action_economy.sql` falha com `relation public.campaigns does not exist (SQLSTATE 42P01)`. O bootstrap pré-ledger continua faltando; não foi criado um baseline inventado.
+- O harness Storage API real existe e sua sintaxe passou, mas o teste HTTP ainda não foi executado porque não há JWTs de staging nem campanha descartável configurada.
+- A migration de snapshot passou fixture PostgreSQL isolada, mas permanece sem integração com `mesa.html`; os 11 leitores diretos, o Realtime de `campaigns` e as respostas integrais de RPC ainda impedem o corte de privilégios.
+- Nenhuma migration foi aplicada ao Supabase ativo, nenhum dado remoto foi alterado, e não houve merge/deploy. Fundação continua NÃO concluída.
