@@ -188,3 +188,10 @@ Esses resultados são positivos para os dados atuais, mas a amostra é pequena e
 ### Helper de salvamento com EXECUTE herdado de PUBLIC
 
 O catálogo confirma que `priv.srd_feat_saving_throw_modifier(jsonb,text)` ainda concede EXECUTE a `PUBLIC`, além de authenticated/service_role; por isso `has_function_privilege('anon',...) = true`. Anon não tem USAGE no schema `priv`, então a chamada direta não está demonstrada via REST no estado atual. A branch contém a migration candidata `20261110160000_revoke_public_feat_saving_throw_helper.sql`, que revoga PUBLIC/anon e mantém authenticated/service_role, mas ela não foi aplicada remotamente e o replay local não consegue iniciar por falta do schema-base. A migration deve ser validada e aplicada via fluxo normal após resolver o baseline; não confundir com correção do default ACL de `priv`, que continua pendente.
+
+
+### Criação direta de personagem legado ainda permitida por RLS
+
+A policy `characters_create_unassigned` permite INSERT direto para authenticated quando `user_id=auth.uid()` e `campaign_id IS NULL`. Os grants de coluna incluem `xp` e `ouro`, então a rota legada `window.criarFicha` (não-SRD) pode inserir esses valores diretamente. O modo D&D 3.5 atual, iniciado pelo lobby com `ruleset=dnd35`, usa `finalizar_criacao_personagem_srd`; porém `ficha.html` ainda mantém o fluxo legado acessível por URL sem o parâmetro SRD, e `lobby_atualizado.html` continua no repositório sem link a partir do index atual.
+
+Isso permite criar registros base incompletos sem ficha SRD e, no caminho legado, definir XP/ouro iniciais no INSERT. Não foi encontrado um caminho ativo do lobby atual que use essa rota. Para a fundação D&D 3.5, a recomendação é aposentar/arquivar o fluxo legado e restringir INSERT direto em `characters` ao mínimo necessário; a criação SRD deve permanecer exclusivamente no RPC atômico que define XP/ouro em zero e cria a ficha completa. Não remover nem migrar dados Vínculo sem plano de compatibilidade.
