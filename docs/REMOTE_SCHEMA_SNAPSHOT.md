@@ -7308,3 +7308,15 @@ As 16 sequences encontradas estão em `public`, todas pertencem a `postgres`, us
 ## Observação para reconstrução de baseline
 
 Este snapshot contém metadados descritivos do schema remoto e não contém linhas de dados. Não é um dump de restauração. A inspeção de SQLs legados confirma que os arquivos `srd35_schema_reconciliation.sql`, `cba_iniciativa_migration.sql`, `srd35_rule_engine_foundation_migration.sql` e `vtt_dnd35_final_migration.sql` dependem de tabelas centrais pré-existentes; nenhum deles é bootstrap inicial de `public.campaigns`, `public.characters` e `public.members`. Use este documento somente para comparação, nunca como script de bootstrap automático.
+
+
+## Revisão de privilégios, RLS e Storage — 2026-11-11
+
+- 83 tabelas-base em `public`, `priv` e `private`; 81 com RLS habilitado e duas sem RLS (`priv.throttle`, `priv.srd_aoo_reaction_ledger`). As duas sem RLS não concedem DML direto a anon/authenticated no ACL atual.
+- 114 políticas RLS; sete tabelas têm RLS sem política. Nenhuma dessas sete concede privilégios diretos a anon/authenticated no ACL atual, portanto o acesso direto permanece negado.
+- `priv` não concede USAGE a anon, mas concede a authenticated. Default privileges de `postgres` em `priv` concedem automaticamente todos os privilégios em novas tabelas, sequences e EXECUTE em novas funções a authenticated e service_role. Isso precisa de migration de endurecimento, não aplicada.
+- 150 funções SECURITY DEFINER públicas; 99 executáveis por authenticated, zero executáveis por anon. Todas têm search_path fixo incluindo pg_temp. O Security Advisor também identifica 39 funções SECURITY DEFINER em `priv` com EXECUTE authenticated e uma helper com EXECUTE anon, embora anon não tenha USAGE em `priv`.
+- Auth leaked-password protection desabilitada no Advisor; a configuração não pôde ser consultada/alterada pelas ferramentas disponíveis.
+- Storage: `midia` público com 135 objetos; `mesa-media` privado com zero objetos. A política de leitura do bucket `midia` é pública. Há 33 objetos `campaigns/` sem metadados em `public.media`; classificar antes de migrar ou alterar a visibilidade. Uma campanha atual referencia uma capa pública.
+- Security Advisor: 99 SECURITY DEFINER warnings, 7 RLS sem política e 1 aviso de proteção de senha; Performance Advisor: 51 índices não utilizados; Health Advisor: nenhum aviso.
+- Ver `docs/FOUNDATION_SECURITY_REVIEW.md` para detalhes e plano de aceite. Nenhuma alteração remota.
