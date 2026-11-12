@@ -101,7 +101,11 @@ BEGIN
     p_campaign_id,p_character_id,p_token_id,p_d20,p_bonus_ataque,p_dano,
     p_weapon_id,p_attack_type,p_power_penalty
   );
-  RETURN priv.cba_filter_rpc_result(v_result,p_campaign_id);
+  -- This legacy RPC returns combat_data as the top-level JSON object rather
+  -- than under a "combat_data" key; wrap it for filtering, then unwrap it.
+  RETURN priv.cba_filter_rpc_result(
+    jsonb_build_object('combat_data',v_result),p_campaign_id
+  )->'combat_data';
 END
 $wrapper$;
 
