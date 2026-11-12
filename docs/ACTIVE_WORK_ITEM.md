@@ -1005,3 +1005,10 @@ A revisão read-only avançou para privilégios, RLS, funções privilegiadas, A
 - A publicação `supabase_realtime` inclui as nove tabelas usadas pelas assinaturas de `mesa.html`: campanha, chat, personagens, membros, fichas SRD, equipamentos, equipamento de token, condições e efeitos. Configuração e call sites estão alinhados estaticamente.
 - A entrega efetiva, isolamento RLS, filtros, reconexão e concorrência ainda não foram testados com sessões GM/jogador simultâneas. Tabelas legadas `tokens` e `vinculo_character_sheets` continuam na publicação; não remover sem confirmar clientes antigos.
 - Detalhes em `docs/FOUNDATION_SECURITY_REVIEW.md`. Nenhuma configuração remota foi alterada.
+
+
+### Integridade relacional — 2026-11-11
+
+- Catálogo: 110 foreign keys, todas validadas; nenhum índice inválido/inapto ou constraint não validada.
+- Três FKs sem índice no lado filho: `priv.srd_pending_spell_resolutions.condition_break_instance_id`, `priv.srd_pending_spell_resolutions.condition_id` e `public.srd_npc_attack_sequences.campaign_id`. Tabelas estavam vazias/volume baixo; avaliar com planos de consulta e os 51 índices não utilizados antes de criar índices.
+- Sem alterações remotas. Detalhes em `docs/FOUNDATION_SECURITY_REVIEW.md`.
