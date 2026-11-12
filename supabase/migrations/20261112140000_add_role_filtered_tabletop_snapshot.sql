@@ -128,7 +128,37 @@ BEGIN
      WHERE e.key = ANY(v_owned_ids);
 
     v_player_action_economy := jsonb_build_object(
-      'round', greatest(1, CASE WHEN coalesce(v_combat->'round'->>'', '') ~ '^[0-9]+
+      'round', CASE
+        WHEN coalesce(v_combat->>'round','') ~ '^[0-9]{1,6}$'
+        THEN greatest(1,(v_combat->>'round')::integer)
+        ELSE 1
+      END,
+      'by_character', v_player_actions
+    );
+
+    IF v_combat->'movement_usage'->>'character_id' = ANY(v_owned_ids) THEN
+      v_player_movement := jsonb_build_object(
+        'character_id', v_combat->'movement_usage'->'character_id',
+        'round', v_combat->'movement_usage'->'round',
+        'current_turn', v_combat->'movement_usage'->'current_turn',
+        'moved_squares', CASE
+          WHEN coalesce(v_combat->'movement_usage'->>'moved_squares','') ~ '^[0-9]{1,5}$'
+          THEN (v_combat->'movement_usage'->>'moved_squares')::integer
+          ELSE 0
+        END
+      );
+    END IF;
+
+    SELECT coalesce(jsonb_agg(to_jsonb(e.value)), '[]'::jsonb)
+      INTO v_expected_ids
+      FROM jsonb_array_elements_text(
+        CASE WHEN jsonb_typeof(v_combat->'expected_character_ids') = 'array'
+             THEN v_combat->'expected_character_ids' ELSE '[]'::jsonb END
+      ) AS e(value)
+     WHERE e.value = ANY(v_owned_ids);
+
+    v_scene := jsonb_build_object(
+      'version', coalesce(v_scene->'version', '1'::jsonb),
       'background', coalesce(v_scene->'background','""'::jsonb),
       'backgroundPath', coalesce(v_scene->'backgroundPath','""'::jsonb),
       'fogEnabled', lower(coalesce(v_scene->>'fogEnabled','false')) = 'true',
