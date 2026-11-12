@@ -98,7 +98,9 @@ BEGIN
   END IF;
 
   IF v_cba_data->>'backgroundPath' = p_name THEN
-    RETURN true;
+    -- A full-resolution background bypasses fog. Until per-player revealed
+    -- tiles/crops exist, deny player access whenever fog is enabled.
+    RETURN lower(coalesce(v_cba_data->>'fogEnabled','false')) <> 'true';
   END IF;
 
   RETURN EXISTS (
