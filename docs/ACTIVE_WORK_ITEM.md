@@ -991,3 +991,10 @@ A revisão read-only avançou para privilégios, RLS, funções privilegiadas, A
 **Segurança:** 2 tabelas `priv` sem RLS não concedem DML direto a anon/authenticated no ACL atual; 7 tabelas têm RLS sem políticas e também sem grants diretos a esses roles. O Security Advisor reporta 99 funções SECURITY DEFINER públicas executáveis por authenticated, zero por anon; todas as 150 funções SECURITY DEFINER públicas têm search_path fixo. Há 39 funções SECURITY DEFINER em `priv` com EXECUTE authenticated e uma helper com EXECUTE anon, mas anon não tem USAGE em `priv`. Proteção de senha comprometida está desabilitada. Não revogar endpoints em massa.
 
 **Bloqueios da fundação permanecem:** bootstrap histórico ausente para replay limpo; configuração de schemas expostos não confirmada no Dashboard; endurecimento de default ACL em `priv`; classificação dos ativos públicos; revisão Auth; testes autenticados GM/jogador/não membro; testes concorrentes; validação ponta a ponta. O ambiente atual não tem Supabase CLI nem checkout local, portanto não foi gerada migration por caminho oficial nesta sessão. Nenhuma alteração de produção, migration remota, arquivo Storage ou deploy foi feita.
+
+
+### Revisão RLS das tabelas centrais — 2026-11-11
+
+- Policies centrais de campaigns/members/characters/fichas/equipamentos foram verificadas por leitura do catálogo. Updates diretos ativos de retrato/transformação/header ficam restritos ao dono; capa da campanha ao GM. Fichas/equipamentos são consultados diretamente e campos mecânicos são majoritariamente alterados por RPC.
+- Exceção: `public.tokens` permite INSERT/UPDATE/DELETE por qualquer membro da campanha. Tabela está vazia e sem call site direto nas páginas principais; a mesa atual usa `campaigns.cba_data`. Manter como dívida de legado e endurecer antes de reativar.
+- Detalhes em `docs/FOUNDATION_SECURITY_REVIEW.md`; nenhuma policy ou dado foi alterado.
