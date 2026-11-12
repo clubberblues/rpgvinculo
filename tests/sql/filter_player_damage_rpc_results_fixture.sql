@@ -60,6 +60,7 @@ AS $ SELECT jsonb_build_object('committed',true,'movement_result',jsonb_build_ob
 )) $;
 
 \ir ../../supabase/migrations/20261112160000_filter_player_damage_rpc_results.sql
+\ir ../../supabase/verification/verify_cba_rpc_response_isolation.sql
 
 SET ROLE authenticated;
 SET request.jwt.claim.sub='00000000-0000-0000-0000-000000000002';
