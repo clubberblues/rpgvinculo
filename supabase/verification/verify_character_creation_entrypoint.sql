@@ -17,6 +17,15 @@ BEGIN
   IF NOT (SELECT prosecdef FROM pg_proc WHERE oid=v_final) THEN
     RAISE EXCEPTION 'Validated finalizer must execute as SECURITY DEFINER.';
   END IF;
+  IF (SELECT pg_get_userbyid(proowner) FROM pg_proc WHERE oid=v_final) <> 'postgres' THEN
+    RAISE EXCEPTION 'Validated finalizer must be owned by postgres.';
+  END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_proc p, unnest(COALESCE(p.proconfig, ARRAY[]::text[])) cfg
+    WHERE p.oid=v_final AND cfg='search_path=public, pg_temp'
+  ) THEN
+    RAISE EXCEPTION 'Validated finalizer must pin search_path to public, pg_temp.';
+  END IF;
   IF NOT has_function_privilege('authenticated',v_final,'EXECUTE')
      OR has_function_privilege('anon',v_final,'EXECUTE') THEN
     RAISE EXCEPTION 'Validated finalizer has incorrect client grants.';
