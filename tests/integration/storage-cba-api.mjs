@@ -46,6 +46,15 @@ function expectDenied(result, label) {
 function expectAllowed(result, label) {
   assert.ok(result.response.ok, `${label}: expected success, got HTTP ${result.response.status}: ${JSON.stringify(result.data)}`);
 }
+async function expectSignedReadable(jwt, objectPath, label) {
+  const result = await sign(jwt, objectPath);
+  expectAllowed(result, label + " signed URL");
+  const signed = result.data?.signedURL || result.data?.signedUrl;
+  assert.ok(signed, `${label}: signed URL missing from response`);
+  const absolute = signed.startsWith("http") ? signed : base + (signed.startsWith("/") ? signed : "/" + signed);
+  const download = await fetch(absolute);
+  assert.equal(download.status, 200, `${label}: signed URL download failed with HTTP ${download.status}`);
+}
 
 // Read the GM's current scene to select real published assets; this test must
 // run only against a disposable/staging campaign after the candidate policies
@@ -65,9 +74,9 @@ const hiddenPortrait = (scene.tokens || []).find(t => t && t.visivel !== true &&
 if (mapPath) {
   const mapResult = await sign(player, mapPath);
   if (scene.fogEnabled === true) expectDenied(mapResult, "player signed URL for full map while fog enabled");
-  else expectAllowed(mapResult, "player signed URL for active map");
+  else await expectSignedReadable(player, mapPath, "player active map");
 }
-if (visiblePortrait) expectAllowed(await sign(player, visiblePortrait), "player signed URL for visible portrait");
+if (visiblePortrait) await expectSignedReadable(player, visiblePortrait, "player visible portrait");
 if (hiddenPortrait) expectDenied(await sign(player, hiddenPortrait), "player signed URL for hidden portrait");
 if (mapPath) expectDenied(await sign(external, mapPath), "external signed URL");
 
@@ -90,8 +99,7 @@ try {
     method: "DELETE", headers: headers(player)
   });
   expectDenied({ response: deniedDelete }, "player delete");
-  const gmSigned = await sign(gm, objectPath);
-  expectAllowed(gmSigned, "GM signed URL for uploaded object");
+  await expectSignedReadable(gm, objectPath, "GM uploaded object");
 } finally {
   const removed = await fetch(url(`${bucket}/${path(objectPath)}`), {
     method: "DELETE", headers: headers(gm)
