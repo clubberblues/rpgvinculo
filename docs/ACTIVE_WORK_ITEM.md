@@ -1153,3 +1153,10 @@ A revisão read-only avançou para privilégios, RLS, funções privilegiadas, A
 - Não fazer DDL/DML remoto antes de existir cópia recuperável. Foi criado `scripts/export-current-schema.ps1` para gerar snapshot schema-only do banco atual fora do repositório, usando o link local e Docker Desktop. O dump exclui Auth/Storage/extension schemas e não é bootstrap pré-ledger nem backup completo.
 - Ainda será necessário exportar dados/Auth e objetos Storage separadamente, verificar hashes e testar restauração. Nenhum backup foi gerado nesta sessão porque o ambiente não tem acesso ao CLI/Docker/local do usuário.
 - Documentação e instruções em `docs/FOUNDATION_SECURITY_REVIEW.md`.
+
+
+### CBA e visibilidade — dados completos expostos a membros (2026-11-11)
+
+- RLS `campaigns_member_read` permite SELECT da linha completa para qualquer membro; grants permitem ler `cba_data` e `combat_data`. `mesa.html` lê `select('*')` e faz refresh direto de `cba_data`. Assim, cada jogador recebe o JSON completo de tokens/posições; não existe estado de token oculto nem fog por jogador no CBA atual.
+- Fog overlay no navegador não protege posições ou áreas secretas: o JSON e o mapa completo podem ser inspecionados/baixados. Antes de implementar fog, separar estado GM-privado e snapshot de jogador filtrado por RPC/view, e entregar tiles/crops revelados; ou declarar explicitamente fog apenas visual. Isso se conecta ao bloqueio do Storage privado.
+- Detalhes em `docs/FOUNDATION_SECURITY_REVIEW.md`.
