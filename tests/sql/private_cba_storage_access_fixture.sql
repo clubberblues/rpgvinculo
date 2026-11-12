@@ -100,9 +100,24 @@ END
 $player$;
 RESET ROLE;
 
--- GM can read all campaign assets and upload.
+-- Legacy members.role='GM' does not grant owner-only campaign controls.
 SET ROLE authenticated;
 SET request.jwt.claim.sub='44444444-4444-4444-4444-444444444444';
+DO $legacy_gm$
+BEGIN
+  IF priv.cba_media_campaign_access('campaigns/41/tokens/hidden.png',false) THEN
+    RAISE EXCEPTION 'Legacy GM member could read hidden token assets.';
+  END IF;
+  IF priv.cba_media_campaign_access('campaigns/41/cba-map.png',true,false) THEN
+    RAISE EXCEPTION 'Legacy GM member could upload owner-only CBA assets.';
+  END IF;
+END
+$legacy_gm$;
+RESET ROLE;
+
+-- Campaign owner (the active GM contract) can read all assets and upload.
+SET ROLE authenticated;
+SET request.jwt.claim.sub='11111111-1111-1111-1111-111111111111';
 DO $gm$
 BEGIN
   IF NOT priv.cba_media_campaign_access('campaigns/41/tokens/hidden.png',false)
@@ -146,7 +161,7 @@ $cleanup_owner$;
 RESET ROLE;
 
 SET ROLE authenticated;
-SET request.jwt.claim.sub='44444444-4444-4444-4444-444444444444';
+SET request.jwt.claim.sub='11111111-1111-1111-1111-111111111111';
 DELETE FROM storage.objects WHERE name='campaigns/41/tokens/hidden.png';
 RESET ROLE;
 DO $deleted$
