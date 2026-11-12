@@ -1,6 +1,6 @@
 # Contrato de acesso ao Storage do CBA
 
-Status: **proposta de implementação; não aplicada ao Supabase de produção**.
+Status: **migration candidata implementada em `20261112130000`; não aplicada ao Supabase de produção e ainda pendente de CI + teste Storage API real**.
 
 ## Estado confirmado no snapshot
 
@@ -176,3 +176,18 @@ A Edge Function precisa ser idempotente: pode ser repetida depois de timeout, pa
 O código upstream atual do Storage mostra duas fases: `prepareUpload/canUpload` faz uma checagem antecipada de permissão; depois o backend grava os bytes; `completeUpload` faz a autorização do chamador novamente dentro da transação que grava metadados, e o caminho de erro tenta remover o objeto físico. Assim, um `FOR KEY SHARE` obtido apenas na checagem antecipada não seria suficiente (essa checagem é separada). A garantia proposta depende de o helper de policy adquirir o lock durante a autorização final de `completeUpload`, mantendo-o até o commit dos metadados. Se a finalização vencer a corrida, a autorização final deve falhar e o Storage API deve limpar os bytes; se o commit dos metadados vencer, a finalização espera e encontra a linha para remoção. Isso deve ser provado com a versão hospedada do Storage e testes de concorrência reais — a leitura do código upstream `master` não substitui confirmar a versão efetivamente executada no projeto.
 
 Referências oficiais/técnicas: [Storage Schema](https://supabase.com/docs/guides/storage/schema/design) (metadados separados dos bytes e proibição de modificar `storage.objects` diretamente); [Supabase Storage uploader.ts](https://github.com/supabase/storage/blob/master/src/storage/uploader.ts) (checagem antecipada, gravação no backend, autorização final e compensação no caminho de erro); [Storage Access Control](https://supabase.com/docs/guides/storage/security/access-control).
+
+
+## Implementação candidata — 2026-11-12
+
+A migration `supabase/migrations/20261112130000_fix_private_cba_storage_access.sql` substitui o helper que interpretava o primeiro segmento como ID numérico e, por isso, rejeitava `campaigns/{id}/...`.
+
+Novo contrato:
+- valida path ancorado `campaigns/{id}/...`, rejeita segmentos vazios, `.`, `..`, barras invertidas e IDs fora do bigint;
+- lê o dono diretamente de `campaigns.owner_id`, aceita dono e GM para operações administrativas;
+- permite ao jogador ler somente o `backgroundPath` ativo e retratos cujo token tenha `visivel: true` no JSONB da campanha; como o snapshot atual de tokens não possui campo de visibilidade, retratos não marcados permanecem GM-only;
+- bloqueia leitura e novos uploads durante `campaign_deletion_cleanup`, mas preserva DELETE para owner/GM durante a limpeza;
+- o helper é VOLATILE SECURITY DEFINER, com search_path fixo, e usa `FOR KEY SHARE` na linha da campanha para operações de escrita/remoção, coordenando com o lock FOR UPDATE do fluxo de exclusão;
+- as quatro policies do bucket `mesa-media` passam a usar o helper novo. Bucket `midia` e seus assets públicos não são alterados.
+
+Fixture `tests/sql/private_cba_storage_access_fixture.sql` e verificação `supabase/verification/verify_private_cba_storage_access.sql` cobrem acesso de jogador/GM, isolamento entre campanhas, path traversal, visibilidade de retrato, bloqueio durante cleanup, RLS SELECT e remoção pelo GM durante cleanup. O fixture é sintético: não substitui Storage API hospedada nem prova que o lock é mantido pelo caminho final de autorização de `completeUpload`. Não aplicar remotamente até CI e teste integrado de upload/download/delete confirmarem o contrato.
