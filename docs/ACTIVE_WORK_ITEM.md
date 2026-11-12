@@ -1160,3 +1160,14 @@ A revisão read-only avançou para privilégios, RLS, funções privilegiadas, A
 - RLS `campaigns_member_read` permite SELECT da linha completa para qualquer membro; grants permitem ler `cba_data` e `combat_data`. `mesa.html` lê `select('*')` e faz refresh direto de `cba_data`. Assim, cada jogador recebe o JSON completo de tokens/posições; não existe estado de token oculto nem fog por jogador no CBA atual.
 - Fog overlay no navegador não protege posições ou áreas secretas: o JSON e o mapa completo podem ser inspecionados/baixados. Antes de implementar fog, separar estado GM-privado e snapshot de jogador filtrado por RPC/view, e entregar tiles/crops revelados; ou declarar explicitamente fog apenas visual. Isso se conecta ao bloqueio do Storage privado.
 - Detalhes em `docs/FOUNDATION_SECURITY_REVIEW.md`.
+
+
+### Próxima ação externa mínima para desbloquear validação local
+
+Quando houver acesso ao PC que contém o checkout linkado, executar uma única vez no diretório do repositório:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\export-current-schema.ps1
+```
+
+O script salva o snapshot schema-only fora do repo, sem enviar dados ou segredos. Esse arquivo é necessário para preparar um ambiente local no estado atual e testar as migrations candidatas; não substitui backup completo nem reconstrói o schema pré-ledger. Antes de qualquer mudança de produção, ainda será necessário backup recuperável de dados/Auth e Storage.
