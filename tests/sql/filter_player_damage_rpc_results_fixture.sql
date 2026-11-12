@@ -35,6 +35,16 @@ VALUES(987654323,'RPC result fixture','00000000-0000-0000-0000-000000000001','CO
 INSERT INTO public.members VALUES(987654323,'00000000-0000-0000-0000-000000000002','PLAYER');
 INSERT INTO public.characters(id,campaign_id,user_id) VALUES('pc-1',987654323,'00000000-0000-0000-0000-000000000002');
 
+CREATE OR REPLACE FUNCTION public.alterar_pv_token_cba(p_campaign_id bigint,p_token_id text,p_variacao integer,p_pv_max integer)
+RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,pg_temp
+AS $ SELECT jsonb_build_object('cba_data',(SELECT cba_data FROM public.campaigns WHERE id=p_campaign_id),'combat_data',(SELECT combat_data FROM public.campaigns WHERE id=p_campaign_id),'ok',true) $;
+CREATE OR REPLACE FUNCTION public.equipar_item_token_srd(p_campaign_id bigint,p_token_id text,p_equipment_id text,p_equipado boolean)
+RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,pg_temp
+AS $ SELECT jsonb_build_object('cba_data',(SELECT cba_data FROM public.campaigns WHERE id=p_campaign_id),'combat_data',(SELECT combat_data FROM public.campaigns WHERE id=p_campaign_id),'ok',true) $;
+CREATE OR REPLACE FUNCTION public.srd_configurar_perfil_combate_token_srd(p_campaign_id bigint,p_token_id text,p_combat_faction text,p_melee_reach_ft integer)
+RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,pg_temp
+AS $ SELECT jsonb_build_object('cba_data',(SELECT cba_data FROM public.campaigns WHERE id=p_campaign_id),'combat_data',(SELECT combat_data FROM public.campaigns WHERE id=p_campaign_id),'ok',true) $;
+
 \ir ../../supabase/migrations/20261112160000_filter_player_damage_rpc_results.sql
 
 SET ROLE authenticated;
@@ -48,6 +58,12 @@ BEGIN
   IF NOT (r->'cba_data'->'tokens' @> '[{"id":"visible"}]'::jsonb) THEN RAISE EXCEPTION 'Player result lost visible token.'; END IF;
   IF r->'combat_data' ? 'pending_reactions' THEN RAISE EXCEPTION 'Player received private combat internals through RPC result.'; END IF;
   IF r->>'damage'<>'4' THEN RAISE EXCEPTION 'RPC business result fields were not preserved.'; END IF;
+  r:=public.alterar_pv_token_cba(987654323,'hidden',1,10);
+  IF r->'cba_data'->'tokens' @> '[{"id":"hidden"}]'::jsonb THEN RAISE EXCEPTION 'PV RPC leaked hidden token.'; END IF;
+  r:=public.equipar_item_token_srd(987654323,'hidden','sword',true);
+  IF r->'cba_data'->'tokens' @> '[{"id":"hidden"}]'::jsonb THEN RAISE EXCEPTION 'Equipment RPC leaked hidden token.'; END IF;
+  r:=public.srd_configurar_perfil_combate_token_srd(987654323,'hidden','hostile',5);
+  IF r->'cba_data'->'tokens' @> '[{"id":"hidden"}]'::jsonb THEN RAISE EXCEPTION 'Combat profile RPC leaked hidden token.'; END IF;
 END
 $player$;
 RESET ROLE;
