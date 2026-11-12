@@ -116,7 +116,7 @@ Na revisão lexical das 99 funções `SECURITY DEFINER` públicas executáveis p
 
 ### Rascunho corrigido de endurecimento dos privilégios padrão (não aplicado)
 
-A primeira fixture isolada falhou de forma útil: revogar EXECUTE de authenticated somente no default ACL do schema `priv` **não remove** EXECUTE herdado de `PUBLIC` no PostgreSQL. Como o catálogo remoto confirma EXECUTE de PUBLIC em `priv.srd_feat_saving_throw_modifier`, o default global de funções está ativo. Portanto, o endurecimento de funções precisa incluir a revogação global para objetos futuros, além dos revokes específicos do schema interno:
+A primeira fixture isolada falhou de forma útil: revogar EXECUTE de authenticated somente no default ACL do schema `priv` **não remove** EXECUTE herdado de `PUBLIC` no PostgreSQL. Como o catálogo remoto confirma EXECUTE de PUBLIC em `priv.srd_feat_saving_throw_modifier`, o default global de funções está ativo. A segunda execução da fixture corrigida passou no CI (`43136928379`), provando a revogação global para funções futuras, os revokes específicos de tabelas/sequences/funções internas, a preservação de `service_role` e a manutenção dos grants de funções já existentes. Portanto, o endurecimento de funções precisa incluir a revogação global para objetos futuros, além dos revokes específicos do schema interno:
 
 ```sql
 -- Afeta somente funções criadas futuramente pelo owner postgres em todos os schemas.
