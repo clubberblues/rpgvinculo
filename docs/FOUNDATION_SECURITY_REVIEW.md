@@ -137,3 +137,12 @@ No bucket `midia`, `file_size_limit` e `allowed_mime_types` estão nulos. Os 135
 O bucket privado `mesa-media` define limite de 50 MiB e allowlist que inclui imagens, vídeo e áudio; os fluxos de upload encontrados na mesa aceitam apenas imagens e limitam a imagem do token a 20 MiB. O bucket estava vazio. Rever se vídeo/áudio são realmente necessários; se não, restringir MIME e tamanho ao uso real.
 
 Plano recomendado: definir limite de tamanho compatível com capas/retratos (avaliar 20 MiB, pois o maior objeto atual tem 15,76 MiB), aceitar somente formatos raster realmente usados, validar também no cliente para UX e preservar leitura dos arquivos existentes. Não aplicar limite antes de confirmar se há mapas/arquivos maiores fora do bucket público.
+
+
+## RPC legada de criação ainda executável
+
+O fluxo atual de criação D&D 3.5 em `ficha.html` chama `public.finalizar_criacao_personagem_srd` (SECURITY INVOKER, exige `auth.uid()`), que chama a sobrecarga de sete argumentos `public.criar_personagem_srd_completo(..., p_identidade)`. Essa implementação valida identidade, idade/altura/peso racial, tendência e restrições de classe, além de gravar os dados complementares na mesma transação.
+
+Entretanto, a sobrecarga antiga de seis argumentos `public.criar_personagem_srd_completo(p_nome,p_raca_id,p_classe_id,p_atributos,p_pericias,p_talentos)` continua com EXECUTE para authenticated e SECURITY DEFINER. Ela não recebe nem valida identidade/tendência/idade e chama o construtor básico, deixando de aplicar as validações e escolhas específicas da versão atual. Não foi encontrado call site dessa sobrecarga nos arquivos ativos `ficha.html`, `lobby.html` ou `mesa.html`. Assim, um usuário autenticado pode invocá-la diretamente como caminho alternativo de criação menos rigoroso.
+
+Correção recomendada: revogar EXECUTE de authenticated nessa assinatura antiga (ou removê-la após verificar clientes antigos), mantendo somente o wrapper atual e a sobrecarga de sete argumentos. Fazer por migration versionada, testar o fluxo atual de criação e uma chamada negativa à assinatura antiga. Não foi alterada remotamente.
