@@ -2691,9 +2691,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
             });
             if(applied.error)throw new Error(applied.error.message);
             var data=applied.data||{};
-            var fresh=await sb.from('campaigns').select('cba_data').eq('id',Number(MESA_ID)).single();
-            if(fresh.error)console.warn('Dano foi confirmado, mas a cena não pôde ser recarregada:',fresh.error.message);
-            else{campanha.cba_data=fresh.data.cba_data;aplicarCBAnaMesa(fresh.data.cba_data,false);}
+            try{await atualizarSnapshotSeguroMesa();}catch(refreshError){console.warn('Dano confirmado; snapshot seguro indisponível:',refreshError);}
             await enviarMensagemChat('💥 Ataque Total retomado · '+savedWeapon.nome+' contra '+target.nome+': '+Number(data.damage_applied||0)+' de dano aplicado.','rolagem',{
               evento:'dano_ataque_iterativo_aplicado',sequence_id:saved.sequence_id,attempt_id:attemptId,atacante:String(own.ch.id),alvo:String(target.id),
               rolagens_dano:damageRolls,rolagens_furtivas:sneakRolls,dano_aplicado:Number(data.damage_applied||0),retomado:true
