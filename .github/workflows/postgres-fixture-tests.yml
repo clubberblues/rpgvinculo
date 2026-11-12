@@ -2,9 +2,11 @@ name: PostgreSQL fixture tests
 
 on:
   push:
-    branches: [main]
+    branches: [main, "audit/**"]
     paths:
       - "tests/sql/**"
+      - "supabase/migrations/**"
+      - "supabase/verification/**"
       - ".github/workflows/postgres-fixture-tests.yml"
   pull_request:
     paths:
