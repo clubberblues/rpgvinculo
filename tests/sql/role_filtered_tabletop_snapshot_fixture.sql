@@ -55,7 +55,7 @@ END
 $privilege$;
 
 SET ROLE authenticated;
-SELECT set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000002',true);
+SET request.jwt.claim.sub='00000000-0000-0000-0000-000000000002';
 DO $$
 DECLARE s jsonb;
 BEGIN
@@ -71,7 +71,7 @@ END $$;
 RESET ROLE;
 
 SET ROLE authenticated;
-SELECT set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',true);
+SET request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
 DO $$
 DECLARE s jsonb;
 BEGIN
