@@ -83,3 +83,11 @@ Consulta read-only ao Supabase em 2026-11-12 confirmou:
 - A consulta read-only do catálogo remoto encontrou 65 overloads em 62 nomes públicos de funções JSONB que referenciam `cba_data` ou `combat_data`; 52 overloads têm EXECUTE para authenticated e nenhum desses overloads concede EXECUTE a anon. Isso é um inventário de candidatos, não prova de que todos vazem: há endpoints exclusivamente GM e wrappers internos que exigem classificação individual. A família de oito assinaturas acima é apenas o primeiro corte.
 - O primeiro CI da fixture encontrou erro de dollar quoting; corrigido no commit `1c0a002c`. A execução seguinte revelou incompatibilidade de tipo no argumento `smallint` do teste de magia; corrigida no commit `7087d188`. O resultado do CI para esse último commit ainda precisa ser confirmado. Não registrar a fixture como aprovada antes da conclusão.
 - A migration continua candidata e não aplicada ao Supabase ativo. A exposição direta por coluna permanece liberada até todas as respostas RPC player-accessible serem filtradas e verificadas.
+
+
+## Endurecimento da projeção por allowlist — 2026-11-12
+
+- Revisão do contrato do frontend confirmou que a mesa consome da cena apenas versão, fundo/caminho, fogEnabled, escala, grade e tokens; da iniciativa consome apenas id, nome, tipo, indicador de monstro, valor, d20 e modificador de Destreza.
+- A migration candidata `20261112140000` foi endurecida: o snapshot de jogador agora reconstrói a cena por allowlist, projeta cada token visível/pertencente para os campos usados pela mesa, projeta cada ator visível na iniciativa e limita o objeto campaign a id/nome/owner/state/active. Metadados desconhecidos de GM não são mais propagados por cópia do JSONB integral.
+- A fixture agora inclui segredos sintéticos no nível da campanha, cena, token visível e ator de iniciativa; jogador deve receber nenhum deles, enquanto o proprietário GM continua recebendo os dados completos de cena/combate.
+- Essa alteração reduz vazamento acidental por campos JSONB futuros, mas não substitui o corte de SELECT direto nem a filtragem das demais respostas RPC. Resultado CI da nova fixture/migration ainda pendente.
