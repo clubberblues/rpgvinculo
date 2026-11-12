@@ -171,3 +171,12 @@ A fixture modela deliberadamente ausência de FK entre marcador/campanha e objet
 O run PostgreSQL no commit `635bdf1` revelou a causa da falha após as migrations de teste: o arquivo iniciava uma transação externa, mas cada migration aplicada com `\i` contém seu próprio `BEGIN/COMMIT`. O `COMMIT` da primeira migration encerrou a transação externa. Consequentemente, os `set_config(..., true)` seguintes eram locais apenas à própria instrução e desapareciam antes da chamada da RPC simulada. O preflight registrou `auth.uid() = NULL` e `my_role() = NULL`, explicando corretamente o bloqueio GM.
 
 Correção aplicada: iniciar uma nova transação imediatamente depois dos scripts de migration/verificação e antes de definir o role authenticated e os claims JWT. Assim, os claims locais permanecem visíveis durante os testes e o `ROLLBACK` final limpa os dados de teste posteriores. Commit `c21490e`; aguarda execução CI própria.
+
+
+## Segurança de funções e privilégios padrão
+
+- `maneuver_catalog_security_fixture.sql` executa as migrations candidatas `20261110150000`, `20261110160000` e `20261110170000`, depois aplica verificações de catálogo e chamadas simuladas com roles GM, PLAYER, anon e service_role. O cenário é um banco PostgreSQL descartável; não executa RPCs instaladas no Supabase.
+- `priv_default_acl_fixture.sql` reproduz os defaults amplos encontrados em `pg_default_acl`, aplica `20261112100000`, executa `verify_priv_default_acl.sql` e confirma que novos objetos internos não ficam acessíveis diretamente a anon/authenticated, service_role mantém acesso e ACLs de objetos antigos não são alteradas.
+- `legacy_character_creation_acl_fixture.sql` aplica `20261112110000` e executa `verify_legacy_character_creation_rpc_acl.sql`, garantindo que a sobrecarga antiga de seis argumentos deixa de ser executável por clientes enquanto a sobrecarga validada de sete argumentos continua acessível a authenticated.
+- As migrations incluídas contêm seus próprios BEGIN/COMMIT. Por isso, esses fixtures deixam objetos de teste no banco de CI; o banco inteiro é descartado com o container ao final do job. Não executar em banco persistente.
+- O workflow PostgreSQL executa esses fixtures em PostgreSQL 17. O resultado do HEAD atual ainda não foi confirmado; ausência de resultado no conector não equivale a falha nem a sucesso.
