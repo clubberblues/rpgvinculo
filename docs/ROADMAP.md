@@ -40,12 +40,16 @@ Nenhuma fase deve ser repetida integralmente sem evidência de mudança ou lacun
 ## Fase 2 — Fundação operacional
 **Objetivo:** assegurar que identidade, autorização, persistência e sincronização suportem os módulos.
 - [ ] Validar matriz de papéis Mestre/Jogador/Observador.
-- [ ] Avaliar proteção de senha vazada no Auth; revisar limites MIME/tamanho do bucket midia; 52 índices marcados como não utilizados ficam sem remoção até análise de tráfego e planos.
-- [ ] Validar RLS, RPCs e propriedade por fluxo; priorizar revisão individual das 99 SECURITY DEFINER acessíveis a authenticated e confirmar exposição dos schemas internos priv/private.
+- [ ] Avaliar proteção de senha vazada no Auth; revisar política de visibilidade do bucket público `midia` (135 objetos, incluindo 33 em `campaigns/`) e limites MIME/tamanho; 51 índices marcados como não utilizados ficam sem remoção até análise de tráfego e planos.
+- [ ] Validar RLS, RPCs e propriedade por fluxo; revisar as 99 SECURITY DEFINER acessíveis a authenticated e confirmar schemas internos `priv/private` no Dashboard. Endurecer default privileges de `priv`: hoje novas tabelas/sequences/funções recebem privilégios automáticos para `authenticated`.
+- [ ] Corrigir ou formalmente desativar a policy legada de `public.tokens` (membro pode inserir/alterar/remover qualquer token); a tabela está vazia e sem uso direto nas páginas principais.
+- [ ] Revisar os dois objetos `priv` sem RLS e os sete objetos sem policies; ACL atual não concede acesso direto a anon/authenticated, mas validar defesa em profundidade antes de ampliar grants.
 - [ ] Validar integridade relacional e transações críticas.
 - [ ] Validar eventos, logs, Realtime e recuperação de estado.
 - [ ] Estabelecer ambiente/campanha descartável e contas de teste.
 - [ ] Automatizar verificações de regressão disponíveis.
+
+**Estado após revisão read-only de 2026-11-11:** segurança e Storage detalhados em `docs/FOUNDATION_SECURITY_REVIEW.md`; nenhuma correção remota foi aplicada. O replay de migrations segue bloqueado pela ausência do schema-base `public.campaigns`.
 
 **Aceite:** operações críticas seguras e repetíveis em ambiente de teste, sem alterar campanhas reais.
 
