@@ -51,7 +51,8 @@ ON CONFLICT (id) DO UPDATE SET owner_id=EXCLUDED.owner_id,cba_data=EXCLUDED.cba_
 
 INSERT INTO public.members VALUES
  (41,'33333333-3333-3333-3333-333333333333','PLAYER'),
- (41,'44444444-4444-4444-4444-444444444444','GM');
+ (41,'44444444-4444-4444-4444-444444444444','GM'),
+ (43,'33333333-3333-3333-3333-333333333333','PLAYER');
 
 \i supabase/migrations/20261112130000_fix_private_cba_storage_access.sql
 \i supabase/verification/verify_private_cba_storage_access.sql
@@ -71,6 +72,9 @@ BEGIN
   END IF;
   IF NOT priv.cba_media_campaign_access('campaigns/41/tokens/visible.png',false) THEN
     RAISE EXCEPTION 'Explicitly visible token asset was denied.';
+  END IF;
+  IF priv.cba_media_campaign_access('campaigns/43/cba-map.png',false) THEN
+    RAISE EXCEPTION 'Player was allowed to read a full-resolution map while fog is enabled.';
   END IF;
   IF priv.cba_media_campaign_access('campaigns/41/tokens/hidden.png',false) THEN
     RAISE EXCEPTION 'Hidden token asset was exposed to a campaign player.';
