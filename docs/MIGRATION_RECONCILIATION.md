@@ -508,3 +508,13 @@ Estado verificado por consulta read-only:
 O workflow de replay foi corrigido para derivar a contagem esperada dos arquivos presentes, em vez de manter o número histórico 966 fixo. A execução no commit anterior falhou antes de iniciar o stack porque a contagem havia ficado desatualizada. Uma tentativa anterior de replay em banco vazio também confirmou que a primeira migration pressupõe `public.campaigns` já existente. O repositório ainda não contém um bootstrap confiável desse schema.
 
 **Regra:** não inventar schema mínimo nem executar as três migrations no remoto. O replay integral só pode ser considerado válido depois de recuperar um bootstrap/schema-only dump com proveniência e reproduzir o estado completo em PostgreSQL descartável.
+
+
+## Caminho de desbloqueio para testar migrations novas sem fingir replay histórico (2026-11-11)
+
+Há dois objetivos distintos e eles não devem ser confundidos:
+
+1. **Testar as migrations candidatas contra o estado remoto atual:** gerar um snapshot schema-only do banco atual com `supabase db dump` (script local `scripts/export-current-schema.ps1`), restaurá-lo em um stack Supabase descartável e marcar no banco local as 966 versões remotas como já aplicadas. Então aplicar somente as três migrations pendentes e executar fixtures/invariantes. Isso valida o delta novo sobre a estrutura atual, mas não valida a história desde zero.
+2. **Provar replay integral desde a primeira migration:** ainda exige recuperar o schema-base pré-ledger com proveniência. O snapshot atual sozinho não pode ser usado como bootstrap e depois reaplicar as 966 migrations, pois ele já contém o resultado delas.
+
+O caminho 1 é o desbloqueio pragmático imediato e não requer plano Supabase pago; exige que o usuário execute o script no PC com CLI linkada e Docker Desktop e disponibilize o arquivo schema-only para preparar o ambiente descartável. O arquivo não deve ser enviado ao repositório público nem contém dados/Auth/Storage. O caminho 2 permanece como trabalho de recuperação histórica. Nenhuma alteração remota.
