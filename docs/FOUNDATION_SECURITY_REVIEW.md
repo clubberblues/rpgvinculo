@@ -146,3 +146,17 @@ O fluxo atual de criação D&D 3.5 em `ficha.html` chama `public.finalizar_criac
 Entretanto, a sobrecarga antiga de seis argumentos `public.criar_personagem_srd_completo(p_nome,p_raca_id,p_classe_id,p_atributos,p_pericias,p_talentos)` continua com EXECUTE para authenticated e SECURITY DEFINER. Ela não recebe nem valida identidade/tendência/idade e chama o construtor básico, deixando de aplicar as validações e escolhas específicas da versão atual. Não foi encontrado call site dessa sobrecarga nos arquivos ativos `ficha.html`, `lobby.html` ou `mesa.html`. Assim, um usuário autenticado pode invocá-la diretamente como caminho alternativo de criação menos rigoroso.
 
 Correção recomendada: revogar EXECUTE de authenticated nessa assinatura antiga (ou removê-la após verificar clientes antigos), mantendo somente o wrapper atual e a sobrecarga de sete argumentos. Fazer por migration versionada, testar o fluxo atual de criação e uma chamada negativa à assinatura antiga. Não foi alterada remotamente.
+
+
+## Grants por coluna — superfície de escrita residual
+
+Os papéis autenticados não têm UPDATE de tabela inteira em `characters`, `srd_character_sheets` ou `srd_character_equipment`; há grants por coluna:
+- `characters`: campos de apresentação/identidade e também `campaign_id`; RLS restringe a proprietário/GM. O frontend ativo usa updates diretos para retrato, transformação e header; não foi encontrado update direto de `campaign_id` nas páginas ativas. A página legada `lobby_atualizado.html` faz esse update diretamente, mas não é referenciada pelo `index.html` nem pelas páginas ativas.
+- `srd_character_sheets`: UPDATE direto de `pv_atual` para dono/GM. O frontend ativo altera PV por RPC (`alterar_pv_personagem`/rotas de combate), sem update direto encontrado. O grant de coluna permite contornar validações/turno/registro dessas RPCs e deve ser removido depois de confirmar compatibilidade.
+- `srd_character_equipment`: UPDATE direto de `equipado` para dono/GM. O frontend ativo usa `equipar_item_srd`; não foi encontrado update direto dessa coluna. O grant permite contornar regras de mãos/instâncias e deve ser removido depois de validar todos os clientes.
+- `campaigns`: UPDATE direto de `capa_url`, usado pelo lobby ativo e protegido por policy GM.
+- `scenes`: grants amplos de INSERT/UPDATE/DELETE, mas policies restringem essas operações a GM; confirmar se a tabela/fluxo legado continua necessário.
+
+A criação SRD ativa usa RPC atômica `finalizar_criacao_personagem_srd`. A função `window.criarFicha` que insere `characters` e escreve em `vinculo_character_sheets` pertence ao fluxo legado não-SRD; `lobby_atualizado.html` também usa tabelas e fluxo legados. O `index.html` redireciona para `lobby.html` e não aponta para `lobby_atualizado.html`; a página antiga ainda pode ser aberta por URL direta. Manter como legado acessível até decidir arquivamento, mas não tratá-la como caminho atual D&D 3.5.
+
+Correção proposta: revogar os grants de coluna `srd_character_sheets.pv_atual`, `srd_character_equipment.equipado` e `characters.campaign_id` quando o fluxo legado for aposentado; preservar os grants de apresentação usados pelo cliente e o de `campaigns.capa_url`. Testar as rotas RPC atuais e confirmar se existe cliente antigo antes da migration. Nada foi alterado remotamente.
