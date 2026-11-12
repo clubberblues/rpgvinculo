@@ -88,3 +88,10 @@ As políticas de `campaigns`, `members`, `characters`, `srd_character_sheets` e 
 Foi encontrada uma exceção de legado em `public.tokens`: as políticas INSERT/UPDATE/DELETE permitem qualquer membro da campanha, sem exigir papel GM. A tabela estava vazia (zero linhas) e não foi encontrado call site direto em `mesa.html`, `ficha.html` ou `lobby.html` no branch auditado; a mesa atual mantém tokens em `campaigns.cba_data`. Tratar a política como legado dormente, mas restringir a GM antes de reativar ou inserir dados nessa tabela. Não alterar agora para evitar quebrar um fluxo não localizado.
 
 O frontend atual atualiza diretamente `characters.retrato_url`, `characters.foto_transform` e `characters.header_bg_url`, protegidos por política de proprietário; atualiza `campaigns.capa_url`, protegida por política GM; consulta diretamente fichas/equipamentos. Não foi encontrado uso direto de `public.tokens` ou `public.scenes` nos três arquivos principais.
+
+
+## Realtime e sincronização de mesa
+
+A publicação `supabase_realtime` inclui as tabelas usadas pelas nove assinaturas encontradas em `mesa.html`: `campaign_log`, `campaigns`, `characters`, `members`, `srd_character_sheets`, `srd_character_equipment`, `srd_cba_token_equipment`, `srd_campaign_conditions` e `srd_campaign_effects`. A configuração está alinhada estaticamente com os canais de chat, participantes, fichas, equipamentos, condições, efeitos e campanha. A entrega real de eventos, filtros, isolamento por RLS e reconexão ainda não foi testada com duas sessões autenticadas simultâneas.
+
+A publicação também contém tabelas legadas `tokens` e `vinculo_character_sheets`; a mesa atual mantém tokens em `campaigns.cba_data` e não usa diretamente a tabela `tokens` nos arquivos principais consultados. Remover essas tabelas da publicação exige confirmar que não há clientes antigos em uso.
