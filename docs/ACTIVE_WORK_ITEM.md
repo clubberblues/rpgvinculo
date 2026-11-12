@@ -1026,3 +1026,11 @@ A revisão read-only avançou para privilégios, RLS, funções privilegiadas, A
 - Bucket público `midia` não define limite de tamanho nem allowlist MIME. Os 135 objetos atuais são imagens (94 PNG, 22 JPEG, 19 WebP), ~190,59 MiB no total; maior objeto 15,76 MiB. Upload de capa aceita `image/*` e envia original sem limite explícito; políticas limitam caminho/propriedade, não tamanho/MIME.
 - Bucket privado `mesa-media` tem 50 MiB e allowlist imagem/vídeo/áudio; os fluxos vistos usam imagens e limitam token image a 20 MiB. Bucket vazio. Avaliar allowlist raster e limite real antes de alterar.
 - Proposta inicial para `midia`: considerar 20 MiB (cobre o maior objeto atual) e formatos raster usados; não aplicar sem confirmar arquivos/mapas maiores e preservar URLs. Detalhes em `FOUNDATION_SECURITY_REVIEW.md`.
+
+
+### RPC legada de criação — exposição confirmada (2026-11-11)
+
+- O fluxo atual D&D 3.5 chama `finalizar_criacao_personagem_srd`, que delega à sobrecarga de sete argumentos de `criar_personagem_srd_completo`, com validações de identidade e regras.
+- A sobrecarga antiga de seis argumentos permanece SECURITY DEFINER com EXECUTE para authenticated. Não recebe nem valida identidade/tendência/idade e não foi encontrada nos três arquivos ativos; é um caminho alternativo menos rigoroso para criar personagem diretamente via RPC.
+- Recomendada revogação do EXECUTE authenticated dessa assinatura (ou remoção após compatibilidade), mantendo a versão atual. Requer migration versionada e teste negativo/positivo; nenhuma alteração remota foi feita.
+- Detalhes em `docs/FOUNDATION_SECURITY_REVIEW.md`.
