@@ -1139,3 +1139,9 @@ A revisão read-only avançou para privilégios, RLS, funções privilegiadas, A
 - Trigger de auth cria perfil com username apenas para exibição; não usa user_metadata para autorização. Trigger de membership força owner=GM e bloqueia promoção de outros membros. `my_role/sou_membro` derivam identidade de auth.uid(). Roles anon/authenticated não têm CREATE nos schemas public/priv/private/storage.
 - Snapshot: 8 auth users/8 profiles; sem perfil ausente/órfão, username duplicado ou vazio. O trigger captura falhas e não cancela signup; manter monitoramento para não gerar conta sem perfil em falha futura.
 - Detalhes em `docs/FOUNDATION_SECURITY_REVIEW.md`.
+
+
+### Papéis de campanha — escopo a confirmar (2026-11-11)
+
+- Constraint permite GM/PLAYER/OBSERVER; trigger garante owner=GM e bloqueia promoção de outro membro. Snapshot tem 3 GM/3 PLAYER, nenhum OBSERVER. Lobby ativo não oferece entrada como observador; mesa apenas ordena esse papel na lista.
+- Roadmap ajustado para validar GM/PLAYER e decidir se OBSERVER é requisito futuro ou legado, sem expandir escopo automaticamente.
