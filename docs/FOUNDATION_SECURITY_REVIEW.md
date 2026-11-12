@@ -220,3 +220,10 @@ A mudança do Supabase de 2026-10-30 deixou de expor automaticamente novas tabel
 ## Manutenção da versão PostgreSQL
 
 O projeto está em PostgreSQL `17.6.1.166`. O changelog do Supabase registra a atualização PostgreSQL 17.11.0.003 (2026-09-25), com correções de 44 CVEs e ajustes de índices/extensões; o aviso de timezone destacado afeta Vancouver/Edmonton/Casablanca, não a região Brasil. A versão atual do projeto está atrás dessa linha de manutenção. Conferir no Dashboard se a atualização gerenciada está disponível/recomendada e revisar extensões/índices antes de agendar; nenhuma atualização foi iniciada.
+
+
+## Auth e perfil — integridade observada
+
+O trigger `auth.users.on_auth_user_created` chama `public.handle_new_user` SECURITY DEFINER com search_path fixo. Ele usa `raw_user_meta_data.username` apenas como nome de exibição (ou parte local do email como fallback), nunca como papel/autorização; erros de criação do perfil são capturados e não cancelam o signup. `public.enforce_campaign_member_role` força o proprietário a GM e impede promoção de outros membros. `my_role` e `sou_membro` derivam o usuário de `auth.uid()`. Anon/authenticated têm USAGE, mas não CREATE nos schemas public/priv/private/storage, reduzindo risco de objetos maliciosos no search_path.
+
+Fotografia read-only: 8 usuários Auth e 8 perfis; nenhum usuário sem perfil, perfil órfão, username duplicado ou vazio. A amostra atual está consistente; o trigger ainda precisa de monitoramento porque engole erros de criação de perfil e pode permitir contas sem perfil em falhas futuras.
