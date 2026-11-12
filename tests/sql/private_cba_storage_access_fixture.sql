@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS public.members(
 CREATE TABLE IF NOT EXISTS priv.campaign_deletion_cleanup(campaign_id bigint PRIMARY KEY);
 CREATE TABLE IF NOT EXISTS storage.objects(bucket_id text NOT NULL,name text NOT NULL);
 ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
 
 GRANT USAGE ON SCHEMA public,auth,storage,priv TO authenticated,anon;
 GRANT SELECT ON public.campaigns,public.members TO authenticated,anon;
@@ -85,6 +86,9 @@ BEGIN
     RAISE EXCEPTION 'Malformed or traversal path was accepted.';
   END IF;
   IF (SELECT count(*) FROM storage.objects WHERE bucket_id='mesa-media') <> 2 THEN
+    RAISE EXCEPTION 'RLS did not limit player reads to the map and explicitly visible token asset.';
+  END IF;
+  IF (SELECT count(*) FROM storage.objects WHERE bucket_id='mesa-media') <> 2 THEN
     RAISE EXCEPTION 'RLS did not limit player reads to map and explicitly visible token assets.';
   END IF;
 END
@@ -106,18 +110,33 @@ INSERT INTO storage.objects(bucket_id,name)
 VALUES ('mesa-media','campaigns/41/tokens/gm-upload.png');
 RESET ROLE;
 
--- Cleanup marker closes even the owner's access until deletion completes.
+-- Cleanup marker blocks reads and new writes, but GM deletion remains possible.
 INSERT INTO priv.campaign_deletion_cleanup VALUES (41);
 SET ROLE authenticated;
 SET request.jwt.claim.sub='11111111-1111-1111-1111-111111111111';
 DO $cleanup$
 BEGIN
   IF priv.cba_media_campaign_access('campaigns/41/cba-map.png',false)
-     OR priv.cba_media_campaign_access('campaigns/41/cba-map.png',true) THEN
-    RAISE EXCEPTION 'Campaign asset access remained open during cleanup.';
+     OR priv.cba_media_campaign_access('campaigns/41/cba-map.png',true,false) THEN
+    RAISE EXCEPTION 'Campaign read or new upload remained open during cleanup.';
+  END IF;
+  IF NOT priv.cba_media_campaign_access('campaigns/41/cba-map.png',true,true) THEN
+    RAISE EXCEPTION 'Campaign owner could not delete assets during cleanup.';
   END IF;
 END
 $cleanup$;
 RESET ROLE;
+
+SET ROLE authenticated;
+SET request.jwt.claim.sub='44444444-4444-4444-4444-444444444444';
+DELETE FROM storage.objects WHERE name='campaigns/41/tokens/hidden.png';
+RESET ROLE;
+DO $deleted$
+BEGIN
+  IF EXISTS (SELECT 1 FROM storage.objects WHERE name='campaigns/41/tokens/hidden.png') THEN
+    RAISE EXCEPTION 'GM could not delete hidden asset during cleanup.';
+  END IF;
+END
+$deleted$;
 
 SELECT 'private CBA Storage fixture passed' AS result;
