@@ -1342,9 +1342,10 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     meuPerfil=rp.data||{username:(eu.email||'aventureiro').split('@')[0]};
 
     atualizarStatusMesa('Carregando a campanha…');
-    var rc=await comPrazoMesa('A campanha',sb.from('campaigns').select('*').eq('id',MESA_ID).single(),12000);
+    var rc=await comPrazoMesa('A campanha',sb.rpc('obter_snapshot_seguro_mesa',{p_campaign_id:Number(MESA_ID)}),12000);
     if(rc.error)throw new Error('Mesa não encontrada ou sem acesso: '+rc.error.message);
-    campanha=rc.data;
+    if(!rc.data||!rc.data.campaign)throw new Error('O servidor não retornou um snapshot autorizado da mesa.');
+    campanha=Object.assign({},rc.data.campaign,{cba_data:rc.data.cba_data||null,combat_data:rc.data.combat_data||null});
 
     var rm=await comPrazoMesa('Sua participação na campanha',sb.from('members').select('role').eq('campaign_id',MESA_ID).eq('user_id',eu.id).maybeSingle(),12000);
     if(rm.error)throw new Error('Não foi possível confirmar sua participação: '+rm.error.message);
@@ -1363,7 +1364,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(campanha.cba_data)aplicarCBAnaMesa(campanha.cba_data,false);
     combatDataState=campanha.combat_data||null;
     renderizarIniciativa(combatDataState);
-    ligarRealtime();
+    await ligarRealtime();
     ligarRecuperacaoPedidoIniciativa();
 
     // O tabuleiro aparece sem esperar consultas secundárias. Cada painel carrega
@@ -6845,7 +6846,26 @@ async function abrirModalEquipamentos(){
     inp.addEventListener('keydown', function(e){ if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); enviar(); } });
   }
 
-  function ligarRealtime(){
+  async function atualizarSnapshotSeguroMesa(){
+    var result=await sb.rpc('obter_snapshot_seguro_mesa',{p_campaign_id:Number(MESA_ID)});
+    if(result.error)throw new Error('Falha ao atualizar o snapshot autorizado da mesa: '+result.error.message);
+    var snapshot=result.data||{};
+    if(!snapshot.campaign)throw new Error('O servidor não retornou o snapshot da campanha.');
+    campanha=Object.assign({},campanha||{},snapshot.campaign,{
+      cba_data:snapshot.cba_data||null,
+      combat_data:snapshot.combat_data||null
+    });
+    cbaPublishedState=normalizarCBAData(snapshot.cba_data);
+    combatDataState=snapshot.combat_data||null;
+    var est=document.querySelector('.titulo-mesa .estado');
+    if(est){est.className='estado '+(campanha.state||'EXPLORACAO');est.textContent=campanha.state||'EXPLORACAO';}
+    if(snapshot.cba_data)aplicarCBAnaMesa(snapshot.cba_data,false);
+    renderizarIniciativa(combatDataState);
+    renderBotoesAcao();
+    return snapshot;
+  }
+
+  async function ligarRealtime(){
     sb.channel('mesa-'+MESA_ID+'-chat').on('postgres_changes', { event:'INSERT', schema:'public', table:'campaign_log', filter:'campaign_id=eq.'+MESA_ID }, function(p){
       var el = document.getElementById('chat-lista');
       if(el){ el.insertAdjacentHTML('beforeend', renderMsg(p.new)); el.scrollTop = el.scrollHeight; }
@@ -6857,17 +6877,14 @@ async function abrirModalEquipamentos(){
     sb.channel('mesa-'+MESA_ID+'-members').on('postgres_changes',{event:'*',schema:'public',table:'members',filter:'campaign_id=eq.'+MESA_ID},async function(){await Promise.all([carregarMembros(),carregarPersonagens()]);}).subscribe();
     sb.channel('mesa-'+MESA_ID+'-conditions').on('postgres_changes',{event:'*',schema:'public',table:'srd_campaign_conditions',filter:'campaign_id=eq.'+MESA_ID},async function(){await carregarEfeitosCampanha();renderCards();}).subscribe();
     sb.channel('mesa-'+MESA_ID+'-effects').on('postgres_changes',{event:'*',schema:'public',table:'srd_campaign_effects',filter:'campaign_id=eq.'+MESA_ID},async function(){await carregarEfeitosCampanha();renderCards();}).subscribe();
-    sb.channel('mesa-'+MESA_ID+'-camp').on('postgres_changes', { event:'UPDATE', schema:'public', table:'campaigns', filter:'id=eq.'+MESA_ID }, function(p){
-      campanha = p.new;
-      var est = document.querySelector('.titulo-mesa .estado');
-      if(est){ est.className = 'estado '+(campanha.state||'EXPLORACAO'); est.textContent = campanha.state || 'EXPLORACAO'; }
-      renderBotoesAcao();
-      if(p.new && p.new.cba_data) aplicarCBAnaMesa(p.new.cba_data,false);
-      if(p.new && Object.prototype.hasOwnProperty.call(p.new,'combat_data')){
-        combatDataState=p.new.combat_data||null;
-        renderizarIniciativa(combatDataState);
-      }
-    }).subscribe();
+    await sb.realtime.setAuth();
+    sb.channel('campaign:'+MESA_ID,{config:{private:true}})
+      .on('broadcast',{event:'campaign_refresh'},async function(){
+        try{
+          await atualizarSnapshotSeguroMesa();
+          await Promise.all([carregarPersonagens(),carregarEfeitosCampanha()]);
+        }catch(error){console.warn('Falha ao atualizar snapshot seguro da mesa:',error);}
+      }).subscribe();
   }
 
   init().catch(function(e){ document.getElementById('root').innerHTML = '<div class="loading-full" style="color:#f87171">Erro: '+esc(e.message)+'</div>'; });
