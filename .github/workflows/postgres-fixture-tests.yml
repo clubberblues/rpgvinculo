@@ -52,4 +52,5 @@ jobs:
           psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/footprint_test.sql
           psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/maneuver_catalog_security_fixture.sql
           psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/priv_default_acl_fixture.sql
+          psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/legacy_character_creation_acl_fixture.sql
           bash tests/sql/lock_cycle_test.sh
