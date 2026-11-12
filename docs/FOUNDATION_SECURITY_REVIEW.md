@@ -112,3 +112,19 @@ As tabelas correspondentes estavam vazias ou com volume muito baixo no snapshot.
 O schema `private` também concede USAGE a `authenticated` (não a `anon`) e contém oito funções; seis têm EXECUTE para authenticated e nenhuma para anon. As seis são rotinas de equipamento para personagem/NPC/token, com `SECURITY DEFINER`, `search_path` fixo e verificações explícitas de `auth.uid()`/papel no corpo. As outras duas são triggers de sincronização sem EXECUTE direto para authenticated. Não há default ACL específico registrado para `private`. A exposição direta REST de `private` não foi confirmada; conferir a allowlist no Dashboard.
 
 Na revisão lexical das 99 funções `SECURITY DEFINER` públicas executáveis por authenticated, 96 mencionam `auth.uid()`, 39 mencionam `my_role()` e cinco mencionam `priv.need_gm()` (categorias sobrepostas); todas têm pelo menos um desses marcadores. Isso é apenas triagem estática: não substitui revisão de autorização por função, validação de propriedade/campanha, nem teste negativo com usuário sem vínculo.
+
+
+### Rascunho de endurecimento dos privilégios padrão (não aplicado)
+
+Depois de validar que nenhum cliente precisa acessar diretamente objetos internos futuros, a migration de endurecimento deve incluir, no mínimo:
+
+```sql
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA priv
+  REVOKE ALL ON TABLES FROM authenticated;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA priv
+  REVOKE ALL ON SEQUENCES FROM authenticated;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA priv
+  REVOKE EXECUTE ON FUNCTIONS FROM authenticated;
+```
+
+Isso altera somente os privilégios padrão para objetos futuros criados pelo owner `postgres`; não revoga grants de objetos existentes. A migration deve ser criada com `supabase migration new`, testada contra um schema reproduzido e acompanhada de teste que prove que uma tabela/função recém-criada em `priv` não fica acessível diretamente a authenticated. Não executar no remoto antes dessa validação.
