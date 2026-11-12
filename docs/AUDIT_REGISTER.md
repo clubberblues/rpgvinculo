@@ -897,3 +897,10 @@ Duas tabelas priv estão sem RLS (`throttle`, `srd_aoo_reaction_ledger`), mas AC
 Storage: bucket `midia` é público e contém 135 objetos, incluindo 33 em `campaigns/`, 12 capas, 53 retratos, 21 headers e 6 avatars; uma das três campanhas aponta para capa pública. O frontend usa esse bucket para imagens públicas de perfil/ficha/capas, enquanto tokens/mapas novos usam bucket privado `mesa-media` e URLs assinadas; este bucket privado estava vazio. Não tornar tudo privado nem manter tudo público sem classificar referências. `public.media` está vazia, logo os 33 objetos de campanha não têm metadados legados para mapeamento automático.
 
 Health Advisor sem avisos; Performance Advisor sinalizou 51 índices não utilizados, sem remoção recomendada sem observação de carga representativa. Detalhes e aceite pendente em `docs/FOUNDATION_SECURITY_REVIEW.md`. Nenhuma mudança remota foi feita.
+
+
+### Políticas RLS das tabelas centrais — 2026-11-11
+
+As policies de `campaigns`, `members`, `characters`, `srd_character_sheets` e `srd_character_equipment` usam propriedade/membership/GM por operação. O frontend atual faz updates diretos de retrato, transformação da foto e header na linha do próprio personagem, e da capa da campanha no caminho GM; consultas de ficha/equipamento também são diretas. Os campos mecânicos continuam majoritariamente gravados por RPC.
+
+Exceção legada: `public.tokens` permite INSERT/UPDATE/DELETE a qualquer membro da campanha, não apenas GM. Está vazia e sem call site direto nos três arquivos principais; a mesa atual usa `campaigns.cba_data`. Não é risco de dados existentes no snapshot, mas a policy deve ser endurecida antes de reativar essa tabela.
