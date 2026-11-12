@@ -1,6 +1,6 @@
 -- Disposable regression test for the legacy six-argument character creator.
+-- The migration commits; all fixture objects live only in the CI database container.
 \set ON_ERROR_STOP on
-BEGIN;
 
 DO $roles$
 BEGIN
@@ -67,5 +67,4 @@ BEGIN
 END
 $after$;
 
-ROLLBACK;
 SELECT 'legacy character creation ACL fixture passed' AS result;
