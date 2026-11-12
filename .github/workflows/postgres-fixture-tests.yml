@@ -11,6 +11,8 @@ on:
   pull_request:
     paths:
       - "tests/sql/**"
+      - "supabase/migrations/**"
+      - "supabase/verification/**"
       - ".github/workflows/postgres-fixture-tests.yml"
   workflow_dispatch:
 
