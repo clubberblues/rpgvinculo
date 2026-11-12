@@ -934,3 +934,8 @@ A policy `mesa_media_ler` chama `public.can_read_media(name)`, que exige registr
 ### Fixture default ACL — sucesso após correção (2026-11-12 UTC)
 
 A fixture `tests/sql/priv_default_acl_fixture.sql` passou no CI PostgreSQL run `43136928379` após modelar o default global PUBLIC EXECUTE. O teste prova que a revogação global para funções futuras + revokes específicos no schema priv bloqueia acesso automático a novos objetos, preserva service_role e não revoga grants existentes. A migration de produção ainda não foi criada/aplicada; replay integral segue bloqueado pelo schema-base ausente.
+
+
+### Dependência Supabase JS — pinagem dos entrypoints ativos (2026-11-11)
+
+Os quatro entrypoints ativos `index.html`, `lobby.html`, `mesa.html` e `ficha.html` foram atualizados para carregar `@supabase/supabase-js@2.119.0` em vez do alias flutuante `@2`. A versão 2.119.0 é a release estável vigente em 2026-11-11. `lobby_atualizado.html` mantém `@2`, mas é fluxo legado sem link no caminho ativo. Verificar CI no novo HEAD.
