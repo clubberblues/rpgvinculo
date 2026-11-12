@@ -115,18 +115,31 @@ RESET ROLE;
 -- Cleanup marker blocks reads and new writes, but GM deletion remains possible.
 INSERT INTO priv.campaign_deletion_cleanup VALUES (41);
 SET ROLE authenticated;
-SET request.jwt.claim.sub='11111111-1111-1111-1111-111111111111';
-DO $cleanup$
+SET request.jwt.claim.sub='33333333-3333-3333-3333-333333333333';
+DO $cleanup_player$
 BEGIN
-  IF priv.cba_media_campaign_access('campaigns/41/cba-map.png',false)
-     OR priv.cba_media_campaign_access('campaigns/41/cba-map.png',true,false) THEN
-    RAISE EXCEPTION 'Campaign read or new upload remained open during cleanup.';
+  IF priv.cba_media_campaign_access('campaigns/41/cba-map.png',false) THEN
+    RAISE EXCEPTION 'Player retained read access during cleanup.';
+  END IF;
+END
+$cleanup_player$;
+RESET ROLE;
+
+SET ROLE authenticated;
+SET request.jwt.claim.sub='11111111-1111-1111-1111-111111111111';
+DO $cleanup_owner$
+BEGIN
+  IF NOT priv.cba_media_campaign_access('campaigns/41/cba-map.png',false) THEN
+    RAISE EXCEPTION 'Owner lost read access needed to enumerate assets during cleanup.';
+  END IF;
+  IF priv.cba_media_campaign_access('campaigns/41/cba-map.png',true,false) THEN
+    RAISE EXCEPTION 'Owner was allowed a new upload during cleanup.';
   END IF;
   IF NOT priv.cba_media_campaign_access('campaigns/41/cba-map.png',true,true) THEN
     RAISE EXCEPTION 'Campaign owner could not delete assets during cleanup.';
   END IF;
 END
-$cleanup$;
+$cleanup_owner$;
 RESET ROLE;
 
 SET ROLE authenticated;
