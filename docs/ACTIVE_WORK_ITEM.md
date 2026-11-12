@@ -1120,3 +1120,10 @@ A revisão read-only avançou para privilégios, RLS, funções privilegiadas, A
 - Os tipos TypeScript gerados pelo Supabase para o Data API incluem as duas sobrecargas públicas `criar_personagem_srd_completo` (6 e 7 argumentos) e o wrapper `finalizar_criacao_personagem_srd`. Portanto, as duas rotas de criação parcial estão efetivamente expostas no schema da API, não apenas com EXECUTE ACL.
 - `priv.srd_feat_saving_throw_modifier` não aparece nos tipos públicos gerados, coerente com `priv` não estar exposto à Data API no momento. A confirmação final da allowlist ainda requer Dashboard.
 - Detalhes em `docs/FOUNDATION_SECURITY_REVIEW.md`.
+
+
+### Data API e schema exposure — dependência de Dashboard (2026-11-11)
+
+- Typegen oficial do Supabase retorna 202 nomes de funções no schema público, incluindo criação SRD e endpoints usados pela mesa; helpers de `priv/private` não aparecem. Isso confirma o caminho público das RPCs, mas a allowlist de schemas deve ser confirmada no Dashboard, pois `pgrst.db_schemas` e overrides por role não forneceram valor.
+- Desde 2026-10-30, novas tabelas não são automaticamente expostas aos Data/GraphQL APIs. Para cada migration futura, validar exposição, grants, RLS/policies e typegen; não inferir exposição apenas pelo schema `public` ou por default ACL.
+- Referência oficial registrada em `docs/FOUNDATION_SECURITY_REVIEW.md`.
