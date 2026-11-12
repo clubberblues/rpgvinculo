@@ -37,27 +37,27 @@ INSERT INTO public.characters(id,campaign_id,user_id) VALUES('pc-1',987654323,'0
 
 CREATE OR REPLACE FUNCTION public.alterar_pv_token_cba(p_campaign_id bigint,p_token_id text,p_variacao integer,p_pv_max integer)
 RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,pg_temp
-AS $ SELECT jsonb_build_object('cba_data',(SELECT cba_data FROM public.campaigns WHERE id=p_campaign_id),'combat_data',(SELECT combat_data FROM public.campaigns WHERE id=p_campaign_id),'ok',true) $;
+AS $$ SELECT jsonb_build_object('cba_data',(SELECT cba_data FROM public.campaigns WHERE id=p_campaign_id),'combat_data',(SELECT combat_data FROM public.campaigns WHERE id=p_campaign_id),'ok',true) $$;
 CREATE OR REPLACE FUNCTION public.equipar_item_token_srd(p_campaign_id bigint,p_token_id text,p_equipment_id text,p_equipado boolean)
 RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,pg_temp
-AS $ SELECT jsonb_build_object('cba_data',(SELECT cba_data FROM public.campaigns WHERE id=p_campaign_id),'combat_data',(SELECT combat_data FROM public.campaigns WHERE id=p_campaign_id),'ok',true) $;
+AS $$ SELECT jsonb_build_object('cba_data',(SELECT cba_data FROM public.campaigns WHERE id=p_campaign_id),'combat_data',(SELECT combat_data FROM public.campaigns WHERE id=p_campaign_id),'ok',true) $$;
 CREATE OR REPLACE FUNCTION public.srd_configurar_perfil_combate_token_srd(p_campaign_id bigint,p_token_id text,p_combat_faction text,p_melee_reach_ft integer)
 RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,pg_temp
-AS $ SELECT jsonb_build_object('cba_data',(SELECT cba_data FROM public.campaigns WHERE id=p_campaign_id),'combat_data',(SELECT combat_data FROM public.campaigns WHERE id=p_campaign_id),'ok',true) $;
+AS $$ SELECT jsonb_build_object('cba_data',(SELECT cba_data FROM public.campaigns WHERE id=p_campaign_id),'combat_data',(SELECT combat_data FROM public.campaigns WHERE id=p_campaign_id),'ok',true) $$;
 
 CREATE OR REPLACE FUNCTION public.conjurar_magia_dano_multialvo_srd(p_character_id text,p_spell_id text,p_slot_level smallint,p_target_token_keys text[],p_roll_results integer[])
 RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,pg_temp
-AS $ SELECT jsonb_build_object('cba_data',(SELECT cba_data FROM public.campaigns c JOIN public.characters ch ON ch.campaign_id=c.id WHERE ch.id::text=p_character_id),'combat_data',(SELECT combat_data FROM public.campaigns c JOIN public.characters ch ON ch.campaign_id=c.id WHERE ch.id::text=p_character_id),'spell_id',p_spell_id) $;
+AS $$ SELECT jsonb_build_object('cba_data',(SELECT cba_data FROM public.campaigns c JOIN public.characters ch ON ch.campaign_id=c.id WHERE ch.id::text=p_character_id),'combat_data',(SELECT combat_data FROM public.campaigns c JOIN public.characters ch ON ch.campaign_id=c.id WHERE ch.id::text=p_character_id),'spell_id',p_spell_id) $$;
 CREATE OR REPLACE FUNCTION public.usar_habilidade_classe_srd(p_character_id text,p_feature_key text,p_target_token_key text,p_amount integer)
 RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,pg_temp
-AS $ SELECT jsonb_build_object('cba_data',(SELECT cba_data FROM public.campaigns c JOIN public.characters ch ON ch.campaign_id=c.id WHERE ch.id::text=p_character_id),'combat_data',(SELECT combat_data FROM public.campaigns c JOIN public.characters ch ON ch.campaign_id=c.id WHERE ch.id::text=p_character_id),'feature_key',p_feature_key) $;
+AS $$ SELECT jsonb_build_object('cba_data',(SELECT cba_data FROM public.campaigns c JOIN public.characters ch ON ch.campaign_id=c.id WHERE ch.id::text=p_character_id),'combat_data',(SELECT combat_data FROM public.campaigns c JOIN public.characters ch ON ch.campaign_id=c.id WHERE ch.id::text=p_character_id),'feature_key',p_feature_key) $$;
 
 CREATE OR REPLACE FUNCTION public.srd_finalizar_movimento_aoo_pendente_srd(p_campaign_id bigint,p_pending_id uuid)
 RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,pg_temp
-AS $ SELECT jsonb_build_object('committed',true,'movement_result',jsonb_build_object(
+AS $$ SELECT jsonb_build_object('committed',true,'movement_result',jsonb_build_object(
   'cba_data',(SELECT cba_data FROM public.campaigns WHERE id=p_campaign_id),
   'combat_data',(SELECT combat_data FROM public.campaigns WHERE id=p_campaign_id)
-)) $;
+)) $$;
 
 \ir ../../supabase/migrations/20261112160000_filter_player_damage_rpc_results.sql
 \ir ../../supabase/verification/verify_cba_rpc_response_isolation.sql
