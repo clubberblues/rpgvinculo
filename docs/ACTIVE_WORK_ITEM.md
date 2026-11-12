@@ -944,3 +944,11 @@ Isso torna mais grave a inversão attack → pending contra cancelamento pending
 - A Fase 1 do roadmap continua **em andamento**: faltam cruzamento completo de argumentos/tipos JS↔PostgreSQL, decisões dos demais valores derivados, fechamento do grafo transitivo de locks/concorrência e estratégia de testes de integração/E2E. A arquitetura escrita é proposta; não confundir documentação com implementação.
 - A Fase 2+ depende de ambiente descartável reproduzível. Não criar branch/projeto Supabase pago; não alterar schema, funções, ACLs, policies, dados, campanhas ou deploy no projeto remoto sem autorização específica.
 - Próxima execução: continuar o fechamento de contratos do domínio SRD com foco em campos derivados/sincronização e cruzamento dos call sites ativos; manter o bloqueio de replay até obter bootstrap histórico confiável. Usar apenas o delta após o último HEAD auditado.
+
+
+### Contratos JavaScript ↔ RPC — delta verificado em 2026-11-11
+
+- Revarredura dos três arquivos ativos encontrou 144 chamadas `.rpc()`, 99 nomes literais distintos e quatro call sites dinâmicos; os 99 nomes literais existem no schema `public`, com 107 assinaturas públicas correspondentes.
+- Comparação de propriedades dos objetos de argumentos com nomes de parâmetros das sobrecargas não encontrou incompatibilidade após revisão manual de dois falsos positivos do parser. Isso valida nomes, não tipos/semântica em runtime.
+- Dispatches dinâmicos foram reidentificados: dano AOO (2 destinos), equipamento/instâncias na mesa (3), salvamento/resistência de magia (2) e equipamento na ficha (4 alternativas, com sobreposição). A contagem histórica 100/106/114 diverge do delta 99/144/107 e permanece marcada para reconciliação de metodologia, sem apagar a fotografia anterior.
+- O inventário foi atualizado em `docs/RPC_INVENTORY.md`. A Fase 1 continua aberta até cruzar tipos/overloads em runtime, completar o grafo transitivo e fechar a política de concorrência e os contratos de estado.
