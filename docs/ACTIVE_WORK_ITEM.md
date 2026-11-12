@@ -978,3 +978,16 @@ Isso torna mais grave a inversão attack → pending contra cancelamento pending
 - O trabalho desta rodada refinou a arquitetura/contratos com fontes canônicas de XP/ouro SRD, revarredura JS↔RPC, lacunas de progressão multiclasse e dependência não preenchida de Maestria em Magia. Referências: `DATA_MODEL.md`, `RPC_INVENTORY.md` e `ROADMAP.md`.
 - **Estágio de arquitetura/contratos (Fase 1) NÃO concluído.** Pendências de aceite: fonte/ciclo de atualização de PV/PM/atributos derivados; suporte multiclasse e spellbook; tipos/overloads em runtime e testes autenticados; fechamento do grafo transitivo de locks e idempotência; configuração de schemas expostos ainda precisa de confirmação pelo Dashboard; baseline histórico confiável para replay.
 - Retomar por essas pendências específicas. Não repetir as auditorias já registradas, não abrir nova frente de funcionalidades, não criar branch/projeto Supabase pago, não tocar produção e não mesclar/deployar.
+
+
+## Execução da fundação — delta de segurança e Storage (2026-11-11)
+
+A revisão read-only avançou para privilégios, RLS, funções privilegiadas, Auth e Storage. O detalhamento está em `docs/FOUNDATION_SECURITY_REVIEW.md`; o registro e snapshot remoto também foram atualizados.
+
+**Achado de prioridade alta:** default privileges do owner `postgres` no schema interno `priv` concedem automaticamente privilégios amplos em novas tabelas/sequences e EXECUTE em novas funções a `authenticated` e `service_role`. Revogar esses defaults por migration é o caminho recomendado, mas requer verificar chamadores/transitivos e testar em ambiente descartável. Nenhuma alteração foi aplicada no banco remoto.
+
+**Storage:** bucket público `midia` tem 135 objetos, incluindo 33 em `campaigns/`; uma campanha atual aponta para capa pública. O frontend usa esse bucket para avatares, retratos, fundos e capas, mas a mesa usa bucket privado `mesa-media` com URLs assinadas para imagens de tokens/mapas. Os 33 arquivos de campanha não têm metadados em `public.media`; não alterar visibilidade até classificar as referências e preservar URLs.
+
+**Segurança:** 2 tabelas `priv` sem RLS não concedem DML direto a anon/authenticated no ACL atual; 7 tabelas têm RLS sem políticas e também sem grants diretos a esses roles. O Security Advisor reporta 99 funções SECURITY DEFINER públicas executáveis por authenticated, zero por anon; todas as 150 funções SECURITY DEFINER públicas têm search_path fixo. Há 39 funções SECURITY DEFINER em `priv` com EXECUTE authenticated e uma helper com EXECUTE anon, mas anon não tem USAGE em `priv`. Proteção de senha comprometida está desabilitada. Não revogar endpoints em massa.
+
+**Bloqueios da fundação permanecem:** bootstrap histórico ausente para replay limpo; configuração de schemas expostos não confirmada no Dashboard; endurecimento de default ACL em `priv`; classificação dos ativos públicos; revisão Auth; testes autenticados GM/jogador/não membro; testes concorrentes; validação ponta a ponta. O ambiente atual não tem Supabase CLI nem checkout local, portanto não foi gerada migration por caminho oficial nesta sessão. Nenhuma alteração de produção, migration remota, arquivo Storage ou deploy foi feita.
