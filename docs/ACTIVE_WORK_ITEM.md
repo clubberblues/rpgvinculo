@@ -952,3 +952,12 @@ Isso torna mais grave a inversão attack → pending contra cancelamento pending
 - Comparação de propriedades dos objetos de argumentos com nomes de parâmetros das sobrecargas não encontrou incompatibilidade após revisão manual de dois falsos positivos do parser. Isso valida nomes, não tipos/semântica em runtime.
 - Dispatches dinâmicos foram reidentificados: dano AOO (2 destinos), equipamento/instâncias na mesa (3), salvamento/resistência de magia (2) e equipamento na ficha (4 alternativas, com sobreposição). A contagem histórica 100/106/114 diverge do delta 99/144/107 e permanece marcada para reconciliação de metodologia, sem apagar a fotografia anterior.
 - O inventário foi atualizado em `docs/RPC_INVENTORY.md`. A Fase 1 continua aberta até cruzar tipos/overloads em runtime, completar o grafo transitivo e fechar a política de concorrência e os contratos de estado.
+
+
+### Lacuna arquitetural de progressão multiclasse — 2026-11-11
+
+- A RPC pública de avanço `concluir_avanco_nivel_personagem_srd_v2` não recebe a classe escolhida para o novo nível. A implementação privada sempre usa `srd_character_sheets.classe_id` e trata `sheet.nivel+1` como nível da classe, atualizando somente a classe primária.
+- O ledger `srd_character_class_levels` é escrito com `taken_at_character_level=1` na primeira inserção, não com o nível total em que aquela classe foi adquirida.
+- O snapshot atual (5 fichas, todas com ledger, soma dos níveis de classe igual ao nível total) contém apenas linhas nível 1; portanto não prova que multiclasse esteja funcionando. Não há evidência de dano aos personagens atuais, mas o contrato é insuficiente para o escopo completo D&D 3.5.
+- Registrar como bloqueio de arquitetura do motor de regras/progressão: separar nível total e nível por classe, permitir escolha de classe a cada avanço, calcular progressões/benefícios por classe e registrar corretamente `taken_at_character_level`. Não corrigir apenas na interface; requer contrato de servidor, validação de pré-requisitos e testes de progressão multiclasse.
+- Detalhes adicionados a `docs/DATA_MODEL.md`. Nenhuma alteração de código ou banco foi feita.
