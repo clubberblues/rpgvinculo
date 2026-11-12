@@ -183,3 +183,8 @@ A RPC antiga `join_campaign(p_code)` e a página `lobby_atualizado.html` pertenc
 No snapshot read-only: 3 campanhas, 6 memberships, 3 memberships GM, 5 personagens e 5 fichas SRD. Todas as campanhas têm seu proprietário como GM; não há membership GM de não proprietário; nenhum personagem vinculado está sem membership do dono; nenhuma ficha SRD órfã ou personagem sem ficha SRD foi encontrado; não há ledger de classe órfão. Não foram encontradas duplicatas de membership por campanha/usuário, códigos de convite por campanha, códigos de convite globais, fichas por personagem ou níveis por personagem/classe.
 
 Esses resultados são positivos para os dados atuais, mas a amostra é pequena e não prova integridade sob concorrência. Constraints/uniques e testes concorrentes continuam necessários.
+
+
+### Helper de salvamento com EXECUTE herdado de PUBLIC
+
+O catálogo confirma que `priv.srd_feat_saving_throw_modifier(jsonb,text)` ainda concede EXECUTE a `PUBLIC`, além de authenticated/service_role; por isso `has_function_privilege('anon',...) = true`. Anon não tem USAGE no schema `priv`, então a chamada direta não está demonstrada via REST no estado atual. A branch contém a migration candidata `20261110160000_revoke_public_feat_saving_throw_helper.sql`, que revoga PUBLIC/anon e mantém authenticated/service_role, mas ela não foi aplicada remotamente e o replay local não consegue iniciar por falta do schema-base. A migration deve ser validada e aplicada via fluxo normal após resolver o baseline; não confundir com correção do default ACL de `priv`, que continua pendente.
