@@ -65,3 +65,11 @@ Consulta read-only ao Supabase em 2026-11-12 confirmou:
 - A publicação `supabase_realtime` ainda contém `campaigns`; não removê-la até revisar todos os outros consumidores/arquivos e confirmar a configuração de private channels no Dashboard (Allow public access desativado).
 - **Bloqueio remanescente:** vários RPCs de mutação ainda retornam `cba_data` ou `combat_data` diretamente. A resposta HTTP desses RPCs pode expor tokens ocultos mesmo que o cliente depois faça refresh seguro. É necessário revisar e corrigir cada endpoint antes de revogar SELECT de coluna.
 - O helper de snapshot e a migration de Broadcast ainda são candidatas não aplicadas. Nenhum corte de ACL foi feito.
+
+## Primeira família de respostas RPC filtradas
+
+- Migration candidata `20261112160000_filter_player_damage_rpc_results.sql` move as duas sobrecargas de `aplicar_dano_token_ataque_srd_v2` para `priv` e mantém o mesmo nome/signatura pública como wrapper SECURITY DEFINER.
+- O wrapper chama a implementação original e substitui recursivamente qualquer chave `cba_data`/`combat_data` no JSONB de retorno pela projeção do snapshot seguro. Assim preserva os campos mecânicos do resultado (dano, PV, CA, total de ataque) sem devolver tokens ocultos ou estado interno do combate ao jogador.
+- O acesso EXECUTE direto às implementações movidas para `priv` é revogado para PUBLIC/anon/authenticated; somente o wrapper público mantém EXECUTE para authenticated.
+- Fixture `tests/sql/filter_player_damage_rpc_results_fixture.sql` simula ambas as sobrecargas, testa payload player filtrado, payload owner completo e impossibilidade de chamar a implementação interna. A aprovação CI desta fixture ainda precisa ser confirmada.
+- Essa é apenas a primeira família. Outros RPCs com retornos de CBA/combate ainda precisam da mesma análise e tratamento; não revogar SELECT de colunas até todos os retornos estarem cobertos.
