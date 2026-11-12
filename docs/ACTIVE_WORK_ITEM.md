@@ -1064,3 +1064,10 @@ A revisão read-only avançou para privilégios, RLS, funções privilegiadas, A
 - 3 campanhas, 6 memberships, 3 GM memberships, 5 personagens e 5 fichas SRD. Todos os donos estão registrados como GM; nenhum GM não proprietário; nenhum personagem vinculado sem membership do dono; nenhuma ficha órfã ou personagem sem ficha SRD; nenhum ledger de classe órfão.
 - Sem duplicatas observadas de membership, código de convite, ficha SRD ou nível por classe. Amostra pequena; não substitui testes de concorrência.
 - Detalhes em `docs/FOUNDATION_SECURITY_REVIEW.md`.
+
+
+### Grant PUBLIC em helper priv — migration candidata não aplicada (2026-11-11)
+
+- `priv.srd_feat_saving_throw_modifier(jsonb,text)` ainda tem EXECUTE para PUBLIC no banco remoto; por herança, anon também passa `has_function_privilege`. Anon não tem USAGE em `priv`, então REST access direto não foi demonstrado.
+- A migration candidata `20261110160000_revoke_public_feat_saving_throw_helper.sql` já existe na branch e revoga PUBLIC/anon, mantendo authenticated/service_role. Não está aplicada no remoto; o replay integral não chega às migrations por falta do schema-base. Validar e aplicar somente após baseline.
+- Isso não resolve o default ACL amplo do schema `priv` para funções/tabelas futuras.
