@@ -1132,3 +1132,10 @@ A revisão read-only avançou para privilégios, RLS, funções privilegiadas, A
 ### Manutenção PostgreSQL — verificar atualização gerenciada (2026-11-11)
 
 - Projeto reporta PostgreSQL `17.6.1.166`; changelog Supabase registra PostgreSQL `17.11.0.003` em 2026-09-25 com correções de 44 CVEs. Verificar no Dashboard se há atualização recomendada/disponível, após revisar extensões e índices. Nenhuma atualização foi iniciada.
+
+
+### Auth e perfis — consistência atual confirmada (2026-11-11)
+
+- Trigger de auth cria perfil com username apenas para exibição; não usa user_metadata para autorização. Trigger de membership força owner=GM e bloqueia promoção de outros membros. `my_role/sou_membro` derivam identidade de auth.uid(). Roles anon/authenticated não têm CREATE nos schemas public/priv/private/storage.
+- Snapshot: 8 auth users/8 profiles; sem perfil ausente/órfão, username duplicado ou vazio. O trigger captura falhas e não cancela signup; manter monitoramento para não gerar conta sem perfil em falha futura.
+- Detalhes em `docs/FOUNDATION_SECURITY_REVIEW.md`.
