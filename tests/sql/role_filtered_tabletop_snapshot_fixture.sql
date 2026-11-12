@@ -46,6 +46,14 @@ GRANT EXECUTE ON FUNCTION auth.uid() TO authenticated;
 
 \ir ../../supabase/migrations/20261112140000_add_role_filtered_tabletop_snapshot.sql
 
+DO $privilege$
+BEGIN
+  IF has_function_privilege('anon','public.obter_snapshot_seguro_mesa(bigint)','EXECUTE') THEN
+    RAISE EXCEPTION 'anon can execute the tabletop snapshot RPC';
+  END IF;
+END
+$privilege$;
+
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000002',true);
 DO $$
