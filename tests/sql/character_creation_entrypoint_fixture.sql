@@ -10,7 +10,7 @@ $roles$;
 CREATE OR REPLACE FUNCTION public.finalizar_criacao_personagem_srd(
  text,text,text,jsonb,jsonb,jsonb,jsonb,jsonb,jsonb,text[],jsonb,text,jsonb,jsonb
 ) RETURNS text LANGUAGE sql SECURITY INVOKER
-AS $ SELECT current_user::text $;
+AS $$ SELECT current_user::text $$;
 
 CREATE OR REPLACE FUNCTION public.criar_personagem_srd_completo(
  text,text,text,jsonb,jsonb,jsonb
