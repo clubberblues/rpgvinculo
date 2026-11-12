@@ -114,11 +114,16 @@ O schema `private` também concede USAGE a `authenticated` (não a `anon`) e con
 Na revisão lexical das 99 funções `SECURITY DEFINER` públicas executáveis por authenticated, 96 mencionam `auth.uid()`, 39 mencionam `my_role()` e cinco mencionam `priv.need_gm()` (categorias sobrepostas); todas têm pelo menos um desses marcadores. Isso é apenas triagem estática: não substitui revisão de autorização por função, validação de propriedade/campanha, nem teste negativo com usuário sem vínculo.
 
 
-### Rascunho de endurecimento dos privilégios padrão (não aplicado)
+### Rascunho corrigido de endurecimento dos privilégios padrão (não aplicado)
 
-Depois de validar que nenhum cliente precisa acessar diretamente objetos internos futuros, a migration de endurecimento deve incluir, no mínimo:
+A primeira fixture isolada falhou de forma útil: revogar EXECUTE de authenticated somente no default ACL do schema `priv` **não remove** EXECUTE herdado de `PUBLIC` no PostgreSQL. Como o catálogo remoto confirma EXECUTE de PUBLIC em `priv.srd_feat_saving_throw_modifier`, o default global de funções está ativo. Portanto, o endurecimento de funções precisa incluir a revogação global para objetos futuros, além dos revokes específicos do schema interno:
 
 ```sql
+-- Afeta somente funções criadas futuramente pelo owner postgres em todos os schemas.
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres
+  REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;
+
+-- Impede acesso automático de authenticated a objetos futuros do schema interno.
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA priv
   REVOKE ALL ON TABLES FROM authenticated;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA priv
@@ -127,17 +132,11 @@ ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA priv
   REVOKE EXECUTE ON FUNCTIONS FROM authenticated;
 ```
 
-Isso altera somente os privilégios padrão para objetos futuros criados pelo owner `postgres`; não revoga grants de objetos existentes. A migration deve ser criada com `supabase migration new`, testada contra um schema reproduzido e acompanhada de teste que prove que uma tabela/função recém-criada em `priv` não fica acessível diretamente a authenticated. Não executar no remoto antes dessa validação.
+A revogação global de PUBLIC não altera grants já existentes; funções públicas atuais mantêm suas ACLs, inclusive as cinco funções públicas que hoje são executáveis por anon. Novas funções públicas continuarão recebendo os grants de authenticated/service_role do default ACL do schema `public`, mas não receberão anon/PUBLIC implicitamente; qualquer endpoint realmente público precisará de GRANT explícito e revisão. Novas funções de `priv` não receberão EXECUTE de authenticated nem de anon; service_role permanece concedido pelo default ACL existente. Novas tabelas/sequences em `priv` deixam de receber privilégios de authenticated, mantendo service_role.
 
+Isso é uma mudança global de padrão para novas funções e precisa ser revisada contra futuras migrations que esperem EXECUTE público implícito. A fixture `tests/sql/priv_default_acl_fixture.sql` foi adicionada para provar: (a) os grants atuais simulados; (b) a revogação de PUBLIC e authenticated para objetos novos; (c) a preservação de service_role; (d) que grants em funções antigas não são removidos por alteração de default ACL. O teste CI da primeira versão falhou e a fixture foi corrigida para representar o default PUBLIC real; aguardar o novo resultado.
 
-### Limites efetivos de upload — risco de abuso/custo
-
-No bucket `midia`, `file_size_limit` e `allowed_mime_types` estão nulos. Os 135 objetos atuais são todos imagens (94 PNG, 22 JPEG, 19 WebP), totalizam aproximadamente 190,59 MiB; o maior tem 15,76 MiB. O frontend limita alguns fluxos por recorte, mas o upload de capa aceita `image/*` e envia o arquivo original sem limite de tamanho explícito. A política de Storage restringe caminho/proprietário, não tamanho ou MIME. Isso permite que um usuário autenticado autorizado no caminho envie arquivos muito grandes ou formatos não desejados, aumentando custo e superfície de conteúdo.
-
-O bucket privado `mesa-media` define limite de 50 MiB e allowlist que inclui imagens, vídeo e áudio; os fluxos de upload encontrados na mesa aceitam apenas imagens e limitam a imagem do token a 20 MiB. O bucket estava vazio. Rever se vídeo/áudio são realmente necessários; se não, restringir MIME e tamanho ao uso real.
-
-Plano recomendado: definir limite de tamanho compatível com capas/retratos (avaliar 20 MiB, pois o maior objeto atual tem 15,76 MiB), aceitar somente formatos raster realmente usados, validar também no cliente para UX e preservar leitura dos arquivos existentes. Não aplicar limite antes de confirmar se há mapas/arquivos maiores fora do bucket público.
-
+A migration deve ser criada com `supabase migration new`, testada no baseline reproduzido e acompanhada de testes que verifiquem funções públicas explicitamente permitidas. Não executar no remoto antes dessa validação.
 
 ## RPC legada de criação ainda executável
 
