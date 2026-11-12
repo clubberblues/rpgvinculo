@@ -17,7 +17,9 @@ DECLARE
   v_user uuid := auth.uid();
   v_campaign_id bigint;
   v_owner_id uuid;
+  v_cba_data jsonb;
   v_is_gm boolean;
+  v_is_member boolean;
 BEGIN
   IF v_user IS NULL OR p_name IS NULL THEN
     RETURN false;
@@ -39,12 +41,12 @@ BEGIN
   END;
 
   IF p_write THEN
-    SELECT c.owner_id INTO v_owner_id
+    SELECT c.owner_id, c.cba_data INTO v_owner_id, v_cba_data
       FROM public.campaigns c
      WHERE c.id = v_campaign_id
      FOR KEY SHARE;
   ELSE
-    SELECT c.owner_id INTO v_owner_id
+    SELECT c.owner_id, c.cba_data INTO v_owner_id, v_cba_data
       FROM public.campaigns c
      WHERE c.id = v_campaign_id;
   END IF;
@@ -69,10 +71,43 @@ BEGIN
     SELECT 1 FROM public.members m
     WHERE m.campaign_id = v_campaign_id
       AND m.user_id = v_user
-      AND (NOT p_write OR m.role = 'GM')
+      AND m.role = 'GM'
   ) INTO v_is_gm;
 
-  RETURN v_is_gm;
+  IF v_is_gm THEN
+    RETURN true;
+  END IF;
+
+  IF p_write THEN
+    RETURN false;
+  END IF;
+
+  SELECT EXISTS (
+    SELECT 1 FROM public.members m
+    WHERE m.campaign_id = v_campaign_id
+      AND m.user_id = v_user
+  ) INTO v_is_member;
+
+  IF NOT v_is_member THEN
+    RETURN false;
+  END IF;
+
+  -- Players may read the active map and explicitly visible token portraits only.
+  -- The current token JSON has no visibility flag, so those portraits remain
+  -- GM-only until the server-side fog/visibility contract is implemented.
+  IF v_cba_data->>'backgroundPath' = p_name THEN
+    RETURN true;
+  END IF;
+
+  RETURN EXISTS (
+    SELECT 1
+      FROM jsonb_array_elements(
+        CASE WHEN jsonb_typeof(v_cba_data->'tokens') = 'array'
+             THEN v_cba_data->'tokens' ELSE '[]'::jsonb END
+      ) AS token(value)
+     WHERE token.value->>'imagemPath' = p_name
+       AND token.value->>'visivel' = 'true'
+  );
 END
 $function$;
 
