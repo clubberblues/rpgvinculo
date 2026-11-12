@@ -65,6 +65,8 @@ BEGIN
 
   v_scene := coalesce(v_campaign.cba_data, '{}'::jsonb);
   v_combat := coalesce(v_campaign.combat_data, '{}'::jsonb);
+  IF jsonb_typeof(v_scene) <> 'object' THEN v_scene := '{}'::jsonb; END IF;
+  IF jsonb_typeof(v_combat) <> 'object' THEN v_combat := '{}'::jsonb; END IF;
 
   IF NOT v_is_gm THEN
     SELECT coalesce(array_agg(t.value->>'id'), ARRAY[]::text[])
@@ -119,7 +121,49 @@ BEGIN
 
     v_combat := jsonb_build_object(
       'active', coalesce((v_combat->>'active')::boolean, false),
-      'round', greatest(1, coalesce(nullif(v_combat->>'round','')::integer, 1)),
+      'round', CASE WHEN coalesce(v_combat->>'round','') ~ '^[0-9]+
+      'current_turn', v_new_current,
+      'turn_order', v_order
+    );
+  END IF;
+
+  RETURN jsonb_build_object(
+    'campaign', jsonb_build_object(
+      'id', v_campaign.id,
+      'name', v_campaign.name,
+      'owner_id', v_campaign.owner_id,
+      'state', v_campaign.state,
+      'active', v_campaign.active,
+      'location_id', v_campaign.location_id,
+      'briefing', v_campaign.briefing,
+      'capa_url', v_campaign.capa_url,
+      'capa_transform', v_campaign.capa_transform
+    ),
+    'cba_data', v_scene,
+    'combat_data', v_combat,
+    'viewer_is_gm', v_is_gm
+  );
+END
+$function$;
+
+REVOKE ALL ON FUNCTION priv.cba_visible_tabletop_snapshot(bigint) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION priv.cba_visible_tabletop_snapshot(bigint) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.obter_snapshot_seguro_mesa(p_campaign_id bigint)
+RETURNS jsonb
+LANGUAGE sql
+STABLE
+SECURITY INVOKER
+SET search_path = pg_catalog, public, priv
+AS $function$
+  SELECT priv.cba_visible_tabletop_snapshot(p_campaign_id)
+$function$;
+
+REVOKE ALL ON FUNCTION public.obter_snapshot_seguro_mesa(bigint) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.obter_snapshot_seguro_mesa(bigint) TO authenticated;
+
+COMMIT;
+ THEN greatest(1, (v_combat->>'round')::integer) ELSE 1 END,
       'current_turn', v_new_current,
       'turn_order', v_order
     );
