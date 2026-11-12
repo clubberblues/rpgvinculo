@@ -1071,3 +1071,10 @@ A revisão read-only avançou para privilégios, RLS, funções privilegiadas, A
 - `priv.srd_feat_saving_throw_modifier(jsonb,text)` ainda tem EXECUTE para PUBLIC no banco remoto; por herança, anon também passa `has_function_privilege`. Anon não tem USAGE em `priv`, então REST access direto não foi demonstrado.
 - A migration candidata `20261110160000_revoke_public_feat_saving_throw_helper.sql` já existe na branch e revoga PUBLIC/anon, mantendo authenticated/service_role. Não está aplicada no remoto; o replay integral não chega às migrations por falta do schema-base. Validar e aplicar somente após baseline.
 - Isso não resolve o default ACL amplo do schema `priv` para funções/tabelas futuras.
+
+
+### Criação legada por INSERT direto — rota ainda acessível (2026-11-11)
+
+- Policy `characters_create_unassigned` permite INSERT autenticado de personagem sem campanha; grants por coluna incluem `xp` e `ouro`. O fluxo legado `window.criarFicha` insere diretamente e escreve em `vinculo_character_sheets`; o modo SRD atual usa RPC atômica e não depende desse INSERT.
+- `ficha.html` mantém modo legado acessível por URL sem `ruleset=dnd35`; `lobby_atualizado.html` está no repo sem link no index atual. Aposentar/arquivar legado e reduzir INSERT direto em characters sem perder dados antigos; não remover agora sem plano de compatibilidade.
+- Detalhes em `docs/FOUNDATION_SECURITY_REVIEW.md`.
