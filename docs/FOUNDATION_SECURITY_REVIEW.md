@@ -95,3 +95,13 @@ O frontend atual atualiza diretamente `characters.retrato_url`, `characters.foto
 A publicação `supabase_realtime` inclui as tabelas usadas pelas nove assinaturas encontradas em `mesa.html`: `campaign_log`, `campaigns`, `characters`, `members`, `srd_character_sheets`, `srd_character_equipment`, `srd_cba_token_equipment`, `srd_campaign_conditions` e `srd_campaign_effects`. A configuração está alinhada estaticamente com os canais de chat, participantes, fichas, equipamentos, condições, efeitos e campanha. A entrega real de eventos, filtros, isolamento por RLS e reconexão ainda não foi testada com duas sessões autenticadas simultâneas.
 
 A publicação também contém tabelas legadas `tokens` e `vinculo_character_sheets`; a mesa atual mantém tokens em `campaigns.cba_data` e não usa diretamente a tabela `tokens` nos arquivos principais consultados. Remover essas tabelas da publicação exige confirmar que não há clientes antigos em uso.
+
+
+## Integridade relacional e índices de FK
+
+A leitura do catálogo encontrou 110 foreign keys nos schemas consultados, todas validadas; não foram encontradas constraints não validadas nem índices inválidos/inaptos. Três FKs não têm índice começando pelas colunas de referência no lado filho:
+- `priv.srd_pending_spell_resolutions.condition_break_instance_id` → `srd_campaign_conditions.condition_instance_id`;
+- `priv.srd_pending_spell_resolutions.condition_id` → `srd_conditions.condition_id`;
+- `public.srd_npc_attack_sequences.campaign_id` → `campaigns.id`.
+
+As tabelas correspondentes estavam vazias ou com volume muito baixo no snapshot. Registrar para avaliar junto aos 51 índices sinalizados como não utilizados e aos planos de consulta reais; não criar índices sem medir impacto/custo e incluir migration versionada.
