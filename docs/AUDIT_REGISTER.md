@@ -950,3 +950,8 @@ Os quatro entrypoints ativos `index.html`, `lobby.html`, `mesa.html` e `ficha.ht
 - Supabase JS foi fixado em `2.119.0` nos quatro entrypoints ativos. CI no commit de código `63fc9d6` passou static, JS app, JS mesa e fixtures; replay integral falhou ao iniciar stack e aplicar a primeira migration porque `public.campaigns` não existe no banco vazio (SQLSTATE 42P01). Nenhuma migration foi aplicada.
 - PostgreSQL remoto é `17.6.1.166`; o changelog Supabase registra 17.11.0.003 com correções de 44 CVEs. Verificar atualização gerenciada no Dashboard, sem upgrade nesta janela.
 - Fog, mídia, Data API, criação parcial, default ACL e bootstrap estão detalhados em `docs/FOUNDATION_SECURITY_REVIEW.md` e `docs/ACTIVE_WORK_ITEM.md`. Nenhuma alteração de produção foi feita.
+
+
+### Backup Free e snapshot de schema local (2026-11-11)
+
+A organização Supabase está no plano Free; backups automáticos diários só estão disponíveis em Pro/Team/Enterprise. Free deve exportar regularmente via CLI e manter cópias fora do projeto. Nenhum backup/restauração foi confirmado e não há ferramenta de listagem de backups disponível. Não fazer alterações remotas antes de backup recuperável. Foi criado `scripts/export-current-schema.ps1` para exportar schema-only do estado atual para pasta irmã ao repo, exigindo CLI linkada e Docker; não inclui Auth/Storage/arquivos e não é o bootstrap pré-ledger. Dados/Auth e Storage precisam de export separado e restauração testada. Nenhum backup foi gerado nesta sessão.
