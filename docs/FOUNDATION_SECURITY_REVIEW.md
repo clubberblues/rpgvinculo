@@ -310,3 +310,18 @@ Consulta read-only ao projeto ativo, após as migrations candidatas da branch ai
 - A proteção de senha comprometida permanece desabilitada. A ferramenta de consulta não permite verificar nem alterar a configuração do Auth; é necessário conferir no Dashboard, sem contratar upgrade.
 
 Nenhuma configuração, ACL, policy ou dado foi alterado durante esta revalidação.
+
+## Recontagem de endpoints privilegiados — 2026-11-12
+
+Consulta read-only atual ao catálogo do projeto:
+- 99 funções `SECURITY DEFINER` em `public` são executáveis por `authenticated`.
+- Nenhuma das 99 é executável por `anon` no ACL efetivo consultado.
+- 96/99 definições contêm referência explícita a `auth.uid()`; 41/99 referenciam `members`; 14/99 referenciam `owner_id`; 58/99 contêm `FOR UPDATE` ou `FOR NO KEY UPDATE`.
+- As três sem referência textual direta a `auth.uid()` são `can_read_media(text)`, `gm_get_code(bigint)` e `media_gc(bigint)`. As duas últimas chamam `priv.need_gm(cid)`, que consulta `public.my_role(cid)`, cuja associação usa `auth.uid()`. `can_read_media` usa `my_role` para GM e membership para camada visível. Essa classificação reduz falso positivo, mas não substitui revisão de autorização de cada função.
+- Não foi encontrada evidência de EXECUTE por anon no conjunto; não fazer revogação em massa de authenticated. A revisão individual dos 99 endpoints continua aberta, incluindo validação de propriedade do alvo, autorização GM/player, lock order, retorno de dados privados e idempotência.
+
+## Novo endpoint de snapshot CBA
+
+A migration candidata `20261112140000_add_role_filtered_tabletop_snapshot.sql` cria `public.obter_snapshot_seguro_mesa(bigint)` com helper em `priv`. O helper aplica filtro por papel e omite dados internos de combate e atores ocultos para jogadores. Se `fogEnabled=true`, também omite o caminho do mapa integral, pois ainda não há tiles/crops revelados por jogador.
+
+O endpoint ainda não está integrado ao frontend. Não considerar isolamento concluído enquanto os 11 leitores diretos identificados em `docs/CBA_SECURITY_CUTOVER_PLAN.md`, o evento Realtime da tabela `campaigns` e todos os retornos de RPC que contêm `cba_data`/`combat_data` permanecerem ativos.
