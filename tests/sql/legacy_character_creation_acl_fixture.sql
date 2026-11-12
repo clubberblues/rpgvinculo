@@ -23,6 +23,9 @@ AS $$ SELECT 'validated-path'::text $$;
 GRANT EXECUTE ON FUNCTION public.criar_personagem_srd_completo(
   text, text, text, jsonb, jsonb, jsonb
 ) TO authenticated;
+REVOKE ALL ON FUNCTION public.criar_personagem_srd_completo(
+  text, text, text, jsonb, jsonb, jsonb, jsonb
+) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.criar_personagem_srd_completo(
   text, text, text, jsonb, jsonb, jsonb, jsonb
 ) TO authenticated;
