@@ -1224,3 +1224,10 @@ O script salva o snapshot schema-only fora do repo, sem enviar dados ou segredos
 - Commit do workflow: `3384dcb498cb7b82debf04fafa5db5dfd90f92c3`.
 - Não aplicado no Supabase remoto; sem DDL/DML em produção, sem merge e sem deploy.
 - Próximo: confirmar execução do workflow e corrigir qualquer falha; então avançar para o próximo gate de segurança sem ampliar privilégios públicos.
+
+## Revalidação adicional — 2026-11-12
+
+- O Security Advisor ativo continua reportando 7 avisos informativos de RLS sem policy, 99 funções SECURITY DEFINER acessíveis a authenticated e 1 aviso de proteção de senha comprometida desabilitada; Health Advisor sem avisos. Isso exige revisão por endpoint, não revogação em massa.
+- A tabela legada `public.tokens` foi reconsultada: RLS ativo, SELECT para membros e policies de escrita que isoladamente usam membership, porém ACL efetivo de `authenticated` não concede INSERT/UPDATE/DELETE. A tabela está vazia. Corrigida a avaliação em `docs/FOUNDATION_SECURITY_REVIEW.md`; não criar migration de escrita sem evidência de grant efetivo.
+- A leitura direta de `campaigns.cba_data/combat_data` continua sendo o bloqueio de segurança dominante. A página `mesa.html` ainda inicia com `select('*')`, atualiza estado por selects diretos e recebe a linha inteira no Realtime. Há múltiplos RPCs que retornam `cba_data`; não é seguro aplicar revogação de SELECT por coluna antes de substituir todos os callsites e normalizar retornos dos RPCs.
+- Não foi realizada alteração no banco ativo. As migrations candidatas seguem sem aplicação. A fundação permanece NÃO concluída.
