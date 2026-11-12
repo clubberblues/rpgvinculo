@@ -1099,3 +1099,10 @@ A revisão read-only avançou para privilégios, RLS, funções privilegiadas, A
 
 - A fixture corrigida `tests/sql/priv_default_acl_fixture.sql` passou no CI PostgreSQL run `43136928379`. Ela confirma que revogar PUBLIC globalmente para funções futuras, junto dos revokes de authenticated em tabelas/sequences/funções futuras de priv, impede novos grants automáticos; service_role permanece e ACLs de funções existentes não são alteradas.
 - A correção ainda não foi transformada em migration, pois o Supabase CLI/repositório local não está disponível nesta sessão e a validação de replay integral continua bloqueada pelo schema-base ausente. Não aplicar no remoto.
+
+
+### Mesa CBA — névoa de guerra ainda não modelada (2026-11-11)
+
+- O normalizador/serializador CBA ativo em `mesa.html` persiste apenas fundo, caminho do fundo, escala, grid e tokens. Não há campo de névoa/revelação no snapshot nem controles de revelar por jogador/todos no fluxo ativo consultado.
+- Portanto, a névoa de guerra por jogador/todos ainda não está implementada no modelo CBA atual. Ao projetá-la, persistir estado autoritativo por campanha e separar visibilidade individual/global. A URL assinada do fundo completo permite baixar a imagem inteira; overlay no navegador não protege regiões não reveladas. Isso precisa ser resolvido junto à política do bucket privado, possivelmente com tiles/crops server-side ou declaração explícita de fog apenas visual.
+- Detalhes de armazenamento em `docs/FOUNDATION_SECURITY_REVIEW.md`; nenhuma mudança remota.
