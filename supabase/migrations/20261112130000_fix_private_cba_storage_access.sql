@@ -68,7 +68,7 @@ BEGIN
   ) INTO v_cleanup;
 
   IF v_owner_id = v_user THEN
-    RETURN NOT v_cleanup OR p_delete;
+    RETURN NOT (v_cleanup AND p_write AND NOT p_delete);
   END IF;
 
   SELECT EXISTS (
@@ -79,7 +79,7 @@ BEGIN
   ) INTO v_is_gm;
 
   IF v_is_gm THEN
-    RETURN NOT v_cleanup OR p_delete;
+    RETURN NOT (v_cleanup AND p_write AND NOT p_delete);
   END IF;
 
   IF v_cleanup OR p_write THEN
