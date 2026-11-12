@@ -36,6 +36,7 @@ BEGIN
 
   IF p_name !~ '^campaigns/[0-9]+/.+$'
      OR p_name LIKE '%//%'
+     OR right(p_name, 1) = '/'
      OR p_name ~ '(^|/)\.\.?(/|$)'
      OR strpos(p_name, chr(92)) > 0 THEN
     RETURN false;
