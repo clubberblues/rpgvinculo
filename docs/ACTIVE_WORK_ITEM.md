@@ -1113,3 +1113,10 @@ A revisão read-only avançou para privilégios, RLS, funções privilegiadas, A
 - Os quatro entrypoints ativos `index.html`, `lobby.html`, `mesa.html` e `ficha.html` agora fixam o CDN em `@supabase/supabase-js@2.119.0` (release estável publicado em 2026-11-04), em vez de resolver automaticamente a última versão 2.x.
 - `lobby_atualizado.html` permanece com a referência antiga `@2`, mas é página legada sem link no fluxo ativo; não foi alterada nesta rodada. A versão fixada corresponde à versão que o alias @2 resolvia no momento da atualização.
 - CI de sintaxe/JS precisa concluir no novo HEAD; nenhum pacote pago ou build tool foi introduzido.
+
+
+### Exposição Data API confirmada via tipos gerados (2026-11-11)
+
+- Os tipos TypeScript gerados pelo Supabase para o Data API incluem as duas sobrecargas públicas `criar_personagem_srd_completo` (6 e 7 argumentos) e o wrapper `finalizar_criacao_personagem_srd`. Portanto, as duas rotas de criação parcial estão efetivamente expostas no schema da API, não apenas com EXECUTE ACL.
+- `priv.srd_feat_saving_throw_modifier` não aparece nos tipos públicos gerados, coerente com `priv` não estar exposto à Data API no momento. A confirmação final da allowlist ainda requer Dashboard.
+- Detalhes em `docs/FOUNDATION_SECURITY_REVIEW.md`.
