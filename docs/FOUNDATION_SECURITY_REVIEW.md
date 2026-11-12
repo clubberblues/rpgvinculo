@@ -105,3 +105,10 @@ A leitura do catálogo encontrou 110 foreign keys nos schemas consultados, todas
 - `public.srd_npc_attack_sequences.campaign_id` → `campaigns.id`.
 
 As tabelas correspondentes estavam vazias ou com volume muito baixo no snapshot. Registrar para avaliar junto aos 51 índices sinalizados como não utilizados e aos planos de consulta reais; não criar índices sem medir impacto/custo e incluir migration versionada.
+
+
+## Schemas internos adicionais e verificações de autorização
+
+O schema `private` também concede USAGE a `authenticated` (não a `anon`) e contém oito funções; seis têm EXECUTE para authenticated e nenhuma para anon. As seis são rotinas de equipamento para personagem/NPC/token, com `SECURITY DEFINER`, `search_path` fixo e verificações explícitas de `auth.uid()`/papel no corpo. As outras duas são triggers de sincronização sem EXECUTE direto para authenticated. Não há default ACL específico registrado para `private`. A exposição direta REST de `private` não foi confirmada; conferir a allowlist no Dashboard.
+
+Na revisão lexical das 99 funções `SECURITY DEFINER` públicas executáveis por authenticated, 96 mencionam `auth.uid()`, 39 mencionam `my_role()` e cinco mencionam `priv.need_gm()` (categorias sobrepostas); todas têm pelo menos um desses marcadores. Isso é apenas triagem estática: não substitui revisão de autorização por função, validação de propriedade/campanha, nem teste negativo com usuário sem vínculo.
