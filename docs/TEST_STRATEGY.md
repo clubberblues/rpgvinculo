@@ -378,3 +378,8 @@ Consulta read-only ao Supabase confirmou:
 A branch aplica `PUBLIC` por padrão às rolagens de jogadores e permite que o Mestre escolha `PUBLIC` ou `PRIVATE` por rolagem. O modal não deve limpar a escolha privada enquanto o callback assíncrono ainda grava o resultado.
 
 **Próximo teste de integração:** duas sessões autenticadas (GM e jogador), uma rolagem pública do jogador visível nos dois chats em tempo real, uma rolagem privada do Mestre visível apenas ao Mestre, e uma rolagem pública do Mestre visível a todos. A política remota foi inspecionada, mas este cenário de ponta a ponta ainda não foi executado.
+
+
+### Descanso longo administrado pelo Mestre — 2026-11-13
+
+A migration candidata `20261112170000_allow_gm_controlled_character_rest.sql` preserva o bloqueio SRD existente e acrescenta autorização para o Mestre da campanha executar descanso longo em personagem de jogador, sem transferir a propriedade. A fixture `gm_character_long_rest_fixture.sql` testa Mestre, dono, outro jogador e usuário externo. A execução CI foi adicionada; não considerar validada até o run terminar. Não aplicada ao Supabase remoto.
