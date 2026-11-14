@@ -199,3 +199,14 @@ Consequência para a loja:
 - As futuras RPCs de compra/venda devem encapsular escrita em função privilegiada com validação explícita de `auth.uid()`, papel, propriedade, campanha, estoque e saldo; não conceder escrita direta ao navegador.
 - O saldo SRD continua sendo candidato a fonte canônica, com espelho legado sincronizado dentro da mesma transação.
 - Nenhuma migration foi aplicada. Nenhuma permissão foi alterada.
+
+
+### Revisão complementar do fluxo de equipamento — 2026-11-14
+
+- `equipar_item_srd(text,text,boolean)` é SECURITY INVOKER. Para itens que não são armas, executa UPDATE em `srd_character_equipment`, mas `authenticated` não tem UPDATE nessa tabela. A policy RLS existente não supre o grant ausente. Esse caminho deve ser tratado como provável falha para armaduras/escudos/acessórios até teste controlado.
+- Para armas, a função delega a `equipar_item_srd_maos`, que usa `srd_character_weapon_instances`. O papel authenticated possui INSERT/UPDATE/DELETE nessa tabela, então o bloqueio identificado acima não se aplica automaticamente ao caminho de instâncias de armas.
+- `equipar_item_srd_maos` e `equipar_arma_instancia_personagem` são SECURITY INVOKER; seus privilégios e políticas devem ser mantidos separados da correção do inventário genérico.
+- `criar_personagem_srd(text,text,text,jsonb)` não tem EXECUTE efetivo para authenticated/anon no banco consultado. Isso não prova que a criação de ficha esteja quebrada: a UI pode usar outro endpoint ou RPC. O fluxo ativo precisa ser rastreado no código antes de alterar permissões.
+- RPCs de descanso longo do jogador, descanso longo de NPC vinculado, entrega de item a token e equipamento de item de token têm EXECUTE para authenticated. As funções de descanso longo do jogador e entrega/equipamento de token são SECURITY DEFINER; descanso de NPC vinculado é SECURITY INVOKER.
+
+Nenhuma permissão foi concedida e nenhuma função foi alterada. Essas observações são auditoria estática de grants/definições; não equivalem a teste funcional.
