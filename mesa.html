@@ -3162,25 +3162,30 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
         var appliedDamage=Number(aplicado.data.damage),damageFinal=Number.isFinite(appliedDamage)?appliedDamage:totalRolado;
         await enviarMensagemChat('💥 '+weaponName+' atingiu '+target.nome+': '+completeDescription+' = **'+totalRolado+'** rolados; **'+damageFinal+'** de dano aplicado após os efeitos. PV: '+restante+' / '+maximo+'.','rolagem',{evento:'dano_ataque_dnd35_aplicado',atacante:String(own.ch.id),atacante_nome:String(own.ch.nome||''),alvo:String(target.id),alvo_nome:String(target.nome||''),arma:weaponName,dano_base:rawDamage,dano_rolado:totalRolado,dano_aplicado:damageFinal,sneak_attack_dice:sneakAttackDice,sneak_attack_damage:sneak,critico:isCritical,ca_alvo:targetAC,pv_atual:restante,pv_max:maximo});
       }
-      function concluirRolagemDano(total,description){
-        if(sneakAttackDice<=0){registrarDano(total,description,0,'');return;}
+      async function concluirRolagemDano(total,description){
+        if(sneakAttackDice<=0){await registrarDano(total,description,0,'');return;}
         abrirDado('Ataque Furtivo · '+sneakAttackDice+'d6',async function(result){
           var extra=Math.trunc(Number(result));
           if(!Number.isFinite(extra)||extra<sneakAttackDice||extra>sneakAttackDice*6)throw new Error('Rolagem de Ataque Furtivo inválida.');
-          registrarDano(total,description,extra,'Rolagem 3D '+sneakAttackDice+'d6');
+          await registrarDano(total,description,extra,'Rolagem 3D '+sneakAttackDice+'d6');
         },true,true,sneakAttackDice+'d6');
       }
       if(sides===2||sides===3){
         var accumulated=0,index=0,mappedSides=sides===2?4:6;
-        function rollMappedSmallDie(){
-          if(index>=diceTotal){concluirRolagemDano(Math.max(1,accumulated+flat),diceTotal+'d'+sides+' (dados 3D equivalentes)'+(flat>0?' + '+flat:flat<0?' − '+Math.abs(flat):''));return;}
+        async function rollMappedSmallDie(){
+          if(index>=diceTotal){await concluirRolagemDano(Math.max(1,accumulated+flat),diceTotal+'d'+sides+' (dados 3D equivalentes)'+(flat>0?' + '+flat:flat<0?' − '+Math.abs(flat):''));return;}
           index++;
-          abrirDado('Dano '+weaponName+' · d'+sides+' '+index+'/'+diceTotal+' (use o dado 3D)',async function(raw){var value=Number(raw);if(!Number.isFinite(value)||value<1||value>mappedSides)throw new Error('O dado retornou um valor inválido.');accumulated+=Math.ceil(value/(mappedSides/sides));rollMappedSmallDie();},true,true,'1d'+mappedSides);
+          abrirDado('Dano '+weaponName+' · d'+sides+' '+index+'/'+diceTotal+' (use o dado 3D)',async function(raw){
+            var value=Number(raw);
+            if(!Number.isFinite(value)||value<1||value>mappedSides)throw new Error('O dado retornou um valor inválido.');
+            accumulated+=Math.ceil(value/(mappedSides/sides));
+            await rollMappedSmallDie();
+          },true,true,'1d'+mappedSides);
         }
         rollMappedSmallDie();
         return;
       }
-      abrirDado('Dano '+weaponName+' · '+formula+critLabel,async function(result){concluirRolagemDano(Math.max(1,Number(result)),'Rolagem 3D '+formula);},true,true,formula);
+      abrirDado('Dano '+weaponName+' · '+formula+critLabel,async function(result){await concluirRolagemDano(Math.max(1,Number(result)),'Rolagem 3D '+formula);},true,true,formula);
     }
     function registrarResultadoAtaque(d20,isCritical){
       var total=Number(d20)+bonus,automaticMiss=Number(d20)===1,automaticHit=Number(d20)===20,hit=!automaticMiss&&(automaticHit||total>=targetAC);
