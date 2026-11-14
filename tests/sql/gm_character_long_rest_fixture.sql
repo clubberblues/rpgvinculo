@@ -53,6 +53,7 @@ BEGIN
   RETURN jsonb_build_object('rested',true,'campaign_id',p_campaign_id,'character_id',p_character_id);
 END
 $rest_fixture$;
+GRANT EXECUTE ON FUNCTION public.descanso_longo_personagem_srd(bigint,text) TO authenticated;
 
 \ir ../../supabase/migrations/20261112170000_allow_gm_controlled_character_rest.sql
 
