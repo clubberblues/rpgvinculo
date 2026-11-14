@@ -126,3 +126,31 @@ Sobre economia:
 - A política `characters_owner_or_gm_update` autoriza o dono da ficha a atualizar a linha inteira. Como RLS não restringe colunas, a futura economia precisa impedir que clientes alterem diretamente `ouro` fora das RPCs (por privilégios de coluna cuidadosamente revisados ou proteção equivalente no banco). Apenas validar saldo dentro da RPC de compra não basta se o cliente puder sobrescrevê-lo por outra chamada.
 - A tabela `srd_character_equipment` tem política de UPDATE para dono/Mestre e SELECT, mas INSERT/DELETE são realizados por RPCs privilegiadas existentes. A implementação de comércio deve seguir esse padrão: sem escrita direta pelo navegador.
 - Decisão de arquitetura pendente: escolher um saldo canônico. A opção mais coerente com o fluxo SRD é `srd_character_sheets.ouro` como fonte decimal e `characters.ouro` como espelho legado inteiro apenas se todos os pontos de leitura ainda necessários forem mantidos sincronizados no servidor. Antes de adotar essa opção, mapear todas as funções que escrevem/consomem ouro e decidir como tratar frações de PO.
+
+
+### Auditoria complementar de todas as rotinas de ouro — 2026-11-14
+
+#### Escritas identificadas
+
+- `criar_personagem_srd`: cria personagem com `characters.ouro=0` e `srd_character_sheets.ouro=0`.
+- `finalizar_equipamento_inicial_srd`: calcula riqueza inicial e grava o saldo restante nos dois campos. O campo SRD mantém NUMERIC; o legado `characters.ouro` recebe `FLOOR(v_remaining)::INTEGER`. Portanto, frações de PO são descartadas no espelho legado.
+- `gm_grant`: concede/remove ouro exclusivamente em `characters.ouro` (INTEGER), com bloqueio de linha, validação de saldo não negativo e log. Não atualiza `srd_character_sheets.ouro`; usar essa RPC em personagens SRD criaria divergência.
+- `calc_sheet`: expõe `characters.ouro` como valor de ouro na ficha legada.
+- `srd35_deslocamento_personagem`: lê `srd_character_sheets.ouro` para calcular o peso do ouro carregado (100 PO = 1 kg conforme comentário/implementação).
+- Não foram encontrados triggers de sincronização entre os dois campos. Os triggers inspecionados são de exclusão de ficha/inventário, sincronização de instâncias de armas e ajuste de PV por talento.
+- Nenhuma outra função pública encontrada na busca por referências a ouro realiza escrita explícita nesses campos.
+
+#### Segurança confirmada
+
+- A política `characters_owner_or_gm_update` permite UPDATE ao dono da ficha ou Mestre da campanha, sem restringir a coluna `ouro`.
+- O papel `authenticated` tem privilégio UPDATE de tabela herdado/atribuído conforme o schema atual; a consulta de privilégios de coluna não mostrou UPDATE específico de `ouro`, mas isso não elimina o risco de UPDATE por privilégio de tabela.
+- As RPCs `gm_grant` e `finalizar_equipamento_inicial_srd` estão executáveis por `authenticated` e são `SECURITY DEFINER`.
+- A política de RLS sozinha não impede que o proprietário altere seu saldo diretamente, pois a política autoriza a atualização da linha inteira. A implementação de loja deve restringir escrita direta de ouro por privilégio de coluna/tabela e concentrar movimentações nas RPCs validadas.
+
+#### Decisão de implementação
+
+- **Não adotar ainda um saldo canônico unilateral sem uma migração de compatibilidade.**
+- Para o VTT simplificado, o contrato proposto é usar `srd_character_sheets.ouro NUMERIC` como saldo autoritativo para fichas SRD, pois a riqueza inicial e a carga já o utilizam. `characters.ouro INTEGER` será espelho legado arredondado para baixo somente enquanto a ficha antiga depender de `calc_sheet`/rotinas legadas.
+- A futura camada de economia deve atualizar ambos os campos dentro da mesma transação, definir explicitamente o tratamento de frações (recomendado: permitir incrementos em PO inteiras e preservar o saldo NUMERIC existente), e registrar saldo anterior/novo no livro-caixa.
+- `gm_grant` não deve ser usado para recompensas em personagens SRD até ser adaptado ou substituído por uma RPC SRD que atualize os dois campos atomicamente. Para personagens legados, manter o comportamento atual até uma migração própria.
+- Antes de criar a migration, conferir os grants efetivos de UPDATE na tabela `characters` e as permissões de UPDATE na coluna `ouro` com uma consulta focada em privilégios de tabela e coluna. A consulta anterior confirmou o papel `authenticated` no privilégio INSERT da coluna, mas não apresentou UPDATE específico por coluna.
