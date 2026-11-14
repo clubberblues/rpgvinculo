@@ -1,3 +1,17 @@
+## Atualização consolidada — 2026-11-13
+
+**Fase atual:** arquitetura e contratos de produto consolidados; auditoria e integração da fundação em execução.
+
+As decisões recentes foram registradas em `DECISIONS.md`. A arquitetura prioriza uma primeira mesa jogável, reutilização de `dice.html`, automação proporcional, adjudicação do Mestre, grid fixo de 1,5 m e ausência de fog/voz/vídeo.
+
+### Estado técnico desta execução
+- Repositório e Supabase acessíveis pelas integrações GitHub/Supabase do ChatGPT; Work não é pré-requisito para a auditoria.
+- Branch de trabalho: `audit/lock-order-rage-removal-2026-11-09`, PR #74 draft; sem merge/deploy.
+- Banco remoto: 966 migrations aplicadas no ledger; branch contém 976 arquivos SQL, com 10 migrations candidatas ainda não aplicadas.
+- Todas as 76 tabelas públicas observadas têm RLS habilitado.
+- Achado P1: membros autenticados ainda podem ler diretamente `campaigns.cba_data` e `campaigns.combat_data`. O snapshot filtrado e o Broadcast já estão integrados no código da branch, mas os retornos RPC e o grant direto precisam ser fechados em ordem.
+- A fundação permanece NÃO concluída; a campanha TESTE 2 e os dados existentes não foram modificados.
+
 # Vínculo RPG — Estado do projeto
 
 > Documento de continuidade entre sessões. Atualizar sempre que houver mudança relevante de código, banco, testes, decisões ou prioridades.
