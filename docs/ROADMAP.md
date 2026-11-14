@@ -29,7 +29,7 @@ Nenhuma fase deve ser repetida integralmente sem evidência de mudança ou lacun
 - [x] Criar proposta inicial de ActionRequest/ActionResult, catálogo inicial de erros/eventos e estratégia de adoção em ACTION_CONTRACTS.md; ainda não implementada e decisões de persistência/versionamento permanecem abertas.
 - [ ] Fechar contratos por fluxo e cruzamento completo de argumentos/tipos JavaScript ↔ PostgreSQL.
 - [ ] Definir política implementável de transações, idempotência e concorrência (auditoria de locks e proposta faseada registradas em [LOCK_ORDER_PROTOCOL_DRAFT.md](LOCK_ORDER_PROTOCOL_DRAFT.md) e [LOCK_ORDER_REFACTOR_PLAN.md](LOCK_ORDER_REFACTOR_PLAN.md); ainda falta fechar grafo transitivo, ordem por domínio, integração real e migração segura).
-- [x] Definir limites de domínio SRD/Vínculo e separar catálogos/regras.
+- [x] Definir D&D 3.5 como única fonte de regras ativa; manter `vinculo_*` isolado como legado.
 - [ ] Fechar estratégia de testes e implantação (CI estático é a primeira camada; integração/E2E e deploy permanecem pendentes).
 - [x] Registrar proposta inicial de contratos de ação e resultado em [ACTION_CONTRACTS.md](ACTION_CONTRACTS.md), sem alterar contratos RPC existentes.
 
@@ -149,7 +149,7 @@ Uma descoberta só interrompe a tarefa atual se for P0, P1, dependência direta 
 
 
 ## Escopo e prioridade do caminho legado Vínculo — 2026-11-09
-A divergência de nomes em ficha.html foi classificada como rota latente: o banco tem 5 personagens, todos SRD, nenhum com ficha Vínculo; o lobby atual cria fichas com ruleset=dnd35. Não alterar o ramo legado sem decisão de produto e sem fixture Vínculo descartável. A prioridade da Fase 1 permanece concluir arquitetura/contratos do fluxo ativo D&D 3.5 + mesa; manter o domínio Vínculo documentado como separado, sem misturar catálogos.
+A divergência de nomes em ficha.html foi classificada como rota legada: o banco tem 5 personagens, todos SRD, nenhum com ficha Vínculo; o lobby ativo cria fichas com ruleset=dnd35. O ramo Vínculo não será reativado; manter apenas compatibilidade histórica até descontinuação segura. A prioridade permanece concluir arquitetura/contratos do fluxo ativo D&D 3.5 + Mesa.
 
 
 ## Prioridade técnica identificada — lock order de AOO — 2026-11-09
