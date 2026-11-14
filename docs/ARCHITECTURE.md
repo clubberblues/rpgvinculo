@@ -107,7 +107,7 @@ As camadas são limites de responsabilidade, não uma ordem para criar serviços
 ## Pontos a confirmar no diagnóstico de reconciliação
 - Mapa real de dependências entre HTMLs, scripts, RPCs e tabelas.
 - Fonte canônica de cada valor mecânico exibido na mesa/ficha.
-- Limites atuais entre regras SRD e regras Vínculo.
+- Pontos de acoplamento e plano de descontinuação segura do ramo legado `vinculo_*`.
 - Uso efetivo de Realtime e Storage por fluxo.
 - Fluxos ainda dependentes de dados JSON/legados.
 - Testes automatizados disponíveis e lacunas.
