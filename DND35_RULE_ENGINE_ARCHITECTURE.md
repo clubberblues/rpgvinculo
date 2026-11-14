@@ -1,16 +1,16 @@
 # Arquitetura do motor D&D 3.5
 
-Estado em 01/11/2026: **fundação de arquitetura e esquema aplicados no Supabase de produção; catálogo e motor ainda não completos**.  
-Escopo de conteúdo inicial: D&D 3.5 SRD / Open Game Content (OGL 1.0a). O Vínculo RPG permanece em catálogo separado.
+Estado em 13/11/2026: **fundação de arquitetura e esquema aplicados no Supabase de produção; catálogo e motor ainda não completos**.  
+Escopo ativo: D&D 3.5, com livros/fontes oficiais como referência normativa. Conteúdo estruturado distribuído pela aplicação deve respeitar licença e direitos autorais; SRD/OGL é usado onde aplicável. O produto continua chamado Vínculo RPG, mas não há um ruleset homebrew Vínculo ativo.
 
 ## Limite de conteúdo
 
-O motor pode representar módulos de D&D 3.5 e regras caseiras separadamente. O catálogo inicial só declara conteúdo cuja fonte/licença foi conferida. Texto integral, ilustrações, identidade de produto e conteúdo fechado dos livros não são importados sem licença apropriada. Para suplemento ou livro fechado, guardar apenas uma referência/resumo próprio até o projeto ter autorização para distribuir seu conteúdo.
+O motor representa regras oficiais de D&D 3.5 e suplementos selecionados quando sua fonte e tratamento jurídico estiverem verificados. Não criar um segundo ruleset Vínculo nem importar regras homebrew antigas como conteúdo ativo. Texto integral, ilustrações e conteúdo fechado dos livros não são redistribuídos sem licença apropriada; para material protegido, guardar referência bibliográfica e dados mecânicos permitidos, sem reproduzir o texto.
 
 ## Camadas
 
 1. **Fonte e licença** — edição, versão, licença, atribuição, URL e estado de verificação por entrada.
-2. **Ruleset e módulos** — regras básicas e módulos opcionais; uma campanha escolhe explicitamente o que habilita. Vínculo RPG e house rules ficam separados.
+2. **Ruleset e módulos oficiais** — regras básicas e suplementos oficiais opcionais; uma campanha escolhe explicitamente o que habilita. Exceções pontuais do Mestre são registradas e auditáveis, sem criar um ruleset alternativo.
 3. **Catálogo mecânico** — raças, classes, progressões por nível, perícias, talentos e pré-requisitos, equipamentos, magias, efeitos, monstros, condições e domínios.
 4. **Ficha permanente** — raça, níveis separados por classe, atributos, perícias, talentos, habilidades, grimório, magias conhecidas, escolhas de domínio e inventário.
 5. **Preparação e estado de jogo** — magias preparadas, espaços gastos, usos por dia, condições/efeitos ativos, turnos, economia de ações e campanha.
@@ -19,7 +19,7 @@ O motor pode representar módulos de D&D 3.5 e regras caseiras separadamente. O 
 
 ## Contrato de mecânica
 
-- Um valor mecânico precisa vir do catálogo, da ficha, do estado da campanha ou de uma house rule explicitamente habilitada.
+- Um valor mecânico precisa vir de uma fonte oficial D&D 3.5 verificada, do catálogo, da ficha ou do estado da campanha. Exceções do Mestre precisam ser explícitas, justificadas e registradas.
 - Fórmulas não devem ser copiadas em diversos handlers HTML. O cliente pode apresentar prévia; o servidor valida recursos, turno, alcance e efeitos antes de persistir.
 - Um resultado explicável registra fórmula, valores de entrada, regra aplicada, alvo, resultado, recursos consumidos e log correlacionado.
 - Regra sem dados suficientes fica como resolução do Mestre e declara o dado ausente; o sistema não inventa CA, bônus, resistência ou efeito.
