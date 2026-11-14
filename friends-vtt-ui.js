@@ -74,6 +74,6 @@
 (function(){
   var style=document.createElement('style');
   style.id='friends-vtt-grid-only';
-  style.textContent='#modal-cba .cba-tool-group:has(#cba-bg-input),#modal-cba .cba-tool-group:has(#img-scale),#modal-cba .cba-fog-tools,#cba-bg-layer,#cba-fog-preview{display:none!important}';
+  style.textContent='#modal-cba .cba-tool-group:has(#cba-bg-input),#modal-cba .cba-tool-group:has(#img-scale),#modal-cba .cba-fog-tools,#cba-bg-layer,#cba-fog-preview{display:none!important}.token-cba.selecionado-para-teste{outline:3px solid #fbbf24!important;outline-offset:3px!important;filter:drop-shadow(0 0 8px rgba(251,191,36,.9))!important}';
   document.head.appendChild(style);
 })();
