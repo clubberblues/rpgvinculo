@@ -1218,6 +1218,10 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   <div class="dado-card">
     <div class="dado-card-header">
       <h3 id="dado-titulo">Mesa de Dados</h3>
+      <label id="dado-visibilidade-controle" hidden style="display:flex;align-items:center;gap:7px;color:#e8d7ad;font:11px 'Cinzel',serif;letter-spacing:.4px">
+        <input id="dado-visibilidade-publica" type="checkbox" checked style="accent-color:#c9a050">
+        Exibir rolagem para todos
+      </label>
       <button class="btn-fechar-dado" onclick="fecharDado()">✕</button>
     </div>
     <div class="dado-card-body">
@@ -1278,6 +1282,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   var rollSessionId = 0;
   var rollSessionToken = null;
   var rollResultReceived = false;
+  var rollVisibilityCurrent = 'PUBLIC';
   var modoSelecaoTeste = false;
   var testeAtual = '';
   var alvosSelecionados = [];
@@ -2327,11 +2332,19 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   }
 
   function atualizarZoomCBA(){ var world=document.getElementById('cba-live-world'); if(world) world.style.setProperty('--cba-zoom',String(cbaZoom)); }
+  window.addEventListener('vinculo:cba-zoom',function(e){
+    var value=Number(e.detail);
+    if(!Number.isFinite(value))return;
+    cbaZoom=Math.max(0.35,Math.min(12,value));
+    atualizarZoomCBA();
+  });
   function ligarGestosCBA(){
     var board=document.getElementById('area-tabuleiro'); if(!board) return;
     var pinchStart=0, zoomStart=1;
-    board.addEventListener('touchstart',function(e){if(e.touches.length===2){cbaPinchInProgress=true;pinchStart=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);zoomStart=cbaZoom;e.preventDefault();}},{passive:false});
-    board.addEventListener('touchmove',function(e){if(e.touches.length===2&&pinchStart>0){var d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);cbaZoom=Math.max(1,Math.min(2.5,zoomStart*d/pinchStart));atualizarZoomCBA();e.preventDefault();}},{passive:false});
+    board.addEventListener('touchstart',function(e){if(e.touches.length===2){cbaPinchInProgress=true;pinchStart=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);var world=document.getElementById('cba-live-world');
+      zoomStart=world?(Number(getComputedStyle(world).getPropertyValue('--cba-zoom'))||cbaZoom):cbaZoom;
+      cbaZoom=zoomStart;e.preventDefault();}},{passive:false});
+    board.addEventListener('touchmove',function(e){if(e.touches.length===2&&pinchStart>0){var d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);cbaZoom=Math.max(0.35,Math.min(12,zoomStart*d/pinchStart));atualizarZoomCBA();e.preventDefault();}},{passive:false});
     board.addEventListener('touchend',function(e){if(e.touches.length<2){pinchStart=0;window.setTimeout(function(){cbaPinchInProgress=false;},120);}});
   }
   function iniciarSelecaoAtaque(tipo){
@@ -5298,11 +5311,11 @@ async function abrirModalEquipamentos(){
     var ratio = Number(data.gridRatio);
     var opacity=Number(data.gridOpacity);
     if(!Number.isFinite(opacity)) opacity=0.3;
-    return {backgroundUrl:image,backgroundPath:String(data.backgroundPath||''),fogEnabled:data.fogEnabled===true,imgScale:Math.max(0.5,Math.min(3,Number(data.imgScale)||1)),gridSize:gridSize,gridRatio:Number.isFinite(ratio)&&ratio>0?ratio:null,gridOpacity:Math.max(0,Math.min(1,opacity)),tokens:tokens};
+    return {backgroundUrl:image,backgroundPath:String(data.backgroundPath||''),imgScale:Math.max(0.5,Math.min(3,Number(data.imgScale)||1)),gridSize:gridSize,gridRatio:Number.isFinite(ratio)&&ratio>0?ratio:null,gridOpacity:Math.max(0,Math.min(1,opacity)),tokens:tokens};
   }
 
   function serializarEstadoCBA(scene){
-    return {version:1,background:scene.backgroundPath?'':(scene.backgroundUrl||''),backgroundPath:String(scene.backgroundPath||''),fogEnabled:scene.fogEnabled===true,imgScale:scene.imgScale,gridSize:scene.gridSize,gridRatio:scene.gridRatio,gridOpacity:scene.gridOpacity,tokens:scene.tokens.map(function(t){return {key:String(t.key),id:String(t.id),nome:String(t.nome),imagem:t.imagemPath?'':String(t.imagem||''),imagemPath:String(t.imagemPath||''),tipo:t.tipo==='monstro'?'monstro':(t.tipo==='player'?'player':'npc'),detalhe:String(t.detalhe||''),hp:t.hp==null?null:Number(t.hp),maxHp:t.maxHp==null?null:Number(t.maxHp),dexMod:t.dexMod==null?null:Number(t.dexMod),bonusIniciativa:t.bonusIniciativa==null?null:Number(t.bonusIniciativa),monsterId:t.monsterId==null?null:String(t.monsterId),ac:t.ac==null?null:Number(t.ac),baseAc:t.baseAc==null?null:Number(t.baseAc),sourceCharacterId:t.sourceCharacterId==null?null:String(t.sourceCharacterId),attackBonus:t.attackBonus==null?null:Number(t.attackBonus),damageDice:String(t.damageDice||''),spellState:t.spellState&&typeof t.spellState==='object'?t.spellState:null,monsterStats:t.monsterStats&&typeof t.monsterStats==='object'?t.monsterStats:null,srdSourceUrl:/^https?:\/\//i.test(String(t.srdSourceUrl||''))?String(t.srdSourceUrl):'',gridX:Number(t.gridX)||0,gridY:Number(t.gridY)||0};})};
+    return {version:1,background:scene.backgroundPath?'':(scene.backgroundUrl||''),backgroundPath:String(scene.backgroundPath||''),imgScale:scene.imgScale,gridSize:scene.gridSize,gridRatio:scene.gridRatio,gridOpacity:scene.gridOpacity,tokens:scene.tokens.map(function(t){return {key:String(t.key),id:String(t.id),nome:String(t.nome),imagem:t.imagemPath?'':String(t.imagem||''),imagemPath:String(t.imagemPath||''),tipo:t.tipo==='monstro'?'monstro':(t.tipo==='player'?'player':'npc'),detalhe:String(t.detalhe||''),hp:t.hp==null?null:Number(t.hp),maxHp:t.maxHp==null?null:Number(t.maxHp),dexMod:t.dexMod==null?null:Number(t.dexMod),bonusIniciativa:t.bonusIniciativa==null?null:Number(t.bonusIniciativa),monsterId:t.monsterId==null?null:String(t.monsterId),ac:t.ac==null?null:Number(t.ac),baseAc:t.baseAc==null?null:Number(t.baseAc),sourceCharacterId:t.sourceCharacterId==null?null:String(t.sourceCharacterId),attackBonus:t.attackBonus==null?null:Number(t.attackBonus),damageDice:String(t.damageDice||''),spellState:t.spellState&&typeof t.spellState==='object'?t.spellState:null,monsterStats:t.monsterStats&&typeof t.monsterStats==='object'?t.monsterStats:null,srdSourceUrl:/^https?:\/\//i.test(String(t.srdSourceUrl||''))?String(t.srdSourceUrl):'',gridX:Number(t.gridX)||0,gridY:Number(t.gridY)||0};})};
   }
 
   function gravarCBAnaCampanha(data){
@@ -6374,6 +6387,16 @@ async function abrirModalEquipamentos(){
     dadoOverlay.style.display = 'flex';
     rolagemCallback = callback;
     rollResultReceived = false;
+    rollVisibilityCurrent = 'PUBLIC';
+    var visibilityControl = document.getElementById('dado-visibilidade-controle');
+    var visibilityCheckbox = document.getElementById('dado-visibilidade-publica');
+    if (visibilityControl) visibilityControl.hidden = !ehGM;
+    if (visibilityCheckbox) {
+      visibilityCheckbox.checked = true;
+      visibilityCheckbox.onchange = function() {
+        rollVisibilityCurrent = this.checked ? 'PUBLIC' : 'PRIVATE';
+      };
+    }
 
     var iframe = document.getElementById('dado-iframe');
     iframe.addEventListener('load', function() {
@@ -6413,6 +6436,7 @@ async function abrirModalEquipamentos(){
     rolagemCallback = null;
     rollResultReceived = true;
     rollSessionToken = null;
+    rollVisibilityCurrent = 'PUBLIC';
     if(pedidoTesteAtivo&&pedidoTesteAtivo.button) pedidoTesteAtivo.button.disabled=false;
     pedidoTesteAtivo=null;
     if(cancelada){if(iniciativaBusy) iniciativaBusy=false;if(reforcoBusy) reforcoBusy=false;}
@@ -6445,7 +6469,9 @@ async function abrirModalEquipamentos(){
     try {
       var valoresDado=Array.isArray(event.data.values)?event.data.values.map(Number):null;
       if (callback) await callback(resultado,valoresDado);
+      rollVisibilityCurrent = 'PUBLIC';
     } catch (err) {
+      rollVisibilityCurrent = 'PUBLIC';
       console.error('Falha ao concluir a rolagem:', err);
       if (pedidoTesteAtivo && pedidoTesteAtivo.button) pedidoTesteAtivo.button.disabled = false;
       pedidoTesteAtivo = null;
@@ -6454,10 +6480,11 @@ async function abrirModalEquipamentos(){
   });
 
   async function enviarMensagemChat(texto, tipo='texto', extra) {
+    var visibilidade = tipo === 'rolagem' && ehGM && rollVisibilityCurrent === 'PRIVATE' ? 'PRIVATE' : 'PUBLIC';
     var r = await sb.from('campaign_log').insert({
       campaign_id: Number(MESA_ID),
       type: tipo,
-      visibilidade: 'PUBLIC',
+      visibilidade: visibilidade,
       data: Object.assign({ autor_id: eu.id, autor_nome: meuPerfil.username, texto: texto }, extra || {})
     });
     if(r.error) console.error(r.error);
@@ -7007,11 +7034,11 @@ html,body,#root{width:100%;height:100%;min-width:0;min-height:0}
     function finish(e){if(!drag||(e&&drag.id!==e.pointerId))return;drag=null;area.style.cursor='';}
     area.addEventListener('pointerup',finish);area.addEventListener('pointercancel',finish);area.addEventListener('lostpointercapture',finish);
     area.addEventListener('wheel',function(e){
-      if(!e.ctrlKey&&!e.metaKey)return;
       e.preventDefault();
       var current=Number(getComputedStyle(world).getPropertyValue('--cba-zoom'))||1;
-      var next=Math.max(.55,Math.min(2.2,current*(e.deltaY<0?1.08:.92)));
+      var next=Math.max(.35,Math.min(12,current*(e.deltaY<0?1.1:.9)));
       world.style.setProperty('--cba-zoom',String(next));
+      window.dispatchEvent(new CustomEvent('vinculo:cba-zoom',{detail:next}));
     },{passive:false});
     apply();
   }
