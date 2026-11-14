@@ -411,3 +411,12 @@ A revisão do fluxo de ataque do Mestre encontrou uma falha concreta na leitura 
 Correção em `mesa.html` nos commits `bc3507f89ddc29fb4c15f06d3666c7f58eea273b` e `472dbc6743d2b2b2debdac99e16f9977b871ba8a`: o parser agora reconhece bônus com o rótulo antes ou depois do número e extrai fórmulas entre parênteses. Foram exercitados no runtime JavaScript quatro exemplos representativos: `Melee +4 (1d6+2)`, `Melee: +4 (1d6+2)`, `+4 melee (1d6+2)` e `Ranged +6 (1d8+3)`; os quatro retornaram bônus e fórmula esperados.
 
 A verificação de status do commit ainda não retornou execuções de CI. Portanto, esta correção tem verificação de parser por exemplos, mas ainda não tem confirmação de CI nem teste real na mesa. Nenhuma migration ou dado do Supabase foi alterado.
+
+
+### Proteção contra avanço duplicado de turno — 2026-11-14
+
+A revisão do fluxo de iniciativa encontrou uma condição de corrida na interface: o RPC `avancar_turno` podia ser chamado repetidamente por cliques rápidos, especialmente nos controles do Mestre que não tinham bloqueio visual. Como o banco serializa a operação, chamadas repetidas podiam avançar mais de um combatente.
+
+Correção em `mesa.html`, commit `a9d469124717e405e40692af553e8b0cbca19ef0`: foi adicionado um bloqueio compartilhado `turnAdvanceBusy` para impedir chamadas concorrentes; o botão de encerrar turno do jogador continua desabilitado durante a operação. O anúncio no chat agora é tratado separadamente: se o avanço foi confirmado pelo banco, uma falha de LOG não será apresentada como se o turno não tivesse avançado.
+
+A RPC existente também foi inspecionada somente para leitura: ela valida autenticação e participação, impede jogador de encerrar turno de outro personagem ou de criatura do Mestre, bloqueia avanço com movimento interrompido por ataques de oportunidade, percorre a rodada surpresa e executa rotinas de fim de rodada. Nenhuma alteração foi feita no banco. Esta correção de interface ainda depende de CI e teste multiplayer para validação completa.
