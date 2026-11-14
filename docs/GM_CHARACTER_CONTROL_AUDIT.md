@@ -23,10 +23,10 @@ Leitura das chamadas RPC em `mesa.html` e `ficha.html` encontrou 93 nomes distin
 | `usar_habilidade_classe_srd` | Habilidade de classe | Busca ficha/personagem pelo proprietário autenticado |
 | `usar_imposicao_maos_mortos_vivos_srd` | Habilidade de classe | Busca personagem pelo proprietário autenticado |
 | `usar_pocao_cura_srd_manual` | Consumível | Fluxo atual exige proprietário |
-| `conjurar_missil_magico_srd_manual` | Magia/rolagem manual | Fluxo atual exige proprietário |
 | `srd_resolve_requested_saving_throw_srd` | Teste de resistência solicitado | Resolução atual vinculada ao usuário dono do personagem |
 | `descanso_longo_personagem_srd` | Descanso longo SRD | Migration candidata `20261112170000` permite Mestre da campanha sem transferir propriedade; fixture GM/dono/outro jogador/externo adicionada. Ainda não aplicada ao remoto |
-
+| `conjurar_magia_srd_manual` (dependência interna) | Conjuração manual | A função base também exige propriedade e bloqueia o Mestre mesmo quando o wrapper permitir |
+| `conjurar_magia_srd_multialvo_v3` (dependência interna) | Conjuração multialvo | A função base também exige propriedade e bloqueia o Mestre mesmo quando o wrapper permitir |
 | `aplicar_dano_token_ataque_srd_v2` (duas sobrecargas) | Ataque SRD de personagem | Exige personagem jogador pertencente ao usuário autenticado; Mestre não passa pela checagem atual |
 | `iniciar_sequencia_ataque_iterativo_srd` | Iniciar ataque iterativo de PC | Wrapper encaminha à implementação privada; autorização da implementação precisa aceitar GM |
 | `consultar_sequencia_ataque_iterativo_pendente_srd` | Consultar ataque pendente | Vincula sequência ao personagem/usuário; verificar exceção GM |
@@ -35,7 +35,7 @@ Leitura das chamadas RPC em `mesa.html` e `ficha.html` encontrou 93 nomes distin
 | `confirmar_critico_ataque_iterativo_srd` | Confirmar crítico | Validação de ator/usuário; verificar exceção GM |
 | `aplicar_dano_ataque_iterativo_srd` | Aplicar dano de ataque | Validação de ator/usuário; verificar exceção GM |
 
-Os quatro primeiros RPCs de ação que também retornam `cba_data/combat_data` foram incluídos na migration candidata `20261112160000` para filtragem de resposta. **A filtragem do JSON não altera autorização:** continuam precisando da exceção de controle do Mestre.
+Quatro RPCs de ação/magia que também retornam `cba_data/combat_data` foram incluídos na migration candidata `20261112160000` para filtragem de resposta. **A filtragem do JSON não altera autorização:** continuam precisando da exceção de controle do Mestre.
 
 ### Fluxos que já apresentam autorização de Mestre
 
