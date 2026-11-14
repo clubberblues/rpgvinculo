@@ -117,3 +117,12 @@ Sobre economia:
 4. Adicionar testes SQL de concorrência/negação (saldo insuficiente, estoque insuficiente, ficha alheia, campanha alheia, quantidade inválida e repetição da chave).
 5. Só então construir UI do Mestre e da compra individual do jogador.
 6. Não aplicar migration no Supabase de produção sem autorização específica.
+
+
+### Achados adicionais sobre saldo e autorização
+
+- A RPC `finalizar_equipamento_inicial_srd` grava o saldo restante simultaneamente em `srd_character_sheets.ouro` (numeric) e `characters.ouro` (integer). Isso confirma que o fluxo de criação inicial tenta manter os dois campos alinhados, mas não prova que todas as rotinas posteriores façam o mesmo.
+- A ficha legada exibe `dados.ch.ouro`, derivado de `characters.ouro`; a mesa SRD não apresentou leitura direta de ouro nos trechos inspecionados.
+- A política `characters_owner_or_gm_update` autoriza o dono da ficha a atualizar a linha inteira. Como RLS não restringe colunas, a futura economia precisa impedir que clientes alterem diretamente `ouro` fora das RPCs (por privilégios de coluna cuidadosamente revisados ou proteção equivalente no banco). Apenas validar saldo dentro da RPC de compra não basta se o cliente puder sobrescrevê-lo por outra chamada.
+- A tabela `srd_character_equipment` tem política de UPDATE para dono/Mestre e SELECT, mas INSERT/DELETE são realizados por RPCs privilegiadas existentes. A implementação de comércio deve seguir esse padrão: sem escrita direta pelo navegador.
+- Decisão de arquitetura pendente: escolher um saldo canônico. A opção mais coerente com o fluxo SRD é `srd_character_sheets.ouro` como fonte decimal e `characters.ouro` como espelho legado inteiro apenas se todos os pontos de leitura ainda necessários forem mantidos sincronizados no servidor. Antes de adotar essa opção, mapear todas as funções que escrevem/consomem ouro e decidir como tratar frações de PO.
