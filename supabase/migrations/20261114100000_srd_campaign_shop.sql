@@ -69,8 +69,8 @@ create policy srd_campaign_shop_receipts_owner_gm_read
     )
   );
 
-revoke all on public.srd_campaign_shop_items from anon, authenticated;
-revoke all on public.srd_campaign_shop_receipts from anon, authenticated;
+revoke all on public.srd_campaign_shop_items from public, anon, authenticated;
+revoke all on public.srd_campaign_shop_receipts from public, anon, authenticated;
 grant select on public.srd_campaign_shop_items, public.srd_campaign_shop_receipts to authenticated;
 
 create or replace function public.srd_campaign_shop_configure_item(
