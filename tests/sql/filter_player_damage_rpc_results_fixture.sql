@@ -113,6 +113,20 @@ AS $$ SELECT jsonb_build_object('committed',true,'movement_result',jsonb_build_o
   'combat_data',(SELECT combat_data FROM public.campaigns WHERE id=p_campaign_id)
 )) $$;
 
+DROP FUNCTION IF EXISTS public.registrar_iniciativa_d20(bigint,text,integer) CASCADE;
+CREATE OR REPLACE FUNCTION public.registrar_iniciativa_d20(p_campaign_id bigint,p_personagem_id text,p_d20 integer)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $initiative$
+BEGIN
+  IF auth.uid() IS NULL OR NOT EXISTS(
+    SELECT 1 FROM public.members m JOIN public.characters ch
+      ON ch.campaign_id=m.campaign_id AND ch.user_id=m.user_id
+     WHERE m.campaign_id=p_campaign_id AND m.user_id=auth.uid()
+       AND m.role='PLAYER' AND ch.id::text=p_personagem_id
+  ) THEN RAISE EXCEPTION 'Player initiative only'; END IF;
+  RETURN (SELECT combat_data FROM public.campaigns WHERE id=p_campaign_id);
+END
+$initiative$;
+
 \ir ../../supabase/migrations/20261112160000_filter_player_damage_rpc_results.sql
 \ir ../../supabase/verification/verify_cba_rpc_response_isolation.sql
 
@@ -149,6 +163,10 @@ BEGIN
   IF r->'combat_data'->'turn_order' @> '[{"id":"hidden"}]'::jsonb THEN RAISE EXCEPTION 'Action-economy RPC leaked hidden initiative actor.'; END IF;
   r:=public.conjurar_magia_com_acao_srd_manual('pc-1','spell',1::smallint,'visible',ARRAY[11]);
   IF r->'combat_data' ? 'pending_reactions' THEN RAISE EXCEPTION 'Single-target spell RPC leaked private combat state.'; END IF;
+  r:=public.registrar_iniciativa_d20(987654323,'pc-1',12);
+  IF r ? 'pending_reactions' THEN RAISE EXCEPTION 'Player initiative RPC leaked private combat state.'; END IF;
+  IF r->'turn_order' @> '[{"id":"hidden"}]'::jsonb THEN RAISE EXCEPTION 'Player initiative RPC leaked hidden initiative actor.'; END IF;
+  IF NOT (r->'turn_order' @> '[{"id":"pc-1"}]'::jsonb) THEN RAISE EXCEPTION 'Player initiative RPC lost own actor.'; END IF;
   r:=public.conjurar_magia_com_acao_srd_multialvo_v3('pc-1','spell',1::smallint,ARRAY['visible'],ARRAY[11]);
   IF r->'combat_data' ? 'pending_reactions' THEN RAISE EXCEPTION 'Multi-target spell RPC leaked private combat state.'; END IF;
   r:=public.usar_imposicao_maos_mortos_vivos_srd('pc-1','visible',12,3);
