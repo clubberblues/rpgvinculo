@@ -127,3 +127,23 @@ A consulta remota anterior encontrou 65 overloads em 62 nomes públicos que refe
 Dois leitores GM-only ainda são SECURITY INVOKER e leem `campaigns.cba_data`: a sobrecarga de seis argumentos de `srd_consultar_modificadores_manobra_srd` e `srd_listar_ataques_naturais_oportunidade_srd`. Ambos verificam `auth.uid()` e `my_role(...)=GM`; antes de retirar privilégios de coluna, deverão executar sob SECURITY DEFINER com search_path fixo ou migrar para helper interno autorizado.
 
 Uma migration preliminar de revogação de SELECT foi preparada durante a revisão, mas foi retirada de `supabase/migrations` e seu fixture removido, pois seria prematuro enquanto as respostas RPC restantes não estiverem cobertas. Nenhuma alteração foi aplicada ao Supabase remoto. **A exposição está confirmada e permanece aberta; não declarar o corte de CBA concluído.**
+
+
+## Cobertura adicional de ações e magias — 2026-11-13
+
+A migration candidata `20261112160000_filter_player_damage_rpc_results.sql` foi ampliada para envolver também quatro RPCs player-facing que retornam estado privado:
+
+- `consumir_acao_turno_srd(bigint,text,text)`
+- `conjurar_magia_com_acao_srd_manual(text,text,smallint,text,integer[])`
+- `conjurar_magia_com_acao_srd_multialvo_v3(text,text,smallint,text[],integer[])`
+- `usar_imposicao_maos_mortos_vivos_srd(text,text,integer,integer)`
+
+As implementações originais são movidas para `priv`; wrappers públicos preservam os campos mecânicos e substituem `cba_data/combat_data` pela projeção autorizada. A fixture `filter_player_damage_rpc_results_fixture.sql` agora simula essas quatro respostas, testa filtragem para jogador, estado completo para GM e impossibilidade de chamar diretamente as implementações privadas.
+
+**Importante:** isso amplia a primeira família, mas não conclui a revisão das 65 assinaturas JSONB/52 executáveis por authenticated. As demais precisam ser classificadas individualmente. Os endpoints exclusivamente GM podem preservar retorno completo se a autorização estiver comprovada; ações de jogador devem filtrar o estado.
+
+### Lacuna funcional separada — controle do Mestre sobre personagem de jogador
+
+A decisão de produto permite ao Mestre assumir temporariamente qualquer personagem durante combate, sem transferir a propriedade da ficha. A revisão dos corpos atuais encontrou endpoints que ainda exigem `characters.user_id = auth.uid()`, inclusive a economia de ações e alguns fluxos de conjuração/recursos. A filtragem de retorno não concede essa permissão.
+
+Antes de declarar o controle do Mestre concluído, classificar e ajustar os endpoints de ação usados em combate para aceitar o Mestre da campanha como controlador operacional, mantendo as verificações de campanha, turno, requisitos e recursos. Não remover as validações do jogador proprietário.
