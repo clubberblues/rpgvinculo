@@ -68,3 +68,12 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',attach);else attach();
   new MutationObserver(attach).observe(document.documentElement,{childList:true,subtree:true});
 })();
+
+
+/* Versão simplificada: somente grid fixo e tokens; sem mapa de fundo ou névoa. */
+(function(){
+  var style=document.createElement('style');
+  style.id='friends-vtt-grid-only';
+  style.textContent='#modal-cba #cba-bg-input,#modal-cba [data-cba-action="choose-background"],#modal-cba #img-scale,#modal-cba .cba-fog-tools,#cba-bg-layer,#cba-fog-preview{display:none!important}';
+  document.head.appendChild(style);
+})();
