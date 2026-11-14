@@ -334,7 +334,7 @@ A inspeção dos corpos completos confirmou uma segunda dimensão da ordem globa
 - `priv.srd_end_barbarian_rage` bloqueia `srd_campaign_effects` → `srd_character_sheets` → condições; a aplicação de fadiga chama `priv.srd_apply_campaign_condition`, que adquire `campaigns FOR UPDATE` e pode também alterar efeitos/condições.
 - `priv.srd_end_barbarian_rage_token` bloqueia `srd_campaign_effects` → `campaigns` → ficha/condições. É chamado por fluxos que já podem ter campanha bloqueada (trigger de rodada, descanso longo NPC, expiração).
 - `public.usar_furia_barbaro_srd` mantém personagem e ficha bloqueados antes de adquirir campanha. Isso precisa ser considerado junto de qualquer caminho campanha → personagem/ficha; padronizar somente o par campanha/efeito não basta.
-- `public.usar_pocao_cura_srd` bloqueia equipamento → ficha e depois sincroniza condições, sem bloquear previamente a campanha. Também precisa ser incluído na matriz de recursos/PV para não criar uma ordem incompatível ao se adicionar locks de campanha.
+- `public.usar_pocao_cura_srd_manual` (OID 24655, authenticated EXECUTE e chamada por `mesa.html`) lê `campaigns.state` sem lock; se a leitura indicar COMBATE, chama o consumo de ação campaign-first antes de bloquear equipamento/ficha; se indicar fora de combate, não serializa a decisão com a campanha. A variante antiga `public.usar_pocao_cura_srd` (OID 20557) não tem EXECUTE para authenticated no snapshot atual e não é o caminho usado pela interface.
 - `public.descanso_longo_personagem_srd` bloqueia personagem → ficha e chama sincronização de condição; não bloqueia campanha com `FOR UPDATE`. Não é seguro inserir um lock de campanha de forma isolada sem verificar os fluxos que já entram campanha → personagem/ficha.
 
 **Decisão de desenho:** o protocolo futuro precisa declarar a ordem entre pelo menos `campaigns`, `characters`, `srd_character_sheets`, `srd_campaign_effects`, `srd_campaign_conditions`, `srd_character_feature_resources`, `srd_character_equipment`, tabelas de sequência de ataque, ledger AOO e log. O inventário lexical atual ainda não é um grafo de chamadas transitivas validado; cada endpoint e overload deve ser analisado individualmente antes de qualquer mudança.
@@ -382,8 +382,7 @@ Consulta read-only dos corpos atuais de `public.usar_imposicao_maos_mortos_vivos
 
 ### Cura, equipamento e condições
 
-- `public.usar_pocao_cura_srd` bloqueia primeiro a linha de inventário da poção, depois a ficha; atualiza PV e chama `priv.srd_sync_character_vital_condition`, que altera condições sem lock inicial de campanha.
-- `public.usar_pocao_cura_srd_manual` pode consumir a ação do turno antes de bloquear inventário e ficha. Durante combate, a ordem inclui o fluxo de campanha/economia de ações antes de equipamento → ficha; fora de combate, começa pelo equipamento. Não é correto atribuir uma única ordem fixa a ambas as variantes.
+- `public.usar_pocao_cura_srd` (OID 20557) bloqueia inventário → ficha, mas não tem EXECUTE para authenticated no snapshot atual. A interface usa `public.usar_pocao_cura_srd_manual` (OID 24655): lê o estado da campanha sem lock e só chama `consumir_acao_turno_srd` quando a leitura encontra COMBATE; nesse branch, campanha é bloqueada antes de equipamento → ficha. Fora de combate, começa por equipamento → ficha e pode consumir a poção depois de outra transação iniciar combate. É uma corrida de regra/estado, não um deadlock demonstrado.
 - A rotina de sincronização de condição atualiza condições e só consulta a rodada da campanha quando precisa inserir um novo estado; não faz `campaigns FOR UPDATE`. Um chamador que já mantém ficha/equipamento pode, portanto, adquirir locks de condição nessa ordem.
 - Esses caminhos precisam de testes de concorrência de cura, PV, condição e combate antes de qualquer padronização por lock de campanha.
 
@@ -391,7 +390,7 @@ Consulta read-only dos corpos atuais de `public.usar_imposicao_maos_mortos_vivos
 
 1. Descanso longo de NPC vinculado concorrente com uso de habilidade que consome recurso na mesma ficha, incluindo Imposição das Mãos quando aplicável.
 2. Ataque iterativo (overloads 7/8) concorrente com equipar/desequipar a mesma instância vinculada a NPC na mesma campanha.
-3. Uso automático e manual de poção concorrentes com sincronização de PV/condições e avanço de rodada.
+3. Uso manual de poção concorrente com início de combate/avanço de rodada, validando se a ação padrão é consumida exatamente quando a transação é serializada.
 4. Repetição concorrente das operações acima com duas sessões PostgreSQL efêmeras, usando fixtures isoladas e identificando os cenários condicionais; não executar concorrência de teste no banco remoto.
 
 **Limite:** estes são caminhos de lock diretamente confirmados nos corpos instalados. As inversões são riscos estruturais condicionais, não incidentes reproduzidos. Não foi construído ainda um grafo transitivo completo por OID/assinatura e triggers. Nenhuma função, ACL, policy, migration ou dado remoto foi alterado.
@@ -474,32 +473,15 @@ O harness agora modela também:
 A aprovação do CI validará apenas que PostgreSQL detecta esses dois padrões sintéticos; não executará os endpoints remotos.
 
 
-### Triggers de AOO e inventário: locks transitivos e alcance real — 2026-11-09
+### Triggers de AOO e inventário: locks transitivos e alcance real — revisão de alcance (2026-11-09)
 
-Foram inspecionados os corpos completos dos quatro triggers relevantes, além dos endpoints que os acionam:
+- `priv.trg_srd_validate_aoo_pending_movement_preview` é AFTER INSERT em `priv.srd_aoo_pending_movements`. Executa preview de movimento sob GUC transacional e desfaz a prévia por rollback da subtransação. Os writers atuais de pending já bloqueiam campanha antes do INSERT.
+- Os triggers de guarda/validação AOO consultam condições sem `FOR UPDATE`; não acrescentam uma aresta de lock própria.
+- `private.sync_character_weapon_instances_from_inventory` tem ramo de delta negativo que remove instâncias, mas o writer atual de entrega aumenta quantidade e cria novas instâncias; não foi encontrado writer frontend/RPC autenticado que reduza quantidade de armas. O UPDATE de `equipado/hand_slot` não dispara o trigger.
+- `private.equipar_arma_instancia_personagem_impl` bloqueia personagem → instância e depois atualiza o resumo de equipamento. Isso não fecha ciclo com o trigger atual: a entrega positiva insere instâncias novas e não bloqueia uma instância existente antes de atualizar equipamento.
+- `public.finalizar_equipamento_inicial_srd` bloqueia personagem → ficha e insere inventário, mas rejeita categorias de poções/óleos antes do UPSERT. Portanto, não disputa a mesma linha de equipamento bloqueada por `usar_pocao_cura_srd_manual`.
 
-- `priv.trg_srd_validate_aoo_pending_movement_preview` é AFTER INSERT em `priv.srd_aoo_pending_movements`. Executa um preview de movimento via RPC player/GM sob GUC transacional e força rollback da subtransação para não persistir a movimentação. A inserção de pending ocorre dentro do request que já bloqueou campanha; locks obtidos dentro do bloco de exceção são revertidos junto com o preview. O trigger, contudo, torna o caminho de solicitação dependente dos writers de movimento e de seus triggers.
-- `priv.trg_srd_aoo_guard...`/triggers de ataques AOO executam verificações de condição em BEFORE INSERT/UPDATE. As funções consultadas não adquirem lock explícito de campanha; leem condições através de helpers. Não foi encontrado lock adicional explícito nessas duas funções de trigger.
-- `private.sync_character_weapon_instances_from_inventory` é AFTER INSERT/DELETE/UPDATE OF quantidade em `public.srd_character_equipment`. No DELETE remove instâncias; no INSERT ou alteração de quantidade cria/remove instâncias e atualiza o resumo de equipamento. Assim, a ordem de locks do endpoint de inventário inclui implicitamente equipamento → instância(s) de arma → atualização do resumo de equipamento.
-- `private.equipar_arma_instancia_personagem_impl` bloqueia personagem → instância(s) de arma → atualiza `srd_character_equipment`. Já `private.equipar_arma_instancia_npc_vinculado_impl` bloqueia campanha → instância de arma → resumo de equipamento.
-- O trigger de inventário não é executado quando o UPDATE altera apenas `equipado/hand_slot`, pois está definido para UPDATE OF quantidade; ele é acionado por INSERT, DELETE ou mudança de quantidade. O ciclo equipamento → instância versus instância → equipamento é, portanto, condicional a uma operação que altera a quantidade/remove/adiciona item enquanto outra equipa a mesma instância.
-- `public.finalizar_equipamento_inicial_srd` bloqueia personagem → ficha e insere linhas de inventário; os triggers criam as instâncias de arma. `public.usar_pocao_cura_srd` bloqueia inventário → ficha e remove/atualiza a linha de item; para item não-arma o trigger retorna sem criar instância, mas no DELETE executa o DELETE de instâncias correspondente (normalmente sem linhas). Não tratar todo consumo de item como lock-free.
-- `public.entregar_item_srd` e `public.equipar_item_srd` têm caminhos distintos dos wrappers de instância; devem ser mantidos na matriz até validação das chamadas de mesa e permissões.
-
-### Novos cenários de concorrência para inventário
-
-32. Alteração de quantidade/remoção de item que aciona o trigger de instâncias, concorrente com equipar a mesma instância.
-33. Entrega de arma e equipamento simultâneos para a mesma ficha, verificando duplicidade/perda de instâncias.
-34. Finalização de equipamento inicial concorrente com alteração de inventário na mesma ficha.
-35. Exclusão de personagem e limpeza de inventário concorrentes com ação de equipamento; validar cascade/trigger e ownership.
-
-
-### Teste sintético do lock transitivo inventário/instância
-
-O harness recebeu um quinto padrão AOO/inventário (além dos pares campaign/effect, campaign/weapon, campaign/character, campaign/pending e pending/attack): **equipment → weapon instance versus weapon instance → equipment**. O padrão corresponde ao efeito AFTER trigger de inventário que cria/remove instâncias e atualiza a linha-resumo, versus a função de equipar instância que bloqueia a instância e depois atualiza o resumo.
-
-O teste não executa o trigger nem as RPCs de produção; verifica apenas se PostgreSQL detecta o ciclo deliberadamente construído. A confirmação funcional exige fixture que copie o trigger e os dois caminhos de escrita.
-
+**Classificação corrigida:** equipamento → instância versus instância → equipamento é risco futuro/condicional se for adicionado writer de redução/remoção de armas ou se mudar o trigger/ACL. Não é ciclo operacional demonstrado no estado atual. O cenário sintético correspondente foi removido do harness ativo para não contar falso positivo.
 
 ### Recursos de classe: campanha versus recurso da ficha — 2026-11-09
 
@@ -624,3 +606,61 @@ Outros caminhos confirmados: `srd_configurar_rodada_surpresa_srd` (OID 27092) bl
 **Interpretação:** helpers sem lock próprio não são automaticamente defeituosos: vários herdam corretamente o lock do chamador. O risco está em compartilhar helpers entre callers com ordens diferentes e em expor writer público sem serialização do agregado. `public.srd_remove_campaign_condition` precisa de revisão de contrato/uso frontend; a busca textual GitHub não encontrou chamada direta em `mesa.html`, portanto não presumir que seja caminho ativo. Nenhuma permissão foi alterada.
 
 **Próxima verificação:** revisar callers e ACLs dos escritores de condição; decidir se remoção deve bloquear campanha e revalidar pending/estado antes do UPDATE. Não adicionar `FOR UPDATE` sem analisar chamadores, pois isso pode criar nova inversão.
+
+
+### Snapshot completo do CBA — confirmação do risco de lost update no frontend (2026-11-09)
+
+A leitura integral de public.salvar_cena_cba(bigint,jsonb) e do fluxo de publicação em mesa.html confirma que o lock da campanha não elimina snapshots obsoletos:
+
+- O RPC autentica o Mestre, adquire campaigns FOR UPDATE, lê o cba_data atual e substitui a cena usando p_scene como base. A união de tokens preserva tokens que existem no banco mas não vieram no snapshot; para tokens com o mesmo id/key, porém, prevalece integralmente a versão enviada pelo cliente.
+- Campos da cena fora de tokens vêm diretamente de p_scene; não há comparação de versão, timestamp, hash/base revision ou merge por campo.
+- mesa.html mantém cbaWriteQueue = Promise.resolve() e encadeia gravarCBAnaCampanha apenas dentro daquela instância da página. A função clona o objeto recebido antes de enfileirar e envia esse snapshot para sb.rpc('salvar_cena_cba', ...). Isso ordena writes de uma aba/cliente, mas não coordena duas abas, dois Mestres ou RPCs de outros fluxos.
+- Foram encontrados nove pontos de chamada do wrapper no arquivo atual. Eles serializam estado local derivado de cbaPublishedState, scene ou do estado publicado; o enfileiramento não atualiza/reconcilia o snapshot já capturado com o último estado remoto antes de cada RPC.
+
+**Cenário concreto:** dois clientes carregam a mesma revisão. Cliente A altera posição de um token e salva. Cliente B, ainda com o snapshot antigo, altera retrato ou metadado desse mesmo token e salva depois. O lock serializa as duas transações, mas a segunda grava a versão antiga do token inteiro, podendo restaurar a posição anterior. O mesmo vale para campos de cena fora de tokens. A preservação de tokens ausentes não protege campos de tokens que aparecem em ambos os snapshots.
+
+**Classificação:** risco de lost update confirmado pela implementação, distinto de deadlock. Não foi reproduzido em duas sessões contra produção e não há evidência de que o sistema atualmente faça reconciliação otimista. A correção deve ser desenhada separadamente do protocolo de locks: preferir RPCs de mutação granular para ações frequentes (posição/PV/metadados) ou controle otimista por revisão (expected_version + incremento atômico), com merge explícito e tratamento de conflito no frontend. Não substituir silenciosamente por merge JSONB genérico, pois arrays de tokens exigem semântica por identidade e operações de exclusão precisam ser explícitas.
+
+
+## Complemento — o salvamento geral também pode alterar coordenadas
+
+A leitura posterior do corpo remoto de `public.salvar_cena_cba` (OID 20077) confirmou que ele é um writer genérico capaz de substituir objetos de tokens recebidos pelo cliente, incluindo `gridX/gridY`. O endpoint é `SECURITY DEFINER`, executável por `authenticated` e exige papel GM, mas não valida se a posição de um token existente foi alterada nem chama o detector AOO.
+
+Em `mesa.html`, o wrapper `gravarCBAnaCampanha` usa esse RPC para várias operações não relacionadas a movimento (imagem/retrato, `spellState`, criação de NPC, dados de iniciativa, mapa/grade e hidratação de monstros). O fallback de sincronização da posição do token também o utiliza fora do ramo de movimento do GM durante combate. A existência desses usos legítimos impede uma solução simplista que bloqueie qualquer UPDATE de `cba_data`.
+
+**Conclusão adicional:** a autoridade de movimento precisa ser imposta no limite comum de persistência, comparando OLD/NEW das coordenadas dos tokens existentes e permitindo mudanças somente quando uma função de movimento/manobra validada pelo servidor fornece autorização transacional estreita. A comparação deve usar identidade estável e tratar explicitamente remoção/recriação; atualizações de outros campos devem continuar permitidas quando não alterarem geometria ou o conjunto de ameaças.
+
+O trigger atual é executado antes do UPDATE feito por `salvar_cena_cba`, mas só barra o token mover quando já existe pending AOO. Portanto, uma chamada autenticada direta ao salvamento geral durante combate pode mover token sem pending. Revogar apenas os dois wrappers diretos de movimento não fecha essa rota.
+
+A correção deve ainda considerar mutações geométricas legítimas internas do motor, como manobras que reposicionam tokens, e não apenas os dois RPCs de deslocamento. O inventário lexical de funções que mencionam `gridX/gridY` não prova, isoladamente, que todas escrevem coordenadas; cada mutador real precisa ser classificado por efeito e caller antes de fechar o trigger.
+
+**Novos critérios de regressão:** tentativa de mover token existente via `salvar_cena_cba` em combate deve falhar; atualizar somente metadados deve continuar funcionando; adicionar/remover/recriar token não pode ser usado para contornar a comparação; manobras com reposicionamento devem funcionar somente por seus próprios entrypoints autorizados; todos os escritores reais de coordenadas precisam ser cobertos em fixture de integração.
+
+
+
+## Complemento — snapshot de ameaças AOO depende de equipamento e dados de ficha
+
+O detector public.srd_detectar_saida_alcance_ameacado_srd (OID 26923) deriva as faixas de ameaça de posição, footprint, facção, alcance manual do token, tamanho/raça da ficha vinculada, armas equipadas (instâncias + inventário), ataques naturais em monsterStats e capacidade de ataque desarmado (Monge ou talento). O snapshot em pending.threats registra os resultados calculados, mas o guard comum não protege as tabelas-fonte.
+
+Writers relevantes autenticados:
+- public.equipar_item_srd OID 20555 → equipar_item_srd_maos OID 26390 → equipar_arma_instancia_personagem OID 26442 → private.equipar_arma_instancia_personagem_impl OID 26441. A implementação bloqueia personagem e instância, atualiza srd_character_weapon_instances e sincroniza srd_character_equipment, mas não adquire lock da campanha nem verifica pending.
+- public.entregar_item_srd OID 20556, GM-only, altera srd_character_equipment e pode equipar automaticamente item quando a ficha não tem mochila; não adquire lock de campanha nem verifica pending.
+- public.srd_configurar_perfil_combate_token_srd OID 26922 altera facção/alcance sob lock da campanha, mas não verifica pending.
+- public.salvar_cena_cba OID 20077 aceita substituição de campos completos dos tokens.
+- public.adicionar_token_cba_completo OID 21726 adiciona tokens que podem passar a ameaçar o movimento.
+
+O resolver AOO revalida a arma equipada no momento da resolução. Assim, desequipar/trocar arma entre detecção e ataque pode invalidar a reação. O equipamento de NPC/monstro via srd_cba_token_equipment não foi classificado como dependência direta do detector atual, pois o corpo de OID 26923 não consulta essa tabela.
+
+A correção deve proteger ou invalidar atomicamente o pending quando qualquer dependência do snapshot mudar. O guard de coordenadas isolado não é suficiente.
+
+
+
+## Reprodução do bypass do guard AOO por identidade duplicada
+
+O fixture tests/sql/aoo_guard_duplicate_identity_repro.sql copia a lógica do trigger remoto e reproduz:
+- movimento do token mover único bloqueado;
+- metadado não geométrico permitido;
+- duplicação de id/key com primeira cópia na origem e segunda cópia deslocada passa por causa do LIMIT 1;
+- coordenadas de token ameaçador alteradas durante pending passam.
+
+A fixture foi incluída no harness e os runs #284, #285 e #293 passaram como reproduções intencionais. Não é correção nem integração real com Supabase. A implementação futura deve inverter os dois resultados vulneráveis para rejeição e preservar o controle de metadados.

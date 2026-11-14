@@ -1,4 +1,4 @@
--- Redução de dano do Bárbaro aplicada no resolvedor central de dano.
+-- Aplica redução de dano passiva do Bárbaro em todos os fluxos que usam srd_adjust_damage.
 CREATE OR REPLACE FUNCTION priv.srd_adjust_damage(p_campaign_id bigint, p_target_kind text, p_target_id text, p_damage_type text, p_base_damage integer)
  RETURNS integer
  LANGUAGE plpgsql

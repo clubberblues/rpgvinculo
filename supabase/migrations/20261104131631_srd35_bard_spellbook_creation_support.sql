@@ -1,4 +1,3 @@
--- Salva grimório do Bardo como conjurador espontâneo, com CAR e limites de conhecidas.
 CREATE OR REPLACE FUNCTION public.salvar_grimorio_srd(p_character_id text, p_estado jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql

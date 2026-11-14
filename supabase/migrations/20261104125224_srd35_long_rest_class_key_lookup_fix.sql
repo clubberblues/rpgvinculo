@@ -1,6 +1,3 @@
--- Usa a chave persistida da classe; nomes localizados não são chaves canônicas.
--- Isso permite descanso longo para classes sem magia (ex.: Bárbaro) e restauração
--- do estado de magia para classes conjuradoras com class_key cadastrado.
 CREATE OR REPLACE FUNCTION public.repor_magias_srd(p_character_id text)
  RETURNS jsonb
  LANGUAGE plpgsql

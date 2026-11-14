@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.move_token(bigint, integer, integer) FROM authenticated;

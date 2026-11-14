@@ -1,4 +1,4 @@
--- Aplica idade antes de validar graduações de perícias e pré-requisitos de talentos.
+-- Valida perícias e talentos somente depois de aplicar os ajustes de idade aos atributos.
 CREATE OR REPLACE FUNCTION public.criar_personagem_srd_completo(p_nome text, p_raca_id text, p_classe_id text, p_atributos jsonb, p_pericias jsonb, p_talentos jsonb, p_identidade jsonb)
  RETURNS text
  LANGUAGE plpgsql

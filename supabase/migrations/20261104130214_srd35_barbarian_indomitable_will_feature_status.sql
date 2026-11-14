@@ -1,4 +1,3 @@
--- Registra Vontade Indomável como característica implementada e corrige a descrição SRD.
 UPDATE public.srd_class_level_features
 SET summary='Enquanto estiver em Fúria, recebe +4 nos testes de Vontade contra magias da escola de Encantamento. Esse bônus se acumula com o bônus normal de Vontade da Fúria.',
     mechanics=mechanics||jsonb_build_object(

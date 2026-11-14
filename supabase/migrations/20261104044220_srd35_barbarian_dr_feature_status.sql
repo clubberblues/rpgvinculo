@@ -1,4 +1,4 @@
--- Marca a redução de dano do Bárbaro como implementada no motor central.
+
 UPDATE public.srd_class_level_features
 SET mechanics = COALESCE(mechanics,'{}'::jsonb) || jsonb_build_object(
   'engine_status',CASE WHEN class_level=16 THEN 'partial' ELSE 'implemented' END,

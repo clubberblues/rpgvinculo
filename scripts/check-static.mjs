@@ -86,8 +86,50 @@ if (!dice.includes("if (!aguardarClique) {") || !dice.includes("vinculoRollButto
   reportFailure('dice.html manual-click handshake changed; review before accepting automatic or hidden rolls.');
 }
 
+// Product invariants: dice visibility and tabletop map behavior.
+for (const required of [
+  'dado-visibilidade-publica',
+  "rollVisibilityCurrent === 'PRIVATE'",
+  "var visibilidade = tipo === 'rolagem' && ehGM && rollVisibilityCurrent === 'PRIVATE' ? 'PRIVATE' : 'PUBLIC'",
+  "if (!rollResultReceived) rollVisibilityCurrent = 'PUBLIC'",
+  "visibilityControl.style.display = ehGM ? 'flex' : 'none'",
+  "document.body.appendChild(overlay)",
+  "1 quadrado = 1,5 m (5 pés)",
+  "Math.min(12,zoomStart*d/pinchStart)",
+  "vinculo:cba-zoom"
+]) {
+  if (!mesa.includes(required)) reportFailure('mesa.html is missing an approved tabletop behavior: ' + required);
+}
+if (mesa.includes('fogEnabled')) {
+  reportFailure('mesa.html still contains fog-of-war state; fog is out of scope.');
+}
+if (mesa.includes('if(!e.ctrlKey&&!e.metaKey)return;')) {
+  reportFailure('Mesa zoom still requires Ctrl/Meta; desktop wheel alone must zoom.');
+}
+
 for (const required of ['registrar_iniciativa_d20', 'iniciar_iniciativa_com_dados', 'registrar_rolagem_ataque_iterativo_srd']) {
   if (!mesa.includes(required)) reportFailure('mesa.html is missing the manual-roll flow contract: ' + required);
+}
+
+// Product invariant: both campaign-deletion entry points must clean public and private Storage.
+const lobby = readFileSync(resolve(root, 'lobby.html'), 'utf8');
+for (const required of [
+  "listarArquivosStorageRecursivo('midia','campaigns/'+id,0)",
+  "listarArquivosStorageRecursivo('mesa-media','campaigns/'+id,0)",
+  "{bucket:'midia',paths:caminhos.midia||[]}",
+  "{bucket:'mesa-media',paths:caminhos.mesaMedia||[]}",
+  "var totalMediaPaths=mediaPaths.midia.length+mediaPaths.mesaMedia.length"
+]) {
+  if (!lobby.includes(required)) reportFailure('lobby.html campaign deletion is missing Storage cleanup contract: ' + required);
+}
+
+// Product invariant: an uploaded private CBA asset is compensated if signed-URL creation fails.
+for (const required of [
+  'async function descartarUploadPrivadoCBA(path)',
+  "sb.storage.from('mesa-media').remove([String(path)])",
+  'await descartarUploadPrivadoCBA(path);'
+]) {
+  if (!mesa.includes(required)) reportFailure('mesa.html is missing private CBA upload compensation: ' + required);
 }
 
 const activePageSource = htmlFiles.map((file) => readFileSync(resolve(root, file), 'utf8')).join('\n');

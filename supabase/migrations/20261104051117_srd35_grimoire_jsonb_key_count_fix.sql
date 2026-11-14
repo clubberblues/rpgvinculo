@@ -115,7 +115,7 @@ BEGIN
       v_circle := v_key::integer;
       IF coalesce((SELECT (slots_by_level -> (v_level-1) ->> v_circle)::integer
                      FROM public.srd_spell_progressions WHERE class_key='sorcerer'),0)=0
-         OR v_count_value > GREATEST(0,public._srd35_slots(v_class,v_level,v_score,v_circle)) THEN
+         OR v_count_value > public._srd35_slots(v_class,v_level,v_score,v_circle) THEN
         RAISE EXCEPTION 'Usos excedem os espaços diários no círculo %',v_circle;
       END IF;
       v_usos_out := jsonb_set(v_usos_out,ARRAY[v_key],to_jsonb(v_count_value),true);
@@ -129,7 +129,7 @@ BEGIN
     END IF;
     IF (v_entry->>'slot_level') !~ '^(0|[1-9])$' THEN RAISE EXCEPTION 'slot_level deve estar entre 0 e 9'; END IF;
     v_slot := (v_entry->>'slot_level')::integer;
-    SELECT id,circulo,classes,escola,nivel INTO v_spell FROM public.srd_spells WHERE id=v_spell_id;
+    SELECT id,circulo,classes,nivel INTO v_spell FROM public.srd_spells WHERE id=v_spell_id;
     IF NOT FOUND THEN RAISE EXCEPTION 'Magia preparada inexistente, nível/slot inválido ou incompatível: %',v_spell_id; END IF;
     v_spell_level:=public._srd35_spell_level_for_class(v_spell.nivel,v_class,v_spell.circulo);
     IF v_spell_level NOT BETWEEN 0 AND 9 OR v_slot < v_spell_level
@@ -228,7 +228,7 @@ BEGIN
   FOR v_circle IN 0..9 LOOP
     SELECT count(*) INTO v_count FROM jsonb_array_elements(v_prepared_out) e
       WHERE (e->>'slot_level')::integer=v_circle;
-    v_base_capacity := GREATEST(0,public._srd35_slots(v_class,v_level,v_score,v_circle));
+    v_base_capacity := public._srd35_slots(v_class,v_level,v_score,v_circle);
     v_capacity := v_base_capacity;
     IF v_class='wizard' AND v_specialization<>'universalista' AND v_base_capacity>0 THEN v_capacity:=v_base_capacity+1; END IF;
     IF v_count>v_capacity THEN RAISE EXCEPTION 'Preparadas excedem espaços diários do círculo % (% > %)',v_circle,v_count,v_capacity; END IF;

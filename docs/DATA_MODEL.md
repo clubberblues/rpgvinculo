@@ -1,3 +1,5 @@
+> **Escopo ativo (13/11/2026):** D&D 3.5 é a única fonte de regras e fichas em desenvolvimento. Relações `vinculo_*` são legado de compatibilidade/histórico, sem novas escritas ou funcionalidades; não são fonte normativa.
+
 # Vínculo RPG — Modelo de dados e fontes canônicas
 
 > Fotografia somente de leitura de 2026-11-08. Este documento distingue dados ativos, estruturas de compatibilidade e estruturas sem consumidores encontrados. Não é autorização para remover ou migrar tabelas.
@@ -14,7 +16,7 @@ erDiagram
   campaigns ||--o{ members : contains
   campaigns ||--o{ characters : hosts
   characters ||--o| srd_character_sheets : has
-  characters ||--o| vinculo_character_sheets : has
+  characters ||--o| vinculo_character_sheets : legacy
   characters ||--o{ srd_character_class_levels : progresses
   characters ||--o{ srd_character_domain_choices : chooses
   campaigns ||--o{ campaign_log : records
@@ -24,7 +26,7 @@ erDiagram
 - `campaigns` é o agregado de sessão/campanha.
 - `members` registra papel por campanha e usuário.
 - `srd_character_sheets` é a ficha D&D 3.5 vinculada a `characters`.
-- `vinculo_character_sheets` é a ficha do ruleset Vínculo, separada da ficha SRD.
+- `vinculo_character_sheets` é uma ficha legada preservada para compatibilidade; não integra o fluxo ativo D&D 3.5.
 - O vínculo entre characters e cada ficha específica é por `character_id`; as tabelas de ficha usam chave única/primária e FK para characters. Equipamento e instâncias de arma usam `character_id` text sem FK; são referências lógicas, não relações garantidas pelo banco.
 - `characters.campaign_id` pode ser NULL. Isso permite fichas-modelo do Mestre/NPCs que são vinculadas a tokens CBA sem serem personagens de jogador associados diretamente à campanha.
 - A restrição única em (campaign_id,user_id) representa atualmente um personagem principal por usuário/campanha. O impacto disso em múltiplos personagens por jogador deve ser uma decisão explícita de produto.
@@ -81,9 +83,9 @@ A varredura das definições de funções e do frontend não encontrou referênc
 
 ## 4. Vínculo RPG
 
-O frontend de ficha usa estruturas Vínculo próprias (`vinculo_character_sheets`, `inventory`, `character_spells`, `character_talents`, catálogos `items`, `spells`, `talents`). Não reutilizar silenciosamente esses catálogos para D&D 3.5.
+Há código legado de ficha que usa estruturas antigas (`vinculo_character_sheets`, `inventory`, `character_spells`, `character_talents`, catálogos `items`, `spells`, `talents`). Esse ramo não deve ser reativado nem ampliado; o fluxo ativo usa estruturas `srd_*`.
 
-A separação SRD/Vínculo é um limite de domínio: compartilhar identidade e infraestrutura de campanha, não regras, progressões ou catálogos.
+As tabelas `vinculo_*` são legado isolado. Compartilham apenas a infraestrutura histórica; não devem alimentar regras, progressões, catálogos ou fichas ativas D&D 3.5.
 
 ## 5. Integridade referencial a melhorar
 
@@ -108,4 +110,39 @@ A separação SRD/Vínculo é um limite de domínio: compartilhar identidade e i
 
 
 ## Estado observado dos dados de personagens — 2026-11-09
-Consulta agregada somente de leitura: 5 personagens no total; 5 com registro srd_character_sheets; 0 sem ficha SRD; 0 com registro vinculo_character_sheets. Isso confirma que, no snapshot atual, o caminho ativo de personagens é D&D 3.5. Não significa que o domínio Vínculo deva ser descartado; o código legado e as tabelas vinculo_* permanecem como domínio separado, mas sua integração de ficha não está ativa nos registros atuais.
+Consulta agregada somente de leitura: 5 personagens no total; 5 com registro srd_character_sheets; 0 sem ficha SRD; 0 com registro vinculo_character_sheets. Isso confirma que o caminho ativo de personagens é D&D 3.5. O código legado e as tabelas `vinculo_*` permanecem apenas para preservação/compatibilidade, sem novas funcionalidades ou uso como fonte de regras.
+
+
+## Decisão de fonte canônica — XP e ouro SRD (2026-11-11)
+
+Consulta read-only ao schema e aos caminhos ativos do D&D 3.5:
+
+- **XP:** `public.characters.xp` é a fonte canônica do total de XP e do cálculo de nível disponível. A RPC ativa `public.conceder_xp_personagem_srd` atualiza esse campo e espelha o mesmo total em `public.srd_character_sheets.xp`; a ficha SRD mantém o espelho para leitura local/compatibilidade. O fluxo de criação inicializa ambos em zero. Não usar o XP da ficha como autoridade independente nem atualizar somente um dos dois campos.
+- **Ouro SRD:** `public.srd_character_sheets.ouro` é a fonte canônica, pois é NUMERIC e preserva frações de peça de ouro. `public.characters.ouro` é INTEGER e, no fluxo ativo de equipamento inicial SRD, recebe `FLOOR(ouro_restante)`; portanto, é apenas um espelho inteiro de compatibilidade e não pode sobrescrever o saldo SRD preciso.
+- Evidência do caminho: `finalizar_equipamento_inicial_srd` grava o saldo exato em `srd_character_sheets.ouro` e o piso inteiro em `characters.ouro`. `srd35_deslocamento_personagem` consulta o ouro da ficha SRD ao calcular peso transportado. O endpoint legado `gm_grant` altera `characters.ouro/xp` e tabelas de inventário do domínio legado; não foi encontrado call site para ele em `mesa.html` no HEAD auditado. Não conectá-lo automaticamente ao fluxo SRD.
+- Fotografia agregada do banco em 2026-11-11: 5 personagens com ficha SRD; XP de characters e ficha coincidem em 5/5; ouro diverge em 5/5, com total de 288 inteiros em characters e 292,50 em fichas SRD. A diferença observada é compatível com a perda de frações no espelho inteiro, mas não se deve corrigir registros existentes por inferência.
+- **PV, PM e valores derivados:** continuam sem uma regra global única declarada. Alguns são persistidos na ficha/token e sincronizados por resolvers/triggers; outros são calculados por funções. Cada campo ainda precisa de contrato próprio (fonte, fórmula, cache, invalidação e direção de sincronização). Não generalizar a decisão de XP/ouro para esses campos.
+
+Esta decisão é arquitetural para o domínio SRD; não altera dados, RPCs, migrations nem o domínio Vínculo. Antes de qualquer migração futura, validar todos os leitores e escritores do saldo SRD e criar teste de regressão para frações de ouro.
+
+
+## Progressão de classe e multiclasse — lacuna de contrato (2026-11-11)
+
+A tabela `srd_character_class_levels` comporta linhas por personagem/classe e deve representar o nível em cada classe; `srd_character_sheets.nivel` representa o nível total do personagem. No snapshot agregado atual, 5/5 fichas têm ledger e a soma dos níveis por classe coincide com o nível total; todas as 5 linhas observadas são nível 1, portanto isso não valida progressão multiclasse.
+
+A implementação instalada de avanço ainda não oferece contrato multiclasse:
+- `public.concluir_avanco_nivel_personagem_srd_v2` não recebe a classe escolhida para o novo nível.
+- `priv.concluir_avanco_nivel_personagem_srd` lê sempre `srd_character_sheets.classe_id`, calcula o avanço usando `sheet.nivel + 1` como nível da classe e faz upsert somente dessa classe.
+- O upsert registra `taken_at_character_level=1` na primeira linha, em vez do nível total em que a classe foi adquirida.
+
+Consequência: o ledger atual não implementa corretamente a escolha de classe a cada nível exigida pelo D&D 3.5 multiclasse, nem preserva o nível de personagem em que cada classe foi adquirida. Não criar workaround no frontend. O contrato futuro deve distinguir nível total, nível por classe, classe escolhida no avanço, pré-requisitos de classe/prestígio, BBA/salvamentos por progressão e características por nível; validar a ordem de níveis e a retroatividade aplicável conforme as regras. Não há evidência de dano a personagens existentes no snapshot atual, que contém somente níveis iniciais de uma classe.
+
+
+## Estado de magias — JSONB ativo e dependência órfã de grimório (2026-11-11)
+
+- O caminho ativo observado de ficha salva o estado de magias conhecidas, preparadas, usos e espaços de domínio em `srd_character_sheets.magias_preparadas` (JSONB versionado), por meio de `salvar_grimorio_srd`. Manter esse JSONB como fonte operacional atual até existir migração completa e testada.
+- As tabelas normalizadas `srd_character_known_spells`, `srd_character_prepared_spells` e `srd_character_spell_slot_state` estão vazias no snapshot e não foram encontradas em corpos de funções consultados; não tratá-las como fontes ativas nem preencher em paralelo sem contrato de migração.
+- `srd_character_spellbook` também está vazia. A implementação de avanço de nível consulta essa tabela para validar as magias escolhidas no talento Maestria em Magia, mas `salvar_grimorio_srd` grava o JSONB da ficha e não popula o spellbook. A busca de funções encontrou apenas a leitura no avanço; não foi identificado writer ativo para essa tabela. Portanto, a seleção de Maestria em Magia tem uma dependência sem caminho de preenchimento demonstrado e deve ser corrigida antes de considerar o talento integrado.
+- Decisão futura: ou derivar/atualizar o grimório a partir do JSONB no mesmo fluxo transacional e validar os IDs conhecidos, ou remover a dependência do spellbook e validar diretamente contra o estado canônico; não manter duas fontes independentes.
+
+Fotografia somente de leitura em 2026-11-11: zero linhas nas quatro tabelas normalizadas/grimório citadas. Nenhuma tabela, ficha ou magia foi alterada.

@@ -1,4 +1,6 @@
--- Restrict legacy character data to its owner and campaign GM.
+
+-- Legacy character records: only the character owner or campaign GM may
+-- inspect and change talents, notes, or inventory.
 DROP POLICY IF EXISTS "talentos personagem leitura" ON public.character_talents;
 DROP POLICY IF EXISTS consolidated_character_talents_insert ON public.character_talents;
 DROP POLICY IF EXISTS consolidated_character_talents_update ON public.character_talents;
@@ -116,6 +118,8 @@ USING (EXISTS (
     AND public.my_role(c.campaign_id)='GM'
 ));
 
+-- These tables are read-only from the browser. Mutations continue through
+-- authenticated, ownership-checked SECURITY DEFINER RPCs or service_role.
 REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER
 ON TABLE
   public.character_abilities,
@@ -151,6 +155,8 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE
   public.srd_starting_packages
 TO service_role;
 
+-- Keep chat append-only for clients; profiles remain self-editable but cannot
+-- be deleted or written through the anonymous role.
 REVOKE UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER
 ON TABLE public.campaign_log
 FROM PUBLIC, anon, authenticated;

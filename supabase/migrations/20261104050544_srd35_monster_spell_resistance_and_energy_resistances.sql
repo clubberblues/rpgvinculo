@@ -1,4 +1,3 @@
--- Lê RM, imunidades e resistências elementais das qualidades especiais dos monstros SRD.
 CREATE OR REPLACE FUNCTION priv.srd_spell_resistance_value(p_campaign_id bigint, p_target_kind text, p_target_id text)
  RETURNS integer
  LANGUAGE plpgsql

@@ -1,5 +1,6 @@
+
 -- Roll requests are created and answered by guarded SECURITY DEFINER RPCs.
--- Prevent clients from rewriting request ownership, dice, status, or results.
+-- Do not allow clients to rewrite request ownership, dice, or results directly.
 REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER
 ON TABLE public.roll_requests
 FROM PUBLIC, anon, authenticated;

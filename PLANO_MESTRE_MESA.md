@@ -1,3 +1,5 @@
+> **Nota de escopo — 13/11/2026:** este documento contém snapshots e referências históricas do antigo catálogo Vínculo. O nome do produto permanece Vínculo RPG, mas o único sistema de regras ativo é D&D 3.5. Tabelas `vinculo_*` são legado isolado; não criar funcionalidades nem usar seus dados como fonte de regras. Consulte `docs/DECISIONS.md` (DEC-002) para a decisão vigente.
+
 # Plano Mestre da Mesa Virtual
 
 Atualizado em 01/11/2026. Repositório: `clubberblues/rpgvinculo`.
@@ -9,8 +11,8 @@ Estabilizar a mesa virtual para uma nova rodada de simulação entre Mestre e jo
 ## Estado atual
 
 - Snapshot do banco em 01/11/2026: `campaigns` 3, `characters` 7, `members` 7, `campaign_log` 142, `tokens` 0 e `srd_character_sheets` 7. Não foram apagados dados nesta etapa.
-- O banco tem catálogos distintos para D&D 3.5 (`srd_*`) e Vínculo (`vinculo_*`). Eles não devem ser misturados.
-- Contagens atuais: D&D 3.5 — 1.021 equipamentos, 601 magias, 7 raças, 11 classes, 110 talentos, 49 perícias e 445 monstros; ainda há 7 progressões de magia, 385 arquétipos NPC e 11 pacotes iniciais. Vínculo — 16 classes, 160 habilidades de classe, 95 magias, 191 itens e 72 talentos.
+- O banco ainda contém tabelas legadas `vinculo_*`; elas não fazem parte do escopo ativo. A implementação, fichas, progressão e regras novas usam exclusivamente D&D 3.5 (`srd_*`).
+- Contagens atuais: D&D 3.5 — 1.021 equipamentos, 601 magias, 7 raças, 11 classes, 110 talentos, 49 perícias e 445 monstros; ainda há 7 progressões de magia, 385 arquétipos NPC e 11 pacotes iniciais. Catálogo Vínculo — contagens históricas de legado, fora do escopo ativo; não desenvolver nem usar como fonte normativa.
 - A relação `srd_character_equipment` e colunas compatíveis com a aplicação foram criadas em `srd35_schema_reconciliation.sql`, com RLS de leitura por dono/Mestre e RPCs protegidas para entregar, equipar e usar poções de cura. O inventário de personagem tem 20 registros e o inventário de tokens tem 1 registro. O esquema legado foi preservado.
 - A função `mover_token_player_cba` tinha permissão efetiva para `anon`; o acesso foi revogado. A verificação posterior mostrou `anon_can_execute=false` e `authenticated=true`. O advisor deixou de apontar função SECURITY DEFINER acessível a anônimos; ainda há avisos genéricos para funções SECURITY DEFINER acessíveis a usuários autenticados, que exigem revisão de autorização por função.
 - O fluxo de ataque foi atualizado para extrair CA numérica, resolver acerto/erro e abrir dado 3D de dano apenas em acerto; falta simulação ponta a ponta e o dano calculado ainda precisa ser aplicado pelo Mestre aos PV do token.
@@ -295,7 +297,7 @@ O servidor mantém `avancar_turno` autenticado e limitado a membros da campanha:
 1. Assistente de evolução de nível com rolagem via `dice.html`, PV, perícias, talentos e incrementos de atributo.
 2. Teste de combate SRD com matriz de raças/classes e sessões autenticadas de Mestre/jogador em campanha descartável.
 3. Resolvedores genéricos de magias ofensivas, salvamentos, resistência à magia/concentração e economia completa de ações.
-4. Automatização dos efeitos de classe/nível, condições, visão/fog of war, armadilhas, sobrecarga e economia/saque conforme a especificação.
+4. Automatização dos efeitos de classe/nível, condições, visibilidade por token controlada pelo Mestre, armadilhas, sobrecarga e economia/saque conforme a especificação. Fog of war está fora do escopo.
 5. Validação visual ponta a ponta em navegador desktop/celular e com menu autenticado de jogador.
 6. Observar índices não usados com carga real antes de qualquer remoção. Proteção contra senhas vazadas segue descartada por escolha do proprietário/plano Free.
 

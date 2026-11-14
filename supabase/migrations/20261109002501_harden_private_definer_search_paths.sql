@@ -1,0 +1,22 @@
+
+ALTER FUNCTION priv.can_delete_midia(text) SET search_path = pg_catalog, public, priv, pg_temp;
+ALTER FUNCTION priv.can_write_midia(text) SET search_path = pg_catalog, public, priv, pg_temp;
+ALTER FUNCTION priv.clear(text) SET search_path = public, pg_temp;
+ALTER FUNCTION priv.concluir_avanco_nivel_personagem_srd(bigint,text,integer,jsonb,jsonb,text) SET search_path = pg_catalog, public, priv, pg_temp;
+ALTER FUNCTION priv.fail(text,integer) SET search_path = public, pg_temp;
+ALTER FUNCTION priv.grow_scene() SET search_path = public, pg_temp;
+ALTER FUNCTION priv.is_my_turn(bigint,bigint) SET search_path = public, pg_temp;
+ALTER FUNCTION priv.locked(text) SET search_path = public, pg_temp;
+ALTER FUNCTION priv.log(bigint,text,jsonb) SET search_path = public, pg_temp;
+ALTER FUNCTION priv.need_gm(bigint) SET search_path = public, pg_temp;
+ALTER FUNCTION priv.need_owner(bigint) SET search_path = public, pg_temp;
+ALTER FUNCTION priv.new_sheet() SET search_path = public, pg_temp;
+ALTER FUNCTION priv.new_user() SET search_path = public, pg_temp;
+ALTER FUNCTION priv.pasta_gm(text) SET search_path = public, pg_temp;
+ALTER FUNCTION priv.pericias_completas(jsonb) SET search_path = public, pg_temp;
+ALTER FUNCTION priv.sheet_fix() SET search_path = public, pg_temp;
+ALTER FUNCTION private.equipar_arma_instancia_personagem_impl(text,uuid,text,boolean) SET search_path = pg_catalog, public, pg_temp;
+ALTER FUNCTION private.equipar_arma_instancia_token_impl(bigint,text,uuid,text,boolean) SET search_path = pg_catalog, public, pg_temp;
+ALTER FUNCTION private.equipar_item_token_srd_maos_impl(bigint,text,text,text,boolean) SET search_path = pg_catalog, public, pg_temp;
+ALTER FUNCTION private.sync_character_weapon_instances_from_inventory() SET search_path = pg_catalog, public, pg_temp;
+ALTER FUNCTION private.sync_token_weapon_instances_from_inventory() SET search_path = pg_catalog, public, pg_temp;

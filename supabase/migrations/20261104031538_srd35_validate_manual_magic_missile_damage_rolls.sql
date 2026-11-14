@@ -1,3 +1,4 @@
+
 CREATE OR REPLACE FUNCTION public.conjurar_missil_magico_srd_manual(
   p_character_id TEXT,
   p_spell_id TEXT,

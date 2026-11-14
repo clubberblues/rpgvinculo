@@ -1,4 +1,3 @@
--- Motor de magias: resistência à magia antes do teste de resistência e suporte a dano manual.
 ALTER TABLE priv.srd_pending_spell_resolutions ALTER COLUMN save_type DROP NOT NULL;
 ALTER TABLE priv.srd_pending_spell_resolutions ALTER COLUMN save_dc DROP NOT NULL;
 CREATE OR REPLACE FUNCTION public.conjurar_magia_srd_manual(p_character_id text, p_spell_id text, p_slot_level smallint, p_target_token_key text DEFAULT NULL::text, p_roll_results integer[] DEFAULT NULL::integer[])

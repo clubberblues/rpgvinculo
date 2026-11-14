@@ -685,7 +685,7 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.js"></script>
 <script>
 (function(){
@@ -1599,8 +1599,11 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
     return encontrados;
   }
 
+  // Keep lobby deletion aligned with mesa.html: both public and private campaign assets must be removed.
   async function coletarArquivosDaCampanha(mesaId){
-    var id=String(mesaId),arquivos=await listarArquivosStorageRecursivo('midia','campaigns/'+id,0);
+    var id=String(mesaId);
+    var arquivosMidia=await listarArquivosStorageRecursivo('midia','campaigns/'+id,0);
+    var arquivosPrivados=await listarArquivosStorageRecursivo('mesa-media','campaigns/'+id,0);
     var offset=0,limit=1000;
     while(true){
       var page=await sb.storage.from('midia').list('capas_mesas',{limit:limit,offset:offset,sortBy:{column:'name',order:'asc'}});
@@ -1608,21 +1611,31 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
       var itens=page.data||[];
       itens.forEach(function(item){
         if(item.id!==null&&item.id!==undefined&&item.name.indexOf('mesa-'+id+'-')===0){
-          arquivos.push('capas_mesas/'+item.name);
+          arquivosMidia.push('capas_mesas/'+item.name);
         }
       });
       if(itens.length<limit)break;
       offset+=limit;
     }
-    return Array.from(new Set(arquivos));
+    return {
+      midia:Array.from(new Set(arquivosMidia)),
+      mesaMedia:Array.from(new Set(arquivosPrivados))
+    };
   }
 
   async function removerArquivosDaCampanha(caminhos){
-    for(var i=0;i<caminhos.length;i+=1000){
-      var lote=caminhos.slice(i,i+1000);
-      if(!lote.length)continue;
-      var removidos=await sb.storage.from('midia').remove(lote);
-      if(removidos.error)throw new Error('Não foi possível remover arquivos da campanha: '+removidos.error.message);
+    var lotes=[
+      {bucket:'midia',paths:caminhos.midia||[]},
+      {bucket:'mesa-media',paths:caminhos.mesaMedia||[]}
+    ];
+    for(var b=0;b<lotes.length;b++){
+      var lista=lotes[b].paths;
+      for(var i=0;i<lista.length;i+=1000){
+        var lote=lista.slice(i,i+1000);
+        if(!lote.length)continue;
+        var removidos=await sb.storage.from(lotes[b].bucket).remove(lote);
+        if(removidos.error)throw new Error('Não foi possível remover arquivos da campanha em '+lotes[b].bucket+': '+removidos.error.message);
+      }
     }
   }
 
@@ -1651,8 +1664,9 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
         if(!prepared.data||prepared.data.ok!==true)throw new Error(prepared.data&&prepared.data.erro||'O banco não autorizou a exclusão.');
         status.textContent='Localizando mapas, capas e imagens…';
         var mediaPaths=await coletarArquivosDaCampanha(campaignId);
-        if(mediaPaths.length){
-          status.textContent='Removendo '+mediaPaths.length+' arquivo(s) da campanha…';
+        var totalMediaPaths=mediaPaths.midia.length+mediaPaths.mesaMedia.length;
+        if(totalMediaPaths){
+          status.textContent='Removendo '+totalMediaPaths+' arquivo(s) da campanha…';
           await removerArquivosDaCampanha(mediaPaths);
         }
         status.textContent='Finalizando exclusão da campanha…';

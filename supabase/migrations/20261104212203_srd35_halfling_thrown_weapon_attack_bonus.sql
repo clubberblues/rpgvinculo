@@ -2,6 +2,7 @@ DO $migration$
 DECLARE
   r record;
   v_def text;
+  v_new text;
   v_old text;
   v_replacement text;
 BEGIN

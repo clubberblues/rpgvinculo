@@ -1,0 +1,3 @@
+# Migrations locais sem versão remota — quarentena
+
+41 arquivos locais foram preservados aqui e retirados de supabase/migrations para que essa pasta represente somente as 966 versões registradas no projeto remoto. A auditoria classificou 34 como duplicatas semânticas de migrations remotas com timestamp diferente, 5 como variantes divergentes com o mesmo nome lógico e 2 como migrations exclusivas de Anão/Bárbaro (dwarf_barbarian_n1_racial_movement_fixes e dwarf_armor_load_classification). Nenhum conteúdo foi descartado. Não aplicar diretamente; revisar e, se aprovados, criar migrations novas pelo Supabase CLI.

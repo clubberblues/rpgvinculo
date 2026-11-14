@@ -1,5 +1,3 @@
--- Inclui todas as classes conjuradoras SRD 3.5 com progressão cadastrada.
--- O helper é usado para resolver classe conjuradora a partir do nome localizado da ficha.
 CREATE OR REPLACE FUNCTION public._srd35_class_key(p_value text)
 RETURNS text
 LANGUAGE sql

@@ -24,7 +24,7 @@ O fluxo é distribuído entre páginas independentes. Cada página inicializa se
 O arquivo vinculo-ui.js (3.944 caracteres no snapshot) é um utilitário de interface para diálogos/entrada/confirmação, não um cliente de dados ou módulo de regras. index.html, lobby.html, ficha.html, mesa.html e dice.html o carregam; lobby_atualizado.html não o carrega.
 
 ## Divergência do lobby legado
-A comparação estática encontrou lobby.html com 10 RPCs distintas e lobby_atualizado.html com 4; seis RPCs do lobby atual não aparecem no arquivo legado. O arquivo legado consulta spells/talents, enquanto o lobby atual consulta vinculo_spells/vinculo_talents e recursos SRD. Os arquivos também diferem em cerca de 30 mil caracteres e na inclusão de vinculo-ui.js. Portanto, lobby_atualizado.html **não é um espelho sincronizado** do lobby atual no HEAD observado. Não publicar nem editar como se fosse equivalente; primeiro decidir se deve ser removido, arquivado ou atualizado.
+A comparação estática encontrou lobby.html com 10 RPCs distintas e lobby_atualizado.html com 4; seis RPCs do lobby atual não aparecem no arquivo legado. O arquivo legado consulta catálogos antigos, enquanto o lobby ativo consulta catálogos SRD. O uso de `vinculo_*` pertence ao ramo legado. Os arquivos também diferem em cerca de 30 mil caracteres e na inclusão de vinculo-ui.js. Portanto, lobby_atualizado.html **não é um espelho sincronizado** do lobby atual no HEAD observado. Não publicar nem editar como se fosse equivalente; primeiro decidir se deve ser removido, arquivado ou atualizado.
 
 ## Inventário de contratos RPC
 O [RPC_INVENTORY.md](RPC_INVENTORY.md) registra as 100 chamadas literais e 108 assinaturas públicas correspondentes, com flags de acesso e marcadores estáticos de guarda. A próxima etapa é cruzar argumentos/tipos do JavaScript com sobrecargas e validar os fluxos críticos.
@@ -71,10 +71,10 @@ O snapshot do banco observado possui 76 relações em public e 7 em priv. Os dom
 - Campanhas e sessão: campaigns, members, campaign_log, scenes, tokens, combat_state e roll_requests/roll_log.
 - Personagens: characters, srd_character_sheets e vinculo_character_sheets.
 - Regras D&D 3.5: tabelas srd_* de classes, raças, perícias, talentos, equipamentos, magias, efeitos, progressões, condições, domínios e monstros.
-- Regras Vínculo: tabelas vinculo_* de classes, habilidades, talentos, magias, itens, fichas e inventário.
+- Legado Vínculo: tabelas `vinculo_*` preservadas para compatibilidade/histórico; fora do escopo ativo e sem novas funcionalidades.
 - Estado interno: tabelas priv.* para operações pendentes, sequências e controles internos.
 
-A separação srd_* / vinculo_* é uma fronteira de domínio. Não misturar regras ou catálogos entre elas.
+O domínio ativo é `srd_*`/D&D 3.5. `vinculo_*` é legado isolado; não usar seus catálogos ou regras em fluxos ativos.
 
 ## Realtime e sincronização
 
@@ -123,7 +123,7 @@ Consulta ao catálogo PostgreSQL identificou:
 
 ### Grafo principal observado
 - campaigns é o agregado central da sessão: members, characters, tokens, scenes, campaign_log, combat_state, roll_requests/roll_log, layers, media e condições/efeitos de campanha se relacionam com campanha.
-- characters é a entidade-base de personagem; srd_character_sheets e vinculo_character_sheets mantêm os dados específicos de cada ruleset.
+- `characters` é a entidade-base; `srd_character_sheets` é a ficha ativa D&D 3.5 e `vinculo_character_sheets` é legado preservado.
 - O domínio SRD relaciona trilhas e níveis a srd_classes; características de nível dependem da progressão; grimório, magias conhecidas/preparadas e slots relacionam personagens, classes e srd_spells.
 - Catálogos SRD referenciam srd_rule_sources; campanhas podem habilitar srd_rule_modules.
 - O domínio Vínculo mantém suas próprias classes, itens, magias, talentos e fichas.
@@ -257,8 +257,8 @@ As RPCs públicas com mutação são SECURITY DEFINER e têm auth.uid() no corpo
 
 ## Contrato da ficha (ficha.html)
 
-A página de ficha atende dois rulesets por estado de aplicação, sem unificar seus catálogos:
-- **Vínculo:** abilities, classes, character_notes, character_spells, character_talents, characters, inventory, items, spells, talents e vinculo_character_sheets.
+A página de ficha ainda contém um ramo legado de compatibilidade, mas o fluxo ativo é exclusivamente D&D 3.5; não reativar o ramo Vínculo:
+- **Legado Vínculo (não ativo):** abilities, classes, character_notes, character_spells, character_talents, inventory, items, spells, talents e `vinculo_character_sheets`.
 - **D&D 3.5 SRD:** srd_character_sheets, srd_character_equipment, srd_character_weapon_instances e catálogos srd_* de classes, raças, perícias, talentos, magias, equipamentos, domínios e progressões.
 
 A varredura encontrou 31 tabelas referenciadas diretamente na ficha. O caminho SRD usa JSONB em srd_character_sheets para atributos, perícias, talentos e estado de magias; equipamento e instâncias de armas são estruturas relacionais. O estado de magias conhecido/preparado é salvo em magias_preparadas via salvar_grimorio_srd; as tabelas srd_character_known_spells, srd_character_prepared_spells e srd_character_spell_slot_state não foram encontradas no call graph atual.
@@ -370,4 +370,4 @@ Ações com efeitos não reversíveis ou consumo de recursos devem aceitar um re
 
 
 ## Incompatibilidade de schema Vínculo — 2026-11-09
-A leitura de ficha.html mostra um ramo legado (fichas sem registro SRD e criação Vínculo) que ainda chama relações antigas sem prefixo. O banco atual contém as relações versionadas vinculo_classes, vinculo_abilities, vinculo_talents, vinculo_spells, vinculo_inventory, vinculo_items e vinculo_character_notes; os nomes antigos classes, abilities, talents, spells, inventory e character_notes não existem em public. O caminho D&D 3.5 é separado pelo registro srd_character_sheets. Ver ACTION_CONTRACTS.md e DATA_MODEL.md. Não corrigido ainda: decidir reativação/migração ou descontinuação do ramo legado.
+A leitura de ficha.html mostra um ramo legado (fichas sem registro SRD e criação Vínculo) que ainda chama relações antigas sem prefixo. O banco atual contém as relações versionadas vinculo_classes, vinculo_abilities, vinculo_talents, vinculo_spells, vinculo_inventory, vinculo_items e vinculo_character_notes; os nomes antigos classes, abilities, talents, spells, inventory e character_notes não existem em public. O caminho D&D 3.5 é separado pelo registro srd_character_sheets. Ver ACTION_CONTRACTS.md e DATA_MODEL.md. Decisão vigente: não reativar o ramo legado; preservar somente até haver plano seguro de arquivamento/descontinuação.

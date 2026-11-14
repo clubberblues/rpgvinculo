@@ -1,5 +1,3 @@
--- Create the normalized level-1 class track when a new D&D 3.5 character is created.
--- Skill-point costs are persisted from the validated skill ranks and the selected class.
 CREATE OR REPLACE FUNCTION public.criar_personagem_srd_completo(
   p_nome text,
   p_raca_id text,

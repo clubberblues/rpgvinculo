@@ -1218,6 +1218,10 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   <div class="dado-card">
     <div class="dado-card-header">
       <h3 id="dado-titulo">Mesa de Dados</h3>
+      <label id="dado-visibilidade-controle" hidden style="display:flex;align-items:center;gap:7px;color:#e8d7ad;font:11px 'Cinzel',serif;letter-spacing:.4px">
+        <input id="dado-visibilidade-publica" type="checkbox" checked style="accent-color:#c9a050">
+        Exibir rolagem para todos
+      </label>
       <button class="btn-fechar-dado" onclick="fecharDado()">✕</button>
     </div>
     <div class="dado-card-body">
@@ -1226,7 +1230,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0"></script>
 <script>
 (function(){
   var SUPABASE_URL = 'https://grrgwxcagvvafdmzsmro.supabase.co';
@@ -1278,6 +1282,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   var rollSessionId = 0;
   var rollSessionToken = null;
   var rollResultReceived = false;
+  var rollVisibilityCurrent = 'PUBLIC';
   var modoSelecaoTeste = false;
   var testeAtual = '';
   var alvosSelecionados = [];
@@ -1342,9 +1347,10 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     meuPerfil=rp.data||{username:(eu.email||'aventureiro').split('@')[0]};
 
     atualizarStatusMesa('Carregando a campanha…');
-    var rc=await comPrazoMesa('A campanha',sb.from('campaigns').select('*').eq('id',MESA_ID).single(),12000);
+    var rc=await comPrazoMesa('A campanha',sb.rpc('obter_snapshot_seguro_mesa',{p_campaign_id:Number(MESA_ID)}),12000);
     if(rc.error)throw new Error('Mesa não encontrada ou sem acesso: '+rc.error.message);
-    campanha=rc.data;
+    if(!rc.data||!rc.data.campaign)throw new Error('O servidor não retornou um snapshot autorizado da mesa.');
+    campanha=Object.assign({},rc.data.campaign,{cba_data:rc.data.cba_data||null,combat_data:rc.data.combat_data||null});
 
     var rm=await comPrazoMesa('Sua participação na campanha',sb.from('members').select('role').eq('campaign_id',MESA_ID).eq('user_id',eu.id).maybeSingle(),12000);
     if(rm.error)throw new Error('Não foi possível confirmar sua participação: '+rm.error.message);
@@ -1363,7 +1369,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(campanha.cba_data)aplicarCBAnaMesa(campanha.cba_data,false);
     combatDataState=campanha.combat_data||null;
     renderizarIniciativa(combatDataState);
-    ligarRealtime();
+    await ligarRealtime();
     ligarRecuperacaoPedidoIniciativa();
 
     // O tabuleiro aparece sem esperar consultas secundárias. Cada painel carrega
@@ -1620,20 +1626,31 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var gear=document.createElement('p');gear.className='feature-detail';gear.textContent='Equipamentos carregados: '+(equipment.length?equipment.map(function(it){return String(it.nome||it.equipment_id||'Item')+(it.equipado?' (equipado)':'')+(Number(it.quantidade)>1?' ×'+it.quantidade:'');}).join(' · '):'nenhum item carregado na leitura da mesa.');
     panel.appendChild(gear);
     var actions=document.createElement('div');actions.className='player-action-groups';
-    var gmActionGroups=[
-      {title:'Personagem',actions:[
-        {id:'gm-racial',ic:'⛰️',txt:'Características raciais',onClick:function(){overlay.remove();abrirDetalhesRaciaisMesa35(p);}},
-        {id:'gm-talents',ic:'🏅',txt:'Talentos escolhidos',onClick:function(){overlay.remove();abrirTalentosJogadorUI(p.ch.id);}},
-        {id:'gm-class',ic:'⚔️',txt:'Características da classe',onClick:function(){overlay.remove();abrirHabilidadesClasse(p.ch.id);}}
-      ]},
+    var gmActionGroups=[],activeTurn=combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
+    if(activeTurn&&!activeTurn.is_monster&&String(activeTurn.id)===String(p.ch.id)){
+      gmActionGroups.push({title:'Combate · turno ativo',actions:[
+        {id:'gm-attack-melee',ic:'⚔️',txt:'Ataque corpo a corpo',onClick:function(){overlay.remove();iniciarSelecaoAtaque('atk-corpo');}},
+        {id:'gm-attack-ranged',ic:'🏹',txt:'Ataque à distância',onClick:function(){overlay.remove();iniciarSelecaoAtaque('atk-dist');}},
+        {id:'gm-full-attack-melee',ic:'⚔️',txt:'Ataque Total corpo a corpo',onClick:function(){overlay.remove();iniciarSelecaoAtaque('atk-total-corpo');}},
+        {id:'gm-full-attack-ranged',ic:'🏹',txt:'Ataque Total à distância',onClick:function(){overlay.remove();iniciarSelecaoAtaque('atk-total-dist');}}
+      ]});
+    }
+    var characterActions=[
+      {id:'gm-racial',ic:'⛰️',txt:'Características raciais',onClick:function(){overlay.remove();abrirDetalhesRaciaisMesa35(p);}},
+      {id:'gm-talents',ic:'🏅',txt:'Talentos escolhidos',onClick:function(){overlay.remove();abrirTalentosJogadorUI(p.ch.id);}},
+      {id:'gm-class',ic:'⚔️',txt:'Características da classe',onClick:function(){overlay.remove();abrirHabilidadesClasse(p.ch.id);}}
+    ];
+    if(possuiMagiasUI(p))characterActions.push({id:'gm-spells',ic:'✨',txt:'Conjurar magia',onClick:function(){overlay.remove();abrirListaMagias(p.ch.id);}});
+    gmActionGroups.push(
+      {title:'Personagem',actions:characterActions},
       {title:'Recursos',actions:[
         {id:'gm-inventory',ic:'🎒',txt:'Mochila e equipamento',onClick:function(){overlay.remove();abrirInventarioSRD(p.ch.id);}},
-        {id:'gm-skills',ic:'📚',txt:'Perícias (consulta)',onClick:function(){overlay.remove();abrirTestePericiaJogador(p.ch.id,true);}}
+        {id:'gm-skills',ic:'📚',txt:'Testar perícia',onClick:function(){overlay.remove();abrirTestePericiaJogador(p.ch.id,false);}}
       ]},
       {title:'Gestão do Mestre',actions:[
         {id:'gm-hp',ic:'❤️',txt:'Ajustar PV',onClick:function(){overlay.remove();abrirAjustePV(p.ch.id);}}
       ]}
-    ];
+    );
     montarPainelAcaoUI(actions,gmActionGroups,String(p.ch.nome||item.nome||'Aventureiro')+' · '+classeUI(p),p);
     panel.appendChild(actions);
     var note=document.createElement('p');note.className='skill-roll-hint';note.textContent='O Mestre pode consultar a ficha e ajustar seus PV. Ataques, testes e conjuração continuam sujeitos às regras de turno, solicitações e rolagens da mesa.';
@@ -1729,10 +1746,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
           else message='🩸 '+String(item.nome||'O NPC')+' não estabilizou (D100 '+d100+') e perdeu 1 PV. PV atual: '+outcome.pv_atual+'.';
           var sent=await enviarMensagemChat(message,'sistema',{evento:'npc_stabilization',token_id:String(item.id),source_character_id:String(item.sourceCharacterId),d100:d100,pv_atual:outcome.pv_atual,condition:outcome.condition});
           if(sent&&sent.error)console.warn('Estabilização aplicada, mas o evento não foi publicado no chat:',sent.error.message);
-          var fresh=await sb.from('campaigns').select('cba_data').eq('id',MESA_ID).single();
-          if(fresh.error)throw new Error('A estabilização foi aplicada, mas não foi possível atualizar o tabuleiro: '+fresh.error.message);
-          campanha.cba_data=fresh.data.cba_data;
-          aplicarCBAnaMesa(campanha.cba_data,false);
+          await atualizarSnapshotSeguroMesa();
           var refreshed=normalizarCBAData(campanha.cba_data);
           var updated=(refreshed&&Array.isArray(refreshed.tokens)?refreshed.tokens:[]).find(function(token){return String(token.id)===String(item.id);});
           if(updated)abrirPainelControleNPC35(updated);
@@ -1863,13 +1877,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
 
 
   async function atualizarCenaAOO(){
-    var fresh=await sb.from('campaigns').select('cba_data,combat_data').eq('id',Number(MESA_ID)).single();
-    if(fresh.error)throw new Error('Não foi possível atualizar a cena após a reação: '+fresh.error.message);
-    campanha.cba_data=fresh.data.cba_data;
-    cbaPublishedState=normalizarCBAData(fresh.data.cba_data);
-    if(fresh.data.combat_data)combatDataState=fresh.data.combat_data;
-    aplicarCBAnaMesa(fresh.data.cba_data,false);
-    renderizarIniciativa(combatDataState);
+    await atualizarSnapshotSeguroMesa();
     await carregarPersonagens();
   }
 
@@ -2290,7 +2298,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(file.size>20*1024*1024){await window.vttUI.alert('A imagem deve ter até 20 MB.');return;}
     try{var token=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key)===key;});if(!token)throw new Error('O token não está mais no mapa.');
       var ext=(file.type.split('/')[1]||'png').split('+')[0].replace(/[^a-z0-9]/gi,'')||'png';var path='campaigns/'+String(MESA_ID)+'/tokens/'+encodeURIComponent(String(token.id))+'-'+Date.now()+'-'+Math.random().toString(36).slice(2,8)+'.'+ext;
-      var up=await sb.storage.from('mesa-media').upload(path,file,{upsert:false,contentType:file.type});if(up.error)throw new Error(up.error.message);var signed=await sb.storage.from('mesa-media').createSignedUrl(path,86400);if(signed.error||!signed.data||!signed.data.signedUrl)throw new Error((signed.error&&signed.error.message)||'O armazenamento não forneceu um endereço seguro para a imagem.');
+      var up=await sb.storage.from('mesa-media').upload(path,file,{upsert:false,contentType:file.type});if(up.error)throw new Error(up.error.message);var signed=await sb.storage.from('mesa-media').createSignedUrl(path,86400);if(signed.error||!signed.data||!signed.data.signedUrl){await descartarUploadPrivadoCBA(path);throw new Error((signed.error&&signed.error.message)||'O armazenamento não forneceu um endereço seguro para a imagem.');}
       token.imagem=signed.data.signedUrl;token.imagemPath=path;cbaSignedMediaCache[path]={url:signed.data.signedUrl,expiresAt:Date.now()+23*60*60*1000};cbaState.tokens=cbaPublishedState.tokens.map(function(t){return Object.assign({},t);});var saved=await gravarCBAnaCampanha(serializarEstadoCBA(cbaPublishedState));campanha.cba_data=saved;aplicarCBAnaMesa(saved,false);await enviarMensagemChat('🖼️ O Mestre atualizou o retrato de '+token.nome+'.','sistema',{evento:'token_retrato_atualizado',token_id:String(token.id)});
     }catch(error){console.error('Falha ao salvar retrato do token:',error);await window.vttUI.alert('Não foi possível salvar o retrato: '+(error.message||error));}
   }
@@ -2316,9 +2324,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         });
         if(request.error)throw new Error(request.error.message);
         if(request.data&&request.data.pending){
-          var freshPending=await sb.from('campaigns').select('cba_data').eq('id',Number(MESA_ID)).single();
-          if(freshPending.error)throw new Error(freshPending.error.message);
-          campanha.cba_data=freshPending.data.cba_data;cbaPublishedState=normalizarCBAData(freshPending.data.cba_data);aplicarCBAnaMesa(freshPending.data.cba_data,false);
+          await atualizarSnapshotSeguroMesa();
           document.getElementById('iniciativa-status').textContent='Movimento interrompido: o Mestre precisa resolver os ataques de oportunidade antes da conclusão.';
           return;
         }
@@ -2329,7 +2335,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       aplicarCBAnaMesa(result.data.cba_data,false);
       var remain=result.data.movement_remaining_m;
       document.getElementById('iniciativa-status').textContent=remain==null?'Posição atualizada no Grid. Movimento livre durante a exploração.':'Movimento restante neste turno: '+Number(remain).toLocaleString('pt-BR')+' m.';
-      var combatRefresh=await sb.from('campaigns').select('combat_data').eq('id',MESA_ID).maybeSingle();if(!combatRefresh.error&&combatRefresh.data){combatDataState=combatRefresh.data.combat_data||combatDataState;renderizarIniciativa(combatDataState);}
+      try{await atualizarSnapshotSeguroMesa();}catch(refreshError){console.warn('Movimento confirmado; snapshot seguro indisponível:',refreshError);}
     }catch(err){
       alert('Movimento não permitido: '+err.message);
       if(campanha&&campanha.cba_data) aplicarCBAnaMesa(campanha.cba_data,false);
@@ -2337,15 +2343,23 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   }
 
   function atualizarZoomCBA(){ var world=document.getElementById('cba-live-world'); if(world) world.style.setProperty('--cba-zoom',String(cbaZoom)); }
+  window.addEventListener('vinculo:cba-zoom',function(e){
+    var value=Number(e.detail);
+    if(!Number.isFinite(value))return;
+    cbaZoom=Math.max(0.35,Math.min(12,value));
+    atualizarZoomCBA();
+  });
   function ligarGestosCBA(){
     var board=document.getElementById('area-tabuleiro'); if(!board) return;
     var pinchStart=0, zoomStart=1;
-    board.addEventListener('touchstart',function(e){if(e.touches.length===2){cbaPinchInProgress=true;pinchStart=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);zoomStart=cbaZoom;e.preventDefault();}},{passive:false});
-    board.addEventListener('touchmove',function(e){if(e.touches.length===2&&pinchStart>0){var d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);cbaZoom=Math.max(1,Math.min(2.5,zoomStart*d/pinchStart));atualizarZoomCBA();e.preventDefault();}},{passive:false});
+    board.addEventListener('touchstart',function(e){if(e.touches.length===2){cbaPinchInProgress=true;pinchStart=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);var world=document.getElementById('cba-live-world');
+      zoomStart=world?(Number(getComputedStyle(world).getPropertyValue('--cba-zoom'))||cbaZoom):cbaZoom;
+      cbaZoom=zoomStart;e.preventDefault();}},{passive:false});
+    board.addEventListener('touchmove',function(e){if(e.touches.length===2&&pinchStart>0){var d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);cbaZoom=Math.max(0.35,Math.min(12,zoomStart*d/pinchStart));atualizarZoomCBA();e.preventDefault();}},{passive:false});
     board.addEventListener('touchend',function(e){if(e.touches.length<2){pinchStart=0;window.setTimeout(function(){cbaPinchInProgress=false;},120);}});
   }
   function iniciarSelecaoAtaque(tipo){
-    if(!personagemDoTurnoDoJogador()){alert('Apenas o personagem do jogador no turno atual pode atacar.');return;}
+    var actingCharacter=ehGM?personagemDoTurnoAtual():personagemDoTurnoDoJogador();if(!actingCharacter){alert('Apenas o personagem do turno ativo pode atacar.');return;}
     if(!cbaPublishedState){alert('O Mestre ainda não publicou um campo de batalha.');return;}
     ataqueSelecionado=tipo; suppressTokenClickUntil=0; var board=document.getElementById('area-tabuleiro'); board.classList.add('selecionando-alvo');
     document.getElementById('iniciativa-status').textContent='Mira ativa: selecione um alvo no tabuleiro. Ataque Total também aceita personagens jogadores; ataques simples ainda exigem NPC ou monstro.';
@@ -2701,9 +2715,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
             });
             if(applied.error)throw new Error(applied.error.message);
             var data=applied.data||{};
-            var fresh=await sb.from('campaigns').select('cba_data').eq('id',Number(MESA_ID)).single();
-            if(fresh.error)console.warn('Dano foi confirmado, mas a cena não pôde ser recarregada:',fresh.error.message);
-            else{campanha.cba_data=fresh.data.cba_data;aplicarCBAnaMesa(fresh.data.cba_data,false);}
+            try{await atualizarSnapshotSeguroMesa();}catch(refreshError){console.warn('Dano confirmado; snapshot seguro indisponível:',refreshError);}
             await enviarMensagemChat('💥 Ataque Total retomado · '+savedWeapon.nome+' contra '+target.nome+': '+Number(data.damage_applied||0)+' de dano aplicado.','rolagem',{
               evento:'dano_ataque_iterativo_aplicado',sequence_id:saved.sequence_id,attempt_id:attemptId,atacante:String(own.ch.id),alvo:String(target.id),
               rolagens_dano:damageRolls,rolagens_furtivas:sneakRolls,dano_aplicado:Number(data.damage_applied||0),retomado:true
@@ -2820,9 +2832,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
       rollChunk(0);
     }
     async function refreshSceneAfterDamage(){
-      var fresh=await sb.from('campaigns').select('cba_data').eq('id',Number(MESA_ID)).single();
-      if(fresh.error)throw new Error(fresh.error.message);
-      campanha.cba_data=fresh.data.cba_data;aplicarCBAnaMesa(fresh.data.cba_data,false);
+      await atualizarSnapshotSeguroMesa();
     }
     function continueSequence(nextIndex){
       if(nextIndex>attacksTotal){document.getElementById('iniciativa-status').textContent='Ataque Total concluído · '+own.ch.nome+'.';return;}
@@ -2949,7 +2959,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     var diceCount=Number(match[1]),faces=Number(match[2]);if(diceCount<1||diceCount>10||faces<2||faces>100)throw new Error('Expressão de dano fora dos limites.');
     var busy=false;
     function roll(title,formula,callback){abrirDado(title,async function(total,values){if(!Array.isArray(values)||!values.length)throw new Error('O dado não retornou os resultados individuais.');return await callback(total,values.map(Number));},true,true,formula);}
-    async function refreshScene(){var result=await sb.from('campaigns').select('cba_data').eq('id',campaignId).single();if(result.error)throw new Error('Falha ao atualizar a cena: '+result.error.message);campanha.cba_data=result.data.cba_data;aplicarCBAnaMesa(result.data.cba_data,false);if(target.tipo==='player')renderCards();}
+    async function refreshScene(){await atualizarSnapshotSeguroMesa();if(target.tipo==='player')renderCards();}
     async function run(){
       if(busy)return;busy=true;
       try{
@@ -3014,7 +3024,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     var type=requestedType==='atk-total-dist'?'atk-dist':requestedType==='atk-total-corpo'?'atk-corpo':requestedType;
     ataqueSelecionado=null; document.getElementById('area-tabuleiro').classList.remove('selecionando-alvo');
     var state=cbaPublishedState||normalizarCBAData(campanha.cba_data), target=state&&state.tokens.find(function(t){return String(t.key)===String(tokenKey);});
-    var own=personagemDoTurnoDoJogador(), ownToken=own&&state&&state.tokens.find(function(t){return t.tipo==='player'&&String(t.id)===String(own.ch.id);});
+    var own=ehGM?personagemDoTurnoAtual():personagemDoTurnoDoJogador(), ownToken=own&&state&&state.tokens.find(function(t){return t.tipo==='player'&&String(t.id)===String(own.ch.id);});
     if(!target||!ownToken){alert('Não foi possível localizar seu token e o alvo publicado.');return;}
     if(target.tipo==='player'&&!iterativeAttack){alert('Ataques simples contra outros jogadores ainda não estão habilitados neste fluxo. Use Ataque Total quando a regra permitir.');return;}
     await carregarEfeitosCampanha();
@@ -3520,8 +3530,19 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     return {expression:expression,count:count,totalCount:totalCount,sides:sides};
   }
   function magicEffect35(spell){var tech=parseJsonSeguro35(spell&&spell.dados_tecnicos,{}),declared=String(tech.tipo_efeito||'').toLowerCase(),typed=String(spell&&spell.typed_effect_kind||'').toLowerCase();if(typed){if(typed==='healing')return tech.cura||tech.healing?'cura':'resolucao_manual';if(typed==='damage'||typed==='attack')return 'ataque_pendente';if(typed==='utility')return 'utilitaria';return 'resolucao_manual';}if(declared==='cura'||declared==='healing'||tech.cura||tech.healing)return 'cura';if(String(spell&&spell.id)==='srd35_magic_missile')return 'missil_magico';if(['ataque','dano','damage','attack'].indexOf(declared)>=0)return 'ataque_pendente';if(declared==='utilitaria'||declared==='utility')return 'utilitaria';var text=[spell&&spell.descricao,spell&&spell.alvo,spell&&spell.area].join(' ').toLowerCase();if(text.indexOf('damage')>=0||text.indexOf('dano')>=0||/(touch attack|ranged touch|melee touch|attack roll)/i.test(text))return 'ataque_pendente';return 'resolucao_manual';}
+  function personagemDoTurnoAtual(){
+    var current=combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
+    if(!current||String(current.is_monster)==='true')return null;
+    return personagens.find(function(p){return String(p.ch.id)===String(current.id);})||null;
+  }
   function personagemParaMagia(preferredId){
     var combatando=String(campanha&&campanha.state||'').toUpperCase()==='COMBATE';
+    if(ehGM&&preferredId){
+      var selected=personagens.find(function(x){return String(x.ch.id)===String(preferredId);})||null;
+      if(!selected)return null;
+      if(combatando){var active=personagemDoTurnoAtual();return active&&String(active.ch.id)===String(selected.ch.id)?selected:null;}
+      return selected;
+    }
     if(combatando){var atual=personagemDoTurnoDoJogador();return !preferredId||atual&&String(atual.ch.id)===String(preferredId)?atual:null;}
     return (preferredId?personagens.find(function(x){return String(x.ch.id)===String(preferredId)&&x.ch.user_id===eu.id;}):personagens.find(function(x){return x.ch.user_id===eu.id;}))||null;
   }
@@ -3541,7 +3562,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     var level=Number(slot.slot_level),spell=spells.find(function(x){return String(x.id)===String(slot.spell_id);});if(!Number.isFinite(level))level=spell?nivelMagia(spell,classKey):0;
     var spent=Number(slot.expended||0),total=Number(slotsDia[level]||0);return {level:level,spent:!!slot.expended,info:total?('Espaços/dia nível '+level+': '+total):('Espaço nível '+level)};
   }
-  function magiaAindaNoTurno(p){return String(campanha&&campanha.state||'').toUpperCase()!=='COMBATE'||!!(personagemDoTurnoDoJogador()&&String(personagemDoTurnoDoJogador().ch.id)===String(p&&p.ch&&p.ch.id));}
+  function magiaAindaNoTurno(p){if(String(campanha&&campanha.state||'').toUpperCase()!=='COMBATE')return true;var active=ehGM?personagemDoTurnoAtual():personagemDoTurnoDoJogador();return !!(active&&String(active.ch.id)===String(p&&p.ch&&p.ch.id));}
   function fecharModalMagias(){var m=document.getElementById('modal-magias');m.classList.remove('ativo');m.hidden=true;magiaPersonagemAtiva=null;magiaSelecionada=null;magiaTokenMestreAtiva=null;if(focoAnteriorMagia&&focoAnteriorMagia.focus)focoAnteriorMagia.focus();}
   function popularSlotsMagia(){
     var p=magiaPersonagemAtiva,spell=magiaSelecionada,select=document.getElementById('magia-slot');select.replaceChildren();if(!p||!spell)return;
@@ -5331,6 +5352,15 @@ async function abrirModalEquipamentos(){
     return job;
   }
 
+  async function descartarUploadPrivadoCBA(path){
+    if(!path)return false;
+    try{
+      var removido=await sb.storage.from('mesa-media').remove([String(path)]);
+      if(removido.error){console.warn('Não foi possível remover upload privado sem referência:',path,removido.error);return false;}
+      return true;
+    }catch(error){console.warn('Falha ao remover upload privado sem referência:',path,error);return false;}
+  }
+
   async function assinarMidiaPrivadaCBA(path){
     var key=String(path||'');
     if(!key)return '';
@@ -5417,9 +5447,7 @@ async function abrirModalEquipamentos(){
         });
         if(request.error)throw new Error(request.error.message||'A movimentação não foi permitida.');
         if(request.data&&request.data.pending){
-          var freshPending=await sb.from('campaigns').select('cba_data').eq('id',Number(MESA_ID)).single();
-          if(freshPending.error)throw new Error(freshPending.error.message);
-          campanha.cba_data=freshPending.data.cba_data;cbaPublishedState=normalizarCBAData(freshPending.data.cba_data);aplicarCBAnaMesa(freshPending.data.cba_data,false);
+          await atualizarSnapshotSeguroMesa();
           document.getElementById('iniciativa-status').textContent='Movimento interrompido por ameaça: resolva a fila de Ataques de Oportunidade.';
           abrirPainelFilaAOO();return;
         }
@@ -5446,7 +5474,10 @@ async function abrirModalEquipamentos(){
     var up=await sb.storage.from('mesa-media').upload(path,blob,{upsert:false,contentType:contentType});
     if(up.error)throw new Error('Upload ao armazenamento privado falhou: '+up.error.message);
     var signed=await sb.storage.from('mesa-media').createSignedUrl(path,86400);
-    if(signed.error||!signed.data||!signed.data.signedUrl)throw new Error((signed.error&&signed.error.message)||'O Storage não retornou uma URL segura para a imagem.');
+    if(signed.error||!signed.data||!signed.data.signedUrl){
+      await descartarUploadPrivadoCBA(path);
+      throw new Error((signed.error&&signed.error.message)||'O Storage não retornou uma URL segura para a imagem.');
+    }
     cbaSignedMediaCache[path]={url:signed.data.signedUrl,expiresAt:Date.now()+23*60*60*1000};
     return {url:signed.data.signedUrl,path:path};
   }
@@ -6068,10 +6099,7 @@ async function abrirModalEquipamentos(){
               (dyingOutcome.dead?'☠️ '+nome+' morreu ao atingir -10 PV (D100 '+d100+').':
               '🩸 '+nome+' não estabilizou (D100 '+d100+') e perdeu 1 PV. PV atual: '+dyingOutcome.pv_atual+'.');
             await enviarMensagemChat(dyingText,'rolagem',{request_id:requestKey,token_id:tokenId,d100:d100,pv_atual:dyingOutcome.pv_atual,condition:dyingOutcome.condition,stabilization:true});
-            var freshCampaign=await sb.from('campaigns').select('cba_data').eq('id',MESA_ID).single();
-            if(freshCampaign.error)throw new Error('Rolagem aplicada, mas não foi possível atualizar o tabuleiro: '+freshCampaign.error.message);
-            campanha.cba_data=freshCampaign.data.cba_data;
-            aplicarCBAnaMesa(campanha.cba_data,false);
+            await atualizarSnapshotSeguroMesa();
           }else{
             var d20=Number(resultado);
             if(!Number.isInteger(d20)||d20<1||d20>20)throw new Error('O resultado precisa ser um d20 entre 1 e 20.');
@@ -6098,11 +6126,8 @@ async function abrirModalEquipamentos(){
     if((campanha.state||'') !== 'COMBATE'){ alert('Mude a mesa para COMBATE antes de solicitar iniciativa.'); return; }
     iniciativaBusy=true;
     try{
-      var atual=await sb.from('campaigns').select('state,cba_data').eq('id',MESA_ID).single();
-      if(atual.error) throw new Error(atual.error.message);
-      if((atual.data.state||'')!=='COMBATE') throw new Error('A campanha saiu do modo COMBATE.');
-      campanha.state=atual.data.state;
-      campanha.cba_data=atual.data.cba_data;
+      await atualizarSnapshotSeguroMesa();
+      if((campanha.state||'')!=='COMBATE') throw new Error('A campanha saiu do modo COMBATE.');
       var charsResult=await sb.from('characters').select('id,user_id,nome').eq('campaign_id',MESA_ID);
       if(charsResult.error) throw new Error('Não foi possível atualizar as fichas da mesa: '+charsResult.error.message);
       var membersResult=await sb.from('members').select('user_id,role').eq('campaign_id',MESA_ID);
@@ -6384,6 +6409,16 @@ async function abrirModalEquipamentos(){
     dadoOverlay.style.display = 'flex';
     rolagemCallback = callback;
     rollResultReceived = false;
+    rollVisibilityCurrent = 'PUBLIC';
+    var visibilityControl = document.getElementById('dado-visibilidade-controle');
+    var visibilityCheckbox = document.getElementById('dado-visibilidade-publica');
+    if (visibilityControl) { visibilityControl.hidden = !ehGM; visibilityControl.style.display = ehGM ? 'flex' : 'none'; }
+    if (visibilityCheckbox) {
+      visibilityCheckbox.checked = true;
+      visibilityCheckbox.onchange = function() {
+        rollVisibilityCurrent = this.checked ? 'PUBLIC' : 'PRIVATE';
+      };
+    }
 
     var iframe = document.getElementById('dado-iframe');
     iframe.addEventListener('load', function() {
@@ -6423,6 +6458,7 @@ async function abrirModalEquipamentos(){
     rolagemCallback = null;
     rollResultReceived = true;
     rollSessionToken = null;
+    if (!rollResultReceived) rollVisibilityCurrent = 'PUBLIC';
     if(pedidoTesteAtivo&&pedidoTesteAtivo.button) pedidoTesteAtivo.button.disabled=false;
     pedidoTesteAtivo=null;
     if(cancelada){if(iniciativaBusy) iniciativaBusy=false;if(reforcoBusy) reforcoBusy=false;}
@@ -6455,7 +6491,9 @@ async function abrirModalEquipamentos(){
     try {
       var valoresDado=Array.isArray(event.data.values)?event.data.values.map(Number):null;
       if (callback) await callback(resultado,valoresDado);
+      rollVisibilityCurrent = 'PUBLIC';
     } catch (err) {
+      rollVisibilityCurrent = 'PUBLIC';
       console.error('Falha ao concluir a rolagem:', err);
       if (pedidoTesteAtivo && pedidoTesteAtivo.button) pedidoTesteAtivo.button.disabled = false;
       pedidoTesteAtivo = null;
@@ -6464,10 +6502,11 @@ async function abrirModalEquipamentos(){
   });
 
   async function enviarMensagemChat(texto, tipo='texto', extra) {
+    var visibilidade = tipo === 'rolagem' && ehGM && rollVisibilityCurrent === 'PRIVATE' ? 'PRIVATE' : 'PUBLIC';
     var r = await sb.from('campaign_log').insert({
       campaign_id: Number(MESA_ID),
       type: tipo,
-      visibilidade: 'PUBLIC',
+      visibilidade: visibilidade,
       data: Object.assign({ autor_id: eu.id, autor_nome: meuPerfil.username, texto: texto }, extra || {})
     });
     if(r.error) console.error(r.error);
@@ -6833,7 +6872,26 @@ async function abrirModalEquipamentos(){
     inp.addEventListener('keydown', function(e){ if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); enviar(); } });
   }
 
-  function ligarRealtime(){
+  async function atualizarSnapshotSeguroMesa(){
+    var result=await sb.rpc('obter_snapshot_seguro_mesa',{p_campaign_id:Number(MESA_ID)});
+    if(result.error)throw new Error('Falha ao atualizar o snapshot autorizado da mesa: '+result.error.message);
+    var snapshot=result.data||{};
+    if(!snapshot.campaign)throw new Error('O servidor não retornou o snapshot da campanha.');
+    campanha=Object.assign({},campanha||{},snapshot.campaign,{
+      cba_data:snapshot.cba_data||null,
+      combat_data:snapshot.combat_data||null
+    });
+    cbaPublishedState=normalizarCBAData(snapshot.cba_data);
+    combatDataState=snapshot.combat_data||null;
+    var est=document.querySelector('.titulo-mesa .estado');
+    if(est){est.className='estado '+(campanha.state||'EXPLORACAO');est.textContent=campanha.state||'EXPLORACAO';}
+    if(snapshot.cba_data)aplicarCBAnaMesa(snapshot.cba_data,false);
+    renderizarIniciativa(combatDataState);
+    renderBotoesAcao();
+    return snapshot;
+  }
+
+  async function ligarRealtime(){
     sb.channel('mesa-'+MESA_ID+'-chat').on('postgres_changes', { event:'INSERT', schema:'public', table:'campaign_log', filter:'campaign_id=eq.'+MESA_ID }, function(p){
       var el = document.getElementById('chat-lista');
       if(el){ el.insertAdjacentHTML('beforeend', renderMsg(p.new)); el.scrollTop = el.scrollHeight; }
@@ -6845,17 +6903,14 @@ async function abrirModalEquipamentos(){
     sb.channel('mesa-'+MESA_ID+'-members').on('postgres_changes',{event:'*',schema:'public',table:'members',filter:'campaign_id=eq.'+MESA_ID},async function(){await Promise.all([carregarMembros(),carregarPersonagens()]);}).subscribe();
     sb.channel('mesa-'+MESA_ID+'-conditions').on('postgres_changes',{event:'*',schema:'public',table:'srd_campaign_conditions',filter:'campaign_id=eq.'+MESA_ID},async function(){await carregarEfeitosCampanha();renderCards();}).subscribe();
     sb.channel('mesa-'+MESA_ID+'-effects').on('postgres_changes',{event:'*',schema:'public',table:'srd_campaign_effects',filter:'campaign_id=eq.'+MESA_ID},async function(){await carregarEfeitosCampanha();renderCards();}).subscribe();
-    sb.channel('mesa-'+MESA_ID+'-camp').on('postgres_changes', { event:'UPDATE', schema:'public', table:'campaigns', filter:'id=eq.'+MESA_ID }, function(p){
-      campanha = p.new;
-      var est = document.querySelector('.titulo-mesa .estado');
-      if(est){ est.className = 'estado '+(campanha.state||'EXPLORACAO'); est.textContent = campanha.state || 'EXPLORACAO'; }
-      renderBotoesAcao();
-      if(p.new && p.new.cba_data) aplicarCBAnaMesa(p.new.cba_data,false);
-      if(p.new && Object.prototype.hasOwnProperty.call(p.new,'combat_data')){
-        combatDataState=p.new.combat_data||null;
-        renderizarIniciativa(combatDataState);
-      }
-    }).subscribe();
+    await sb.realtime.setAuth();
+    sb.channel('campaign:'+MESA_ID,{config:{private:true}})
+      .on('broadcast',{event:'campaign_refresh'},async function(){
+        try{
+          await atualizarSnapshotSeguroMesa();
+          await Promise.all([carregarPersonagens(),carregarEfeitosCampanha()]);
+        }catch(error){console.warn('Falha ao atualizar snapshot seguro da mesa:',error);}
+      }).subscribe();
   }
 
   init().catch(function(e){ document.getElementById('root').innerHTML = '<div class="loading-full" style="color:#f87171">Erro: '+esc(e.message)+'</div>'; });
@@ -7001,11 +7056,11 @@ html,body,#root{width:100%;height:100%;min-width:0;min-height:0}
     function finish(e){if(!drag||(e&&drag.id!==e.pointerId))return;drag=null;area.style.cursor='';}
     area.addEventListener('pointerup',finish);area.addEventListener('pointercancel',finish);area.addEventListener('lostpointercapture',finish);
     area.addEventListener('wheel',function(e){
-      if(!e.ctrlKey&&!e.metaKey)return;
       e.preventDefault();
       var current=Number(getComputedStyle(world).getPropertyValue('--cba-zoom'))||1;
-      var next=Math.max(.55,Math.min(2.2,current*(e.deltaY<0?1.08:.92)));
+      var next=Math.max(.35,Math.min(12,current*(e.deltaY<0?1.1:.9)));
       world.style.setProperty('--cba-zoom',String(next));
+      window.dispatchEvent(new CustomEvent('vinculo:cba-zoom',{detail:next}));
     },{passive:false});
     apply();
   }

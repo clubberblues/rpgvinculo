@@ -1,7 +1,3 @@
--- Keep player movement synchronized with the SRD action economy.
--- A move must be visible to condition gates (one_move_or_standard) and
--- to full-round action reservation, while still allowing split movement.
-
 DO $patch$
 DECLARE
   v_def TEXT;
@@ -12,14 +8,10 @@ BEGIN
   IF position('v_action_state' in v_def) > 0 AND position('one_move_or_standard' in v_def) > 0 THEN
     RETURN;
   END IF;
-
   v_old := E'  v_active BOOLEAN;\n  v_new_token JSONB;';
   v_new := E'  v_active BOOLEAN;\n  v_action_state JSONB;\n  v_by_character JSONB;\n  v_character_actions JSONB;\n  v_new_token JSONB;';
-  IF strpos(v_def, v_old) = 0 THEN
-    RAISE EXCEPTION 'Patch abortado: bloco de declaração não encontrado.';
-  END IF;
+  IF strpos(v_def, v_old) = 0 THEN RAISE EXCEPTION 'Patch abortado: bloco de declaração não encontrado.'; END IF;
   v_def := replace(v_def, v_old, v_new);
-
   v_old := E'  v_new_token := v_entry || jsonb_build_object(\'gridX\', p_grid_x, \'gridY\', p_grid_y);';
   v_new := E'  IF v_active THEN\n' ||
            E'    v_action_state := v_combat->\'action_economy\';\n' ||
@@ -35,11 +27,8 @@ BEGIN
            E'    v_combat := v_combat || jsonb_build_object(\'action_economy\',v_action_state);\n' ||
            E'  END IF;\n\n' ||
            E'  v_new_token := v_entry || jsonb_build_object(\'gridX\', p_grid_x, \'gridY\', p_grid_y);';
-  IF strpos(v_def, v_old) = 0 THEN
-    RAISE EXCEPTION 'Patch abortado: ponto de gravação da posição não encontrado.';
-  END IF;
+  IF strpos(v_def, v_old) = 0 THEN RAISE EXCEPTION 'Patch abortado: ponto de gravação da posição não encontrado.'; END IF;
   v_def := replace(v_def, v_old, v_new);
-
   EXECUTE v_def;
 END
 $patch$;

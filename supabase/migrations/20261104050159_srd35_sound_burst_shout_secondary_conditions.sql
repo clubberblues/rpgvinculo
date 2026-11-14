@@ -1,4 +1,4 @@
--- Sound Burst: dano sônico integral, mas Atordoado somente em falha de Fortitude.
+
 UPDATE public.srd_spell_effects
 SET verification_status='verified_srd',
     parameters=jsonb_set(
@@ -19,7 +19,6 @@ SET verification_status='verified_srd',
     )
 WHERE spell_id='srd35_spell_sound_burst' AND effect_index=1;
 
--- Shout: dano sônico metade em sucesso; Surdez por 2d6 rodadas somente em falha.
 UPDATE public.srd_spell_effects
 SET verification_status='verified_srd',
     parameters=jsonb_set(

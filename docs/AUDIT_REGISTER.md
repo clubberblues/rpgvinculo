@@ -1,3 +1,11 @@
+## 2026-11-13 — Exposição direta do estado CBA confirmada
+- **Severidade:** P1 / bloqueador de segurança para liberar a Mesa a jogadores.
+- **Evidência:** `campaigns_member_read` autoriza membros; ACL concede SELECT de tabela a authenticated; `has_column_privilege` confirma SELECT em `cba_data` e `combat_data`.
+- **Impacto:** um jogador membro pode ignorar o snapshot filtrado e consultar o JSONB integral, incluindo dados que deveriam ser exclusivos do Mestre.
+- **Estado:** confirmado no Supabase remoto; sem alteração remota.
+- **Ação:** classificar/filtrar todos os retornos RPC player-accessible (65 overloads/62 nomes identificados) e somente depois revogar SELECT direto e retirar campaigns da publicação Realtime.
+- **Referência:** `docs/CBA_SECURITY_CUTOVER_PLAN.md` e `docs/FOUNDATION_SECURITY_REVIEW.md`.
+- **Não fazer:** não aplicar migration isolada de revogação de coluna enquanto a cobertura de RPC estiver incompleta.
 # Vínculo RPG — Registro de auditorias
 
 ## Objetivo
@@ -362,7 +370,7 @@ As relações internas existentes foram individualmente configuradas sem privil�
 
 As definições atuais de 37 funções AOO e 41 funções de movimento/ações/iniciativa/turnos foram exportadas em documentos próprios, com SECURITY DEFINER/INVOKER, search_path, grants anon/authenticated e fingerprints. No conjunto AOO, 0 funções concedem EXECUTE a anon; no conjunto movimento/turnos, também 0. Isso não confirma a configuração PostgREST Exposed schemas nem substitui revisão de autorização por caminho de chamada.
 
-A reconciliação focal identificou 51 migrations remotas com nomes AOO/movimento pendente sem arquivo local de mesmo nome. A inversão de lock entre cancelamento e resolução/dano segue como risco de deadlock não reproduzido em ambiente concorrente.
+Snapshot histórico anterior à recuperação: havia migrations remotas AOO/movimento sem arquivo local. Em 2026-11-10, todas as 81 versões desse conjunto foram restauradas e alinhadas byte a byte ao ledger. A inversão de lock entre cancelamento e resolução/dano segue como risco de deadlock não reproduzido em ambiente concorrente.
 
 
 ### Risco adicional de inversão AOO
@@ -477,3 +485,486 @@ A execução 42673083206 para o commit `91a13d7db6c46b88d1cd9c64570c84409d085d24
 - Novos modelos sintéticos incluídos: campaign/pending, pending/attack e equipment/weapon instance, além dos pares anteriores.
 - A execução do workflow para commit `502b47bc28b61ed7ed5c3dab181fee62c9f433ec` está queued (run 42673548023); aguardar resultado antes de declarar aprovação.
 - A tentativa anterior (run 42673083206) falhou sem check jobs ou logs de etapas. Foi classificada como falha sem diagnóstico, não como erro confirmado dos testes SQL. A concorrência que cancelava execuções foi removida.
+
+
+## Concorrência e ordem de locks — 2026-11-10
+- **Parcial / verificado estaticamente:** auditoria read-only de OIDs, definições instaladas, privilégios efetivos e call sites para AOO, ataques iterativos PC/NPC, ficha, magia, recursos de classe, condições e movimento.
+- **Evidência:** [LOCK_ORDER_PROTOCOL_DRAFT.md](LOCK_ORDER_PROTOCOL_DRAFT.md) contém o grafo parcial, OIDs, locks próprios/herdados e limites; [LOCK_ORDER_REFACTOR_PLAN.md](LOCK_ORDER_REFACTOR_PLAN.md) contém proposta faseada ainda não aprovada para deploy.
+- **CI:** PostgreSQL fixture run #72 [42730159992](https://github.com/clubberblues/rpgvinculo/actions/runs/42730159992) passou footprint helper + oito padrões sintéticos de deadlock + um controle positivo. Não executa RPCs de produção.
+- **Limites:** deadlocks de produção não foram reproduzidos; `pg_stat_database` mostra zero desde reset em 2026-08-25 e nenhum lock aguardando na amostragem de 2026-11-10, o que não elimina ciclos potenciais.
+- **Bloqueio de mudança:** 681 arquivos SQL locais versus 966 registros remotos, 640 versões coincidentes por timestamp/nome e conteúdo não reconciliado. Não alterar funções/migrations/ACL/policies/dados até reconciliar e validar em ambiente descartável.
+- **Próxima ação:** fechar grafo transitivo dos writers/callers e helpers/triggers; depois implementar fatias pequenas com teste real das RPCs em PostgreSQL descartável e plano de rollback.
+
+- **Achado adicional condicionado:** public.gm_transfer (OID 18749), SECURITY DEFINER com EXECUTE authenticated, valida owner por leitura sem lock via priv.need_owner e depois altera papéis/owner_id; chamadas concorrentes podem reutilizar uma validação de propriedade obsoleta. Sem call site direto localizado nas páginas principais. Registrar como corrida de autorização a testar antes de manter/alterar o endpoint; não é deadlock reproduzido.
+
+- **Regressão de transferência:** CI PostgreSQL #100 [42731471362](https://github.com/clubberblues/rpgvinculo/actions/runs/42731471362) passou os dois cenários sintéticos de TOCTOU/campaign-first. A simulação reproduziu a dupla transferência stale e demonstrou que lock da campanha + revalidação rejeita a segunda chamada. Não executou gm_transfer remoto.
+
+
+### Movimento/AOO — ampliação do bypass e regressão do Encontrão (2026-11-10)
+- **P1, confirmado estaticamente:** além dos wrappers diretos de movimento, public.salvar_cena_cba (OID 20077, authenticated EXECUTE, GM-only) substitui tokens em campaigns.cba_data e aceita coordenadas sem detector AOO quando não existe pending ativo. Revogar somente os wrappers de movimento não fecha a rota.
+- **P1, integridade da pending:** adicionar_token_cba_completo (OID 21726) permite spawn de token autenticado durante combate; srd_configurar_perfil_combate_token_srd (OID 26922) altera facção/alcance. O guard atual não congela essas mudanças durante pending, podendo tornar obsoleta a lista de ameaças. Definir política explícita de freeze/cancelamento e exceções de reação.
+- **P2, regressão funcional provável/estaticamente demonstrada:** o resolver de Encontrão (OID 27169; wrapper OID 27172) altera as coordenadas do token mover no ramo p_follow=true, mas não define app.srd_aoo_pending_commit; o trigger de pending rejeita alteração de coordenadas do mover. O frontend oferece essa opção. Teste de integração deve confirmar e corrigir com autorização restrita à manobra.
+- **Evidência:** docs/MOVEMENT_AOO_AUTHORITY_GAP.md e docs/CBA_MUTATION_INVENTORY.md. Consultas ao Supabase foram somente leitura; nenhuma RPC de jogo, migration, ACL, policy, dado ou TESTE 2 foi alterado.
+- **CI:** commit fc2f008e59e980305990e9083058f2b2e76c7750 teve Static validation #62, Validate application JavaScript #110, Validate mesa JavaScript #365 e PostgreSQL fixture #271 (42749952496) em success. O fixture não testa RPCs remotas. Commits seguintes até o HEAD corrente alteram somente documentação.
+- **Decisão:** não implementar trigger/ACL/migration ainda. Fechar identidade estável de tokens, writers geométricos, exceções de manobra e ordem de locks; reconciliação do histórico de migrations continua bloqueio de deploy.
+
+
+
+### AOO — mutabilidade das fontes do snapshot (2026-11-10)
+- **P1, confirmado estaticamente:** detector OID 26923 deriva ameaças de posição/footprint/facção/alcance, raça/tamanho de ficha, armas equipadas, ataques naturais e Monge/Ataque Desarmado Aprimorado. Pending armazena o snapshot, mas o guard só verifica mover/remoção/posição.
+- **P1, endpoint ativo:** equipar_item_srd OID 20555 (authenticated EXECUTE) permite dono/GM alterar arma; cadeia OID 26390 → 26442 → 26441 bloqueia personagem/instância, mas não campanha/pending. entregar_item_srd OID 20556 (GM-only) pode adicionar item equipado automaticamente, também sem lock de campanha/pending. O resolver AOO revalida arma equipada, portanto a reação pode ficar inválida após a detecção.
+- **P1, fontes CBA:** salvar_cena_cba OID 20077 substitui dados completos de token e srd_configurar_perfil_combate_token_srd OID 26922 altera facção/alcance; o guard não protege esses campos. adicionar_token_cba_completo OID 21726 adiciona novo possível ameaçador durante pending.
+- **Política ainda em aberto:** congelar todas as dependências até terminalidade ou invalidar/cancelar e recalcular pending de modo atômico. Não há implementação ainda; consultas foram read-only.
+- **Detalhes e testes:** docs/MOVEMENT_AOO_AUTHORITY_GAP.md e docs/CBA_MUTATION_INVENTORY.md.
+
+
+
+- **P1, TOCTOU normal do movimento:** OID 26964 retorna `continue_with_existing_movement_rpc=true` sem commit quando não há ameaça; frontend então grava por OID 20522/21615 em transação separada. Outro writer pode alterar ameaças entre as chamadas e o RPC direto não recalcula AOO. Requer detecção + movimento na mesma transação. Evidência: MOVEMENT_AOO_AUTHORITY_GAP.md.
+
+
+- **Reproducer CI, 2026-11-10:** fixtures #284 [42751013687](https://github.com/clubberblues/rpgvinculo/actions/runs/42751013687) e #285 [42751022904](https://github.com/clubberblues/rpgvinculo/actions/runs/42751022904) success. O modelo copiado do trigger reproduziu duplicata do mover e movimento de outro token durante pending; controlou bloqueio de movimento único e atualização de metadados. Não executa o trigger/RPC Supabase instalado.
+
+
+
+- **P1 mecânico — snapshot de armas incompleto:** OID 26923 grava source/range sem instância; consulta OID 27044 lista equipamento atual; início OID 27022 aceita instância atual equipada sem provar que estava equipada no gatilho. Mudanças por OIDs 20555/20556 durante pending podem invalidar/criar elegibilidade AOO. Correção exige snapshot de arma exata ou freeze de equipamento. Evidência em MOVEMENT_AOO_AUTHORITY_GAP.md.
+
+
+
+- **P1/P2 mecânico — footprint duplicado Colossal:** OIDs 24744/25562 (ataque físico, overload ativo na mesa) e 25509 (Imposição das Mãos/toque, callsite ativo) ainda calculam Colossal=5 e não usam helper; OIDs 27073/26923 usam 6. A centralização deve alcançar ataques e toque, não apenas movimento. Evidência em MOVEMENT_AOO_AUTHORITY_GAP.md.
+
+
+
+### Reconciliação do baseline de migrations — 2026-11-10
+- `supabase_migrations.schema_migrations` preserva `statements[1]` para os 966 registros. Foram recuperados 326 arquivos ausentes; 103 variantes locais de versões aplicadas e 41 migrations locais sem versão remota foram preservadas em `docs/migration_reconciliation/`.
+- A pasta `supabase/migrations` contém agora exatamente 966 arquivos e os 966 hashes Git coincidem byte a byte com o ledger remoto. As 81 versões movimento/manobras/AOO estão alinhadas.
+- 13 variantes locais de versões aplicadas apresentavam diferenças semânticas; 90 eram diferenças de comentários/formatação/casts/terminadores. As 41 migrations locais em quarentena: 34 duplicatas semânticas com timestamp divergente, 5 variantes divergentes e 2 exclusivas de Anão/Bárbaro.
+- Nenhuma migration foi aplicada no Supabase; nenhum schema, função, ACL, policy, dado ou TESTE 2 foi alterado. Próximo gate é reproduzir o baseline completo em stack local descartável antes de nova migration.
+
+
+- **Bypass reproduzido em fixture descartável:** tests/sql/aoo_guard_duplicate_identity_repro.sql copia o trigger remoto e confirma que dois tokens com a mesma identidade (id/key) passam quando a primeira cópia permanece na origem e a segunda muda de coordenadas; o LIMIT 1 só compara a primeira. A mesma fixture confirma que outro token (ameaçador) pode mudar coordenadas enquanto o mover está pendente. Runs #284/#285/#293 passaram como reproduções intencionais, não como correção de segurança. Não executa a RPC instalada nem comprova exploração via API.
+
+
+### CI — replay de migrations e harness de AOO (2026-11-10)
+- PostgreSQL fixtures run [42808666665](https://github.com/clubberblues/rpgvinculo/actions/runs/42808666665): success. Logs confirmiram reprodução de duplicação de identidade do mover, alteração de coordenadas do ameaçador durante pending, footprint, lifecycle NPC e testes sintéticos de lock/autorização/Storage. A fixture AOO é reproducer intencional, não aprovação de segurança.
+- Replay integral [42808666675](https://github.com/clubberblues/rpgvinculo/actions/runs/42808666675): failure na primeira migration 20261031160944, SQLSTATE 42P01, relation public.campaigns does not exist. O stack era local descartável e foi parado pelo cleanup; nenhuma credencial/projeto Supabase remoto foi configurado.
+- Root cause e plano de recuperação em docs/MIGRATION_RECONCILIATION.md. PR segue draft e não mesclado.
+
+
+- **Nova confirmação read-only no catálogo Supabase (2026-11-10):** as funções AOO não compartilham ordem de locks. `srd_resolver_ataque_oportunidade_srd` OID 27025 e `srd_registrar_ocultacao_ataque_oportunidade_impl` OID 27254 bloqueiam attack → pending → campaign; `srd_reservar_reacao_movimento_aoo_impl` OID 27256 e `srd_resolver_encontrao_srd` OID 27169 bloqueiam pending → campaign. Solicitação/finalização são campaign-first. Isso confirma inversão estrutural e risco de deadlock, sem demonstrar deadlock ocorrido. Protocolo e regressões atualizados em `docs/LOCK_ORDER_PROTOCOL_DRAFT.md`.
+
+
+### AOO — inventário ampliado de escritores CBA (2026-11-10)
+- Catálogo remoto read-only identificou escritores adicionais de `campaigns.cba_data`: movimento GM/jogador OID 27306/27366; salvamento geral OID 20077; spawn completo OID 21726; perfil facção/alcance OID 26922; avanço de turno OID 20074; ataque físico v2 OID 24744/25562; Imposição das Mãos OID 25509; finalização AOO OID 27038; Encontrão OID 27169, além de rotas de PV/equipamento/efeitos.
+- Referência textual a coordenadas não prova que a função altere geometria; ainda é necessário classificar diffs efetivos por função. O trigger ligado a `cba_data` é único e não substitui contrato comum para todos os writers.
+- Arquitetura futura deve centralizar ou fechar o conjunto de escritores, com política explícita para pending ativo (freeze ou invalidar/recalcular dependências AOO). Booleano `has_function_privilege` em `priv.*` não prova exposição PostgREST sem verificar grants do schema e wrappers.
+- Sem alteração de produção. Evidência detalhada: `docs/MOVEMENT_AOO_AUTHORITY_GAP.md`.
+
+
+### Segurança — grants do schema interno `priv` (2026-11-10)
+- Supabase remoto: authenticated tem USAGE no schema `priv` e EXECUTE em funções internas SECURITY DEFINER, incluindo OIDs 27306, 27366 e 27169. ACL inclui `authenticated=X`. Risco confirmado na camada SQL; exposição REST/PostgREST não foi provada, pois a configuração `pgrst.db_schemas` não foi obtida.
+- Correção candidata: revogar USAGE/EXECUTE para papéis cliente após inventário de dependências e manter wrappers públicos autorizadores. Nenhuma ACL alterada. Evidência em `docs/MOVEMENT_AOO_AUTHORITY_GAP.md`.
+
+- **Ressalva da remediação `priv`:** revogação em bloco de USAGE/EXECUTE não é segura; wrappers públicos invoker chamam diretamente funções internas. Necessário converter/reprojetar cadeia de chamadas após revisão de search_path/ownership/autorização, com testes de regressão, antes de restringir grants. Nenhuma mudança aplicada.
+
+
+### Schema `priv` — dependências públicas quantificadas (2026-11-10)
+- 70 funções internas `priv.*` distintas chamadas a partir de `public`; 35 funções públicas `SECURITY INVOKER` distintas chamam `priv.*` e têm EXECUTE para authenticated. O escopo inclui movimento, AOO, ataques iterativos NPC, dano, ações de turno, avanço de nível e descanso.
+- Revogar USAGE/EXECUTE em bloco quebraria cadeias invoker; conversão em lote também não é segura. Exigir matriz por assinatura, autorização, owner e search_path e migração/testes individuais antes de restringir schema. Sem alteração de ACL/função. Ver `docs/MOVEMENT_AOO_AUTHORITY_GAP.md`.
+
+- ACL interna: 40 funções `priv.*` com EXECUTE authenticated, 39 SECURITY DEFINER. Exceção: `priv.srd_feat_saving_throw_modifier(jsonb,text)` OID 26355 tem grant PUBLIC/EXECUTE e é chamada também por anon; parece helper read-only de cálculo de talentos, mas precisa decisão explícita. Nenhum CREATE de authenticated/anon em public/priv. Sem alteração de grants.
+
+- `priv` ownership: 94 funções com owner postgres, 88 SECURITY DEFINER. Helper invoker `srd_parse_natural_attack_list(text)` OID 27228 também tem EXECUTE authenticated; demais cinco helpers invoker observados não têm EXECUTE cliente. Config PostgREST não pôde ser obtida via current_setting (NULL), logo exposição REST de `priv` não comprovada.
+
+
+### CI concluído e incompatibilidade invoker/priv (2026-11-10)
+
+- PR #74 / HEAD `e32716894d3388478d416e63a31926a811810395`: 4 workflows concluídos com sucesso (validação estática, JS aplicação, JS mesa, PostgreSQL fixtures); replay completo das 966 migrations falhou na inicialização do stack descartável, ao aplicar `20261031160944_srd35_action_economy.sql`, por `relation public.campaigns does not exist`. Nenhuma migration foi efetivamente reproduzida; a causa continua sendo a ausência de bootstrap histórico confiável.
+- O job de fixtures confirmou assertions de footprint, reproduziu bypass por identidade duplicada do mover, e executou ciclos de lock/concorrência e controles de autorização isolados. Os logs exibem deadlocks e autorizações obsoletas como resultados intencionais das reproduções; os controles campaign-first passaram. Isso não equivale a teste das RPCs reais no Supabase remoto.
+- Catálogo remoto: duas RPCs invoker de manobra/ataques naturais têm EXECUTE authenticated, mas chamam helper(s) `priv` sem EXECUTE para authenticated: `srd_consultar_modificadores_manobra_srd` (OID 27119) e `srd_listar_ataques_naturais_oportunidade_srd` (OID 27229). A incompatibilidade é objetiva no catálogo; confirmar erro ponta a ponta em sessão autenticada antes de corrigir. Nenhuma ACL/função alterada.
+- Evidência detalhada e proposta de correção específica em `docs/MOVEMENT_AOO_AUTHORITY_GAP.md`.
+
+
+### Correção de autorização em catálogo de manobras (2026-11-10)
+
+- Identificada incompatibilidade específica de privilégio: dois wrappers públicos SECURITY INVOKER chamam helpers `priv.*` sem EXECUTE authenticated. A sobrecarga de 6 argumentos da consulta de manobras é afetada no ramo Derrubar; o catálogo de ataques naturais é afetado ao construir perfil.
+- A origem está nas migrations de 08/11 que criaram esses wrappers como invoker. A análise refinada não encontrou outros wrappers públicos invoker com dependência direta sem EXECUTE authenticated na amostra de chamadas diretas resolvidas.
+- Migration focalizada e script de verificação foram adicionados ao branch de auditoria; nenhum SQL foi executado no banco remoto. A conversão para SECURITY DEFINER preserva os guards auth.uid()/GM e search_path fixo, sem abrir EXECUTE dos helpers internos ao cliente.
+- Regressão autenticada e revisão final ainda pendentes; não declarar corrigido em produção.
+
+### EXECUTE em wrappers de manobra e helper passivo (2026-11-10)
+
+- Duas funções públicas invoker com chamadas a helpers internos sem EXECUTE authenticated foram corrigidas em migration proposta, sem abrir grants nos helpers.
+- Um helper passivo de talentos tinha EXECUTE herdado de PUBLIC, tornando-o também executável por anon; chamador SQL catalogal identificado é função SECURITY DEFINER interna; grants explícitos de authenticated/service_role foram preservados. Migration proposta remove somente o grant PUBLIC e preserva authenticated/service_role no helper, e preserva os grants authenticated/service_role já existentes nas RPCs GM.
+- Adicionados dois scripts de verificação e um fixture PostgreSQL que aplica as migrations e testa o modelo de privilégio isoladamente; workflow de fixtures atualizado.
+- Nada aplicado em produção. A execução do CI no HEAD atual e as chamadas reais autenticadas permanecem pendentes.
+
+### EXECUTE interno: condição, talentos, parser e ataque iterativo (2026-11-10)
+
+- A revisão de helpers com EXECUTE authenticated encontrou três funções sem contexto de autorização que não precisavam ser chamadas diretamente pelo cliente: leitura booleana de flags de condições, cálculo passivo de modificadores de resistência e parser de ataques naturais. Seus chamadores identificados são funções SECURITY DEFINER/triggers.
+- Também foi identificado que os helpers SECURITY DEFINER de sequência iterativa 7/8 argumentos estavam diretamente executáveis por authenticated. O helper de 7 args não validava usuário/propriedade antes de acessar arma; o de 8 args consultava ficha/arma antes de delegar a validação.
+- Migration proposta remove EXECUTE cliente desses cinco helpers, preserva service_role, e move a fronteira autenticada para wrappers públicos com checagem explícita de usuário, propriedade e membership PLAYER.
+- Fixture isolado e script de verificação ampliados. Nenhuma ACL/função foi alterada no banco remoto; schema REST PostgREST ainda não foi confirmado.
+
+
+### Dependências AOO em inventário, ficha e schema interno `private` (2026-11-10)
+
+- Trigger `private.sync_character_weapon_instances_from_inventory` propaga INSERT/DELETE/UPDATE de quantidade em `srd_character_equipment` para `srd_character_weapon_instances`; inventário é writer transitivo de armas/alcance AOO.
+- `entregar_item_srd` e `equipar_item_srd` são chamados por `mesa.html` e não adquirem lock de campanha no fluxo de personagem. `private.equipar_arma_instancia_personagem_impl` também tem EXECUTE authenticated e bloqueia personagem → instância, sem campanha/pending. O schema `private` tem USAGE authenticated; 8 funções SECURITY DEFINER, 6 com EXECUTE authenticated e nenhuma com anon. Exposição PostgREST permanece não confirmada.
+- `ficha.html` chama o wrapper ativo de avanço de nível. A implementação interna bloqueia personagem → ficha e atualiza nível/atributos/talentos/progressão de classe sem lock de campanha nem guarda real de combate. Talento Ataque Desarmado Aprimorado e classe Monge são entradas do detector AOO; avanço durante pending pode alterar elegibilidade/ameaça.
+- Metadados de idiomas e PV derivados foram separados das premissas de ameaça; não congelar toda escrita de ficha/inventário. Refatoração deve ser por campo/efeito, campaign-first, com invalidação atômica quando uma premissa AOO mudar.
+- Evidência e limites registrados em `docs/ACTIVE_WORK_ITEM.md`. Consulta read-only; nenhuma mudança remota.
+
+
+### Writers de condição/efeito que alteram elegibilidade AOO (2026-11-10)
+
+- O helper de flags usado na reserva AOO consulta condições, efeitos ativos e estado de Confusão. A reserva verifica flags que tornam o reator inelegível, incluindo `no_actions`, `helpless`, `stunned`, `unconscious`, `disabled` e `no_aoo_against_unengaged`.
+- As funções de aplicação de condição/efeito já bloqueiam `campaigns` antes da mutação. Em contraste, `public.srd_remove_campaign_condition` e `public.srd_remove_campaign_effect` atualizam suas tabelas sem lock de campanha ou tratamento de pending; a remoção de efeito é um bypass direto de elegibilidade tão relevante quanto remoção de condição.
+- `public.srd_resolve_dying_round` mantém ordem personagem → ficha → campanha → condição, incompatível com campaign-first e potencial fonte de deadlock concorrente com operações de combate.
+- O contrato deve serializar escritores de condições/efeitos por campanha e tratar alterações internas como parte da transação de reação; sem trigger AOO nessas tabelas, a consistência hoje depende dos contratos RPC.
+- Nenhuma alteração remota ou execução funcional realizada; evidência estática documentada em `docs/ACTIVE_WORK_ITEM.md`.
+
+
+### Fúria: novos callers com ordem de bloqueio inconsistente (2026-11-10)
+
+- `public.usar_furia_barbaro_srd` bloqueia personagem e ficha antes da campanha; `public.end_combat` bloqueia efeitos de Fúria antes de obter lock da campanha. Ambos divergem do protocolo campaign-first e podem formar espera circular com operações de combate.
+- Os helpers internos `priv.srd_end_barbarian_rage` e `_token` bloqueiam o efeito primeiro; são seguros apenas quando o caller já mantém lock da campanha. O catálogo indica que não são diretamente executáveis por authenticated.
+- Os caminhos NPC via `usar_furia_barbaro_npc_srd`, descanso longo, expiração de condições, mudança de estado e trigger de rodada obtêm campaign lock antes de chamar os helpers; não generalizar a falha a todos os caminhos.
+- CI no commit `1959849`: JS ficha/lobby, JS mesa e fixtures PostgreSQL passaram; inicialização do stack descartável para replay de migrations falhou antes do replay começar.
+- Correção requerida: campanha primeiro e revalidação de autorização/estado/turno, depois personagem/ficha/efeito/recurso; testes de concorrência reais/isolados antes de considerar resolvido. Nenhuma execução mutável remota.
+
+
+### Condições de combate: descanso de jogador e resistência a magia (2026-11-10)
+
+- `descanso_longo_personagem_srd` altera condições de fadiga/exaustão e recursos após bloquear personagem/ficha, mas lê campanha sem lock. Pode competir com início de combate e não participa da serialização por campanha.
+- `srd_resolve_pending_spell_save` bloqueia pedido de resistência antes da campanha e, no ramo de quebra de condição, atualiza diretamente a condição sem campaign lock. A cadeia de aplicação de efeitos ainda exige revisão transitiva para ordenar campanha antes de pedido/condição.
+- `srd_resolve_dying_round` confirma ordem personagem → ficha → campanha → condição, incluindo rodada consultada somente depois de segurar os locks anteriores. Refatorar para campaign-first e revalidar turno/rodada após lock.
+- Inventário de writers deve incluir descansos, resistências, estabilização e efeitos derivados, não só rotas GM de administração. Nenhuma execução mutável remota.
+
+
+### Magias pendentes: ordem pedido → campanha (2026-11-10)
+
+- `priv.srd_apply_pending_spell_resolution` bloqueia o pedido de magia e depois a campanha; as RPCs públicas de resistência a magia/resistência de salvamento também bloqueiam o pedido primeiro e podem delegar a esse helper.
+- `srd_resolve_pending_spell_save` também encerra condição diretamente sem lock da campanha no ramo de quebra de condição. Isso altera a fonte consultada pela elegibilidade AOO.
+- Divergência do protocolo campaign-first confirmada por leitura estática; ainda não foi demonstrado ciclo de deadlock real para um mesmo pedido, portanto registrar como risco/ordem inconsistente, não como deadlock ocorrido.
+- Refatorar para campaign lock → revalidar pedido → lock do pedido → aplicar consequência, mantendo resolução idempotente. Nenhuma mutação remota executada.
+
+
+### Conjuração: RPCs autenticadas bloqueiam ficha antes da campanha (2026-11-10)
+
+- `conjurar_magia_efeitos_multialvo` e `conjurar_magia_dano_multialvo_srd` (ambas authenticated EXECUTE) bloqueiam personagem/ficha e depois campanha. Isso diverge do padrão campaign-first e concorre com ações de combate que seguram campanha antes da ficha.
+- `conjurar_magia_srd_manual` e `conjurar_missil_magico_srd` exibem ordem semelhante, mas sem EXECUTE authenticated direto; não tratá-las como endpoints de cliente sem confirmar wrappers/callsites.
+- Refatorar as RPCs públicas para campanha primeiro, revalidar permissão/estado, depois ficha do conjurador/alvos em ordem determinística. Nenhuma magia executada; nenhuma mudança remota.
+
+
+### Novos escritores de ficha/recursos fora do protocolo de campanha (2026-11-10)
+
+- `usar_habilidade_classe_srd` e `usar_imposicao_maos_mortos_vivos_srd` (authenticated EXECUTE) bloqueiam personagem/ficha/recurso antes de bloquear campanha; ambas alteram recursos e efeitos de combate.
+- `conceder_xp_personagem_srd` bloqueia personagem/ficha antes de progressão; validar guarda de combate porque progressão pode mudar classe/talentos e elegibilidade AOO.
+- `finalizar_equipamento_inicial_srd`, `salvar_talentos_bonus_classe_inicial_srd`, `salvar_dominios_personagem_srd` alteram ficha sem campaign lock; devem rejeitar alterações estruturais durante combate/pending ou passar por serialização campaign-first.
+- `excluir_ficha_propria` bloqueia personagem antes da campanha e pode alterar iniciativa; `usar_pocao_cura_srd_manual` altera inventário/PV/condição sem lock explícito de campanha. Revisar ambos.
+- Não presumir que todas as rotas geram deadlock; separar ações de mesa e alterações de ficha fora de combate. Nenhuma mutação remota executada.
+
+
+### CBA: escritores com lock e exceção de spawn (2026-11-10)
+
+- A maioria dos escritores de `campaigns.cba_data` identificados usa lock da campanha antes de gravar, incluindo movimento, dano, AOO, turno, perfil de combate e equipamento de token.
+- `adicionar_token_cba_completo` é exceção: authenticated EXECUTE, atualiza a cena sem lock explícito de campanha e permite spawn durante combate. Exigir lock, revalidar GM/estado/pending e definir política de inserção durante combate.
+- Presença de lock em `alterar_pv_token_cba` ainda não prova validação correta; revisar permissão e pending após lock. Helpers internos de Fúria/sincronização de PV dependem de callers que já seguram campanha.
+- Lacunas centrais continuam nas mutações relacionais de ficha/condição/efeito e ações de classe/magia. Nenhuma mutação remota executada.
+
+
+## 2026-11-10 — novos caminhos de resolução e controle de autoridade
+
+- `public.srd_resolver_levantar_caido_apos_aoo_srd` (OID 27157) delega ao helper authenticated `priv.srd_resolver_levantar_caido_apos_aoo_srd` (OID 27152). O helper bloqueia pending AOO antes da campanha; divergência campaign-first e risco de ciclo com finalização/cancelamento. A correção deve ler pending sem lock, obter campaign lock, revalidar e então bloquear pending.
+- `public.srd_resolve_confusion_turn_srd` (OID 27277) delega ao helper authenticated `priv.srd_resolve_confusion_turn_impl` (OID 27273), que segue campanha → condição e usa request_id para idempotência. Registrar como controle positivo; ainda conferir exposição efetiva de `priv` no Data API.
+- `public.srd_resolve_npc_dying_round` (OID 26859) também usa campanha-first antes de condição/sincronização vital, controle positivo frente ao caminho PC.
+- `public.srd_configurar_rodada_surpresa_srd` (OID 27092) valida GM antes de bloquear campanha e não repete a autorização após o lock. Revalidar papel sob lock para evitar TOCTOU.
+- `public.adicionar_token_cba_completo` (OID 21726) não é ausência total de lock: delega a `public.adicionar_token_cba` (OID 20075), que bloqueia campanha; porém a validação GM do helper ocorre antes do lock e não é repetida, e não há política de pending/combate para spawn.
+- `public.srd_remove_campaign_condition` (OID 24806) e `public.srd_remove_campaign_effect` (OID 24897) validam GM e escrevem diretamente em condições/efeitos sem campaign lock; ambos alteram flags consultadas pela elegibilidade AOO.
+- `public.usar_pocao_cura_srd_manual` (OID 24655) lê estado da campanha sem lock e só consome ação quando já observou COMBATE. A transição concorrente EXPLORACAO→COMBATE pode fazer a poção aplicar cura/consumir item sem custo de ação; serializar campanha antes de inventário/ficha e revalidar estado.
+- Evidência: corpos instalados consultados por leitura SQL; wrappers/callers identificados por busca no catálogo. Nenhuma RPC foi executada e nenhuma alteração remota foi feita.
+
+
+## 2026-11-10 — consolidação da ordem de locks AOO e correção do inventário CBA
+
+### Ordem efetiva encontrada no catálogo remoto
+
+- Reserva de reação: pending → campaign (`priv.srd_reservar_reacao_movimento_aoo_impl`, OID 27256).
+- Início de ataque AOO com arma, desarmado e ataque natural legado: pending → campaign (OIDs 27022, 27065, 27055). A sobrecarga natural OID 27231 delega para o fluxo legado.
+- Registro de ocultação: attack → pending → campaign (OID 27254).
+- Resolução de ataque: attack → pending → campaign (OID 27025).
+- Finalização de movimento: pending → campaign (OID 27038).
+- Levantar-se após AOO: pending → campaign (OID 27152).
+- Cancelamento: pending → attack (OID 27268), sem campaign lock explícito.
+- Encerramento de reação: pending → attack condicional (OID 27269), sem campaign lock explícito.
+
+Essas inversões são risco estrutural de deadlock com rotas campaign-first; não são prova de deadlocks ocorridos. Protocolo de destino: campaign → pending → attack/ledger, com autorização revalidada sob lock. Aplicar a helpers, wrappers e overloads como uma única cadeia transacional.
+
+### Correção formal do achado de spawn
+
+A afirmação anterior de que `public.adicionar_token_cba_completo` (OID 21726) não adquiria campaign lock foi corrigida após rastrear a chamada transitiva. O wrapper chama `public.adicionar_token_cba` (OID 20075), que adquire `campaigns FOR UPDATE`; o wrapper herda o lock na mesma transação. Não adicionar lock redundante. Permanecem duas lacunas: autorização GM não revalidada depois do lock e ausência de política explícita para spawn enquanto há pending AOO/combate.
+
+### CI após os commits de documentação
+
+No commit `6c1d1e95c1d3f083ebc82f09bf0a547b8880a60c`, validação estática, JavaScript de mesa, JavaScript da aplicação e fixtures PostgreSQL concluíram com sucesso. O workflow de replay das 969 migrations falhou antes de executar o replay, na etapa de inicialização do stack descartável; o log registra `relation "public.campaigns" does not exist` ao aplicar a primeira migration incremental. O problema permanece no bootstrap do ambiente vazio, não é evidência de falha no banco remoto. Nenhuma alteração foi feita no banco de produção.
+
+
+## 2026-11-10 — qualificação da exposição dos schemas internos
+
+- No banco, `authenticated` possui USAGE em `priv` e EXECUTE em 40 funções; possui USAGE em `private` e EXECUTE em 6 funções. `anon` não possui USAGE nesses schemas.
+- As configurações SQL consultadas (`current_setting('pgrst.db_schemas', true)`, `pgrst.db_extra_search_path` e overrides em `pg_db_role_setting`) não informaram schemas adicionais.
+- Isso não revela a lista efetiva configurada no serviço PostgREST/Supabase. Portanto, a exposição HTTP de `priv` e `private` permanece **não confirmada**; não afirmar que os helpers com EXECUTE authenticated são diretamente chamáveis via API até obter essa configuração.
+- Somente leitura de catálogo e configurações SQL; nenhuma ACL ou configuração foi modificada.
+
+
+### Extensão da cadeia AOO — dano e reserva
+
+- `public.srd_aplicar_dano_ataque_oportunidade_srd` (OID 27036) e `public.srd_aplicar_dano_ataque_oportunidade_monstro_srd` (OID 27058): attack → pending → campaign → ficha do alvo. Confirmada a inversão de ordem no caminho de dano.
+- `priv.srd_reservar_ataque_oportunidade_impl` (OID 27261): campaign → ledger de reação, exemplo positivo.
+- `public.srd_registrar_rolagem_ataque_oportunidade_srd` (OID 27024) e `public.srd_confirmar_critico_ataque_oportunidade_srd` (OID 27027): lock somente na linha de attack no corpo analisado; não adquirem pending/campaign posteriormente.
+- Escopo de correção deve cobrir início, reserva, rolagem, crítico/ocultação, dano, cancelamento/encerramento e commit do movimento como uma única máquina transacional.
+
+
+### 2026-11-10 — extensão da auditoria AOO a Derrubar e início/finalização
+
+- Confirmada a ordem pending → campaign nos três iniciadores de ataque AOO (arma, desarmado e ataque natural; OIDs 27022, 27065, 27055), com bloqueio do ledger após a campanha. A sobrecarga natural OID 27231 delega à implementação OID 27055.
+- public.srd_finalizar_movimento_aoo_pendente_srd (OID 27038) também bloqueia pending antes da campanha.
+- Derrubar após AOO (priv OID 27136) bloqueia pending e depois delega à cadeia pública/API até priv.srd_resolver_derrubar_srd (OID 27120), que bloqueia campaign. Inversão transitiva confirmada. O iniciador de Derrubar (priv OID 27131) bloqueia campanha antes de inserir pending.
+- app.srd_trip_aoo_pending_id é limpo para vazio em vez de restaurar o valor anterior; app.srd_aoo_pending_commit no finalizador normal não é restaurado em caminho de erro. Requerem escopo/restauração robustos.
+- A validação GM nos iniciadores de ataque ocorre antes do lock da campanha e não é repetida sob lock.
+- Somente leitura de catálogo remoto. Nenhuma RPC de combate, token ou campanha foi alterada.
+
+
+### 2026-11-10 — transições globais da máquina AOO
+
+- public.alternar_estado_campanha (OID 20103, authenticated) é campaign-first e, ao sair de combate, cancela ataques e expira pendings AOO, marcando reações em aberto como skipped. GM é validado antes do lock e não revalidado depois.
+- public.avancar_turno (OID 20074, authenticated) é campaign-first e bloqueia avanço enquanto existir pending AOO ativo. PLAYER tem revalidação de propriedade/turno sob lock; GM não tem revalidação de membership após o lock.
+- public.end_combat (OID 19091) altera os mesmos registros, mas não possui EXECUTE authenticated/anon no catálogo consultado; não é endpoint direto confirmado.
+- Somente leitura do catálogo remoto; nenhuma transição de campanha ou combate foi executada.
+
+
+### 2026-11-10 — invariantes de dados AOO
+
+- Pending tem cinco estados permitidos e índice parcial único por campanha para `waiting_reactions`/`ready_to_commit`.
+- Ataques vinculam pending e ledger por FK e têm unicidade por reação e por chaves de idempotência de rolagem/dano.
+- Ledger impede duplicação pelo ordinal e pela chave de trigger na mesma campanha/fase/rodada/ator.
+- As três tabelas estavam vazias no momento da consulta remota; sem pending `ready_to_commit`. Isto é fotografia atual, não evidência de ausência de uso histórico.
+- Os testes de integração devem cobrir reservas simultâneas, replay de rolagem/dano, terminalização coerente e ausência de ataques abertos após cancelamento/expiração.
+
+
+### 2026-11-11 — diagnóstico final do CI de migrations
+
+- Job 42931233897 falhou na etapa de inicialização do stack descartável, não na etapa separada de replay.
+- Log: `supabase start` tenta aplicar automaticamente `20261031160944_srd35_action_economy.sql`; a criação de `public.consumir_acao_turno_srd` falha porque `public.campaigns` não existe (`42P01`).
+- Interpretação: a primeira migration versionada depende de schema-base não incluído no conjunto atual. Isso não indica falha no Supabase remoto. A solução correta é recuperar o schema-base/histórico confiável, não adicionar uma tabela mínima artificial.
+- No mesmo SHA `fa4b33f`, static validation, application JS, mesa JS e PostgreSQL fixture tests passaram; replay integral falhou na inicialização.
+
+
+### 2026-11-11 — matriz inicial de escritores AOO
+
+A varredura lexical dos corpos de funções encontrou escritores diretos de pending em helpers de cancelamento/encerramento, iniciadores e resolvers de manobra, reserva de reação, ocultação, finalização e solicitação de movimento; escritores diretos de ataques em cancelamento/encerramento, ocultação, estado global, aplicação de dano, crítico, início/rolagem/resolução; e um escritor direto do ledger, o helper de reserva de ataque.
+
+A matriz completa está no item de trabalho ativo. Limite importante: é inventário lexical, não grafo transitivo; helpers, triggers e SQL dinâmico exigem rastreamento separado. Não confundir funções `priv` com endpoints REST; a exposição HTTP do schema não foi confirmada.
+
+
+### 2026-11-11 — histórico de `ready_to_commit` esclarecido
+
+As migrations 20261108170021 e 20261108193147 incluíram explicitamente `ready_to_commit` como estado cancelável/resumível. Não remover como resíduo. Existe assimetria: cancelamento, encerramento de combate e bloqueio de avanço aceitam o estado; finalização e encerramento individual de reação não. Nenhum produtor instalado foi localizado e a tabela não tinha linhas nesse estado no snapshot remoto. Exige decisão de compatibilidade antes de alterar constraints, índices ou consumidores.
+
+
+### 2026-11-11 — confirmação de estado legado e locks das rotas de manobra
+
+A leitura do catálogo confirma que não existe atribuição atual localizada de `ready_to_commit`; as ocorrências nas funções instaladas são consumidores. O estado permanece na constraint e no índice ativo por compatibilidade histórica, então não remover sem reconciliação.
+
+Iniciadores de Derrubar, Encontrão e Levantar-se são campaign-first. Em contraste, finalização do movimento é pending-first → campaign; cancelamento e encerramento individual são pending-first → attack e não bloqueiam campanha. As três rotas precisam ser harmonizadas antes de testes de carga ou alterações de produção.
+
+CI no commit `131e717`: validação estática, JS da aplicação, JS da mesa e fixtures PostgreSQL passaram; replay integral falhou ao inicializar stack descartável porque `public.campaigns` não existe quando a primeira migration incremental é aplicada. Não é falha observada no banco remoto.
+
+
+### 2026-11-11 — busca por origem do schema-base
+
+Os candidatos SQL legados não criam o core: `srd35_schema_reconciliation.sql` começa alterando tabelas SRD existentes; `cba_iniciativa_migration.sql` altera `public.campaigns`; `srd35_rule_engine_foundation_migration.sql` cria módulos que referenciam `campaigns`/`characters`; `vtt_dnd35_final_migration.sql` também assume essas tabelas. O snapshot remoto descreve o schema, mas declara expressamente que não é dump restaurável. Não foi localizada uma migration de bootstrap que crie `public.campaigns` antes da primeira migration versionada.
+
+Conclusão: a falha de CI tem causa estrutural confirmada: falta versionar a origem do schema-base pré-ledger. Não fabricar tabelas mínimas; localizar backup/schema-only SQL ou histórico confiável e reconstruir bootstrap a partir dele.
+
+
+### 2026-11-11 — privilégios padrão e superfície `priv`
+
+O catálogo remoto confirma `USAGE` no schema `priv` para `authenticated`, EXECUTE em 40 funções `priv` e privilégios padrão de EXECUTE para `authenticated`/`service_role` em todas as novas funções criadas por `postgres` nesse schema. A regra padrão é ampla e pode conceder acesso futuro inadvertidamente. O inventário AOO inclui implementações internas de cancelar, encerrar reação, reservar reação, iniciar manobras e resolver manobras com EXECUTE direto.
+
+Não foi possível provar exposição HTTP: `pgrst.db_schemas` não está visível via current_setting nem em configurações persistidas de role/database consultadas. Portanto, registrar como risco de privilégio no banco e possível superfície REST condicional, não como vulnerabilidade REST confirmada. Próximo passo é confirmar allowlist PostgREST ativa e revisar as 40 rotinas, depois migrar para privilégios explícitos mínimos. Nenhum GRANT/REVOKE foi executado no remoto.
+
+
+### 2026-11-11 — Security Advisor e escopo REST
+
+Security Advisor reportou 99 funções `SECURITY DEFINER` executáveis por `authenticated` como RPCs REST, identificadas no schema `public`; não reportou funções `priv` como RPCs. Isso reforça, sem provar de forma absoluta, que `priv` não está na allowlist REST atual. No banco, porém, `authenticated` continua com USAGE e EXECUTE em 40 funções `priv`, devido também ao default ACL amplo.
+
+Advisor reportou 7 tabelas RLS-enabled sem policy, incluindo `priv.srd_aoo_attacks` e `priv.srd_aoo_pending_movements`, além de cinco tabelas públicas de ataques/recursos. Tratar como revisão de hardening, não como falha funcional confirmada. Nenhuma permissão/policy foi alterada.
+
+
+### 2026-11-11 — lista de RPCs AOO sinalizadas pelo Security Advisor
+
+O Advisor reporta 99 funções SECURITY DEFINER em `public` como RPCs REST executáveis por `authenticated`; não reporta funções `priv` como RPCs. Dentre as 99, 15 assinaturas AOO foram listadas: aplicar dano (normal e monstro), confirmar crítico, consultar armas/ataque/movimento pendente, finalizar movimento, iniciar ataques desarmado/arma/natural (incluindo overloads), listar movimentos, registrar rolagem, resolver ataque e solicitar movimento.
+
+Este alerta é de hardening, não prova de vulnerabilidade isoladamente. Entretanto, como o AOO já tem TOCTOU e inversões de locks confirmadas, cada RPC exposta precisa de autorização revalidada sob campaign lock e validação transitiva dos helpers antes de release.
+
+
+### 2026-11-11 — verificação direta de RPCs AOO e origem do schema-base
+
+A leitura do código PL/pgSQL instalado confirmou: (1) finalização de movimento bloqueia pending antes de campaign e verifica GM antes do lock de campanha, sem revalidar papel depois; limpa o GUC de commit somente no caminho de sucesso e só aceita `waiting_reactions`; (2) confirmação crítica bloqueia attack e atualiza pending sem lock explícito do pending/campaign, criando ordem attack → pending frente a cancelamento pending → attack; (3) solicitação de movimento GM valida papel antes do campaign lock e não revalida sob lock, enquanto o fluxo de jogador valida dono/turno sob lock; (4) início de ataque natural legado também valida GM antes dos locks pending → campaign, e a sobrecarga de 5 argumentos delega à de 4.
+
+Essas são inversões/janelas de autorização estáticas confirmadas, não deadlocks observados em produção. Nenhuma RPC foi executada no banco remoto.
+
+A árvore do commit inicial rastreável (`bd9ba612`, 2026-10-31 14:13 UTC) tem 26 arquivos e 10 SQL, sem criação do core `campaigns`/`characters`/`members`. Os SQL antigos já pressupõem esse core; o repositório não preserva dump/schema-base restaurável. Recuperar export/backup/histórico externo confiável, sem inventar bootstrap artificial.
+
+
+A busca por proveniência foi ampliada às branches `audit/reconcile-supabase-migration-history`, `audit/restore-remote-migration-history`, `chore/archive-unversioned-supabase-sql` e `fix/restore-production-migration-history`. Nenhuma contém dump/schema-only ou bootstrap do core; apenas migrations incrementais/arquivadas e material de reconciliação. Isso não exclui backup fora do GitHub.
+
+### Ciclo de lock attack ↔ pending confirmado em duas RPCs públicas
+
+A leitura integral de `srd_confirmar_critico_ataque_oportunidade_srd` e `priv.srd_cancelar_movimento_aoo_pendente_impl` confirmou inversão recíproca: confirmação crítica bloqueia attack com `FOR UPDATE` e depois atualiza pending; cancelamento bloqueia pending com `FOR UPDATE` e depois atualiza attack. Duas transações concorrentes no mesmo par podem formar ciclo de espera (deadlock possível). Não foi observado deadlock real nem executado teste de concorrência.
+
+A confirmação crítica não valida o status atual do pending nem o estado anterior da reação antes de alterar o ataque. O update da reação procura por `reservation_id` e sobrescreve o status para `hit_pending_damage` sem precondição. Teste SQL read-only mostrou que, quando a reserva não existe em um array não vazio, o caminho JSONB nulo gera erro e aborta a transação (não há sucesso silencioso); quando existe em estado inesperado, a função ainda pode sobrescrever esse estado. Corrigir com ordem campaign → pending → attack e validação explícita da transição permitida sob lock.
+
+No CI do commit `cfd924f`, passaram static validation, JS de aplicação, JS da mesa e fixtures PostgreSQL. A reconstrução completa falhou na inicialização do stack descartável: houve rate limit temporário ao baixar imagem Docker, seguido de retry; depois a primeira migration falhou porque `public.campaigns` não existe no banco vazio. Replay e verificação subsequentes foram pulados. Isso não indica falha no banco remoto.
+
+
+### `srd_resolve_pending_spell_save` altera condição de combate sem campaign lock
+
+A RPC autenticada `public.srd_resolve_pending_spell_save(uuid,integer)` bloqueia primeiro o pedido em `priv.srd_pending_spell_resolutions`. No ramo `condition_break`, lê a rodada da campanha sem `FOR UPDATE` e atualiza diretamente `public.srd_campaign_conditions` para desativar a condição quando a resistência é bem-sucedida; não delega a `priv.srd_apply_pending_spell_resolution`, que obtém o lock da campanha. Como `priv.srd_condition_has_flag` consulta condições que controlam `stunned`, `helpless`, `unconscious` e `no_actions`, esta rota pode mudar a elegibilidade de reação AOO sem serialização com movimento pendente. Não foi executada; conclusão estática.
+
+Exigir campaign-first e política de invalidação/revalidação do pending AOO para condições que alteram elegibilidade, preservando as consequências legítimas de uma reação.
+
+
+CI: no commit `c912f498f0555747709c8675bcffbf3f7635044d`, passaram validação estática (`42944067699`), JS aplicação (`42944067629`), JS mesa (`42944067654`) e fixtures PostgreSQL (`42944067709`). A reconstrução integral falhou ao inicializar o stack descartável (`42944067641`): rate limit temporário Docker e, em seguida, erro `public.campaigns` ausente na primeira migration versionada (`SQLSTATE 42P01`); replay/verificação foram pulados. Não é falha no banco remoto. Os commits documentais seguintes ainda não tinham execução própria concluída na última consulta.
+
+### Escopo ampliado do ciclo de locks AOO; lookup ambíguo de token
+
+A definição instalada de `public.srd_resolver_ataque_oportunidade_srd` e das duas RPCs `srd_aplicar_dano_ataque_oportunidade_*` confirma attack → pending → campaign. O cancelamento individual continua pending → attack. Assim, resolver ataque e aplicar dano também podem formar o ciclo de espera com cancelamento/encerramento concorrente, além da confirmação crítica. Risco estrutural inferido do código; não houve teste de concorrência nem deadlock observado.
+
+O resolver localiza atacante e alvo por `id OR key` com `LIMIT 1`, sem garantir uma única correspondência. Como a fixture de cena já reproduz colisão/duplicação de identidade aceita pelo salvamento, essa RPC pode resolver usando uma cópia arbitrária. Corrigir identidade da cena no writer e rejeitar duplicidade no resolver.
+
+
+### Avanço de nível confirmado como rota de alteração de snapshot AOO
+
+O frontend `ficha.html` chama a RPC pública autenticada `public.concluir_avanco_nivel_personagem_srd_v2`, que delega para `priv.concluir_avanco_nivel_personagem_srd`. A implementação bloqueia personagem → ficha, sem lock de campanha, sem checagem de combate e sem checagem de pending AOO. Ela altera classe/nível, atributos, talentos, perícias e PV. Isso pode mudar premissas de ameaça/elegibilidade de AOO durante uma reação reservada.
+
+A correção deve serializar campaign-first e rejeitar avanço enquanto combate/pending estiver ativo, ou invalidar/recalcular o pending de modo atômico. A exposição via RPC pública está confirmada pelo callsite; não é necessário presumir que o schema `priv` esteja na allowlist REST. A migration local `20261110170000` não revoga EXECUTE desse helper e ainda não está no ledger remoto consultado.
+
+
+### Estado de CI confirmado — 2026-11-11
+
+No HEAD `4e5d2390462501190652c04f851f04d8a1a7a6cc`: validação estática, JS da aplicação, JS da mesa e fixtures SQL isoladas concluíram com sucesso. O replay de migrations falhou ao iniciar o stack descartável; log contém `toomanyrequests: Rate exceeded` e depois `relation public.campaigns does not exist` na primeira migration versionada. As etapas de replay e verificação de objetos foram ignoradas. A fixture aprovada não substitui replay completo nem testes concorrentes AOO.
+
+
+### RPCs de dano AOO — invariantes de estado e identidade
+
+As definições instaladas de `srd_aplicar_dano_ataque_oportunidade_srd` e `_monstro_srd` verificam `awaiting_damage` no ataque e `waiting_reactions` no pending, mas não verificam que a reação vinculada ao `reaction_id` esteja presente uma única vez e em `hit_pending_damage`. A atualização usa `LIMIT 1` e pode sobrescrever um status de reação inesperado; se não houver entrada, o caminho JSONB nulo faz a transação falhar.
+
+Há também divergência de identidade: o resolver aceita token por `id OR key`, enquanto ambas as RPCs de dano localizam o alvo apenas por `id`. Isso pode fazer a resolução reconhecer um alvo que a etapa de dano não encontra. Padronizar identidade canônica e exigir correspondência única em todas as rotas.
+
+As RPCs de dano mantêm ordem attack → pending → campaign, reforçando a inversão contra cancelamento pending → attack. Achado estático; sem execução de dano/teste concorrente remoto.
+
+
+### FKs AOO sem vínculo composto de campanha
+
+No catálogo remoto, `srd_aoo_attacks.pending_id` e `reaction_id` referenciam apenas os IDs globais das tabelas-pai. Não há FK composta validando que `campaign_id` do ataque seja igual ao `campaign_id` do movimento pendente e do ledger de reação. As RPCs analisadas filtram campanha, então não foi demonstrado caminho cliente para criar vínculo cruzado; ainda assim, o banco não impõe essa invariável se uma linha inconsistente for criada por outro writer.
+
+Recomendação: reforçar no schema com chaves únicas compostas e FKs compostas, ou mecanismo equivalente, e incluir fixture negativa que tente associar ataque a pending/ledger de campanha diferente.
+
+
+### Unicidade da reação no array pending não é garantida pelos iniciadores
+
+As RPCs de início de ataque (arma e desarmado) procuram `pending_reactions` pelo `reactor_token_id` com `LIMIT 1`; não verificam contagem exata de entradas. Elas validam o status e `reservation_id` da primeira ocorrência e consultam o ledger relacional, cuja unicidade não impõe unicidade dentro do array JSON. Repetir a mesma validação de contagem única nas etapas de início, resolver e dano; não confiar apenas no ledger para sanear o snapshot JSON.
+
+
+### CI e restrições AOO — confirmação em 2026-11-11
+
+HEAD auditado `e18941910f54d2bf537384e3fb1eb2b20ead257c`: static, application JS, mesa JS e PostgreSQL fixtures success; replay das 969 migrations failure. A falha ocorre antes da sequência de migrations: `public.campaigns` não existe no banco local vazio quando a primeira migration versionada executa. As etapas posteriores foram ignoradas. O problema permanece schema-base histórico ausente; não se deve inventar bootstrap.
+
+As constraints/indexes atuais oferecem PKs globais, unicidade de `reaction_id` em ataques, idempotência de rolagem/dano, um pending ativo por campanha e unicidade de ledger por campanha/fase/rodada/ator/ordinal e trigger. Falta, porém, vínculo composto de campanha entre ataque, pending e ledger: as FKs usam apenas IDs globais. Reforçar com unique keys compostas nos pais e FKs compostas no ataque (ou validação equivalente).
+
+As três implementações-base de início de ataque (arma, desarmado e ataque natural de monstro) selecionam reação em `pending_reactions` com `LIMIT 1` sem exigir correspondência única. Todas devem rejeitar arrays duplicados/inconsistentes antes de iniciar. O wrapper de seleção de ataque natural delega à implementação-base, então correções devem ocorrer na base e não ser duplicadas no wrapper.
+
+
+### Confirmação crítica — falta precondição no pending/reação
+
+`public.srd_confirmar_critico_ataque_oportunidade_srd` valida `awaiting_critical_confirmation` no ataque, mas não valida o status do pending antes de alterar `pending_reactions`; filtra apenas por `pending_id`. Também atualiza a reação selecionada por `reservation_id` com `LIMIT 1`, sem exigir uma ocorrência única nem estado anterior `hit_pending_damage`. A ausência da entrada gera erro transacional por caminho JSONB nulo; uma entrada existente em estado inesperado pode ser sobrescrita.
+
+Esta omissão combina com a inversão attack → pending contra cancelamento pending → attack. A confirmação precisa adquirir campaign → pending → attack e validar o ciclo de vida de ambos e a transição única da reação sob lock.
+
+
+## Fundação — segurança, privilégios padrão e Storage (2026-11-11)
+
+A revisão read-only do projeto Supabase identificou que os privilégios padrão do owner `postgres` no schema interno `priv` concedem automaticamente todos os privilégios de tabelas e EXECUTE de funções a `authenticated` (e também privilégios de sequences). Isso é excessivo para um schema interno e deve ser corrigido por migration versionada, após confirmar o grafo de chamadores. Não foi alterado remotamente.
+
+O Security Advisor lista 99 funções `SECURITY DEFINER` públicas executáveis por authenticated; nenhuma função pública desse tipo é executável por anon no ACL atual. Há 39 funções SECURITY DEFINER no schema priv com EXECUTE para authenticated e uma função helper com EXECUTE para anon, mas anon não tem USAGE no schema priv; exposição REST direta não foi demonstrada. Todas as 150 funções SECURITY DEFINER públicas têm search_path fixo com pg_temp. Não revogar grants em massa sem classificar os endpoints e wrappers.
+
+Duas tabelas priv estão sem RLS (`throttle`, `srd_aoo_reaction_ledger`), mas ACL atual não concede acesso direto a anon/authenticated. Cinco tabelas públicas e duas privadas têm RLS sem políticas e também não concedem acesso direto a esses roles; padrão efetivo atual é negar acesso direto. O Security Advisor reporta proteção contra senhas comprometidas desabilitada.
+
+Storage: bucket `midia` é público e contém 135 objetos, incluindo 33 em `campaigns/`, 12 capas, 53 retratos, 21 headers e 6 avatars; uma das três campanhas aponta para capa pública. O frontend usa esse bucket para imagens públicas de perfil/ficha/capas, enquanto tokens/mapas novos usam bucket privado `mesa-media` e URLs assinadas; este bucket privado estava vazio. Não tornar tudo privado nem manter tudo público sem classificar referências. `public.media` está vazia, logo os 33 objetos de campanha não têm metadados legados para mapeamento automático.
+
+Health Advisor sem avisos; Performance Advisor sinalizou 51 índices não utilizados, sem remoção recomendada sem observação de carga representativa. Detalhes e aceite pendente em `docs/FOUNDATION_SECURITY_REVIEW.md`. Nenhuma mudança remota foi feita.
+
+
+### Políticas RLS das tabelas centrais — 2026-11-11
+
+As policies de `campaigns`, `members`, `characters`, `srd_character_sheets` e `srd_character_equipment` usam propriedade/membership/GM por operação. O frontend atual faz updates diretos de retrato, transformação da foto e header na linha do próprio personagem, e da capa da campanha no caminho GM; consultas de ficha/equipamento também são diretas. Os campos mecânicos continuam majoritariamente gravados por RPC.
+
+Exceção legada: `public.tokens` permite INSERT/UPDATE/DELETE a qualquer membro da campanha, não apenas GM. Está vazia e sem call site direto nos três arquivos principais; a mesa atual usa `campaigns.cba_data`. Não é risco de dados existentes no snapshot, mas a policy deve ser endurecida antes de reativar essa tabela.
+
+
+## Fundação operacional — continuação de segurança, RPC e acesso (2026-11-11)
+
+- Default ACL de `postgres` no schema `priv` concede automaticamente privilégios amplos em novas tabelas/sequences e EXECUTE em novas funções a authenticated/service_role; endurecer via migration testada. Nenhuma mudança remota.
+- 99 funções SECURITY DEFINER públicas executáveis por authenticated; zero executáveis por anon. Todas as 150 funções SECURITY DEFINER públicas têm search_path fixo com pg_temp; das 99, 96 mencionam auth.uid(), 39 my_role() e cinco priv.need_gm() (categorias sobrepostas). Isso é triagem estática, não prova de autorização.
+- `priv.srd_feat_saving_throw_modifier(jsonb,text)` ainda tem EXECUTE PUBLIC no remoto; anon herda EXECUTE, mas não tem USAGE em priv. Migration candidata 20261110160000 revoga PUBLIC/anon, não aplicada.
+- `public.criar_personagem_srd_completo` tem duas sobrecargas authenticated. A de seis argumentos é legado sem validação de identidade/tendência/idade; a de sete argumentos cria apenas parte do estado. O wrapper final chama a de sete e depois grava idiomas, bônus, domínios, grimório e equipamento. Não há call sites diretos das sobrecargas nas páginas ativas. Refatorar helper para fronteira interna e wrapper final SECURITY DEFINER/atômico antes de revogar EXECUTE direto.
+- Grants por coluna: authenticated pode atualizar `srd_character_sheets.pv_atual` e `srd_character_equipment.equipado`, apesar de o frontend ativo usar RPCs para PV/equipamento; também pode atualizar `characters.campaign_id`, usado apenas pelo lobby legado não referenciado. Avaliar revogação desses grants após compatibilidade. `campaigns.capa_url` é update direto ativo pelo GM.
+- `lobby_list_v2` lista todas as campanhas ativas a usuários autenticados, sem filtrar membership; código fica restrito ao dono. Parece discovery intencional, mas política de privacidade precisa ser confirmada. `entrar_campanha_com_codigo` e `sentar_personagem_na_mesa` têm janela TOCTOU sem lock/revalidação campaign-first; `entrar_campanha_aberta` usa FOR SHARE.
+- `public.tokens` permite DML por qualquer membro, mas está vazia e sem uso direto nas páginas ativas; tabela legada em campaigns.cba_data é a fonte atual.
+- Storage `midia` público, 135 imagens (~190,59 MiB), sem limite MIME/tamanho; um objeto tem 15,76 MiB. 33 arquivos em campaigns/ sem metadados em public.media. Bucket privado mesa-media vazio; UI usa URLs assinadas para tokens/mapas. Classificar ativos e impor limites sem quebrar URLs.
+- Realtime publication inclui as nove tabelas das assinaturas de mesa; alinhamento estático confirmado, entrega real com duas sessões ainda não testada.
+- Integridade atual positiva: 3 campanhas, 6 memberships, 5 personagens/5 fichas; sem memberships duplicadas, GM não proprietário, personagem sem membership, fichas órfãs ou ledger órfão. 110 FKs validadas; três FKs sem índice no lado filho em tabelas de baixo volume.
+- Detalhes, evidências e plano de aceite em `docs/FOUNDATION_SECURITY_REVIEW.md`. Nenhuma alteração de schema, ACL, policy, Auth, Storage ou dado remoto.
+
+
+### Default ACL — fixture revelou herança de PUBLIC (2026-11-11)
+
+A primeira fixture isolada para endurecimento de `priv` falhou: revogar authenticated somente no default ACL por schema não remove EXECUTE herdado de PUBLIC para funções futuras. O catálogo remoto confirma PUBLIC EXECUTE em `priv.srd_feat_saving_throw_modifier`. O desenho corrigido inclui `ALTER DEFAULT PRIVILEGES FOR ROLE postgres REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC` global para funções futuras, além dos revokes por schema para authenticated em tabelas/sequences/funções de `priv`. Grants existentes permanecem; endpoints públicos existentes não são revogados por mudança de default. Fixture atualizada em `tests/sql/priv_default_acl_fixture.sql` para verificar comportamento, preservação de service_role e ACLs existentes. Novo CI ainda pendente; migration não criada/aplicada.
+
+
+### Storage privado CBA — autorização de signed URL não conectada (2026-11-11)
+
+A policy `mesa_media_ler` chama `public.can_read_media(name)`, que exige registro em `public.media` e layer visível em `public.layers`; ambas as tabelas estão vazias e nenhum writer/trigger foi encontrado. O frontend `mesa.html` faz upload para `mesa-media` e imediatamente chama `createSignedUrl`; o Supabase exige SELECT em `storage.objects` para criar signed URL. A função retorna false para paths de token em todas as campanhas atuais. O fluxo de upload/assinatura privada está bloqueado; bucket `mesa-media` vazio. A correção deve definir autorização por metadata/layer ou path/CBA sem revelar mapas completos por URL assinada e contornar a névoa de guerra. Nenhuma mudança remota; sem teste real de upload.
+
+
+### Fixture default ACL — sucesso após correção (2026-11-12 UTC)
+
+A fixture `tests/sql/priv_default_acl_fixture.sql` passou no CI PostgreSQL run `43136928379` após modelar o default global PUBLIC EXECUTE. O teste prova que a revogação global para funções futuras + revokes específicos no schema priv bloqueia acesso automático a novos objetos, preserva service_role e não revoga grants existentes. A migration de produção ainda não foi criada/aplicada; replay integral segue bloqueado pelo schema-base ausente.
+
+
+### Dependência Supabase JS — pinagem dos entrypoints ativos (2026-11-11)
+
+Os quatro entrypoints ativos `index.html`, `lobby.html`, `mesa.html` e `ficha.html` foram atualizados para carregar `@supabase/supabase-js@2.119.0` em vez do alias flutuante `@2`. A versão 2.119.0 é a release estável vigente em 2026-11-11. `lobby_atualizado.html` mantém `@2`, mas é fluxo legado sem link no caminho ativo. Verificar CI no novo HEAD.
+
+
+## Fundação — continuação final desta janela (2026-11-11/12)
+
+- Storage privado CBA: policy `mesa_media_ler` depende de `public.can_read_media(name)`, que exige registros em `public.media/layers`; ambas as tabelas estão vazias e nenhum writer/trigger as popula. O frontend faz upload em `mesa-media` e chama `createSignedUrl`, que exige SELECT em `storage.objects`; a função retorna false para paths de token. Upload/assinatura de imagens privadas está bloqueado. Corrigir autorização sem abrir o mapa completo por URL e sem ignorar névoa de guerra.
+- CBA ativo não persiste fog/reveals: normalizador/serializador contém fundo, caminho, escala, grid e tokens, sem estado de névoa. Fog por jogador/todos não está implementada no modelo atual; overlay no cliente não protege o mapa completo.
+- Data API typegen do Supabase contém as duas sobrecargas `criar_personagem_srd_completo` e o wrapper final, confirmando exposição REST das rotas de criação parcial; helpers priv/private não aparecem no typegen. A allowlist do Dashboard ainda precisa confirmação. Desde 2026-10-30 novas tabelas não são automaticamente expostas aos Data/GraphQL APIs.
+- Fixture `tests/sql/priv_default_acl_fixture.sql` passou no CI run `43136928379` após modelar o default global PUBLIC EXECUTE. O desenho corrigido revoga PUBLIC globalmente para funções futuras e authenticated em tabelas/sequences/funções futuras de priv; preserva service_role e grants existentes. Migration ainda não criada/aplicada.
+- Supabase JS foi fixado em `2.119.0` nos quatro entrypoints ativos. CI no commit de código `63fc9d6` passou static, JS app, JS mesa e fixtures; replay integral falhou ao iniciar stack e aplicar a primeira migration porque `public.campaigns` não existe no banco vazio (SQLSTATE 42P01). Nenhuma migration foi aplicada.
+- PostgreSQL remoto é `17.6.1.166`; o changelog Supabase registra 17.11.0.003 com correções de 44 CVEs. Verificar atualização gerenciada no Dashboard, sem upgrade nesta janela.
+- Fog, mídia, Data API, criação parcial, default ACL e bootstrap estão detalhados em `docs/FOUNDATION_SECURITY_REVIEW.md` e `docs/ACTIVE_WORK_ITEM.md`. Nenhuma alteração de produção foi feita.
+
+
+### Backup Free e snapshot de schema local (2026-11-11)
+
+A organização Supabase está no plano Free; backups automáticos diários só estão disponíveis em Pro/Team/Enterprise. Free deve exportar regularmente via CLI e manter cópias fora do projeto. Nenhum backup/restauração foi confirmado e não há ferramenta de listagem de backups disponível. Não fazer alterações remotas antes de backup recuperável. Foi criado `scripts/export-current-schema.ps1` para exportar schema-only do estado atual para pasta irmã ao repo, exigindo CLI linkada e Docker; não inclui Auth/Storage/arquivos e não é o bootstrap pré-ledger. Dados/Auth e Storage precisam de export separado e restauração testada. Nenhum backup foi gerado nesta sessão.
+
+
+### CBA — dados privados não isolados por jogador (2026-11-11)
+
+RLS `campaigns_member_read` permite a qualquer membro ler a linha completa da campanha, incluindo `cba_data` e `combat_data`; `mesa.html` usa select('*') e refresh direto de cba_data. Todos os jogadores recebem tokens/posições completos, sem estado oculto/fog por usuário no modelo atual. Overlay visual não protege segredos. Implementação futura de fog exige snapshot server-side filtrado e separação GM-privado/jogador-visível, além de tiles/crops para não revelar a imagem completa. Relacionado ao bloqueio de assinatura em `mesa-media`.

@@ -1,6 +1,3 @@
--- Atualiza somente o estado do motor das características de Fúria já conectadas.
--- O nível 1 e o nível 12 permanecem parciais porque ainda incluem, respectivamente,
--- Analfabetismo e Sentido para Armadilhas +4, que não fazem parte desta entrega.
 UPDATE public.srd_class_level_features
 SET mechanics = mechanics || jsonb_build_object(
   'engine_status','partial',

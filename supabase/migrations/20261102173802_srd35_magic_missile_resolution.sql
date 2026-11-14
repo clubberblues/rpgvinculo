@@ -33,29 +33,19 @@ BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Autenticação obrigatória.'; END IF;
   IF p_spell_id IS DISTINCT FROM 'srd35_magic_missile' THEN RAISE EXCEPTION 'Esta resolução aceita somente Míssil Mágico.'; END IF;
   IF NULLIF(BTRIM(p_target_token_key),'') IS NULL THEN RAISE EXCEPTION 'Selecione um alvo.'; END IF;
-
-  SELECT ch.* INTO v_character
-    FROM public.characters ch
-   WHERE ch.id::TEXT=BTRIM(p_character_id) AND ch.user_id=auth.uid()
-   FOR UPDATE;
+  SELECT ch.* INTO v_character FROM public.characters ch
+   WHERE ch.id::TEXT=BTRIM(p_character_id) AND ch.user_id=auth.uid() FOR UPDATE;
   IF NOT FOUND OR v_character.campaign_id IS NULL THEN RAISE EXCEPTION 'Ficha própria em campanha não encontrada.'; END IF;
   SELECT sh.* INTO v_sheet FROM public.srd_character_sheets sh
    WHERE sh.character_id::TEXT=BTRIM(p_character_id) FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'Ficha SRD não encontrada.'; END IF;
   IF v_sheet.nivel IS NULL OR v_sheet.nivel<1 OR v_sheet.nivel>20 THEN RAISE EXCEPTION 'Nível de conjurador inválido.'; END IF;
-
   v_missiles:=LEAST(5,CEIL(v_sheet.nivel/2.0)::INTEGER);
   v_min:=2*v_missiles; v_max:=5*v_missiles;
   IF p_damage IS NULL OR p_damage<v_min OR p_damage>v_max THEN
     RAISE EXCEPTION 'Dano inválido para % míssil(is): esperado de % a %.',v_missiles,v_min,v_max;
   END IF;
-
-  -- The existing resolver validates spell access, preparation/known status,
-  -- slot use and, during combat, the standard action and active player's turn.
-  v_cast:=public.conjurar_magia_com_acao_srd(
-    p_character_id,p_spell_id,p_slot_level,p_target_token_key
-  );
-
+  v_cast:=public.conjurar_magia_com_acao_srd(p_character_id,p_spell_id,p_slot_level,p_target_token_key);
   SELECT c.* INTO v_campaign FROM public.campaigns c
    WHERE c.id=v_character.campaign_id FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'Campanha não encontrada.'; END IF;
@@ -67,7 +57,6 @@ BEGIN
    WHERE e.token->>'key'=BTRIM(p_target_token_key);
   IF v_count<>1 THEN RAISE EXCEPTION 'Token-alvo ausente ou duplicado nesta campanha.'; END IF;
   v_token:=v_tokens->(v_index::INTEGER-1);
-
   IF v_type='player' THEN
     SELECT sh.pv_atual,sh.pv_max INTO v_hp,v_max_hp
       FROM public.characters ch
@@ -89,7 +78,6 @@ BEGIN
   ELSE
     RAISE EXCEPTION 'Tipo de token incompatível com Míssil Mágico.';
   END IF;
-
   v_scene:=v_scene||jsonb_build_object('tokens',v_tokens);
   UPDATE public.campaigns SET cba_data=v_scene WHERE id=v_character.campaign_id;
   RETURN COALESCE(v_cast,'{}'::JSONB)||jsonb_build_object(
@@ -101,5 +89,3 @@ $$;
 REVOKE ALL ON FUNCTION public.conjurar_missil_magico_srd(TEXT,TEXT,SMALLINT,TEXT,INTEGER) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.conjurar_missil_magico_srd(TEXT,TEXT,SMALLINT,TEXT,INTEGER) TO authenticated;
 NOTIFY pgrst,'reload schema';
-
-

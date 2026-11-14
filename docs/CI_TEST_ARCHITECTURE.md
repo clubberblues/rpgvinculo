@@ -1,4 +1,4 @@
-# Arquitetura de CI e testes — estado observado em 2026-11-09
+# Arquitetura de CI e testes — estado observado em 2026-11-10
 
 ## Workflows existentes
 
@@ -8,15 +8,18 @@
 | `mesa-syntax-check.yml` | push/PR em mesa ou workflow | Sintaxe de JavaScript inline em `mesa.html`, Node 20 | Não valida fluxo funcional, banco ou concorrência |
 | `validate-static.yml` | push/PR em HTML/JS/scripts e dispatch | Sintaxe de 5 páginas + `vinculo-ui.js`; invariantes do dado manual e chamadas proibidas de `roll_dice`; Node 22 | Sobrepõe parte dos dois workflows de sintaxe; não valida SQL |
 | `pages-smoke-check.yml` | push em páginas públicas e dispatch | HTTP 200, título, idioma, viewport e corpo não vazio via Playwright 1.55.0 | Só roda contra GitHub Pages publicado; não autentica, não interage com Supabase e não altera dados |
+| `postgres-fixture-tests.yml` | PR/push em `tests/sql/**` e dispatch | Executa fixtures SQL sintéticas em PostgreSQL 17 descartável | Não executa RPCs reais, Auth, PostgREST ou RLS do projeto |
+| `supabase-migration-replay.yml` | PR em `supabase/migrations/**` e dispatch | Inicializa Supabase local descartável e tenta reproduzir todas as migrations versionadas | Bloqueado pela ausência de bootstrap/schema-base; não conecta ao remoto |
 
 ## Observações confirmadas
 
-- Existem quatro workflows no repositório.
-- Não existe `supabase/config.toml`, `package.json`, diretório `tests/` nem configuração Playwright/Vitest/Jest dedicada ao banco.
+- Existem seis workflows no repositório.
+- Não existe `supabase/config.toml` versionado nem `package.json`; há fixtures em `tests/sql/`, mas não uma configuração Playwright/Vitest/Jest dedicada ao banco.
 - O smoke test instala Playwright no próprio job sem lockfile de dependências.
 - Node 20 é usado em dois workflows; Node 22 em `validate-static`. A versão de Node não está centralizada.
 - A verificação de dado manual é um contrato de produto importante: impede regressões que façam rolagens automáticas e confirma a integração de iniciativa/ataque com o dado físico/3D.
-- Não há CI para aplicar migrations, validar DDL, executar pgTAP, testar grants/RLS, testar RPCs com usuários autenticados ou reproduzir concorrência.
+- Há um workflow de replay local das migrations, mas ele não consegue completar o reset em banco vazio enquanto o schema-base anterior à primeira migration não for recuperado. Não há deploy automático para produção.
+- As fixtures PostgreSQL cobrem lógica transacional sintética, não grants/RLS ou RPCs reais com usuários autenticados.
 
 ## Arquitetura-alvo por camadas
 
@@ -90,3 +93,11 @@ A sequência não depende de uma nova branch Supabase: primeiro montar fixtures 
 O repositório `clubberblues/rpgvinculo` foi confirmado como **público**. A documentação oficial do GitHub informa que o uso de runners GitHub-hosted padrão em repositórios públicos é gratuito; runners maiores são cobrados. Portanto, o harness deve usar somente `ubuntu-latest` padrão e um serviço PostgreSQL efêmero no job, sem larger runners, Codespaces, GitHub Sandbox, serviços gerenciados adicionais ou runners self-hosted pagos. Referência: [GitHub Actions billing](https://docs.github.com/en/billing/concepts/product-billing/github-actions).
 
 O workflow deve ter limites de tempo e não publicar artifacts com dados de campanha. As fixtures serão sintéticas e descartadas ao fim do job.
+
+
+## Estado do replay integral — 2026-11-10
+
+- O repositório contém 969 arquivos de migration; o ledger remoto contém 966 versões já aplicadas. As três migrations novas da branch são candidatas pendentes e não foram aplicadas no remoto.
+- O workflow de replay passou a calcular dinamicamente a contagem de migrations para evitar a regressão do valor fixo 966.
+- O replay em banco vazio permanece bloqueado porque o conjunto versionado começa com migrations incrementais que alteram objetos preexistentes, incluindo `public.campaigns`. O bootstrap original ainda não foi localizado.
+- Não criar tabelas mínimas artificiais para fazer o CI passar. Recuperar dump/schema-base confiável, validar proveniência e então executar replay integral em ambiente descartável.

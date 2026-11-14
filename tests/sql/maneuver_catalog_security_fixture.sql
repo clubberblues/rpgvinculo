@@ -1,0 +1,360 @@
+-- Isolated regression fixture for the exact SECURITY DEFINER remediation migration.
+-- Uses a disposable PostgreSQL database and never touches application data.
+-- The included migrations commit; fixture objects remain only until the CI container is discarded.
+\set ON_ERROR_STOP on
+BEGIN;
+
+DO $roles$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN CREATE ROLE authenticated NOLOGIN; END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon NOLOGIN; END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='service_role') THEN CREATE ROLE service_role NOLOGIN; END IF;
+END
+$roles$;
+
+CREATE SCHEMA IF NOT EXISTS auth;
+CREATE SCHEMA IF NOT EXISTS priv;
+GRANT USAGE ON SCHEMA auth, priv TO authenticated, anon, service_role;
+
+CREATE OR REPLACE FUNCTION auth.uid()
+RETURNS uuid LANGUAGE sql STABLE
+AS $$ SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
+GRANT EXECUTE ON FUNCTION auth.uid() TO PUBLIC;
+
+CREATE OR REPLACE FUNCTION public.my_role(cid bigint)
+RETURNS text LANGUAGE sql STABLE
+AS $$ SELECT current_setting('fixture.campaign_role',true) $$;
+GRANT EXECUTE ON FUNCTION public.my_role(bigint) TO authenticated, anon;
+
+CREATE OR REPLACE FUNCTION priv.srd35_maneuver_profile(bigint,text)
+RETURNS jsonb LANGUAGE sql STABLE
+AS $$ SELECT jsonb_build_object('ok',true) $$;
+REVOKE ALL ON FUNCTION priv.srd35_maneuver_profile(bigint,text) FROM PUBLIC, authenticated, anon;
+
+CREATE OR REPLACE FUNCTION priv.srd_grid_footprint_distance_ft(integer,integer,integer,integer,integer,integer)
+RETURNS integer LANGUAGE sql IMMUTABLE
+AS $$ SELECT 5 $$;
+REVOKE ALL ON FUNCTION priv.srd_grid_footprint_distance_ft(integer,integer,integer,integer,integer,integer) FROM PUBLIC, authenticated, anon;
+
+CREATE OR REPLACE FUNCTION priv.srd_token_grid_footprint(p_campaign_id bigint,p_token_id text)
+RETURNS integer LANGUAGE sql STABLE
+AS $$ SELECT 1 $$;
+REVOKE ALL ON FUNCTION priv.srd_token_grid_footprint(bigint,text) FROM PUBLIC, authenticated, anon;
+
+CREATE OR REPLACE FUNCTION priv.srd_parse_natural_attack_list(text)
+RETURNS jsonb LANGUAGE sql IMMUTABLE
+AS $$ SELECT '[]'::jsonb $$;
+REVOKE ALL ON FUNCTION priv.srd_parse_natural_attack_list(text) FROM PUBLIC, authenticated, anon;
+
+GRANT EXECUTE ON FUNCTION priv.srd_parse_natural_attack_list(text) TO authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION priv.srd_condition_has_flag(bigint,text,text,text)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path TO pg_catalog, public, priv, pg_temp
+AS $$ SELECT true $$;
+GRANT EXECUTE ON FUNCTION priv.srd_condition_has_flag(bigint,text,text,text) TO authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION priv.fixture_condition_caller(bigint,text,text,text)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path TO pg_catalog, public, priv, pg_temp
+AS $$ SELECT priv.srd_condition_has_flag($1,$2,$3,$4) $$;
+GRANT EXECUTE ON FUNCTION priv.fixture_condition_caller(bigint,text,text,text) TO authenticated;
+
+CREATE TABLE public.characters(id text, campaign_id bigint, user_id uuid);
+CREATE TABLE public.members(campaign_id bigint, user_id uuid, role text);
+GRANT SELECT, DELETE ON public.members TO service_role;
+CREATE TABLE public.srd_character_weapon_instances(instance_id uuid, character_id text, equipment_id text, equipado boolean, hand_slot text);
+CREATE TABLE public.srd_equipment(id text, detalhes jsonb);
+CREATE TABLE public.srd_character_equipment(character_id text, equipment_id text, equipado boolean, hand_slot text);
+CREATE TABLE public.srd_attack_sequences(id uuid, weapon_hand_slot text, weapon_end text);
+
+CREATE OR REPLACE FUNCTION public.iniciar_sequencia_ataque_iterativo_srd(
+ p_campaign_id bigint,p_character_id text,p_target_token_id text,p_attack_type text,p_weapon_instance_id uuid
+) RETURNS jsonb LANGUAGE sql SECURITY DEFINER
+SET search_path TO pg_catalog, public, priv, pg_temp
+AS $$ SELECT jsonb_build_object('sequence_id','22222222-2222-4222-8222-222222222222') $$;
+
+INSERT INTO public.characters(id,campaign_id,user_id)
+VALUES ('owned-character',1,'11111111-1111-4111-8111-111111111111');
+INSERT INTO public.members(campaign_id,user_id,role)
+VALUES (1,'11111111-1111-4111-8111-111111111111','PLAYER');
+INSERT INTO public.srd_character_weapon_instances(instance_id,character_id,equipment_id,equipado,hand_slot)
+VALUES ('33333333-3333-4333-8333-333333333333','owned-character','weapon-1',true,'main_hand');
+INSERT INTO public.srd_equipment(id,detalhes)
+VALUES ('weapon-1','{"weapon_double":false}'::jsonb);
+INSERT INTO public.srd_character_equipment(character_id,equipment_id,equipado,hand_slot)
+VALUES ('owned-character','weapon-1',true,'main_hand');
+
+CREATE OR REPLACE FUNCTION priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(
+ p_campaign_id bigint,p_character_id text,p_target_token_id text,p_attack_type text,
+ p_weapon_instance_id uuid,p_weapon_hand_slot text,p_weapon_end text
+) RETURNS jsonb LANGUAGE sql SECURITY DEFINER
+SET search_path TO public, priv, pg_temp
+AS $$ SELECT '{}'::jsonb $$;
+GRANT EXECUTE ON FUNCTION priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(bigint,text,text,text,uuid,text,text)
+TO authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION priv.iniciar_sequencia_ataque_iterativo_srd_8_impl(
+ p_campaign_id bigint,p_character_id text,p_target_token_id text,p_attack_type text,
+ p_weapon_instance_id uuid,p_weapon_hand_slot text,p_weapon_end text,p_power_attack_penalty integer
+) RETURNS jsonb LANGUAGE sql SECURITY DEFINER
+SET search_path TO public, priv, pg_temp
+AS $$ SELECT '{}'::jsonb $$;
+GRANT EXECUTE ON FUNCTION priv.iniciar_sequencia_ataque_iterativo_srd_8_impl(bigint,text,text,text,uuid,text,text,integer)
+TO authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.iniciar_sequencia_ataque_iterativo_srd(
+ p_campaign_id bigint,p_character_id text,p_target_token_id text,p_attack_type text,
+ p_weapon_instance_id uuid,p_weapon_hand_slot text,p_weapon_end text
+) RETURNS jsonb LANGUAGE sql SECURITY INVOKER
+SET search_path TO pg_catalog, public, priv, pg_temp
+AS $$ SELECT '{}'::jsonb $$;
+GRANT EXECUTE ON FUNCTION public.iniciar_sequencia_ataque_iterativo_srd(bigint,text,text,text,uuid,text,text)
+TO authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION public.iniciar_sequencia_ataque_iterativo_srd(
+ p_campaign_id bigint,p_character_id text,p_target_token_id text,p_attack_type text,
+ p_weapon_instance_id uuid,p_weapon_hand_slot text,p_weapon_end text,p_power_attack_penalty integer
+) RETURNS jsonb LANGUAGE sql SECURITY INVOKER
+SET search_path TO pg_catalog, public, priv, pg_temp
+AS $$ SELECT '{}'::jsonb $$;
+GRANT EXECUTE ON FUNCTION public.iniciar_sequencia_ataque_iterativo_srd(bigint,text,text,text,uuid,text,text,integer)
+TO authenticated, service_role;
+
+
+
+CREATE OR REPLACE FUNCTION priv.srd_feat_saving_throw_modifier(jsonb,text)
+RETURNS integer LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path TO pg_catalog, public, priv, pg_temp
+AS $$ SELECT 0 $$;
+GRANT EXECUTE ON FUNCTION priv.srd_feat_saving_throw_modifier(jsonb,text) TO authenticated, service_role;
+
+CREATE OR REPLACE FUNCTION priv.srd_saving_throw_bonus(bigint,text,text,text,text)
+RETURNS integer LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path TO pg_catalog, public, priv, pg_temp
+AS $$ SELECT priv.srd_feat_saving_throw_modifier('[]'::jsonb,'fortitude') $$;
+REVOKE ALL ON FUNCTION priv.srd_saving_throw_bonus(bigint,text,text,text,text) FROM PUBLIC, authenticated, anon;
+
+CREATE OR REPLACE FUNCTION priv.fixture_saving_throw_caller(bigint,text,text,text,text)
+RETURNS integer LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path TO pg_catalog, public, priv, pg_temp
+AS $$ SELECT priv.srd_saving_throw_bonus($1,$2,$3,$4,$5) $$;
+GRANT EXECUTE ON FUNCTION priv.fixture_saving_throw_caller(bigint,text,text,text,text) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.srd_consultar_modificadores_manobra_srd(
+  bigint,text,text,text,boolean,boolean
+) RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER
+AS $fn$
+BEGIN
+  IF auth.uid() IS NULL OR public.my_role($1) IS DISTINCT FROM 'GM' THEN
+    RAISE EXCEPTION 'Somente o Mestre';
+  END IF;
+  PERFORM priv.srd35_maneuver_profile($1,$2);
+  PERFORM priv.srd_grid_footprint_distance_ft(0,0,1,0,0,1);
+  PERFORM priv.srd_token_grid_footprint($1,$2);
+  RETURN '{"ok":true}'::jsonb;
+END
+$fn$;
+
+CREATE OR REPLACE FUNCTION public.srd_listar_ataques_naturais_oportunidade_srd(bigint,text)
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY INVOKER
+AS $fn$
+BEGIN
+  IF auth.uid() IS NULL OR public.my_role($1) IS DISTINCT FROM 'GM' THEN
+    RAISE EXCEPTION 'Somente o Mestre';
+  END IF;
+  PERFORM priv.srd35_maneuver_profile($1,$2);
+  PERFORM priv.srd_parse_natural_attack_list('bite');
+  RETURN '{"ok":true}'::jsonb;
+END
+$fn$;
+
+GRANT EXECUTE ON FUNCTION public.srd_consultar_modificadores_manobra_srd(bigint,text,text,text,boolean,boolean) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.srd_listar_ataques_naturais_oportunidade_srd(bigint,text) TO authenticated, service_role;
+
+-- Apply the same migration that will be deployed in production.
+\i supabase/migrations/20261110150000_fix_invoker_maneuver_catalog_helper_permissions.sql
+\i supabase/verification/verify_maneuver_catalog_rpc_security.sql
+\i supabase/migrations/20261110160000_revoke_public_feat_saving_throw_helper.sql
+\i supabase/verification/verify_passive_feat_helper_acl.sql
+\i supabase/migrations/20261110170000_lock_down_internal_helper_execute.sql
+\i supabase/verification/verify_internal_helper_execute.sql
+
+-- The migrations commit their own transactions; begin a fresh transaction so
+-- SET LOCAL JWT/fixture claims remain visible to the authenticated test calls.
+BEGIN;
+SET ROLE authenticated;
+SELECT set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',true);
+SELECT set_config('fixture.campaign_role','GM',true);
+SELECT auth.uid() AS fixture_uid, public.my_role(1) AS fixture_role, current_user AS fixture_current_user;
+DO $gm$
+BEGIN
+  IF public.srd_consultar_modificadores_manobra_srd(1,'a','b','trip',true,false)->>'ok' <> 'true' THEN
+    RAISE EXCEPTION 'GM maneuver wrapper did not return success';
+  END IF;
+  IF public.srd_listar_ataques_naturais_oportunidade_srd(1,'monster')->>'ok' <> 'true' THEN
+    RAISE EXCEPTION 'GM natural attack wrapper did not return success';
+  END IF;
+  IF priv.fixture_saving_throw_caller(1,'character','1','fortitude','base') <> 0 THEN
+    RAISE EXCEPTION 'SECURITY DEFINER saving throw engine caller failed';
+  END IF;
+  IF NOT priv.fixture_condition_caller(1,'token','monster','cannot_attack') THEN
+    RAISE EXCEPTION 'SECURITY DEFINER condition caller failed';
+  END IF;
+  BEGIN
+    PERFORM priv.srd_saving_throw_bonus(1,'character','1','fortitude','base');
+    RAISE EXCEPTION 'Authenticated unexpectedly executed private saving throw engine helper';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    PERFORM priv.srd_feat_saving_throw_modifier('[]'::jsonb,'fortitude');
+    RAISE EXCEPTION 'Authenticated unexpectedly executed passive feat helper directly';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    PERFORM priv.srd_condition_has_flag(1,'token','monster','cannot_attack');
+    RAISE EXCEPTION 'Authenticated unexpectedly executed condition helper directly';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    PERFORM priv.srd_parse_natural_attack_list('bite');
+    RAISE EXCEPTION 'Authenticated unexpectedly executed natural attack parser directly';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    PERFORM priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(
+      1,'not-owned','target','atk-corpo','11111111-1111-4111-8111-111111111111'::uuid,'main_hand',NULL
+    );
+    RAISE EXCEPTION 'Authenticated unexpectedly called private 7-argument helper';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    PERFORM priv.iniciar_sequencia_ataque_iterativo_srd_8_impl(
+      1,'not-owned','target','atk-corpo','11111111-1111-4111-8111-111111111111'::uuid,'main_hand',NULL,0
+    );
+    RAISE EXCEPTION 'Authenticated unexpectedly called private 8-argument helper';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+  BEGIN
+    PERFORM public.iniciar_sequencia_ataque_iterativo_srd(
+      1,'not-owned','target','atk-corpo','11111111-1111-4111-8111-111111111111'::uuid,'main_hand',NULL
+    );
+    RAISE EXCEPTION 'Public 7-argument wrapper unexpectedly accepted unowned character';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM='Public 7-argument wrapper unexpectedly accepted unowned character' THEN RAISE; END IF;
+  END;
+  BEGIN
+    PERFORM public.iniciar_sequencia_ataque_iterativo_srd(
+      1,'not-owned','target','atk-corpo','11111111-1111-4111-8111-111111111111'::uuid,'main_hand',NULL,0
+    );
+    RAISE EXCEPTION 'Public 8-argument wrapper unexpectedly accepted unowned character';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM='Public 8-argument wrapper unexpectedly accepted unowned character' THEN RAISE; END IF;
+  END;
+  IF public.iniciar_sequencia_ataque_iterativo_srd(
+    1,'owned-character','target','atk-corpo',
+    '33333333-3333-4333-8333-333333333333'::uuid,'main_hand',NULL
+  )->>'weapon_hand_slot' <> 'main_hand' THEN
+    RAISE EXCEPTION 'Owned character 7-argument iterative attack did not succeed';
+  END IF;
+  IF public.iniciar_sequencia_ataque_iterativo_srd(
+    1,'owned-character','target','atk-corpo',
+    '33333333-3333-4333-8333-333333333333'::uuid,'main_hand',NULL,0
+  ) IS NULL THEN
+    RAISE EXCEPTION 'Owned character 8-argument iterative attack did not return';
+  END IF;
+  BEGIN
+    PERFORM priv.srd35_maneuver_profile(1,'a');
+    RAISE EXCEPTION 'Authenticated unexpectedly executed private helper';
+  EXCEPTION WHEN insufficient_privilege THEN
+    NULL;
+  END;
+END
+$gm$;
+
+SELECT set_config('fixture.campaign_role','PLAYER',true);
+DO $player$
+BEGIN
+  BEGIN
+    PERFORM public.srd_consultar_modificadores_manobra_srd(1,'a','b','trip',true,false);
+    RAISE EXCEPTION 'Player unexpectedly passed maneuver GM guard';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM='Player unexpectedly passed maneuver GM guard' THEN RAISE; END IF;
+  END;
+  BEGIN
+    PERFORM public.srd_listar_ataques_naturais_oportunidade_srd(1,'monster');
+    RAISE EXCEPTION 'Player unexpectedly passed natural attack GM guard';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM='Player unexpectedly passed natural attack GM guard' THEN RAISE; END IF;
+  END;
+END
+$player$;
+RESET ROLE;
+
+SET ROLE anon;
+DO $anon$
+BEGIN
+  BEGIN
+    PERFORM priv.srd_feat_saving_throw_modifier('[]'::jsonb,'fortitude');
+    RAISE EXCEPTION 'Anon unexpectedly executed passive feat helper';
+  EXCEPTION WHEN insufficient_privilege THEN
+    NULL;
+  END;
+END
+$anon$;
+RESET ROLE;
+
+SET ROLE service_role;
+SELECT set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',true);
+DO $service$
+BEGIN
+  BEGIN
+    PERFORM priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(
+      1,'not-owned','target','atk-corpo','11111111-1111-4111-8111-111111111111'::uuid,'main_hand',NULL
+    );
+    RAISE EXCEPTION 'Private iterative helper unexpectedly accepted unowned character';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM='Private iterative helper unexpectedly accepted unowned character' THEN RAISE; END IF;
+  END;
+  IF priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(
+    1,'owned-character','target','atk-corpo',
+    '33333333-3333-4333-8333-333333333333'::uuid,'main_hand',NULL
+  )->>'weapon_hand_slot' <> 'main_hand' THEN
+    RAISE EXCEPTION 'Trusted service role could not execute the guarded internal helper for an owned character';
+  END IF;
+  BEGIN
+    PERFORM priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(
+      2,'owned-character','target','atk-corpo',
+      '33333333-3333-4333-8333-333333333333'::uuid,'main_hand',NULL
+    );
+    RAISE EXCEPTION 'Private iterative helper unexpectedly accepted an owned character under the wrong campaign';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM='Private iterative helper unexpectedly accepted an owned character under the wrong campaign' THEN RAISE; END IF;
+  END;
+  PERFORM set_config('request.jwt.claim.sub','22222222-2222-4222-8222-222222222222',true);
+  BEGIN
+    PERFORM priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(
+      1,'owned-character','target','atk-corpo',
+      '33333333-3333-4333-8333-333333333333'::uuid,'main_hand',NULL
+    );
+    RAISE EXCEPTION 'Private iterative helper unexpectedly accepted another user identity';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM='Private iterative helper unexpectedly accepted another user identity' THEN RAISE; END IF;
+  END;
+  PERFORM set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',true);
+  DELETE FROM public.members WHERE campaign_id=1;
+  BEGIN
+    PERFORM priv.iniciar_sequencia_ataque_iterativo_srd_7_impl(
+      1,'owned-character','target','atk-corpo',
+      '33333333-3333-4333-8333-333333333333'::uuid,'main_hand',NULL
+    );
+    RAISE EXCEPTION 'Private iterative helper unexpectedly accepted missing PLAYER membership';
+  EXCEPTION WHEN raise_exception THEN
+    IF SQLERRM='Private iterative helper unexpectedly accepted missing PLAYER membership' THEN RAISE; END IF;
+  END;
+END
+$service$;
+RESET ROLE;
+
+ROLLBACK;
+SELECT 'maneuver catalog SECURITY DEFINER fixture passed' AS result;

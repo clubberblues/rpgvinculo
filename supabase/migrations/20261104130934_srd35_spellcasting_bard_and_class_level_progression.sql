@@ -1,5 +1,3 @@
--- Bardo conjura como classe espontânea; níveis de magia usam a trilha da classe,
--- não o nível total da ficha. Paladino e Patrulheiro resolvem suas chaves canônicas.
 CREATE OR REPLACE FUNCTION public.conjurar_magia_srd(p_character_id text, p_spell_id text, p_slot_level smallint, p_target_token_key text DEFAULT NULL::text)
  RETURNS jsonb
  LANGUAGE plpgsql

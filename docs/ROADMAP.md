@@ -3,14 +3,18 @@
 ## Como ler este roadmap
 O roadmap é organizado por dependências e resultados verificáveis, não por quantidade de sessões. Uma fase pode atravessar várias conversas. Sessões são janelas de execução; o projeto e suas prioridades permanecem contínuos.
 
+**Regra operacional:** executar cada fase como um estágio completo. Não interromper para relatar microtarefas; avançar por diagnóstico, implementação autorizada, integração, testes e documentação até atingir o aceite da fase ou encontrar um impedimento externo/uma autorização necessária. Só então apresentar relatório consolidado. Ao atingir limite de sessão, registrar o ponto exato de retomada em `ACTIVE_WORK_ITEM.md`. Uma fase não é concluída por documentação isolada nem por testes sintéticos que não cubram o comportamento real.
+
+As seis frentes de produto (fundação, motor de regras, sistemas de personagem, mesa/multiplayer, conteúdo e experiência do usuário) são acompanhadas pelas fases técnicas abaixo: arquitetura/contratos (Fase 1) como pré-requisito; fundação (Fase 2); regras e conteúdo mecânico (Fase 3); personagem (Fase 4); mesa/multiplayer (Fase 5); experiência (Fase 6); estabilização/liberação (Fase 7). Conteúdo é transversal e não deve ser tratado como uma etapa isolada que bloqueia o restante do produto.
+
 Nenhuma fase deve ser repetida integralmente sem evidência de mudança ou lacuna.
 
 ## Fase 0 — Consolidação e reconciliação
 **Estado:** concluída como baseline arquitetural; lacunas remanescentes foram explicitadas e transferidas às fases seguintes.
 **Objetivo:** criar uma visão confiável a partir das auditorias e documentos existentes.
-- [x] Identificar e consolidar README, arquitetura D&D 3.5 e Plano Mestre como referências centrais; reconciliação detalhada do conteúdo segue em andamento.
+- [x] Identificar e consolidar README, arquitetura D&D 3.5 e Plano Mestre como referências centrais; reconciliação do ledger remoto concluída: 966 migrations aplicadas correspondem byte a byte às versões remotas; a branch atual contém 969 arquivos, incluindo três candidatas ainda não aplicadas. O schema-base pré-ledger não foi recuperado e o replay de banco vazio continua bloqueado; variantes e arquivos não aplicados foram preservados.
 - [x] Consolidar fotografia atual de catálogos, funções, migrations e pendências; snapshots históricos divergentes estão registrados com data/critério e não foram apagados.
-- [x] Mapear fluxos prioritários e registrar dependências frontend/RPC/tabelas; criados INTEGRATION_MAP, DATA_MODEL e inventário atualizado de 106 nomes de função/114 assinaturas públicas. Argumentos e consumidores externos restantes viram tarefas por fluxo nas fases 1–2; candidatos a legado estão documentados.
+- [x] Mapear fluxos prioritários e registrar dependências frontend/RPC/tabelas; criados INTEGRATION_MAP, DATA_MODEL e inventário RPC. A fotografia inicial registrou 106 nomes/114 assinaturas; a revarredura de 2026-11-11 encontrou 99 nomes literais/107 assinaturas para os três arquivos principais e permanece em reconciliação de escopo. Argumentos, tipos e consumidores externos restantes viram tarefas por fluxo nas fases 1–2; candidatos a legado estão documentados.
 - [x] Inventariar o estado conhecido dos testes e criar CI estático aprovado; Playwright/pglast e integração/E2E ausentes ou não reproduzíveis estão registrados como lacunas da Fase 2.
 - [x] Atualizar o registro de auditorias sem repetir itens já verificados; pendências e evidências centralizadas em AUDIT_REGISTER.md.
 - [x] Capturar fotografia somente de leitura do estado remoto do Supabase; contagens, RLS, FKs, triggers, advisors e principais tabelas foram registrados.
@@ -21,25 +25,38 @@ Nenhuma fase deve ser repetida integralmente sem evidência de mudança ou lacun
 **Estado:** em andamento.
 **Objetivo:** fechar responsabilidades e contratos entre módulos.
 - [x] Definir proposta inicial de módulos e limites no ARCHITECTURE.md (ainda não implementada no código).
-- [x] Mapear fontes canônicas atuais e registrar campos pendentes em DATA_MODEL.md; [ ] fechar decisões restantes de XP/ouro e valores derivados.
+- [x] Mapear fontes canônicas atuais e registrar campos pendentes em DATA_MODEL.md; [x] decidir fontes canônicas de XP e ouro SRD; [ ] fechar contratos de PV/PM, atributos e demais valores derivados.
 - [x] Criar proposta inicial de ActionRequest/ActionResult, catálogo inicial de erros/eventos e estratégia de adoção em ACTION_CONTRACTS.md; ainda não implementada e decisões de persistência/versionamento permanecem abertas.
 - [ ] Fechar contratos por fluxo e cruzamento completo de argumentos/tipos JavaScript ↔ PostgreSQL.
-- [ ] Definir política implementável de transações, idempotência e concorrência (locks e idempotência de ataques/pending já mapeados; revisar avanço de turno e conjuração manual).
-- [x] Definir limites de domínio SRD/Vínculo e separar catálogos/regras.
+- [ ] Definir política implementável de transações, idempotência e concorrência (auditoria de locks e proposta faseada registradas em [LOCK_ORDER_PROTOCOL_DRAFT.md](LOCK_ORDER_PROTOCOL_DRAFT.md) e [LOCK_ORDER_REFACTOR_PLAN.md](LOCK_ORDER_REFACTOR_PLAN.md); ainda falta fechar grafo transitivo, ordem por domínio, integração real e migração segura).
+- [x] Definir D&D 3.5 como única fonte de regras ativa; manter `vinculo_*` isolado como legado.
 - [ ] Fechar estratégia de testes e implantação (CI estático é a primeira camada; integração/E2E e deploy permanecem pendentes).
 - [x] Registrar proposta inicial de contratos de ação e resultado em [ACTION_CONTRACTS.md](ACTION_CONTRACTS.md), sem alterar contratos RPC existentes.
+
+**Achados que mantêm a Fase 1 aberta (2026-11-11):** o contrato atual de avanço não suporta escolha de classe por nível e não registra corretamente o nível total em que cada classe foi adquirida; o talento Maestria em Magia depende de `srd_character_spellbook`, mas o fluxo ativo de grimório não preenche essa tabela; os contratos de PV/PM e outros valores derivados ainda precisam de fonte/ciclo de atualização por campo. A revarredura de RPCs validou nomes e chaves de argumentos para os call sites literais, mas não tipos em runtime nem execução autenticada ponta a ponta.
 
 **Aceite:** arquitetura-alvo compatível com a aplicação existente e decisões registradas.
 
 ## Fase 2 — Fundação operacional
 **Objetivo:** assegurar que identidade, autorização, persistência e sincronização suportem os módulos.
-- [ ] Validar matriz de papéis Mestre/Jogador/Observador.
-- [ ] Avaliar proteção de senha vazada no Auth; revisar limites MIME/tamanho do bucket midia; 52 índices marcados como não utilizados ficam sem remoção até análise de tráfego e planos.
-- [ ] Validar RLS, RPCs e propriedade por fluxo; priorizar revisão individual das 99 SECURITY DEFINER acessíveis a authenticated e confirmar exposição dos schemas internos priv/private.
+- [ ] Validar matriz de papéis Mestre/Jogador; decidir se OBSERVER é requisito futuro ou legado (o banco aceita, mas o lobby ativo não oferece entrada como observador).
+- [ ] Avaliar proteção de senha vazada no Auth; revisar política de visibilidade do bucket público `midia` (135 objetos, incluindo 33 em `campaigns/`) e limites MIME/tamanho; 51 índices marcados como não utilizados ficam sem remoção até análise de tráfego e planos.
+- [ ] Validar RLS, RPCs e propriedade por fluxo; revisar as 99 SECURITY DEFINER acessíveis a authenticated e confirmar schemas internos `priv/private` no Dashboard. Migration candidata `20261112100000` remove defaults de authenticated/anon em `priv`, revoga PUBLIC EXECUTE padrão para funções futuras e preserva service_role; fixture PostgreSQL passou no CI. A migration candidata `20261112130000` corrige as policies do Storage privado `mesa-media`, com acesso por campanha, visibilidade explícita de assets e limpeza serializada; fixture RLS passou. Ainda falta validar a Storage API hospedada e a corrida real `completeUpload` × exclusão. A leitura direta de `campaigns.cba_data/combat_data` por membros permanece uma lacuna crítica: precisa de snapshot server-side filtrado e substituição dos callsites/realtime.
+- [ ] Validar e testar o encapsulamento das duas sobrecargas `criar_personagem_srd_completo`: migrations candidatas `20261112110000` e `20261112120000` revogam ambas para clientes e convertem `finalizar_criacao_personagem_srd` no único ponto de entrada SECURITY DEFINER com search_path fixo; fixture verifica ACL e execução com owner, mas ainda aguarda CI e replay reproduzível.
+- [ ] Remover grants residuais por coluna em `srd_character_sheets.pv_atual` e `srd_character_equipment.equipado` após validar todos os clientes; revisar `characters.campaign_id` e o fluxo legado `lobby_atualizado.html`.
+- [ ] Serializar entrada por convite e alocação de ficha com lock/revalidação da campanha; decidir se `lobby_list_v2` deve expor metadados de todas as campanhas ativas a qualquer usuário autenticado.
+- [ ] Corrigir ou formalmente desativar a policy legada de `public.tokens` (membro pode inserir/alterar/remover qualquer token); a tabela está vazia e sem uso direto nas páginas principais.
+- [ ] Revisar os dois objetos `priv` sem RLS e os sete objetos sem policies; ACL atual não concede acesso direto a anon/authenticated, mas validar defesa em profundidade antes de ampliar grants.
 - [ ] Validar integridade relacional e transações críticas.
 - [ ] Validar eventos, logs, Realtime e recuperação de estado.
 - [ ] Estabelecer ambiente/campanha descartável e contas de teste.
+- [x] Fixar `@supabase/supabase-js@2.119.0` nos quatro entrypoints ativos; a página `lobby_atualizado.html` permanece legada e sem link no fluxo atual.
+- [ ] Confirmar schemas expostos do Data API no Dashboard; desde 2026-10-30 novas tabelas não são expostas automaticamente, então validar schema cache/grants/RLS por migration.
+- [ ] Verificar atualização gerenciada do PostgreSQL `17.6.1.166` para a linha `17.11.0.003` (changelog Supabase registra 44 CVEs corrigidos); não atualizar sem revisar extensões/índices e janela.
+- [ ] Criar e testar backup local recuperável antes de qualquer alteração de produção. Organização está no plano Free sem backups diários automáticos; usar exportação CLI/armazenamento local gratuito e preservar Storage separadamente.
 - [ ] Automatizar verificações de regressão disponíveis.
+
+**Estado após revisão read-only de 2026-11-11:** segurança e Storage detalhados em `docs/FOUNDATION_SECURITY_REVIEW.md`; nenhuma correção remota foi aplicada. O replay de migrations segue bloqueado pela ausência do schema-base `public.campaigns`.
 
 **Aceite:** operações críticas seguras e repetíveis em ambiente de teste, sem alterar campanhas reais.
 
@@ -72,7 +89,8 @@ Ordem interna por dependências:
 ## Fase 5 — Mesa virtual e multiplayer
 - [ ] Preparação de cena, mapa e grid.
 - [ ] Tokens, tamanhos, ocupação e movimentação.
-- [ ] Fog of war e visibilidade por jogador.
+- [ ] Isolar tokens ocultos e estado privado do Mestre por snapshot server-side e cortar leitura direta de `cba_data/combat_data` após classificar RPCs. O mapa/imagem de fundo permanece compartilhado. Fog of war/reveal por área está fora do escopo.
+- [ ] Corrigir autorização de mídia privada CBA: `mesa-media` usa `public.can_read_media`, mas `public.media/layers` estão vazias e o frontend não as preenche; upload seguido de `createSignedUrl` falha sem SELECT. Definir acesso por membro/caminho e visibilidade sem abrir o mapa completo.
 - [ ] Iniciativa e ordem do turno.
 - [ ] Ações, reações e combate.
 - [ ] Integração com dados manuais.
@@ -102,6 +120,12 @@ Ordem interna por dependências:
 
 **Aceite:** critérios de lançamento atendidos e limitações conhecidas documentadas.
 
+## Bloqueio P1 do motor de movimento — 2026-11-10
+
+A autoridade de movimento AOO precisa ser corrigida antes de ampliar combate: os endpoints autenticados de movimento direto do jogador e do Mestre podem gravar coordenadas sem passar pela solicitação AOO; o fluxo sem ameaça ainda separa detecção e commit em duas transações (TOCTOU). O frontend faz a sequência correta no fluxo normal, mas o servidor não a impõe. Além dos wrappers diretos, `salvar_cena_cba` (OID 20077) aceita atualização geral de `cba_data`; a guarda usa `LIMIT 1`, permite duplicidade de identidade e não protege a geometria de outros tokens nem os campos que definem ameaças. Spawn (OID 21726), perfil de combate (OID 26922) e equipamento (OIDs 20555/20556) também podem alterar o conjunto de ameaças durante pending. O snapshot não fixa a instância de arma que originou a ameaça; o Encontrão com acompanhamento pode ser rejeitado pelo guard. Footprint Colossal=5 persiste também em ataques físicos (OIDs 24744/25562) e toque/Imposição das Mãos (OID 25509), enquanto helper/detector usam 6. O reproducer isolado em `tests/sql/aoo_guard_duplicate_identity_repro.sql` passou em CI e confirmou a duplicata e mudança de outro token, mas copia o trigger e não executa RPCs remotas. Evidência e critérios em [MOVEMENT_AOO_AUTHORITY_GAP.md](MOVEMENT_AOO_AUTHORITY_GAP.md).
+
+**Prioridade da Fase 3:** tratar a unificação server-side de detecção AOO + pending + commit e o footprint compartilhado como bloqueio P1 do módulo de movimento. Fechar antes a ordem parcial de locks com pending/attack/ficha. O ledger remoto aplicado está reconciliado (966/966), mas o baseline de instalação limpa **não está recuperado**: as 966 migrations são incrementais e a primeira referencia `public.campaigns`, ausente no stack vazio. A branch contém 969 arquivos, incluindo três candidatas locais não aplicadas. Próximo gate: recuperar o schema-base histórico com proveniência e reproduzir bootstrap + 966 migrations em stack Supabase descartável. Não fabricar schema mínimo nem aplicar migrations no projeto remoto.
+
 ## Priorização de descobertas
 - **P0:** segurança, perda/corrupção de dados, exposição indevida.
 - **P1:** bloqueio de fluxo essencial ou falha que impede uso.
@@ -125,7 +149,7 @@ Uma descoberta só interrompe a tarefa atual se for P0, P1, dependência direta 
 
 
 ## Escopo e prioridade do caminho legado Vínculo — 2026-11-09
-A divergência de nomes em ficha.html foi classificada como rota latente: o banco tem 5 personagens, todos SRD, nenhum com ficha Vínculo; o lobby atual cria fichas com ruleset=dnd35. Não alterar o ramo legado sem decisão de produto e sem fixture Vínculo descartável. A prioridade da Fase 1 permanece concluir arquitetura/contratos do fluxo ativo D&D 3.5 + mesa; manter o domínio Vínculo documentado como separado, sem misturar catálogos.
+A divergência de nomes em ficha.html foi classificada como rota legada: o banco tem 5 personagens, todos SRD, nenhum com ficha Vínculo; o lobby ativo cria fichas com ruleset=dnd35. O ramo Vínculo não será reativado; manter apenas compatibilidade histórica até descontinuação segura. A prioridade permanece concluir arquitetura/contratos do fluxo ativo D&D 3.5 + Mesa.
 
 
 ## Prioridade técnica identificada — lock order de AOO — 2026-11-09

@@ -1,0 +1,2 @@
+CREATE INDEX IF NOT EXISTS idx_srd_npc_attack_sequences_actor_character_id
+ON public.srd_npc_attack_sequences (actor_character_id);

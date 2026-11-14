@@ -1,4 +1,3 @@
--- Atualiza o catálogo somente após validar o cálculo dinâmico de CA e os testes de resistência.
 UPDATE public.srd_class_level_features
 SET summary='Mantém o bônus de Destreza na CA quando surpreendido ou atacado por criatura invisível, exceto quando incapacitado.',
     mechanics=mechanics||jsonb_build_object(

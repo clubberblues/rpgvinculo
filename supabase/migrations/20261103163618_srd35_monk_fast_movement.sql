@@ -1,4 +1,3 @@
--- Adds the monk's level-based fast movement to the effective speed resolver.
 CREATE OR REPLACE FUNCTION public.srd35_deslocamento_personagem(p_character_id text, p_base_speed_m numeric)
  RETURNS numeric
  LANGUAGE plpgsql

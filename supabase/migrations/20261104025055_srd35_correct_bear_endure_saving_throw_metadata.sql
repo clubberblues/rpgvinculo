@@ -1,5 +1,4 @@
--- D&D 3.5 SRD: Bear's Endurance and Endure Elements both use Will saves (harmless).
--- Their canonical source fields already contain the correct save type.
+
 DO $correct_simple_spell_save_metadata$
 DECLARE
   v_bear_save text;
@@ -28,6 +27,7 @@ BEGIN
   WHERE spell_id='srd35_spell_bear_s_endurance'
     AND effect_index=1
     AND saving_throw='fortitude';
+
   IF NOT FOUND AND v_bear_save<>'will' THEN
     RAISE EXCEPTION 'Não foi possível corrigir Resistência do Urso.';
   END IF;
@@ -37,6 +37,7 @@ BEGIN
   WHERE spell_id='srd35_spell_endure_elements'
     AND effect_index=1
     AND saving_throw='fortitude';
+
   IF NOT FOUND AND v_endure_save<>'will' THEN
     RAISE EXCEPTION 'Não foi possível corrigir Resistir aos Elementos.';
   END IF;

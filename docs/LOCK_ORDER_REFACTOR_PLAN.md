@@ -1,0 +1,263 @@
+# Plano proposto de refatoração da concorrência
+
+**Estado:** proposta técnica, não aprovada para deploy.  
+**Data:** 2026-11-10  
+**Escopo:** D&D 3.5 VTT — transações de campanha, AOO, ataques iterativos, fichas, recursos de classe e conjuração.  
+**Regra de segurança:** este documento não autoriza executar migrations no projeto Supabase de produção.
+
+## 1. Objetivo e invariantes
+
+Eliminar ciclos de espera e corridas de estado sem alterar regras de D&D 3.5, autorização ou resultados de combate.
+
+Invariantes propostos:
+
+1. Uma RPC que altera ou coordena o agregado de uma campanha adquire o lock da campanha antes de locks de linhas dependentes.
+2. Identificadores de campanha/alvo podem ser descobertos por leitura MVCC; após o lock da campanha, vínculo, autorização, estado, rodada, turno, status e pré-condições são relidos e validados.
+3. Uma helper privada não adquire implicitamente locks de campanha se alguns callers já mantêm ficha/recurso. O contrato de locks deve estar no entrypoint e ser documentado.
+4. Todos os caminhos que atualizam a mesma fila AOO devem compartilhar a mesma ordem de pending e attack.
+5. Locks de múltiplas linhas do mesmo tipo devem usar ordenação determinística por ID.
+6. FOR UPDATE não substitui validação de versão/payload: lost update de snapshot JSONB é um problema separado.
+7. Não existe uma hierarquia global aprovada para todas as tabelas. A ordem secundária é um grafo parcial por domínio.
+
+## 2. Sequência de refatoração proposta
+
+### Fase A — Preparação e contratos
+
+- Congelar a fotografia das definições SQL, OIDs, grants, triggers, call sites e migrations que correspondem a cada RPC.
+- Para cada entrypoint, registrar: locks próprios, locks herdados por helpers/triggers, leituras MVCC, linhas/IDs compartilhados, autoridade e condições revalidadas.
+- Obter definição de referência e assinatura de cada função a partir do banco; não reconstruir migrations por nome/timestamp.
+- Criar fixtures descartáveis baseadas em cópias das funções relevantes e testes que exercitem a semântica real em PostgreSQL, com papéis/claims de teste.
+- Bloqueio atual: reconciliação local/remota tem 681 arquivos SQL e 966 registros remotos, com apenas 640 versões coincidentes exatas por timestamp/nome. Conteúdo SQL equivalente ainda não foi provado.
+
+**Aceite:** matriz completa por OID/caller; nenhuma dependência desconhecida entre entrypoints e helpers; base de migration validada contra histórico remoto.
+
+### Fase B — Ataques iterativos PC e NPC
+
+Alvos identificados:
+- PC: OID 27364 bloqueia instância de arma antes da implementação-base bloquear campanha (OID 27360).
+- NPC: OID 26730 bloqueia sequência NPC antes da campanha; resolvers/dano usam campanha → tentativa → sequência.
+
+Direção candidata para mutações campaign-scoped: campanha → sequência → tentativa → instância de arma. Normalizar wrappers e implementações privadas para que nenhum caminho de registro adquira arma/sequência antes da campanha. Manter idempotência de request/attempt e ordenar IDs se mais de uma arma/linha for bloqueada.
+
+**Aceite:** testes concorrentes de início/registro/resolução/dano PC e NPC; repetição de request idempotente; nenhuma duplicação de ataque/consumo de arma/ação; matriz de papéis preservada.
+
+### Fase C — AOO como fluxo transacional único
+
+RPCs autenticadas principais observadas:
+- Transição: alternar_estado_campanha OID 20103 — campanha → ataques → pendências.
+- Resolução: OID 27025 — ataque → pending → campanha.
+- Dano PC/NPC: OIDs 27036/27058 — ataque → pending → campanha → ficha persistente, quando aplicável.
+- Início armado/desarmado/monstro: OIDs 27022/27065/27055 — pending → campanha → ledger (e arma FOR SHARE no armado).
+- Finalização: OID 27038 — pending → campanha.
+- Ocultação: helper OID 27254 — ataque → pending → campanha.
+
+Direção candidata, sujeita à validação de todas as interseções:
+1. Obter campaign_id, pending_id, attack_id, target character_id e IDs auxiliares por leitura MVCC.
+2. Bloquear campanha.
+3. Se o alvo for ficha persistente, bloquear personagem e ficha; revalidar vínculo token↔ficha e identidade do alvo.
+4. Bloquear pending.
+5. Bloquear attack(s) em ordem determinística.
+6. Bloquear ledger/instância de arma na ordem final definida pelo subgrafo de reação/arma; revalidar reserva, equipamento, mão, rodada e idempotency key.
+7. Aplicar dano/condição, atualizar estado terminal, registrar log e concluir movimento na mesma transação quando a regra exigir atomicidade.
+
+Todos os endpoints que alteram uma pending ou attack existente — incluindo rolagem, crítico, ocultação, dano, cancelamento, finalização e transição de estado — devem respeitar o mesmo prefixo. O desenho deve evitar que um endpoint segure attack enquanto espera pending, ou segure pending enquanto espera attack, fora da ordem escolhida.
+
+**Aceite:** dois clientes concorrentes não podem resolver/cancelar/finalizar o mesmo movimento em duplicidade; nenhuma transação consegue mover o token antes de todas as reações terminais; AOO e mudança de estado não formam ciclo; dano em personagem e estabilização não formam ciclo na mesma ficha; reação/arma mantém validação e idempotência.
+
+### Fase D — Ficha, magia e recursos de classe
+
+Entrypoints confirmados:
+- Estabilização OID 24914: personagem → ficha → campanha → condição.
+- Magias multialvo OIDs 25109/25246: personagem → ficha → consumo de ação/campanha → cena/pendências.
+- Imposição das Mãos contra mortos-vivos OID 25509: personagem → ficha → recurso → campanha.
+- Habilidade de classe OID 25236: personagem → ficha → recurso; a aquisição de campanha varia por branch/alvo.
+- Aplicação de magia pendente OID 25071: pending → campanha → ficha/efeitos.
+- Resolvers de salvamento/resistência OIDs 25072/25073: pending-first; o branch condition_break altera condição sem lock explícito da campanha.
+- Descanso longo PC OID 24366: personagem → leitura MVCC do estado da campanha → ficha → recursos/condições; não bloqueia campanha e tem corrida de estado, não ciclo de lock.
+
+Direção candidata para operações que alteram campanha: campanha → personagem → ficha → recurso/condição → pending (ou a ordem pending/ficha que a matriz final justificar para cada resolução de magia). Para magia pendente, obter campaign_id/target por MVCC, bloquear campanha e revalidar pending/status/alvo antes de alterar condição, efeito, PV ou log. Helpers de condição/vitalidade devem herdar contrato explícito do caller; não inserir lock de campanha dentro deles sem migrar todos os callers.
+
+Descanso e poção devem revalidar estado de combate sob lock da campanha antes de consumir item/recurso ou alterar PV. A regra de descanso não deve ser executada se combate iniciou concorrentemente.
+
+**Aceite:** concorrência entre estabilização, dano, cura, descanso, magia, recurso de classe e transição de combate preserva PV, condições, espaços, recursos e ações sem consumo/perda duplicada.
+
+### Fase E — CBA JSONB e movimento
+
+Tratar separadamente dos deadlocks:
+- salvar_cena_cba substitui snapshot integral; FOR UPDATE não impede que payload antigo reverta atualizações concorrentes.
+- cbaWriteQueue serializa apenas um cliente.
+- movimento player/GM ainda tem lógica divergente de footprint e não centraliza AOO/pending em todos os caminhos.
+
+Direção candidata:
+1. Substituir gravações genéricas por comandos parciais por domínio.
+2. Adotar revisão monotônica gerada/validada no servidor ou comparar revisão esperada antes de aceitar snapshot.
+3. Tornar RPCs de movimento a autoridade única: geometria/footprint, ocupação, AOO, pending, validação de turno e commit devem estar no mesmo limite transacional.
+4. Separar publicação de mapa/metadados, spawn/remoção, PV e movimento; definir quais mutações são permitidas enquanto existe pending.
+
+**Aceite:** snapshots obsoletos são rejeitados; movimento direto não contorna AOO; footprint Grande–Colossal é idêntico em spawn, movimento, alcance e ataque.
+
+## 3. Estratégia de migrations e rollback
+
+- Não aplicar nenhuma migration até reconciliar conteúdo SQL, nomes/timestamps duplicados e os 41 arquivos locais sem correspondência remota.
+- Cada fatia deve ter migration nova e append-only, com pré-condições explícitas; nunca reescrever migration já aplicada.
+- Antes de aplicar: comparar definição instalada com baseline capturada; validar assinatura, grants, search_path, SECURITY DEFINER/INVOKER, RLS, triggers e dependências.
+- Em ambiente descartável, executar migration, testes concorrentes, testes de autorização, regressão de regras e smoke dos call sites.
+- Rollback deve restaurar a definição anterior de cada RPC/trigger e preservar os dados; testar rollback antes de produção.
+- Deploy remoto somente após aprovação explícita e reconciliação do histórico.
+
+## 4. Critérios gerais de liberação
+
+- Grafo de locks sem ciclo entre caminhos autenticados alcançáveis; helper/trigger não introduz aresta inversa.
+- Revalidação pós-lock de identidade, papel, campanha, token, alvo, estado, rodada, turno, status e idempotência.
+- Testes reais de concorrência usando RPCs instaladas em PostgreSQL descartável, não apenas padrões sintéticos.
+- Matriz de autorização: não autenticado, dono, outro jogador, Mestre, outra campanha e alvo ausente/duplicado.
+- Regressão D&D 3.5: resultados, ações, PV, condições, duração, recursos, inventário, armas e logs.
+- Sem regressão de contratos do frontend e sem perda de dados CBA.
+- Observabilidade de falhas, deadlocks e transações canceladas; procedimento de rollback reproduzível.
+
+## 5. Fora do escopo desta proposta
+
+- Não altera regras de D&D 3.5 nem adiciona automação de efeitos ainda não implementados.
+- Não remove índices, tabelas, funções ou grants por inferência.
+- Não altera TESTE 2 ou outras campanhas.
+- Não aplica mudanças no Supabase conectado.
+- Não aprova merge ou deploy por si só.
+
+
+## 6. Adendos identificados em auditoria subsequente
+
+### Complemento de escopo single-target (2026-11-10)
+
+A inspeção de mesa.html confirmou que Míssil Mágico usa o wrapper autenticado OID 25191 (personagem → ficha → campanha, por helpers internos), enquanto as demais magias manuais single-target usam OID 24658 (personagem → campanha → ficha). Ambos devem entrar na Fase D e ser testados separadamente. Os helpers internos OIDs 24356, 20410 e 24656 não têm EXECUTE autenticado no snapshot; isso não é falha por si só, pois são invocados pelos wrappers SECURITY DEFINER autenticados.
+
+
+A cura multialvo usa o wrapper autenticado OID 24661, que adquire personagem → campanha antes de delegar ao helper OID 24659, que bloqueia ficha. Não confundir com dano/efeito multialvo (OIDs 25246/25109), que bloqueiam personagem → ficha antes da campanha. A Fase D deve manter contratos de teste separados por branch e reordenar todos os entrypoints para campaign-first, sem depender da ordem herdada pelo wrapper.
+
+
+### Writer legado de transferência de Mestre
+
+Incluir public.gm_transfer (OID 18749) na Fase A caso seja mantido: endpoint SECURITY DEFINER com EXECUTE authenticated chama priv.need_owner sem lock e depois atualiza dois membros e owner_id. Há uma corrida TOCTOU em chamadas concorrentes do proprietário atual. A correção candidata é lock de campanha antes da revalidação de owner_id/active e atualização de membros em ordem determinística. Antes de remover ou alterar, localizar consumidores externos; não há call site direto localizado nas três páginas principais consultadas. Teste de aceitação: duas transferências simultâneas, somente uma autorizada.
+
+
+### Complemento da Fase D — gates de estado e inventário (2026-11-10)
+
+Incluir descanso longo (OID 24366) e poção de cura manual (OID 24655) como mutações autenticadas que dependem do estado da campanha. Ambos fazem leitura de `campaigns.state` sem lock. Descanso bloqueia personagem antes da leitura; poção só chama o consumo de ação (OID 20405, que bloqueia campanha) quando a leitura anterior já indicou combate. A transição autenticada (OID 20103) bloqueia campanha primeiro. Há, portanto, janela de estado obsoleto: descanso pode continuar depois do início do combate; poção que observou exploração pode ser consumida sem ação se o combate iniciar em seguida.
+
+Direção candidata: MVCC localizar campanha → `campaigns FOR UPDATE` → revalidar vínculo/owner/estado → locks de personagem/ficha/equipamento/recursos conforme a ordem específica do inventário. A decisão de gastar ação da poção deve ocorrer dentro da mesma serialização da transição, não por leitura anterior sem lock. Não mover o lock de campanha para dentro de `srd_sync_character_vital_condition`: helper sem lock próprio, com pré-condição campaign-first explícita no caller, evita lock implícito campanha-after-sheet.
+
+**Aceite:** testes concorrentes com RPCs reais em PostgreSQL descartável para descanso × início de combate, poção × início de combate, poção em combate × ação já consumida e duas poções × última unidade; confirmar que estado, ação, inventário, PV, magias, recursos e condições não divergem.
+
+
+Nota de escopo: o descanso longo de NPC vinculado (wrapper OID 26801 → implementação privada OID 26808) já bloqueia campanha e valida estado antes de personagem/ficha. A correção de estado da Fase D deve priorizar o descanso PC (OID 24366); preservar e testar separadamente o caminho NPC existente, sem reordená-lo por suposição.
+
+
+Complemento transacional: triggers AFTER INSERT/DELETE/UPDATE OF quantidade de `srd_character_equipment` e `srd_cba_token_equipment` materializam/removem instâncias de arma e sincronizam campos do inventário (funções private OIDs 26446/26447). Assim, operações de inventário adquirem locks transitivos em weapon instances; incluir essas arestas no grafo e nos testes de PC/NPC, sem concluir deadlock apenas pela existência do trigger.
+
+
+### Equipamento: ordem por domínio e autorização GM
+
+- PC weapon equip (OID 26441): character → weapon instance → inventory row. Token weapon equip (OID 26443): campaign → token weapon instance → token inventory row. Manter ordens distintas por domínio.
+- Inventory quantity triggers (OIDs 26446/26447) produzem inventory row → weapon instances. No snapshot de writers authenticated, nenhum caminho reduz quantidade de arma; os decrementos encontrados são consumo de poção. Não classificar como ciclo ativo até existir writer que reduza/exclua arma; manter o ramo negativo como requisito de teste futuro.
+- Entrega de item PC (OID 20556) valida papel GM sem lock de campanha. Entrega/equipamento de item em token (OIDs 21668/21670) validam papel antes do lock de campanha. Como `gm_transfer` altera owner/membership, essas validações podem ficar obsoletas. Candidato: campaign FOR UPDATE → revalidar role GM e alvo → mutação de inventário/trigger; teste concorrente de revogação/transferência versus entrega/equipamento.
+
+
+### Administração da campanha: escopo ampliado da correção campaign-first
+
+Além de `gm_transfer`, os endpoints authenticated `gm_set_role` (OID 18748) e `gm_kick` (OID 19188) usam `priv.need_owner` (OID 18742), que consulta owner sem lock, e depois alteram `members` sem lock de campanha. `iniciar_iniciativa_com_dados` (OID 20577) valida GM antes de `campaigns FOR UPDATE`. Corrigir como uma família: campanha FOR UPDATE primeiro, revalidar owner/active/papel e alvo, depois mutações de membership/iniciativa. Testes concorrentes: transferência × mudança de papel, transferência × expulsão, transferência × início de iniciativa; apenas a operação autorizada sob o lock deve concluir.
+
+`sentar_personagem_na_mesa` (OID 21606) valida PLAYER antes do lock da ficha e altera campaign_id sem lock de campanha. Tratar em trilha separada: definir invariantes de associação de personagem e coordenar com join/leave/kick antes de impor campaign-first, evitando inventar uma ordem character↔campaign que gere ciclo.
+
+
+### Bloqueador de transferência: trigger de papel
+
+`gm_transfer` (OID 18749) altera membership antes de atualizar `campaigns.owner_id`, mas `enforce_campaign_member_role` (OID 21603) força o owner atual a GM e impede qualquer outro membro de receber GM. A ordem atual pode deixar owner_id no novo usuário enquanto membership preserva o antigo GM e rebaixa o novo para PLAYER. O snapshot atual tem 3 campanhas e todas mantêm owner=GM e exatamente um GM; não há inconsistência observada nos registros existentes. Novo teste fixture reproduz a ordem atual e valida controle owner-first, com lock de campanha. A correção candidata deve atualizar owner_id antes dos papéis, tudo sob campaign FOR UPDATE e na mesma transação.
+
+
+### Matriz de endpoints GM a revalidar depois do lock
+
+Além de inventário e iniciativa, a varredura identificou endpoints ativos que verificam GM antes de `campaigns FOR UPDATE`: `alternar_estado_campanha` (20103), `salvar_cena_cba` (20077), `adicionar_combatente_iniciativa` (20078), `mover_combatente_iniciativa` (20080), `iniciar_iniciativa_com_dados` (20577), `srd_configurar_perfil_combate_token_srd` (26922), `srd_configurar_rodada_surpresa_srd` (27092), `usar_furia_barbaro_npc_srd` (26656), `entregar_item_token_srd` (21668) e `equipar_item_token_srd` (21670). O frontend principal chama esses fluxos em `mesa.html`/ `ficha.html`.
+
+Correção comum: obter campaign FOR UPDATE antes da autorização definitiva; revalidar papel GM após o lock; só então executar mutação. Preservar locks de domínio subsequentes e evitar que helpers adquiram campanha depois de personagem/ficha. Incluir testes concorrentes de transferência × alternância de estado, transferência × CBA snapshot, transferência × iniciativa, transferência × perfil/rodada surpresa/Fúria NPC e transferência × inventário token.
+
+
+#### Completar endpoints de owner: código de acesso
+
+A mesma dependência de `priv.need_owner` (OID 18742) aparece em `public.gm_set_code` (OID 18747), EXECUTE authenticated. A função valida owner/active por `need_owner` e depois altera `campaign_codes` sem lock de campanha. Assim, o antigo proprietário também pode alterar o código de entrada depois de uma transferência concorrente se a autorização tiver sido validada antes da revogação. A matriz de operações owner-first passa a incluir `gm_set_code`, `gm_set_role`, `gm_kick` e `gm_transfer`; o helper não deve ganhar lock implícito sem auditar callers.
+
+
+### Estado de verificação do bloco owner-admin
+
+A consulta de dependências confirmou que `priv.need_owner` só é chamado por `gm_set_code`, `gm_set_role`, `gm_transfer` e `gm_kick` no catálogo atual. Tratar os quatro na mesma mudança. A suíte sintética atual já cobre corrida de transferência, expulsão após perda de ownership e a incompatibilidade com trigger; acrescentar casos dedicados para mudança de código e alteração de papel antes de aprovar a refatoração. CI #141 (SHA `cf1ba84`) passou integralmente.
+
+
+### Extensão do plano: operações protegidas por GM fora da família owner-admin
+
+Não basta revalidar somente funções que já bloqueiam campanha. `priv.need_gm` (18741) não bloqueia: `gm_grant` (18752) concede ouro/XP/itens após lock de personagem; `gm_reopen_sheet` (18892) e `gm_set_bonus` (18893) alteram ficha sem campanha lock; `media_gc` (18760) exclui metadados de mídia; `gm_get_code` (18746) expõe código. Também `srd_apply_campaign_condition/effect` (24805/24896) verificam papel antes de helper que bloqueia campanha, sem revalidação após lock; `srd_remove_campaign_condition/effect` (24806/24897) não bloqueiam campanha.
+
+Auditar e corrigir cada família com campaign-first quando houver mutação de estado compartilhado; preservar distinção de leitura e operações de Storage. Para personagem/ficha, ordem candidata campaign → character → sheet. Para efeitos/condições, campaign → tabela-alvo. Não inserir FOR UPDATE dentro de `priv.need_gm` sem mapear callers legados e a ordem anterior de locks.
+
+
+### Classificação de call sites da segunda camada GM
+
+As RPCs `gm_grant`, `gm_reopen_sheet`, `gm_set_bonus`, `media_gc`, `gm_get_code`, apply/remove condition/effect têm EXECUTE authenticated, mas não foram encontradas por busca exata no código frontend atual (mesa/ficha/lobby nem code search no repo). Mantê-las na revisão de superfície RPC e nos testes de segurança, mas não classificá-las como fluxo UI ativo sem evidência. Distinguir risco de autorização de deadlock e escolher ordem de lock de acordo com cada função; por exemplo, `gm_grant` bloqueia personagem após autorização, enquanto apply effect bloqueia campanha em helper após autorização.
+
+
+### Varredura de role checks — não generalizar
+
+Catálogo público: 41 funções authenticated mencionam `my_role` em comparação com GM; isso é contagem lexical, não total de vulnerabilidades. A lista mistura leituras, dono da ficha, jogador e GM, e RPCs de AOO com atores diferentes. A próxima etapa precisa classificar cada transição por ator autorizado e lock adquirido, preservando ações do jogador; não exigir GM globalmente. Helpers `priv` não são RPCs diretas apenas por terem EXECUTE quando schema USAGE não está concedido.
+
+
+### Cobertura sintética de ficha GM
+
+Adicionar aos endpoints da segunda camada os casos `gm_reopen_sheet` e `gm_set_bonus`: ambos modificam ficha sem campaign lock após a autorização GM. O novo fixture modela reabertura e alteração de bônus após revogação concorrente; a correção candidata é campaign → revalidar GM/vínculo → character → sheet. Ainda é necessário inspecionar as assinaturas e efeitos colaterais completos antes de gerar SQL de migração.
+
+
+### Auditoria complementar de endpoints GM — 2026-11-10
+
+- `gm_grant` (OID 18752) checa GM antes de `characters FOR UPDATE`, sem campaign lock/revalidação. Correção candidata: campaign → revalidar GM/vínculo → character → inventário/ouro/XP/log.
+- Defeito funcional: o corpo instalado consulta `public.items` e `public.inventory`, relações inexistentes no catálogo atual; existem `public.vinculo_items` e `public.vinculo_inventory`. O ramo de concessão de item é incompatível com o schema instalado; não foi invocado remotamente nem corrigido por causa da reconciliação de migrations pendente.
+- `srd_remove_campaign_condition/effect` (OIDs 24806/24897) checam GM e atualizam tabelas sem lock da campanha. Aplicadores (24805/24896) checam GM antes de chamar helpers que depois bloqueiam campanha, sem revalidar. Campaign-first e recheck após lock para os quatro.
+- `media_gc` (18760) checa GM sem lock, exclui metadados de mídia não referenciada por layers e devolve paths para remoção no Storage pelo navegador. FK layers→media preserva integridade referencial; não elimina stale authorization nem a não atomicidade banco/Storage. Candidato: campaign-first, recheck e remoção de Storage idempotente/reconciliável.
+- `gm_get_code` (18746) é leitura; definir separadamente se exige revogação linearizável.
+- Fixtures sintéticos adicionados para corrida/rejeição de `gm_grant` e remoção de condição/efeito. Eles testam a ordem/autorização, não executam as RPCs reais nem validam o ramo de item incompatível com o schema.
+- Nenhuma mutação Supabase. Detalhes e limites em `docs/GM_ENDPOINT_AUDIT_2026-11-10.md`.
+
+
+### Exclusão de ficha: endpoint ativo e locks invertidos
+
+- `public.excluir_ficha_propria` (OID 20219) é chamado pelo botão de exclusão de ficha em `lobby.html`. O corpo bloqueia personagem e depois campanha (quando vinculado), invertendo campaign-first → character dos fluxos de combate ativos.
+- O mesmo corpo tenta apagar `public.character_notes` e `public.inventory`, relações ausentes no catálogo atual; existem `vinculo_character_notes` e `vinculo_inventory`. A primeira instrução inválida falha e reverte a transação, impedindo a exclusão no lobby.
+- Limpeza instalada inclui cascades de vinculo_inventory/vinculo_character_notes, trigger BEFORE DELETE da ficha SRD e trigger AFTER DELETE do equipamento SRD. Mapear todas as dependências antes de corrigir/remover instruções.
+- Correção candidata: MVCC campaign_id → campaign FOR UPDATE → revalidar propriedade/vínculo → character FOR UPDATE → ajuste da ordem de iniciativa/exclusão. Definir caminho de ficha sem campanha e corrida com associação/join.
+- O fixture genérico campaign↔character já representa o padrão; documentação associa agora o endpoint/call site ao cenário. Não executar a RPC nem alterar o banco até reconciliação de migrations.
+
+
+### Compatibilidade de schema e limpeza da ficha
+
+A leitura do catálogo remoto confirmou ausência de `public.items`, `public.inventory`, `public.character_notes` e `public.character_sheets`; as tabelas atuais incluem `vinculo_items`, `vinculo_inventory`, `vinculo_character_notes`, `vinculo_character_sheets` e `srd_character_sheets`. RPCs instaladas ainda dependem das relações ausentes: `excluir_ficha_propria` (chamada no lobby), `gm_reopen_sheet`, `gm_set_bonus`, `calc_sheet`, `calc_ca`, `calc_desl`, `sell_price` e `gm_grant`. `save_sheet` também depende delas, mas EXECUTE está restrito a service_role.
+
+A exclusão de personagem já usa cascades/triggers para spells, talentos, condições, notas/inventário Vínculo, ficha SRD, equipamento e instâncias de arma. A exceção explícita é FK RESTRICT de `srd_npc_attack_sequences.actor_character_id`; snapshot atual tem zero linhas. Não duplicar DELETEs manuais sem verificar o grafo inteiro.
+
+Para a exclusão ativa do lobby, manter o ajuste de iniciativa, mas reordenar para MVCC campaign_id → campanha FOR UPDATE → revalidar dono e vínculo → personagem FOR UPDATE → mutação de combate/exclusão. Caminho sem campanha e corrida de associação precisam contrato separado. Detalhes e origem não reconciliada das relações antigas em `docs/GM_ENDPOINT_AUDIT_2026-11-10.md`.
+
+
+### Cópia de equipamento para NPC: fluxo autenticado ativo
+
+`mesa.html` chama `clonar_equipamento_ficha_para_token` (OID 26515) depois de `adicionar_token_cba_completo`. O clone verifica GM antes de ler o token/cena e inserir equipamento/instâncias, sem campaign lock/revalidação. Não depende das relações legadas `items/inventory`; classificar apenas como stale GM authorization e sincronização de snapshot, separado da correção de schema. Candidato: campaign FOR UPDATE → revalidar GM + token/sourceCharacterId + propriedade da ficha → validar origem → copiar equipamento/instâncias. A criação do token e a cópia são duas RPCs; falha da segunda deixa token já criado e é reportada ao usuário.
+
+
+### Não mapear RPC legado para tabelas Vínculo em projeto D&D 3.5
+
+As tabelas `vinculo_character_sheets`, `vinculo_items` e `vinculo_inventory` pertencem ao modelo legado; semelhança de colunas não autoriza religar as RPCs antigas. O motor D&D 3.5 atual usa `srd_character_sheets`, `srd_equipment`, `srd_character_equipment` e `srd_character_weapon_instances`. Não corrigir `calc_sheet`, `gm_reopen_sheet`, `gm_set_bonus`, `gm_grant` etc. apenas substituindo nomes de tabelas por `vinculo_*`. Sem call site atual, avaliar revogar ACL/aposentar; quando requisito existir, criar RPC D&D específica. A exceção é `excluir_ficha_propria`, ativa no lobby: corrigir a exclusão do personagem com cascades/triggers atuais e sem reativar inventário legado.
+
+
+### Criação D&D 3.5: helpers expostos contornam o agregador
+
+As duas sobrecargas `public.criar_personagem_srd_completo` (OID 20270, 6 args; OID 24809, 7 args) são SECURITY DEFINER com EXECUTE authenticated. O frontend chama somente `finalizar_criacao_personagem_srd` (OID 25213), que completa identidade, idiomas, talentos bônus, domínios, grimório e equipamento em uma transação. A sobrecarga de seis args não recebe identidade nem escolhas complementares; a de sete args cria base/identidade/perícias/talentos/trilha, mas não chama as etapas posteriores. Chamadas diretas podem produzir ficha parcial. A sobrecarga 6 args vem do script root não timestamped `srd35_skills_feats_migration.sql`; a de 7 args vem da migration `20261103200319`.
+
+O agregador foi alterado de SECURITY DEFINER para INVOKER em `20261104042251`, mantendo a permissão authenticated no helper. Correção candidata: esconder/revogar as sobrecargas auxiliares e preservar o agregador por execução SECURITY DEFINER estritamente autenticada com search_path fixo e referências qualificadas, ou alternativa equivalente em schema privado. Não revogar helpers sem migrar/testar o contrato do wrapper. Snapshot atual: 5 fichas SRD, todas com identidade, talentos e equipamento inicial concluído; não há registros incompletos observados. Detalhes em `docs/GM_ENDPOINT_AUDIT_2026-11-10.md`.
+
+
+### Exclusão de ficha precisa localizar campanhas por sourceCharacterId
+
+`excluir_ficha_propria` só bloqueia `characters.campaign_id`, mas o snapshot tem 3 tokens NPC em 2 campanhas referenciando 2 personagens com `campaign_id IS NULL`. A função não limpa `cba_data.tokens[*].sourceCharacterId`; após corrigir os nomes de tabelas, excluir essas fichas deixaria links JSON quebrados usados por RPCs SRD de NPC. Decidir entre bloquear exclusão enquanto há NPC vinculado ou converter/desvincular o token preservando snapshot completo. Para qualquer mutação, descobrir campanhas pelo JSON, bloquear todas por ID crescente, revalidar os links e depois bloquear personagem; não usar apenas `characters.campaign_id`. Detalhes e contagens em `docs/GM_ENDPOINT_AUDIT_2026-11-10.md`.

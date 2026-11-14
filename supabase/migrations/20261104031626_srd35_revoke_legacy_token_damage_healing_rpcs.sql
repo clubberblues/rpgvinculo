@@ -1,3 +1,4 @@
+
 -- The active VTT uses the campaign-scoped SRD damage/healing RPCs.
 -- Retire legacy token-table endpoints from authenticated clients.
 REVOKE ALL ON FUNCTION public.apply_damage(BIGINT,INTEGER,TEXT) FROM PUBLIC,anon,authenticated;

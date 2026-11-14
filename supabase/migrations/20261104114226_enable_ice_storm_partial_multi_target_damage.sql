@@ -1,3 +1,4 @@
+
 UPDATE public.srd_spell_effects
 SET effect_kind='damage',
     target_kind='area',

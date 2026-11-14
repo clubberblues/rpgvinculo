@@ -1,5 +1,3 @@
--- Encaminha a escola da magia para o cálculo de resistência e implementa
--- Vontade Indomável: +4 contra Encantamento enquanto em Fúria a partir do nível 14.
 CREATE OR REPLACE FUNCTION priv.srd_saving_throw_bonus(p_campaign_id bigint, p_target_kind text, p_target_id text, p_save_type text, p_context text DEFAULT NULL::text)
  RETURNS integer
  LANGUAGE plpgsql

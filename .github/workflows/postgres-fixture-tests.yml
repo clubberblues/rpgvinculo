@@ -2,13 +2,19 @@ name: PostgreSQL fixture tests
 
 on:
   push:
-    branches: [main]
+    branches: [main, "audit/**"]
     paths:
       - "tests/sql/**"
+      - "tests/integration/**"
+      - "supabase/migrations/**"
+      - "supabase/verification/**"
       - ".github/workflows/postgres-fixture-tests.yml"
   pull_request:
     paths:
       - "tests/sql/**"
+      - "tests/integration/**"
+      - "supabase/migrations/**"
+      - "supabase/verification/**"
       - ".github/workflows/postgres-fixture-tests.yml"
   workflow_dispatch:
 
@@ -42,10 +48,27 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y postgresql-client
 
+      - name: Validate integration harness syntax
+        run: node --check tests/integration/storage-cba-api.mjs
+
       - name: Run isolated SQL fixtures
         env:
           PGPASSWORD: postgres
         run: |
           psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/footprint_fixture.sql
           psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/footprint_test.sql
+          psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/maneuver_catalog_security_fixture.sql
+          psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/priv_default_acl_fixture.sql
+          psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/legacy_character_creation_acl_fixture.sql
+          psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/character_creation_entrypoint_fixture.sql
+          psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/private_cba_storage_access_fixture.sql
+          psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/role_filtered_tabletop_snapshot_fixture.sql
+          psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/filter_player_damage_rpc_results_fixture.sql
+          psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/gm_character_long_rest_fixture.sql
+          psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/gm_character_action_economy_fixture.sql
+          psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/gm_iterative_attack_control_fixture.sql
+          psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/gm_pc_direct_attack_fixture.sql
+          psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/gm_character_actions_fixture.sql
+          psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/gm_spellcasting_fixture.sql
+          psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/campaign_refresh_broadcast_fixture.sql
           bash tests/sql/lock_cycle_test.sh

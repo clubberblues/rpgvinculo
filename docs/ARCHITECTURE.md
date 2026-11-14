@@ -8,7 +8,7 @@ Consolidar a arquitetura do produto sem apagar ou contradizer os documentos espe
 2. **Responsabilidade única:** interface apresenta e coleta ações; aplicação coordena casos de uso; motor aplica regras; banco mantém estado persistente e integridade.
 3. **Servidor autoritativo:** permissões, turno, recursos, movimentação validada e alterações de estado devem ser confirmados no servidor.
 4. **Regras explicáveis:** resultados devem permitir identificar entradas, modificadores, regra aplicada, resultado e recursos consumidos.
-5. **Dados separados por domínio:** D&D 3.5 SRD e Vínculo não compartilham catálogos mecanicamente por conveniência.
+5. **Fonte de regras única:** D&D 3.5 é o único sistema ativo; tabelas `vinculo_*` são legado isolado e não alimentam novos fluxos.
 6. **Compatibilidade controlada:** formatos legados permanecem até existir equivalência comprovada e migração segura.
 7. **Integração testável:** cada módulo deve ter contratos e testes isolados e integrados.
 
@@ -26,7 +26,7 @@ O código atual contém lógica distribuída entre páginas HTML/JavaScript, fun
 
 ↓
 
-**Domínios e regras:** D&D 3.5 SRD | Regras próprias Vínculo | Regras de campanha.
+**Domínio e regras:** D&D 3.5 oficial (livros/fontes verificadas) | exceções de campanha registradas pelo Mestre.
 
 ↓
 
@@ -60,14 +60,15 @@ As camadas são limites de responsabilidade, não uma ordem para criar serviços
 - Cálculos e resoluções de combate, testes, condições, magias e recursos.
 - Dados insuficientes devem produzir resolução manual explícita, não suposição.
 
-### Regras Vínculo
-- Classes, habilidades exclusivas, talentos gerais, magias e recursos próprios.
-- Catálogos e fórmulas independentes das regras SRD.
+### Compatibilidade legada
+- Tabelas e código `vinculo_*` permanecem isolados apenas para leitura/auditoria e compatibilidade temporária.
+- Não criar novos catálogos, fichas ou regras Vínculo; não usar esse domínio como fonte para fluxos ativos.
+- A descontinuação só ocorre após migração comprovada e preservação dos dados históricos.
 
 ### Mesa virtual
-- Cena, mapa, grid, tokens, visão, fog of war e movimentação.
+- Cena, mapa, grid, tokens, visibilidade por token e movimentação. Fog of war/reveal por área está fora do escopo.
 - Iniciativa, turnos, economia de ações, combate e reações.
-- Mestre controla criaturas sob sua responsabilidade; jogador mantém controle de suas ações de personagem conforme as regras acordadas.
+- Mestre controla qualquer token e pode assumir temporariamente qualquer personagem jogador durante combate, inclusive rolagens e ações, sem transferir propriedade; jogador mantém o controle normal de sua ficha.
 
 ### Dados e eventos
 - Interface de rolagem integrada aos fluxos de jogo.
@@ -106,7 +107,7 @@ As camadas são limites de responsabilidade, não uma ordem para criar serviços
 ## Pontos a confirmar no diagnóstico de reconciliação
 - Mapa real de dependências entre HTMLs, scripts, RPCs e tabelas.
 - Fonte canônica de cada valor mecânico exibido na mesa/ficha.
-- Limites atuais entre regras SRD e regras Vínculo.
+- Pontos de acoplamento e plano de descontinuação segura do ramo legado `vinculo_*`.
 - Uso efetivo de Realtime e Storage por fluxo.
 - Fluxos ainda dependentes de dados JSON/legados.
 - Testes automatizados disponíveis e lacunas.
@@ -176,7 +177,7 @@ Esse desenho deve ser tratado como coexistência/compatibilidade até que todos 
 |---|---|
 | Dependências entre HTML, RPCs e tabelas | Mapa inicial e inventário RPC criados; argumentos de todos os fluxos ainda não conferidos |
 | Fonte canônica dos valores mecânicos | DATA_MODEL documenta principais fontes; XP/ouro e alguns campos JSONB ainda precisam de decisão |
-| Limites SRD/Vínculo | Separação de catálogos e fichas mapeada; não unificar regras |
+| Legado `vinculo_*` | Isolado, sem novas funcionalidades; preservar até migração/arquivamento seguro |
 | Realtime e Storage | 9 subscriptions mapeadas com filtros e policies; fluxos Storage de mídia/exclusão ainda exigem E2E |
 | Dados JSON/legados | CBA JSONB vs tabelas relacionais, combate JSONB vs combat_state e campaign_log vs roll_log registrados |
 | Testes | CI estático aprovado; Playwright/pglast e integração/E2E não reproduzíveis no repositório |
@@ -231,7 +232,7 @@ tests/
 - **pages:** montagem da tela, eventos de UI e apresentação.
 - **application:** casos de uso e orquestração entre módulos.
 - **domain/srd35:** regras D&D 3.5 puras/explicáveis, sem acesso direto ao DOM.
-- **domain/vinculo:** regras próprias Vínculo, sem importar regras SRD.
+- **domain/legacy-vinculo:** somente adaptadores temporários de leitura/compatibilidade; sem regras ativas ou novas funcionalidades.
 - **infrastructure:** cliente Supabase, RPC adapters, queries, Realtime e Storage.
 - **core:** identidade, contexto de campanha, erros e contratos comuns.
 - **tests:** validação estática, regras isoladas, integração com banco e E2E.

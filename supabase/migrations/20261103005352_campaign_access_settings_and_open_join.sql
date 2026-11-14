@@ -1,3 +1,4 @@
+
 create or replace function public.atualizar_configuracoes_campanha(
   p_campaign_id bigint,
   p_name text,

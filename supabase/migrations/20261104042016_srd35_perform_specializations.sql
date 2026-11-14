@@ -1,6 +1,4 @@
 
--- D&D 3.5: cada categoria de Atuação é uma perícia independente.
--- O registro genérico antigo é preservado para compatibilidade com fichas já salvas.
 WITH categories(id, nome, category_key, examples) AS (
   VALUES
     ('srd35_skill_perform_act','Atuação (Representação)','act','comédia, drama e mímica'),

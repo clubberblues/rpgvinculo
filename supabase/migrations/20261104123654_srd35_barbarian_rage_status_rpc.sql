@@ -1,9 +1,8 @@
--- RPC de leitura do estado de Fúria para a ficha do jogador.
 CREATE OR REPLACE FUNCTION public.consultar_furia_barbaro_srd(p_character_id text)
- RETURNS jsonb
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'pg_catalog', 'public', 'priv', 'pg_temp'
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'pg_catalog','public','priv','pg_temp'
 AS $function$
 DECLARE
   v_character public.characters%ROWTYPE;
@@ -114,7 +113,7 @@ BEGIN
     'tier',CASE WHEN v_barbarian_level>=20 THEN 'mighty' WHEN v_barbarian_level>=11 THEN 'greater' ELSE 'normal' END
   );
 END;
-$function$
-;
+$function$;
+
 REVOKE ALL ON FUNCTION public.consultar_furia_barbaro_srd(text) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.consultar_furia_barbaro_srd(text) TO authenticated;

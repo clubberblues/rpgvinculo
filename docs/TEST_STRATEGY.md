@@ -1,3 +1,15 @@
+## Testes adicionados/atualizados — 2026-11-13
+
+### Contratos de rolagem e mapa
+- A validação estática verifica que `mesa.html` reutiliza o Dice iframe, oferece ao Mestre o controle público/privado por rolagem, mantém rolagens de jogadores públicas no chat, não contém estado `fogEnabled`, mantém o rótulo mecânico de 1,5 m por quadrado e aceita zoom por scroll/pinça sem exigir Ctrl.
+- A fixture `role_filtered_tabletop_snapshot_fixture.sql` verifica projeção por papel e preservação do mapa compartilhado, sem estado de fog of war.
+- A fixture `filter_player_damage_rpc_results_fixture.sql` cobre respostas de RPC filtradas e o contrato top-level de `avancar_turno`. O dollar-quoting do stub foi corrigido; aguardar nova execução CI antes de marcar como aprovado.
+
+### Corte de colunas privadas de campanha
+- O teste de privilégios de coluna só deve ser ativado quando a cobertura de retornos RPC estiver completa.
+- Pré-condição: classificar os 65 overloads/62 nomes identificados, proteger todas as respostas acessíveis a jogadores e confirmar que os clientes ativos não leem diretamente as colunas privadas.
+- Não revogar SELECT nem remover `campaigns` da publicação Realtime antes dessa pré-condição.
+
 # Vínculo RPG — Estratégia de testes
 
 ## Princípios
@@ -353,3 +365,21 @@ Fixture descartável com campanha em combate, movimento pendente ativo, reação
 - [Run 42714600496](https://github.com/clubberblues/rpgvinculo/actions/runs/42714600496) — **success**, commit `fb261e66a14bb5fed9a35976ea394afaddafb160`.
 - Log confirmou: footprint helper assertions passaram; padrão base campaign/effect e mais oito padrões sintéticos (incluindo o novo caso composto de Fúria) passaram, com PostgreSQL detectando e abortando um participante em cada ciclo deliberadamente montado.
 - O resultado não é teste das RPCs/trigger remotos, nem prova de deadlock em produção. PostgreSQL 17 foi executado em serviço efêmero no runner público e descartado ao final.
+
+
+### Chat e visibilidade das rolagens — verificação remota 2026-11-13
+
+Consulta read-only ao Supabase confirmou:
+- `campaign_log` está na publicação `supabase_realtime`.
+- Jogadores/observadores só leem linhas com `visibilidade='PUBLIC'`.
+- O Mestre lê linhas públicas e privadas.
+- Jogadores só inserem mensagens/rolagens públicas com `autor_id` igual a `auth.uid()`; o Mestre pode inserir registros com visibilidade escolhida.
+
+A branch aplica `PUBLIC` por padrão às rolagens de jogadores e permite que o Mestre escolha `PUBLIC` ou `PRIVATE` por rolagem. O modal não deve limpar a escolha privada enquanto o callback assíncrono ainda grava o resultado.
+
+**Próximo teste de integração:** duas sessões autenticadas (GM e jogador), uma rolagem pública do jogador visível nos dois chats em tempo real, uma rolagem privada do Mestre visível apenas ao Mestre, e uma rolagem pública do Mestre visível a todos. A política remota foi inspecionada, mas este cenário de ponta a ponta ainda não foi executado.
+
+
+### Descanso longo administrado pelo Mestre — 2026-11-13
+
+A migration candidata `20261112170000_allow_gm_controlled_character_rest.sql` preserva o bloqueio SRD existente e acrescenta autorização para o Mestre da campanha executar descanso longo em personagem de jogador, sem transferir a propriedade. A fixture `gm_character_long_rest_fixture.sql` testa Mestre, dono, outro jogador e usuário externo. A execução CI foi adicionada; não considerar validada até o run terminar. Não aplicada ao Supabase remoto.

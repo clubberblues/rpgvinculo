@@ -1,3 +1,4 @@
+
 create or replace function public.entrar_campanha_com_codigo(p_campaign_id bigint,p_code text)
 returns jsonb
 language plpgsql

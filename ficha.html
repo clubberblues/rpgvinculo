@@ -524,7 +524,7 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2938
 
 <div id="dnd35-tutorial" role="dialog" aria-modal="true" aria-labelledby="dnd35-tutorial-title" aria-describedby="dnd35-tutorial-copy"><section class="dnd35-tutorial-card"><div class="dnd35-tutorial-kicker">GUIA DE CRIAÇÃO · DICA CONTEXTUAL</div><h2 id="dnd35-tutorial-title">Como preencher</h2><p id="dnd35-tutorial-copy"></p><div class="dnd35-tutorial-actions"><button type="button" data-tutorial-close="session">Fechar esta dica</button><button type="button" class="primary" data-tutorial-close="continue">Entendi, continuar</button></div></section></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/cropperjs@1.6.1/dist/cropper.min.js"></script>
 <script>
 (function(){
@@ -2507,7 +2507,7 @@ function dnd35LanguageNormalize(value){
       try {
         var campaignId=Number(URL_PARAMS.get('mesa')||(state.character&&state.character.campaign_id)||0),linkedNpcToken=null;
         if(campaignId&&!state.character.campaign_id){
-          var campaignResult=await sb.from('campaigns').select('cba_data').eq('id',campaignId).single();
+          var campaignResult=await sb.rpc('obter_snapshot_seguro_mesa',{p_campaign_id:campaignId});
           if(campaignResult.error)throw campaignResult.error;
           var campaignTokens=campaignResult.data&&campaignResult.data.cba_data&&Array.isArray(campaignResult.data.cba_data.tokens)?campaignResult.data.cba_data.tokens:[];
           var linkedNpcTokens=campaignTokens.filter(function(token){return token&&token.tipo==='npc'&&String(token.sourceCharacterId||'')===String(CHAR_ID);});
@@ -2665,7 +2665,7 @@ function dnd35LanguageNormalize(value){
     try {
       var campaignId=Number(URL_PARAMS.get('mesa')||(state.character&&state.character.campaign_id)||0),linkedNpcToken=null;
       if(campaignId&&!state.character.campaign_id){
-        var campaignResult=await sb.from('campaigns').select('cba_data').eq('id',campaignId).single();
+        var campaignResult=await sb.rpc('obter_snapshot_seguro_mesa',{p_campaign_id:campaignId});
         if(campaignResult.error)throw campaignResult.error;
         var campaignTokens=campaignResult.data&&campaignResult.data.cba_data&&Array.isArray(campaignResult.data.cba_data.tokens)?campaignResult.data.cba_data.tokens:[];
         var linkedNpcTokens=campaignTokens.filter(function(token){return token&&token.tipo==='npc'&&String(token.sourceCharacterId||'')===String(CHAR_ID);});
@@ -2781,7 +2781,7 @@ function dnd35LanguageNormalize(value){
     async function resolveLinkedNpcToken(){
       var campaignId=Number(URL_PARAMS.get('mesa')||(state.character&&state.character.campaign_id)||0);
       if(!campaignId||state.character.campaign_id)return null;
-      var campaignResult=await sb.from('campaigns').select('cba_data').eq('id',campaignId).single();
+      var campaignResult=await sb.rpc('obter_snapshot_seguro_mesa',{p_campaign_id:campaignId});
       if(campaignResult.error)throw campaignResult.error;
       var tokens=campaignResult.data&&campaignResult.data.cba_data&&Array.isArray(campaignResult.data.cba_data.tokens)?campaignResult.data.cba_data.tokens:[];
       var matches=tokens.filter(function(token){return token&&token.tipo==='npc'&&String(token.sourceCharacterId||'')===String(state.character.id);});

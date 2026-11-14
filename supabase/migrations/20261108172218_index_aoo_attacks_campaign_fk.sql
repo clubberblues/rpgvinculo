@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS srd_aoo_attacks_campaign_id_idx ON priv.srd_aoo_attacks(campaign_id);

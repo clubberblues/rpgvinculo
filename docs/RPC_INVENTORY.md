@@ -188,3 +188,18 @@ A função de aplicação do inventário recebe `request.name` e resolve argumen
 - 10 RPCs de lobby/ciclo de vida foram conferidas por assinatura, SECURITY DEFINER, EXECUTE authenticated/anon/PUBLIC e search_path: lobby_list_v2, create_campaign, join_campaign, entrar_campanha_aberta, entrar_campanha_com_codigo, sentar_personagem_na_mesa, atualizar_configuracoes_campanha, excluir_ficha_propria, preparar_exclusao_campanha_propria e finalizar_exclusao_campanha_propria (as duas últimas são wrappers INVOKER com implementação privada DEFINER).
 - A exclusão de campanha foi rastreada como saga Storage + preparação/finalização. Ver ACTION_CONTRACTS.md para sequência, limites e riscos observados.
 - Limite: grants e busca de marcadores no código não substituem teste autenticado por papel; nenhuma RPC mutável foi executada.
+
+
+## Revarredura automatizada dos call sites — 2026-11-11
+
+Nova extração estática do HEAD atual de `mesa.html`, `ficha.html` e `lobby.html` encontrou 144 ocorrências de `.rpc(...)`, 99 nomes literais distintos e quatro call sites com nome de RPC resolvido por variável. Consulta read-only ao catálogo PostgreSQL encontrou 107 assinaturas públicas para os 99 nomes literais; todos os 99 nomes existem em `public`.
+
+Para chamadas literais com objeto de argumentos identificável, os nomes das propriedades enviados pelo JavaScript foram comparados com `proargnames` das sobrecargas públicas, respeitando parâmetros com valor padrão. A primeira extração sinalizou dois campos adicionais (`resultados` e `codigo`); inspeção dos trechos originais confirmou que eram falsos positivos do parser, não propriedades enviadas à RPC. Não foi encontrado mismatch de nome de argumento nesta rodada.
+
+Os quatro dispatches variáveis foram confirmados nos fontes:
+- dano AOO: `srd_aplicar_dano_ataque_oportunidade_srd` ou `srd_aplicar_dano_ataque_oportunidade_monstro_srd`;
+- instância de arma na mesa: `equipar_arma_instancia_personagem`, `equipar_arma_instancia_npc_vinculado_srd` ou `equipar_arma_instancia_token`;
+- resistência/salvamento pendente: `srd_resolve_pending_spell_save` ou `srd_resolve_pending_spell_resistance`;
+- equipamento na ficha: `equipar_item_srd` ou `equipar_item_npc_vinculado_srd`, e `equipar_arma_instancia_personagem` ou `equipar_arma_instancia_npc_vinculado_srd` conforme o tipo de pedido e vínculo.
+
+**Limites:** a contagem atual (99 nomes literais/144 chamadas/107 assinaturas) difere da fotografia histórica anterior (100/106/114). Manter ambas datadas até reconciliar a metodologia e os alvos dinâmicos. A comparação de chaves não prova compatibilidade de tipos em runtime, escolha de overload pelo PostgREST, autorização, semântica ou resultado funcional. Os fluxos críticos ainda exigem testes autenticados e de integração.

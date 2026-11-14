@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS srd_cba_token_weapon_instances_equipment_id_idx ON public.srd_cba_token_weapon_instances(equipment_id);

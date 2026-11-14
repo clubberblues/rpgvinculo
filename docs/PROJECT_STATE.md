@@ -1,3 +1,39 @@
+## Atualização de execução — 2026-11-13
+
+A arquitetura de produto está consolidada; a execução técnica está na branch de auditoria, não em produção.
+
+**Estado verificado:** GitHub e Supabase conectados por integrações do ChatGPT; PR #74 draft; branch HEAD de código validado `a9b3d3a` (commits posteriores atualizaram apenas documentação).. Há 977 migrations versionadas na branch e 966 aplicadas no remoto, portanto 11 pendentes sem aplicação remota.
+
+**Progresso implementado na branch:** modal centralizado usando o `dice.html` existente; visibilidade de rolagens por usuário e RLS no chat; grid fixo 1,5 m com zoom por scroll/pinça; remoção de fog of war do escopo/estado; snapshot filtrado e Broadcast privado; wrappers para filtrar respostas de quatro RPCs adicionais de ação/magia.
+
+**Validação:** PostgreSQL fixtures, validação estática e JavaScript passaram em runs recentes (`5e7642b` e `392dd81`). Nova execução no HEAD atual está em andamento. Replay integral segue bloqueado porque falta o bootstrap pré-ledger que cria `public.campaigns`; não fabricar baseline.
+
+- **Descanso longo:** migration candidata `20261112170000_allow_gm_controlled_character_rest.sql` e fixture GM/dono/outro jogador/externo adicionadas; fixture passou no CI em `a9b3d3a`. Ainda não aplicada ao remoto.
+
+**Bloqueios antes de liberar a Mesa:**
+1. Corrigir exposição direta de `cba_data/combat_data` e publicação Realtime após classificar todos os RPCs.
+2. Implementar controle operacional do Mestre sobre personagens de jogadores em ações/rolagens, sem transferência de propriedade.
+3. Validar fluxo ponta a ponta com duas sessões e campanha descartável.
+4. Recuperar/provar o bootstrap histórico para replay integral ou formalizar uma estratégia de baseline baseada em snapshot, sem marcar migrations antigas artificialmente.
+
+Nenhuma alteração foi aplicada ao Supabase remoto ou à campanha de teste.
+
+---
+
+## Atualização consolidada — 2026-11-13
+
+**Fase atual:** arquitetura e contratos de produto consolidados; auditoria e integração da fundação em execução.
+
+As decisões recentes foram registradas em `DECISIONS.md`. A arquitetura prioriza uma primeira mesa jogável, reutilização de `dice.html`, automação proporcional, adjudicação do Mestre, grid fixo de 1,5 m e ausência de fog/voz/vídeo.
+
+### Estado técnico desta execução
+- Repositório e Supabase acessíveis pelas integrações GitHub/Supabase do ChatGPT; Work não é pré-requisito para a auditoria.
+- Branch de trabalho: `audit/lock-order-rage-removal-2026-11-09`, PR #74 draft; sem merge/deploy.
+- Banco remoto: 966 migrations aplicadas no ledger; branch contém 976 arquivos SQL, com 10 migrations candidatas ainda não aplicadas.
+- Todas as 76 tabelas públicas observadas têm RLS habilitado.
+- Achado P1: membros autenticados ainda podem ler diretamente `campaigns.cba_data` e `campaigns.combat_data`. O snapshot filtrado e o Broadcast já estão integrados no código da branch, mas os retornos RPC e o grant direto precisam ser fechados em ordem.
+- A fundação permanece NÃO concluída; a campanha TESTE 2 e os dados existentes não foram modificados.
+
 # Vínculo RPG — Estado do projeto
 
 > Documento de continuidade entre sessões. Atualizar sempre que houver mudança relevante de código, banco, testes, decisões ou prioridades.
@@ -12,7 +48,7 @@
 - Referências técnicas preexistentes: [README](../README.md), [Arquitetura do motor D&D 3.5](../DND35_RULE_ENGINE_ARCHITECTURE.md) e [Plano Mestre da Mesa](../PLANO_MESTRE_MESA.md).
 
 ## Objetivo do produto
-Construir um ambiente integrado para campanhas de RPG, com experiência de mestre e jogadores, mesa virtual, fichas, dados, progressão, inventário, catálogos e resolução de regras. D&D 3.5 SRD e o sistema próprio Vínculo são domínios distintos, com catálogos e regras separados.
+Construir um ambiente integrado para campanhas D&D 3.5, com experiência de Mestre e jogadores, Mesa Virtual, fichas, dados, progressão, inventário, biblioteca e resolução assistida de regras. D&D 3.5 é a única fonte normativa ativa; o antigo catálogo Vínculo é legado isolado.
 
 O produto deve preservar a experiência de rolagem manual dos jogadores quando definida pelo fluxo, enquanto o servidor valida regras, permissões, recursos e persistência. O objetivo não é apenas ter páginas funcionais: os módulos precisam operar como um sistema coerente.
 
@@ -24,7 +60,7 @@ Este registro começou como consolidação da documentação existente. A fotogr
 - O README descreve implantação dos arquivos principais e preservação de compatibilidade.
 - O documento de arquitetura D&D 3.5 define camadas de fonte/licença, rulesets, catálogo, ficha, estado de jogo, resolução transacional e interface.
 - O Plano Mestre registra decisões de produto, fluxos de mestre/jogador, auditorias e pendências funcionais.
-- O banco mantém catálogos separados para D&D 3.5 (srd_*) e Vínculo (vinculo_*).
+- O banco mantém tabelas `srd_*` ativas e tabelas `vinculo_*` legadas, preservadas apenas para compatibilidade/histórico.
 - O histórico documenta migrações, RPCs, RLS, inventários, conjuração, iniciativa, combate, economia de ações e integrações da mesa.
 
 ### Estado conhecido, ainda sujeito à reconciliação
@@ -37,7 +73,7 @@ Este registro começou como consolidação da documentação existente. A fotogr
 ## Restrições permanentes
 1. Não alterar personagens, fichas, campanhas, tokens ou progresso de jogo durante auditorias sem autorização explícita.
 2. Não repetir auditorias concluídas sem evidência de mudança, lacuna ou inconsistência.
-3. Não misturar dados/regras srd_* com vinculo_*.
+3. Não usar `vinculo_*` como fonte de regras ou dados ativos; manter isolamento e preservar histórico.
 4. Não reconstruir ou migrar a aplicação para outra stack apenas por preferência arquitetural; exigir justificativa técnica.
 5. Não declarar módulo concluído apenas porque existe interface, RPC ou catálogo.
 6. Não inventar valores ou resoluções de regra quando faltarem dados; encaminhar ao Mestre e registrar a limitação.
@@ -208,7 +244,7 @@ Portanto, o teste de CA 10 executado para Thorgar (681) **não valida nem invali
 - mesa.html: somente INSERT direto em campaign_log (chat/pedidos), com RLS de autoria/papel; mutações de combate/personagem/token seguem RPCs. Nenhuma mutação direta nessas entidades foi encontrada na varredura estática.
 - lobby.html: operações de campanha via RPC; upload de capa/avatar em Storage e update direto de campaigns.capa_url.
 - ficha.html: ramo D&D 3.5 usa RPCs para operações mecânicas críticas; ramo legado Vínculo mantém escritas diretas e referências de schema antigas. Criação em duas transações, aquisição de talentos/magias sem validação de pré-requisitos no servidor, update direto de ficha e consumo de inventário não atômico foram registrados como riscos, não corrigidos.
-- Decisão de arquitetura: uniformizar a autoridade do servidor para ações mecânicas nos dois rulesets. Não misturar catálogos ou tabelas SRD e Vínculo.
+- Decisão de arquitetura: uniformizar a autoridade do servidor para todas as ações mecânicas D&D 3.5. O legado `vinculo_*` não participa dos fluxos ativos.
 
 
 ## Contratos adicionais D&D 3.5 — 2026-11-09

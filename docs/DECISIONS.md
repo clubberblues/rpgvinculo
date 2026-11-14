@@ -9,31 +9,33 @@ Este documento registra decisões que devem sobreviver às sessões. Decisões n
 - **Motivo:** preservar investimento, dados, fluxos e comportamento já implementados.
 - **Consequência:** refatorações devem ser incrementais e compatíveis.
 
-### DEC-002 — Domínios de regras separados
-- **Decisão:** D&D 3.5 SRD e regras próprias do Vínculo permanecem em catálogos e modelos separados (srd_* e vinculo_*).
-- **Motivo:** evitar mistura de progressões, fórmulas, talentos, magias e recursos de sistemas diferentes.
-- **Consequência:** integração visual não significa compartilhar regras mecanicamente.
+### DEC-002 — D&D 3.5 como única fonte de regras ativa
+- **Decisão:** o sistema de jogo ativo do Vínculo RPG é D&D 3.5, usando os livros e fontes oficiais da edição como referência normativa. Regras próprias/homebrew do antigo sistema Vínculo não fazem parte do escopo ativo.
+- **Compatibilidade:** tabelas e código `vinculo_*` permanecem legados, isolados e sem novas funcionalidades/escritas até auditoria e descontinuação segura; não são fonte de verdade para fichas, combate, biblioteca ou progressão.
+- **Motivo:** garantir fidelidade às regras D&D 3.5 e impedir que dados antigos contaminem os cálculos.
+- **Consequência:** novos conteúdos e motores devem usar o domínio `srd_*`/D&D 3.5 e fontes verificadas. Exceções do Mestre são registradas como decisões da campanha, não como um segundo ruleset.
 
 ### DEC-003 — Servidor como autoridade
 - **Decisão:** permissões, turno, consumo de recursos, validação de movimento e persistência são validados no servidor.
 - **Motivo:** o navegador não pode decidir sozinho resultados ou autorizações.
 - **Consequência:** prévias no cliente são informativas; RPC/serviço valida e grava o resultado final.
 
-### DEC-004 — Dados manuais do jogador
-- **Decisão:** ações de jogadores que exigem rolagem devem solicitar rolagem pela interface de dados; o sistema não gera automaticamente um d20 oculto para substituir a rolagem do jogador.
-- **Decisão complementar:** o fluxo de iniciativa convoca os jogadores a rolar seus próprios dados. O Mestre rola dados para NPCs/monstros sob seu controle; resultados múltiplos devem ser associados uma única vez aos tokens selecionados, não aos personagens dos jogadores.
-- **Motivo:** preservar a experiência de rolagem de mesa e a transparência.
-- **Consequência:** o fluxo aguarda as rolagens exigidas antes de avançar. O Dice iframe gera o resultado após clique e devolve-o por postMessage; os resolvers de ação recebem os valores manuais. O RPC público roll_dice, que gera resultados no servidor, não está conectado às páginas ativas no snapshot e não deve ser usado para ações de personagem sem decisão explícita.
+### DEC-004 — Rolagens físicas, transparência e chat
+- **Decisão:** reutilizar o `dice.html` existente e seus dados disponíveis; não reconstruir o motor de rolagem. A interface abre como modal centralizado sobre a Mesa, sem ocupar uma coluna lateral.
+- **Decisão complementar:** jogadores rolam seus próprios dados; o Mestre administra rolagens de NPCs/monstros e pode assumir temporariamente qualquer personagem jogador durante o combate, inclusive suas rolagens e ações. Isso não transfere a propriedade da ficha.
+- **Visibilidade:** rolagens de jogadores são públicas e acompanhadas em tempo real pelo chat. Para cada rolagem do Mestre, ele pode escolher publicar para todos ou manter privada. O chat registra personagem/criatura, finalidade, face natural, modificadores separados e total calculado. Não haverá mensagens fixadas.
+- **Motivo:** preservar a experiência de rolagem de mesa, a transparência e a autoridade do Mestre.
+- **Consequência:** o Dice iframe devolve resultados por `postMessage`; o chat é o canal de acompanhamento dos demais participantes. A política RLS de `campaign_log` permite ao Mestre ler registros privados e limita jogadores a registros públicos. O RPC público `roll_dice`, que gera resultados no servidor, não deve substituir a rolagem física do jogador.
 
-### DEC-005 — Controle de tokens
-- **Decisão:** jogador controla seu personagem; Mestre controla NPCs/monstros. O Mestre pode mover token de jogador nas condições já acordadas, sem assumir suas ações de combate, magia ou inventário.
-- **Motivo:** separar autoridade do Mestre e agência do jogador.
-- **Consequência:** interface e RPCs devem aplicar a mesma matriz de permissões.
+### DEC-005 — Controle e autoridade sobre personagens
+- **Decisão:** o jogador controla sua própria ficha e token. O Mestre pode controlar qualquer personagem, NPC ou monstro, inclusive assumir temporariamente um personagem jogador durante combate e realizar rolagens/ações em seu nome, sem transferir a propriedade da ficha. O Mestre também pode conceder controle temporário de NPCs/criaturas a jogadores.
+- **Motivo:** permitir continuidade da sessão, arbitragem e administração sem retirar a titularidade do personagem.
+- **Consequência:** permissões devem distinguir propriedade da ficha, controle operacional temporário e autoridade do Mestre. Desconexão do jogador não remove token nem altera iniciativa.
 
-### DEC-006 — Exploração e combate
-- **Decisão:** movimento fora de combate é livre, respeitando grid e validações acordadas; durante combate, movimento respeita deslocamento, turno e economia de ações.
-- **Motivo:** manter exploração fluida e combate regido pelas regras.
-- **Consequência:** não aplicar custo de ação de combate durante exploração.
+### DEC-006 — Movimento assistido, sem bloqueio automático
+- **Decisão:** o jogador pode movimentar seu token livremente durante o turno. A Mesa informa o deslocamento da ficha, mede distâncias e apresenta referências de movimento, mas não bloqueia automaticamente movimento excedente nem decide suas consequências. O Mestre pode mover/reposicionar qualquer token.
+- **Motivo:** manter a fluidez e deixar a adjudicação de exceções sob responsabilidade do Mestre, sem abandonar as referências D&D 3.5.
+- **Consequência:** movimento e deslocamento devem permanecer sincronizados com a ficha e o estado da campanha; alertas são informativos, não barreiras.
 
 ### DEC-007 — Conclusão exige validação
 - **Decisão:** interface, catálogo ou RPC existente não basta para declarar um módulo completo.
@@ -108,3 +110,50 @@ Os itens abaixo não são decisões tomadas; precisam ser definidos após o diag
 - **Decisão:** ações que consomem recursos ou produzem efeitos não reversíveis devem adotar request_id/idempotency_key persistido e escopado por usuário/campanha/ação, além de locks transacionais.
 - **Motivo:** locks serializam concorrência, mas não distinguem retry da mesma ação de uma nova ação intencional.
 - **Consequência:** primeiro padronizar ActionRequest/resultado; depois migrar fluxos em fatias e cobrir retries em testes descartáveis. Não alterar contratos existentes antes dessa definição.
+
+
+### DEC-018 — Grid fixo e mapa sem neblina de guerra
+- **Data:** 2026-11-13
+- **Decisão:** cada quadrado do grid representa sempre 1,5 m (5 pés), conforme D&D 3.5. O Mestre pode alinhar o grid à imagem e ajustar sua aparência/transparência, mas não alterar a metragem real do quadrado. Zoom por pinça no celular e scroll do mouse no desktop altera somente a visualização; arrastar o espaço vazio move a câmera, arrastar token move a criatura. Neblina de guerra/fog of war está fora do escopo.
+- **Motivo:** manter distâncias consistentes e evitar complexidade visual desnecessária.
+- **Consequência:** tamanho visual do grid, zoom e pan nunca alteram a escala mecânica de 1,5 m por quadrado.
+
+### DEC-019 — Lobby, participantes e continuidade da sessão
+- **Data:** 2026-11-13
+- **Decisão:** o Lobby mostra campanha, Mestre, participantes, personagens vinculados, presença online/offline e prontidão. O Mestre pode iniciar a sessão sem exigir que todos estejam prontos e controla quando libera a entrada na Mesa.
+- **Decisão complementar:** o painel de participantes mostra identidade, personagem e turno atual, podendo ser recolhido. Jogadores podem desconectar e retornar sem interromper a sessão; tokens, dados e iniciativa permanecem. O Mestre pode assumir temporariamente o personagem desconectado.
+- **Notificações:** alertas discretos e não bloqueantes informam início/fim de combate, início de turno, dano/0 PV, efeitos prestes a terminar, XP/ouro/itens e entrada/saída. Os eventos podem ser consultados posteriormente no chat/histórico. Não haverá mensagens fixadas.
+- **Motivo:** permitir sessões resilientes e acompanhamento da mesa sem interromper a interação.
+- **Consequência:** presença online/offline não altera propriedade do personagem nem estado do combate.
+
+### DEC-020 — Criação de campanhas e ciclo de vida de personagens
+- **Data:** 2026-11-13
+- **Decisão:** o Mestre cria campanhas independentes com nome, descrição e imagem de apresentação. Cada campanha tem código de convite; o Mestre pode aprovar ou recusar solicitações de entrada e vincular personagens existentes ou criar novos. Participantes, personagens, mapas, encontros, inventários, configurações e histórico ficam isolados por campanha.
+- **Personagens:** podem estar ativos, em reserva ou arquivados. O Mestre pode substituir um personagem ativo sem apagar ficha ou histórico.
+- **Motivo:** preservar continuidade e impedir mistura de dados entre campanhas.
+- **Consequência:** relacionamentos e consultas devem ser sempre escopados pela campanha e respeitar a titularidade do personagem.
+
+### DEC-021 — Sem voz ou vídeo integrados
+- **Data:** 2026-11-13
+- **Decisão:** comunicação por voz e vídeo não faz parte do escopo do Vínculo nesta etapa. A comunicação integrada permanece no chat textual e nos registros de eventos/rolagens.
+- **Motivo:** manter o foco na mesa e evitar infraestrutura adicional.
+- **Consequência:** não desenvolver chamadas, transmissão de câmera ou áudio como requisito do MVP.
+
+### DEC-022 — Automação proporcional à confiabilidade
+- **Data:** 2026-11-13
+- **Decisão:** automatizar operações simples, determinísticas e confiáveis; para regras ou efeitos que exigem interpretação, apresentar dados e ferramentas gerais e permitir que o Mestre decida/aplique manualmente. A plataforma não deve bloquear ações de jogo como substituto da adjudicação do Mestre.
+- **Motivo:** entregar uma mesa jogável sem exigir um motor completo e inflexível de regras antes da primeira campanha.
+- **Consequência:** priorizar operações reutilizáveis, persistência consistente e integração entre ficha, motor e Mesa; não criar implementação isolada para cada talento, magia ou habilidade quando uma ferramenta geral resolver.
+
+
+### DEC-023 — Biblioteca central D&D 3.5
+- **Data:** 2026-11-13
+- **Decisão:** centralizar conteúdo oficial D&D 3.5 em uma biblioteca compartilhada: classes, raças, talentos, perícias, magias, armas, armaduras, equipamentos, monstros/criaturas, condições, regras e tabelas. Conteúdo oficial fica separado do conteúdo personalizado criado pelo Mestre. A visibilidade respeita permissões de campanha e ficha.
+- **Motivo:** oferecer consulta consistente durante preparação e jogo sem duplicar catálogos por campanha.
+- **Consequência:** conteúdo oficial não é sobrescrito por personalizações; modelos do Mestre permanecem identificados como conteúdo personalizado.
+
+### DEC-024 — Consulta contextual de regras na Mesa
+- **Data:** 2026-11-13
+- **Decisão:** ao selecionar um elemento da ficha ou criatura, o usuário pode abrir uma consulta sobreposta à Mesa com descrição, requisitos, funcionamento D&D 3.5, valores, bônus, penalidades, limitações, referência da fonte e observações do Mestre. A consulta não navega para fora da Mesa.
+- **Motivo:** tornar as regras acessíveis durante o jogo sem interromper a sessão.
+- **Consequência:** a consulta é uma camada de referência; não substitui a adjudicação do Mestre nem automatiza efeitos que dependem de interpretação.
