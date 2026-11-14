@@ -59,11 +59,11 @@ RETURNS jsonb
 LANGUAGE sql
 SECURITY DEFINER
 SET search_path = public, pg_temp
-AS $
+AS $turnadvance$
   SELECT coalesce(c.combat_data, '{}'::jsonb)
     FROM public.campaigns AS c
    WHERE c.id = p_campaign_id
-$;
+$turnadvance$;
 
 CREATE OR REPLACE FUNCTION public.srd_finalizar_movimento_aoo_pendente_srd(p_campaign_id bigint,p_pending_id uuid)
 RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,pg_temp
