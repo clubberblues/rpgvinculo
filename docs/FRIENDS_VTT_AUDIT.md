@@ -154,3 +154,11 @@ Sobre economia:
 - A futura camada de economia deve atualizar ambos os campos dentro da mesma transação, definir explicitamente o tratamento de frações (recomendado: permitir incrementos em PO inteiras e preservar o saldo NUMERIC existente), e registrar saldo anterior/novo no livro-caixa.
 - `gm_grant` não deve ser usado para recompensas em personagens SRD até ser adaptado ou substituído por uma RPC SRD que atualize os dois campos atomicamente. Para personagens legados, manter o comportamento atual até uma migração própria.
 - Antes de criar a migration, conferir os grants efetivos de UPDATE na tabela `characters` e as permissões de UPDATE na coluna `ouro` com uma consulta focada em privilégios de tabela e coluna. A consulta anterior confirmou o papel `authenticated` no privilégio INSERT da coluna, mas não apresentou UPDATE específico por coluna.
+
+
+#### Integração de interface confirmada
+
+- A interface de inventário em `ficha.html` ainda monta o resumo de ouro usando `dados.ch.ouro` e lista itens por estrutura legada. Esse componente não deve ser reaproveitado como tela de comércio SRD sem refatoração.
+- A consulta à ficha SRD carrega `srd_character_sheets`, mas a inspeção da interface não encontrou ainda um componente de loja SRD nem um resumo de saldo SRD integrado ao inventário novo.
+- A busca por chamada textual `gm_grant` em `mesa.html` não encontrou invocação direta; a rotina é um endpoint legado do banco e não deve ser presumida como fluxo atualmente usado pelo VTT simplificado.
+- Portanto, a loja será uma interface nova dentro da mesa/campanha, com inventário SRD do personagem e saldo apresentado a partir do mesmo contrato de dados das RPCs. Não conectar o novo fluxo à mochila legada.
