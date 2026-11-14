@@ -37,7 +37,7 @@ Não restringir privilégios de coluna nem remover a publicação antes de subst
 2. Remover a subscription de `campaigns`; introduzir Broadcast privado ou refresh por RPC com throttling. Não transmitir row payload.
 3. Inventariar cada RPC que retorna `cba_data`/`combat_data` e cada RPC que aceita token id, campanha, movimento, dano, cura, iniciativa ou edição de cena. Verificar autenticação, ownership, GM/player, autorização do token e conteúdo do retorno.
 4. Para cada RPC de mutação, devolver somente confirmação e valores necessários; o cliente atualiza a cena via snapshot filtrado. Nunca devolver JSONB integral a jogador.
-5. Persistir fog/reveals com escopo de jogador/grupo e regras de visibilidade server-side. Definir política de revelação, não inferir visibilidade de campos ausentes.
+5. Manter a visibilidade por token sob autoridade do Mestre; mapa de fundo sempre compartilhado. Não persistir fog/reveals.
 6. Criar fixture de integração com GM, jogador A, jogador B e externo; testar consultas, RPCs, Realtime, token oculto, movimento, combate, reconexão e mudança de membership.
 7. Só então revogar SELECT direto de `cba_data`/`combat_data` para `authenticated`, remover a tabela `campaigns` da publicação Realtime e validar todos os fluxos.
 8. Repetir auditoria estática para provar zero referências cliente a colunas privadas e zero payloads integrais de RPC em contexto player.
