@@ -368,3 +368,8 @@ No commit `fb23eaf022f4ef86bc1159804804b1d39117c332`, os três workflows consult
 ### Bloqueio atual de validação
 
 A lista de branches do Supabase retornou apenas a branch `main` do projeto; não existe ambiente isolado de desenvolvimento disponível. Não foi criado um branch/projeto novo porque isso pode gerar cobrança e o usuário já estabeleceu que não dispõe de orçamento para ferramentas/infraestrutura pagas. Portanto, as migrations permanecem draft e não se deve conectar a UI da loja nem aplicar qualquer migration ao banco de produção até haver validação PostgreSQL em ambiente isolado sem custo.
+### Correção de sincronização do zoom — 2026-11-14
+
+A revisão da camada de mapa encontrou uma inconsistência: os botões/roda atualizavam a variável CSS `--cba-zoom`, mas o gesto de pinça iniciava a partir da variável JavaScript antiga `cbaZoom` e ainda limitava o zoom mínimo a 100%. Isso fazia a pinça poder saltar de escala depois de usar o zoom por botão/roda e impedia reduzir o mapa abaixo de 100% no celular.
+
+Correção gravada em `mesa.html` no commit `7f481122933c0bc67e08dd9bb23a43f10b28079b`: a pinça agora lê a escala CSS atual, respeita o mesmo mínimo de 65% e cancela o pan por ponteiro quando dois dedos estão ativos, evitando disputa entre arrastar o mapa e pinçar. O limite máximo permanece 250%. A alteração aguarda validação automatizada e teste real em celular; não declarar validação tátil concluída.
