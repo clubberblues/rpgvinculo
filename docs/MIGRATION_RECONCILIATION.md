@@ -1,3 +1,25 @@
+## Delta de reconciliação — 2026-11-13
+
+Consulta direta ao ledger remoto e contagem da branch atual:
+
+- Supabase remoto: **966** versões aplicadas, da `20261031160944` à `20261109005941`.
+- Branch `audit/lock-order-rage-removal-2026-11-09`: **976** arquivos SQL em `supabase/migrations`.
+- Delta: **10 migrations locais ainda não aplicadas**:
+  - `20261110150000_fix_invoker_maneuver_catalog_helper_permissions.sql`
+  - `20261110160000_revoke_public_feat_saving_throw_helper.sql`
+  - `20261110170000_lock_down_internal_helper_execute.sql`
+  - `20261112100000_harden_priv_default_privileges.sql`
+  - `20261112110000_revoke_legacy_character_creation_rpc.sql`
+  - `20261112120000_lock_down_character_creation_entrypoint.sql`
+  - `20261112130000_fix_private_cba_storage_access.sql`
+  - `20261112140000_add_role_filtered_tabletop_snapshot.sql`
+  - `20261112150000_broadcast_campaign_refresh.sql`
+  - `20261112160000_filter_player_damage_rpc_results.sql`
+
+Nenhuma das 10 migrations foi aplicada ao projeto remoto. A proposta de revogar SELECT direto de `campaigns.cba_data/combat_data` foi retirada da pasta de migrations porque a revisão dos retornos RPC ainda não terminou. Não incluir esse corte até que todos os endpoints player-accessible estejam protegidos e testados.
+
+O replay integral segue bloqueado por ausência do bootstrap pré-ledger que cria `public.campaigns`. Não fabricar schema mínimo nem marcar migrations como aplicadas artificialmente.
+
 # Reconciliação de migrations — inventário e recuperação — 2026-11-10
 
 ## Resultado
