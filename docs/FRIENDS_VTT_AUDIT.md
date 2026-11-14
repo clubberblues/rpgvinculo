@@ -210,3 +210,18 @@ Consequência para a loja:
 - RPCs de descanso longo do jogador, descanso longo de NPC vinculado, entrega de item a token e equipamento de item de token têm EXECUTE para authenticated. As funções de descanso longo do jogador e entrega/equipamento de token são SECURITY DEFINER; descanso de NPC vinculado é SECURITY INVOKER.
 
 Nenhuma permissão foi concedida e nenhuma função foi alterada. Essas observações são auditoria estática de grants/definições; não equivalem a teste funcional.
+
+
+### Rastreamento do fluxo real de criação da ficha — 2026-11-14
+
+A UI de criação em `ficha.html` não chama diretamente `criar_personagem_srd`. Ela chama `finalizar_criacao_personagem_srd` com identidade, perícias, talentos, idiomas, escolhas de classe/domínios, grimório e equipamento inicial.
+
+A função `finalizar_criacao_personagem_srd(text,text,text,jsonb,jsonb,jsonb,jsonb,jsonb,jsonb,text[],jsonb,text,jsonb,jsonb)`:
+- tem EXECUTE efetivo para authenticated;
+- é SECURITY INVOKER;
+- chama `criar_personagem_srd_completo` (variante com identidade), `salvar_idiomas_personagem_srd`, `salvar_talentos_bonus_classe_inicial_srd`, opcionalmente `salvar_dominios_personagem_srd` e `salvar_grimorio_srd`, e por fim `finalizar_equipamento_inicial_srd`;
+- executa o conjunto como uma única transação, conforme comentário da própria função.
+
+A variante `criar_personagem_srd` sem grant para authenticated não é o endpoint direto da UI e é chamada internamente pelo caminho privilegiado de criação completo. Não alterar grants dessa função isoladamente.
+
+A criação de ficha SRD, portanto, já possui um endpoint agregado e transacional; não deve ser reconstruída para o VTT simplificado. A próxima investigação deve concentrar-se em validar a chamada agregada e corrigir apenas lacunas específicas de equipamento/economia.
