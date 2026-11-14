@@ -10,7 +10,8 @@
 --
 -- REQUIRED ASSERTIONS
 -- A. GM can configure an item; PLAYER and non-member cannot.
--- B. Player A can buy; gold decreases by unit_price * quantity and inventory increases.
+-- B. Player A can buy; gold decreases by unit_price * quantity and inventory increases. RPC p_character_id is text even though characters.id/srd_character_sheets.character_id are bigint; verify conversion and updates.
+-- B2. If the same equipment row is currently equipped, an additional purchase is rejected without mutation (the current inventory model cannot split equipped/unequipped stacks).
 -- C. Insufficient gold raises and leaves gold, inventory, stock, and receipts unchanged.
 -- D. Insufficient finite stock raises and changes nothing.
 -- E. Unlimited stock never decrements below/away from unlimited mode.
