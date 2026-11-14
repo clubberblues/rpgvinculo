@@ -27,8 +27,6 @@ Leitura das chamadas RPC em `mesa.html` e `ficha.html` encontrou 93 nomes distin
 | `srd_resolve_requested_saving_throw_srd` | Teste de resistência solicitado | Resolução atual vinculada ao usuário dono do personagem |
 | `descanso_longo_personagem_srd` | Descanso longo SRD | Migration candidata `20261112170000` permite Mestre da campanha sem transferir propriedade; fixture GM/dono/outro jogador/externo adicionada. Ainda não aplicada ao remoto |
 
-Os quatro primeiros RPCs de ação que também retornam `cba_data/combat_data` foram incluídos na migration candidata `20261112160000` para filtragem de resposta. **A filtragem do JSON não altera autorização:** continuam precisando da exceção de controle do Mestre.
-
 | `aplicar_dano_token_ataque_srd_v2` (duas sobrecargas) | Ataque SRD de personagem | Exige personagem jogador pertencente ao usuário autenticado; Mestre não passa pela checagem atual |
 | `iniciar_sequencia_ataque_iterativo_srd` | Iniciar ataque iterativo de PC | Wrapper encaminha à implementação privada; autorização da implementação precisa aceitar GM |
 | `consultar_sequencia_ataque_iterativo_pendente_srd` | Consultar ataque pendente | Vincula sequência ao personagem/usuário; verificar exceção GM |
@@ -36,7 +34,8 @@ Os quatro primeiros RPCs de ação que também retornam `cba_data/combat_data` f
 | `resolver_ataque_iterativo_srd` | Resolver ataque | Validação de ator/usuário; verificar exceção GM |
 | `confirmar_critico_ataque_iterativo_srd` | Confirmar crítico | Validação de ator/usuário; verificar exceção GM |
 | `aplicar_dano_ataque_iterativo_srd` | Aplicar dano de ataque | Validação de ator/usuário; verificar exceção GM |
-| `descanso_longo_personagem_srd` | Descanso longo SRD | Migration candidata `20261112170000` permite Mestre da campanha sem transferir propriedade; fixture GM/dono/outro jogador/externo adicionada. Ainda não aplicada ao remoto |
+
+Os quatro primeiros RPCs de ação que também retornam `cba_data/combat_data` foram incluídos na migration candidata `20261112160000` para filtragem de resposta. **A filtragem do JSON não altera autorização:** continuam precisando da exceção de controle do Mestre.
 
 ### Fluxos que já apresentam autorização de Mestre
 
