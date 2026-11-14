@@ -541,3 +541,14 @@ Há dois objetivos distintos e eles não devem ser confundidos:
 2. **Provar replay integral desde a primeira migration:** ainda exige recuperar o schema-base pré-ledger com proveniência. O snapshot atual sozinho não pode ser usado como bootstrap e depois reaplicar as 966 migrations, pois ele já contém o resultado delas.
 
 O caminho 1 é o desbloqueio pragmático imediato e não requer plano Supabase pago; exige que o usuário execute o script no PC com CLI linkada e Docker Desktop e disponibilize o arquivo schema-only para preparar o ambiente descartável. O arquivo não deve ser enviado ao repositório público nem contém dados/Auth/Storage. O caminho 2 permanece como trabalho de recuperação histórica. Nenhuma alteração remota.
+
+
+## Busca de bootstrap em branches históricas — 2026-11-14
+
+Foram inspecionadas as árvores de `audit/restore-remote-migration-history`, `audit/reconcile-supabase-migration-history` e `chore/archive-unversioned-supabase-sql`. As três preservam os mesmos scripts SQL manuais/arquivados e migrations D&D 3.5, mas não contêm uma migration inicial que crie `public.campaigns` e o schema-base anterior à primeira versão versionada. `REMOTE_SCHEMA_SNAPSHOT.md` é descritivo e não restaura o schema.
+
+Conclusão: o bloqueio de replay integral não pode ser resolvido copiando uma migration de outra branch. Próximas opções técnicas, sem mascarar o histórico:
+1. Recuperar um dump/base schema histórico confiável do período anterior a `20261031160944`; ou
+2. Formalizar uma estratégia de baseline/snapshot atual, com procedimento explícito de bootstrap e reconciliação de versões, aprovada antes de substituir o replay histórico.
+
+Não criar schema mínimo improvisado nem inserir versões antigas no ledger como se tivessem sido executadas.
