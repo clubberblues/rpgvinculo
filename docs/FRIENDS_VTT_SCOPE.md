@@ -21,6 +21,7 @@ Princípio: a plataforma organiza a sessão e automatiza somente operações sim
 - Zoom altera apenas a visualização, nunca a escala lógica do grid.
 - Computador: roda do mouse para aproximar/afastar e arrastar área vazia para deslocar o mapa.
 - Celular: gesto de pinça para zoom e toque/arrasto para tokens.
+- Névoa de guerra opcional: Mestre revela áreas com pincel para todos os jogadores ou para um jogador selecionado.
 - Não implementar colisão automática com paredes/terrenos nesta versão.
 
 ## Mestre e jogadores
