@@ -131,10 +131,10 @@ DROP FUNCTION IF EXISTS public.conjurar_missil_magico_srd_manual(text,text,small
 CREATE OR REPLACE FUNCTION public.conjurar_missil_magico_srd_manual(
  p_character_id text,p_spell_id text,p_slot_level smallint,p_target_token_key text,p_damage_rolls integer[]
 ) RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,pg_temp
-AS $ SELECT jsonb_build_object(
+AS $missile$ SELECT jsonb_build_object(
  'cba_data',(SELECT c.cba_data FROM public.campaigns c JOIN public.characters ch ON ch.campaign_id=c.id WHERE ch.id::text=p_character_id),
  'damage_rolls',to_jsonb(p_damage_rolls),'spell_id',p_spell_id
-) $;
+) $missile$;
 
 \ir ../../supabase/migrations/20261112160000_filter_player_damage_rpc_results.sql
 \ir ../../supabase/verification/verify_cba_rpc_response_isolation.sql
