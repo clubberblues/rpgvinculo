@@ -282,3 +282,17 @@ Implicação: **não é correto restringir a economia a PO inteiras**. O saldo S
 8. Recibos ficam consultáveis pelo Mestre e pelo jogador dono da ficha; registros preservam campanha, personagem, ator, operação, item, quantidade, preço unitário, total e saldos anterior/posterior.
 9. Itens SRD sem preço no catálogo não entram na loja até o Mestre atribuir preço. O catálogo global não é alterado.
 10. Nenhuma migration ou RPC deve ser aplicada no banco de produção durante esta etapa de auditoria.
+
+
+### Verificação de segurança do projeto — advisor Supabase — 2026-11-14
+Consulta ao advisor de segurança do projeto retornou:
+- 7 tabelas com RLS habilitado e sem policies (inclui tabelas internas de sequência de ataque e recursos de classe).
+- 99 funções SECURITY DEFINER executáveis por authenticated, classificadas como WARN pelo advisor.
+- 1 aviso de proteção contra senhas vazadas desabilitada no Auth.
+
+Esses resultados são avisos agregados do projeto, não prova automática de exploração. Cada função SECURITY DEFINER precisa de revisão individual de autorização e validação de `auth.uid()`; não revogar em lote, pois várias podem ser endpoints legítimos do VTT. Para a nova loja, as RPCs deverão ter checagens explícitas de papel, campanha e propriedade, search_path fixo, grants restritos e testes negativos. As tabelas privadas da loja deverão ter RLS e políticas de leitura específicas; escrita ocorrerá somente pelas RPCs. Nenhuma configuração de Auth, policy ou função foi modificada nesta auditoria.
+
+Remediações oficiais:
+- [Advisor: SECURITY DEFINER executável por authenticated](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable)
+- [Advisor: RLS habilitado sem policy](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy)
+- [Proteção contra senhas vazadas](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection)
