@@ -1,6 +1,6 @@
 ## Estado de execução — 2026-11-13 (atualização)
 
-- **HEAD de código validado:** `efe1cd7e3734c1faa9242deafe04f081a0f0eee6` (commits posteriores atualizaram apenas documentação).; PR #74 permanece draft, sem merge/deploy. PR temporário #75 foi fechado.
+- **HEAD de código validado:** `a9b3d3a` (commits posteriores atualizaram apenas documentação).; PR #74 permanece draft, sem merge/deploy. PR temporário #75 foi fechado.
 - **Migrations:** 977 arquivos locais / 966 aplicadas remotamente / 11 pendentes. A contagem foi conferida novamente; nenhuma migration foi aplicada ao remoto.
 - **Mesa/rolagens:** `mesa.html` reutiliza `dice.html`; modal centralizado; rolagens dos jogadores públicas no chat; Mestre escolhe visibilidade por rolagem. Foi corrigida a condição de reset para não tornar pública uma rolagem privada enquanto o callback assíncrono ainda grava o resultado.
 - **Chat:** `campaign_log` está na publicação Realtime. RLS remoto confirma: jogador/observador lê somente PUBLIC; Mestre lê PUBLIC e PRIVATE; jogadores só inserem rolagem pública própria. Teste ponta a ponta com duas sessões ainda pendente.
