@@ -5492,7 +5492,7 @@ async function abrirModalEquipamentos(){
       ctx.fillStyle='rgba(0,0,0,.94)';ctx.fillRect(0,0,width,height);
       ctx.globalCompositeOperation='destination-out';
       fog.reveals.forEach(function(stroke){
-        if(stroke.audience!=='all'&&stroke.audience!=='user:'+String(viewerId||''))return;
+        if(!(isPreview&&ehGM)&&stroke.audience!=='all'&&stroke.audience!=='user:'+String(viewerId||''))return;
         var points=stroke.points;if(!points.length)return;
         var first=points[0],radius=Math.max(2,first.r*width);
         ctx.beginPath();ctx.arc(first.x*width,first.y*height,radius,0,Math.PI*2);ctx.fill();
