@@ -1096,6 +1096,30 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   </div>
 </div>
 
+
+<!-- LOJA DA CAMPANHA: estoque do Mestre e compras/vendas individuais -->
+<div class="modal-final" id="modal-loja-campanha" role="dialog" aria-modal="true" aria-labelledby="titulo-loja-campanha" hidden>
+  <section class="modal-final-card shop-card">
+    <header class="shop-head"><div><h2 id="titulo-loja-campanha">Loja da campanha</h2><p id="loja-personagem-contexto">Comércio individual por personagem</p></div><button type="button" data-shop-close aria-label="Fechar loja">✕</button></header>
+    <p id="loja-status" class="shop-status" role="status" aria-live="polite">Carregando loja…</p>
+    <section id="loja-admin" hidden>
+      <h3>Administrar estoque</h3>
+      <div class="shop-admin-grid">
+        <label>Equipamento<select id="loja-item-select"><option value="">Selecione um item do catálogo SRD</option></select></label>
+        <label>Preço de compra (po)<input id="loja-buy-price" type="number" min="0" max="9999999999.99" step="0.01" value="0"></label>
+        <label>Preço de recompra (po)<input id="loja-sell-price" type="number" min="0" max="9999999999.99" step="0.01" placeholder="Não aceita venda"></label>
+        <label>Quantidade em estoque<input id="loja-stock" type="number" min="0" max="1000000" step="1" value="0"></label>
+        <label class="shop-check"><input id="loja-unlimited" type="checkbox"> Estoque ilimitado</label>
+        <label class="shop-check"><input id="loja-active" type="checkbox" checked> Item disponível</label>
+      </div>
+      <button type="button" class="confirm" id="loja-save-listing">Salvar item na loja</button>
+      <h3>Estoque publicado</h3>
+    </section>
+    <div id="loja-lista" class="shop-list"></div>
+    <div class="modal-final-actions"><button type="button" data-shop-close>Fechar</button></div>
+  </section>
+</div>
+
 <!-- ESTÚDIO DE PREPARAÇÃO DO CBA -->
 <div id="modal-cba" role="dialog" aria-modal="true" aria-labelledby="titulo-modal-cba">
   <header class="cba-header">
@@ -1436,6 +1460,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     ligarEventosTestes();
     ligarEventosXP();
     ligarEventosEquipamentos();
+    ligarEventosLoja();
     ligarEventosCBA();
     ligarEventosReforcos();
     var cardsStrip = document.getElementById('cards-strip');
@@ -1478,11 +1503,11 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   function renderBotoesAcao(){
     var el=document.getElementById('acoes-dir'),tokenMenu=document.getElementById('token-context-menu'),diceOverlay=document.getElementById('dado-iframe-overlay');if(!el)return;if(tokenMenu&&tokenMenu.parentNode)tokenMenu.parentNode.removeChild(tokenMenu);
     var estado=campanha?(campanha.state||'EXPLORACAO'):'EXPLORACAO';
-    if(ehGM){var gm=[{id:'alternar-combate',ic:'⚔️',txt:estado==='COMBATE'?'Encerrar combate':'Iniciar combate'},{id:'cba',ic:'🗺️',txt:'Campo de batalha'},{id:'npc',ic:'👤',txt:'Adicionar NPC'},{id:'monstros',ic:'🐉',txt:'Bestiário'},{id:'testes',ic:'📜',txt:'Solicitar teste'},{id:'manobras-mestre',ic:'🛡️',txt:'Consultar manobras'},{id:'avancar-turno',ic:'⏭️',txt:'Avançar turno'},{id:'equipamentos',ic:'🛡️',txt:'Distribuir equipamento'},{id:'xp',ic:'⭐',txt:'Experiência'},{id:'dados',ic:'🎲',txt:'Dados'},{id:'token-image-manager',ic:'🖼️',txt:'Imagens dos tokens'}];if(estado==='COMBATE')gm.splice(1,0,{id:'iniciativa',ic:'🎲',txt:'Solicitar iniciativa'});var wrap=document.createElement('div');wrap.className='player-action-grid';gm.forEach(function(x){wrap.appendChild(criarBotaoAcaoUI(x));});el.replaceChildren(wrap);
+    if(ehGM){var gm=[{id:'loja',ic:'🪙',txt:'Loja da campanha'},{id:'alternar-combate',ic:'⚔️',txt:estado==='COMBATE'?'Encerrar combate':'Iniciar combate'},{id:'cba',ic:'🗺️',txt:'Campo de batalha'},{id:'npc',ic:'👤',txt:'Adicionar NPC'},{id:'monstros',ic:'🐉',txt:'Bestiário'},{id:'testes',ic:'📜',txt:'Solicitar teste'},{id:'manobras-mestre',ic:'🛡️',txt:'Consultar manobras'},{id:'avancar-turno',ic:'⏭️',txt:'Avançar turno'},{id:'equipamentos',ic:'🛡️',txt:'Distribuir equipamento'},{id:'xp',ic:'⭐',txt:'Experiência'},{id:'dados',ic:'🎲',txt:'Dados'},{id:'token-image-manager',ic:'🖼️',txt:'Imagens dos tokens'}];if(estado==='COMBATE')gm.splice(1,0,{id:'iniciativa',ic:'🎲',txt:'Solicitar iniciativa'});var wrap=document.createElement('div');wrap.className='player-action-grid';gm.forEach(function(x){wrap.appendChild(criarBotaoAcaoUI(x));});el.replaceChildren(wrap);
     }else{var p=personagemAtivoDaInterface(),magic=possuiMagiasUI(p),combat=estado==='COMBATE';var groups=combat?[
       {title:'Ataque',actions:[{id:'atk-corpo',ic:'⚔️',txt:'Ataque corpo a corpo'},{id:'atk-dist',ic:'🏹',txt:'Ataque à distância'},{id:'atk-total-corpo',ic:'⚔️',txt:'Ataque Total corpo a corpo'},{id:'atk-total-dist',ic:'🏹',txt:'Ataque Total à distância'}].concat(magic?[{id:'atk-mag',ic:'✨',txt:'Conjurar magia'}]:[])},
       {title:'Tática e defesa',actions:[{id:'manobras-ui',ic:'🛡️',txt:'Manobras de combate'},{id:'defesa-ui',ic:'🧱',txt:'Ações defensivas'},{id:'movimento-ui',ic:'👣',txt:'Movimentação'}]},
-      {title:'Personagem',actions:[{id:'ficha',ic:'📜',txt:'Minha ficha'},{id:'inventario',ic:'🎒',txt:'Equipamentos'},{id:'pericia',ic:'📚',txt:'Perícias'},{id:'racial-ui',ic:'⛰️',txt:'Características raciais'},{id:'talentos-ui',ic:'🏅',txt:'Talentos'},{id:'habilidades',ic:'⚔️',txt:'Características da classe'},{id:'dados',ic:'🎲',txt:'Dados livres'},{id:'avancar-turno',ic:'⏭️',txt:'Encerrar turno'}]}
+      {title:'Personagem',actions:[{id:'loja',ic:'🪙',txt:'Loja da campanha'},{id:'ficha',ic:'📜',txt:'Minha ficha'},{id:'inventario',ic:'🎒',txt:'Equipamentos'},{id:'pericia',ic:'📚',txt:'Perícias'},{id:'racial-ui',ic:'⛰️',txt:'Características raciais'},{id:'talentos-ui',ic:'🏅',txt:'Talentos'},{id:'habilidades',ic:'⚔️',txt:'Características da classe'},{id:'dados',ic:'🎲',txt:'Dados livres'},{id:'avancar-turno',ic:'⏭️',txt:'Encerrar turno'}]}
     ]:[{title:'Aventureiro',actions:[{id:'movimento-ui',ic:'👣',txt:'Movimentação'},{id:'ficha',ic:'📜',txt:'Minha ficha'},{id:'inventario',ic:'🎒',txt:'Equipamentos e mochila'},{id:'pericia',ic:'📚',txt:'Perícias'},{id:'racial-ui',ic:'⛰️',txt:'Características raciais'},{id:'talentos-ui',ic:'🏅',txt:'Talentos'},{id:'habilidades',ic:'⚔️',txt:'Características da classe'},{id:'dados',ic:'🎲',txt:'Dados livres'}].concat(magic?[{id:'atk-mag',ic:'✨',txt:'Magias disponíveis'}]:[])}];montarPainelAcaoUI(el,groups,(p&&p.ch.nome||'Aventureiro')+' · '+classeUI(p),p);}
     var economy=document.getElementById('painel-economia');if(economy&&economy.parentNode)economy.parentNode.removeChild(economy);var combatPanel=document.createElement('section');combatPanel.id='painel-combate-acoes';combatPanel.hidden=true;combatPanel.innerHTML='<h3>CONTROLE DO TURNO</h3><p id="turno-controle-status">Aguardando a iniciativa.</p><div id="iniciativa-acoes-mestre"></div>';el.appendChild(combatPanel);if(ehGM){var aooQueueButton=document.createElement('button');aooQueueButton.type='button';aooQueueButton.className='btn-acao';aooQueueButton.textContent='⚔️ Reações pendentes';aooQueueButton.addEventListener('click',abrirPainelFilaAOO);combatPanel.appendChild(aooQueueButton);}if(economy)combatPanel.appendChild(economy);if(tokenMenu)el.appendChild(tokenMenu);var oldRoster=document.querySelector('.mesa-footer .painel-aventureiros');if(oldRoster)oldRoster.remove();var roster=document.createElement('section');roster.className='painel painel-aventureiros';roster.setAttribute('aria-label','Aventureiros da mesa');roster.innerHTML='<div class="painel-cab">AVENTUREIROS</div><div class="painel-corpo" id="cards-strip" aria-label="Cards de personagens, NPCs e monstros"></div>';var footer=document.querySelector('.mesa-footer');if(footer)footer.appendChild(roster);else el.appendChild(roster);if(diceOverlay){if(diceOverlay.parentElement!==document.body)document.body.appendChild(diceOverlay);diceOverlay.classList.add('dado-modal-global');}if(document.getElementById('painel-iniciativa'))renderizarIniciativa(combatDataState);
   }
@@ -4092,7 +4117,124 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     };
     overlay.appendChild(panel);overlay.addEventListener('click',function(e){if(e.target===overlay)overlay.remove();});document.body.appendChild(overlay);
   }
+
+  // ============ LOJA DA CAMPANHA ============
+  var lojaListings=[],lojaCatalogo=[],lojaBusy=false;
+  function chaveIdempotenciaLoja(){
+    if(window.crypto&&typeof window.crypto.randomUUID==='function')return window.crypto.randomUUID();
+    if(window.crypto&&typeof window.crypto.getRandomValues==='function'){
+      var bytes=new Uint8Array(16);window.crypto.getRandomValues(bytes);bytes[6]=(bytes[6]&15)|64;bytes[8]=(bytes[8]&63)|128;
+      return Array.from(bytes).map(function(b){return b.toString(16).padStart(2,'0');}).join('').replace(/^(........)(....)(....)(....)(............)$/,'$1-$2-$3-$4-$5');
+    }
+    throw new Error('Este navegador não oferece geração segura de chave de operação. Atualize o navegador.');
+  }
+  function moedaLoja(v){var n=Number(v);return (Number.isFinite(n)?n:0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:2})+' po';}
+  function atualizarStatusLoja(texto,erro){var el=document.getElementById('loja-status');if(el){el.textContent=String(texto||'');el.style.borderColor=erro?'#b83232':'#665638';}}
+  async function carregarDadosLoja(){
+    atualizarStatusLoja('Carregando estoque da campanha…');
+    var result=await sb.from('srd_campaign_shop_items').select('campaign_id,equipment_id,buy_price,sell_price,stock_quantity,unlimited_stock,active,equipment:srd_equipment(*)').eq('campaign_id',Number(MESA_ID)).order('equipment_id',{ascending:true});
+    if(result.error)throw new Error('A loja ainda não está disponível no banco. A estrutura da loja precisa ser instalada antes do uso. Detalhe: '+result.error.message);
+    lojaListings=result.data||[];
+    if(ehGM){
+      var catalog=await sb.from('srd_equipment').select('id,nome,categoria,descricao,preco,custo_po').order('nome',{ascending:true}).range(0,1999);
+      if(catalog.error)throw new Error('Não foi possível carregar o catálogo SRD: '+catalog.error.message);
+      lojaCatalogo=catalog.data||[];
+      var select=document.getElementById('loja-item-select'),selected=select.value;
+      select.replaceChildren(new Option('Selecione um item do catálogo SRD',''));
+      lojaCatalogo.forEach(function(item){select.appendChild(new Option(item.nome+' · '+nomeCategoriaEquipamento35(item.categoria),String(item.id)));});
+      if(selected)select.value=selected;
+      document.getElementById('loja-admin').hidden=false;
+    }else{
+      document.getElementById('loja-admin').hidden=true;
+    }
+    renderizarLoja();
+  }
+  function renderizarLoja(){
+    var list=document.getElementById('loja-lista');if(!list)return;
+    if(ehGM){
+      list.innerHTML=lojaListings.length?lojaListings.map(function(row){
+        var item=row.equipment||{},stock=row.unlimited_stock?'Ilimitado':String(row.stock_quantity)+' un.';
+        return '<article class="shop-item"><div><strong>'+esc(item.nome||row.equipment_id)+'</strong><small>Compra: '+moedaLoja(row.buy_price)+' · Recompra: '+(row.sell_price==null?'não aceita':moedaLoja(row.sell_price))+' · Estoque: '+stock+' · '+(row.active?'Disponível':'Inativo')+'</small></div></article>';
+      }).join(''):'<div class="shop-empty">Nenhum item publicado. Selecione um equipamento acima para montar o estoque.</div>';
+      atualizarStatusLoja('Você administra a loja desta campanha. Os jogadores compram individualmente com o ouro de suas próprias fichas.');
+      return;
+    }
+    var p=personagemAtivoDaInterface();
+    if(!p){list.innerHTML='<div class="shop-empty">Sua ficha ainda não está carregada nesta mesa.</div>';atualizarStatusLoja('Não foi possível identificar seu personagem.',true);return;}
+    var gold=Number(p.sh&&p.sh.ouro)||0,inventory=p.equipamento||[];
+    document.getElementById('loja-personagem-contexto').textContent=(p.ch.nome||'Personagem')+' · Saldo: '+moedaLoja(gold);
+    var active=lojaListings.filter(function(row){return row.active;});
+    if(!active.length){list.innerHTML='<div class="shop-empty">O Mestre ainda não publicou itens nesta loja.</div>';atualizarStatusLoja('Saldo individual: '+moedaLoja(gold));return;}
+    list.innerHTML=active.map(function(row){
+      var item=row.equipment||{},id=String(row.equipment_id),held=inventory.find(function(x){return String(x.equipment_id)===id;}),quantity=Number(held&&held.quantidade)||0;
+      var stock=row.unlimited_stock?'Estoque ilimitado':Number(row.stock_quantity)+' disponível(is)',buyable=row.unlimited_stock||Number(row.stock_quantity)>0,sellable=row.sell_price!=null&&quantity>0;
+      return '<article class="shop-item"><div><strong>'+esc(item.nome||id)+'</strong><small>'+esc(nomeCategoriaEquipamento35(item.categoria||'outro'))+' · '+esc(stock)+'<br>Compra: '+moedaLoja(row.buy_price)+' · Sua quantidade: '+quantity+(row.sell_price==null?'':' · Recompra: '+moedaLoja(row.sell_price))+'</small></div><div class="shop-item-actions"><input type="number" min="1" max="99" step="1" value="1" aria-label="Quantidade de '+esc(item.nome||id)+'" data-shop-qty="'+esc(id)+'"><button type="button" data-shop-buy="'+esc(id)+'" '+(buyable?'':'disabled')+'>Comprar</button><button type="button" data-shop-sell="'+esc(id)+'" '+(sellable?'':'disabled')+'>Vender</button></div></article>';
+    }).join('');
+    atualizarStatusLoja('Ficha: '+p.ch.nome+' · Saldo individual: '+moedaLoja(gold));
+  }
+  async function salvarItemLoja(){
+    if(!ehGM||lojaBusy)return;
+    var id=document.getElementById('loja-item-select').value;
+    var buy=Number(document.getElementById('loja-buy-price').value),sellRaw=document.getElementById('loja-sell-price').value.trim(),sell=sellRaw===''?null:Number(sellRaw);
+    var stock=Number(document.getElementById('loja-stock').value),unlimited=document.getElementById('loja-unlimited').checked,active=document.getElementById('loja-active').checked;
+    if(!id)return atualizarStatusLoja('Selecione um equipamento do catálogo.',true);
+    if(!Number.isFinite(buy)||buy<0||!Number.isInteger(stock)||stock<0||stock>1000000||(sell!==null&&(!Number.isFinite(sell)||sell<0)))return atualizarStatusLoja('Informe preços e estoque válidos.',true);
+    if(unlimited)stock=0;
+    var button=document.getElementById('loja-save-listing');button.disabled=true;lojaBusy=true;
+    try{
+      var result=await sb.rpc('srd_campaign_shop_configure_item',{p_campaign_id:Number(MESA_ID),p_equipment_id:id,p_buy_price:buy,p_sell_price:sell,p_stock_quantity:stock,p_unlimited_stock:unlimited,p_active:active});
+      if(result.error)throw new Error(result.error.message);
+      await carregarDadosLoja();
+      atualizarStatusLoja('Item salvo na loja da campanha.');
+      await enviarMensagemChat('🪙 O Mestre atualizou o estoque da loja.','sistema',{evento:'loja_estoque_atualizado',equipment_id:id});
+    }catch(error){atualizarStatusLoja('Não foi possível salvar o item: '+error.message,true);}
+    finally{button.disabled=false;lojaBusy=false;}
+  }
+  async function operarLoja(operacao,id,button){
+    if(ehGM||lojaBusy||!id)return;
+    var p=personagemAtivoDaInterface();if(!p)return atualizarStatusLoja('Sua ficha não está disponível.',true);
+    var qtyInput=document.querySelector('[data-shop-qty="'+CSS.escape(id)+'"]'),qty=Number(qtyInput&&qtyInput.value);
+    if(!Number.isInteger(qty)||qty<1||qty>99)return atualizarStatusLoja('A quantidade deve ser um número inteiro entre 1 e 99.',true);
+    button.disabled=true;lojaBusy=true;
+    try{
+      var result=await sb.rpc(operacao==='buy'?'srd_campaign_shop_buy':'srd_campaign_shop_sell',{
+        p_campaign_id:Number(MESA_ID),p_character_id:Number(p.ch.id),p_equipment_id:id,p_quantity:qty,p_idempotency_key:chaveIdempotenciaLoja()
+      });
+      if(result.error)throw new Error(result.error.message);
+      var receipt=result.data||{},item=lojaListings.find(function(row){return String(row.equipment_id)===String(id);}),name=item&&item.equipment&&item.equipment.nome||id;
+      await carregarPersonagens();
+      await carregarDadosLoja();
+      var textEvent=operacao==='buy'?'comprou':'vendeu';
+      await enviarMensagemChat('🪙 '+p.ch.nome+' '+textEvent+' '+qty+' × '+name+'.','sistema',{evento:operacao==='buy'?'loja_compra':'loja_venda',character_id:String(p.ch.id),equipment_id:id,quantity:qty,total:Number(receipt.total)||null});
+      atualizarStatusLoja((operacao==='buy'?'Compra':'Venda')+' concluída: '+qty+' × '+name+'. Saldo atualizado.');
+    }catch(error){atualizarStatusLoja('Operação não concluída: '+error.message,true);}
+    finally{lojaBusy=false;if(button&&button.isConnected)button.disabled=false;}
+  }
+  function abrirLojaCampanha(){
+    var modal=document.getElementById('modal-loja-campanha');if(!modal)return;
+    modal.hidden=false;modal.classList.add('ativo');
+    document.getElementById('loja-personagem-contexto').textContent=ehGM?'Estoque e preços definidos pelo Mestre':'Comércio individual do seu personagem';
+    carregarDadosLoja().catch(function(error){document.getElementById('loja-lista').innerHTML='<div class="shop-empty">'+esc(error.message)+'</div>';atualizarStatusLoja(error.message,true);});
+  }
+  function ligarEventosLoja(){
+    var modal=document.getElementById('modal-loja-campanha');if(!modal)return;
+    modal.addEventListener('click',function(event){
+      if(event.target===modal||event.target.closest('[data-shop-close]')){modal.classList.remove('ativo');modal.hidden=true;return;}
+      var buy=event.target.closest('[data-shop-buy]'),sell=event.target.closest('[data-shop-sell]');
+      if(buy){operarLoja('buy',buy.dataset.shopBuy,buy);return;}
+      if(sell){operarLoja('sell',sell.dataset.shopSell,sell);return;}
+    });
+    document.getElementById('loja-save-listing').addEventListener('click',salvarItemLoja);
+    document.getElementById('loja-unlimited').addEventListener('change',function(event){var stock=document.getElementById('loja-stock');stock.disabled=event.target.checked;if(event.target.checked)stock.value='0';});
+    document.getElementById('loja-item-select').addEventListener('change',function(){
+      var row=lojaListings.find(function(x){return String(x.equipment_id)===String(this.value);},this);
+      if(row){document.getElementById('loja-buy-price').value=row.buy_price;document.getElementById('loja-sell-price').value=row.sell_price==null?'':row.sell_price;document.getElementById('loja-stock').value=row.stock_quantity;document.getElementById('loja-unlimited').checked=!!row.unlimited_stock;document.getElementById('loja-stock').disabled=!!row.unlimited_stock;document.getElementById('loja-active').checked=!!row.active;}
+    });
+    document.addEventListener('keydown',function(event){if(event.key==='Escape'&&modal.classList.contains('ativo')){modal.classList.remove('ativo');modal.hidden=true;}});
+  }
+
   function acao(id){
+    if(id==='loja'){abrirLojaCampanha();return;}
     if(id === 'alternar-combate'){
       alternarEstadoMesa();
       return;
@@ -7165,6 +7307,33 @@ body > #dado-iframe-overlay.dado-modal-global,
  .gm-token-action-group{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
  #cards-strip .card-pers{flex-basis:205px;min-width:205px}
 }
+
+
+/* Loja da campanha — interface responsiva para Mestre e jogador */
+#modal-loja-campanha.ativo{display:flex}
+#modal-loja-campanha .shop-card{width:min(94vw,860px);max-height:90vh;overflow:hidden;display:flex;flex-direction:column;gap:12px}
+.shop-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:1px solid #75613d;padding-bottom:10px}
+.shop-head h2{font:800 20px Cinzel,serif;color:#c9a050}
+.shop-head p,.shop-status{color:#c5b995;font-size:13px}
+.shop-head button{background:transparent;border:1px solid #75613d;color:#c9a050;border-radius:5px;padding:7px 10px;cursor:pointer}
+#loja-status{padding:8px 10px;border:1px solid #665638;border-radius:5px;background:#10170f}
+#loja-admin{border:1px solid #665638;border-radius:6px;padding:12px;overflow:auto;max-height:42vh}
+#loja-admin h3{font:700 12px Cinzel,serif;color:#c9a050;margin:7px 0 10px}
+.shop-admin-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:10px}
+.shop-admin-grid label{display:flex;flex-direction:column;gap:4px;color:#c5b995;font-size:12px}
+.shop-admin-grid input:not([type=checkbox]),.shop-admin-grid select{width:100%;min-width:0;background:#10170f;color:#f5ecd6;border:1px solid #75613d;border-radius:4px;padding:9px}
+.shop-admin-grid .shop-check{flex-direction:row;align-items:center}
+#loja-save-listing{padding:9px 14px;border:1px solid #c9a050;border-radius:5px;background:#c9a050;color:#17130a;font-weight:800;cursor:pointer}
+.shop-list{overflow:auto;min-height:80px;display:flex;flex-direction:column;gap:8px}
+.shop-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:11px;background:#10170f;border:1px solid #665638;border-radius:6px}
+.shop-item strong{display:block;color:#f5ecd6;font:700 12px Cinzel,serif}
+.shop-item small{display:block;color:#c5b995;margin-top:4px;font-size:12px}
+.shop-item-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.shop-item-actions input{width:64px;background:#0b100b;border:1px solid #75613d;color:#f5ecd6;padding:7px;border-radius:4px}
+.shop-item-actions button{background:#273222;border:1px solid #c9a050;color:#f5ecd6;border-radius:4px;padding:7px 9px;cursor:pointer}
+.shop-item-actions button:disabled,#loja-save-listing:disabled{opacity:.5;cursor:wait}
+.shop-empty{padding:22px;text-align:center;color:#c5b995;font-style:italic}
+@media(max-width:560px){.shop-admin-grid{grid-template-columns:1fr}.shop-item{grid-template-columns:1fr}.shop-item-actions{justify-content:flex-start}#modal-loja-campanha .shop-card{max-height:94vh;padding:13px}}
 
 </style>
 <script src="friends-vtt-ui.js"></script>
