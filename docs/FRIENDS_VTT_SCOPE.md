@@ -9,52 +9,53 @@ Princípio: a plataforma organiza a sessão e automatiza somente operações sim
 - Login e autenticação existentes.
 - Lobby para criar, localizar e entrar em campanhas.
 - Fichas de personagens vinculadas à campanha.
-- Mesa compartilhada para Mestre e jogadores.
-- Mapa enviado pelo Mestre, tokens e sincronização em tempo real.
+- Mesa compartilhada com grid fixo, tokens e sincronização em tempo real.
 - Chat para conversa e LOG separado para eventos de jogo.
 - Modal de dados integrado à mesa.
 - Ordem de iniciativa e controle básico de turnos.
 
-## Mapa e movimento
-- Cada quadrado do grid representa sempre 1,5 m (5 pés), conforme D&D 3.5.
-- A metragem por quadrado é fixa e não é uma configuração do Mestre.
+## Grid e movimento
+- Cada quadrado representa sempre 1,5 m (5 pés), conforme D&D 3.5.
+- A metragem por quadrado é fixa; o Mestre não pode alterá-la.
 - Zoom altera apenas a visualização, nunca a escala lógica do grid.
-- Computador: roda do mouse para aproximar/afastar e arrastar área vazia para deslocar o mapa.
-- Celular: gesto de pinça para zoom e toque/arrasto para tokens.
-- Névoa de guerra opcional: Mestre revela áreas com pincel para todos os jogadores ou para um jogador selecionado.
-- Não implementar colisão automática com paredes/terrenos nesta versão.
+- Computador: roda do mouse para zoom e arrastar área vazia para deslocar a visualização.
+- Celular: gesto de pinça para zoom e toque/arrasto para mover tokens.
+- Não há mapa de fundo, editor de mapas ou névoa de guerra nesta versão.
+- Não implementar colisão automática com paredes/terrenos.
 
 ## Mestre e jogadores
-- Mestre controla a campanha, mapa, tokens de criaturas/NPCs, PV, iniciativa e eventos.
+- Mestre controla a campanha, tokens de NPCs/monstros, PV, iniciativa e eventos.
 - Jogadores controlam apenas seus próprios personagens e ações permitidas.
+- Tokens de personagens permanecem vinculados à ficha correspondente.
+- PV atual (incluindo valores negativos até -10), PV máximo, CA e nome do personagem são sincronizados a partir da ficha persistida; a atualização é publicada pelo Mestre e distribuída pela sincronização da campanha.
 - Ações devem ser contextualizadas pelo tipo de token e pelo papel do usuário.
 - Não mostrar ações de conjuração para personagens sem capacidade de conjurar.
 - O Mestre pode resolver manualmente resultados que dependam de interpretação.
 
 ## Recursos de sessão
 - Fichas: atributos, PV, CA, deslocamento, salvamentos, perícias, talentos e equipamentos.
-- Combate: iniciativa, turnos, ataques e dano quando o fluxo existente for confiável; demais situações ficam sob decisão do Mestre.
-- Descanso curto/longo: recuperação aplicada pelo Mestre ao personagem ou grupo selecionado.
+- Combate: iniciativa, turnos, ataques, confirmação de crítico, dano e atualização de PV; situações excepcionais ficam sob decisão do Mestre.
+- Dados e testes: solicitações do Mestre, rolagens individuais dos jogadores e rolagens de NPCs/monstros pelo Mestre, com modificadores e registro no LOG.
+- Descanso curto/longo: recuperação aplicada pelo Mestre ao personagem ou grupo selecionado, respeitando as permissões da ficha.
 - Economia: cada jogador compra com seu próprio saldo; venda credita automaticamente o ouro ao vendedor.
 - XP e recompensas administrados pelo Mestre.
 - Chat e LOG mantêm conversa separada de eventos e rolagens.
 
-## Escopo funcional confirmado — ajuste de prioridade (2026-11-14)
-
-- **Grid:** manter apenas o grid fixo de D&D 3.5, com cada quadrado representando 1,5 m (5 pés). Zoom e pan são apenas controles visuais; não alteram a escala lógica.
-- **Mapa e névoa:** não fazem parte desta versão simplificada. Não implementar editor de mapas, publicação de imagens de cenário, camadas de névoa ou revelação por jogador.
-- **Tokens e fichas:** tokens de personagens devem permanecer vinculados à ficha de origem. PV, PV máximo, CA e demais dados exibidos no token devem refletir a ficha persistida; alterações de token não podem sobrescrever silenciosamente a ficha.
-- **Combate:** priorizar a correção ponta a ponta de iniciativa, ordem e avanço de turnos, ações, ataques, confirmação de crítico, rolagem de dano e atualização de PV do alvo.
-- **Dados e testes:** priorizar solicitações do Mestre, rolagens individuais dos jogadores, rolagens de NPCs/monstros pelo Mestre, aplicação de modificadores/CD quando aplicável e registro do resultado no LOG.
+## Prioridades funcionais confirmadas (2026-11-14)
+1. Sincronização persistente entre ficha e token.
+2. Combate ponta a ponta: iniciativa, ordem, turnos, ações, ataques, crítico, dano e PV.
+3. Dados e testes: pedidos, rolagens, modificadores, CDs quando aplicáveis e LOG.
+4. Manter somente o grid fixo de 1,5 m; mapa de fundo e névoa estão fora do escopo.
 
 ## Fora do escopo desta versão
 - Automatização completa de todas as regras do D&D 3.5.
+- Mapa de fundo, editor de mapas e névoa de guerra.
 - Simulação de paredes, linha de visão e colisão de terreno.
 - Expansão de catálogos/auditorias avançadas de talentos, magias e monstros.
 - Sistemas avançados do projeto principal enquanto ele estiver em stand-by.
 
 ## Método de trabalho
-1. Preservar funcionalidades existentes que já estejam operacionais.
+1. Preservar funcionalidades existentes.
 2. Corrigir integrações e bugs que impeçam uma sessão completa.
 3. Implementar apenas o necessário para o escopo acima.
 4. Validar cada alteração com verificações reproduzíveis; não declarar testes funcionais sem executá-los.
