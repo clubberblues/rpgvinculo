@@ -1,0 +1,9 @@
+-- Verify in an isolated test project after applying the companion migration.
+-- 1. authenticated has column UPDATE on srd_character_equipment.equipado.
+-- 2. authenticated does NOT have UPDATE on quantidade or hand_slot.
+-- 3. Character owner can call equipar_item_srd for an owned armor/shield/accessory.
+-- 4. Campaign GM can call it for a campaign character.
+-- 5. Unrelated user cannot update another character's inventory row (RLS).
+-- 6. Direct UPDATE of quantidade remains denied by SQL privileges.
+-- 7. Weapon instance flow remains routed through equipar_item_srd_maos and its
+--    SECURITY DEFINER implementation; this grant does not expand weapon permissions.
