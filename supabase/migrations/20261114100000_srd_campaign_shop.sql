@@ -84,7 +84,7 @@ create or replace function public.srd_campaign_shop_configure_item(
 ) returns jsonb
 language plpgsql
 security definer
-set search_path = public, pg_temp
+set search_path = ''
 as $function$
 declare
   v_uid uuid := auth.uid();
@@ -144,7 +144,7 @@ create or replace function public.srd_campaign_shop_buy(
 ) returns jsonb
 language plpgsql
 security definer
-set search_path = public, pg_temp
+set search_path = ''
 as $function$
 declare
   v_uid uuid := auth.uid();
@@ -244,7 +244,7 @@ create or replace function public.srd_campaign_shop_sell(
 ) returns jsonb
 language plpgsql
 security definer
-set search_path = public, pg_temp
+set search_path = ''
 as $function$
 declare
   v_uid uuid := auth.uid();
