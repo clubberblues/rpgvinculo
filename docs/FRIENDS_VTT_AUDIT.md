@@ -420,3 +420,12 @@ A revisão do fluxo de iniciativa encontrou uma condição de corrida na interfa
 Correção em `mesa.html`, commit `a9d469124717e405e40692af553e8b0cbca19ef0`: foi adicionado um bloqueio compartilhado `turnAdvanceBusy` para impedir chamadas concorrentes; o botão de encerrar turno do jogador continua desabilitado durante a operação. O anúncio no chat agora é tratado separadamente: se o avanço foi confirmado pelo banco, uma falha de LOG não será apresentada como se o turno não tivesse avançado.
 
 A RPC existente também foi inspecionada somente para leitura: ela valida autenticação e participação, impede jogador de encerrar turno de outro personagem ou de criatura do Mestre, bloqueia avanço com movimento interrompido por ataques de oportunidade, percorre a rodada surpresa e executa rotinas de fim de rodada. Nenhuma alteração foi feita no banco. Esta correção de interface ainda depende de CI e teste multiplayer para validação completa.
+
+
+### Tratamento de falhas ao preparar ataques do Mestre — 2026-11-14
+
+As ações de ataque chamavam a função assíncrona `iniciarAtaqueMestre` sem tratar rejeições em alguns caminhos da interface (menu contextual, painel do token, ataque como armadilha e controles do turno). Falhas de consulta à ficha, equipamento ou efeitos podiam virar rejeições não tratadas, sem mensagem clara para o Mestre.
+
+Correção em `mesa.html`, commit `4f42bd14a418211cdfd0caf841f6d8d30bc53214`: centralizei as chamadas de interface em `solicitarAtaqueMestre`, que registra o erro no console e informa ao Mestre qual preparação de ataque falhou. A resolução de ataque/dano e as RPCs não foram alteradas nesta etapa.
+
+A revisão continua estática; ainda é necessário executar CI e validar ataques reais entre tokens de jogador, NPC e monstro.
