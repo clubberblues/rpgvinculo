@@ -257,7 +257,7 @@ As RPCs públicas com mutação são SECURITY DEFINER e têm auth.uid() no corpo
 
 ## Contrato da ficha (ficha.html)
 
-A página de ficha atende dois rulesets por estado de aplicação, sem unificar seus catálogos:
+A página de ficha ainda contém um ramo legado de compatibilidade, mas o fluxo ativo é exclusivamente D&D 3.5; não reativar o ramo Vínculo:
 - **Legado Vínculo (não ativo):** abilities, classes, character_notes, character_spells, character_talents, inventory, items, spells, talents e `vinculo_character_sheets`.
 - **D&D 3.5 SRD:** srd_character_sheets, srd_character_equipment, srd_character_weapon_instances e catálogos srd_* de classes, raças, perícias, talentos, magias, equipamentos, domínios e progressões.
 
