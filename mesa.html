@@ -7088,7 +7088,7 @@ async function abrirModalEquipamentos(){
   function ligarRealtime(){
     sb.channel('mesa-'+MESA_ID+'-chat').on('postgres_changes', { event:'INSERT', schema:'public', table:'campaign_log', filter:'campaign_id=eq.'+MESA_ID }, function(p){
       var el = document.getElementById('chat-lista');
-      if(el){ el.insertAdjacentHTML('beforeend', renderMsg(p.new)); el.scrollTop = el.scrollHeight; }
+      if(el){ var estavaNoFim = (el.scrollHeight - el.scrollTop - el.clientHeight) < 80; el.insertAdjacentHTML('beforeend', renderMsg(p.new)); if(estavaNoFim) el.scrollTop = el.scrollHeight; }
     }).subscribe();
     sb.channel('mesa-'+MESA_ID+'-chars').on('postgres_changes', { event:'*', schema:'public', table:'characters', filter:'campaign_id=eq.'+MESA_ID }, function(){ carregarPersonagens(); }).subscribe();
     sb.channel('mesa-'+MESA_ID+'-srd').on('postgres_changes',{event:'*',schema:'public',table:'srd_character_sheets'},function(payload){var id=String((payload.new&&payload.new.character_id)||(payload.old&&payload.old.character_id)||'');if(personagens.some(function(p){return String(p.ch.id)===id;}))carregarPersonagens();var linkedNpc=cbaPublishedState&&Array.isArray(cbaPublishedState.tokens)&&cbaPublishedState.tokens.some(function(token){return token&&token.tipo==='npc'&&String(token.sourceCharacterId||'')===id;});if(linkedNpc)carregarEquipamentosTokens();}).subscribe();
