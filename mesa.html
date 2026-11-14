@@ -4762,6 +4762,7 @@ async function abrirModalEquipamentos(){
     atualizarVazioCBA();
   }
 
+  function popularAudienciaNevoaCBA(){var select=document.getElementById('fog-audience');if(!select)return;var current=select.value||'all';select.replaceChildren(new Option('Todos os jogadores','all'));membros.filter(function(member){return member.role==='PLAYER';}).forEach(function(member){select.appendChild(new Option(member.username||'Jogador','user:'+member.user_id));});if(Array.from(select.options).some(function(option){return option.value===current;}))select.value=current;}
   function abrirPreparacaoCBA(){
     if(!ehGM) return;
     fecharSubModaisCBA();
@@ -4771,6 +4772,7 @@ async function abrirModalEquipamentos(){
     document.getElementById('fog-enabled').checked=!!cbaState.fog.enabled;
     document.getElementById('fog-paint-toggle').checked=false;
     document.getElementById('fog-brush-label').textContent=document.getElementById('fog-brush-size').value;
+    popularAudienciaNevoaCBA();
     document.getElementById('modal-cba').classList.add('ativo');
     setStatusCBA('Arraste os tokens; ao soltar, eles se alinham ao centro do quadrado. 1 quadrado = 1,5 m (5 pés).');
     window.requestAnimationFrame(function(){
@@ -5518,7 +5520,7 @@ async function abrirModalEquipamentos(){
     if(!fogActiveStroke)return;
     var previous=fogActiveStroke.points[fogActiveStroke.points.length-1];
     if(previous&&Math.hypot(point.x-previous.x,point.y-previous.y)<.002)return;
-    fogActiveStroke.points.push(point);cbaState.fog=normalizarNevoaCBA(cbaState.fog);renderizarNevoaCBA();
+    fogActiveStroke.points.push(point);renderizarNevoaCBA();
   }
   function ligarEventosNevoaCBA(){
     var canvas=document.getElementById('cba-fog-preview');if(!canvas)return;
@@ -7415,7 +7417,7 @@ body > #dado-iframe-overlay.dado-modal-global,
 
 
 /* Camada de névoa persistente; desenhada acima de grid e tokens para ocultá-los também. */
-.cba-preview-area,.cba-live-world{position:relative}
+.cba-preview-area,#cba-live-world{position:relative}
 .cba-fog-overlay{position:absolute;inset:0;width:100%;height:100%;z-index:6;display:block;pointer-events:none;touch-action:none}
 .cba-fog-preview{z-index:8}
 .cba-fog-check{display:flex;align-items:center;gap:7px;color:#c5b995;font-size:12px}
