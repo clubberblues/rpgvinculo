@@ -365,3 +365,16 @@ Fixture descartável com campanha em combate, movimento pendente ativo, reação
 - [Run 42714600496](https://github.com/clubberblues/rpgvinculo/actions/runs/42714600496) — **success**, commit `fb261e66a14bb5fed9a35976ea394afaddafb160`.
 - Log confirmou: footprint helper assertions passaram; padrão base campaign/effect e mais oito padrões sintéticos (incluindo o novo caso composto de Fúria) passaram, com PostgreSQL detectando e abortando um participante em cada ciclo deliberadamente montado.
 - O resultado não é teste das RPCs/trigger remotos, nem prova de deadlock em produção. PostgreSQL 17 foi executado em serviço efêmero no runner público e descartado ao final.
+
+
+### Chat e visibilidade das rolagens — verificação remota 2026-11-13
+
+Consulta read-only ao Supabase confirmou:
+- `campaign_log` está na publicação `supabase_realtime`.
+- Jogadores/observadores só leem linhas com `visibilidade='PUBLIC'`.
+- O Mestre lê linhas públicas e privadas.
+- Jogadores só inserem mensagens/rolagens públicas com `autor_id` igual a `auth.uid()`; o Mestre pode inserir registros com visibilidade escolhida.
+
+A branch aplica `PUBLIC` por padrão às rolagens de jogadores e permite que o Mestre escolha `PUBLIC` ou `PRIVATE` por rolagem. O modal não deve limpar a escolha privada enquanto o callback assíncrono ainda grava o resultado.
+
+**Próximo teste de integração:** duas sessões autenticadas (GM e jogador), uma rolagem pública do jogador visível nos dois chats em tempo real, uma rolagem privada do Mestre visível apenas ao Mestre, e uma rolagem pública do Mestre visível a todos. A política remota foi inspecionada, mas este cenário de ponta a ponta ainda não foi executado.
