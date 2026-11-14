@@ -373,3 +373,25 @@ A lista de branches do Supabase retornou apenas a branch `main` do projeto; não
 A revisão da camada de mapa encontrou uma inconsistência: os botões/roda atualizavam a variável CSS `--cba-zoom`, mas o gesto de pinça iniciava a partir da variável JavaScript antiga `cbaZoom` e ainda limitava o zoom mínimo a 100%. Isso fazia a pinça poder saltar de escala depois de usar o zoom por botão/roda e impedia reduzir o mapa abaixo de 100% no celular.
 
 Correção gravada em `mesa.html` no commit `7f481122933c0bc67e08dd9bb23a43f10b28079b`: a pinça agora lê a escala CSS atual, respeita o mesmo mínimo de 65% e cancela o pan por ponteiro quando dois dedos estão ativos, evitando disputa entre arrastar o mapa e pinçar. O limite máximo permanece 250%. A alteração aguarda validação automatizada e teste real em celular; não declarar validação tátil concluída.
+
+## Implementação complementar — loja da campanha (2026-11-14)
+
+A branch agora contém a interface de loja integrada à mesa:
+
+- Mestre: botão **Loja da campanha**, seleção do catálogo SRD, preço de compra, preço de recompra opcional, estoque limitado/ilimitado e ativação/desativação do item.
+- Jogador: botão **Loja da campanha** também fora de combate, consulta do próprio saldo e inventário, compra e venda por quantidade.
+- Compra e venda chamam RPCs transacionais; o navegador não atualiza ouro ou inventário diretamente.
+- Cada operação envia chave de idempotência gerada com crypto.randomUUID()/crypto.getRandomValues().
+- Venda de item equipado é bloqueada na interface e a RPC também rejeita o item até que seja desequipado.
+- Eventos de compra/venda e atualização do estoque são publicados no LOG de campanha via campaign_log.
+
+### Ajustes no contrato SQL
+
+A inspeção somente de leitura do schema confirmou:
+- characters.id é bigint;
+- srd_character_sheets.character_id é bigint;
+- srd_character_equipment.character_id é text, com chave primária composta por personagem e equipamento.
+
+As RPCs de compra/venda foram ajustadas para receber p_character_id text (compatível com as RPCs SRD já usadas pela mesa), localizar a ficha e o saldo por characters.id::text, atualizar srd_character_sheets pelo ID bigint resolvido e atualizar o inventário pelo identificador text. Os recibos guardam o ID bigint de characters.
+
+**Estado de implantação:** a UI e a migration permanecem somente na branch. A migration não foi aplicada ao Supabase de produção. Enquanto a migration não for aplicada em um ambiente apropriado, a loja apresenta uma mensagem de indisponibilidade em vez de simular transações no navegador. Não foi executado teste funcional de compra/venda.
