@@ -25,7 +25,7 @@ Leitura das chamadas RPC em `mesa.html` e `ficha.html` encontrou 93 nomes distin
 | `usar_pocao_cura_srd_manual` | Consumível | Fluxo atual exige proprietário |
 | `conjurar_missil_magico_srd_manual` | Magia/rolagem manual | Fluxo atual exige proprietário |
 | `srd_resolve_requested_saving_throw_srd` | Teste de resistência solicitado | Resolução atual vinculada ao usuário dono do personagem |
-| `descanso_longo_personagem_srd` | Descanso administrado pelo Mestre | Função atual verifica proprietário; conflita com o fluxo aprovado de descanso iniciado pelo Mestre |
+| `descanso_longo_personagem_srd` | Descanso longo SRD | Migration candidata `20261112170000` permite Mestre da campanha sem transferir propriedade; fixture GM/dono/outro jogador/externo adicionada. Ainda não aplicada ao remoto |
 
 Os quatro primeiros RPCs de ação que também retornam `cba_data/combat_data` foram incluídos na migration candidata `20261112160000` para filtragem de resposta. **A filtragem do JSON não altera autorização:** continuam precisando da exceção de controle do Mestre.
 
@@ -65,3 +65,9 @@ Verificar também que PV, recursos diários, slots de magia, condições, inicia
 3. Atualizar somente os RPCs de ação confirmados.
 4. Adicionar fixtures owner/GM/other-player/outsider.
 5. Validar fluxo completo na campanha descartável antes de deploy.
+
+## Atualização de implementação — 2026-11-13
+
+A migration candidata `20261112170000_allow_gm_controlled_character_rest.sql` modifica somente a autorização de `descanso_longo_personagem_srd`: dono continua permitido; Mestre com papel GM na campanha também pode administrar o descanso; outro jogador e usuário externo continuam negados. Nenhuma regra de recuperação, intervalo de 8 horas ou bloqueio durante combate é alterada.
+
+Fixture `gm_character_long_rest_fixture.sql` adicionada ao workflow PostgreSQL para validar GM, dono, outro jogador e usuário externo. A migration não foi aplicada ao Supabase remoto.
