@@ -201,6 +201,7 @@ begin
   v_total := round(v_listing.buy_price * p_quantity, 2);
   if v_before < v_total then raise exception 'Ouro insuficiente.'; end if;
   v_after := round(v_before - v_total, 2);
+  if v_after > 2147483647.99 then raise exception 'O saldo excede o limite do espelho legado de ouro.'; end if;
 
   update public.srd_character_sheets set ouro = v_after where character_id = p_character_id;
   update public.characters set ouro = floor(v_after)::integer where id = p_character_id;
@@ -297,7 +298,10 @@ begin
   v_before := round(coalesce(v_sheet.ouro, 0), 2);
   v_total := round(v_listing.sell_price * p_quantity, 2);
   v_after := round(v_before + v_total, 2);
-  if v_after > 999999999999.99 then raise exception 'O saldo excede o limite permitido.'; end if;
+  if v_after > 2147483647.99 then raise exception 'O saldo excede o limite do espelho legado de ouro.'; end if;
+  if not v_listing.unlimited_stock and v_listing.stock_quantity > 1000000 - p_quantity then
+    raise exception 'O estoque da loja atingiria o limite permitido.';
+  end if;
 
   if v_held.quantidade = p_quantity then
     delete from public.srd_character_equipment
@@ -310,6 +314,11 @@ begin
 
   update public.srd_character_sheets set ouro = v_after where character_id = p_character_id;
   update public.characters set ouro = floor(v_after)::integer where id = p_character_id;
+  if not v_listing.unlimited_stock then
+    update public.srd_campaign_shop_items
+      set stock_quantity = stock_quantity + p_quantity, updated_at = now()
+    where campaign_id = p_campaign_id and equipment_id = p_equipment_id;
+  end if;
 
   insert into public.srd_campaign_shop_receipts (
     campaign_id, character_id, actor_id, operation, equipment_id, quantity,
