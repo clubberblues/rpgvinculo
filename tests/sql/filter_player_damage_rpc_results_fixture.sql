@@ -65,6 +65,47 @@ AS $turnadvance$
    WHERE c.id = p_campaign_id
 $turnadvance$;
 
+CREATE OR REPLACE FUNCTION public.consumir_acao_turno_srd(p_campaign_id bigint,p_character_id text,p_acao text)
+RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,pg_temp
+AS $consume_fixture$
+  SELECT jsonb_build_object('combat_data',(SELECT combat_data FROM public.campaigns WHERE id=p_campaign_id),'action',p_acao)
+$consume_fixture$;
+
+CREATE OR REPLACE FUNCTION public.conjurar_magia_com_acao_srd_manual(
+  p_character_id text,p_spell_id text,p_slot_level smallint,
+  p_target_token_key text DEFAULT NULL::text,p_roll_results integer[] DEFAULT NULL::integer[]
+)
+RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,pg_temp
+AS $spell_fixture$
+  SELECT jsonb_build_object(
+    'combat_data',(SELECT c.combat_data FROM public.campaigns c JOIN public.characters ch ON ch.campaign_id=c.id WHERE ch.id::text=p_character_id),
+    'spell_id',p_spell_id
+  )
+$spell_fixture$;
+
+CREATE OR REPLACE FUNCTION public.conjurar_magia_com_acao_srd_multialvo_v3(
+  p_character_id text,p_spell_id text,p_slot_level smallint,
+  p_target_token_keys text[],p_roll_results integer[]
+)
+RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,pg_temp
+AS $multi_spell_fixture$
+  SELECT jsonb_build_object(
+    'combat_data',(SELECT c.combat_data FROM public.campaigns c JOIN public.characters ch ON ch.campaign_id=c.id WHERE ch.id::text=p_character_id),
+    'spell_id',p_spell_id
+  )
+$multi_spell_fixture$;
+
+CREATE OR REPLACE FUNCTION public.usar_imposicao_maos_mortos_vivos_srd(
+  p_character_id text,p_target_token_key text,p_d20 integer,p_amount integer
+)
+RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,pg_temp
+AS $lay_hands_fixture$
+  SELECT jsonb_build_object(
+    'cba_data',(SELECT c.cba_data FROM public.campaigns c JOIN public.characters ch ON ch.campaign_id=c.id WHERE ch.id::text=p_character_id),
+    'damage',p_amount
+  )
+$lay_hands_fixture$;
+
 CREATE OR REPLACE FUNCTION public.srd_finalizar_movimento_aoo_pendente_srd(p_campaign_id bigint,p_pending_id uuid)
 RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,pg_temp
 AS $$ SELECT jsonb_build_object('committed',true,'movement_result',jsonb_build_object(
@@ -103,6 +144,15 @@ BEGIN
   r:=public.srd_finalizar_movimento_aoo_pendente_srd(987654323,'00000000-0000-0000-0000-000000000123');
   IF r->'movement_result'->'cba_data'->'tokens' @> '[{"id":"hidden"}]'::jsonb THEN RAISE EXCEPTION 'Nested movement RPC leaked hidden token.'; END IF;
   IF r->'movement_result'->'combat_data' ? 'pending_reactions' THEN RAISE EXCEPTION 'Nested movement RPC leaked private combat state.'; END IF;
+  r:=public.consumir_acao_turno_srd(987654323,'pc-1','padrao');
+  IF r->'combat_data' ? 'pending_reactions' THEN RAISE EXCEPTION 'Action-economy RPC leaked private combat state.'; END IF;
+  IF r->'combat_data'->'turn_order' @> '[{"id":"hidden"}]'::jsonb THEN RAISE EXCEPTION 'Action-economy RPC leaked hidden initiative actor.'; END IF;
+  r:=public.conjurar_magia_com_acao_srd_manual('pc-1','spell',1::smallint,'visible',ARRAY[11]);
+  IF r->'combat_data' ? 'pending_reactions' THEN RAISE EXCEPTION 'Single-target spell RPC leaked private combat state.'; END IF;
+  r:=public.conjurar_magia_com_acao_srd_multialvo_v3('pc-1','spell',1::smallint,ARRAY['visible'],ARRAY[11]);
+  IF r->'combat_data' ? 'pending_reactions' THEN RAISE EXCEPTION 'Multi-target spell RPC leaked private combat state.'; END IF;
+  r:=public.usar_imposicao_maos_mortos_vivos_srd('pc-1','visible',12,3);
+  IF r->'cba_data'->'tokens' @> '[{"id":"hidden"}]'::jsonb THEN RAISE EXCEPTION 'Lay on Hands RPC leaked hidden token.'; END IF;
 END
 $player$;
 RESET ROLE;
@@ -117,6 +167,14 @@ BEGIN
   IF NOT (r->'combat_data' ? 'pending_reactions') THEN RAISE EXCEPTION 'Owner lost private combat state in RPC result.'; END IF;
   r:=public.avancar_turno(987654323);
   IF NOT (r ? 'pending_reactions') THEN RAISE EXCEPTION 'Owner lost private combat state through turn advancement.'; END IF;
+  r:=public.consumir_acao_turno_srd(987654323,'pc-1','padrao');
+  IF NOT (r->'combat_data' ? 'pending_reactions') THEN RAISE EXCEPTION 'Owner lost private state through action-economy RPC.'; END IF;
+  r:=public.conjurar_magia_com_acao_srd_manual('pc-1','spell',1::smallint,'visible',ARRAY[11]);
+  IF NOT (r->'combat_data' ? 'pending_reactions') THEN RAISE EXCEPTION 'Owner lost private state through single-target spell RPC.'; END IF;
+  r:=public.conjurar_magia_com_acao_srd_multialvo_v3('pc-1','spell',1::smallint,ARRAY['visible'],ARRAY[11]);
+  IF NOT (r->'combat_data' ? 'pending_reactions') THEN RAISE EXCEPTION 'Owner lost private state through multi-target spell RPC.'; END IF;
+  r:=public.usar_imposicao_maos_mortos_vivos_srd('pc-1','visible',12,3);
+  IF NOT (r->'cba_data'->'tokens' @> '[{"id":"hidden"}]'::jsonb) THEN RAISE EXCEPTION 'Owner lost hidden token through Lay on Hands RPC.'; END IF;
 END
 $owner$;
 RESET ROLE;
@@ -128,6 +186,12 @@ BEGIN
   END IF;
   IF NOT has_function_privilege('authenticated','public.aplicar_dano_token_ataque_srd_v2(bigint,text,text,integer,integer,integer,text,text,integer)','EXECUTE') THEN
     RAISE EXCEPTION 'Authenticated cannot execute filtered damage RPC wrapper.';
+  END IF;
+  IF has_function_privilege('authenticated','priv.consumir_acao_turno_srd(bigint,text,text)','EXECUTE')
+     OR has_function_privilege('authenticated','priv.conjurar_magia_com_acao_srd_manual(text,text,smallint,text,integer[])','EXECUTE')
+     OR has_function_privilege('authenticated','priv.conjurar_magia_com_acao_srd_multialvo_v3(text,text,smallint,text[],integer[])','EXECUTE')
+     OR has_function_privilege('authenticated','priv.usar_imposicao_maos_mortos_vivos_srd(text,text,integer,integer)','EXECUTE') THEN
+    RAISE EXCEPTION 'Authenticated can bypass a filtered player action/spell RPC wrapper.';
   END IF;
 END
 $acl$;
