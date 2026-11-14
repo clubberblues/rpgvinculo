@@ -101,3 +101,18 @@ A consulta direta às definições instaladas confirmou que a exceção GM ainda
 ### Próxima implementação delimitada
 
 Criar helper privado e estável que autorize somente (a) proprietário que continua membro PLAYER da campanha, ou (b) GM da mesma campanha; exigir que character.campaign_id corresponda à campanha informada. Aplicar a helper apenas às RPCs player-facing confirmadas acima, mantendo intactos turno, recursos, slots, condições, validações D&D 3.5, alvo e idempotência. Para NPC/monstros, preservar os endpoints GM-only já existentes. Criar fixture com quatro identidades para cada família (dono, GM, outro jogador, externo) e provar que a propriedade da ficha nunca muda. Não aplicar ao remoto antes do replay e dos testes PostgREST.
+
+
+## Primeira implementação incremental — economia de ações do PC (2026-11-14)
+
+Foi adicionada à branch uma migration candidata 20261114190000_allow_gm_character_action_economy.sql e fixture gm_character_action_economy_fixture.sql:
+
+- Cria priv.srd_can_control_campaign_character(campaign_id, character_id), que permite somente o proprietário membro PLAYER, o GM da mesma campanha ou o owner_id da campanha; exige que a ficha pertença à campanha informada.
+- Atualiza apenas a implementação privada de consumir_acao_turno_srd para usar a autorização central. A validação de campanha, combate, turno, condições e economia de ações permanece intacta.
+- A fixture testa dono, GM, outro jogador e usuário externo e verifica que a propriedade da ficha não muda.
+- O workflow PostgreSQL foi atualizado para executar a fixture. JavaScript da aplicação, JavaScript da mesa e validação estática passaram no commit 15eeb84b7d1e9b73246dd1f8a2c926e73fb6aa00; no momento deste registro, fixtures PostgreSQL e replay integral ainda estavam em execução. Não declarar a fixture aprovada até CI concluir.
+- A migration é candidata e não foi aplicada ao Supabase remoto.
+
+## Lacuna de interface confirmada
+
+A tela GM de ficha em mesa.html atualmente oferece consulta de raça/talentos/classe, inventário, perícias em modo consulta e ajuste de PV; o texto do painel diz explicitamente que ataques, testes e conjuração continuam sujeitos aos fluxos do jogador. Além disso, personagemDoTurnoDoJogador() só retorna a ficha do turno quando characters.user_id = auth.uid(), e esse helper é usado por seleção de ataque, magia, perícia e ações táticas. Portanto, mesmo após liberar RPCs, a interface ainda precisa permitir que o GM escolha o PC ativo no turno e use o mesmo painel de ações do jogador, sem enfraquecer a validação server-side.
