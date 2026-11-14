@@ -10,7 +10,7 @@ Atualizado em 2026-11-12. **Status: em implementação; não aplicar em produç�
 - GM/proprietário recebe a cena e o estado de combate completos.
 - Jogador recebe mapa publicado, tokens explicitamente visíveis e seu próprio token; recebe somente a projeção pública da iniciativa. Reações pendentes, estado interno da economia de ações e dados de atores ocultos ficam no servidor.
 - Escritas de cena e ações de combate permanecem RPCs transacionais; seus retornos também precisam ser projetados antes que o cliente receba a resposta.
-- Fog of war exige estado de revelação persistente e autorização por jogador/grupo; não existe campo de fog consistente no JSONB atual. Não simular fog apenas escondendo tokens no DOM.
+- Fog of war/reveal por área está fora do escopo. O mapa de fundo é compartilhado; o Mestre controla apenas a visibilidade de cada token. Não criar campos de fog/reveals.
 
 ## Primitive criada nesta branch
 
