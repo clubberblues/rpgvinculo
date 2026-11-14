@@ -12,20 +12,26 @@
     var label=document.getElementById('friends-zoom-value');
     if(label)label.textContent=Math.round(z*100)+'%';
   }
+  function resetView(){
+    var w=world();if(!w)return;
+    setZoom(1);
+    w.style.setProperty('--cba-pan-x','0px');
+    w.style.setProperty('--cba-pan-y','0px');
+  }
   function attachBoard(){
     var area=board();if(!area||area.dataset.friendsUi==='1')return;
     area.dataset.friendsUi='1';
     var controls=document.createElement('div');
     controls.className='friends-map-controls';
     controls.setAttribute('aria-label','Controles de visualização do mapa');
-    controls.innerHTML='<span class="friends-grid-note">1 quadrado = 1,5 m</span><button type="button" data-zoom="out" aria-label="Diminuir zoom">−</button><output id="friends-zoom-value">100%</output><button type="button" data-zoom="in" aria-label="Aumentar zoom">+</button><button type="button" data-zoom="reset" aria-label="Restaurar zoom">↺</button>';
+    controls.innerHTML='<span class="friends-grid-note">1 quadrado = 1,5 m</span><button type="button" data-zoom="out" aria-label="Diminuir zoom">−</button><output id="friends-zoom-value">100%</output><button type="button" data-zoom="in" aria-label="Aumentar zoom">+</button><button type="button" data-zoom="reset" aria-label="Centralizar mapa e restaurar zoom" title="Centralizar mapa">↺</button>';
     area.appendChild(controls);
     controls.addEventListener('click',function(e){
       var b=e.target.closest('[data-zoom]');if(!b)return;
       var z=currentZoom();
       if(b.dataset.zoom==='in')setZoom(z*SCALE_STEP);
       else if(b.dataset.zoom==='out')setZoom(z/SCALE_STEP);
-      else setZoom(1);
+      else resetView();
     });
     area.addEventListener('wheel',function(e){
       if(e.target.closest&&e.target.closest('.friends-map-controls'))return;
