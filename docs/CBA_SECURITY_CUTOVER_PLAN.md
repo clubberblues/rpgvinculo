@@ -147,3 +147,20 @@ As implementações originais são movidas para `priv`; wrappers públicos prese
 A decisão de produto permite ao Mestre assumir temporariamente qualquer personagem durante combate, sem transferir a propriedade da ficha. A revisão dos corpos atuais encontrou endpoints que ainda exigem `characters.user_id = auth.uid()`, inclusive a economia de ações e alguns fluxos de conjuração/recursos. A filtragem de retorno não concede essa permissão.
 
 Antes de declarar o controle do Mestre concluído, classificar e ajustar os endpoints de ação usados em combate para aceitar o Mestre da campanha como controlador operacional, mantendo as verificações de campanha, turno, requisitos e recursos. Não remover as validações do jogador proprietário.
+
+
+## Matriz de chamadas frontend e funções invoker — 2026-11-14
+
+Consulta direta ao catálogo do Supabase e busca textual dos callsites .rpc nos sete arquivos cliente versionados (mesa.html, ficha.html, lobby.html, lobby_atualizado.html, dice.html, index.html e vinculo-ui.js):
+
+- 53 overloads públicos executáveis por authenticated referenciam cba_data ou combat_data.
+- 52 retornam JSONB e um retorna numeric; 51 são SECURITY DEFINER e duas são SECURITY INVOKER.
+- 50 nomes distintos: 45 possuem chamada .rpc direta em pelo menos um dos arquivos cliente inspecionados. Os cinco nomes sem callsite direto nesses arquivos são aplicar_dano_token_gm_personagem_srd, srd_aplicar_dano_ataque_oportunidade_monstro_srd, srd_aplicar_dano_ataque_oportunidade_srd, srd_detectar_saida_alcance_ameacado_srd e srd_resolver_teste_resistencia_token_srd. Ausência de chamada direta não autoriza revogação: podem ser dependências SQL de outras funções ou chamadas dinâmicas.
+- As duas funções SECURITY INVOKER são srd_consultar_modificadores_manobra_srd(bigint,text,text,text,boolean,boolean) e srd_listar_ataques_naturais_oportunidade_srd(bigint,text). Ambas referenciam estado privado da campanha e contêm checagem auth.uid()/my_role/GM. Como invoker, dependem do SELECT de campaigns.cba_data enquanto esse privilégio existir; precisam de execução interna autorizada/SECURITY DEFINER com search_path fixo antes do corte de SELECT.
+- A busca de wrappers no catálogo público não encontrou chamada ao snapshot seguro nos 53 overloads; a migration candidata de wrappers não está aplicada ao banco remoto. Isso não classifica automaticamente todos os 52 JSONB como vazamento: é necessário inspecionar o retorno real e a autoridade de cada endpoint.
+
+Próxima entrega de auditoria: matriz individual das 53 assinaturas com chamada frontend ou dependência SQL, classe de ator permitida (owner/GM/player), ownership/token guard, forma de retorno e estratégia de filtragem. Manter sem alterações as ACLs remotas até a matriz e os testes com quatro identidades estarem completos.
+
+## CI pós-registro documental — 2026-11-14
+
+No commit 17b24b8093e9a4b1900553dc52582ac8faeb78bc, os workflows de validação JavaScript da aplicação (run 577), JavaScript da mesa (run 833), validação estática (run 529) e fixtures PostgreSQL (run 850) concluíram success. O replay integral (run 413) voltou a falhar pelo mesmo bloqueio pré-ledger: a primeira migration tenta usar public.campaigns antes de existir bootstrap. Nenhum teste autenticado via PostgREST/Realtime foi executado.
