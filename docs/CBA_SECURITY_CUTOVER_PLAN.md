@@ -175,3 +175,20 @@ Comparação por nome/signatura entre a migration candidata 20261112160000_filte
 - As duas SECURITY INVOKER sem cobertura continuam sendo srd_consultar_modificadores_manobra_srd(..., p_trip_using_weapon boolean) e srd_listar_ataques_naturais_oportunidade_srd(...). Ambas têm verificação explícita de GM, mas ainda dependem do SELECT de colunas privadas.
 - A cobertura candidata de 13/53 não foi instalada no Supabase remoto; os 53 overloads públicos ainda são o estado efetivo da produção.
 - Não gerar wrappers genéricos para as 40 assinaturas sem classificar retorno e autorização. Algumas são GM-only, outras player-facing, outras dependências internas ou retorno escalar. O próximo artefato deve registrar classificação individual por overload e callsite antes de qualquer migration.
+
+
+## Expansão do inventário por dependências transitivas — 2026-11-14
+
+A contagem anterior de 53 overloads era baseada apenas em definições públicas que mencionam diretamente cba_data/combat_data. Uma nova varredura recursiva do catálogo, seguindo chamadas schema-qualified priv.* até profundidade 4, encontrou:
+
+- 85 funções públicas executáveis por authenticated com caminho até pelo menos uma função privada cuja definição referencia cba_data/combat_data.
+- 83 dessas raízes públicas retornam jsonb; 2 retornam escalar.
+- 53 raízes fazem referência direta às colunas privadas; **32 raízes adicionais só aparecem pela dependência transitiva** (o corpo público chama implementação/helper em priv).
+- 70 das 85 raízes JSONB também contêm chamada priv.* no corpo público.
+- A migration candidata atual cobre 13 overloads do conjunto de referência direta. Portanto, 40 raízes diretas e 32 raízes transitivas permanecem fora dessa cobertura nominal: **72 raízes públicas candidatas ainda precisam ser classificadas**.
+
+Esta é uma ampliação do conjunto de revisão, não uma afirmação de que 85 endpoints vazam o JSONB integral. Uma função privada pode consultar CBA para calcular um número ou devolver somente campos permitidos; cada caminho precisa ser seguido até a construção efetiva do retorno. A varredura não captura SQL dinâmico, chamadas sem schema qualification ou profundidade superior a quatro níveis; o inventário ainda pode crescer.
+
+A configuração efetiva de schemas expostos pelo PostgREST não pôde ser confirmada por current_setting (retornou NULL para pgrst.db_schemas). Não presumir que priv esteja ou não exposto à API; verificar Dashboard/configuração e testar HTTP real.
+
+Novo critério de conclusão: classificar as 85 raízes públicas e seus caminhos privados, separar retornos escalares/JSONB e provar se o estado privado chega ao payload de jogador. A matriz anterior de 53 é mantida como subconjunto histórico, não como inventário completo.
