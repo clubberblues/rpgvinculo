@@ -263,3 +263,22 @@ Consulta somente de leitura às fichas atuais:
 - 2 das 6 fichas estão vinculadas a campanha.
 
 Implicação: **não é correto restringir a economia a PO inteiras**. O saldo SRD deve permanecer NUMERIC e as operações precisam aceitar preços fracionários compatíveis com o catálogo (sem conversão prematura para INTEGER). O espelho legado continuará recebendo apenas a parte inteira por FLOOR, como já ocorre na finalização do equipamento inicial. Essa regra deve ser mantida na mesma transação de compra/venda/recompensa SRD.
+
+
+#### Precisão do catálogo de equipamentos
+- O catálogo `srd_equipment` contém 1.027 itens; 1.021 têm preço cadastrado, 6 não têm preço e nenhum preço negativo foi encontrado.
+- Os preços cadastrados têm no máximo duas casas decimais; o intervalo consultado vai de 0,00 a 211.000,00 PO.
+- A loja não deve publicar automaticamente itens sem preço. O Mestre deve informar preço de compra e preço de recompra para cada item adicionado à loja, ou confirmar explicitamente uma regra padrão de recompra.
+- Contrato de valores: usar NUMERIC com duas casas decimais para preços, totais e saldo de transação; preservar o saldo NUMERIC SRD e nunca converter o valor intermediário para INTEGER. O campo legado `characters.ouro` permanece espelho inteiro via FLOOR.
+
+#### Contrato funcional consolidado para a próxima implementação
+1. Estoque por campanha e item, com preço de compra e preço de venda/recompra definidos separadamente pelo Mestre; quantidade inteira positiva ou modo de estoque ilimitado explícito.
+2. Uma loja ativa por campanha pode conter vários itens; a mesma peça de equipamento pode ter preços diferentes em campanhas distintas.
+3. Compra: jogador escolhe sua ficha vinculada à campanha; o servidor confirma que a ficha pertence ao usuário, que o usuário é membro PLAYER, que o item está ativo, que há estoque, e que o saldo cobre o total.
+4. Venda: somente o dono da ficha vende itens que possui; o servidor confirma quantidade no inventário e preço de recompra ativo. O item é decrementado/removido e o ouro creditado atomicamente.
+5. A compra/venda deve bloquear estoque, ficha/saldo e linha de inventário com `FOR UPDATE`, recalcular total no servidor e registrar um recibo idempotente.
+6. A chave idempotente deve ser única por campanha + ator + operação, para que repetição de requisição não duplique débito, crédito ou entrega.
+7. Mestre administra catálogo da loja e estoque; jogador não pode alterar preços, estoque, recibos nem saldo por escrita direta.
+8. Recibos ficam consultáveis pelo Mestre e pelo jogador dono da ficha; registros preservam campanha, personagem, ator, operação, item, quantidade, preço unitário, total e saldos anterior/posterior.
+9. Itens SRD sem preço no catálogo não entram na loja até o Mestre atribuir preço. O catálogo global não é alterado.
+10. Nenhuma migration ou RPC deve ser aplicada no banco de produção durante esta etapa de auditoria.
