@@ -402,3 +402,12 @@ As RPCs de compra/venda foram ajustadas para receber p_character_id text (compat
 A mesa agora inclui controles de névoa no estúdio de preparação do Mestre: ativar/desativar, pincel de revelação, tamanho ajustável, destino para todos ou um jogador, limpeza de áreas e persistência no JSON da cena. A máscara cobre mapa, grid e tokens no painel do jogador; o Mestre continua vendo o mapa completo na mesa e todas as áreas no editor. As coordenadas são normalizadas para manter a revelação alinhada em telas com dimensões diferentes.
 
 **Limitação de segurança conhecida:** nesta primeira implementação, os traços por jogador ficam dentro do JSON da cena da campanha, que já é acessível aos membros. A interface filtra visualmente as áreas de outros jogadores, mas um usuário técnico poderia inspecionar o JSON bruto. Portanto, a seleção individual ainda não é isolamento de informação no servidor. Para segredos reais entre jogadores, será necessário migrar os traços para tabela separada com RLS por destinatário e evento realtime próprio; até isso existir, trate a segmentação individual como recurso visual, não como proteção contra inspeção técnica.
+
+
+### Correção do parser de ataques de monstros — 2026-11-14
+
+A revisão do fluxo de ataque do Mestre encontrou uma falha concreta na leitura dos ataques de NPCs/monstros não vinculados a fichas SRD: as expressões regulares estavam com escapes duplicados, impedindo reconhecer bônus e fórmulas de dano; além disso, o parser aceitava apenas a ordem `+4 melee`, não a notação comum `Melee +4` / `Melee: +4`. Isso fazia a mesa cair desnecessariamente nas perguntas manuais de bônus e dano.
+
+Correção em `mesa.html` nos commits `bc3507f89ddc29fb4c15f06d3666c7f58eea273b` e `472dbc6743d2b2b2debdac99e16f9977b871ba8a`: o parser agora reconhece bônus com o rótulo antes ou depois do número e extrai fórmulas entre parênteses. Foram exercitados no runtime JavaScript quatro exemplos representativos: `Melee +4 (1d6+2)`, `Melee: +4 (1d6+2)`, `+4 melee (1d6+2)` e `Ranged +6 (1d8+3)`; os quatro retornaram bônus e fórmula esperados.
+
+A verificação de status do commit ainda não retornou execuções de CI. Portanto, esta correção tem verificação de parser por exemplos, mas ainda não tem confirmação de CI nem teste real na mesa. Nenhuma migration ou dado do Supabase foi alterado.
