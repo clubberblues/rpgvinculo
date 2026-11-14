@@ -3470,6 +3470,29 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     var summary=summaries[n]||'Use esta perícia quando a ação exigir treinamento ou conhecimento específico. O Mestre define a dificuldade (CD) conforme a situação e as condições do ambiente.';
     return summary;
   }
+  // Lista canônica de perícias com teste de D&D 3.5. Mantém fora perícias de outras edições e Falar Idioma (não usa teste de perícia).
+  function ehPericiaDnd35(skill){
+    if(!skill)return false;
+    var id=String(skill.id||'');
+    var validIds=[
+      'srd35_skill_open_lock','adestrar_animais','fuga','srd35_skill_perform',
+      'srd35_skill_perform_sing','srd35_skill_perform_comedy','srd35_skill_perform_dance',
+      'srd35_skill_perform_string','srd35_skill_perform_percussion','srd35_skill_perform_wind',
+      'srd35_skill_perform_keyboard','srd35_skill_perform_oratory','srd35_skill_perform_act',
+      'avaliacao','blefe','cavalgar','concentracao','srd35_skill_knowledge',
+      'conhecimento_arcano','conhecimento_arquitetura','conhecimento_geografia',
+      'conhecimento_historia','conhecimento_local','conhecimento_masmorras',
+      'conhecimento_natureza','conhecimento_nobreza','conhecimento_planos',
+      'conhecimento_religiao','cura','decifrar_escrita','diplomacia','disfarce',
+      'srd35_skill_balance','escalar','esconder_se','srd35_skill_forgery',
+      'srd35_skill_spellcraft','intimidacao','mover_silenciosamente','natacao',
+      'observar','srd35_skill_gather_information','oficio',
+      'srd35_skill_disable_device','ouvir','prestidigitacao','procurar','profissao',
+      'srd35_skill_jump','sentir_motivacao','sobrevivencia','srd35_skill_use_rope',
+      'usar_instrumento_magico'
+    ];
+    return validIds.indexOf(id)!==-1;
+  }
   async function abrirTestePericiaJogador(characterId,somenteConsulta){
     var p=characterId&&ehGM?personagens.find(function(x){return String(x.ch.id)===String(characterId);}):(personagemDoTurnoDoJogador()||personagens.find(function(x){return x.ch.user_id===eu.id;}));
     if(!p){alert(somenteConsulta?'Não foi possível localizar a ficha selecionada.':'Nenhuma ficha própria disponível.');return;}
@@ -3482,7 +3505,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     var norm=function(t){return String(t||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();};
     var normalizedClassSkills=(Array.isArray(classList)?classList:[classList]).map(norm);
     var options=[];
-    (result.data||[]).filter(function(sk){return sk.source_status!=='excluded'&&String(sk.id)!=='srd35_skill_speak_language';}).forEach(function(sk){
+    (result.data||[]).filter(ehPericiaDnd35).forEach(function(sk){
       var specializations=['oficio','profissao'].indexOf(String(sk.id))>=0?skillSpecializations.filter(function(spec){return spec&&String(spec.type)===String(sk.id)&&String(spec.key||'').trim()&&String(spec.name||'').trim();}):[];
       var variants=specializations.length?specializations:[null];
       variants.forEach(function(spec){
@@ -4499,9 +4522,7 @@ async function abrirModalEquipamentos(){
     catalogoTestesMestrePromise=(async function(){
       var result=await sb.from('srd_skills').select('id,nome,atributo,source_status,treinada_apenas,penalidade_armadura').order('nome');
       if(result.error)throw new Error(result.error.message||'Catálogo de perícias indisponível.');
-      var skills=(result.data||[]).filter(function(skill){
-        return skill.source_status!=='excluded'&&String(skill.id)!=='srd35_skill_speak_language';
-      });
+      var skills=(result.data||[]).filter(ehPericiaDnd35);
       if(!skills.length)throw new Error('O catálogo de perícias D&D 3.5 está vazio.');
       catalogoTestesMestre={skills:skills};
       renderizarCatalogoTestesMestre();
