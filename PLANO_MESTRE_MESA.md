@@ -295,7 +295,7 @@ O servidor mantém `avancar_turno` autenticado e limitado a membros da campanha:
 1. Assistente de evolução de nível com rolagem via `dice.html`, PV, perícias, talentos e incrementos de atributo.
 2. Teste de combate SRD com matriz de raças/classes e sessões autenticadas de Mestre/jogador em campanha descartável.
 3. Resolvedores genéricos de magias ofensivas, salvamentos, resistência à magia/concentração e economia completa de ações.
-4. Automatização dos efeitos de classe/nível, condições, visão/fog of war, armadilhas, sobrecarga e economia/saque conforme a especificação.
+4. Automatização dos efeitos de classe/nível, condições, visibilidade por token controlada pelo Mestre, armadilhas, sobrecarga e economia/saque conforme a especificação. Fog of war está fora do escopo.
 5. Validação visual ponta a ponta em navegador desktop/celular e com menu autenticado de jogador.
 6. Observar índices não usados com carga real antes de qualquer remoção. Proteção contra senhas vazadas segue descartada por escolha do proprietário/plano Free.
 
