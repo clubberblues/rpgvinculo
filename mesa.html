@@ -1000,50 +1000,15 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     <button class="btn-fechar-livro" type="button" data-fechar-testes aria-label="Fechar livro de testes">✕</button>
     <div class="pagina-teste-conteudo">
       <h2 id="titulo-modal-testes">TESTES DE HABILIDADE</h2>
-      <div class="grid-testes">
-        <div class="testes-divisor"><span>ATRIBUTOS</span></div>
-        <button class="btn-teste" type="button" data-teste="Teste de Força (FOR)">Força (FOR)</button>
-        <button class="btn-teste" type="button" data-teste="Teste de Destreza (DES)">Destreza (DES)</button>
-        <button class="btn-teste" type="button" data-teste="Teste de Constituição (CON)">Constituição (CON)</button>
-        <button class="btn-teste" type="button" data-teste="Teste de Inteligência (INT)">Inteligência (INT)</button>
-        <button class="btn-teste" type="button" data-teste="Teste de Sabedoria (SAB)">Sabedoria (SAB)</button>
-        <button class="btn-teste" type="button" data-teste="Teste de Carisma (CAR)">Carisma (CAR)</button>
-
-        <div class="testes-divisor"><span>RESISTÊNCIAS · D&D 3.5</span></div>
-        <button class="btn-teste" type="button" data-teste="Fortitude (CON)">Fortitude (CON)</button>
-        <button class="btn-teste" type="button" data-teste="Reflexos (DES)">Reflexos (DES)</button>
-        <button class="btn-teste" type="button" data-teste="Vontade (SAB)">Vontade (SAB)</button>
-        <button class="btn-teste" type="button" data-teste="Reflexos contra Armadilhas (DES)">Reflexos contra Armadilhas (DES)</button>
-        <button class="btn-teste" type="button" data-teste="Vontade contra Encantamento">Vontade contra Encantamento</button>
-        <button class="btn-teste" type="button" data-teste="Vontade contra Medo">Vontade contra Medo</button>
-
-        <div class="testes-divisor"><span>PERÍCIAS</span></div>
-        <button class="btn-teste" type="button" data-teste="Acrobacia">Acrobacia (DES)</button>
-        <button class="btn-teste" type="button" data-teste="Adestramento">Adestramento (CAR)</button>
-        <button class="btn-teste" type="button" data-teste="Atletismo">Atletismo (FOR)</button>
-        <button class="btn-teste" type="button" data-teste="Atuação">Atuação (CAR)</button>
-        <button class="btn-teste" type="button" data-teste="Enganação">Enganação (CAR)</button>
-        <button class="btn-teste" type="button" data-teste="Furtividade">Furtividade (DES)</button>
-        <button class="btn-teste" type="button" data-teste="História">História (INT)</button>
-        <button class="btn-teste" type="button" data-teste="Intimidação">Intimidação (CAR)</button>
-        <button class="btn-teste" type="button" data-teste="Intuição">Intuição (SAB)</button>
-        <button class="btn-teste" type="button" data-teste="Investigação">Investigação (INT)</button>
-        <button class="btn-teste" type="button" data-teste="Medicina">Medicina (SAB)</button>
-        <button class="btn-teste" type="button" data-teste="Natureza">Natureza (INT)</button>
-        <button class="btn-teste" type="button" data-teste="Percepção">Percepção (SAB)</button>
-        <button class="btn-teste" type="button" data-teste="Persuasão">Persuasão (CAR)</button>
-        <button class="btn-teste" type="button" data-teste="Prestidigitação">Prestidigitação (DES)</button>
-        <button class="btn-teste" type="button" data-teste="Religião">Religião (INT)</button>
-        <button class="btn-teste" type="button" data-teste="Sobrevivência">Sobrevivência (SAB)</button>
-      </div>
-      <div class="instrucao-teste">Selecione o teste e depois clique nos personagens.</div>
+      <input id="catalogo-testes-busca" class="skill-roll-search" type="search" placeholder="Buscar atributo, resistência ou perícia…" aria-label="Buscar teste">
+      <div class="grid-testes"><div id="catalogo-testes-mestre" class="catalogo-testes-mestre"><p class="instrucao-teste">Carregando catálogo de testes D&D 3.5…</p></div></div>
+      <div class="instrucao-teste">Escolha o teste; depois selecione os personagens ou tokens que deverão rolar.</div>
     </div>
   </div>
 </div>
 
 <div id="barra-confirmar-teste" role="group" aria-label="Confirmar alvos do teste">
   <p id="txt-teste-selecionado">Teste selecionado</p>
-  <div id="teste-dc-wrap"><label for="input-teste-dc">CD (opcional)</label><input id="input-teste-dc" type="number" min="1" max="100" placeholder="CD"></div>
   <button class="teste-confirmar" id="btn-confirmar-teste" type="button">CONFIRMAR ALVOS</button>
   <button class="teste-cancelar" id="btn-cancelar-teste" type="button">Cancelar</button>
 </div>
@@ -1318,6 +1283,9 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   var rollResultReceived = false;
   var modoSelecaoTeste = false;
   var testeAtual = '';
+  var skillAtualId = null;
+  var catalogoTestesMestre = null;
+  var catalogoTestesMestrePromise = null;
   var alvosSelecionados = [];
   var alvosNpcSelecionados = [];
   var personagensCarregados = false;
@@ -4348,6 +4316,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     if(id === 'testes'){
       if(!ehGM) return;
       document.getElementById('modal-testes').style.display = 'flex';
+      carregarCatalogoTestesMestre();
       return;
     }
     if(id === 'xp'){
@@ -4521,6 +4490,81 @@ async function abrirModalEquipamentos(){
     document.getElementById('equipamento-categoria').addEventListener('change',renderizarCatalogoEquipamentos);
   }
 
+  async function carregarCatalogoTestesMestre(){
+    var host=document.getElementById('catalogo-testes-mestre');
+    if(!host)return;
+    if(catalogoTestesMestre){renderizarCatalogoTestesMestre();return;}
+    if(catalogoTestesMestrePromise){await catalogoTestesMestrePromise;return;}
+    host.textContent='Carregando testes oficiais de D&D 3.5…';
+    catalogoTestesMestrePromise=(async function(){
+      var result=await sb.from('srd_skills').select('id,nome,atributo,source_status,treinada_apenas,penalidade_armadura').order('nome');
+      if(result.error)throw new Error(result.error.message||'Catálogo de perícias indisponível.');
+      var skills=(result.data||[]).filter(function(skill){
+        return skill.source_status!=='excluded'&&String(skill.id)!=='srd35_skill_speak_language';
+      });
+      if(!skills.length)throw new Error('O catálogo de perícias D&D 3.5 está vazio.');
+      catalogoTestesMestre={skills:skills};
+      renderizarCatalogoTestesMestre();
+    })().catch(function(error){
+      console.error('Falha ao carregar o livro de testes:',error);
+      if(host)host.textContent='Não foi possível carregar o catálogo de perícias: '+error.message;
+    }).finally(function(){catalogoTestesMestrePromise=null;});
+    await catalogoTestesMestrePromise;
+  }
+  function criarOpcaoCatalogoTeste(host,label,display,skillId){
+    var button=document.createElement('button');
+    button.type='button';button.className='btn-teste';button.dataset.teste=label;
+    if(skillId)button.dataset.skillId=skillId;
+    button.textContent=display;
+    button.dataset.search=(label+' '+display).toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    host.appendChild(button);
+  }
+  function criarDivisorCatalogoTeste(host,label){
+    var divider=document.createElement('div');divider.className='testes-divisor';
+    var span=document.createElement('span');span.textContent=label;divider.appendChild(span);host.appendChild(divider);
+  }
+  function renderizarCatalogoTestesMestre(){
+    var host=document.getElementById('catalogo-testes-mestre');
+    if(!host||!catalogoTestesMestre)return;
+    host.replaceChildren();
+    criarDivisorCatalogoTeste(host,'TESTES DE ATRIBUTOS');
+    [['FOR','Força'],['DES','Destreza'],['CON','Constituição'],['INT','Inteligência'],['SAB','Sabedoria'],['CAR','Carisma']].forEach(function(item){
+      criarOpcaoCatalogoTeste(host,'Teste de '+item[1]+' ('+item[0]+')',item[1]+' ('+item[0]+')');
+    });
+    criarDivisorCatalogoTeste(host,'TESTES DE RESISTÊNCIA');
+    [
+      ['Fortitude (CON)','Fortitude (CON)'],
+      ['Reflexos (DES)','Reflexos (DES)'],
+      ['Vontade (SAB)','Vontade (SAB)'],
+      ['Reflexos contra Armadilhas (DES)','Reflexos contra Armadilhas (DES)'],
+      ['Vontade contra Encantamento','Vontade contra Encantamento'],
+      ['Vontade contra Medo','Vontade contra Medo'],
+      ['Fortitude contra Veneno','Fortitude contra Veneno'],
+      ['Fortitude contra Efeito de Magia','Fortitude contra Efeito de Magia'],
+      ['Reflexos contra Efeito de Magia','Reflexos contra Efeito de Magia']
+    ].forEach(function(item){criarOpcaoCatalogoTeste(host,item[0],item[1]);});
+    criarDivisorCatalogoTeste(host,'PERÍCIAS · CATÁLOGO D&D 3.5');
+    catalogoTestesMestre.skills.forEach(function(skill){
+      var ability=String(skill.atributo||'').toUpperCase();
+      var suffix=/^(FOR|DES|CON|INT|SAB|CAR)$/.test(ability)?' ('+ability+')':'';
+      criarOpcaoCatalogoTeste(host,'Perícia: '+skill.nome,skill.nome+suffix,skill.id);
+    });
+    var search=document.getElementById('catalogo-testes-busca');
+    if(search&&search.value)filtrarCatalogoTestesMestre(search.value);
+  }
+  function filtrarCatalogoTestesMestre(query){
+    var host=document.getElementById('catalogo-testes-mestre');if(!host)return;
+    var q=String(query||'').toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+    Array.from(host.querySelectorAll('[data-teste]')).forEach(function(button){
+      button.hidden=!!q&&button.dataset.search.indexOf(q)<0;
+    });
+    Array.from(host.querySelectorAll('.testes-divisor')).forEach(function(divider){
+      var next=divider.nextElementSibling,visible=false;
+      while(next&&!next.classList.contains('testes-divisor')){if(!next.hidden)visible=true;next=next.nextElementSibling;}
+      divider.hidden=!!q&&!visible;
+    });
+  }
+
   function ligarEventosTestes(){
     var modal = document.getElementById('modal-testes');
     modal.addEventListener('click', function(e){
@@ -4529,10 +4573,12 @@ async function abrirModalEquipamentos(){
         return;
       }
       var botaoTeste = e.target.closest ? e.target.closest('[data-teste]') : null;
-      if(botaoTeste) iniciarSelecaoTeste(botaoTeste.dataset.teste);
+      if(botaoTeste) iniciarSelecaoTeste(botaoTeste.dataset.teste,botaoTeste.dataset.skillId||null);
     });
     document.getElementById('btn-confirmar-teste').addEventListener('click', confirmarTeste);
     document.getElementById('btn-cancelar-teste').addEventListener('click', cancelarSelecaoTeste);
+    var search=document.getElementById('catalogo-testes-busca');
+    if(search)search.addEventListener('input',function(){filtrarCatalogoTestesMestre(search.value);});
   }
 
   function criarFallbackAvatarXP(nome){
@@ -5937,18 +5983,16 @@ async function abrirModalEquipamentos(){
     return null;
   }
 
-  function iniciarSelecaoTeste(nomeTeste){
+  function iniciarSelecaoTeste(nomeTeste,skillId){
     if(!ehGM || !nomeTeste) return;
     testeAtual = nomeTeste;
+    skillAtualId = skillId || null;
     modoSelecaoTeste = true;
     alvosSelecionados = [];
     alvosNpcSelecionados = [];
     document.getElementById('modal-testes').style.display = 'none';
     var testBar=document.getElementById('barra-confirmar-teste'),testRoster=document.querySelector('.painel-aventureiros');if(testRoster)testRoster.insertBefore(testBar,document.getElementById('cards-strip'));testBar.style.display = 'block';
     document.getElementById('txt-teste-selecionado').textContent = nomeTeste+' — selecione os alvos';
-    var dcWrap=document.getElementById('teste-dc-wrap'),dcInput=document.getElementById('input-teste-dc');
-    if(dcWrap)dcWrap.style.display='flex';
-    if(dcInput)dcInput.value='';
     document.getElementById('cards-strip').classList.add('selecionando-teste');
     document.querySelectorAll('.card-pers').forEach(function(card){ card.classList.remove('selecionado-para-teste'); });
     document.querySelectorAll('.token-cba').forEach(function(token){token.classList.remove('selecionado-para-teste');});
@@ -5976,12 +6020,10 @@ async function abrirModalEquipamentos(){
   function cancelarSelecaoTeste(){
     modoSelecaoTeste = false;
     testeAtual = '';
+    skillAtualId = null;
     alvosSelecionados = [];
     alvosNpcSelecionados = [];
     document.getElementById('barra-confirmar-teste').style.display = 'none';
-    var dcWrap=document.getElementById('teste-dc-wrap'),dcInput=document.getElementById('input-teste-dc');
-    if(dcWrap)dcWrap.style.display='none';
-    if(dcInput)dcInput.value='';
     document.getElementById('cards-strip').classList.remove('selecionando-teste');
     document.querySelectorAll('.card-pers').forEach(function(card){ card.classList.remove('selecionado-para-teste'); });
     document.querySelectorAll('.token-cba').forEach(function(token){token.classList.remove('selecionado-para-teste');});
@@ -6000,15 +6042,11 @@ async function abrirModalEquipamentos(){
     try{
       var requestId=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():(Date.now()+'-'+Math.random().toString(36).slice(2));
       var saveSpec=specResistenciaDnd35(testeAtual);
-      var dcInput=document.getElementById('input-teste-dc');
-      var dcValue=dcInput&&String(dcInput.value||'').trim()!==''?Number(dcInput.value):null;
-      if(dcValue!==null&&(!Number.isInteger(dcValue)||dcValue<1||dcValue>100))throw new Error('A CD deve ser um número inteiro entre 1 e 100.');
-      var requestPayload={tipo:testeAtual,alvos:alvos,npc_alvos:npcAlvos,dc:dcValue,mestre:meuPerfil.username,mestre_id:eu.id,request_id:requestId};
+      var requestPayload={tipo:testeAtual,alvos:alvos,npc_alvos:npcAlvos,skill_id:skillAtualId,mestre:meuPerfil.username,mestre_id:eu.id,request_id:requestId};
       if(saveSpec){
         requestPayload.resolution_type='saving_throw';
         requestPayload.save_type=saveSpec.save_type;
         requestPayload.context=saveSpec.context;
-        requestPayload.dc=dcValue;
       }
       var r=await sb.from('campaign_log').insert({
         campaign_id:Number(MESA_ID),
@@ -6128,6 +6166,40 @@ async function abrirModalEquipamentos(){
     }finally{iniciativaRecuperacaoBusy=false;}
   }
 
+  async function calcularBonusPericiaSolicitada35(personagem,skillId){
+    if(!personagem||!skillId)return null;
+    var response=await sb.from('srd_skills').select('id,nome,atributo,treinada_apenas,penalidade_armadura').eq('id',String(skillId)).maybeSingle();
+    if(response.error)throw new Error('Não foi possível consultar a perícia solicitada: '+response.error.message);
+    var skill=response.data;if(!skill)throw new Error('A perícia solicitada não existe no catálogo D&D 3.5.');
+    var trained=personagem.sh&&personagem.sh.pericias||{};
+    if(typeof trained==='string'){try{trained=JSON.parse(trained);}catch(e){trained={};}}
+    var ranks=Math.max(0,Number(trained[String(skill.id)]||0));
+    var identity=personagem.sh&&personagem.sh.identidade||{};
+    if(typeof identity==='string'){try{identity=JSON.parse(identity);}catch(e){identity={};}}
+    var specializations=Array.isArray(identity.skill_specializations)?identity.skill_specializations:[];
+    if(String(skill.id)==='srd35_skill_knowledge'){
+      Object.keys(trained).forEach(function(key){if(key.indexOf('conhecimento_')===0)ranks=Math.max(ranks,Number(trained[key]||0));});
+    }
+    if(['oficio','profissao','srd35_skill_perform'].indexOf(String(skill.id))>=0){
+      specializations.filter(function(spec){return spec&&String(spec.type)===String(skill.id)&&spec.key;}).forEach(function(spec){ranks=Math.max(ranks,Number(trained[String(spec.key)]||0));});
+    }
+    if(skill.treinada_apenas&&ranks<=0)throw new Error('Esta perícia exige treinamento; a ficha não possui graduações nela.');
+    var ability=String(skill.atributo||'INT').toUpperCase();
+    var attributes=personagem.sh&&personagem.sh.atributos||{};
+    if(typeof attributes==='string'){try{attributes=JSON.parse(attributes);}catch(e){attributes={};}}
+    var abilityMod=modifier35(attributes[ability]);
+    var classList=personagem.cl&&personagem.cl.pericias_classe||[];
+    if(typeof classList==='string'){try{classList=JSON.parse(classList);}catch(e){classList=classList.split(',');}}
+    var normalize=function(value){return String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();};
+    var skillName=normalize(skill.nome);
+    var classSkills=(Array.isArray(classList)?classList:[classList]).map(normalize);
+    var isClassSkill=classSkills.some(function(name){return name===skillName||(skillName.indexOf('conhecimento ')===0&&name==='conhecimento qualquer');});
+    var classBonus=isClassSkill&&ranks>0?3:0;
+    var racialBonus=bonusRacialPericia35(personagem.sh&&personagem.sh.raca_id,skill.id);
+    var armorPenalty=skill.penalidade_armadura?penalidadeArmaduraHabilidade35(personagem)*(String(skill.id)==='natacao'?2:1):0;
+    var nonproficiencyPenalty=skill.penalidade_armadura&&(ability==='FOR'||ability==='DES')?penalidadeArmaduraNaoProficiente35(personagem):0;
+    return {bonus:ranks+abilityMod+classBonus+racialBonus+armorPenalty+nonproficiencyPenalty,ranks:ranks,ability:ability,abilityMod:abilityMod,classBonus:classBonus,racialBonus:racialBonus,armorPenalty:armorPenalty,nonproficiencyPenalty:nonproficiencyPenalty};
+  }
   function bonusDoTeste(tipoTeste, atributos){
     var texto = String(tipoTeste || '').toLocaleLowerCase('pt-BR')
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -6323,12 +6395,12 @@ async function abrirModalEquipamentos(){
             texto='🛡️ '+ficha.ch.nome+' — '+tipoTeste+': D20 '+d20Save+' + bônus '+saveOutcome.bonus+' = '+saveOutcome.total+
               (saveOutcome.dc!=null?' contra CD '+saveOutcome.dc:'')+contextNote+resultNote+'.';
           }else{
-            var bonus=bonusDoTeste(tipoTeste,ficha.sh?ficha.sh.atributos:null);
+            var skillResult=requestData&&requestData.skill_id?await calcularBonusPericiaSolicitada35(ficha,requestData.skill_id):null;
+            var bonus=skillResult?skillResult.bonus:bonusDoTeste(tipoTeste,ficha.sh?ficha.sh.atributos:null);
             var isInitiative=String(tipoTeste).toLocaleLowerCase('pt-BR').includes('iniciativa');
             var featBonus=isInitiative&&personagemTemTalento(ficha.sh,'iniciativa_aprimorada')?4:0;
             var total=Number(resultado)+bonus+featBonus;
-            var requestedDc=requestData&&requestData.dc!=null?Number(requestData.dc):null;
-            texto=tipoTeste+' — D20: '+resultado+' + bônus: '+(bonus+featBonus)+' = '+total+(requestedDc==null?'': ' contra CD '+requestedDc+' — '+(total>=requestedDc?'SUCESSO':'FALHA'));
+            texto=tipoTeste+' — D20: '+resultado+' + bônus: '+(bonus+featBonus)+' = '+total;
             if(isInitiative){
               var salvo=await salvarIniciativa(personagemId,ficha.ch.nome,Number(resultado));
               if(!salvo.ok){btn.disabled=false;throw new Error('Sua rolagem foi registrada no dado, mas a iniciativa não pôde ser salva. '+salvo.error);}
@@ -6338,7 +6410,7 @@ async function abrirModalEquipamentos(){
               var effectBonus=Number(entry.effect_bonus)||0;
               texto='⚡ Iniciativa de '+esc(ficha.ch.nome)+': '+total+' (D20 '+resultado+' + DES '+bonus+(featBonus?' + Iniciativa Aprimorada +4':'')+(effectBonus?' + efeitos '+effectBonus:'')+')';
               extras.iniciativa=true;extras.bonus=bonus;extras.bonus_talento=featBonus;extras.bonus_efeitos=effectBonus;extras.total=total;extras.d20=Number(resultado);
-            }else{extras.d20=Number(resultado);extras.bonus=bonus;extras.total=total;if(requestedDc!=null){extras.dc=requestedDc;extras.success=total>=requestedDc;}}
+            }else{extras.d20=Number(resultado);extras.bonus=bonus;extras.total=total;if(skillResult){extras.skill_id=requestData.skill_id;extras.skill_breakdown=skillResult;}}
           }
           pedidosTesteRespondidos[responseKey]=true;
           removerBotaoRolagemTeste(requestKey,personagemId);
