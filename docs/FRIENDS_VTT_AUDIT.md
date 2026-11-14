@@ -346,3 +346,16 @@ Consulta à função privada do gatilho confirmou que INSERT de equipamento do t
 
 ### Estado das migrations em revisão
 As duas migrations da loja e a correção de equipagem existem somente na branch. Foram criados arquivos de matriz de testes para cada caminho. Nenhuma migration foi aplicada no Supabase de produção nem em projeto de teste nesta sessão. A revisão realizada até aqui é estática; sintaxe PostgreSQL, RLS, execução das RPCs e concorrência ainda precisam de validação real em projeto isolado.
+
+### Conferência do schema real e proteção adicional de venda — 2026-11-14
+
+A migration da loja foi confrontada com o schema ativo do Supabase em consultas somente de leitura:
+- `campaigns.id` e `characters.id` são BIGINT; `srd_equipment.id` é TEXT; `members.campaign_id` é BIGINT e `members.user_id` é UUID.
+- Os papéis reais em `members.role` são `GM` e `PLAYER`, exatamente os valores usados pelas RPCs.
+- `srd_character_sheets.character_id` é BIGINT e `ouro` é NUMERIC; `characters.ouro` é INTEGER.
+- `srd_character_equipment` usa `character_id` TEXT, `equipment_id` TEXT, `quantidade` INTEGER, `equipado` BOOLEAN e PK composta `(character_id,equipment_id)`. A migration converte o ID BIGINT para TEXT ao operar no inventário.
+- O gatilho de sincronização de armas é AFTER INSERT/DELETE/UPDATE OF quantidade; INSERT cria instâncias e redução de quantidade só remove instâncias não equipadas.
+
+A inspeção do gatilho revelou um detalhe importante: o caminho DELETE remove instâncias de armas sem verificar se estavam equipadas. Por isso, não bastava confiar no gatilho para impedir venda de item equipado. A RPC `srd_campaign_shop_sell` foi corrigida na branch para rejeitar a venda quando `v_held.equipado` for verdadeiro, exigindo que o jogador desequipe o item primeiro. A regra vale também para armaduras, escudos e acessórios, e evita a remoção acidental de arma equipada pelo caminho DELETE.
+
+Essa correção foi gravada no commit `739629be2ab87142daacb09d5e6fb76a49132738`. A conferência do schema e do código foi somente leitura no projeto de produção; nenhuma migration, dado ou configuração foi alterada. A migration ainda não foi validada pelo parser PostgreSQL nem executada em ambiente isolado.
