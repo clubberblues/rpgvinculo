@@ -1407,3 +1407,19 @@ O script salva o snapshot schema-only fora do repo, sem enviar dados ou segredos
 - 32 dessas raízes públicas não mencionam as colunas no próprio corpo; chamam implementações/helpers privados. O filtro candidato cobre 13 overloads do subconjunto direto, deixando 72 raízes fora dessa cobertura nominal. Não declarar 85 vazamentos: é conjunto de revisão por dependência, e cada retorno precisa ser rastreado até o payload.
 - O call graph é estático e limitado a chamadas priv.* qualificadas até 4 níveis; SQL dinâmico, chamadas não qualificadas e profundidade maior ainda não foram cobertos. A configuração PostgREST de schemas expostos não pôde ser lida via current_setting (NULL); requer confirmação no Dashboard e teste HTTP.
 - Segurança CBA continua bloqueada: snapshot RPC não instalado; SELECT de campaigns/cba_data/combat_data e Realtime campaigns ainda ativos; nenhum corte remoto aplicado.
+
+## Controle operacional do Mestre sobre fichas de jogadores — 2026-11-14
+
+- Nova helper priv.srd_can_control_character(text) centraliza a autorização: o dono conserva seu acesso; o GM da campanha (ou owner da campanha) pode operar a ficha vinculada sem alterar characters.user_id; terceiros continuam negados.
+- Migrations candidatas adicionadas na branch:
+  - 20261114220000_character_control_helper.sql
+  - 20261114210000_allow_gm_pc_direct_attacks.sql (já existente na branch e testada em fixture)
+  - 20261114190000_allow_gm_character_action_economy.sql (já existente na branch e testada em fixture)
+  - 20261114221000_allow_gm_character_actions.sql
+  - 20261114230000_allow_gm_pc_spellcasting.sql
+- Ações cobertas pelos fixtures: economia de ações, ataques diretos, perícias, salvamentos, recursos de classe/Imposição das Mãos, poções e sete entradas de conjuração (incluindo Mísseis Mágicos e conjuração multialvo). Os fixtures testam dono, GM, outro jogador e usuário externo, além da preservação de ownership.
+- mesa.html passou a oferecer no painel de controle de ficha do GM testes de perícia e, quando a classe possui conjuração, acesso ao grimório. Durante o turno ativo de uma ficha de jogador, o painel expõe ataques simples e Ataque Total; as validações de turno permanecem no fluxo.
+- CI confirmado no commit a87d15bfc67d24e8720541fa416c12e95d732fd0: PostgreSQL fixture tests success; JavaScript da aplicação, JavaScript da mesa e validação estática success. O replay integral das migrations ainda não foi aprovado.
+- O replay local começa em 20261031160944_srd35_action_economy.sql e falha porque public.campaigns não existe. Os SQLs legados na raiz (cba_iniciativa_migration.sql, vtt_dnd35_final_migration.sql, srd35_spellcasting_migration.sql) também pressupõem tabelas preexistentes; docs/REMOTE_SCHEMA_SNAPSHOT.md é descritivo, não um bootstrap executável. É necessário recuperar/gerar e revisar o bootstrap real antes de declarar replay completo.
+- Nenhuma migration foi aplicada ao Supabase remoto; nenhuma ACL/RLS/Realtime foi cortada; nenhuma ficha/campanha/dado de produção foi alterado.
+- PR #74 continua não mesclada. O corte de isolamento CBA continua bloqueado até o bootstrap/replay e a matriz de 85 raízes RPC com dependência transitiva serem concluídos e validados.
