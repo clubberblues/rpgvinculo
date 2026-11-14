@@ -211,8 +211,15 @@ begin
     where campaign_id = p_campaign_id and equipment_id = p_equipment_id;
   end if;
 
+  if exists (
+    select 1 from public.srd_character_equipment e
+    where e.character_id = btrim(p_character_id) and e.equipment_id = p_equipment_id and e.equipado
+  ) then
+    raise exception 'Desequipe este item antes de comprar outra unidade do mesmo equipamento.';
+  end if;
+
   insert into public.srd_character_equipment(character_id, equipment_id, quantidade, equipado)
-  values (p_character_id::text, p_equipment_id, p_quantity, false)
+  values (btrim(p_character_id), p_equipment_id, p_quantity, false)
   on conflict (character_id, equipment_id) do update
     set quantidade = public.srd_character_equipment.quantidade + excluded.quantidade;
 
