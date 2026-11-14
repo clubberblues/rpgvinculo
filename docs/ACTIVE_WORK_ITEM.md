@@ -1371,3 +1371,11 @@ O script salva o snapshot schema-only fora do repo, sem enviar dados ou segredos
 - Advisors de segurança: 3 categorias — 7 tabelas RLS-enabled sem policy, 99 SECURITY DEFINER executáveis por authenticated, e proteção contra senhas vazadas desabilitada. As sete tabelas sem policy não concedem SELECT/INSERT/UPDATE/DELETE a authenticated nem SELECT a anon na checagem direta; são deny-by-default no acesso direto e precisam ser avaliadas individualmente, não receber policy genérica. Health advisor: zero findings.
 - Nenhuma migration, ACL, policy, Realtime, configuração Auth ou dado foi alterado. TESTE 2 não foi acessada.
 - Próximas ações bloqueantes: recuperar bootstrap pré-ledger exato; classificar 53 overloads por autorização/retorno/chamador; corrigir as respostas RPC e controle temporário do Mestre; testar GM, dono da ficha, outro jogador e externo; somente então planejar corte ACL/Realtime.
+
+
+## Pull requests pendentes adicionais — 2026-11-14
+
+- PR #73 (centralização do cliente Supabase): aberta/draft, 13 arquivos, 98 adições/21 remoções; os workflows disponíveis no head consultado passaram (JavaScript app, JavaScript mesa, validação estática). Não está mesclada.
+- PR #72 (catálogo/tradução de talentos): aberta/draft, 60 arquivos, 3.622 adições/62 remoções; GitHub informa mergeable=false e mergeable_state=dirty contra main. A branch feat-catalog-translation-batch-01 contém 734 migrations SQL e quatro grupos de versões duplicadas: 20261105040000, 20261105041000, 20261105113000 e 20261105130000. As colisões envolvem nove arquivos. Não há workflow run confirmado para o head c0df0eb419628ac91dce404b95ec187280387297. Nenhuma dessas quatro versões aparece no ledger remoto consultado.
+- A PR #72 não deve ser mesclada como está. Antes, reconciliar a branch com main, determinar se as migrations repetidas são versões alternativas ou operações distintas, atribuir versões únicas mantendo dependências, e executar fixtures/replay. Não renumerar automaticamente sem validar a semântica, especialmente as duas migrations de Aptidão Mágica.
+- PR #28 também permanece aberta/draft (1 migration, 182 linhas); sem workflow run associado ao head consultado. Revisar junto à matriz de alterações de combate antes de merge.
