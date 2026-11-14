@@ -1786,7 +1786,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(item.sourceCharacterId)addAction('⚔️ Características da classe',function(){overlay.remove();abrirHabilidadesClasse(item.id);});
     addAction('📣 Publicar ficha no chat',function(){publicarFichaNPC35(item).catch(function(err){alert('Não foi possível publicar a ficha do NPC: '+err.message);});});
     if(tokenEhTurnoMestre35(item)){
-      addAction('⚔️ Atacar',function(){overlay.remove();iniciarAtaqueMestre(item);});
+      addAction('⚔️ Atacar',function(){overlay.remove();solicitarAtaqueMestre(item);});
       if(item.tipo==='npc'&&item.sourceCharacterId)addAction('⚔️ Ataque Total',function(){overlay.remove();iniciarAtaqueTotalNpcMestre(item).catch(function(err){alert('Ataque Total indisponível: '+err.message);});});
       addAction('📜 Registrar ação',function(){overlay.remove();registrarOutraAcaoMestre(item);});
       addAction('↔️ Mover token',function(){overlay.remove();document.getElementById('iniciativa-status').textContent='Mova '+item.nome+' arrastando seu token no tabuleiro.';});
@@ -1858,7 +1858,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     addAction('🎒 Inventário',function(){overlay.remove();abrirInventarioTokenSRD(item);});
     addAction('📣 Publicar ficha no chat',function(){publicarInfoMonstro(monster||{id:item.monsterId||item.id,nome:item.nome,nd:stats.nd,ca:stats.ca,pv:maxHp,ataques:stats.ataques,srd_source_url:sourceUrl});});
     if(tokenEhTurnoMestre35(item)){
-      addAction('⚔️ Atacar',function(){overlay.remove();iniciarAtaqueMestre(item);});
+      addAction('⚔️ Atacar',function(){overlay.remove();solicitarAtaqueMestre(item);});
       addAction('📜 Registrar ação',function(){overlay.remove();registrarOutraAcaoMestre(item);});
       specialAttackNames.forEach(function(abilityName){
         addAction('✨ '+abilityName,function(){overlay.remove();registrarOutraAcaoMestre(item,abilityName);});
@@ -2284,9 +2284,9 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(acao==='monster-info'){if(ehGM&&item.tipo==='monstro')infoTokenNoChat(item);return;}
     if(acao==='gm-character-sheet'){if(ehGM)abrirPainelControlePersonagemGM(item);return;}
     if(acao==='npc-sheet'){if(ehGM)abrirPainelControleNPC35(item);return;}
-    if(acao==='criatura-atacar'){iniciarAtaqueMestre(item);return;}
-    if(acao==='gm-token-attack'){iniciarAtaqueMestre(item);return;}
-    if(acao==='gm-token-trap-attack'){iniciarAtaqueMestre(item,'trap');return;}
+    if(acao==='criatura-atacar'){solicitarAtaqueMestre(item);return;}
+    if(acao==='gm-token-attack'){solicitarAtaqueMestre(item);return;}
+    if(acao==='gm-token-trap-attack'){solicitarAtaqueMestre(item,'trap');return;}
     if(acao==='gm-token-magic'){abrirMagiasTokenMestre(item);return;}
     if(acao==='gm-token-action'){registrarOutraAcaoMestre(item);return;}
     if(acao==='gm-token-move'){
@@ -2476,6 +2476,12 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var packageText=s.starting_package&&s.starting_package.name||'sem pacote inicial',gearNames=(s.loadout||[]).map(function(it){return it.nome+' ×'+(it.quantidade||1);}).join(', ')||packageText,saves=s.saves||{},traits=JSON.stringify(s.racial_traits||[]),classDesc=String(s.class_description||'').slice(0,320);
     var message='📜 '+item.nome+' · '+String(s.race_name||'Raça não identificada')+' '+String(s.class_name||'classe não identificada')+' nível '+String(s.level||'—')+'. PV '+String(item.hp==null?'—':item.hp)+'/'+String(item.maxHp||'—')+' · CA '+caToken35(item)+' · BBA +'+String(s.bab==null?'—':s.bab)+'.\nAtributos: '+attrText+'.\nResistências: Fort '+String(saves.fortitude==null?'—':saves.fortitude)+' · Ref '+String(saves.reflexos==null?'—':saves.reflexos)+' · Von '+String(saves.vontade==null?'—':saves.vontade)+'.\nPerícias: '+skillText+'.\nTalentos: '+featText+'.\nMagias: '+(spellNames.join(', ')||'nenhuma selecionada')+'.\nTraços raciais: '+traits+'.\nClasse: '+classDesc+'.\nEquipamento: '+gearNames+'.';
     await enviarMensagemChat(message,'sistema',{evento:'ficha_npc_gerada',token_id:String(item.id),level:Number(s.level)||1});
+  }
+  function solicitarAtaqueMestre(item,attackContext){
+    return iniciarAtaqueMestre(item,attackContext).catch(function(error){
+      console.error('Falha ao preparar ataque do Mestre:',error);
+      alert('Não foi possível preparar o ataque de '+String(item&&item.nome||'criatura')+': '+(error&&error.message||error));
+    });
   }
   async function iniciarAtaqueMestre(item,attackContext){
     if(!ehGM||!item||!combatDataState||!combatDataState.active){alert('O ataque do Mestre exige iniciativa ativa e um token controlado por ele.');return;}var turn=combatDataState.turn_order[Number(combatDataState.current_turn)||0];if(!turn||!turn.is_monster||String(turn.id)!==String(item.id)){alert('O Mestre só pode atacar com o token que está no turno atual.');return;}
@@ -6625,7 +6631,7 @@ async function abrirModalEquipamentos(){
     if(cbaPublishedState) renderizarTokensCBA(document.getElementById('cba-token-layer'),cbaPublishedState);
     var eMinhaVez=!ehGM && ativo && atual && !atual.is_monster && personagens.some(function(p){return String(p.ch.id)===String(atual.id)&&p.ch.user_id===eu.id;});
     var turnoTokenMestre=ehGM&&ativo&&atual&&atual.is_monster;
-    if(turnoTokenMestre){var controlToken=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.id)===String(atual.id);});if(controlToken){var gmTitle=document.createElement('span');gmTitle.textContent='Turno do Mestre · '+controlToken.nome;gmActions.appendChild(gmTitle);if(controlToken.tipo!=='player'||(acharPersonagemDoToken(controlToken)&&acharPersonagemDoToken(controlToken).ch.user_id===eu.id)){var attackBtn=document.createElement('button');attackBtn.type='button';attackBtn.textContent='⚔️ Atacar';attackBtn.onclick=function(){iniciarAtaqueMestre(controlToken);};gmActions.appendChild(attackBtn);}if(tokenTemMagiaPreparada35(controlToken)){var magicBtn=document.createElement('button');magicBtn.type='button';magicBtn.textContent='✨ Magia preparada';magicBtn.onclick=function(){abrirMagiasTokenMestre(controlToken);};gmActions.appendChild(magicBtn);}var moveBtn=document.createElement('button');moveBtn.type='button';moveBtn.textContent='↔️ Mover';moveBtn.onclick=function(){document.getElementById('iniciativa-status').textContent='Mova '+controlToken.nome+' arrastando seu token no tabuleiro. O deslocamento e a ação serão validados ao soltar.';var tokenEl=Array.from(document.querySelectorAll('#cba-token-layer .token-cba')).find(function(el){return String(el.dataset.cbaTokenKey)===String(controlToken.key);});if(tokenEl)tokenEl.focus();};gmActions.appendChild(moveBtn);['padrao','rapida'].forEach(function(actionName){var actionBtn=document.createElement('button');actionBtn.type='button';actionBtn.textContent=({padrao:'Ação padrão',rapida:'Ação rápida'})[actionName];actionBtn.onclick=async function(){var note=await window.vttUI.ask({title:'Ação de '+controlToken.nome,label:'Descreva brevemente a ação',defaultValue:''});if(note&&note.trim())registrarAcaoTokenGM(controlToken,actionName,note);};gmActions.appendChild(actionBtn);});var finish=document.createElement('button');finish.type='button';finish.textContent='⏭️ Encerrar turno do token';finish.onclick=avancarTurno;gmActions.appendChild(finish);}}
+    if(turnoTokenMestre){var controlToken=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.id)===String(atual.id);});if(controlToken){var gmTitle=document.createElement('span');gmTitle.textContent='Turno do Mestre · '+controlToken.nome;gmActions.appendChild(gmTitle);if(controlToken.tipo!=='player'||(acharPersonagemDoToken(controlToken)&&acharPersonagemDoToken(controlToken).ch.user_id===eu.id)){var attackBtn=document.createElement('button');attackBtn.type='button';attackBtn.textContent='⚔️ Atacar';attackBtn.onclick=function(){solicitarAtaqueMestre(controlToken);};gmActions.appendChild(attackBtn);}if(tokenTemMagiaPreparada35(controlToken)){var magicBtn=document.createElement('button');magicBtn.type='button';magicBtn.textContent='✨ Magia preparada';magicBtn.onclick=function(){abrirMagiasTokenMestre(controlToken);};gmActions.appendChild(magicBtn);}var moveBtn=document.createElement('button');moveBtn.type='button';moveBtn.textContent='↔️ Mover';moveBtn.onclick=function(){document.getElementById('iniciativa-status').textContent='Mova '+controlToken.nome+' arrastando seu token no tabuleiro. O deslocamento e a ação serão validados ao soltar.';var tokenEl=Array.from(document.querySelectorAll('#cba-token-layer .token-cba')).find(function(el){return String(el.dataset.cbaTokenKey)===String(controlToken.key);});if(tokenEl)tokenEl.focus();};gmActions.appendChild(moveBtn);['padrao','rapida'].forEach(function(actionName){var actionBtn=document.createElement('button');actionBtn.type='button';actionBtn.textContent=({padrao:'Ação padrão',rapida:'Ação rápida'})[actionName];actionBtn.onclick=async function(){var note=await window.vttUI.ask({title:'Ação de '+controlToken.nome,label:'Descreva brevemente a ação',defaultValue:''});if(note&&note.trim())registrarAcaoTokenGM(controlToken,actionName,note);};gmActions.appendChild(actionBtn);});var finish=document.createElement('button');finish.type='button';finish.textContent='⏭️ Encerrar turno do token';finish.onclick=avancarTurno;gmActions.appendChild(finish);}}
     if(eMinhaVez){
       if(!antigo){
         antigo=document.createElement('button');
