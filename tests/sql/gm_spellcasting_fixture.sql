@@ -18,6 +18,14 @@ INSERT INTO public.members(campaign_id,user_id,role) VALUES
  (987654334,'00000000-0000-0000-0000-000000000003','PLAYER');
 INSERT INTO public.characters(id,campaign_id,user_id) VALUES('gm-control-pc-spells',987654334,'00000000-0000-0000-0000-000000000002');
 
+DROP FUNCTION IF EXISTS public.conjurar_magia_com_acao_srd_manual(text,text,smallint,text,integer[]) CASCADE;
+DROP FUNCTION IF EXISTS public.conjurar_magia_com_acao_srd_multialvo_v3(text,text,smallint,text[],integer[]) CASCADE;
+DROP FUNCTION IF EXISTS public.conjurar_magia_dano_multialvo_srd(text,text,smallint,text[],integer[]) CASCADE;
+DROP FUNCTION IF EXISTS public.conjurar_magia_efeitos_multialvo(text,text,smallint,text[]) CASCADE;
+DROP FUNCTION IF EXISTS public.conjurar_magia_srd_manual(text,text,smallint,text,integer[]) CASCADE;
+DROP FUNCTION IF EXISTS public.conjurar_magia_srd_multialvo_v3(text,text,smallint,text[],integer[]) CASCADE;
+DROP FUNCTION IF EXISTS public.conjurar_missil_magico_srd_manual(text,text,smallint,text,integer[]) CASCADE;
+
 CREATE OR REPLACE FUNCTION public.conjurar_magia_com_acao_srd_manual(p_character_id text,p_spell_id text,p_slot_level smallint,p_target_token_key text,p_roll_results integer[])
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,priv,pg_temp AS $s1$
 DECLARE v_campaign_id bigint;
