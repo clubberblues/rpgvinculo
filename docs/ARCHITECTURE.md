@@ -8,7 +8,7 @@ Consolidar a arquitetura do produto sem apagar ou contradizer os documentos espe
 2. **Responsabilidade única:** interface apresenta e coleta ações; aplicação coordena casos de uso; motor aplica regras; banco mantém estado persistente e integridade.
 3. **Servidor autoritativo:** permissões, turno, recursos, movimentação validada e alterações de estado devem ser confirmados no servidor.
 4. **Regras explicáveis:** resultados devem permitir identificar entradas, modificadores, regra aplicada, resultado e recursos consumidos.
-5. **Dados separados por domínio:** D&D 3.5 SRD e Vínculo não compartilham catálogos mecanicamente por conveniência.
+5. **Fonte de regras única:** D&D 3.5 é o único sistema ativo; tabelas `vinculo_*` são legado isolado e não alimentam novos fluxos.
 6. **Compatibilidade controlada:** formatos legados permanecem até existir equivalência comprovada e migração segura.
 7. **Integração testável:** cada módulo deve ter contratos e testes isolados e integrados.
 
@@ -177,7 +177,7 @@ Esse desenho deve ser tratado como coexistência/compatibilidade até que todos 
 |---|---|
 | Dependências entre HTML, RPCs e tabelas | Mapa inicial e inventário RPC criados; argumentos de todos os fluxos ainda não conferidos |
 | Fonte canônica dos valores mecânicos | DATA_MODEL documenta principais fontes; XP/ouro e alguns campos JSONB ainda precisam de decisão |
-| Limites SRD/Vínculo | Separação de catálogos e fichas mapeada; não unificar regras |
+| Legado `vinculo_*` | Isolado, sem novas funcionalidades; preservar até migração/arquivamento seguro |
 | Realtime e Storage | 9 subscriptions mapeadas com filtros e policies; fluxos Storage de mídia/exclusão ainda exigem E2E |
 | Dados JSON/legados | CBA JSONB vs tabelas relacionais, combate JSONB vs combat_state e campaign_log vs roll_log registrados |
 | Testes | CI estático aprovado; Playwright/pglast e integração/E2E não reproduzíveis no repositório |
@@ -232,7 +232,7 @@ tests/
 - **pages:** montagem da tela, eventos de UI e apresentação.
 - **application:** casos de uso e orquestração entre módulos.
 - **domain/srd35:** regras D&D 3.5 puras/explicáveis, sem acesso direto ao DOM.
-- **domain/vinculo:** regras próprias Vínculo, sem importar regras SRD.
+- **domain/legacy-vinculo:** somente adaptadores temporários de leitura/compatibilidade; sem regras ativas ou novas funcionalidades.
 - **infrastructure:** cliente Supabase, RPC adapters, queries, Realtime e Storage.
 - **core:** identidade, contexto de campanha, erros e contratos comuns.
 - **tests:** validação estática, regras isoladas, integração com banco e E2E.
