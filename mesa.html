@@ -1630,11 +1630,12 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       {title:'Personagem',actions:[
         {id:'gm-racial',ic:'⛰️',txt:'Características raciais',onClick:function(){overlay.remove();abrirDetalhesRaciaisMesa35(p);}},
         {id:'gm-talents',ic:'🏅',txt:'Talentos escolhidos',onClick:function(){overlay.remove();abrirTalentosJogadorUI(p.ch.id);}},
-        {id:'gm-class',ic:'⚔️',txt:'Características da classe',onClick:function(){overlay.remove();abrirHabilidadesClasse(p.ch.id);}}
+        {id:'gm-class',ic:'⚔️',txt:'Características da classe',onClick:function(){overlay.remove();abrirHabilidadesClasse(p.ch.id);}},
+        {id:'gm-spells',ic:'✨',txt:'Conjurar magia',onClick:function(){overlay.remove();abrirListaMagias(p.ch.id);}}
       ]},
       {title:'Recursos',actions:[
         {id:'gm-inventory',ic:'🎒',txt:'Mochila e equipamento',onClick:function(){overlay.remove();abrirInventarioSRD(p.ch.id);}},
-        {id:'gm-skills',ic:'📚',txt:'Perícias (consulta)',onClick:function(){overlay.remove();abrirTestePericiaJogador(p.ch.id,true);}}
+        {id:'gm-skills',ic:'📚',txt:'Testar perícia',onClick:function(){overlay.remove();abrirTestePericiaJogador(p.ch.id,false);}}
       ]},
       {title:'Gestão do Mestre',actions:[
         {id:'gm-hp',ic:'❤️',txt:'Ajustar PV',onClick:function(){overlay.remove();abrirAjustePV(p.ch.id);}}
@@ -3519,8 +3520,19 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     return {expression:expression,count:count,totalCount:totalCount,sides:sides};
   }
   function magicEffect35(spell){var tech=parseJsonSeguro35(spell&&spell.dados_tecnicos,{}),declared=String(tech.tipo_efeito||'').toLowerCase(),typed=String(spell&&spell.typed_effect_kind||'').toLowerCase();if(typed){if(typed==='healing')return tech.cura||tech.healing?'cura':'resolucao_manual';if(typed==='damage'||typed==='attack')return 'ataque_pendente';if(typed==='utility')return 'utilitaria';return 'resolucao_manual';}if(declared==='cura'||declared==='healing'||tech.cura||tech.healing)return 'cura';if(String(spell&&spell.id)==='srd35_magic_missile')return 'missil_magico';if(['ataque','dano','damage','attack'].indexOf(declared)>=0)return 'ataque_pendente';if(declared==='utilitaria'||declared==='utility')return 'utilitaria';var text=[spell&&spell.descricao,spell&&spell.alvo,spell&&spell.area].join(' ').toLowerCase();if(text.indexOf('damage')>=0||text.indexOf('dano')>=0||/(touch attack|ranged touch|melee touch|attack roll)/i.test(text))return 'ataque_pendente';return 'resolucao_manual';}
+  function personagemDoTurnoAtual(){
+    var current=combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
+    if(!current||String(current.is_monster)==='true')return null;
+    return personagens.find(function(p){return String(p.ch.id)===String(current.id);})||null;
+  }
   function personagemParaMagia(preferredId){
     var combatando=String(campanha&&campanha.state||'').toUpperCase()==='COMBATE';
+    if(ehGM&&preferredId){
+      var selected=personagens.find(function(x){return String(x.ch.id)===String(preferredId);})||null;
+      if(!selected)return null;
+      if(combatando){var active=personagemDoTurnoAtual();return active&&String(active.ch.id)===String(selected.ch.id)?selected:null;}
+      return selected;
+    }
     if(combatando){var atual=personagemDoTurnoDoJogador();return !preferredId||atual&&String(atual.ch.id)===String(preferredId)?atual:null;}
     return (preferredId?personagens.find(function(x){return String(x.ch.id)===String(preferredId)&&x.ch.user_id===eu.id;}):personagens.find(function(x){return x.ch.user_id===eu.id;}))||null;
   }
@@ -3540,7 +3552,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     var level=Number(slot.slot_level),spell=spells.find(function(x){return String(x.id)===String(slot.spell_id);});if(!Number.isFinite(level))level=spell?nivelMagia(spell,classKey):0;
     var spent=Number(slot.expended||0),total=Number(slotsDia[level]||0);return {level:level,spent:!!slot.expended,info:total?('Espaços/dia nível '+level+': '+total):('Espaço nível '+level)};
   }
-  function magiaAindaNoTurno(p){return String(campanha&&campanha.state||'').toUpperCase()!=='COMBATE'||!!(personagemDoTurnoDoJogador()&&String(personagemDoTurnoDoJogador().ch.id)===String(p&&p.ch&&p.ch.id));}
+  function magiaAindaNoTurno(p){if(String(campanha&&campanha.state||'').toUpperCase()!=='COMBATE')return true;var active=ehGM?personagemDoTurnoAtual():personagemDoTurnoDoJogador();return !!(active&&String(active.ch.id)===String(p&&p.ch&&p.ch.id));}
   function fecharModalMagias(){var m=document.getElementById('modal-magias');m.classList.remove('ativo');m.hidden=true;magiaPersonagemAtiva=null;magiaSelecionada=null;magiaTokenMestreAtiva=null;if(focoAnteriorMagia&&focoAnteriorMagia.focus)focoAnteriorMagia.focus();}
   function popularSlotsMagia(){
     var p=magiaPersonagemAtiva,spell=magiaSelecionada,select=document.getElementById('magia-slot');select.replaceChildren();if(!p||!spell)return;
