@@ -86,6 +86,7 @@ if (!dice.includes("if (!aguardarClique) {") || !dice.includes("vinculoRollButto
   reportFailure('dice.html manual-click handshake changed; review before accepting automatic or hidden rolls.');
 }
 
+// Product invariants below mirror the approved 2026-11-13 Mesa decisions.
 // Product invariants: dice visibility and tabletop map behavior.
 for (const required of [
   'dado-visibilidade-publica',
