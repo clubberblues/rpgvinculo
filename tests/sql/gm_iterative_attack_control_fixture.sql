@@ -284,9 +284,13 @@ SET request.jwt.claim.sub='00000000-0000-0000-0000-000000000003';
 SELECT public.fixture_assert_gm_attack_access('SELECT priv.iniciar_sequencia_ataque_iterativo_srd_5_impl(987654331,''gm-control-pc-attack'',''target'',''melee'',NULL)',false);
 SELECT public.fixture_assert_gm_attack_access('SELECT public.consultar_sequencia_ataque_iterativo_pendente_srd(987654331,''gm-control-pc-attack'')',false);
 SELECT public.fixture_assert_gm_attack_access('SELECT public.registrar_rolagem_ataque_iterativo_srd(987654331,''00000000-0000-0000-0000-000000000010'',12,''00000000-0000-0000-0000-000000000011'')',false);
+SELECT public.fixture_assert_gm_attack_access('SELECT public.registrar_rolagem_ataque_iterativo_srd(987654331,''00000000-0000-0000-0000-000000000010'',12,''00000000-0000-0000-0000-000000000011'')',false);
+SELECT public.fixture_assert_gm_attack_access('SELECT public.confirmar_critico_ataque_iterativo_srd(987654331,''00000000-0000-0000-0000-000000000010'',15)',false);
+SELECT public.fixture_assert_gm_attack_access('SELECT public.aplicar_dano_ataque_iterativo_srd(987654331,''00000000-0000-0000-0000-000000000010'',ARRAY[4],''00000000-0000-0000-0000-000000000011'')',false);
+SELECT public.fixture_assert_gm_attack_access('SELECT public.aplicar_dano_ataque_iterativo_srd(987654331,''00000000-0000-0000-0000-000000000010'',ARRAY[4],''00000000-0000-0000-0000-000000000011'',ARRAY[2])',false);
 SELECT public.fixture_assert_gm_attack_access('SELECT public.resolver_ataque_iterativo_srd(987654331,''00000000-0000-0000-0000-000000000010'')',false);
 SELECT public.fixture_assert_gm_attack_access('SELECT public.confirmar_critico_ataque_iterativo_srd(987654331,''00000000-0000-0000-0000-000000000010'',15)',false);
-SELECT public.fixture_assert_gm_attack_access('SELECT public.aplicar_dano_ataque_iterativo_srd(987654331,''00000000-0000-0000-0000/000000000010'',ARRAY[4],''00000000-0000-0000-0000-000000000011'')',false);
+SELECT public.fixture_assert_gm_attack_access('SELECT public.aplicar_dano_ataque_iterativo_srd(987654331,''00000000-0000-0000-0000-000000000010'',ARRAY[4],''00000000-0000-0000-0000-000000000011'')',false);
 RESET ROLE;
 
 SET ROLE authenticated;
