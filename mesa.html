@@ -1150,6 +1150,18 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         <label for="grid-opacity">OPACIDADE DO GRID · <span id="lbl-grid-op">0,30</span></label>
         <input type="range" id="grid-opacity" min="0" max="1" step="0.05" value="0.3">
       </div>
+      <div class="cba-tool-group cba-tool-divider cba-fog-tools">
+        <label>FOG OF WAR · NÉVOA DE GUERRA</label>
+        <label class="cba-fog-check"><input type="checkbox" id="fog-enabled"> Ativar névoa para jogadores</label>
+        <label class="cba-fog-check"><input type="checkbox" id="fog-paint-toggle"> Modo revelar áreas</label>
+        <label for="fog-audience">Quem pode ver as áreas reveladas?</label>
+        <select id="fog-audience"><option value="all">Todos os jogadores</option></select>
+        <label for="fog-brush-size">Tamanho do pincel · <span id="fog-brush-label">60</span> px</label>
+        <input type="range" id="fog-brush-size" min="20" max="220" step="5" value="60">
+        <button type="button" class="cba-tool-btn" id="fog-clear">Limpar áreas reveladas</button>
+        <small>Arraste sobre o mapa para revelar. As áreas podem ser destinadas a todos ou a um jogador.</small>
+      </div>
+      </div>
       <div class="cba-tool-group cba-tool-divider">
         <label>ADICIONAR À CENA</label>
         <button class="cba-tool-btn" type="button" data-cba-action="open-npcs">👤 Adicionar NPC</button>
@@ -1162,6 +1174,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         <div class="cba-bg-layer" id="cba-bg-layer"></div>
         <div class="cba-preview-empty" id="cba-preview-empty">Carregue um mapa, ajuste o grid e posicione as criaturas.</div>
         <div class="cba-grid-lines" id="cba-grid-lines"></div>
+        <canvas id="cba-fog-preview" class="cba-fog-overlay cba-fog-preview" aria-label="Camada de névoa; arraste para revelar áreas do mapa"></canvas>
         <div class="cba-token-layer" id="cba-preview-tokens"></div>
         <div id="cba-distancia-preview" role="status" aria-live="polite">0,0 m</div>
       </div>
@@ -1263,7 +1276,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   var campanha = null, membros = [], personagens = [];
   var ctxTokenAtualKey = null, ctxFocusTokenKey = null, suppressTokenClickUntil = 0;
   var cbaSignedMediaCache=Object.create(null);
-  var cbaState = { backgroundUrl:'', backgroundPath:'', backgroundObjectUrl:'', imgScale:1, gridSize:50, gridOpacity:0.3, gridRatio:null, tokens:[] };
+  var cbaState = { backgroundUrl:'', backgroundPath:'', backgroundObjectUrl:'', imgScale:1, gridSize:50, gridOpacity:0.3, gridRatio:null, tokens:[], fog:{enabled:false,reveals:[]} };
   var cbaPublishedState = null;
   var cbaWriteQueue = Promise.resolve();
   var combatDataState = null;
@@ -1437,7 +1450,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
           '<main class="tabuleiro" id="area-tabuleiro">'+
             '<div id="cba-live-movement-preview" class="cba-live-movement-preview" role="status" aria-live="polite" hidden></div>'+
             '<div id="cba-live-world">'+
-            '<div class="cba-bg-layer" id="cba-bg-live" aria-hidden="true"></div>'+
+            '<div class="cba-bg-layer" id="cba-bg-live" aria-hidden="true"></div>'+\n            '<canvas id="cba-fog-live" class="cba-fog-overlay" aria-hidden="true"></canvas>'+
             '<div class="tabuleiro-vazio" id="tabuleiro-vazio">'+
               '<div class="icone">🗺️</div>'+
               '<div class="txt">TABULEIRO</div>'+
@@ -4719,6 +4732,7 @@ async function abrirModalEquipamentos(){
     var escalaLive = preview.width > 0 && palco.width > 0 ? palco.width/preview.width : 1;
     aplicarGradeCBA(document.getElementById('cba-grid-lines'),cbaState.gridSize,cbaState.gridOpacity);
     if(preview.width > 0) renderizarTokensCBA(document.getElementById('cba-preview-tokens'));
+    renderizarNevoaCBA();
     if(cbaPublishedState && document.getElementById('area-tabuleiro').classList.contains('cba-publicado')){
       var tamanhoLive = Number.isFinite(Number(cbaPublishedState.gridRatio)) && Number(cbaPublishedState.gridRatio) > 0 && palco.width > 0 ? palco.width*Number(cbaPublishedState.gridRatio) : cbaPublishedState.gridSize*escalaLive;
       aplicarGradeCBA(document.getElementById('cba-grid-live'),tamanhoLive,cbaPublishedState.gridOpacity);
@@ -4754,6 +4768,9 @@ async function abrirModalEquipamentos(){
     document.getElementById('grid-size').value = String(cbaState.gridSize);
     document.getElementById('grid-opacity').value = String(cbaState.gridOpacity);
     document.getElementById('img-scale').value = String(cbaState.imgScale);
+    document.getElementById('fog-enabled').checked=!!cbaState.fog.enabled;
+    document.getElementById('fog-paint-toggle').checked=false;
+    document.getElementById('fog-brush-label').textContent=document.getElementById('fog-brush-size').value;
     document.getElementById('modal-cba').classList.add('ativo');
     setStatusCBA('Arraste os tokens; ao soltar, eles se alinham ao centro do quadrado. 1 quadrado = 1,5 m (5 pés).');
     window.requestAnimationFrame(function(){
@@ -5442,6 +5459,90 @@ async function abrirModalEquipamentos(){
     preview.setAttribute('aria-label',preview.textContent);preview.hidden=false;preview.style.display='block';var status=document.getElementById('iniciativa-status');if(status)status.textContent=preview.textContent;
   }
 
+
+  function normalizarNevoaCBA(raw){
+    raw=raw&&typeof raw==='object'?raw:{};
+    var reveals=Array.isArray(raw.reveals)?raw.reveals.slice(0,5000).map(function(stroke){
+      if(!stroke||typeof stroke!=='object')return null;
+      var audience=String(stroke.audience||'all');
+      if(audience!=='all'&&!/^user:[0-9a-f-]{20,}$/i.test(audience))return null;
+      var points=Array.isArray(stroke.points)?stroke.points.slice(0,3000).map(function(point){
+        var x=Number(point&&point.x),y=Number(point&&point.y),r=Number(point&&point.r);
+        return Number.isFinite(x)&&Number.isFinite(y)&&Number.isFinite(r)?{x:Math.max(0,Math.min(1,x)),y:Math.max(0,Math.min(1,y)),r:Math.max(.002,Math.min(.25,r))}:null;
+      }).filter(Boolean):[];
+      return points.length?{audience:audience,points:points}:null;
+    }).filter(Boolean):[];
+    return {enabled:raw.enabled===true,reveals:reveals};
+  }
+  function renderizarNevoaCBA(){
+    var live=document.getElementById('cba-fog-live'),preview=document.getElementById('cba-fog-preview');
+    function draw(canvas,scene,viewerId,isPreview){
+      if(!canvas)return;
+      var rect=canvas.getBoundingClientRect(),width=rect.width,height=rect.height;
+      if(width<=0||height<=0)return;
+      var dpr=Math.max(1,Math.min(3,window.devicePixelRatio||1));
+      var targetW=Math.round(width*dpr),targetH=Math.round(height*dpr);
+      if(canvas.width!==targetW||canvas.height!==targetH){canvas.width=targetW;canvas.height=targetH;}
+      var ctx=canvas.getContext('2d');if(!ctx)return;
+      ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,height);
+      var fog=normalizarNevoaCBA(scene&&scene.fog);
+      if(!fog.enabled||(!isPreview&&ehGM)){canvas.style.pointerEvents='none';return;}
+      ctx.fillStyle='rgba(0,0,0,.94)';ctx.fillRect(0,0,width,height);
+      ctx.globalCompositeOperation='destination-out';
+      fog.reveals.forEach(function(stroke){
+        if(stroke.audience!=='all'&&stroke.audience!=='user:'+String(viewerId||''))return;
+        var points=stroke.points;if(!points.length)return;
+        var first=points[0],radius=Math.max(2,first.r*width);
+        ctx.beginPath();ctx.arc(first.x*width,first.y*height,radius,0,Math.PI*2);ctx.fill();
+        for(var i=1;i<points.length;i++){
+          var a=points[i-1],b=points[i],r=Math.max(2,((a.r+b.r)/2)*width);
+          ctx.beginPath();ctx.moveTo(a.x*width,a.y*height);ctx.lineTo(b.x*width,b.y*height);
+          ctx.lineWidth=r*2;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='rgba(0,0,0,1)';ctx.stroke();
+          ctx.beginPath();ctx.arc(b.x*width,b.y*height,Math.max(2,b.r*width),0,Math.PI*2);ctx.fill();
+        }
+      });
+      ctx.globalCompositeOperation='source-over';
+      canvas.style.pointerEvents=isPreview&&ehGM&&fog.enabled&&document.getElementById('fog-paint-toggle')&&document.getElementById('fog-paint-toggle').checked?'auto':'none';
+      canvas.style.cursor=canvas.style.pointerEvents==='auto'?'crosshair':'default';
+    }
+    draw(live,cbaPublishedState,eu&&eu.id,false);
+    draw(preview,{fog:cbaState.fog},eu&&eu.id,true);
+  }
+  var fogPaintActive=false,fogActiveStroke=null,fogPointerId=null;
+  function pontoNevoaDoEvento(event,canvas){
+    var rect=canvas.getBoundingClientRect(),x=(event.clientX-rect.left)/rect.width,y=(event.clientY-rect.top)/rect.height;
+    var brush=Number(document.getElementById('fog-brush-size').value)||60;
+    return {x:Math.max(0,Math.min(1,x)),y:Math.max(0,Math.min(1,y)),r:Math.max(.002,Math.min(.25,(brush/2)/rect.width))};
+  }
+  function adicionarPontoNevoa(point){
+    if(!fogActiveStroke)return;
+    var previous=fogActiveStroke.points[fogActiveStroke.points.length-1];
+    if(previous&&Math.hypot(point.x-previous.x,point.y-previous.y)<.002)return;
+    fogActiveStroke.points.push(point);cbaState.fog=normalizarNevoaCBA(cbaState.fog);renderizarNevoaCBA();
+  }
+  function ligarEventosNevoaCBA(){
+    var canvas=document.getElementById('cba-fog-preview');if(!canvas)return;
+    canvas.addEventListener('pointerdown',function(event){
+      if(!ehGM||!document.getElementById('fog-paint-toggle').checked||!cbaState.fog.enabled)return;
+      event.preventDefault();event.stopPropagation();fogPaintActive=true;fogPointerId=event.pointerId;
+      var audience=document.getElementById('fog-audience').value||'all';
+      fogActiveStroke={audience:audience,points:[]};cbaState.fog.reveals.push(fogActiveStroke);
+      try{canvas.setPointerCapture(event.pointerId);}catch(e){}
+      adicionarPontoNevoa(pontoNevoaDoEvento(event,canvas));
+    });
+    canvas.addEventListener('pointermove',function(event){if(!fogPaintActive||event.pointerId!==fogPointerId)return;event.preventDefault();adicionarPontoNevoa(pontoNevoaDoEvento(event,canvas));});
+    function finish(event){if(!fogPaintActive||event.pointerId!==fogPointerId)return;fogPaintActive=false;fogPointerId=null;fogActiveStroke=null;renderizarNevoaCBA();}
+    canvas.addEventListener('pointerup',finish);canvas.addEventListener('pointercancel',finish);
+    canvas.addEventListener('lostpointercapture',function(){fogPaintActive=false;fogPointerId=null;fogActiveStroke=null;});
+    document.getElementById('fog-enabled').addEventListener('change',function(event){cbaState.fog.enabled=!!event.target.checked;if(!event.target.checked)document.getElementById('fog-paint-toggle').checked=false;renderizarNevoaCBA();});
+    document.getElementById('fog-paint-toggle').addEventListener('change',function(event){if(event.target.checked){document.getElementById('fog-enabled').checked=true;cbaState.fog.enabled=true;}renderizarNevoaCBA();});
+    document.getElementById('fog-audience').addEventListener('change',renderizarNevoaCBA);
+    document.getElementById('fog-brush-size').addEventListener('input',function(event){document.getElementById('fog-brush-label').textContent=event.target.value;});
+    document.getElementById('fog-clear').addEventListener('click',function(){if(!confirm('Apagar todas as áreas reveladas deste mapa?'))return;cbaState.fog.reveals=[];renderizarNevoaCBA();setStatusCBA('Áreas reveladas limpas. Publique o mapa para sincronizar a alteração.');});
+    var audienceSelect=document.getElementById('fog-audience');audienceSelect.replaceChildren(new Option('Todos os jogadores','all'));
+    membros.filter(function(member){return member.role==='PLAYER';}).forEach(function(member){audienceSelect.appendChild(new Option(member.username||'Jogador','user:'+member.user_id));});
+  }
+
   function normalizarCBAData(data){
     if(!data || typeof data !== 'object') return null;
     var gridSize = Math.max(20,Math.min(120,Number(data.gridSize)||50));
@@ -5454,11 +5555,11 @@ async function abrirModalEquipamentos(){
     var ratio = Number(data.gridRatio);
     var opacity=Number(data.gridOpacity);
     if(!Number.isFinite(opacity)) opacity=0.3;
-    return {backgroundUrl:image,backgroundPath:String(data.backgroundPath||''),imgScale:Math.max(0.5,Math.min(3,Number(data.imgScale)||1)),gridSize:gridSize,gridRatio:Number.isFinite(ratio)&&ratio>0?ratio:null,gridOpacity:Math.max(0,Math.min(1,opacity)),tokens:tokens};
+    return {backgroundUrl:image,backgroundPath:String(data.backgroundPath||''),imgScale:Math.max(0.5,Math.min(3,Number(data.imgScale)||1)),gridSize:gridSize,gridRatio:Number.isFinite(ratio)&&ratio>0?ratio:null,gridOpacity:Math.max(0,Math.min(1,opacity)),fog:normalizarNevoaCBA(data.fog),tokens:tokens};
   }
 
   function serializarEstadoCBA(scene){
-    return {version:1,background:scene.backgroundPath?'':(scene.backgroundUrl||''),backgroundPath:String(scene.backgroundPath||''),imgScale:scene.imgScale,gridSize:scene.gridSize,gridRatio:scene.gridRatio,gridOpacity:scene.gridOpacity,tokens:scene.tokens.map(function(t){return {key:String(t.key),id:String(t.id),nome:String(t.nome),imagem:t.imagemPath?'':String(t.imagem||''),imagemPath:String(t.imagemPath||''),tipo:t.tipo==='monstro'?'monstro':(t.tipo==='player'?'player':'npc'),detalhe:String(t.detalhe||''),hp:t.hp==null?null:Number(t.hp),maxHp:t.maxHp==null?null:Number(t.maxHp),dexMod:t.dexMod==null?null:Number(t.dexMod),bonusIniciativa:t.bonusIniciativa==null?null:Number(t.bonusIniciativa),monsterId:t.monsterId==null?null:String(t.monsterId),ac:t.ac==null?null:Number(t.ac),baseAc:t.baseAc==null?null:Number(t.baseAc),sourceCharacterId:t.sourceCharacterId==null?null:String(t.sourceCharacterId),attackBonus:t.attackBonus==null?null:Number(t.attackBonus),damageDice:String(t.damageDice||''),spellState:t.spellState&&typeof t.spellState==='object'?t.spellState:null,monsterStats:t.monsterStats&&typeof t.monsterStats==='object'?t.monsterStats:null,srdSourceUrl:/^https?:\/\//i.test(String(t.srdSourceUrl||''))?String(t.srdSourceUrl):'',gridX:Number(t.gridX)||0,gridY:Number(t.gridY)||0};})};
+    return {version:1,background:scene.backgroundPath?'':(scene.backgroundUrl||''),backgroundPath:String(scene.backgroundPath||''),imgScale:scene.imgScale,gridSize:scene.gridSize,gridRatio:scene.gridRatio,gridOpacity:scene.gridOpacity,fog:normalizarNevoaCBA(scene.fog),tokens:scene.tokens.map(function(t){return {key:String(t.key),id:String(t.id),nome:String(t.nome),imagem:t.imagemPath?'':String(t.imagem||''),imagemPath:String(t.imagemPath||''),tipo:t.tipo==='monstro'?'monstro':(t.tipo==='player'?'player':'npc'),detalhe:String(t.detalhe||''),hp:t.hp==null?null:Number(t.hp),maxHp:t.maxHp==null?null:Number(t.maxHp),dexMod:t.dexMod==null?null:Number(t.dexMod),bonusIniciativa:t.bonusIniciativa==null?null:Number(t.bonusIniciativa),monsterId:t.monsterId==null?null:String(t.monsterId),ac:t.ac==null?null:Number(t.ac),baseAc:t.baseAc==null?null:Number(t.baseAc),sourceCharacterId:t.sourceCharacterId==null?null:String(t.sourceCharacterId),attackBonus:t.attackBonus==null?null:Number(t.attackBonus),damageDice:String(t.damageDice||''),spellState:t.spellState&&typeof t.spellState==='object'?t.spellState:null,monsterStats:t.monsterStats&&typeof t.monsterStats==='object'?t.monsterStats:null,srdSourceUrl:/^https?:\/\//i.test(String(t.srdSourceUrl||''))?String(t.srdSourceUrl):'',gridX:Number(t.gridX)||0,gridY:Number(t.gridY)||0};})};
   }
 
   function gravarCBAnaCampanha(data){
@@ -5535,9 +5636,11 @@ async function abrirModalEquipamentos(){
       cbaState.gridSize=scene.gridSize;
       cbaState.gridRatio=scene.gridRatio;
       cbaState.gridOpacity=scene.gridOpacity;
+      cbaState.fog=normalizarNevoaCBA(scene.fog);
       cbaState.tokens=scene.tokens.map(function(t){ return Object.assign({},t); });
     }
     aplicarGradeCamadasCBA();
+    renderizarNevoaCBA();
     atualizarZoomCBA();
     var scaleInput=document.getElementById('img-scale');
     if(scaleInput && (!ehGM || !document.getElementById('modal-cba').classList.contains('ativo'))){
@@ -5659,6 +5762,7 @@ async function abrirModalEquipamentos(){
     document.getElementById('img-scale').addEventListener('input',atualizarImagemCBA);
     document.getElementById('grid-size').addEventListener('input',atualizarGrid);
     document.getElementById('grid-opacity').addEventListener('input',atualizarGrid);
+    ligarEventosNevoaCBA();
     document.getElementById('cba-monstro-busca').addEventListener('input',renderizarMonstrosCBA);
     document.getElementById('cba-monstro-regiao').addEventListener('change',renderizarMonstrosCBA);
     fazerArrastavelCBA(document.getElementById('cba-preview-tokens'));
@@ -7308,6 +7412,15 @@ body > #dado-iframe-overlay.dado-modal-global,
  #cards-strip .card-pers{flex-basis:205px;min-width:205px}
 }
 
+
+
+/* Camada de névoa persistente; desenhada acima de grid e tokens para ocultá-los também. */
+.cba-preview-area,.cba-live-world{position:relative}
+.cba-fog-overlay{position:absolute;inset:0;width:100%;height:100%;z-index:6;display:block;pointer-events:none;touch-action:none}
+.cba-fog-preview{z-index:8}
+.cba-fog-check{display:flex;align-items:center;gap:7px;color:#c5b995;font-size:12px}
+.cba-fog-tools small{color:#a99d80;font-size:10px;line-height:1.35}
+#fog-audience{width:100%;background:#10170f;color:#f5ecd6;border:1px solid #75613d;border-radius:4px;padding:8px}
 
 /* Loja da campanha — interface responsiva para Mestre e jogador */
 #modal-loja-campanha.ativo{display:flex}
