@@ -1,3 +1,5 @@
+> **Escopo ativo (13/11/2026):** D&D 3.5 é a única fonte de regras e fichas em desenvolvimento. Relações `vinculo_*` são legado de compatibilidade/histórico, sem novas escritas ou funcionalidades; não são fonte normativa.
+
 # Vínculo RPG — Modelo de dados e fontes canônicas
 
 > Fotografia somente de leitura de 2026-11-08. Este documento distingue dados ativos, estruturas de compatibilidade e estruturas sem consumidores encontrados. Não é autorização para remover ou migrar tabelas.
@@ -14,7 +16,7 @@ erDiagram
   campaigns ||--o{ members : contains
   campaigns ||--o{ characters : hosts
   characters ||--o| srd_character_sheets : has
-  characters ||--o| vinculo_character_sheets : has
+  characters ||--o| vinculo_character_sheets : legacy
   characters ||--o{ srd_character_class_levels : progresses
   characters ||--o{ srd_character_domain_choices : chooses
   campaigns ||--o{ campaign_log : records
@@ -24,7 +26,7 @@ erDiagram
 - `campaigns` é o agregado de sessão/campanha.
 - `members` registra papel por campanha e usuário.
 - `srd_character_sheets` é a ficha D&D 3.5 vinculada a `characters`.
-- `vinculo_character_sheets` é a ficha do ruleset Vínculo, separada da ficha SRD.
+- `vinculo_character_sheets` é uma ficha legada preservada para compatibilidade; não integra o fluxo ativo D&D 3.5.
 - O vínculo entre characters e cada ficha específica é por `character_id`; as tabelas de ficha usam chave única/primária e FK para characters. Equipamento e instâncias de arma usam `character_id` text sem FK; são referências lógicas, não relações garantidas pelo banco.
 - `characters.campaign_id` pode ser NULL. Isso permite fichas-modelo do Mestre/NPCs que são vinculadas a tokens CBA sem serem personagens de jogador associados diretamente à campanha.
 - A restrição única em (campaign_id,user_id) representa atualmente um personagem principal por usuário/campanha. O impacto disso em múltiplos personagens por jogador deve ser uma decisão explícita de produto.
@@ -81,9 +83,9 @@ A varredura das definições de funções e do frontend não encontrou referênc
 
 ## 4. Vínculo RPG
 
-O frontend de ficha usa estruturas Vínculo próprias (`vinculo_character_sheets`, `inventory`, `character_spells`, `character_talents`, catálogos `items`, `spells`, `talents`). Não reutilizar silenciosamente esses catálogos para D&D 3.5.
+Há código legado de ficha que usa estruturas antigas (`vinculo_character_sheets`, `inventory`, `character_spells`, `character_talents`, catálogos `items`, `spells`, `talents`). Esse ramo não deve ser reativado nem ampliado; o fluxo ativo usa estruturas `srd_*`.
 
-A separação SRD/Vínculo é um limite de domínio: compartilhar identidade e infraestrutura de campanha, não regras, progressões ou catálogos.
+As tabelas `vinculo_*` são legado isolado. Compartilham apenas a infraestrutura histórica; não devem alimentar regras, progressões, catálogos ou fichas ativas D&D 3.5.
 
 ## 5. Integridade referencial a melhorar
 
@@ -108,7 +110,7 @@ A separação SRD/Vínculo é um limite de domínio: compartilhar identidade e i
 
 
 ## Estado observado dos dados de personagens — 2026-11-09
-Consulta agregada somente de leitura: 5 personagens no total; 5 com registro srd_character_sheets; 0 sem ficha SRD; 0 com registro vinculo_character_sheets. Isso confirma que, no snapshot atual, o caminho ativo de personagens é D&D 3.5. Não significa que o domínio Vínculo deva ser descartado; o código legado e as tabelas vinculo_* permanecem como domínio separado, mas sua integração de ficha não está ativa nos registros atuais.
+Consulta agregada somente de leitura: 5 personagens no total; 5 com registro srd_character_sheets; 0 sem ficha SRD; 0 com registro vinculo_character_sheets. Isso confirma que o caminho ativo de personagens é D&D 3.5. O código legado e as tabelas `vinculo_*` permanecem apenas para preservação/compatibilidade, sem novas funcionalidades ou uso como fonte de regras.
 
 
 ## Decisão de fonte canônica — XP e ouro SRD (2026-11-11)
