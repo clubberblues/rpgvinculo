@@ -15,8 +15,11 @@ A inspeção mais profunda corrigiu a conclusão preliminar sobre descanso:
 - **Descanso curto:** existe uma RPC legada `short_rest(p_char)`, mas ela atua sobre `character_sheets`/PM e recupera 25% do PM. Isso não corresponde ao recurso de descanso curto SRD 3.5 que devemos expor sem confirmar regras e modelo de recursos. Não reutilizar automaticamente.
 
 Sobre economia:
-- O schema contém saldo `ouro` em `characters` e `srd_character_sheets`, e inventário `vinculo_inventory`.
-- Não foi localizado modelo de estoque por campanha nem RPC transacional de compra/venda. Também não foi encontrada tabela pública `items` ou `inventory` na consulta de schema, embora existam referências legadas a esses nomes em `ficha.html`.
+- O banco possui dois modelos distintos: o legado `vinculo_items`/`vinculo_inventory` e o modelo SRD ativo `srd_equipment`/`srd_character_equipment`, além de `srd_cba_token_equipment` para tokens não vinculados.
+- `ficha.html` ainda contém leituras e escritas legadas em `inventory`/`items`, enquanto a mesa usa `srd_character_equipment` e `srd_equipment` para o inventário SRD. Essa divergência precisa ser eliminada no fluxo da loja; não misturar os dois modelos.
+- O saldo `ouro` existe em `characters` (integer) e em `srd_character_sheets` (numeric). A UI de inventário legada exibe `dados.ch.ouro`; o fluxo de loja SRD precisa definir uma fonte canônica e sincronização/migração compatível antes de movimentar dinheiro.
+- Não foi localizada tabela de estoque por campanha nem RPC transacional de compra/venda. Existem RPCs de entrega/equipamento, mas não são compra/venda e não resolvem débito/crédito atômico.
+- A função `public.sell_price(text)` ainda consulta `public.items`, tabela ausente no schema inspecionado. É uma referência legada inconsistente e não deve ser usada pela loja SRD.
 - Portanto, a loja compartilhada continua pendente. Não é seguro simular compra/venda com atualizações separadas no cliente: isso pode permitir saldo negativo, compras duplicadas ou perda de crédito em concorrência.
 
 ## Inventário de funcionalidades encontradas
@@ -69,3 +72,48 @@ Sobre economia:
 - Não criar chamadas RPC, tabelas ou colunas por suposição.
 - Não fazer merge, deploy ou alterações no Supabase de produção sem autorização específica.
 - Distinguir código encontrado, validação estática, CI e teste funcional real.
+
+
+## Auditoria complementar da economia — 2026-11-14
+
+### Modelos encontrados e decisão de reaproveitamento
+
+| Estrutura | Campos/uso confirmado | Decisão |
+|---|---|---|
+| `srd_equipment` | Catálogo SRD com `id`, nome, categoria/tipo, dano, CA, peso, descrição, `preco`/`custo_po`, fonte e estado de revisão | Catálogo a reutilizar na loja |
+| `srd_character_equipment` | `character_id`, `equipment_id`, quantidade, equipado e slot de mão | Inventário SRD do personagem jogador |
+| `srd_cba_token_equipment` | campanha, token, equipamento, quantidade e estado equipado | Inventário separado de tokens/NPCs |
+| `characters` | `user_id`, `campaign_id`, `ouro` integer | Identidade/propriedade e saldo candidato |
+| `srd_character_sheets` | `character_id`, `ouro` numeric e dados SRD | Saldo duplicado que exige decisão de fonte canônica |
+| `vinculo_items`/`vinculo_inventory` | Catálogo e inventário legado | Não usar no novo fluxo SRD |
+
+### Segurança e lacunas verificadas
+
+- `srd_equipment` tem leitura pública de catálogo.
+- `srd_character_equipment` tem leitura para dono/Mestre e atualização para dono/Mestre. Não foram encontradas políticas diretas de INSERT/DELETE na consulta; o fluxo de entrega existente usa RPCs privilegiadas.
+- `srd_cba_token_equipment` tem política de leitura por membro da campanha; entrega e equipamento passam por RPCs próprias.
+- RPCs existentes: `entregar_item_srd`, `entregar_item_token_srd`, `equipar_item_srd`, `equipar_item_token_srd` e variantes. Nenhuma RPC de compra/venda foi encontrada.
+- `public.sell_price(p_item)` consulta `public.items`, que não existe no schema atual. Não reutilizar.
+- O inventário legado em `ficha.html` consulta `inventory` com relação `items`, mas o schema expõe `vinculo_inventory` e `vinculo_items`. Tratar como dívida técnica separada; não construir a loja sobre esse caminho quebrado.
+
+### Contrato recomendado para a loja simplificada
+
+1. **Catálogo:** reutilizar `srd_equipment`; Mestre escolhe item, preço de campanha e quantidade disponível. O preço da loja deve ser uma cópia explícita/editável do preço definido pelo Mestre, não uma alteração global do catálogo SRD.
+2. **Estoque:** nova tabela de estoque por campanha, com chave da campanha + item, quantidade disponível, preço unitário, ativo/inativo, criador e timestamps. Estoque infinito deve ser um modo explícito, não inferido de quantidade nula.
+3. **Fonte de saldo:** antes da implementação, resolver `characters.ouro` versus `srd_character_sheets.ouro`. A recomendação é manter um único saldo canônico por personagem e expor esse mesmo valor na ficha e na mesa; não atualizar ambos sem uma regra formal de sincronização.
+4. **Compra:** RPC transacional autenticada recebe campanha, personagem, item, quantidade e chave de idempotência; valida papel de membro, propriedade do personagem, campanha, item ativo, quantidade positiva, preço e estoque; bloqueia as linhas relevantes (`FOR UPDATE`); debita saldo e incrementa/insere inventário na mesma transação; registra recibo.
+5. **Venda:** RPC transacional autentica o dono da ficha (ou fluxo explicitamente autorizado pelo Mestre), bloqueia inventário e saldo, valida quantidade e política de recompra, remove/decrementa item, credita o saldo e registra recibo na mesma transação.
+6. **Idempotência:** tabela de transações com chave única por campanha/usuário/operação; chamadas repetidas retornam o recibo original e não repetem o débito/crédito.
+7. **Autorização:** operações de gestão de loja somente para papel `GM`; compra/venda por dono da ficha; não confiar em `user_metadata`; validar no servidor `auth.uid()`, associação à campanha e propriedade do personagem.
+8. **Concorrência:** bloqueio de linha do estoque, saldo e inventário; validar saldo/quantidade novamente dentro da transação. A interface nunca calcula nem grava o saldo final.
+9. **Auditoria:** registrar personagem, campanha, item, quantidade, preço unitário, total, tipo (compra/venda), ator, horário e chave idempotente.
+10. **Entrega a NPC/token:** manter fluxo separado do comércio de personagens jogadores. O estoque da loja não deve inserir itens em inventários de NPC sem uma ação específica do Mestre.
+
+### Próximas etapas técnicas (sem tocar produção)
+
+1. Definir e documentar a fonte canônica de ouro após inspecionar todas as leituras/escritas de saldo no código.
+2. Inspecionar as definições completas das RPCs de entrega existentes para reutilizar validações e evitar duplicação.
+3. Criar migration SQL versionada na branch, com tabela de estoque/transações e RPCs de compra/venda; revisar autorização, RLS, idempotência e concorrência.
+4. Adicionar testes SQL de concorrência/negação (saldo insuficiente, estoque insuficiente, ficha alheia, campanha alheia, quantidade inválida e repetição da chave).
+5. Só então construir UI do Mestre e da compra individual do jogador.
+6. Não aplicar migration no Supabase de produção sem autorização específica.
