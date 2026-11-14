@@ -1,5 +1,7 @@
 \set ON_ERROR_STOP on
 
+-- The fixture uses a signature-compatible turn RPC stub to test the wrapper contract.
+
 -- The previous snapshot fixture has installed the real role-filtering helper
 -- and the shared synthetic campaigns/members tables in this isolated DB.
 CREATE OR REPLACE FUNCTION public.aplicar_dano_token_ataque_srd_v2(
