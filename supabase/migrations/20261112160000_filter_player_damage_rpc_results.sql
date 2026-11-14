@@ -431,4 +431,35 @@ $wrapper$;
 REVOKE ALL ON FUNCTION public.registrar_iniciativa_d20(bigint,text,integer) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.registrar_iniciativa_d20(bigint,text,integer) TO authenticated;
 
+
+-- Manual Magic Missile is player-executable and returns the nested raw CBA scene
+-- from its internal resolver. Filter that response before it reaches clients.
+ALTER FUNCTION public.conjurar_missil_magico_srd_manual(text,text,smallint,text,integer[]) SET SCHEMA priv;
+REVOKE ALL ON FUNCTION priv.conjurar_missil_magico_srd_manual(text,text,smallint,text,integer[]) FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.conjurar_missil_magico_srd_manual(
+  p_character_id text, p_spell_id text, p_slot_level smallint,
+  p_target_token_key text, p_damage_rolls integer[]
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public, priv, auth
+AS $wrapper$
+DECLARE
+  v_campaign_id bigint;
+  v_result jsonb;
+BEGIN
+  SELECT ch.campaign_id INTO v_campaign_id
+    FROM public.characters ch
+   WHERE ch.id::text=BTRIM(p_character_id);
+  v_result := priv.conjurar_missil_magico_srd_manual(
+    p_character_id,p_spell_id,p_slot_level,p_target_token_key,p_damage_rolls
+  );
+  RETURN priv.cba_filter_rpc_result(v_result,v_campaign_id);
+END
+$wrapper$;
+REVOKE ALL ON FUNCTION public.conjurar_missil_magico_srd_manual(text,text,smallint,text,integer[]) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.conjurar_missil_magico_srd_manual(text,text,smallint,text,integer[]) TO authenticated;
+
 COMMIT;
