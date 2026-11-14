@@ -318,9 +318,8 @@ DROP FUNCTION public.registrar_rolagem_ataque_iterativo_srd(bigint,uuid,integer,
 DROP FUNCTION public.consultar_sequencia_ataque_iterativo_pendente_srd(bigint,text);
 DROP FUNCTION priv.iniciar_sequencia_ataque_iterativo_srd_5_impl(bigint,text,text,text,uuid);
 DROP FUNCTION priv.srd_can_control_campaign_character(bigint,text);
-DROP TABLE public.fixture_gm_attack_sequences;
-
 DELETE FROM public.fixture_gm_attack_sequences WHERE campaign_id=987654331;
+DROP TABLE public.fixture_gm_attack_sequences;
 DELETE FROM public.characters WHERE campaign_id=987654331;
 DELETE FROM public.members WHERE campaign_id=987654331;
 DELETE FROM public.campaigns WHERE id=987654331;
