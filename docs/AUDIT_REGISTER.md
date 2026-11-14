@@ -1,3 +1,11 @@
+## 2026-11-13 — Exposição direta do estado CBA confirmada
+- **Severidade:** P1 / bloqueador de segurança para liberar a Mesa a jogadores.
+- **Evidência:** `campaigns_member_read` autoriza membros; ACL concede SELECT de tabela a authenticated; `has_column_privilege` confirma SELECT em `cba_data` e `combat_data`.
+- **Impacto:** um jogador membro pode ignorar o snapshot filtrado e consultar o JSONB integral, incluindo dados que deveriam ser exclusivos do Mestre.
+- **Estado:** confirmado no Supabase remoto; sem alteração remota.
+- **Ação:** classificar/filtrar todos os retornos RPC player-accessible (65 overloads/62 nomes identificados) e somente depois revogar SELECT direto e retirar campaigns da publicação Realtime.
+- **Referência:** `docs/CBA_SECURITY_CUTOVER_PLAN.md` e `docs/FOUNDATION_SECURITY_REVIEW.md`.
+- **Não fazer:** não aplicar migration isolada de revogação de coluna enquanto a cobertura de RPC estiver incompleta.
 # Vínculo RPG — Registro de auditorias
 
 ## Objetivo
