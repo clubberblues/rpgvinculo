@@ -86,6 +86,25 @@ if (!dice.includes("if (!aguardarClique) {") || !dice.includes("vinculoRollButto
   reportFailure('dice.html manual-click handshake changed; review before accepting automatic or hidden rolls.');
 }
 
+// Product invariants: dice visibility and tabletop map behavior.
+for (const required of [
+  'dado-visibilidade-publica',
+  "rollVisibilityCurrent === 'PRIVATE'",
+  "visibilityControl.style.display = ehGM ? 'flex' : 'none'",
+  "document.body.appendChild(overlay)",
+  "1 quadrado = 1,5 m (5 pés)",
+  "Math.min(12,zoomStart*d/pinchStart)",
+  "vinculo:cba-zoom"
+]) {
+  if (!mesa.includes(required)) reportFailure('mesa.html is missing an approved tabletop behavior: ' + required);
+}
+if (mesa.includes('fogEnabled')) {
+  reportFailure('mesa.html still contains fog-of-war state; fog is out of scope.');
+}
+if (mesa.includes('if(!e.ctrlKey&&!e.metaKey)return;')) {
+  reportFailure('Mesa zoom still requires Ctrl/Meta; desktop wheel alone must zoom.');
+}
+
 for (const required of ['registrar_iniciativa_d20', 'iniciar_iniciativa_com_dados', 'registrar_rolagem_ataque_iterativo_srd']) {
   if (!mesa.includes(required)) reportFailure('mesa.html is missing the manual-roll flow contract: ' + required);
 }
