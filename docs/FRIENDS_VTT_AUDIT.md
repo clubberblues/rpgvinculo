@@ -225,3 +225,31 @@ A função `finalizar_criacao_personagem_srd(text,text,text,jsonb,jsonb,jsonb,js
 A variante `criar_personagem_srd` sem grant para authenticated não é o endpoint direto da UI e é chamada internamente pelo caminho privilegiado de criação completo. Não alterar grants dessa função isoladamente.
 
 A criação de ficha SRD, portanto, já possui um endpoint agregado e transacional; não deve ser reconstruída para o VTT simplificado. A próxima investigação deve concentrar-se em validar a chamada agregada e corrigir apenas lacunas específicas de equipamento/economia.
+
+
+### Continuação da auditoria — economia, grants e CI — 2026-11-14
+
+#### Ausência confirmada de estrutura de loja
+- Nova consulta ao schema não encontrou tabelas públicas com nomes/propósito de loja, estoque, transações, economia ou livro-caixa.
+- A busca por RPCs de compra/venda/loja encontrou somente `sell_price(text)`, função legada já identificada como incompatível porque consulta `public.items`, inexistente no schema atual.
+- As policies RLS de `srd_character_equipment` e `srd_character_sheets` não substituem grants SQL. Para `authenticated`, o inventário SRD permite SELECT, mas não INSERT/UPDATE/DELETE; a ficha SRD permite SELECT, mas não UPDATE. O cliente não deve gravar saldo ou inventário diretamente.
+
+#### Integração de equipamento: chamada de UI e risco funcional
+- O código atual de `ficha.html` chama `equipar_item_srd` para equipar/desequipar itens genéricos, passando `p_character_id`, `p_equipment_id` e `p_equipado`.
+- Para itens que não são armas, a função executa UPDATE em `srd_character_equipment` como SECURITY INVOKER. O papel `authenticated` não tem grant UPDATE nessa tabela. Portanto, há uma incompatibilidade concreta entre o caminho de UI e os privilégios SQL; armaduras, escudos e acessórios podem falhar ao equipar/desequipar.
+- Para armas, a função encaminha para a rotina de instâncias de armas, que usa outra tabela e conjunto de privilégios. Não generalizar a falha de itens genéricos para o fluxo de armas.
+- A correção deve ser específica e validada; não conceder UPDATE geral ao navegador nem transformar a função em SECURITY DEFINER sem revisão completa de autorização.
+
+#### Criação de ficha
+- A consulta confirmou que a UI usa `finalizar_criacao_personagem_srd`, não a RPC simples `criar_personagem_srd`. A variante simples sem EXECUTE para authenticated não representa, isoladamente, falha na criação.
+- O endpoint agregado já foi documentado acima e não deve ser substituído.
+
+#### CI do branch simplificado
+No HEAD consultado do PR #76 (`e93f40800494afb36361cd129880cc5f5e351117`), os três workflows associados terminaram com conclusão `success`:
+- Validate mesa JavaScript;
+- Validate application JavaScript;
+- Static validation.
+
+Isso comprova somente os testes automatizados cobertos pelos workflows. Não comprova funcionamento em navegador, celular, multiplayer, autenticação, economia ou equipagem real.
+
+Nenhuma tabela, função, policy ou grant foi alterado no Supabase. Nenhuma migration foi aplicada. PR #76 continua draft, aberto e sem merge.
