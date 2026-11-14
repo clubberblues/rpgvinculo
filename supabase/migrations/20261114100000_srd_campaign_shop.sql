@@ -203,7 +203,7 @@ begin
   v_after := round(v_before - v_total, 2);
   if v_after > 2147483647.99 then raise exception 'O saldo excede o limite do espelho legado de ouro.'; end if;
 
-  update public.srd_character_sheets set ouro = v_after where character_id = p_character_id;
+  update public.srd_character_sheets set ouro = v_after where character_id = btrim(p_character_id);
   update public.characters set ouro = floor(v_after)::integer where id = v_character.id;
   if not v_listing.unlimited_stock then
     update public.srd_campaign_shop_items
@@ -220,7 +220,7 @@ begin
     campaign_id, character_id, actor_id, operation, equipment_id, quantity,
     unit_price, total, gold_before, gold_after, idempotency_key
   ) values (
-    p_campaign_id, p_character_id, v_uid, 'buy', p_equipment_id, p_quantity,
+    p_campaign_id, v_character.id, v_uid, 'buy', p_equipment_id, p_quantity,
     v_listing.buy_price, v_total, v_before, v_after, p_idempotency_key
   ) returning * into v_receipt;
 
@@ -315,7 +315,7 @@ begin
     where character_id = btrim(p_character_id) and equipment_id = p_equipment_id;
   end if;
 
-  update public.srd_character_sheets set ouro = v_after where character_id = p_character_id;
+  update public.srd_character_sheets set ouro = v_after where character_id = btrim(p_character_id);
   update public.characters set ouro = floor(v_after)::integer where id = v_character.id;
   if not v_listing.unlimited_stock then
     update public.srd_campaign_shop_items
@@ -327,7 +327,7 @@ begin
     campaign_id, character_id, actor_id, operation, equipment_id, quantity,
     unit_price, total, gold_before, gold_after, idempotency_key
   ) values (
-    p_campaign_id, p_character_id, v_uid, 'sell', p_equipment_id, p_quantity,
+    p_campaign_id, v_character.id, v_uid, 'sell', p_equipment_id, p_quantity,
     v_listing.sell_price, v_total, v_before, v_after, p_idempotency_key
   ) returning * into v_receipt;
 
