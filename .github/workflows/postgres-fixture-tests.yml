@@ -65,5 +65,6 @@ jobs:
           psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/role_filtered_tabletop_snapshot_fixture.sql
           psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/filter_player_damage_rpc_results_fixture.sql
           psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/gm_character_long_rest_fixture.sql
+          psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/gm_character_action_economy_fixture.sql
           psql -h 127.0.0.1 -U postgres -d vinculo_test -v ON_ERROR_STOP=1 -f tests/sql/campaign_refresh_broadcast_fixture.sql
           bash tests/sql/lock_cycle_test.sh
