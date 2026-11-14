@@ -1,6 +1,6 @@
 \set ON_ERROR_STOP on
 
-CREATE OR REPLACE FUNCTION public.my_role(p_campaign_id bigint)
+CREATE OR REPLACE FUNCTION public.my_role(cid bigint)
 RETURNS text
 LANGUAGE sql
 STABLE
@@ -9,7 +9,7 @@ SET search_path = public, pg_temp
 AS $role_fixture$
   SELECT m.role
     FROM public.members m
-   WHERE m.campaign_id=p_campaign_id
+   WHERE m.campaign_id=cid
      AND m.user_id=auth.uid()
    LIMIT 1
 $role_fixture$;
