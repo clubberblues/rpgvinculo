@@ -2,7 +2,7 @@
 
 A arquitetura de produto está consolidada; a execução técnica está na branch de auditoria, não em produção.
 
-**Estado verificado:** GitHub e Supabase conectados por integrações do ChatGPT; PR #74 draft; branch HEAD `aa82336e2462b5fdfb5b80306deadbdd8ae4de0f`. Há 976 migrations versionadas na branch e 966 aplicadas no remoto, portanto 10 pendentes sem aplicação remota.
+**Estado verificado:** GitHub e Supabase conectados por integrações do ChatGPT; PR #74 draft; branch HEAD `aa82336e2462b5fdfb5b80306deadbdd8ae4de0f`. Há 977 migrations versionadas na branch e 966 aplicadas no remoto, portanto 11 pendentes sem aplicação remota.
 
 **Progresso implementado na branch:** modal centralizado usando o `dice.html` existente; visibilidade de rolagens por usuário e RLS no chat; grid fixo 1,5 m com zoom por scroll/pinça; remoção de fog of war do escopo/estado; snapshot filtrado e Broadcast privado; wrappers para filtrar respostas de quatro RPCs adicionais de ação/magia.
 
