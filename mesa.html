@@ -1318,6 +1318,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   var modoSelecaoTeste = false;
   var testeAtual = '';
   var alvosSelecionados = [];
+  var alvosNpcSelecionados = [];
   var personagensCarregados = false;
   var pedidosTestePendentes = [];
   var pedidosTesteVistos = Object.create(null);
@@ -1502,7 +1503,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     ligarGestosCBA();
     ligarMenuContextualToken();
     var tokenLayer=document.getElementById('cba-token-layer');
-    tokenLayer.addEventListener('click',function(e){var hpButton=e.target.closest&&e.target.closest('.token-pv-btn');if(hpButton){e.preventDefault();e.stopPropagation();abrirAjustePVToken(hpButton.dataset.cbaPvKey);return;}var token=e.target.closest&&e.target.closest('.token-cba');if(!token||Date.now()<suppressTokenClickUntil)return;var item=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key)===String(token.dataset.cbaTokenKey);});if(!item)return;if(ataqueMestreSelecionado){selecionarAlvoAtaqueMestre(item);return;}if(ataqueSelecionado){selecionarAlvoAtaque(item.key);return;}abrirMenuContextualToken(item,token);});
+    tokenLayer.addEventListener('click',function(e){var hpButton=e.target.closest&&e.target.closest('.token-pv-btn');if(hpButton){e.preventDefault();e.stopPropagation();abrirAjustePVToken(hpButton.dataset.cbaPvKey);return;}var token=e.target.closest&&e.target.closest('.token-cba');if(!token||Date.now()<suppressTokenClickUntil)return;var item=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key)===String(token.dataset.cbaTokenKey);});if(!item)return;if(modoSelecaoTeste&&ehGM){alternarAlvoTokenTeste(item,token);return;}if(ataqueMestreSelecionado){selecionarAlvoAtaqueMestre(item);return;}if(ataqueSelecionado){selecionarAlvoAtaque(item.key);return;}abrirMenuContextualToken(item,token);});
     tokenLayer.addEventListener('dblclick',function(e){var token=e.target.closest&&e.target.closest('.token-cba');if(token&&ehGM&&!ataqueSelecionado)abrirAjustePVToken(token.dataset.cbaTokenKey);});
     tokenLayer.addEventListener('contextmenu',function(e){var el=e.target.closest&&e.target.closest('.token-cba');if(!el)return;var t=cbaPublishedState&&cbaPublishedState.tokens.find(function(x){return String(x.key)===String(el.dataset.cbaTokenKey);});if(!t||t.tipo!=='monstro'||!t.monsterId)return;e.preventDefault();var m=cbaMonsterCatalog.find(function(x){return String(x.id)===String(t.monsterId);});if(m)publicarInfoMonstro(m);else if(t.monsterStats){publicarInfoMonstro({id:t.monsterId,nome:t.nome,nd:t.monsterStats.nd,ca:t.ac,pv:t.maxHp,ataques:t.monsterStats.ataques,srd_source_url:t.srdSourceUrl});}});
   }
@@ -5915,14 +5916,16 @@ async function abrirModalEquipamentos(){
     testeAtual = nomeTeste;
     modoSelecaoTeste = true;
     alvosSelecionados = [];
+    alvosNpcSelecionados = [];
     document.getElementById('modal-testes').style.display = 'none';
     var testBar=document.getElementById('barra-confirmar-teste'),testRoster=document.querySelector('.painel-aventureiros');if(testRoster)testRoster.insertBefore(testBar,document.getElementById('cards-strip'));testBar.style.display = 'block';
     document.getElementById('txt-teste-selecionado').textContent = nomeTeste+' — selecione os alvos';
     var dcWrap=document.getElementById('teste-dc-wrap'),dcInput=document.getElementById('input-teste-dc');
-    if(dcWrap)dcWrap.style.display=specResistenciaDnd35(nomeTeste)?'flex':'none';
+    if(dcWrap)dcWrap.style.display='flex';
     if(dcInput)dcInput.value='';
     document.getElementById('cards-strip').classList.add('selecionando-teste');
     document.querySelectorAll('.card-pers').forEach(function(card){ card.classList.remove('selecionado-para-teste'); });
+    document.querySelectorAll('.token-cba').forEach(function(token){token.classList.remove('selecionado-para-teste');});
   }
 
   function alternarAlvoTeste(card){
@@ -5935,16 +5938,26 @@ async function abrirModalEquipamentos(){
     texto.textContent = testeAtual+' — '+alvosSelecionados.length+' alvo(s) selecionado(s)';
   }
 
+  function alternarAlvoTokenTeste(item,element){
+    var tokenId=String(item.key||item.id),index=alvosNpcSelecionados.indexOf(tokenId);
+    if(index<0){alvosNpcSelecionados.push(tokenId);element.classList.add('selecionado-para-teste');}
+    else{alvosNpcSelecionados.splice(index,1);element.classList.remove('selecionado-para-teste');}
+    var texto=document.getElementById('txt-teste-selecionado');
+    if(texto)texto.textContent=testeAtual+' — '+alvosSelecionados.length+' personagem(ns), '+alvosNpcSelecionados.length+' NPC/monstro(s)';
+  }
+
   function cancelarSelecaoTeste(){
     modoSelecaoTeste = false;
     testeAtual = '';
     alvosSelecionados = [];
+    alvosNpcSelecionados = [];
     document.getElementById('barra-confirmar-teste').style.display = 'none';
     var dcWrap=document.getElementById('teste-dc-wrap'),dcInput=document.getElementById('input-teste-dc');
     if(dcWrap)dcWrap.style.display='none';
     if(dcInput)dcInput.value='';
     document.getElementById('cards-strip').classList.remove('selecionando-teste');
     document.querySelectorAll('.card-pers').forEach(function(card){ card.classList.remove('selecionado-para-teste'); });
+    document.querySelectorAll('.token-cba').forEach(function(token){token.classList.remove('selecionado-para-teste');});
     var confirmar = document.getElementById('btn-confirmar-teste');
     if(confirmar) confirmar.disabled = false;
   }
@@ -5952,7 +5965,8 @@ async function abrirModalEquipamentos(){
   async function confirmarTeste(){
     if(!ehGM || !modoSelecaoTeste) return;
     var alvos=Array.from(new Set((Array.isArray(alvosSelecionados)?alvosSelecionados:[]).map(String).filter(Boolean)));
-    if(!alvos.length){ alert('Selecione pelo menos um personagem.'); return; }
+    var npcAlvos=Array.from(new Set((Array.isArray(alvosNpcSelecionados)?alvosNpcSelecionados:[]).map(String).filter(Boolean)));
+    if(!alvos.length&&!npcAlvos.length){ alert('Selecione pelo menos um personagem, NPC ou monstro.'); return; }
     var confirmar=document.getElementById('btn-confirmar-teste');
     if(!confirmar||confirmar.disabled)return;
     confirmar.disabled=true;
@@ -5961,8 +5975,8 @@ async function abrirModalEquipamentos(){
       var saveSpec=specResistenciaDnd35(testeAtual);
       var dcInput=document.getElementById('input-teste-dc');
       var dcValue=dcInput&&String(dcInput.value||'').trim()!==''?Number(dcInput.value):null;
-      if(saveSpec&&dcValue!==null&&(!Number.isInteger(dcValue)||dcValue<1||dcValue>100))throw new Error('A CD deve ser um número inteiro entre 1 e 100.');
-      var requestPayload={tipo:testeAtual,alvos:alvos,mestre:meuPerfil.username,mestre_id:eu.id,request_id:requestId};
+      if(dcValue!==null&&(!Number.isInteger(dcValue)||dcValue<1||dcValue>100))throw new Error('A CD deve ser um número inteiro entre 1 e 100.');
+      var requestPayload={tipo:testeAtual,alvos:alvos,npc_alvos:npcAlvos,dc:dcValue,mestre:meuPerfil.username,mestre_id:eu.id,request_id:requestId};
       if(saveSpec){
         requestPayload.resolution_type='saving_throw';
         requestPayload.save_type=saveSpec.save_type;
@@ -5989,7 +6003,7 @@ async function abrirModalEquipamentos(){
     if(pedidosTesteVistos[key])return;
     pedidosTesteVistos[key]=true;
     if(ehGM){
-      if(((data.resolution_type==='spell_save'||data.resolution_type==='condition_break'||data.resolution_type==='npc_dying_save'||data.resolution_type==='confusion_d100')&&Array.isArray(data.npc_alvos)&&data.npc_alvos.length)
+      if((Array.isArray(data.npc_alvos)&&data.npc_alvos.length)
         ||((data.resolution_type==='spell_resistance'||data.resolution_type==='saving_throw')&&Array.isArray(data.alvos)&&data.alvos.length)){
         ativarPedidoTeste(data,key);
       }
@@ -6010,7 +6024,7 @@ async function abrirModalEquipamentos(){
   function ativarPedidoTeste(data, requestKey){
     if(!data) return;
     if(ehGM){
-      if((data.resolution_type==='spell_save'||data.resolution_type==='condition_break'||data.resolution_type==='npc_dying_save'||data.resolution_type==='confusion_d100')&&Array.isArray(data.npc_alvos)){
+      if(Array.isArray(data.npc_alvos)&&data.npc_alvos.length){
         data.npc_alvos.forEach(function(tokenId){
           criarBotaoRolagemNpcTeste(String(data.tipo||'Resistência'),String(tokenId),requestKey,data);
         });
@@ -6286,7 +6300,8 @@ async function abrirModalEquipamentos(){
             var isInitiative=String(tipoTeste).toLocaleLowerCase('pt-BR').includes('iniciativa');
             var featBonus=isInitiative&&personagemTemTalento(ficha.sh,'iniciativa_aprimorada')?4:0;
             var total=Number(resultado)+bonus+featBonus;
-            texto=tipoTeste+' — D20: '+resultado+' + bônus: '+bonus+' = '+total;
+            var requestedDc=requestData&&requestData.dc!=null?Number(requestData.dc):null;
+            texto=tipoTeste+' — D20: '+resultado+' + bônus: '+(bonus+featBonus)+' = '+total+(requestedDc==null?'': ' contra CD '+requestedDc+' — '+(total>=requestedDc?'SUCESSO':'FALHA'));
             if(isInitiative){
               var salvo=await salvarIniciativa(personagemId,ficha.ch.nome,Number(resultado));
               if(!salvo.ok){btn.disabled=false;throw new Error('Sua rolagem foi registrada no dado, mas a iniciativa não pôde ser salva. '+salvo.error);}
@@ -6296,7 +6311,7 @@ async function abrirModalEquipamentos(){
               var effectBonus=Number(entry.effect_bonus)||0;
               texto='⚡ Iniciativa de '+esc(ficha.ch.nome)+': '+total+' (D20 '+resultado+' + DES '+bonus+(featBonus?' + Iniciativa Aprimorada +4':'')+(effectBonus?' + efeitos '+effectBonus:'')+')';
               extras.iniciativa=true;extras.bonus=bonus;extras.bonus_talento=featBonus;extras.bonus_efeitos=effectBonus;extras.total=total;extras.d20=Number(resultado);
-            }else{extras.d20=Number(resultado);extras.bonus=bonus;extras.total=total;}
+            }else{extras.d20=Number(resultado);extras.bonus=bonus;extras.total=total;if(requestedDc!=null){extras.dc=requestedDc;extras.success=total>=requestedDc;}}
           }
           pedidosTesteRespondidos[responseKey]=true;
           removerBotaoRolagemTeste(requestKey,personagemId);
@@ -6360,7 +6375,7 @@ async function abrirModalEquipamentos(){
             if(freshCampaign.error)throw new Error('Rolagem aplicada, mas não foi possível atualizar o tabuleiro: '+freshCampaign.error.message);
             campanha.cba_data=freshCampaign.data.cba_data;
             aplicarCBAnaMesa(campanha.cba_data,false);
-          }else{
+          }else if(requestData&&(requestData.resolution_type==='spell_save'||requestData.resolution_type==='condition_break')){
             var d20=Number(resultado);
             if(!Number.isInteger(d20)||d20<1||d20>20)throw new Error('O resultado precisa ser um d20 entre 1 e 20.');
             var resolved=await sb.rpc('srd_resolve_pending_spell_save',{p_pending_id:String(requestData.pending_id),p_d20:d20});
@@ -6369,6 +6384,20 @@ async function abrirModalEquipamentos(){
             removerBotaoRolagemTeste(requestKey,tokenId);
             var texto=requestData.resolution_type==='condition_break'?(outcome.condition_ended?'🛡️ '+nome+' superou a resistência e encerrou a paralisia.':'🌀 '+nome+' não superou a resistência e permanece paralisado.'):(outcome.saved?'🛡️ '+nome+' resistiu à magia ('+d20+' + '+outcome.bonus+' = '+outcome.total+' contra CD '+outcome.dc+').':(outcome.requires_spell_resistance?'🌀 '+nome+' falhou na resistência; o conjurador agora deve superar RM '+outcome.spell_resistance+'.':'🌀 A resistência falhou; o efeito foi aplicado a '+nome+'.'));
             await enviarMensagemChat(texto,'rolagem',{request_id:requestKey,pending_id:requestData.pending_id,token_id:tokenId,d20:d20,total:outcome.total,status:outcome.status});
+          }else{
+            var d20=Number(resultado);
+            if(!Number.isInteger(d20)||d20<1||d20>20)throw new Error('O resultado precisa ser um d20 entre 1 e 20.');
+            var rawBonus=await window.vttUI.ask({title:'Bônus do teste · '+nome,label:'Consulte a ficha do NPC/monstro e informe o bônus total aplicável.',defaultValue:'0',inputMode:'numeric'});
+            if(rawBonus===null||rawBonus===undefined)return;
+            var bonus=Number(rawBonus);
+            if(!Number.isInteger(bonus)||bonus < -50||bonus>100)throw new Error('Informe um bônus inteiro entre -50 e 100.');
+            var total=d20+bonus,dc=requestData&&requestData.dc!=null?Number(requestData.dc):null;
+            var success=dc==null?null:total>=dc;
+            var resultText='🎲 '+nome+' — '+tipoTeste+': D20 '+d20+' + bônus '+bonus+' = '+total+
+              (dc==null?' — resultado enviado ao Mestre.': ' contra CD '+dc+' — '+(success?'SUCESSO':'FALHA')+'.');
+            pedidosTesteRespondidos[responseKey]=true;removerBotaoRolagemTeste(requestKey,tokenId);
+            await enviarMensagemChat(resultText,'rolagem',{request_id:requestKey,token_id:tokenId,d20:d20,bonus:bonus,total:total,dc:dc,success:success,npc_test:true});
+          }
           }
         }catch(err){btn.disabled=false;alert('Não foi possível concluir a rolagem: '+(err.message||err));}
         finally{if(pedidoTesteAtivo&&pedidoTesteAtivo.responseKey===responseKey)pedidoTesteAtivo=null;}
