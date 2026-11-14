@@ -2340,8 +2340,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   function ligarGestosCBA(){
     var board=document.getElementById('area-tabuleiro'); if(!board) return;
     var pinchStart=0, zoomStart=1;
-    board.addEventListener('touchstart',function(e){if(e.touches.length===2){cbaPinchInProgress=true;pinchStart=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);zoomStart=cbaZoom;e.preventDefault();}},{passive:false});
-    board.addEventListener('touchmove',function(e){if(e.touches.length===2&&pinchStart>0){var d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);cbaZoom=Math.max(1,Math.min(2.5,zoomStart*d/pinchStart));atualizarZoomCBA();e.preventDefault();}},{passive:false});
+    board.addEventListener('touchstart',function(e){if(e.touches.length===2){cbaPinchInProgress=true;pinchStart=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);var world=document.getElementById('cba-live-world');zoomStart=world?(Number(getComputedStyle(world).getPropertyValue('--cba-zoom'))||cbaZoom):cbaZoom;e.preventDefault();}},{passive:false});
+    board.addEventListener('touchmove',function(e){if(e.touches.length===2&&pinchStart>0){var d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);cbaZoom=Math.max(0.65,Math.min(2.5,zoomStart*d/pinchStart));atualizarZoomCBA();e.preventDefault();}},{passive:false});
     board.addEventListener('touchend',function(e){if(e.touches.length<2){pinchStart=0;window.setTimeout(function(){cbaPinchInProgress=false;},120);}});
   }
   function iniciarSelecaoAtaque(tipo){
@@ -6991,6 +6991,7 @@ html,body,#root{width:100%;height:100%;min-width:0;min-height:0}
       try{area.setPointerCapture(e.pointerId);}catch(_){}
       area.style.cursor='grabbing';
     });
+    area.addEventListener('touchstart',function(e){if(e.touches&&e.touches.length>=2){drag=null;area.style.cursor='';}},{passive:true});
     area.addEventListener('pointermove',function(e){
       if(!drag||drag.id!==e.pointerId)return;
       var dx=e.clientX-drag.x,dy=e.clientY-drag.y;
