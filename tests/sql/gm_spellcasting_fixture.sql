@@ -69,13 +69,13 @@ GRANT EXECUTE ON FUNCTION public.conjurar_magia_dano_multialvo_srd(text,text,sma
 GRANT EXECUTE ON FUNCTION public.conjurar_magia_efeitos_multialvo(text,text,smallint,text[]) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.conjurar_magia_srd_manual(text,text,smallint,text,integer[]) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.conjurar_magia_srd_multialvo_v3(text,text,smallint,text[],integer[]) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.conjurar_missil_magico_srd_manual(text,text,smallint,text,integer[]) TO authenticated;
 CREATE OR REPLACE FUNCTION public.conjurar_missil_magico_srd_manual(p_character_id text,p_spell_id text,p_slot_level smallint,p_target_token_key text,p_damage_rolls integer[])
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,priv,pg_temp AS $s7$
 DECLARE v_campaign_id bigint;
 BEGIN SELECT ch.campaign_id INTO v_campaign_id FROM public.characters ch WHERE ch.id::text=BTRIM(p_character_id) AND ch.user_id=auth.uid();
  IF NOT FOUND THEN RAISE EXCEPTION 'Owner only'; END IF; RETURN jsonb_build_object('allowed',true); END
 $s7$;
+GRANT EXECUTE ON FUNCTION public.conjurar_missil_magico_srd_manual(text,text,smallint,text,integer[]) TO authenticated;
 CREATE OR REPLACE FUNCTION public.fixture_assert_gm_spell(p_sql text,p_allow boolean)
 RETURNS void LANGUAGE plpgsql SECURITY INVOKER AS $assert$
 DECLARE denied boolean:=false;
