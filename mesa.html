@@ -6436,7 +6436,7 @@ async function abrirModalEquipamentos(){
     rolagemCallback = null;
     rollResultReceived = true;
     rollSessionToken = null;
-    rollVisibilityCurrent = 'PUBLIC';
+    if (!rollResultReceived) rollVisibilityCurrent = 'PUBLIC';
     if(pedidoTesteAtivo&&pedidoTesteAtivo.button) pedidoTesteAtivo.button.disabled=false;
     pedidoTesteAtivo=null;
     if(cancelada){if(iniciativaBusy) iniciativaBusy=false;if(reforcoBusy) reforcoBusy=false;}
