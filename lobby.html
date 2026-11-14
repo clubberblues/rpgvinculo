@@ -519,24 +519,18 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
     </div>
     <button type="button" class="btn-biblioteca-srd" id="btn-abrir-biblioteca-srd">⌕ <span>Abrir Biblioteca SRD · D&amp;D 3.5</span></button>
     <div class="grid-livros">
-      <!-- LIVRO DO MESTRE -->
-      <div class="card-livro" onclick="alert('EM CONSTRUÇÃO\n\nO Livro do Mestre estará disponível em breve!')">
-        <img src="capa-mestre.png" alt="Livro do Mestre" class="capa-livro-img">
+      <!-- Os livros abrem o compêndio SRD já filtrado por assunto. -->
+      <div class="card-livro" role="button" tabindex="0" data-livro-srd="todos" aria-label="Abrir referências para o Mestre">
+        <img src="capa-mestre.png" alt="Livro do Mestre · referências gerais" class="capa-livro-img">
       </div>
-      
-      <!-- LIVRO DO JOGADOR -->
-      <div class="card-livro" onclick="alert('EM CONSTRUÇÃO\n\nO Livro do Jogador estará disponível em breve!')">
-        <img src="capa-jogador.png" alt="Livro do Jogador" class="capa-livro-img">
+      <div class="card-livro" role="button" tabindex="0" data-livro-srd="classes" aria-label="Abrir referências do Jogador">
+        <img src="capa-jogador.png" alt="Livro do Jogador · classes" class="capa-livro-img">
       </div>
-      
-      <!-- LIVRO DOS MONSTROS -->
-      <div class="card-livro" onclick="alert('EM CONSTRUÇÃO\n\nO Livro dos Monstros estará disponível em breve!')">
+      <div class="card-livro" role="button" tabindex="0" data-livro-srd="monstros" aria-label="Abrir catálogo de monstros">
         <img src="capa-monstros.png" alt="Livro dos Monstros" class="capa-livro-img">
       </div>
-      
-      <!-- LIVRO DO MUNDO -->
-      <div class="card-livro" onclick="alert('EM CONSTRUÇÃO\n\nO Livro do Mundo estará disponível em breve!')">
-        <img src="capa-mundo.png" alt="Livro do Mundo" class="capa-livro-img">
+      <div class="card-livro" role="button" tabindex="0" data-livro-srd="todos" aria-label="Abrir compêndio do mundo">
+        <img src="capa-mundo.png" alt="Livro do Mundo · compêndio geral" class="capa-livro-img">
       </div>
     </div>
     <button type="button" class="btn btn-dourado grimorio-cta" id="btn-abrir-grimorio">⚔ Forjar Novo Personagem · D&amp;D 3.5</button>
@@ -1927,6 +1921,32 @@ function uploadCapaMesa(mesaId) {
     if (e.key === 'Escape' && modalPerfil.classList.contains('ativo')) fecharModalPerfil();
   });
   document.getElementById('btn-fechar-livros').addEventListener('click', function() { modalLivros.classList.remove('ativo'); });
+  function abrirBibliotecaSrdCategoria(categoria, acionador) {
+    var filtro = modalBibliotecaSrd.querySelector('[data-srd-category="'+categoria+'"]');
+    if (!filtro) categoria = 'todos';
+    filtro = modalBibliotecaSrd.querySelector('[data-srd-category="'+categoria+'"]');
+    modalBibliotecaSrd.querySelectorAll('[data-srd-category]').forEach(function(botao){botao.classList.toggle('ativo',botao===filtro);});
+    bibliotecaSrd.categoria = categoria;
+    detalheBibliotecaSrd.dataset.itemId = '';
+    buscaBibliotecaSrd.value = '';
+    acionadorBibliotecaSrd = acionador || document.getElementById('btn-abrir-biblioteca-srd');
+    modalBibliotecaSrd.classList.add('ativo');
+    carregarBibliotecaSrd();
+    desenharResultadosBiblioteca();
+    window.setTimeout(function(){ buscaBibliotecaSrd.focus(); }, 0);
+  }
+  var gradeLivros = document.querySelector('#modal-livros .grid-livros');
+  gradeLivros.addEventListener('click', function(e) {
+    var card = e.target.closest('[data-livro-srd]');
+    if (card) abrirBibliotecaSrdCategoria(card.dataset.livroSrd, card);
+  });
+  gradeLivros.addEventListener('keydown', function(e) {
+    var card = e.target.closest('[data-livro-srd]');
+    if (card && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      abrirBibliotecaSrdCategoria(card.dataset.livroSrd, card);
+    }
+  });
   function abrirBibliotecaSrd(evento) {
     evento.preventDefault();
     acionadorBibliotecaSrd = evento.currentTarget;
