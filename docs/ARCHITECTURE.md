@@ -26,7 +26,7 @@ O código atual contém lógica distribuída entre páginas HTML/JavaScript, fun
 
 ↓
 
-**Domínios e regras:** D&D 3.5 SRD | Regras próprias Vínculo | Regras de campanha.
+**Domínio e regras:** D&D 3.5 oficial (livros/fontes verificadas) | exceções de campanha registradas pelo Mestre.
 
 ↓
 
@@ -60,14 +60,15 @@ As camadas são limites de responsabilidade, não uma ordem para criar serviços
 - Cálculos e resoluções de combate, testes, condições, magias e recursos.
 - Dados insuficientes devem produzir resolução manual explícita, não suposição.
 
-### Regras Vínculo
-- Classes, habilidades exclusivas, talentos gerais, magias e recursos próprios.
-- Catálogos e fórmulas independentes das regras SRD.
+### Compatibilidade legada
+- Tabelas e código `vinculo_*` permanecem isolados apenas para leitura/auditoria e compatibilidade temporária.
+- Não criar novos catálogos, fichas ou regras Vínculo; não usar esse domínio como fonte para fluxos ativos.
+- A descontinuação só ocorre após migração comprovada e preservação dos dados históricos.
 
 ### Mesa virtual
 - Cena, mapa, grid, tokens, visibilidade por token e movimentação. Fog of war/reveal por área está fora do escopo.
 - Iniciativa, turnos, economia de ações, combate e reações.
-- Mestre controla criaturas sob sua responsabilidade; jogador mantém controle de suas ações de personagem conforme as regras acordadas.
+- Mestre controla qualquer token e pode assumir temporariamente qualquer personagem jogador durante combate, inclusive rolagens e ações, sem transferir propriedade; jogador mantém o controle normal de sua ficha.
 
 ### Dados e eventos
 - Interface de rolagem integrada aos fluxos de jogo.
