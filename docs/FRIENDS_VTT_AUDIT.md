@@ -123,7 +123,7 @@ Sobre economia:
 
 - A RPC `finalizar_equipamento_inicial_srd` grava o saldo restante simultaneamente em `srd_character_sheets.ouro` (numeric) e `characters.ouro` (integer). Isso confirma que o fluxo de criação inicial tenta manter os dois campos alinhados, mas não prova que todas as rotinas posteriores façam o mesmo.
 - A ficha legada exibe `dados.ch.ouro`, derivado de `characters.ouro`; a mesa SRD não apresentou leitura direta de ouro nos trechos inspecionados.
-- A política `characters_owner_or_gm_update` autoriza o dono da ficha a atualizar a linha inteira. Como RLS não restringe colunas, a futura economia precisa impedir que clientes alterem diretamente `ouro` fora das RPCs (por privilégios de coluna cuidadosamente revisados ou proteção equivalente no banco). Apenas validar saldo dentro da RPC de compra não basta se o cliente puder sobrescrevê-lo por outra chamada.
+- Existe uma política RLS `characters_owner_or_gm_update` para UPDATE, mas política RLS não concede privilégio SQL. A verificação efetiva de grants mostrou que `authenticated` NÃO possui UPDATE na tabela `characters` nem na coluna `ouro`; portanto, o cliente não pode sobrescrever diretamente esse saldo com os privilégios atuais.
 - A tabela `srd_character_equipment` tem política de UPDATE para dono/Mestre e SELECT, mas INSERT/DELETE são realizados por RPCs privilegiadas existentes. A implementação de comércio deve seguir esse padrão: sem escrita direta pelo navegador.
 - Decisão de arquitetura pendente: escolher um saldo canônico. A opção mais coerente com o fluxo SRD é `srd_character_sheets.ouro` como fonte decimal e `characters.ouro` como espelho legado inteiro apenas se todos os pontos de leitura ainda necessários forem mantidos sincronizados no servidor. Antes de adotar essa opção, mapear todas as funções que escrevem/consomem ouro e decidir como tratar frações de PO.
 
@@ -142,10 +142,11 @@ Sobre economia:
 
 #### Segurança confirmada
 
-- A política `characters_owner_or_gm_update` permite UPDATE ao dono da ficha ou Mestre da campanha, sem restringir a coluna `ouro`.
-- O papel `authenticated` tem privilégio UPDATE de tabela herdado/atribuído conforme o schema atual; a consulta de privilégios de coluna não mostrou UPDATE específico de `ouro`, mas isso não elimina o risco de UPDATE por privilégio de tabela.
-- As RPCs `gm_grant` e `finalizar_equipamento_inicial_srd` estão executáveis por `authenticated` e são `SECURITY DEFINER`.
-- A política de RLS sozinha não impede que o proprietário altere seu saldo diretamente, pois a política autoriza a atualização da linha inteira. A implementação de loja deve restringir escrita direta de ouro por privilégio de coluna/tabela e concentrar movimentações nas RPCs validadas.
+- Existe uma política RLS `characters_owner_or_gm_update`, mas o papel `authenticated` não possui privilégio SQL UPDATE na tabela `characters` nem na coluna `ouro` (verificação efetiva por `has_table_privilege` e `has_column_privilege`). A política, isoladamente, não concede acesso.
+- `authenticated` também não possui UPDATE em `srd_character_sheets` nem INSERT/UPDATE/DELETE em `srd_character_equipment`; as políticas RLS de UPDATE dessas tabelas não concedem privilégios SQL ausentes.
+- `gm_grant` e `finalizar_equipamento_inicial_srd` são `SECURITY DEFINER` e executáveis por `authenticated`. `entregar_item_srd` também é `SECURITY DEFINER` e executável por `authenticated`.
+- `criar_personagem_srd(text,text,text,jsonb)` é `SECURITY DEFINER`, mas a verificação atual não encontrou EXECUTE concedido a `authenticated` nem a `anon`; identificar o caminho de criação ativo antes de depender dessa função.
+- `equipar_item_srd(text,text,boolean)` é `SECURITY INVOKER` e executável por `authenticated`, mas o papel não possui UPDATE em `srd_character_equipment`. O caminho precisa de teste funcional/revisão de grants; a política RLS de UPDATE não basta para a chamada funcionar.
 
 #### Decisão de implementação
 
@@ -162,3 +163,39 @@ Sobre economia:
 - A consulta à ficha SRD carrega `srd_character_sheets`, mas a inspeção da interface não encontrou ainda um componente de loja SRD nem um resumo de saldo SRD integrado ao inventário novo.
 - A busca por chamada textual `gm_grant` em `mesa.html` não encontrou invocação direta; a rotina é um endpoint legado do banco e não deve ser presumida como fluxo atualmente usado pelo VTT simplificado.
 - Portanto, a loja será uma interface nova dentro da mesa/campanha, com inventário SRD do personagem e saldo apresentado a partir do mesmo contrato de dados das RPCs. Não conectar o novo fluxo à mochila legada.
+
+
+### Verificação efetiva de privilégios e tipos — 2026-11-14
+
+A consulta final separou políticas RLS de privilégios SQL efetivos. Resultado para o papel `authenticated`:
+
+| Tabela/operação | Privilégio SQL efetivo |
+|---|---|
+| `characters` UPDATE | Não |
+| `characters.ouro` UPDATE | Não |
+| `srd_character_sheets` UPDATE | Não |
+| `srd_character_equipment` INSERT | Não |
+| `srd_character_equipment` UPDATE | Não |
+| `srd_character_equipment` DELETE | Não |
+| `srd_character_equipment` SELECT | Sim |
+| `srd_equipment` SELECT | Sim |
+
+Isso corrige duas conclusões anteriores: a existência de política RLS UPDATE não significa que o cliente tenha grant SQL UPDATE; e a política de UPDATE do inventário não significa que o papel possa executar a alteração diretamente. Não conceder grants amplos para contornar isso.
+
+Tipos confirmados:
+- `characters.id`: bigint; `characters.campaign_id`: bigint; `characters.user_id`: uuid; `characters.ouro`: integer.
+- `srd_character_sheets.character_id`: bigint; `srd_character_sheets.ouro`: numeric.
+- `srd_character_equipment.character_id` e `equipment_id`: text; `quantidade`: integer.
+- `srd_equipment.id`: text; `preco` e `custo_po`: numeric.
+
+Assinaturas e privilégios de RPC verificados:
+- `criar_personagem_srd(text,text,text,jsonb)`: SECURITY DEFINER, mas sem EXECUTE efetivo para authenticated/anon.
+- `finalizar_equipamento_inicial_srd(text,text,jsonb,jsonb)`: SECURITY DEFINER, EXECUTE para authenticated.
+- `entregar_item_srd(bigint,text,text,integer)`: SECURITY DEFINER, EXECUTE para authenticated.
+- `gm_grant(bigint,bigint,integer,integer,text,integer)`: SECURITY DEFINER, EXECUTE para authenticated; atualiza somente `characters.ouro`.
+- `equipar_item_srd(text,text,boolean)`: SECURITY INVOKER, EXECUTE para authenticated, porém a tabela de inventário não concede UPDATE ao papel. Este caminho merece teste e correção específica antes de ser considerado funcional.
+
+Consequência para a loja:
+- As futuras RPCs de compra/venda devem encapsular escrita em função privilegiada com validação explícita de `auth.uid()`, papel, propriedade, campanha, estoque e saldo; não conceder escrita direta ao navegador.
+- O saldo SRD continua sendo candidato a fonte canônica, com espelho legado sincronizado dentro da mesma transação.
+- Nenhuma migration foi aplicada. Nenhuma permissão foi alterada.
