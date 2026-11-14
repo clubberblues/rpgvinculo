@@ -1346,3 +1346,15 @@ O script salva o snapshot schema-only fora do repo, sem enviar dados ou segredos
 - PR #73 também permanece draft e não mergeável no momento da consulta; não tratar sua centralização do cliente Supabase como integrada.
 - Nenhuma migration, ACL, policy, publicação Realtime, dado ou campanha foi alterada nesta retomada. A campanha TESTE 2 não foi acessada.
 - Próximos gates: (1) concluir classificação e filtragem de todas as respostas RPC player-accessible que carregam CBA/combate; (2) validar o cutover com quatro identidades e sessões reais; (3) obter schema-base fiel para replay completo sem inventar bootstrap; (4) testar Storage HTTP em ambiente descartável; (5) só depois planejar revogação de SELECT e retirada de `campaigns` do Realtime. A fundação permanece **NÃO CONCLUÍDA**.
+
+
+## Continuação da execução — recontagem de RPCs CBA/combate (2026-11-13)
+
+- Reaberto o plano de corte CBA e repetida a consulta diretamente ao catálogo PostgreSQL 17.6.
+- A consulta atual encontrou **53 overloads executáveis por authenticated** cujas definições fazem referência a `cba_data` ou `combat_data`. A contagem anterior registrada era 52; a diferença de +1 deve ser reconciliada por assinatura/OID antes de assumir regressão ou mudança real de ACL.
+- Dentro dessas 53 definições: 24 contêm referência textual a `my_role`; 5 contêm padrões literais de checagem GM; todas as 53 contêm `auth.uid()`; 39 usam padrões de retorno JSONB selecionados pela consulta. Esses são indicadores estáticos, não classificação de autorização: helper transitivo, guards indiretos, wrappers e retorno efetivo exigem leitura individual.
+- Nenhum dos overloads consultados concede EXECUTE a anon. Isso não resolve a exposição por authenticated.
+- O documento `docs/CBA_SECURITY_CUTOVER_PLAN.md` continua determinando a ordem segura: inventariar e classificar cada assinatura, filtrar respostas player-accessible, validar quatro identidades e só então revogar SELECT de colunas e retirar Realtime.
+- PR #74 permanece aberta, draft, não mesclada; o HEAD atual é `d263403cd89f2f19085aa5129fac19aec5b42613`. A atualização documental anterior não gerou workflow run associado; portanto, não há novo CI confirmado para esse HEAD.
+- Nenhuma migration, ACL, policy, publicação Realtime, configuração ou dado remoto foi alterado. Nenhuma campanha foi acessada.
+- Próximo passo técnico: reconciliar a diferença 52→53 por OID/assinatura e produzir uma matriz endpoint a endpoint com: chamador frontend, EXECUTE efetivo, autorização direta/transitiva, classe de ator (dono/GM/player), campos privados no retorno e status da wrapper filtrada. Não aplicar revogações até fechar a matriz.
