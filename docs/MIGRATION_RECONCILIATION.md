@@ -3,8 +3,8 @@
 Consulta direta ao ledger remoto e contagem da branch atual:
 
 - Supabase remoto: **966** versões aplicadas, da `20261031160944` à `20261109005941`.
-- Branch `audit/lock-order-rage-removal-2026-11-09`: **976** arquivos SQL em `supabase/migrations`.
-- Delta: **10 migrations locais ainda não aplicadas**:
+- Branch `audit/lock-order-rage-removal-2026-11-09`: **977** arquivos SQL em `supabase/migrations`.
+- Delta: **11 migrations locais ainda não aplicadas**:
   - `20261110150000_fix_invoker_maneuver_catalog_helper_permissions.sql`
   - `20261110160000_revoke_public_feat_saving_throw_helper.sql`
   - `20261110170000_lock_down_internal_helper_execute.sql`
@@ -15,6 +15,7 @@ Consulta direta ao ledger remoto e contagem da branch atual:
   - `20261112140000_add_role_filtered_tabletop_snapshot.sql`
   - `20261112150000_broadcast_campaign_refresh.sql`
   - `20261112160000_filter_player_damage_rpc_results.sql`
+  - `20261112170000_allow_gm_controlled_character_rest.sql`
 
 Nenhuma das 10 migrations foi aplicada ao projeto remoto. A proposta de revogar SELECT direto de `campaigns.cba_data/combat_data` foi retirada da pasta de migrations porque a revisão dos retornos RPC ainda não terminou. Não incluir esse corte até que todos os endpoints player-accessible estejam protegidos e testados.
 
