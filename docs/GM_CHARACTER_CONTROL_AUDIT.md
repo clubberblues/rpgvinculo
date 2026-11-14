@@ -85,3 +85,19 @@ Fixture `gm_character_long_rest_fixture.sql` adicionada ao workflow PostgreSQL p
 `registrar_iniciativa_d20` exige papel PLAYER e propriedade da ficha. Isso permanece alinhado à decisão anterior de que jogadores rolam sua própria iniciativa; o Mestre rola NPCs/monstros pelo fluxo GM. O controle temporário de PC pelo Mestre começa após a iniciativa, salvo decisão futura explícita para jogadores desconectados antes do combate.
 
 As RPCs de ataque de oportunidade (`srd_iniciar_ataque_oportunidade_*`, `srd_registrar_rolagem_ataque_oportunidade_srd`, `srd_resolver_ataque_oportunidade_srd`) já são GM-only, conforme o papel do Mestre nesse subsistema.
+
+
+## Revalidação no banco ativo — 2026-11-14
+
+A consulta direta às definições instaladas confirmou que a exceção GM ainda é parcial:
+
+- **Já permite GM:** usar_furia_barbaro_srd usa owner OR public.my_role(campaign_id)='GM'; srd_resolve_dying_round e srd_resolve_pending_spell_save permitem dono ou GM; srd_solicitar_movimento_com_aoo_srd recebe p_controller e valida o papel; funções de ataques de oportunidade são deliberadamente GM-only.
+- **Ainda owner-only:** consumir_acao_turno_srd exige que o usuário seja o proprietário da ficha e membro PLAYER; conjurar_magia_com_acao_srd_manual e conjurar_magia_com_acao_srd_multialvo_v3 selecionam characters por user_id=auth.uid(); usar_habilidade_classe_srd, usar_imposicao_maos_mortos_vivos_srd e srd_validar_uso_pericia_srd também exigem proprietário. O fluxo de perícia para GM só considera NPCs vinculados, não PCs.
+- **Ataque iterativo de PC ainda owner-only:** priv.iniciar_sequencia_ataque_iterativo_srd_5_impl exige character owner + member PLAYER; registrar_rolagem_ataque_iterativo_srd, resolver_ataque_iterativo_srd, confirmar_critico_ataque_iterativo_srd e ambas as sobrecargas de aplicar_dano_ataque_iterativo_srd repetem a exigência de ficha pertencente ao usuário autenticado e role PLAYER. A camada de início de sequência chama a implementação privada por wrapper SQL SECURITY INVOKER.
+- O endpoint de descanso longo continua owner-only no banco ativo. A migration candidata 20261112170000 altera apenas esse endpoint e não está aplicada.
+- A migration candidata 20261112160000 filtra respostas de 12 nomes (13 overloads), mas não concede controle operacional ao GM; 40 overloads do inventário de estado CBA/combate permanecem sem cobertura dessa migration.
+- Os dois caminhos não devem ser confundidos: autorização operacional (quem pode agir pela ficha) e projeção de resposta (quais dados privados a RPC pode devolver). Ambos precisam ser resolvidos independentemente.
+
+### Próxima implementação delimitada
+
+Criar helper privado e estável que autorize somente (a) proprietário que continua membro PLAYER da campanha, ou (b) GM da mesma campanha; exigir que character.campaign_id corresponda à campanha informada. Aplicar a helper apenas às RPCs player-facing confirmadas acima, mantendo intactos turno, recursos, slots, condições, validações D&D 3.5, alvo e idempotência. Para NPC/monstros, preservar os endpoints GM-only já existentes. Criar fixture com quatro identidades para cada família (dono, GM, outro jogador, externo) e provar que a propriedade da ficha nunca muda. Não aplicar ao remoto antes do replay e dos testes PostgREST.
