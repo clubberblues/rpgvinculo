@@ -66,15 +66,15 @@ INSERT INTO public.members(campaign_id, user_id, role) VALUES
 INSERT INTO public.characters(id, campaign_id, user_id)
 VALUES ('gm-control-pc-attack', 987654331, '00000000-0000-0000-0000-000000000002');
 
-CREATE TABLE IF NOT EXISTS public.srd_attack_sequences (
+CREATE TABLE IF NOT EXISTS public.fixture_gm_attack_sequences (
   id uuid PRIMARY KEY,
   campaign_id bigint NOT NULL,
   actor_character_id text NOT NULL,
   created_by uuid NOT NULL,
   status text NOT NULL DEFAULT 'active'
 );
-DELETE FROM public.srd_attack_sequences WHERE campaign_id = 987654331;
-INSERT INTO public.srd_attack_sequences(id,campaign_id,actor_character_id,created_by,status)
+DELETE FROM public.fixture_gm_attack_sequences WHERE campaign_id = 987654331;
+INSERT INTO public.fixture_gm_attack_sequences(id,campaign_id,actor_character_id,created_by,status)
 VALUES ('00000000-0000-0000-0000-000000000010',987654331,'gm-control-pc-attack',
         '00000000-0000-0000-0000-000000000002','active');
 
@@ -112,7 +112,7 @@ BEGIN
       AND m.role='PLAYER' AND ch.id::text=p_character_id
   ) THEN RAISE EXCEPTION 'Personagem não pertence ao jogador.'; END IF;
   IF NOT EXISTS (
-    SELECT 1 FROM public.srd_attack_sequences s
+    SELECT 1 FROM public.fixture_gm_attack_sequences s
      WHERE s.campaign_id=p_campaign_id
        AND s.actor_character_id::text=p_character_id
        AND s.created_by=v_user
@@ -127,9 +127,9 @@ CREATE OR REPLACE FUNCTION public.registrar_rolagem_ataque_iterativo_srd(
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public, priv, pg_temp
 AS $register$
-DECLARE v_user uuid := auth.uid(); v_sequence public.srd_attack_sequences%rowtype;
+DECLARE v_user uuid := auth.uid(); v_sequence public.fixture_gm_attack_sequences%rowtype;
 BEGIN
-  SELECT * INTO v_sequence FROM public.srd_attack_sequences
+  SELECT * INTO v_sequence FROM public.fixture_gm_attack_sequences
    WHERE id=p_sequence_id AND campaign_id=p_campaign_id;
   IF NOT FOUND THEN RAISE EXCEPTION 'Sequência não encontrada.'; END IF;
   IF v_sequence.created_by<>v_user THEN RAISE EXCEPTION 'Somente criador pode rolar.'; END IF;
@@ -149,9 +149,9 @@ CREATE OR REPLACE FUNCTION public.resolver_ataque_iterativo_srd(
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public, priv, pg_temp
 AS $resolve$
-DECLARE v_user uuid:=auth.uid(); v_seq public.srd_attack_sequences%rowtype;
+DECLARE v_user uuid:=auth.uid(); v_seq public.fixture_gm_attack_sequences%rowtype;
 BEGIN
-  SELECT * INTO v_seq FROM public.srd_attack_sequences
+  SELECT * INTO v_seq FROM public.fixture_gm_attack_sequences
    WHERE id=p_attempt_id AND campaign_id=p_campaign_id;
   IF NOT FOUND THEN RAISE EXCEPTION 'Sequência não encontrada.'; END IF;
   IF v_seq.created_by<>v_user THEN RAISE EXCEPTION 'Somente criador pode resolver.'; END IF;
@@ -171,9 +171,9 @@ CREATE OR REPLACE FUNCTION public.confirmar_critico_ataque_iterativo_srd(
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public, priv, pg_temp
 AS $critical$
-DECLARE v_user uuid:=auth.uid(); v_seq public.srd_attack_sequences%rowtype;
+DECLARE v_user uuid:=auth.uid(); v_seq public.fixture_gm_attack_sequences%rowtype;
 BEGIN
-  SELECT * INTO v_seq FROM public.srd_attack_sequences
+  SELECT * INTO v_seq FROM public.fixture_gm_attack_sequences
    WHERE id=p_attempt_id AND campaign_id=p_campaign_id;
   IF NOT FOUND THEN RAISE EXCEPTION 'Sequência não encontrada.'; END IF;
   IF v_seq.created_by<>v_user THEN RAISE EXCEPTION 'Somente criador pode confirmar crítico.'; END IF;
@@ -193,9 +193,9 @@ CREATE OR REPLACE FUNCTION public.aplicar_dano_ataque_iterativo_srd(
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public, priv, pg_temp
 AS $damage4$
-DECLARE v_user uuid:=auth.uid(); v_seq public.srd_attack_sequences%rowtype;
+DECLARE v_user uuid:=auth.uid(); v_seq public.fixture_gm_attack_sequences%rowtype;
 BEGIN
-  SELECT * INTO v_seq FROM public.srd_attack_sequences
+  SELECT * INTO v_seq FROM public.fixture_gm_attack_sequences
    WHERE id=p_attempt_id AND campaign_id=p_campaign_id;
   IF NOT FOUND THEN RAISE EXCEPTION 'Sequência não encontrada.'; END IF;
   IF v_seq.created_by<>v_user THEN RAISE EXCEPTION 'Somente criador pode aplicar dano.'; END IF;
@@ -216,9 +216,9 @@ CREATE OR REPLACE FUNCTION public.aplicar_dano_ataque_iterativo_srd(
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public, priv, pg_temp
 AS $damage5$
-DECLARE v_user uuid:=auth.uid(); v_seq public.srd_attack_sequences%rowtype;
+DECLARE v_user uuid:=auth.uid(); v_seq public.fixture_gm_attack_sequences%rowtype;
 BEGIN
-  SELECT * INTO v_seq FROM public.srd_attack_sequences
+  SELECT * INTO v_seq FROM public.fixture_gm_attack_sequences
    WHERE id=p_attempt_id AND campaign_id=p_campaign_id;
   IF NOT FOUND THEN RAISE EXCEPTION 'Sequência não encontrada.'; END IF;
   IF v_seq.created_by<>v_user THEN RAISE EXCEPTION 'Somente criador pode aplicar dano.'; END IF;
@@ -318,8 +318,9 @@ DROP FUNCTION public.registrar_rolagem_ataque_iterativo_srd(bigint,uuid,integer,
 DROP FUNCTION public.consultar_sequencia_ataque_iterativo_pendente_srd(bigint,text);
 DROP FUNCTION priv.iniciar_sequencia_ataque_iterativo_srd_5_impl(bigint,text,text,text,uuid);
 DROP FUNCTION priv.srd_can_control_campaign_character(bigint,text);
+DROP TABLE public.fixture_gm_attack_sequences;
 
-DELETE FROM public.srd_attack_sequences WHERE campaign_id=987654331;
+DELETE FROM public.fixture_gm_attack_sequences WHERE campaign_id=987654331;
 DELETE FROM public.characters WHERE campaign_id=987654331;
 DELETE FROM public.members WHERE campaign_id=987654331;
 DELETE FROM public.campaigns WHERE id=987654331;
