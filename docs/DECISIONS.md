@@ -9,10 +9,11 @@ Este documento registra decisões que devem sobreviver às sessões. Decisões n
 - **Motivo:** preservar investimento, dados, fluxos e comportamento já implementados.
 - **Consequência:** refatorações devem ser incrementais e compatíveis.
 
-### DEC-002 — Domínios de regras separados
-- **Decisão:** D&D 3.5 SRD e regras próprias do Vínculo permanecem em catálogos e modelos separados (srd_* e vinculo_*).
-- **Motivo:** evitar mistura de progressões, fórmulas, talentos, magias e recursos de sistemas diferentes.
-- **Consequência:** integração visual não significa compartilhar regras mecanicamente.
+### DEC-002 — D&D 3.5 como única fonte de regras ativa
+- **Decisão:** o sistema de jogo ativo do Vínculo RPG é D&D 3.5, usando os livros e fontes oficiais da edição como referência normativa. Regras próprias/homebrew do antigo sistema Vínculo não fazem parte do escopo ativo.
+- **Compatibilidade:** tabelas e código `vinculo_*` permanecem legados, isolados e sem novas funcionalidades/escritas até auditoria e descontinuação segura; não são fonte de verdade para fichas, combate, biblioteca ou progressão.
+- **Motivo:** garantir fidelidade às regras D&D 3.5 e impedir que dados antigos contaminem os cálculos.
+- **Consequência:** novos conteúdos e motores devem usar o domínio `srd_*`/D&D 3.5 e fontes verificadas. Exceções do Mestre são registradas como decisões da campanha, não como um segundo ruleset.
 
 ### DEC-003 — Servidor como autoridade
 - **Decisão:** permissões, turno, consumo de recursos, validação de movimento e persistência são validados no servidor.
