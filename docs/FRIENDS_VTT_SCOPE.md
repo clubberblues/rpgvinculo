@@ -39,6 +39,14 @@ Princípio: a plataforma organiza a sessão e automatiza somente operações sim
 - XP e recompensas administrados pelo Mestre.
 - Chat e LOG mantêm conversa separada de eventos e rolagens.
 
+## Escopo funcional confirmado — ajuste de prioridade (2026-11-14)
+
+- **Grid:** manter apenas o grid fixo de D&D 3.5, com cada quadrado representando 1,5 m (5 pés). Zoom e pan são apenas controles visuais; não alteram a escala lógica.
+- **Mapa e névoa:** não fazem parte desta versão simplificada. Não implementar editor de mapas, publicação de imagens de cenário, camadas de névoa ou revelação por jogador.
+- **Tokens e fichas:** tokens de personagens devem permanecer vinculados à ficha de origem. PV, PV máximo, CA e demais dados exibidos no token devem refletir a ficha persistida; alterações de token não podem sobrescrever silenciosamente a ficha.
+- **Combate:** priorizar a correção ponta a ponta de iniciativa, ordem e avanço de turnos, ações, ataques, confirmação de crítico, rolagem de dano e atualização de PV do alvo.
+- **Dados e testes:** priorizar solicitações do Mestre, rolagens individuais dos jogadores, rolagens de NPCs/monstros pelo Mestre, aplicação de modificadores/CD quando aplicável e registro do resultado no LOG.
+
 ## Fora do escopo desta versão
 - Automatização completa de todas as regras do D&D 3.5.
 - Simulação de paredes, linha de visão e colisão de terreno.
