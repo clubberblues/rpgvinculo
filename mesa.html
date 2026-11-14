@@ -5493,7 +5493,7 @@ async function abrirModalEquipamentos(){
       ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,height);
       var fog=normalizarNevoaCBA(scene&&scene.fog);
       if(!fog.enabled||(!isPreview&&ehGM)){canvas.style.pointerEvents='none';return;}
-      ctx.fillStyle='rgba(0,0,0,.94)';ctx.fillRect(0,0,width,height);
+      ctx.fillStyle=isPreview&&ehGM?'rgba(0,0,0,.42)':'rgba(0,0,0,.94)';ctx.fillRect(0,0,width,height);
       ctx.globalCompositeOperation='destination-out';
       fog.reveals.forEach(function(stroke){
         if(!(isPreview&&ehGM)&&stroke.audience!=='all'&&stroke.audience!=='user:'+String(viewerId||''))return;
