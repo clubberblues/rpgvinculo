@@ -1334,3 +1334,15 @@ O script salva o snapshot schema-only fora do repo, sem enviar dados ou segredos
 - Estado atual do PR: aberto/draft, sem merge. Nenhuma migration remota, ACL, policy, dado, Storage ou publicação Realtime foi alterada.
 - Pendências que ainda exigem ambiente/artefato externo: export schema-only fiel para bootstrap; JWTs e campanha descartável de staging para Storage HTTP real; arquitetura e pipeline de tiles/crops/reveals para fog funcional. A auditoria e o corte das outras RPCs continuam em andamento (65 overloads/62 nomes encontrados, oito famílias iniciais mais avanço de turno cobertos em migration candidata; classificação individual restante pendente).
 - Fundação permanece **NÃO concluída**.
+
+
+## Retomada verificada — 2026-11-13 (consulta direta GitHub + Supabase)
+
+- PR #74 continua aberto, draft, não mesclado; HEAD consultado: `6888cb3329cd94df3f364424d5d0a9eee01eba2c`. O PR contém 923 commits e 644 arquivos alterados; deve ser tratado como integração de alto risco, não como pronto para merge.
+- CI associado ao HEAD consultado: PostgreSQL fixture tests #847 **success**; Static validation #526 **success**; Validate application JavaScript #574 **success**; Validate mesa JavaScript #830 **success**. O workflow Replay full Supabase migration baseline #410 terminou **failure**. O status combinado do commit não retornou checks adicionais; os workflows individuais acima são a evidência disponível.
+- Consulta direta ao Supabase ativo confirmou PostgreSQL 17.6, 76 tabelas em `public` e RLS habilitado nas 76.
+- Bloqueio P1 CBA confirmado novamente por SQL: `authenticated` tem SELECT da tabela `public.campaigns` e SELECT das colunas `cba_data` e `combat_data`; a policy `campaigns_member_read` autoriza qualquer membro (`my_role(id) IS NOT NULL`). A tabela `campaigns` também continua na publicação `supabase_realtime`. Portanto, jogadores membros ainda conseguem ler o JSONB integral diretamente; o snapshot filtrado não constitui isolamento enquanto esse caminho existir.
+- Consulta direta contou 99 funções `SECURITY DEFINER` em `public` executáveis por `authenticated`. Esse total é superfície para revisão individual, não prova automática de vulnerabilidade; não fazer revogação em massa.
+- PR #73 também permanece draft e não mergeável no momento da consulta; não tratar sua centralização do cliente Supabase como integrada.
+- Nenhuma migration, ACL, policy, publicação Realtime, dado ou campanha foi alterada nesta retomada. A campanha TESTE 2 não foi acessada.
+- Próximos gates: (1) concluir classificação e filtragem de todas as respostas RPC player-accessible que carregam CBA/combate; (2) validar o cutover com quatro identidades e sessões reais; (3) obter schema-base fiel para replay completo sem inventar bootstrap; (4) testar Storage HTTP em ambiente descartável; (5) só depois planejar revogação de SELECT e retirada de `campaigns` do Realtime. A fundação permanece **NÃO CONCLUÍDA**.
