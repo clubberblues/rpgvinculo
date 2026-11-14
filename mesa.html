@@ -5920,31 +5920,36 @@ async function abrirModalEquipamentos(){
 
   async function confirmarTeste(){
     if(!ehGM || !modoSelecaoTeste) return;
-    if(alvosSelecionados.length === 0){ alert('Selecione pelo menos um personagem.'); return; }
-    var confirmar = document.getElementById('btn-confirmar-teste');
-    confirmar.disabled = true;
-    var requestId = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now()+'-'+Math.random().toString(36).slice(2));
-    var saveSpec=specResistenciaDnd35(testeAtual);
-    var dcInput=document.getElementById('input-teste-dc');
-    var dcValue=dcInput&&String(dcInput.value||'').trim()!==''?Number(dcInput.value):null;
-    if(saveSpec&&dcValue!==null&&(!Number.isInteger(dcValue)||dcValue<1||dcValue>100)){
-      confirmar.disabled=false;alert('A CD deve ser um número inteiro entre 1 e 100.');return;
+    var alvos=Array.from(new Set((Array.isArray(alvosSelecionados)?alvosSelecionados:[]).map(String).filter(Boolean)));
+    if(!alvos.length){ alert('Selecione pelo menos um personagem.'); return; }
+    var confirmar=document.getElementById('btn-confirmar-teste');
+    if(!confirmar||confirmar.disabled)return;
+    confirmar.disabled=true;
+    try{
+      var requestId=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():(Date.now()+'-'+Math.random().toString(36).slice(2));
+      var saveSpec=specResistenciaDnd35(testeAtual);
+      var dcInput=document.getElementById('input-teste-dc');
+      var dcValue=dcInput&&String(dcInput.value||'').trim()!==''?Number(dcInput.value):null;
+      if(saveSpec&&dcValue!==null&&(!Number.isInteger(dcValue)||dcValue<1||dcValue>100))throw new Error('A CD deve ser um número inteiro entre 1 e 100.');
+      var requestPayload={tipo:testeAtual,alvos:alvos,mestre:meuPerfil.username,mestre_id:eu.id,request_id:requestId};
+      if(saveSpec){
+        requestPayload.resolution_type='saving_throw';
+        requestPayload.save_type=saveSpec.save_type;
+        requestPayload.context=saveSpec.context;
+        requestPayload.dc=dcValue;
+      }
+      var r=await sb.from('campaign_log').insert({
+        campaign_id:Number(MESA_ID),
+        type:'test_request',
+        visibilidade:'PUBLIC',
+        data:requestPayload
+      });
+      if(r.error)throw new Error(r.error.message||'Não foi possível enviar o teste.');
+      cancelarSelecaoTeste();
+    }catch(error){
+      confirmar.disabled=false;
+      alert('Erro ao enviar teste: '+(error&&error.message?error.message:String(error)));
     }
-    var requestPayload={tipo:testeAtual,alvos:alvosSelecionados.slice(),mestre:meuPerfil.username,mestre_id:eu.id,request_id:requestId};
-    if(saveSpec){
-      requestPayload.resolution_type='saving_throw';
-      requestPayload.save_type=saveSpec.save_type;
-      requestPayload.context=saveSpec.context;
-      requestPayload.dc=dcValue;
-    }
-    var r = await sb.from('campaign_log').insert({
-      campaign_id: Number(MESA_ID),
-      type: 'test_request',
-      visibilidade: 'PUBLIC',
-      data: requestPayload
-    });
-    if(r.error){ confirmar.disabled = false; alert('Erro ao enviar teste: '+r.error.message); return; }
-    cancelarSelecaoTeste();
   }
 
   function receberPedidoTeste(data, logId){
