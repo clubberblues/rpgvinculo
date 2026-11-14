@@ -6400,7 +6400,6 @@ async function abrirModalEquipamentos(){
             pedidosTesteRespondidos[responseKey]=true;removerBotaoRolagemTeste(requestKey,tokenId);
             await enviarMensagemChat(resultText,'rolagem',{request_id:requestKey,token_id:tokenId,d20:d20,bonus:bonus,total:total,dc:dc,success:success,npc_test:true});
           }
-          }
         }catch(err){btn.disabled=false;alert('Não foi possível concluir a rolagem: '+(err.message||err));}
         finally{if(pedidoTesteAtivo&&pedidoTesteAtivo.responseKey===responseKey)pedidoTesteAtivo=null;}
       },true,true,(isNpcDying||isNpcConfusion)?'1d100':'1d20');
