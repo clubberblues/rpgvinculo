@@ -186,7 +186,7 @@ begin
   ) then raise exception 'Somente jogadores podem comprar na loja.'; end if;
 
   select * into v_sheet from public.srd_character_sheets s
-  where s.character_id = btrim(p_character_id) for update;
+  where s.character_id = v_character.id for update;
   if not found then raise exception 'Ficha D&D 3.5 não encontrada.'; end if;
 
   select * into v_listing from public.srd_campaign_shop_items i
@@ -203,7 +203,7 @@ begin
   v_after := round(v_before - v_total, 2);
   if v_after > 2147483647.99 then raise exception 'O saldo excede o limite do espelho legado de ouro.'; end if;
 
-  update public.srd_character_sheets set ouro = v_after where character_id = btrim(p_character_id);
+  update public.srd_character_sheets set ouro = v_after where character_id = v_character.id;
   update public.characters set ouro = floor(v_after)::integer where id = v_character.id;
   if not v_listing.unlimited_stock then
     update public.srd_campaign_shop_items
@@ -280,7 +280,7 @@ begin
   ) then raise exception 'Somente jogadores podem vender na loja.'; end if;
 
   select * into v_sheet from public.srd_character_sheets s
-  where s.character_id = btrim(p_character_id) for update;
+  where s.character_id = v_character.id for update;
   if not found then raise exception 'Ficha D&D 3.5 não encontrada.'; end if;
 
   select * into v_listing from public.srd_campaign_shop_items i
@@ -315,7 +315,7 @@ begin
     where character_id = btrim(p_character_id) and equipment_id = p_equipment_id;
   end if;
 
-  update public.srd_character_sheets set ouro = v_after where character_id = btrim(p_character_id);
+  update public.srd_character_sheets set ouro = v_after where character_id = v_character.id;
   update public.characters set ouro = floor(v_after)::integer where id = v_character.id;
   if not v_listing.unlimited_stock then
     update public.srd_campaign_shop_items
