@@ -1635,13 +1635,14 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         {id:'gm-full-attack-ranged',ic:'🏹',txt:'Ataque Total à distância',onClick:function(){overlay.remove();iniciarSelecaoAtaque('atk-total-dist');}}
       ]});
     }
+    var characterActions=[
+      {id:'gm-racial',ic:'⛰️',txt:'Características raciais',onClick:function(){overlay.remove();abrirDetalhesRaciaisMesa35(p);}},
+      {id:'gm-talents',ic:'🏅',txt:'Talentos escolhidos',onClick:function(){overlay.remove();abrirTalentosJogadorUI(p.ch.id);}},
+      {id:'gm-class',ic:'⚔️',txt:'Características da classe',onClick:function(){overlay.remove();abrirHabilidadesClasse(p.ch.id);}}
+    ];
+    if(possuiMagiasUI(p))characterActions.push({id:'gm-spells',ic:'✨',txt:'Conjurar magia',onClick:function(){overlay.remove();abrirListaMagias(p.ch.id);}});
     gmActionGroups.push(
-      {title:'Personagem',actions:[
-        {id:'gm-racial',ic:'⛰️',txt:'Características raciais',onClick:function(){overlay.remove();abrirDetalhesRaciaisMesa35(p);}},
-        {id:'gm-talents',ic:'🏅',txt:'Talentos escolhidos',onClick:function(){overlay.remove();abrirTalentosJogadorUI(p.ch.id);}},
-        {id:'gm-class',ic:'⚔️',txt:'Características da classe',onClick:function(){overlay.remove();abrirHabilidadesClasse(p.ch.id);}},
-        {id:'gm-spells',ic:'✨',txt:'Conjurar magia',onClick:function(){overlay.remove();abrirListaMagias(p.ch.id);}}
-      ]},
+      {title:'Personagem',actions:characterActions},
       {title:'Recursos',actions:[
         {id:'gm-inventory',ic:'🎒',txt:'Mochila e equipamento',onClick:function(){overlay.remove();abrirInventarioSRD(p.ch.id);}},
         {id:'gm-skills',ic:'📚',txt:'Testar perícia',onClick:function(){overlay.remove();abrirTestePericiaJogador(p.ch.id,false);}}
