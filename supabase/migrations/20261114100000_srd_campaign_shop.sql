@@ -294,6 +294,9 @@ begin
   where e.character_id = p_character_id::text and e.equipment_id = p_equipment_id
   for update;
   if not found or v_held.quantidade < p_quantity then raise exception 'Quantidade insuficiente no inventário.'; end if;
+  if v_held.equipado then
+    raise exception 'Desequipe este item antes de vendê-lo.';
+  end if;
 
   v_before := round(coalesce(v_sheet.ouro, 0), 2);
   v_total := round(v_listing.sell_price * p_quantity, 2);
