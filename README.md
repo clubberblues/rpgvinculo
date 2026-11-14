@@ -1,4 +1,6 @@
-# Vínculo — entrega D&D 3.5 SRD
+# Vínculo RPG — Mesa Virtual para D&D 3.5
+
+**Escopo ativo:** D&D 3.5 é a única fonte de regras do produto. O nome Vínculo RPG identifica a plataforma; o antigo ruleset/catálogo Vínculo é legado isolado, sem novas funcionalidades.
 
 ## Engenharia e continuidade do projeto
 
