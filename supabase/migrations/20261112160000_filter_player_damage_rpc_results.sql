@@ -403,4 +403,29 @@ $wrapper$;
 REVOKE ALL ON FUNCTION public.avancar_turno(bigint) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.avancar_turno(bigint) TO authenticated;
 
+
+-- Player initiative submission also returns the complete combat_data object.
+-- Keep the owner/PLAYER guard in the original implementation and filter its
+-- response before it reaches the player client.
+ALTER FUNCTION public.registrar_iniciativa_d20(bigint,text,integer) SET SCHEMA priv;
+REVOKE ALL ON FUNCTION priv.registrar_iniciativa_d20(bigint,text,integer) FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.registrar_iniciativa_d20(
+  p_campaign_id bigint, p_personagem_id text, p_d20 integer
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public, priv, auth
+AS $wrapper$
+DECLARE
+  v_result jsonb;
+BEGIN
+  v_result := priv.registrar_iniciativa_d20(p_campaign_id,p_personagem_id,p_d20);
+  RETURN priv.cba_filter_rpc_result(v_result,p_campaign_id);
+END
+$wrapper$;
+REVOKE ALL ON FUNCTION public.registrar_iniciativa_d20(bigint,text,integer) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.registrar_iniciativa_d20(bigint,text,integer) TO authenticated;
+
 COMMIT;
