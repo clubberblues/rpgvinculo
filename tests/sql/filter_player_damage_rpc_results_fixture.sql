@@ -127,6 +127,15 @@ BEGIN
 END
 $initiative$;
 
+DROP FUNCTION IF EXISTS public.conjurar_missil_magico_srd_manual(text,text,smallint,text,integer[]) CASCADE;
+CREATE OR REPLACE FUNCTION public.conjurar_missil_magico_srd_manual(
+ p_character_id text,p_spell_id text,p_slot_level smallint,p_target_token_key text,p_damage_rolls integer[]
+) RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,pg_temp
+AS $ SELECT jsonb_build_object(
+ 'cba_data',(SELECT c.cba_data FROM public.campaigns c JOIN public.characters ch ON ch.campaign_id=c.id WHERE ch.id::text=p_character_id),
+ 'damage_rolls',to_jsonb(p_damage_rolls),'spell_id',p_spell_id
+) $;
+
 \ir ../../supabase/migrations/20261112160000_filter_player_damage_rpc_results.sql
 \ir ../../supabase/verification/verify_cba_rpc_response_isolation.sql
 
@@ -161,6 +170,10 @@ BEGIN
   r:=public.consumir_acao_turno_srd(987654323,'pc-1','padrao');
   IF r->'combat_data' ? 'pending_reactions' THEN RAISE EXCEPTION 'Action-economy RPC leaked private combat state.'; END IF;
   IF r->'combat_data'->'turn_order' @> '[{"id":"hidden"}]'::jsonb THEN RAISE EXCEPTION 'Action-economy RPC leaked hidden initiative actor.'; END IF;
+  r:=public.conjurar_missil_magico_srd_manual('pc-1','srd35_magic_missile',1::smallint,'visible',ARRAY[4]);
+  IF r->'cba_data'->'tokens' @> '[{"id":"hidden"}]'::jsonb THEN RAISE EXCEPTION 'Manual Magic Missile RPC leaked hidden token.'; END IF;
+  IF NOT (r->'cba_data'->'tokens' @> '[{"id":"pc-1"}]'::jsonb) THEN RAISE EXCEPTION 'Manual Magic Missile RPC lost own token.'; END IF;
+  IF r->'damage_rolls' <> '[4]'::jsonb THEN RAISE EXCEPTION 'Manual Magic Missile RPC lost roll results.'; END IF;
   r:=public.conjurar_magia_com_acao_srd_manual('pc-1','spell',1::smallint,'visible',ARRAY[11]);
   IF r->'combat_data' ? 'pending_reactions' THEN RAISE EXCEPTION 'Single-target spell RPC leaked private combat state.'; END IF;
   r:=public.registrar_iniciativa_d20(987654323,'pc-1',12);
