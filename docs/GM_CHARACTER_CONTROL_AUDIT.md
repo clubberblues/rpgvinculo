@@ -110,7 +110,7 @@ Foi adicionada à branch uma migration candidata 20261114190000_allow_gm_charact
 - Cria priv.srd_can_control_campaign_character(campaign_id, character_id), que permite somente o proprietário membro PLAYER, o GM da mesma campanha ou o owner_id da campanha; exige que a ficha pertença à campanha informada.
 - Atualiza apenas a implementação privada de consumir_acao_turno_srd para usar a autorização central. A validação de campanha, combate, turno, condições e economia de ações permanece intacta.
 - A fixture testa dono, GM, outro jogador e usuário externo e verifica que a propriedade da ficha não muda.
-- O workflow PostgreSQL foi atualizado para executar a fixture. JavaScript da aplicação, JavaScript da mesa e validação estática passaram no commit 15eeb84b7d1e9b73246dd1f8a2c926e73fb6aa00; no momento deste registro, fixtures PostgreSQL e replay integral ainda estavam em execução. Não declarar a fixture aprovada até CI concluir.
+- O workflow PostgreSQL foi atualizado para executar a fixture. No commit 15eeb84b7d1e9b73246dd1f8a2c926e73fb6aa00, a fixture PostgreSQL passou (run 860), assim como JavaScript da aplicação (run 584), JavaScript da mesa (run 840) e validação estática (run 536). O replay integral falhou (run 420) pelo bloqueio de bootstrap pré-ledger já documentado. A fixture valida a autorização e a preservação de ownership em banco PostgreSQL isolado; não equivale a teste PostgREST/Realtime nem autoriza deploy.
 - A migration é candidata e não foi aplicada ao Supabase remoto.
 
 ## Lacuna de interface confirmada
