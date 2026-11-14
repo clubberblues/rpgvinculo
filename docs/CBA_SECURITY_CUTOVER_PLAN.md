@@ -87,7 +87,7 @@ Consulta read-only ao Supabase em 2026-11-12 confirmou:
 
 ## Endurecimento da projeção por allowlist — 2026-11-12
 
-- Revisão do contrato do frontend confirmou que a mesa consome da cena apenas versão, fundo/caminho, fogEnabled, escala, grade e tokens; da iniciativa consome apenas id, nome, tipo, indicador de monstro, valor, d20 e modificador de Destreza.
+- Revisão do contrato do frontend confirmou que a mesa consome da cena versão, fundo/caminho compartilhado, escala visual, grade e tokens; não existe nem será usado campo `fogEnabled`. Da iniciativa consome apenas id, nome, tipo, indicador de monstro, valor, d20 e modificador de Destreza.
 - A migration candidata `20261112140000` foi endurecida: o snapshot de jogador agora reconstrói a cena por allowlist, projeta cada token visível/pertencente para os campos usados pela mesa, projeta cada ator visível na iniciativa e limita o objeto campaign a id/nome/owner/state/active. Metadados desconhecidos de GM não são mais propagados por cópia do JSONB integral.
 - A fixture agora inclui segredos sintéticos no nível da campanha, cena, token visível e ator de iniciativa; jogador deve receber nenhum deles, enquanto o proprietário GM continua recebendo os dados completos de cena/combate.
 - Essa alteração reduz vazamento acidental por campos JSONB futuros, mas não substitui o corte de SELECT direto nem a filtragem das demais respostas RPC. Resultado CI da nova fixture/migration ainda pendente.
