@@ -1,3 +1,18 @@
+## ATUALIZAÇÃO MAIS RECENTE — 2026-11-13
+
+- **Frente ativa:** executar a arquitetura aprovada e fechar o isolamento da Mesa CBA. O usuário autorizou a execução do trabalho alinhado; alterações continuam em branch e não devem tocar campanha/dados reais.
+- **PR #74:** branch `audit/lock-order-rage-removal-2026-11-09`, draft, sem merge/deploy. HEAD observado nesta atualização: `46c18a0fe25272033c879233a4422ee771e98047`.
+- **Migrations:** 976 arquivos locais na branch; 966 versões no ledger remoto; 10 migrations locais pendentes, listadas em `docs/MIGRATION_RECONCILIATION.md`. Nenhuma foi aplicada ao Supabase ativo.
+- **Descoberta P1:** `campaigns_member_read` e o ACL atual permitem que qualquer membro autenticado leia diretamente `campaigns.cba_data` e `campaigns.combat_data`. Isso permite contornar o snapshot filtrado. A exposição está confirmada; não revogar SELECT ainda porque 65 overloads/62 nomes RPC com referências ao estado CBA/combate ainda precisam ser classificados e respostas player-accessible filtradas. O plano atualizado está em `docs/CBA_SECURITY_CUTOVER_PLAN.md`.
+- **Mesa/rolagens:** a branch agora registra as decisões aprovadas: reaproveitar `dice.html`, modal centralizado, rolagens de jogadores públicas no chat, controle de visibilidade pública/privada por rolagem do Mestre, grid fixo 1,5 m, zoom por scroll/pinça e ausência de fog of war. A camada de chamadas por voz/vídeo permanece fora do escopo.
+- **Código atualizado na branch:** `mesa.html` remove o estado legado de fog, aplica a visibilidade de rolagens do Mestre no `campaign_log`, permite zoom por scroll sem Ctrl e amplia o zoom por pinça. `docs/DECISIONS.md` registra as decisões aprovadas.
+- **Snapshot seguro:** `mesa.html` e `ficha.html` usam a RPC candidata `obter_snapshot_seguro_mesa`; `mesa.html` escuta Broadcast privado de refresh. As migrations 12140000/12150000/12160000 continuam candidatas e não aplicadas.
+- **Validação:** JavaScript/validação estática passaram no run do commit `91568f7`. O fixture PostgreSQL ainda falhou por dollar-quoting de um stub de teste; corrigido no commit `61073c0`, mas a correção ainda precisa de CI. A migration replay integral continua bloqueada pela ausência do bootstrap pré-ledger (`public.campaigns` não existe no banco vazio).
+- **Próxima sequência:** (1) reexecutar fixtures PostgreSQL e static checks no HEAD atual; (2) classificar as 65 overloads por autorização/retorno; (3) filtrar todos os retornos player-accessible; (4) só então cortar SELECT direto e remover `campaigns` da publicação; (5) testar Realtime/Storage com sessões autenticadas e campanha descartável.
+- **Regra:** nenhuma migration candidata será aplicada ao projeto remoto nem qualquer dado de campanha alterado antes de testes e plano de recuperação. O replay vermelho não será mascarado.
+
+---
+
 # VTT D&D 3.5 — item de trabalho ativo
 
 ## ESTADO ATUAL — LEIA PRIMEIRO (2026-11-12)
