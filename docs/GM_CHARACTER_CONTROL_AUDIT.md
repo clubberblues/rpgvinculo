@@ -29,6 +29,15 @@ Leitura das chamadas RPC em `mesa.html` e `ficha.html` encontrou 93 nomes distin
 
 Os quatro primeiros RPCs de ação que também retornam `cba_data/combat_data` foram incluídos na migration candidata `20261112160000` para filtragem de resposta. **A filtragem do JSON não altera autorização:** continuam precisando da exceção de controle do Mestre.
 
+| `aplicar_dano_token_ataque_srd_v2` (duas sobrecargas) | Ataque SRD de personagem | Exige personagem jogador pertencente ao usuário autenticado; Mestre não passa pela checagem atual |
+| `iniciar_sequencia_ataque_iterativo_srd` | Iniciar ataque iterativo de PC | Wrapper encaminha à implementação privada; autorização da implementação precisa aceitar GM |
+| `consultar_sequencia_ataque_iterativo_pendente_srd` | Consultar ataque pendente | Vincula sequência ao personagem/usuário; verificar exceção GM |
+| `registrar_rolagem_ataque_iterativo_srd` | Registrar d20 manual de ataque | Validação de ator/usuário; verificar exceção GM |
+| `resolver_ataque_iterativo_srd` | Resolver ataque | Validação de ator/usuário; verificar exceção GM |
+| `confirmar_critico_ataque_iterativo_srd` | Confirmar crítico | Validação de ator/usuário; verificar exceção GM |
+| `aplicar_dano_ataque_iterativo_srd` | Aplicar dano de ataque | Validação de ator/usuário; verificar exceção GM |
+| `descanso_longo_personagem_srd` | Descanso longo SRD | Migration candidata `20261112170000` permite Mestre da campanha sem transferir propriedade; fixture GM/dono/outro jogador/externo adicionada. Ainda não aplicada ao remoto |
+
 ### Fluxos que já apresentam autorização de Mestre
 
 A inspeção encontrou verificações de papel em funções como `usar_furia_barbaro_srd`, `srd_resolve_pending_spell_save`, `srd_resolve_dying_round`, `srd_solicitar_movimento_com_aoo_srd` e `srd_calcular_ca_personagem_srd`. O Mestre também possui RPCs próprios para movimentação e economia de ações genérica (`mover_token_gm_cba_srd`, `consumir_acao_token_gm_srd`).
@@ -71,3 +80,9 @@ Verificar também que PV, recursos diários, slots de magia, condições, inicia
 A migration candidata `20261112170000_allow_gm_controlled_character_rest.sql` modifica somente a autorização de `descanso_longo_personagem_srd`: dono continua permitido; Mestre com papel GM na campanha também pode administrar o descanso; outro jogador e usuário externo continuam negados. Nenhuma regra de recuperação, intervalo de 8 horas ou bloqueio durante combate é alterada.
 
 Fixture `gm_character_long_rest_fixture.sql` adicionada ao workflow PostgreSQL para validar GM, dono, outro jogador e usuário externo. A migration não foi aplicada ao Supabase remoto.
+
+### Iniciativa — regra preservada
+
+`registrar_iniciativa_d20` exige papel PLAYER e propriedade da ficha. Isso permanece alinhado à decisão anterior de que jogadores rolam sua própria iniciativa; o Mestre rola NPCs/monstros pelo fluxo GM. O controle temporário de PC pelo Mestre começa após a iniciativa, salvo decisão futura explícita para jogadores desconectados antes do combate.
+
+As RPCs de ataque de oportunidade (`srd_iniciar_ataque_oportunidade_*`, `srd_registrar_rolagem_ataque_oportunidade_srd`, `srd_resolver_ataque_oportunidade_srd`) já são GM-only, conforme o papel do Mestre nesse subsistema.
