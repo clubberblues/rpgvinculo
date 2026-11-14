@@ -90,46 +90,46 @@ GRANT EXECUTE ON FUNCTION public.fixture_assert_gm_spell(text,boolean) TO authen
 
 SET ROLE authenticated;
 SET request.jwt.claim.sub='00000000-0000-0000-0000-000000000002';
-SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_com_acao_srd_manual(''gm-control-pc-spells'',''spell'',1,NULL,NULL)',true);
-SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_com_acao_srd_multialvo_v3(''gm-control-pc-spells'',''spell'',1,ARRAY[]::text[],NULL)',true);
-SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_dano_multialvo_srd(''gm-control-pc-spells'',''spell'',1,ARRAY[]::text[],NULL)',true);
-SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_efeitos_multialvo(''gm-control-pc-spells'',''spell'',1,ARRAY[]::text[])',true);
-SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_srd_manual(''gm-control-pc-spells'',''spell'',1,NULL,NULL)',true);
-SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_srd_multialvo_v3(''gm-control-pc-spells'',''spell'',1,ARRAY[]::text[],NULL)',true);
-SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_missil_magico_srd_manual(''gm-control-pc-spells'',''spell'',1,NULL,ARRAY[4])',true);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_com_acao_srd_manual(''gm-control-pc-spells'',''spell'',1::smallint,NULL,NULL)',true);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_com_acao_srd_multialvo_v3(''gm-control-pc-spells'',''spell'',1::smallint,ARRAY[]::text[],NULL)',true);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_dano_multialvo_srd(''gm-control-pc-spells'',''spell'',1::smallint,ARRAY[]::text[],NULL)',true);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_efeitos_multialvo(''gm-control-pc-spells'',''spell'',1::smallint,ARRAY[]::text[])',true);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_srd_manual(''gm-control-pc-spells'',''spell'',1::smallint,NULL,NULL)',true);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_srd_multialvo_v3(''gm-control-pc-spells'',''spell'',1::smallint,ARRAY[]::text[],NULL)',true);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_missil_magico_srd_manual(''gm-control-pc-spells'',''spell'',1::smallint,NULL,ARRAY[4])',true);
 RESET ROLE;
 
 SET ROLE authenticated;
 SET request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
-SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_com_acao_srd_manual(''gm-control-pc-spells'',''spell'',1,NULL,NULL)',true);
-SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_com_acao_srd_multialvo_v3(''gm-control-pc-spells'',''spell'',1,ARRAY[]::text[],NULL)',true);
-SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_dano_multialvo_srd(''gm-control-pc-spells'',''spell'',1,ARRAY[]::text[],NULL)',true);
-SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_efeitos_multialvo(''gm-control-pc-spells'',''spell'',1,ARRAY[]::text[])',true);
-SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_srd_manual(''gm-control-pc-spells'',''spell'',1,NULL,NULL)',true);
-SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_srd_multialvo_v3(''gm-control-pc-spells'',''spell'',1,ARRAY[]::text[],NULL)',true);
-SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_missil_magico_srd_manual(''gm-control-pc-spells'',''spell'',1,NULL,ARRAY[4])',true);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_com_acao_srd_manual(''gm-control-pc-spells'',''spell'',1::smallint,NULL,NULL)',true);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_com_acao_srd_multialvo_v3(''gm-control-pc-spells'',''spell'',1::smallint,ARRAY[]::text[],NULL)',true);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_dano_multialvo_srd(''gm-control-pc-spells'',''spell'',1::smallint,ARRAY[]::text[],NULL)',true);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_efeitos_multialvo(''gm-control-pc-spells'',''spell'',1::smallint,ARRAY[]::text[])',true);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_srd_manual(''gm-control-pc-spells'',''spell'',1::smallint,NULL,NULL)',true);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_srd_multialvo_v3(''gm-control-pc-spells'',''spell'',1::smallint,ARRAY[]::text[],NULL)',true);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_missil_magico_srd_manual(''gm-control-pc-spells'',''spell'',1::smallint,NULL,ARRAY[4])',true);
 RESET ROLE;
 
 SET ROLE authenticated;
 SET request.jwt.claim.sub='00000000-0000-0000-0000-000000000003';
-SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_com_acao_srd_manual(''gm-control-pc-spells'',''spell'',1,NULL,NULL)',false);
-SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_com_acao_srd_multialvo_v3(''gm-control-pc-spells'',''spell'',1,ARRAY[]::text[],NULL)',false);
-SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_dano_multialvo_srd(''gm-control-pc-spells'',''spell'',1,ARRAY[]::text[],NULL)',false);
-SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_efeitos_multialvo(''gm-control-pc-spells'',''spell'',1,ARRAY[]::text[])',false);
-SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_srd_manual(''gm-control-pc-spells'',''spell'',1,NULL,NULL)',false);
-SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_srd_multialvo_v3(''gm-control-pc-spells'',''spell'',1,ARRAY[]::text[],NULL)',false);
-SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_missil_magico_srd_manual(''gm-control-pc-spells'',''spell'',1,NULL,ARRAY[4])',false);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_com_acao_srd_manual(''gm-control-pc-spells'',''spell'',1::smallint,NULL,NULL)',false);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_com_acao_srd_multialvo_v3(''gm-control-pc-spells'',''spell'',1::smallint,ARRAY[]::text[],NULL)',false);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_dano_multialvo_srd(''gm-control-pc-spells'',''spell'',1::smallint,ARRAY[]::text[],NULL)',false);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_efeitos_multialvo(''gm-control-pc-spells'',''spell'',1::smallint,ARRAY[]::text[])',false);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_srd_manual(''gm-control-pc-spells'',''spell'',1::smallint,NULL,NULL)',false);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_srd_multialvo_v3(''gm-control-pc-spells'',''spell'',1::smallint,ARRAY[]::text[],NULL)',false);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_missil_magico_srd_manual(''gm-control-pc-spells'',''spell'',1::smallint,NULL,ARRAY[4])',false);
 RESET ROLE;
 
 SET ROLE authenticated;
 SET request.jwt.claim.sub='00000000-0000-0000-0000-000000000004';
-SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_com_acao_srd_manual(''gm-control-pc-spells'',''spell'',1,NULL,NULL)',false);
-SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_com_acao_srd_multialvo_v3(''gm-control-pc-spells'',''spell'',1,ARRAY[]::text[],NULL)',false);
-SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_dano_multialvo_srd(''gm-control-pc-spells'',''spell'',1,ARRAY[]::text[],NULL)',false);
-SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_efeitos_multialvo(''gm-control-pc-spells'',''spell'',1,ARRAY[]::text[])',false);
-SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_srd_manual(''gm-control-pc-spells'',''spell'',1,NULL,NULL)',false);
-SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_srd_multialvo_v3(''gm-control-pc-spells'',''spell'',1,ARRAY[]::text[],NULL)',false);
-SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_missil_magico_srd_manual(''gm-control-pc-spells'',''spell'',1,NULL,ARRAY[4])',false);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_com_acao_srd_manual(''gm-control-pc-spells'',''spell'',1::smallint,NULL,NULL)',false);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_com_acao_srd_multialvo_v3(''gm-control-pc-spells'',''spell'',1::smallint,ARRAY[]::text[],NULL)',false);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_dano_multialvo_srd(''gm-control-pc-spells'',''spell'',1::smallint,ARRAY[]::text[],NULL)',false);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_efeitos_multialvo(''gm-control-pc-spells'',''spell'',1::smallint,ARRAY[]::text[])',false);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_srd_manual(''gm-control-pc-spells'',''spell'',1::smallint,NULL,NULL)',false);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_srd_multialvo_v3(''gm-control-pc-spells'',''spell'',1::smallint,ARRAY[]::text[],NULL)',false);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_missil_magico_srd_manual(''gm-control-pc-spells'',''spell'',1::smallint,NULL,ARRAY[4])',false);
 RESET ROLE;
 
 DO $ownership$
