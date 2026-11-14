@@ -65,7 +65,7 @@ As camadas são limites de responsabilidade, não uma ordem para criar serviços
 - Catálogos e fórmulas independentes das regras SRD.
 
 ### Mesa virtual
-- Cena, mapa, grid, tokens, visão, fog of war e movimentação.
+- Cena, mapa, grid, tokens, visibilidade por token e movimentação. Fog of war/reveal por área está fora do escopo.
 - Iniciativa, turnos, economia de ações, combate e reações.
 - Mestre controla criaturas sob sua responsabilidade; jogador mantém controle de suas ações de personagem conforme as regras acordadas.
 
