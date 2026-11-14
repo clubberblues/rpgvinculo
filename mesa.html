@@ -1125,7 +1125,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   <header class="cba-header">
     <h2 id="titulo-modal-cba">Preparação do CBA</h2>
     <div class="cba-head-actions">
-      <p class="cba-sync-note">Ao publicar, mapa, grid e tokens serão salvos e sincronizados com os membros da mesa.</p>
+      <p class="cba-sync-note">Ao publicar, o grid e os tokens serão salvos e sincronizados com os membros da mesa.</p>
       <button class="btn-publicar" type="button" data-cba-action="publish">Publicar na Mesa</button>
       <button class="btn-fechar-dado" type="button" data-cba-action="close" aria-label="Fechar preparação do CBA">✕</button>
     </div>
@@ -1172,7 +1172,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     <div class="cba-preview-wrap" id="cba-preview-wrap">
       <div class="cba-preview-area" id="cba-preview-area" aria-label="Pré-visualização do campo de batalha">
         <div class="cba-bg-layer" id="cba-bg-layer"></div>
-        <div class="cba-preview-empty" id="cba-preview-empty">Carregue um mapa, ajuste o grid e posicione as criaturas.</div>
+        <div class="cba-preview-empty" id="cba-preview-empty">Grid de combate · 1 quadrado = 1,5 m. Posicione os tokens.</div>
         <div class="cba-grid-lines" id="cba-grid-lines"></div>
         <canvas id="cba-fog-preview" class="cba-fog-overlay cba-fog-preview" aria-label="Camada de névoa; arraste para revelar áreas do mapa"></canvas>
         <div class="cba-token-layer" id="cba-preview-tokens"></div>
@@ -2428,7 +2428,32 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   function bonusCAEquipamento35(item){var value=Number(item&&item.bonus_ca)||Number(item&&item.ca_bonus)||0;if(value)return value;if(String(item&&(item.categoria_original||item.categoria)||'').toLowerCase()==='armor_and_shields'){var match=String(item.nome||'').match(/\+(\d+)/);if(match)return Number(match[1]);}return 0;}
   function maxDexEquipamento35(item){var value=item&&item.bonus_max_des!=null?item.bonus_max_des:item&&item.max_des;if(value==null||value==='')return null;var n=Number(value);return Number.isFinite(n)?n:null;}
   function caFichaMesa(p){if(!p)return null;var attrs=p.sh&&p.sh.atributos||{},dex=modifier35(attrs.DES),sizeBonus=modifierTamanho35(p.tamanho),items=(p.equipamento||[]).filter(function(it){return it.equipado&&['armadura','escudo','acessorio'].indexOf(slotEquipamento35(it))>=0;}),bonus=items.reduce(function(sum,it){return sum+bonusCAEquipamento35(it);},0),maxDex=items.reduce(function(cap,it){var n=slotEquipamento35(it)==='armadura'?maxDexEquipamento35(it):null;return n==null?cap:Math.min(cap,n);},99);return 10+Math.min(dex,maxDex)+bonus+sizeBonus;}
-  function sincronizarDadosFichaNosTokens(){if(!cbaPublishedState)return;(cbaPublishedState.tokens||[]).forEach(function(token){if(token.tipo!=='player')return;var p=personagens.find(function(x){return String(x.ch.id)===String(token.id);});if(!p)return;var max=Math.max(1,pvMax(p.sh,p.cl));token.maxHp=max;token.hp=Math.max(0,Math.min(max,Number(p.sh.pv_atual==null?max:p.sh.pv_atual)));token.ac=caFichaMesa(p);token.sheetCharacterId=String(p.ch.id);});}
+  var cbaSheetSyncPending=false;
+  function sincronizarDadosFichaNosTokens(){
+    if(!cbaPublishedState||!Array.isArray(cbaPublishedState.tokens))return;
+    var changed=false;
+    cbaPublishedState.tokens.forEach(function(token){
+      if(token.tipo!=='player')return;
+      var p=personagens.find(function(x){return String(x.ch.id)===String(token.id);});
+      if(!p||!p.sh)return;
+      var max=Math.max(1,pvMax(p.sh,p.cl));
+      var hp=Math.max(0,Math.min(max,Number(p.sh.pv_atual==null?max:p.sh.pv_atual)));
+      var ac=caFichaMesa(p);
+      if(Number(token.maxHp)!==max){token.maxHp=max;changed=true;}
+      if(Number(token.hp)!==hp){token.hp=hp;changed=true;}
+      if(Number(token.ac)!==ac){token.ac=ac;changed=true;}
+      if(String(token.sheetCharacterId||'')!==String(p.ch.id)){token.sheetCharacterId=String(p.ch.id);changed=true;}
+    });
+    if(!changed||!ehGM||cbaSheetSyncPending)return;
+    cbaSheetSyncPending=true;
+    gravarCBAnaCampanha(serializarEstadoCBA(cbaPublishedState)).then(function(saved){
+      cbaPublishedState=normalizarCBAData(saved);
+    }).catch(function(error){
+      console.error('Falha ao sincronizar ficha e token:',error);
+      var status=document.getElementById('cba-status');
+      if(status)status.textContent='Não foi possível sincronizar PV e CA dos tokens: '+(error&&error.message?error.message:'erro desconhecido');
+    }).finally(function(){cbaSheetSyncPending=false;});
+  }
   function critico35(value){var text=String(value||'x2'),range=text.match(/(\d{1,2})(?:-(\d{1,2}))?\s*\/\s*x\s*(\d+)/i),mult=text.match(/x\s*(\d+)/i);return {min:range?Number(range[1]):20,max:range&&range[2]?Number(range[2]):20,multiplier:mult?Math.max(2,Number(mult[1])):2};}
   function bab35(cls,level){var prog=String(cls&&(cls.bab_progression||cls.progressao_bba)||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase(); if(prog==='good'||prog==='bom')return level; if(prog==='average'||prog==='medium'||prog==='medio')return Math.floor(3*level/4); if(prog==='poor'||prog==='ruim')return Math.floor(level/2); return 0;}
   async function registrarAcaoTokenGM(item,category,note){
@@ -5566,11 +5591,11 @@ async function abrirModalEquipamentos(){
     var ratio = Number(data.gridRatio);
     var opacity=Number(data.gridOpacity);
     if(!Number.isFinite(opacity)) opacity=0.3;
-    return {backgroundUrl:image,backgroundPath:String(data.backgroundPath||''),imgScale:Math.max(0.5,Math.min(3,Number(data.imgScale)||1)),gridSize:gridSize,gridRatio:Number.isFinite(ratio)&&ratio>0?ratio:null,gridOpacity:Math.max(0,Math.min(1,opacity)),fog:normalizarNevoaCBA(data.fog),tokens:tokens};
+    return {backgroundUrl:'',backgroundPath:'',imgScale:1,gridSize:gridSize,gridRatio:Number.isFinite(ratio)&&ratio>0?ratio:null,gridOpacity:Math.max(0,Math.min(1,opacity)),fog:{enabled:false,reveals:[]},tokens:tokens};
   }
 
   function serializarEstadoCBA(scene){
-    return {version:1,background:scene.backgroundPath?'':(scene.backgroundUrl||''),backgroundPath:String(scene.backgroundPath||''),imgScale:scene.imgScale,gridSize:scene.gridSize,gridRatio:scene.gridRatio,gridOpacity:scene.gridOpacity,fog:normalizarNevoaCBA(scene.fog),tokens:scene.tokens.map(function(t){return {key:String(t.key),id:String(t.id),nome:String(t.nome),imagem:t.imagemPath?'':String(t.imagem||''),imagemPath:String(t.imagemPath||''),tipo:t.tipo==='monstro'?'monstro':(t.tipo==='player'?'player':'npc'),detalhe:String(t.detalhe||''),hp:t.hp==null?null:Number(t.hp),maxHp:t.maxHp==null?null:Number(t.maxHp),dexMod:t.dexMod==null?null:Number(t.dexMod),bonusIniciativa:t.bonusIniciativa==null?null:Number(t.bonusIniciativa),monsterId:t.monsterId==null?null:String(t.monsterId),ac:t.ac==null?null:Number(t.ac),baseAc:t.baseAc==null?null:Number(t.baseAc),sourceCharacterId:t.sourceCharacterId==null?null:String(t.sourceCharacterId),attackBonus:t.attackBonus==null?null:Number(t.attackBonus),damageDice:String(t.damageDice||''),spellState:t.spellState&&typeof t.spellState==='object'?t.spellState:null,monsterStats:t.monsterStats&&typeof t.monsterStats==='object'?t.monsterStats:null,srdSourceUrl:/^https?:\/\//i.test(String(t.srdSourceUrl||''))?String(t.srdSourceUrl):'',gridX:Number(t.gridX)||0,gridY:Number(t.gridY)||0};})};
+    return {version:1,background:'',backgroundPath:'',imgScale:1,gridSize:scene.gridSize,gridRatio:scene.gridRatio,gridOpacity:scene.gridOpacity,tokens:scene.tokens.map(function(t){return {key:String(t.key),id:String(t.id),nome:String(t.nome),imagem:t.imagemPath?'':String(t.imagem||''),imagemPath:String(t.imagemPath||''),tipo:t.tipo==='monstro'?'monstro':(t.tipo==='player'?'player':'npc'),detalhe:String(t.detalhe||''),hp:t.hp==null?null:Number(t.hp),maxHp:t.maxHp==null?null:Number(t.maxHp),dexMod:t.dexMod==null?null:Number(t.dexMod),bonusIniciativa:t.bonusIniciativa==null?null:Number(t.bonusIniciativa),monsterId:t.monsterId==null?null:String(t.monsterId),ac:t.ac==null?null:Number(t.ac),baseAc:t.baseAc==null?null:Number(t.baseAc),sourceCharacterId:t.sourceCharacterId==null?null:String(t.sourceCharacterId),attackBonus:t.attackBonus==null?null:Number(t.attackBonus),damageDice:String(t.damageDice||''),spellState:t.spellState&&typeof t.spellState==='object'?t.spellState:null,monsterStats:t.monsterStats&&typeof t.monsterStats==='object'?t.monsterStats:null,srdSourceUrl:/^https?:\/\//i.test(String(t.srdSourceUrl||''))?String(t.srdSourceUrl):'',gridX:Number(t.gridX)||0,gridY:Number(t.gridY)||0};})};
   }
 
   function gravarCBAnaCampanha(data){
