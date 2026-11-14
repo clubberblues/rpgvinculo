@@ -119,15 +119,17 @@ Os itens abaixo não são decisões tomadas; precisam ser definidos após o diag
 
 ### DEC-019 — Lobby, participantes e continuidade da sessão
 - **Data:** 2026-11-13
-- **Decisão:** o Lobby organiza campanha, participantes, personagens vinculados e prontidão. O Mestre pode iniciar a sessão sem exigir que todos estejam prontos e controla a liberação de entrada na Mesa. Jogadores podem desconectar e retornar sem interromper a sessão; seus tokens, dados e iniciativa permanecem. O Mestre pode assumir temporariamente o personagem desconectado.
-- **Decisão complementar:** o painel de participantes mostra identidade, personagem, presença e turno atual, podendo ser recolhido. Notificações discretas informam eventos importantes e ficam consultáveis no histórico/chat.
-- **Motivo:** permitir sessões resilientes sem depender de todos os jogadores permanecerem conectados.
-- **Consequência:** presença online/offline não altera a propriedade do personagem nem o estado do combate.
+- **Decisão:** o Lobby mostra campanha, Mestre, participantes, personagens vinculados, presença online/offline e prontidão. O Mestre pode iniciar a sessão sem exigir que todos estejam prontos e controla quando libera a entrada na Mesa.
+- **Decisão complementar:** o painel de participantes mostra identidade, personagem e turno atual, podendo ser recolhido. Jogadores podem desconectar e retornar sem interromper a sessão; tokens, dados e iniciativa permanecem. O Mestre pode assumir temporariamente o personagem desconectado.
+- **Notificações:** alertas discretos e não bloqueantes informam início/fim de combate, início de turno, dano/0 PV, efeitos prestes a terminar, XP/ouro/itens e entrada/saída. Os eventos podem ser consultados posteriormente no chat/histórico. Não haverá mensagens fixadas.
+- **Motivo:** permitir sessões resilientes e acompanhamento da mesa sem interromper a interação.
+- **Consequência:** presença online/offline não altera propriedade do personagem nem estado do combate.
 
-### DEC-020 — Ciclo de vida de personagens e campanhas
+### DEC-020 — Criação de campanhas e ciclo de vida de personagens
 - **Data:** 2026-11-13
-- **Decisão:** personagens de campanha podem estar ativos, em reserva ou arquivados. O Mestre pode substituir um personagem ativo sem apagar ficha ou histórico. Campanhas são independentes, com participantes, personagens, mapas, encontros, inventários, configurações e histórico próprios.
-- **Motivo:** preservar continuidade e evitar mistura de dados entre campanhas.
+- **Decisão:** o Mestre cria campanhas independentes com nome, descrição e imagem de apresentação. Cada campanha tem código de convite; o Mestre pode aprovar ou recusar solicitações de entrada e vincular personagens existentes ou criar novos. Participantes, personagens, mapas, encontros, inventários, configurações e histórico ficam isolados por campanha.
+- **Personagens:** podem estar ativos, em reserva ou arquivados. O Mestre pode substituir um personagem ativo sem apagar ficha ou histórico.
+- **Motivo:** preservar continuidade e impedir mistura de dados entre campanhas.
 - **Consequência:** relacionamentos e consultas devem ser sempre escopados pela campanha e respeitar a titularidade do personagem.
 
 ### DEC-021 — Sem voz ou vídeo integrados
@@ -141,3 +143,16 @@ Os itens abaixo não são decisões tomadas; precisam ser definidos após o diag
 - **Decisão:** automatizar operações simples, determinísticas e confiáveis; para regras ou efeitos que exigem interpretação, apresentar dados e ferramentas gerais e permitir que o Mestre decida/aplique manualmente. A plataforma não deve bloquear ações de jogo como substituto da adjudicação do Mestre.
 - **Motivo:** entregar uma mesa jogável sem exigir um motor completo e inflexível de regras antes da primeira campanha.
 - **Consequência:** priorizar operações reutilizáveis, persistência consistente e integração entre ficha, motor e Mesa; não criar implementação isolada para cada talento, magia ou habilidade quando uma ferramenta geral resolver.
+
+
+### DEC-023 — Biblioteca central D&D 3.5
+- **Data:** 2026-11-13
+- **Decisão:** centralizar conteúdo oficial D&D 3.5 em uma biblioteca compartilhada: classes, raças, talentos, perícias, magias, armas, armaduras, equipamentos, monstros/criaturas, condições, regras e tabelas. Conteúdo oficial fica separado do conteúdo personalizado criado pelo Mestre. A visibilidade respeita permissões de campanha e ficha.
+- **Motivo:** oferecer consulta consistente durante preparação e jogo sem duplicar catálogos por campanha.
+- **Consequência:** conteúdo oficial não é sobrescrito por personalizações; modelos do Mestre permanecem identificados como conteúdo personalizado.
+
+### DEC-024 — Consulta contextual de regras na Mesa
+- **Data:** 2026-11-13
+- **Decisão:** ao selecionar um elemento da ficha ou criatura, o usuário pode abrir uma consulta sobreposta à Mesa com descrição, requisitos, funcionamento D&D 3.5, valores, bônus, penalidades, limitações, referência da fonte e observações do Mestre. A consulta não navega para fora da Mesa.
+- **Motivo:** tornar as regras acessíveis durante o jogo sem interromper a sessão.
+- **Consequência:** a consulta é uma camada de referência; não substitui a adjudicação do Mestre nem automatiza efeitos que dependem de interpretação.
