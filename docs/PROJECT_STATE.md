@@ -1,3 +1,23 @@
+## Atualização de execução — 2026-11-13
+
+A arquitetura de produto está consolidada; a execução técnica está na branch de auditoria, não em produção.
+
+**Estado verificado:** GitHub e Supabase conectados por integrações do ChatGPT; PR #74 draft; branch HEAD `aa82336e2462b5fdfb5b80306deadbdd8ae4de0f`. Há 976 migrations versionadas na branch e 966 aplicadas no remoto, portanto 10 pendentes sem aplicação remota.
+
+**Progresso implementado na branch:** modal centralizado usando o `dice.html` existente; visibilidade de rolagens por usuário e RLS no chat; grid fixo 1,5 m com zoom por scroll/pinça; remoção de fog of war do escopo/estado; snapshot filtrado e Broadcast privado; wrappers para filtrar respostas de quatro RPCs adicionais de ação/magia.
+
+**Validação:** PostgreSQL fixtures, validação estática e JavaScript passaram em runs recentes (`5e7642b` e `392dd81`). Nova execução no HEAD atual está em andamento. Replay integral segue bloqueado porque falta o bootstrap pré-ledger que cria `public.campaigns`; não fabricar baseline.
+
+**Bloqueios antes de liberar a Mesa:**
+1. Corrigir exposição direta de `cba_data/combat_data` e publicação Realtime após classificar todos os RPCs.
+2. Implementar controle operacional do Mestre sobre personagens de jogadores em ações/rolagens, sem transferência de propriedade.
+3. Validar fluxo ponta a ponta com duas sessões e campanha descartável.
+4. Recuperar/provar o bootstrap histórico para replay integral ou formalizar uma estratégia de baseline baseada em snapshot, sem marcar migrations antigas artificialmente.
+
+Nenhuma alteração foi aplicada ao Supabase remoto ou à campanha de teste.
+
+---
+
 ## Atualização consolidada — 2026-11-13
 
 **Fase atual:** arquitetura e contratos de produto consolidados; auditoria e integração da fundação em execução.
