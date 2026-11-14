@@ -78,9 +78,9 @@ $s7$;
 GRANT EXECUTE ON FUNCTION public.conjurar_missil_magico_srd_manual(text,text,smallint,text,integer[]) TO authenticated;
 CREATE OR REPLACE FUNCTION public.fixture_assert_gm_spell(p_sql text,p_allow boolean)
 RETURNS void LANGUAGE plpgsql SECURITY INVOKER AS $assert$
-DECLARE denied boolean:=false;
-BEGIN BEGIN EXECUTE p_sql; EXCEPTION WHEN OTHERS THEN denied:=true; END;
- IF p_allow AND denied THEN RAISE EXCEPTION 'Expected allow: %',p_sql; END IF;
+DECLARE denied boolean:=false; v_error text;
+BEGIN BEGIN EXECUTE p_sql; EXCEPTION WHEN OTHERS THEN denied:=true; v_error:=SQLERRM; END;
+ IF p_allow AND denied THEN RAISE EXCEPTION 'Expected allow: %; actual error: %',p_sql,v_error; END IF;
  IF NOT p_allow AND NOT denied THEN RAISE EXCEPTION 'Expected deny: %',p_sql; END IF;
 END
 $assert$;
