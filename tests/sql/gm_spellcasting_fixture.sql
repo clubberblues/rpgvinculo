@@ -25,6 +25,7 @@ DROP FUNCTION IF EXISTS public.conjurar_magia_efeitos_multialvo(text,text,smalli
 DROP FUNCTION IF EXISTS public.conjurar_magia_srd_manual(text,text,smallint,text,integer[]) CASCADE;
 DROP FUNCTION IF EXISTS public.conjurar_magia_srd_multialvo_v3(text,text,smallint,text[],integer[]) CASCADE;
 DROP FUNCTION IF EXISTS public.conjurar_missil_magico_srd_manual(text,text,smallint,text,integer[]) CASCADE;
+DROP FUNCTION IF EXISTS priv.conjurar_missil_magico_srd_manual(text,text,smallint,text,integer[]) CASCADE;
 
 CREATE OR REPLACE FUNCTION public.conjurar_magia_com_acao_srd_manual(p_character_id text,p_spell_id text,p_slot_level smallint,p_target_token_key text,p_roll_results integer[])
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,priv,pg_temp AS $s1$
@@ -69,12 +70,17 @@ GRANT EXECUTE ON FUNCTION public.conjurar_magia_dano_multialvo_srd(text,text,sma
 GRANT EXECUTE ON FUNCTION public.conjurar_magia_efeitos_multialvo(text,text,smallint,text[]) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.conjurar_magia_srd_manual(text,text,smallint,text,integer[]) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.conjurar_magia_srd_multialvo_v3(text,text,smallint,text[],integer[]) TO authenticated;
-CREATE OR REPLACE FUNCTION public.conjurar_missil_magico_srd_manual(p_character_id text,p_spell_id text,p_slot_level smallint,p_target_token_key text,p_damage_rolls integer[])
+CREATE OR REPLACE FUNCTION priv.conjurar_missil_magico_srd_manual(p_character_id text,p_spell_id text,p_slot_level smallint,p_target_token_key text,p_damage_rolls integer[])
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,priv,pg_temp AS $s7$
 DECLARE v_campaign_id bigint;
 BEGIN SELECT ch.campaign_id INTO v_campaign_id FROM public.characters ch WHERE ch.id::text=BTRIM(p_character_id) AND ch.user_id=auth.uid();
  IF NOT FOUND THEN RAISE EXCEPTION 'Owner only'; END IF; RETURN jsonb_build_object('allowed',true); END
 $s7$;
+REVOKE ALL ON FUNCTION priv.conjurar_missil_magico_srd_manual(text,text,smallint,text,integer[]) FROM PUBLIC,anon,authenticated;
+CREATE OR REPLACE FUNCTION public.conjurar_missil_magico_srd_manual(p_character_id text,p_spell_id text,p_slot_level smallint,p_target_token_key text,p_damage_rolls integer[])
+RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=pg_catalog,public,priv,pg_temp AS $s8$
+ SELECT priv.conjurar_missil_magico_srd_manual($1,$2,$3,$4,$5)
+$s8$;
 GRANT EXECUTE ON FUNCTION public.conjurar_missil_magico_srd_manual(text,text,smallint,text,integer[]) TO authenticated;
 CREATE OR REPLACE FUNCTION public.fixture_assert_gm_spell(p_sql text,p_allow boolean)
 RETURNS void LANGUAGE plpgsql SECURITY INVOKER AS $assert$
@@ -141,6 +147,7 @@ $ownership$;
 
 DROP FUNCTION public.fixture_assert_gm_spell(text,boolean);
 DROP FUNCTION public.conjurar_missil_magico_srd_manual(text,text,smallint,text,integer[]);
+DROP FUNCTION priv.conjurar_missil_magico_srd_manual(text,text,smallint,text,integer[]);
 DROP FUNCTION public.conjurar_magia_srd_multialvo_v3(text,text,smallint,text[],integer[]);
 DROP FUNCTION public.conjurar_magia_srd_manual(text,text,smallint,text,integer[]);
 DROP FUNCTION public.conjurar_magia_efeitos_multialvo(text,text,smallint,text[]);
