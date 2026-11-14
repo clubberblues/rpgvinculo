@@ -395,3 +395,10 @@ A inspeção somente de leitura do schema confirmou:
 As RPCs de compra/venda foram ajustadas para receber p_character_id text (compatível com as RPCs SRD já usadas pela mesa), localizar a ficha e o saldo por characters.id::text, atualizar srd_character_sheets pelo ID bigint resolvido e atualizar o inventário pelo identificador text. Os recibos guardam o ID bigint de characters.
 
 **Estado de implantação:** a UI e a migration permanecem somente na branch. A migration não foi aplicada ao Supabase de produção. Enquanto a migration não for aplicada em um ambiente apropriado, a loja apresenta uma mensagem de indisponibilidade em vez de simular transações no navegador. Não foi executado teste funcional de compra/venda.
+
+
+## Implementação complementar — névoa de guerra (2026-11-14)
+
+A mesa agora inclui controles de névoa no estúdio de preparação do Mestre: ativar/desativar, pincel de revelação, tamanho ajustável, destino para todos ou um jogador, limpeza de áreas e persistência no JSON da cena. A máscara cobre mapa, grid e tokens no painel do jogador; o Mestre continua vendo o mapa completo na mesa e todas as áreas no editor. As coordenadas são normalizadas para manter a revelação alinhada em telas com dimensões diferentes.
+
+**Limitação de segurança conhecida:** nesta primeira implementação, os traços por jogador ficam dentro do JSON da cena da campanha, que já é acessível aos membros. A interface filtra visualmente as áreas de outros jogadores, mas um usuário técnico poderia inspecionar o JSON bruto. Portanto, a seleção individual ainda não é isolamento de informação no servidor. Para segredos reais entre jogadores, será necessário migrar os traços para tabela separada com RLS por destinatário e evento realtime próprio; até isso existir, trate a segmentação individual como recurso visual, não como proteção contra inspeção técnica.
