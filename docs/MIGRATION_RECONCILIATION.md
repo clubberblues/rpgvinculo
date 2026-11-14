@@ -552,3 +552,12 @@ Conclusão: o bloqueio de replay integral não pode ser resolvido copiando uma m
 2. Formalizar uma estratégia de baseline/snapshot atual, com procedimento explícito de bootstrap e reconciliação de versões, aprovada antes de substituir o replay histórico.
 
 Não criar schema mínimo improvisado nem inserir versões antigas no ledger como se tivessem sido executadas.
+
+
+### Opção de snapshot documentada pelo Supabase CLI
+
+A documentação oficial do Supabase descreve `supabase db dump --remote` para exportar o schema atual e `supabase db pull --remote` para gerar uma migration de baseline em um projeto sem histórico. Como este projeto remoto já tem 966 versões registradas, um `db pull` simples não recupera o bootstrap histórico: com histórico existente, a ferramenta compara o estado local com o remoto. Um snapshot atual exigiria estratégia explícita de baseline/squash e reconciliação do ledger, testada em ambiente descartável antes de tocar no projeto de produção.
+
+Referências:
+- [Supabase CLI — local development workflows](https://supabase.com/docs/guides/local-development/cli-workflows)
+- [Supabase CLI — db dump e migrations](https://supabase.com/docs/reference/cli/supabase-db-schema-declarative)
