@@ -67,7 +67,8 @@ BEGIN
   IF s->'cba_data'->'tokens' @> '[{"id":"enemy-hidden"}]'::jsonb THEN RAISE EXCEPTION 'hidden token leaked'; END IF;
   IF NOT (s->'cba_data'->'tokens' @> '[{"id":"pc-1"}]'::jsonb) THEN RAISE EXCEPTION 'owned token missing'; END IF;
   IF NOT (s->'cba_data'->'tokens' @> '[{"id":"npc-visible"}]'::jsonb) THEN RAISE EXCEPTION 'visible token missing'; END IF;
-  IF s->'cba_data' ? 'backgroundPath' THEN RAISE EXCEPTION 'full fogged map path leaked to player'; END IF;
+  IF s->'cba_data'->>'backgroundPath' <> 'campaigns/987654321/map.png' THEN RAISE EXCEPTION 'player snapshot must retain the shared map background'; END IF;
+  IF s->'cba_data' ? 'fogEnabled' THEN RAISE EXCEPTION 'fog-of-war state must not be part of the tabletop contract'; END IF;
   IF s->'cba_data' ? 'gm_secret' THEN RAISE EXCEPTION 'unknown GM-only scene metadata leaked'; END IF;
   IF s->'campaign' ? 'briefing' THEN RAISE EXCEPTION 'GM-only campaign briefing leaked'; END IF;
   IF (s->'combat_data'->'turn_order'->1) ? 'secret' THEN RAISE EXCEPTION 'unknown initiative metadata leaked'; END IF;
