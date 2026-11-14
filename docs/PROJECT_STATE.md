@@ -2,11 +2,13 @@
 
 A arquitetura de produto está consolidada; a execução técnica está na branch de auditoria, não em produção.
 
-**Estado verificado:** GitHub e Supabase conectados por integrações do ChatGPT; PR #74 draft; branch HEAD `aa82336e2462b5fdfb5b80306deadbdd8ae4de0f`. Há 977 migrations versionadas na branch e 966 aplicadas no remoto, portanto 11 pendentes sem aplicação remota.
+**Estado verificado:** GitHub e Supabase conectados por integrações do ChatGPT; PR #74 draft; branch HEAD `efe1cd7e3734c1faa9242deafe04f081a0f0eee6`. Há 977 migrations versionadas na branch e 966 aplicadas no remoto, portanto 11 pendentes sem aplicação remota.
 
 **Progresso implementado na branch:** modal centralizado usando o `dice.html` existente; visibilidade de rolagens por usuário e RLS no chat; grid fixo 1,5 m com zoom por scroll/pinça; remoção de fog of war do escopo/estado; snapshot filtrado e Broadcast privado; wrappers para filtrar respostas de quatro RPCs adicionais de ação/magia.
 
 **Validação:** PostgreSQL fixtures, validação estática e JavaScript passaram em runs recentes (`5e7642b` e `392dd81`). Nova execução no HEAD atual está em andamento. Replay integral segue bloqueado porque falta o bootstrap pré-ledger que cria `public.campaigns`; não fabricar baseline.
+
+- **Descanso longo:** migration candidata `20261112170000_allow_gm_controlled_character_rest.sql` e fixture GM/dono/outro jogador/externo adicionadas; fixture passou no CI em `a9b3d3a`. Ainda não aplicada ao remoto.
 
 **Bloqueios antes de liberar a Mesa:**
 1. Corrigir exposição direta de `cba_data/combat_data` e publicação Realtime após classificar todos os RPCs.
