@@ -90,6 +90,8 @@ if (!dice.includes("if (!aguardarClique) {") || !dice.includes("vinculoRollButto
 for (const required of [
   'dado-visibilidade-publica',
   "rollVisibilityCurrent === 'PRIVATE'",
+  "var visibilidade = tipo === 'rolagem' && ehGM && rollVisibilityCurrent === 'PRIVATE' ? 'PRIVATE' : 'PUBLIC'",
+  "if (!rollResultReceived) rollVisibilityCurrent = 'PUBLIC'",
   "visibilityControl.style.display = ehGM ? 'flex' : 'none'",
   "document.body.appendChild(overlay)",
   "1 quadrado = 1,5 m (5 pés)",
