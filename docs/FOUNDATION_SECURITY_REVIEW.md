@@ -325,3 +325,17 @@ Consulta read-only atual ao catálogo do projeto:
 A migration candidata `20261112140000_add_role_filtered_tabletop_snapshot.sql` cria `public.obter_snapshot_seguro_mesa(bigint)` com helper em `priv`. O helper aplica filtro por papel e omite dados internos de combate e atores ocultos para jogadores. Se `fogEnabled=true`, também omite o caminho do mapa integral, pois ainda não há tiles/crops revelados por jogador.
 
 O endpoint ainda não está integrado ao frontend. Não considerar isolamento concluído enquanto os 11 leitores diretos identificados em `docs/CBA_SECURITY_CUTOVER_PLAN.md`, o evento Realtime da tabela `campaigns` e todos os retornos de RPC que contêm `cba_data`/`combat_data` permanecerem ativos.
+
+
+## Revalidação crítica — leitura direta do estado da campanha (2026-11-13)
+
+Consulta read-only atual ao projeto confirmou:
+- `public.campaigns` tem a policy `campaigns_member_read`, que autoriza leitura de linhas a membros.
+- ACL efetivo concede SELECT de tabela a `authenticated`.
+- `authenticated` possui SELECT de coluna em `cba_data` e `combat_data`; `anon` não possui SELECT.
+- Logo, jogadores membros podem consultar os JSONB completos da campanha diretamente pela Data API. O snapshot filtrado não protege contra esse caminho enquanto o grant existir.
+- `campaigns` continua na publicação `supabase_realtime`; o Broadcast privado candidato envia apenas o identificador da campanha, mas não substitui a retirada da publicação antiga.
+
+A branch já encaminha os clientes ativos para o snapshot seguro e Broadcast privado, mas a análise de retornos RPC está incompleta: foram inventariados 65 overloads/62 nomes com referência a estado CBA/combate, 52 executáveis por authenticated. A migration candidata de filtragem cobre somente uma primeira família. Não revogar SELECT nem remover a publicação antes de classificar e proteger os demais endpoints.
+
+**Ação:** manter este achado como bloqueio P1. Nenhuma ACL, policy, migration remota ou dado foi alterado nesta verificação. A proposta de revogação de colunas foi retirada da pasta de migrations até cumprir a ordem de cutover registrada em `CBA_SECURITY_CUTOVER_PLAN.md`.
