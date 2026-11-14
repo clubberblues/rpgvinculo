@@ -19,6 +19,8 @@
 -- H. Invalid quantity (NULL, 0, negative, 100) rejected.
 -- I. Player can sell only inventory they own; insufficient quantity rejected.
 -- J. Sale removes/decrements inventory and credits the exact configured sell price.
+-- J2. Sale of an equipped weapon, armor, shield, or accessory is rejected without mutation;
+--     player must unequip it first. Confirm weapon-instance rows remain intact.
 -- K. Repeating an identical idempotency key returns the original receipt and changes no balances,
 --    stock, or inventory a second time.
 -- L. Reusing a key with different character/item/quantity is rejected.
@@ -33,5 +35,7 @@
 -- * The migration deliberately grants no direct INSERT/UPDATE/DELETE on shop tables.
 -- * No changes are made to global SRD catalog prices.
 -- * No GM purchase/sale on behalf of players is supported in this first version.
+-- * The sell RPC explicitly blocks equipped inventory rows; do not rely on the weapon DELETE trigger,
+--   because that trigger removes linked weapon instances on DELETE without checking equipped state.
 -- * UI integration must generate a fresh UUID idempotency key per user-intended action,
 --   and reuse it only when retrying that same action after a network timeout.
