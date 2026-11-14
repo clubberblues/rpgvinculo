@@ -46,7 +46,7 @@ As decisões recentes foram registradas em `DECISIONS.md`. A arquitetura prioriz
 - Referências técnicas preexistentes: [README](../README.md), [Arquitetura do motor D&D 3.5](../DND35_RULE_ENGINE_ARCHITECTURE.md) e [Plano Mestre da Mesa](../PLANO_MESTRE_MESA.md).
 
 ## Objetivo do produto
-Construir um ambiente integrado para campanhas de RPG, com experiência de mestre e jogadores, mesa virtual, fichas, dados, progressão, inventário, catálogos e resolução de regras. D&D 3.5 SRD e o sistema próprio Vínculo são domínios distintos, com catálogos e regras separados.
+Construir um ambiente integrado para campanhas D&D 3.5, com experiência de Mestre e jogadores, Mesa Virtual, fichas, dados, progressão, inventário, biblioteca e resolução assistida de regras. D&D 3.5 é a única fonte normativa ativa; o antigo catálogo Vínculo é legado isolado.
 
 O produto deve preservar a experiência de rolagem manual dos jogadores quando definida pelo fluxo, enquanto o servidor valida regras, permissões, recursos e persistência. O objetivo não é apenas ter páginas funcionais: os módulos precisam operar como um sistema coerente.
 
@@ -58,7 +58,7 @@ Este registro começou como consolidação da documentação existente. A fotogr
 - O README descreve implantação dos arquivos principais e preservação de compatibilidade.
 - O documento de arquitetura D&D 3.5 define camadas de fonte/licença, rulesets, catálogo, ficha, estado de jogo, resolução transacional e interface.
 - O Plano Mestre registra decisões de produto, fluxos de mestre/jogador, auditorias e pendências funcionais.
-- O banco mantém catálogos separados para D&D 3.5 (srd_*) e Vínculo (vinculo_*).
+- O banco mantém tabelas `srd_*` ativas e tabelas `vinculo_*` legadas, preservadas apenas para compatibilidade/histórico.
 - O histórico documenta migrações, RPCs, RLS, inventários, conjuração, iniciativa, combate, economia de ações e integrações da mesa.
 
 ### Estado conhecido, ainda sujeito à reconciliação
@@ -71,7 +71,7 @@ Este registro começou como consolidação da documentação existente. A fotogr
 ## Restrições permanentes
 1. Não alterar personagens, fichas, campanhas, tokens ou progresso de jogo durante auditorias sem autorização explícita.
 2. Não repetir auditorias concluídas sem evidência de mudança, lacuna ou inconsistência.
-3. Não misturar dados/regras srd_* com vinculo_*.
+3. Não usar `vinculo_*` como fonte de regras ou dados ativos; manter isolamento e preservar histórico.
 4. Não reconstruir ou migrar a aplicação para outra stack apenas por preferência arquitetural; exigir justificativa técnica.
 5. Não declarar módulo concluído apenas porque existe interface, RPC ou catálogo.
 6. Não inventar valores ou resoluções de regra quando faltarem dados; encaminhar ao Mestre e registrar a limitação.
@@ -242,7 +242,7 @@ Portanto, o teste de CA 10 executado para Thorgar (681) **não valida nem invali
 - mesa.html: somente INSERT direto em campaign_log (chat/pedidos), com RLS de autoria/papel; mutações de combate/personagem/token seguem RPCs. Nenhuma mutação direta nessas entidades foi encontrada na varredura estática.
 - lobby.html: operações de campanha via RPC; upload de capa/avatar em Storage e update direto de campaigns.capa_url.
 - ficha.html: ramo D&D 3.5 usa RPCs para operações mecânicas críticas; ramo legado Vínculo mantém escritas diretas e referências de schema antigas. Criação em duas transações, aquisição de talentos/magias sem validação de pré-requisitos no servidor, update direto de ficha e consumo de inventário não atômico foram registrados como riscos, não corrigidos.
-- Decisão de arquitetura: uniformizar a autoridade do servidor para ações mecânicas nos dois rulesets. Não misturar catálogos ou tabelas SRD e Vínculo.
+- Decisão de arquitetura: uniformizar a autoridade do servidor para todas as ações mecânicas D&D 3.5. O legado `vinculo_*` não participa dos fluxos ativos.
 
 
 ## Contratos adicionais D&D 3.5 — 2026-11-09
