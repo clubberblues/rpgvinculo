@@ -359,3 +359,12 @@ A migration da loja foi confrontada com o schema ativo do Supabase em consultas 
 A inspeção do gatilho revelou um detalhe importante: o caminho DELETE remove instâncias de armas sem verificar se estavam equipadas. Por isso, não bastava confiar no gatilho para impedir venda de item equipado. A RPC `srd_campaign_shop_sell` foi corrigida na branch para rejeitar a venda quando `v_held.equipado` for verdadeiro, exigindo que o jogador desequipe o item primeiro. A regra vale também para armaduras, escudos e acessórios, e evita a remoção acidental de arma equipada pelo caminho DELETE.
 
 Essa correção foi gravada no commit `739629be2ab87142daacb09d5e6fb76a49132738`. A conferência do schema e do código foi somente leitura no projeto de produção; nenhuma migration, dado ou configuração foi alterada. A migration ainda não foi validada pelo parser PostgreSQL nem executada em ambiente isolado.
+### Regressão de venda de equipamento equipado e CI — 2026-11-14
+
+A matriz `supabase/tests/srd_campaign_shop_test_plan.sql` agora inclui explicitamente o caso de venda de arma, armadura, escudo ou acessório equipado: a operação deve falhar sem alterar saldo, inventário, estoque ou instâncias; o jogador deve desequipar antes.
+
+No commit `fb23eaf022f4ef86bc1159804804b1d39117c332`, os três workflows consultados concluíram com sucesso: validação estática, validação do JavaScript da aplicação e validação do JavaScript da mesa. O commit posterior `df85c36be9aa3ea621a3cafc1f40f147e09e010a` altera somente a matriz SQL de testes e ainda não apresentava execução de workflow no momento da consulta. Nenhum desses workflows valida a sintaxe/execução das RPCs no PostgreSQL.
+
+### Bloqueio atual de validação
+
+A lista de branches do Supabase retornou apenas a branch `main` do projeto; não existe ambiente isolado de desenvolvimento disponível. Não foi criado um branch/projeto novo porque isso pode gerar cobrança e o usuário já estabeleceu que não dispõe de orçamento para ferramentas/infraestrutura pagas. Portanto, as migrations permanecem draft e não se deve conectar a UI da loja nem aplicar qualquer migration ao banco de produção até haver validação PostgreSQL em ambiente isolado sem custo.
