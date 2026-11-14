@@ -19,7 +19,12 @@ BEGIN
       ('conjurar_magia_dano_multialvo_srd','text,text,smallint,text[],integer[]'),
       ('usar_habilidade_classe_srd','text,text,text,integer'),
       ('srd_finalizar_movimento_aoo_pendente_srd','bigint,uuid'),
-      ('avancar_turno','bigint')
+      ('avancar_turno','bigint'),
+      ('consumir_acao_turno_srd','bigint,text,text'),
+      ('conjurar_magia_com_acao_srd_manual','text,text,smallint,text,integer[]'),
+      ('conjurar_magia_com_acao_srd_multialvo_v3','text,text,smallint,text[],integer[]'),
+      ('usar_imposicao_maos_mortos_vivos_srd','text,text,integer,integer'),
+      ('registrar_iniciativa_d20','bigint,text,integer')
     ) AS x(name, signature)
   LOOP
     v_public := to_regprocedure('public.'||v_name||'('||v_signature||')');
