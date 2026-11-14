@@ -561,3 +561,24 @@ A documentação oficial do Supabase descreve `supabase db dump --remote` para e
 Referências:
 - [Supabase CLI — local development workflows](https://supabase.com/docs/guides/local-development/cli-workflows)
 - [Supabase CLI — db dump e migrations](https://supabase.com/docs/reference/cli/supabase-db-schema-declarative)
+
+
+## Replay reproduzido e causa exata — 2026-11-14
+
+O workflow run 43541178394 (https://github.com/clubberblues/rpgvinculo/actions/runs/43541178394) falhou antes da etapa supabase db reset --local: o passo supabase start iniciou o Postgres e tentou aplicar automaticamente a primeira migration versionada, 20261031160944_srd35_action_economy.sql. A aplicação falhou com SQLSTATE 42P01: relation public.campaigns does not exist, ao compilar a função consumir_acao_turno_srd, que declara public.campaigns%ROWTYPE.
+
+A falha não é causada por Docker, download de imagens ou por uma migration recente. O log mostra que a stack local iniciou o banco e chegou à aplicação da primeira migration; a migration 1 já pressupõe tabelas e colunas criadas antes dela. O comentário da própria migration diz que ela deve vir depois de cba_iniciativa_migration.sql, vtt_dnd35_final_migration.sql e srd35_spellcasting_migration.sql.
+
+Esses três arquivos legados existem na raiz do repositório, mas não são migrations timestamped em supabase/migrations; além disso, os arquivos inspecionados também pressupõem tabelas-base existentes (por exemplo, cba_iniciativa_migration.sql começa com ALTER TABLE campaigns). role_ownership_migration.sql igualmente pressupõe campaigns e members. Portanto, ainda não foi localizada uma definição versionada que crie a fundação inicial completa.
+
+Estado remoto conferido novamente:
+- 966 migrations aplicadas, da 20261031160944 à 20261109005941.
+- 977 arquivos SQL timestamped na branch, incluindo 11 pendentes de aplicação remota.
+- Nenhuma das cinco migrations de cutover/controle do Mestre entre 20261112130000 e 20261112170000 aparece no ledger remoto.
+- O snapshot docs/REMOTE_SCHEMA_SNAPSHOT.md é descritivo e explicitamente não é dump restaurável.
+
+Correção necessária antes de retomar o replay: recuperar do histórico/artefatos confiáveis o SQL exato da fundação pré-2026-10-31 (tabelas-base, constraints, índices, triggers, policies, grants, funções e extensões), estabelecer a ordem original das migrations legadas e criar um bootstrap reproduzível em ambiente descartável. Não fabricar apenas campaigns, não marcar versões como aplicadas manualmente e não executar esse bootstrap na produção. Após o bootstrap, executar replay completo em banco local descartável e comparar objetos críticos com o snapshot remoto.
+
+O CI do commit 23a92d204f1a0fb79e4efc06ae4da04ded51aa8c concluiu com sucesso: validação JavaScript da aplicação, validação JavaScript da mesa, validação estática e fixtures PostgreSQL. O workflow de replay falhou pelo bloqueio acima. A aprovação dos quatro jobs não substitui replay integral.
+
+Nenhuma alteração foi aplicada ao Supabase remoto.
