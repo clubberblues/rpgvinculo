@@ -2477,6 +2477,18 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var message='📜 '+item.nome+' · '+String(s.race_name||'Raça não identificada')+' '+String(s.class_name||'classe não identificada')+' nível '+String(s.level||'—')+'. PV '+String(item.hp==null?'—':item.hp)+'/'+String(item.maxHp||'—')+' · CA '+caToken35(item)+' · BBA +'+String(s.bab==null?'—':s.bab)+'.\nAtributos: '+attrText+'.\nResistências: Fort '+String(saves.fortitude==null?'—':saves.fortitude)+' · Ref '+String(saves.reflexos==null?'—':saves.reflexos)+' · Von '+String(saves.vontade==null?'—':saves.vontade)+'.\nPerícias: '+skillText+'.\nTalentos: '+featText+'.\nMagias: '+(spellNames.join(', ')||'nenhuma selecionada')+'.\nTraços raciais: '+traits+'.\nClasse: '+classDesc+'.\nEquipamento: '+gearNames+'.';
     await enviarMensagemChat(message,'sistema',{evento:'ficha_npc_gerada',token_id:String(item.id),level:Number(s.level)||1});
   }
+  function extrairPerfisAtaqueMonstro35(raw){
+    var source=String(raw||''),profiles=[],pattern=/(?:^|[,;]|\b(?:and|or|e|ou)\b)\s*(?:(\d+)\s+)?([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ'’ -]*?)\s+([+-]\d+)\s*(?:melee|ranged|corpo\s+a\s+corpo|à\s+distância|ataque\s+básico)?\s*\((\d+d(?:2|3|4|6|8|10|12|20|100)(?:[+-]\d+)?)\)/gi,match;
+    while((match=pattern.exec(source))!==null){
+      profiles.push({count:Math.max(1,Number(match[1])||1),name:String(match[2]||'Ataque').trim(),bonus:Number(match[3]),damage:match[4]});
+    }
+    if(!profiles.length){
+      var bonusMatch=source.match(/(?:melee|ranged|corpo a corpo|à distância|ataque básico)\s*:?\s*[+-]\d+|[+-]\d+\s+(?:melee|ranged|corpo a corpo|à distância|ataque básico)/i);
+      var damageMatch=source.match(/\((\d+d(?:2|3|4|6|8|10|12|20|100)(?:[+-]\d+)?)\)/i);
+      if(bonusMatch&&damageMatch)profiles.push({count:1,name:/ranged|à distância/i.test(bonusMatch[0])?'Ataque à distância':'Ataque',bonus:Number(bonusMatch[0].match(/[+-]\d+/)[0]),damage:damageMatch[1]});
+    }
+    return profiles;
+  }
   function solicitarAtaqueMestre(item,attackContext){
     return iniciarAtaqueMestre(item,attackContext).catch(function(error){
       console.error('Falha ao preparar ataque do Mestre:',error);
@@ -2509,11 +2521,17 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       if(typeof raw!=='string')raw=JSON.stringify(raw);
       var linkedNpc=item.tipo==='npc'&&item.sourceCharacterId,linkedNpcRaceId='';
       if(!linkedNpc){
-        var bonusMatch=raw.match(/(?:melee|ranged|corpo a corpo|à distância|ataque básico)\s*:?\s*[+-]\d+|[+-]\d+\s+(?:melee|ranged|corpo a corpo|à distância|ataque básico)/i),damageMatch=raw.match(/\((\d+d(?:3|4|6|8|10|12|20|100)(?:[+-]\d+)?)\)/i);
-        bonus=bonusMatch?Number(bonusMatch[0].match(/[+-]\d+/)[0]):Number(await window.vttUI.ask({title:'Bônus de ataque',label:'Bônus de ataque de '+item.nome+' conforme a ficha',defaultValue:'0',inputMode:'numeric'}));
+        var attackProfiles=extrairPerfisAtaqueMonstro35(raw),chosenProfile=null;
+        if(attackProfiles.length>1){
+          var attackChoice=await window.vttUI.ask({title:'Escolher ataque · '+item.nome,label:'Selecione o perfil de ataque que será usado nesta ação. A quantidade indica os ataques descritos na ficha; o Mestre conduz manualmente a sequência de Ataque Total quando aplicável.',kind:'select',options:attackProfiles.map(function(profile,index){return {value:String(index),label:(profile.count>1?profile.count+' × ':'')+profile.name+' · '+(profile.bonus>=0?'+':'')+profile.bonus+' · '+profile.damage};})});
+          if(attackChoice===null||attackChoice===undefined)return;
+          var chosenIndex=Number(attackChoice);if(!Number.isInteger(chosenIndex)||chosenIndex<0||chosenIndex>=attackProfiles.length)throw new Error('Perfil de ataque selecionado inválido.');
+          chosenProfile=attackProfiles[chosenIndex];
+        }else if(attackProfiles.length===1)chosenProfile=attackProfiles[0];
+        bonus=chosenProfile?chosenProfile.bonus:Number(await window.vttUI.ask({title:'Bônus de ataque',label:'Bônus de ataque de '+item.nome+' conforme a ficha',defaultValue:'0',inputMode:'numeric'}));
         if(!Number.isFinite(bonus))return;
-        formula=damageMatch?damageMatch[1]:(item.damageDice||'');
-        if(equipped&&equipped.dano)formula=equipped.dano;
+        formula=chosenProfile?chosenProfile.damage:(item.damageDice||'');
+        if(!chosenProfile&&equipped&&equipped.dano)formula=equipped.dano;
         if(!formula)formula=await window.vttUI.ask({title:'Dano do token',label:'Fórmula de dano de '+item.nome+' (por exemplo, 1d8+3)',defaultValue:'1d6'});
         if(!formula)return;
       }
