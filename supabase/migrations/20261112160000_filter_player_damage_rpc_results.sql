@@ -422,7 +422,10 @@ DECLARE
   v_result jsonb;
 BEGIN
   v_result := priv.registrar_iniciativa_d20(p_campaign_id,p_personagem_id,p_d20);
-  RETURN priv.cba_filter_rpc_result(v_result,p_campaign_id);
+  -- The legacy initiative RPC returns combat_data at the top level.
+  RETURN priv.cba_filter_rpc_result(
+    jsonb_build_object('combat_data',v_result),p_campaign_id
+  )->'combat_data';
 END
 $wrapper$;
 REVOKE ALL ON FUNCTION public.registrar_iniciativa_d20(bigint,text,integer) FROM PUBLIC, anon;
