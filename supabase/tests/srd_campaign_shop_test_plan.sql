@@ -1,0 +1,37 @@
+-- Friends VTT shop migration: pre-merge verification checklist.
+-- Run only against an isolated Supabase test project after applying the migration there.
+-- These cases require authenticated JWT contexts for GM, PLAYER, and unrelated users.
+--
+-- SETUP
+-- 1. Create a campaign with one GM and two PLAYER users.
+-- 2. Create SRD characters/sheets for both players; seed one inventory row.
+-- 3. Add a priced equipment item to srd_campaign_shop_items through
+--    srd_campaign_shop_configure_item as GM.
+--
+-- REQUIRED ASSERTIONS
+-- A. GM can configure an item; PLAYER and non-member cannot.
+-- B. Player A can buy; gold decreases by unit_price * quantity and inventory increases.
+-- C. Insufficient gold raises and leaves gold, inventory, stock, and receipts unchanged.
+-- D. Insufficient finite stock raises and changes nothing.
+-- E. Unlimited stock never decrements below/away from unlimited mode.
+-- F. Inactive item cannot be bought or sold.
+-- G. Missing item / missing SRD sheet / wrong campaign / another player's character rejected.
+-- H. Invalid quantity (NULL, 0, negative, 100) rejected.
+-- I. Player can sell only inventory they own; insufficient quantity rejected.
+-- J. Sale removes/decrements inventory and credits the exact configured sell price.
+-- K. Repeating an identical idempotency key returns the original receipt and changes no balances,
+--    stock, or inventory a second time.
+-- L. Reusing a key with different character/item/quantity is rejected.
+-- M. Two simultaneous buys competing for the last stock unit: only one succeeds.
+-- N. Concurrent repeated requests with the same key: exactly one receipt and one mutation.
+-- O. Player A cannot read Player B's receipt; campaign GM can read campaign receipts.
+-- P. Anonymous cannot read shop/receipt rows or execute any shop RPC.
+-- Q. Fractional balances such as 54.90 and prices such as 0.35 remain exact to two decimals;
+--    characters.ouro always equals FLOOR(srd_character_sheets.ouro).
+--
+-- STATIC NOTES
+-- * The migration deliberately grants no direct INSERT/UPDATE/DELETE on shop tables.
+-- * No changes are made to global SRD catalog prices.
+-- * No GM purchase/sale on behalf of players is supported in this first version.
+-- * UI integration must generate a fresh UUID idempotency key per user-intended action,
+--   and reuse it only when retrying that same action after a network timeout.
