@@ -2502,7 +2502,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       if(typeof raw!=='string')raw=JSON.stringify(raw);
       var linkedNpc=item.tipo==='npc'&&item.sourceCharacterId,linkedNpcRaceId='';
       if(!linkedNpc){
-        var bonusMatch=raw.match(/[+-]\d+\s+(?:melee|ranged|corpo a corpo|à distância|ataque básico)/i),damageMatch=raw.match(/\((\d+d(?:3|4|6|8|10|12|20|100)(?:[+-]\d+)?)\)/i);
+        var bonusMatch=raw.match(/(?:melee|ranged|corpo a corpo|à distância|ataque básico)\s*:?\s*[+-]\d+|[+-]\d+\s+(?:melee|ranged|corpo a corpo|à distância|ataque básico)/i),damageMatch=raw.match(/\((\d+d(?:3|4|6|8|10|12|20|100)(?:[+-]\d+)?)\)/i);
         bonus=bonusMatch?Number(bonusMatch[0].match(/[+-]\d+/)[0]):Number(await window.vttUI.ask({title:'Bônus de ataque',label:'Bônus de ataque de '+item.nome+' conforme a ficha',defaultValue:'0',inputMode:'numeric'}));
         if(!Number.isFinite(bonus))return;
         formula=damageMatch?damageMatch[1]:(item.damageDice||'');
