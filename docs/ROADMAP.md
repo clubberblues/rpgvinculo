@@ -89,7 +89,7 @@ Ordem interna por dependências:
 ## Fase 5 — Mesa virtual e multiplayer
 - [ ] Preparação de cena, mapa e grid.
 - [ ] Tokens, tamanhos, ocupação e movimentação.
-- [ ] Fog of war e visibilidade por jogador; o CBA atual não persiste estado de áreas reveladas e todos os membros recebem `cba_data` completo (tokens/posições). Separar snapshot GM-privado de estado visível ao jogador e entregar mapa em tiles/crops revelados; overlay no cliente não é proteção.
+- [ ] Isolar tokens ocultos e estado privado do Mestre por snapshot server-side e cortar leitura direta de `cba_data/combat_data` após classificar RPCs. O mapa/imagem de fundo permanece compartilhado. Fog of war/reveal por área está fora do escopo.
 - [ ] Corrigir autorização de mídia privada CBA: `mesa-media` usa `public.can_read_media`, mas `public.media/layers` estão vazias e o frontend não as preenche; upload seguido de `createSignedUrl` falha sem SELECT. Definir acesso por membro/caminho e visibilidade sem abrir o mapa completo.
 - [ ] Iniciativa e ordem do turno.
 - [ ] Ações, reações e combate.
