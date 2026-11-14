@@ -24,7 +24,8 @@ BEGIN
       ('conjurar_magia_com_acao_srd_manual','text,text,smallint,text,integer[]'),
       ('conjurar_magia_com_acao_srd_multialvo_v3','text,text,smallint,text[],integer[]'),
       ('usar_imposicao_maos_mortos_vivos_srd','text,text,integer,integer'),
-      ('registrar_iniciativa_d20','bigint,text,integer')
+      ('registrar_iniciativa_d20','bigint,text,integer'),
+      ('conjurar_missil_magico_srd_manual','text,text,smallint,text,integer[]')
     ) AS x(name, signature)
   LOOP
     v_public := to_regprocedure('public.'||v_name||'('||v_signature||')');
