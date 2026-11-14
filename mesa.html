@@ -6390,7 +6390,7 @@ async function abrirModalEquipamentos(){
     rollVisibilityCurrent = 'PUBLIC';
     var visibilityControl = document.getElementById('dado-visibilidade-controle');
     var visibilityCheckbox = document.getElementById('dado-visibilidade-publica');
-    if (visibilityControl) visibilityControl.hidden = !ehGM;
+    if (visibilityControl) { visibilityControl.hidden = !ehGM; visibilityControl.style.display = ehGM ? 'flex' : 'none'; }
     if (visibilityCheckbox) {
       visibilityCheckbox.checked = true;
       visibilityCheckbox.onchange = function() {
