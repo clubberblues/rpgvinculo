@@ -339,3 +339,12 @@ Consulta read-only atual ao projeto confirmou:
 A branch já encaminha os clientes ativos para o snapshot seguro e Broadcast privado, mas a análise de retornos RPC está incompleta: foram inventariados 65 overloads/62 nomes com referência a estado CBA/combate, 52 executáveis por authenticated. A migration candidata de filtragem cobre somente uma primeira família. Não revogar SELECT nem remover a publicação antes de classificar e proteger os demais endpoints.
 
 **Ação:** manter este achado como bloqueio P1. Nenhuma ACL, policy, migration remota ou dado foi alterado nesta verificação. A proposta de revogação de colunas foi retirada da pasta de migrations até cumprir a ordem de cutover registrada em `CBA_SECURITY_CUTOVER_PLAN.md`.
+
+
+## Advisor Supabase — verificação de 2026-11-13
+
+- **99 funções SECURITY DEFINER executáveis por authenticated** foram sinalizadas pelo advisor. O aviso é genérico: não significa que as 99 sejam exploráveis, mas cada endpoint público precisa de revisão de autorização, parâmetros, search_path e necessidade de execução autenticada.
+- **7 tabelas com RLS habilitado e sem policies**: `priv.srd_aoo_attacks`, `priv.srd_aoo_pending_movements`, `public.srd_attack_sequence_attempts`, `public.srd_attack_sequences`, `public.srd_character_feature_resources`, `public.srd_npc_attack_attempts` e `public.srd_npc_attack_sequences`. Sem policy, acesso direto por API fica negado; validar que os consumidores necessários usam RPCs privilegiadas com autorização correta.
+- **Proteção contra senhas comprometidas desabilitada** no Supabase Auth. Recomendação de configuração: habilitar após avaliar impacto sobre cadastros e recuperação de conta. Não foi alterada nesta execução.
+- **Chat/rolagens:** `campaign_log` tem RLS e está na publicação Realtime. Jogadores leem somente PUBLIC e só inserem PUBLIC em nome próprio; Mestre lê PUBLIC/PRIVATE e pode escolher visibilidade.
+- **Estado da campanha:** em contraste, `campaigns` continua com SELECT direto para authenticated e policy de membro; colunas `cba_data/combat_data` são legíveis por jogadores. Esse é o bloqueio P1 confirmado descrito acima.
