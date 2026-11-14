@@ -164,3 +164,14 @@ Próxima entrega de auditoria: matriz individual das 53 assinaturas com chamada 
 ## CI pós-registro documental — 2026-11-14
 
 No commit 17b24b8093e9a4b1900553dc52582ac8faeb78bc, os workflows de validação JavaScript da aplicação (run 577), JavaScript da mesa (run 833), validação estática (run 529) e fixtures PostgreSQL (run 850) concluíram success. O replay integral (run 413) voltou a falhar pelo mesmo bloqueio pré-ledger: a primeira migration tenta usar public.campaigns antes de existir bootstrap. Nenhum teste autenticado via PostgREST/Realtime foi executado.
+
+
+## Contagem de cobertura da migration candidata — 2026-11-14
+
+Comparação por nome/signatura entre a migration candidata 20261112160000_filter_player_damage_rpc_results.sql e o catálogo remoto:
+
+- A migration candidata define 12 nomes de wrappers públicos, cobrindo 13 overloads do inventário remoto (as duas sobrecargas de aplicar_dano_token_ataque_srd_v2 contam separadamente).
+- Permanecem **40 overloads** sem cobertura por essa migration candidata. Desses 40, 38 são SECURITY DEFINER e 2 SECURITY INVOKER. Entre os 40, 22 têm referência textual a my_role, 28 a owner_id/user_id e 32 a GM/gm; são pistas de inspeção, não prova de autorização.
+- As duas SECURITY INVOKER sem cobertura continuam sendo srd_consultar_modificadores_manobra_srd(..., p_trip_using_weapon boolean) e srd_listar_ataques_naturais_oportunidade_srd(...). Ambas têm verificação explícita de GM, mas ainda dependem do SELECT de colunas privadas.
+- A cobertura candidata de 13/53 não foi instalada no Supabase remoto; os 53 overloads públicos ainda são o estado efetivo da produção.
+- Não gerar wrappers genéricos para as 40 assinaturas sem classificar retorno e autorização. Algumas são GM-only, outras player-facing, outras dependências internas ou retorno escalar. O próximo artefato deve registrar classificação individual por overload e callsite antes de qualquer migration.
