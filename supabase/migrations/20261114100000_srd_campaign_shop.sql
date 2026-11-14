@@ -137,7 +137,7 @@ $function$;
 
 create or replace function public.srd_campaign_shop_buy(
   p_campaign_id bigint,
-  p_character_id bigint,
+  p_character_id text,
   p_equipment_id text,
   p_quantity integer,
   p_idempotency_key uuid
@@ -169,7 +169,7 @@ begin
   where r.campaign_id = p_campaign_id and r.actor_id = v_uid
     and r.operation = 'buy' and r.idempotency_key = p_idempotency_key;
   if found then
-    if v_prior.character_id <> p_character_id or v_prior.equipment_id <> p_equipment_id
+    if v_prior.character_id::text <> btrim(p_character_id) or v_prior.equipment_id <> p_equipment_id
        or v_prior.quantity <> p_quantity then
       raise exception 'Chave de operação já utilizada com dados diferentes.';
     end if;
@@ -177,7 +177,7 @@ begin
   end if;
 
   select * into v_character from public.characters ch
-  where ch.id = p_character_id and ch.campaign_id = p_campaign_id and ch.user_id = v_uid
+  where ch.id::text = btrim(p_character_id) and ch.campaign_id = p_campaign_id and ch.user_id = v_uid
   for update;
   if not found then raise exception 'A ficha não pertence a você nesta campanha.'; end if;
   if not exists (
@@ -186,7 +186,7 @@ begin
   ) then raise exception 'Somente jogadores podem comprar na loja.'; end if;
 
   select * into v_sheet from public.srd_character_sheets s
-  where s.character_id = p_character_id for update;
+  where s.character_id = btrim(p_character_id) for update;
   if not found then raise exception 'Ficha D&D 3.5 não encontrada.'; end if;
 
   select * into v_listing from public.srd_campaign_shop_items i
@@ -204,7 +204,7 @@ begin
   if v_after > 2147483647.99 then raise exception 'O saldo excede o limite do espelho legado de ouro.'; end if;
 
   update public.srd_character_sheets set ouro = v_after where character_id = p_character_id;
-  update public.characters set ouro = floor(v_after)::integer where id = p_character_id;
+  update public.characters set ouro = floor(v_after)::integer where id = v_character.id;
   if not v_listing.unlimited_stock then
     update public.srd_campaign_shop_items
       set stock_quantity = stock_quantity - p_quantity, updated_at = now()
@@ -230,7 +230,7 @@ $function$;
 
 create or replace function public.srd_campaign_shop_sell(
   p_campaign_id bigint,
-  p_character_id bigint,
+  p_character_id text,
   p_equipment_id text,
   p_quantity integer,
   p_idempotency_key uuid
@@ -263,7 +263,7 @@ begin
   where r.campaign_id = p_campaign_id and r.actor_id = v_uid
     and r.operation = 'sell' and r.idempotency_key = p_idempotency_key;
   if found then
-    if v_prior.character_id <> p_character_id or v_prior.equipment_id <> p_equipment_id
+    if v_prior.character_id::text <> btrim(p_character_id) or v_prior.equipment_id <> p_equipment_id
        or v_prior.quantity <> p_quantity then
       raise exception 'Chave de operação já utilizada com dados diferentes.';
     end if;
@@ -271,7 +271,7 @@ begin
   end if;
 
   select * into v_character from public.characters ch
-  where ch.id = p_character_id and ch.campaign_id = p_campaign_id and ch.user_id = v_uid
+  where ch.id::text = btrim(p_character_id) and ch.campaign_id = p_campaign_id and ch.user_id = v_uid
   for update;
   if not found then raise exception 'A ficha não pertence a você nesta campanha.'; end if;
   if not exists (
@@ -280,7 +280,7 @@ begin
   ) then raise exception 'Somente jogadores podem vender na loja.'; end if;
 
   select * into v_sheet from public.srd_character_sheets s
-  where s.character_id = p_character_id for update;
+  where s.character_id = btrim(p_character_id) for update;
   if not found then raise exception 'Ficha D&D 3.5 não encontrada.'; end if;
 
   select * into v_listing from public.srd_campaign_shop_items i
@@ -291,7 +291,7 @@ begin
   end if;
 
   select * into v_held from public.srd_character_equipment e
-  where e.character_id = p_character_id::text and e.equipment_id = p_equipment_id
+  where e.character_id = btrim(p_character_id) and e.equipment_id = p_equipment_id
   for update;
   if not found or v_held.quantidade < p_quantity then raise exception 'Quantidade insuficiente no inventário.'; end if;
   if v_held.equipado then
@@ -308,15 +308,15 @@ begin
 
   if v_held.quantidade = p_quantity then
     delete from public.srd_character_equipment
-    where character_id = p_character_id::text and equipment_id = p_equipment_id;
+    where character_id = btrim(p_character_id) and equipment_id = p_equipment_id;
   else
     update public.srd_character_equipment
       set quantidade = quantidade - p_quantity
-    where character_id = p_character_id::text and equipment_id = p_equipment_id;
+    where character_id = btrim(p_character_id) and equipment_id = p_equipment_id;
   end if;
 
   update public.srd_character_sheets set ouro = v_after where character_id = p_character_id;
-  update public.characters set ouro = floor(v_after)::integer where id = p_character_id;
+  update public.characters set ouro = floor(v_after)::integer where id = v_character.id;
   if not v_listing.unlimited_stock then
     update public.srd_campaign_shop_items
       set stock_quantity = stock_quantity + p_quantity, updated_at = now()
@@ -336,10 +336,10 @@ end;
 $function$;
 
 revoke all on function public.srd_campaign_shop_configure_item(bigint,text,numeric,numeric,integer,boolean,boolean) from public, anon;
-revoke all on function public.srd_campaign_shop_buy(bigint,bigint,text,integer,uuid) from public, anon;
-revoke all on function public.srd_campaign_shop_sell(bigint,bigint,text,integer,uuid) from public, anon;
+revoke all on function public.srd_campaign_shop_buy(bigint,text,text,integer,uuid) from public, anon;
+revoke all on function public.srd_campaign_shop_sell(bigint,text,text,integer,uuid) from public, anon;
 grant execute on function public.srd_campaign_shop_configure_item(bigint,text,numeric,numeric,integer,boolean,boolean) to authenticated;
-grant execute on function public.srd_campaign_shop_buy(bigint,bigint,text,integer,uuid) to authenticated;
-grant execute on function public.srd_campaign_shop_sell(bigint,bigint,text,integer,uuid) to authenticated;
+grant execute on function public.srd_campaign_shop_buy(bigint,text,text,integer,uuid) to authenticated;
+grant execute on function public.srd_campaign_shop_sell(bigint,text,text,integer,uuid) to authenticated;
 
 commit;
