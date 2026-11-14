@@ -2437,11 +2437,12 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       var p=personagens.find(function(x){return String(x.ch.id)===String(token.id);});
       if(!p||!p.sh)return;
       var max=Math.max(1,pvMax(p.sh,p.cl));
-      var hp=Math.max(0,Math.min(max,Number(p.sh.pv_atual==null?max:p.sh.pv_atual)));
+      var hp=Math.max(-10,Math.min(max,Number(p.sh.pv_atual==null?max:p.sh.pv_atual)));
       var ac=caFichaMesa(p);
       if(Number(token.maxHp)!==max){token.maxHp=max;changed=true;}
       if(Number(token.hp)!==hp){token.hp=hp;changed=true;}
       if(Number(token.ac)!==ac){token.ac=ac;changed=true;}
+      if(String(token.nome||'')!==String(p.ch.nome||'Personagem')){token.nome=String(p.ch.nome||'Personagem');changed=true;}
       if(String(token.sheetCharacterId||'')!==String(p.ch.id)){token.sheetCharacterId=String(p.ch.id);changed=true;}
     });
     if(!changed||!ehGM||cbaSheetSyncPending)return;
