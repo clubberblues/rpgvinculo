@@ -1281,6 +1281,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   var cbaWriteQueue = Promise.resolve();
   var combatDataState = null;
   var iniciativaBusy = false;
+  var turnAdvanceBusy = false;
   var cardsPage = 0;
   var estadoMesaBusy = false;
   var reforcoBusy = false;
@@ -6655,27 +6656,33 @@ async function abrirModalEquipamentos(){
   }
 
   async function avancarTurno(){
+    if(turnAdvanceBusy)return;
     if(!ehGM){
       var atual=combatDataState && Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
       if(!atual || atual.is_monster || !personagens.some(function(p){return String(p.ch.id)===String(atual.id)&&p.ch.user_id===eu.id;})){ alert('Você só pode encerrar o turno do seu personagem quando a iniciativa estiver ativa.'); return; }
     }
+    turnAdvanceBusy=true;
     var btn=document.getElementById('btn-encerrar-turno-player');
-    if(btn) btn.disabled=true;
+    if(btn)btn.disabled=true;
     try{
       var r=await sb.rpc('avancar_turno',{p_campaign_id:Number(MESA_ID)});
-      if(r.error) throw new Error(r.error.message);
+      if(r.error)throw new Error(r.error.message);
       combatDataState=r.data||combatDataState;
       renderizarIniciativa(combatDataState);
       var atual=combatDataState && combatDataState.turn_order && combatDataState.turn_order[Number(combatDataState.current_turn)||0];
       var player=atual&&!atual.is_monster?personagens.find(function(p){return String(p.ch.id)===String(atual.id);}):null;
       var txt=!atual?'Turno encerrado.':player?'⚔️ Vez do jogador @'+String((player.perfil&&player.perfil.username)||player.ch.nome)+'.':'🐉 Vez do Mestre · '+String(atual.nome||'criatura')+'.';
-      await enviarMensagemChat(txt,'sistema',{evento:'turno_avancado',round:combatDataState.round||1,current_turn:combatDataState.current_turn||0});
+      try{
+        var log=await enviarMensagemChat(txt,'sistema',{evento:'turno_avancado',round:combatDataState.round||1,current_turn:combatDataState.current_turn||0});
+        if(log&&log.error)console.warn('Turno avançado, mas o anúncio não entrou no chat.',log.error);
+      }catch(logError){console.warn('Turno avançado, mas não foi possível anunciar no chat.',logError);}
     }catch(e){
       console.error('Falha ao avançar turno:',e);
       alert('Não foi possível avançar o turno. Verifique a migração SQL e a ordem de iniciativa. Detalhe: '+e.message);
     }finally{
+      turnAdvanceBusy=false;
       var currentBtn=document.getElementById('btn-encerrar-turno-player');
-      if(currentBtn) currentBtn.disabled=false;
+      if(currentBtn)currentBtn.disabled=false;
     }
   }
 
