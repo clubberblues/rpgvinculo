@@ -125,3 +125,8 @@
 - Consulta remota em 2026-11-14: priv.cba_filter_rpc_result(jsonb,bigint), priv.cba_visible_tabletop_snapshot(bigint) e public.obter_snapshot_seguro_mesa(bigint) retornam NULL em to_regprocedure; as migrations 20261112140000, 20261112150000 e 20261112160000 não constam no ledger remoto.
 - Portanto, as 13 wrappers com filtragem preparadas em 20261112160000 são candidatas na branch, não proteção ativa em produção. Não contar essas 13 como filtradas na matriz efetiva.
 - campaigns ainda concede SELECT a authenticated nas colunas cba_data/combat_data e permanece na publicação supabase_realtime. O risco de leitura direta de estado privado por membro de campanha permanece confirmado. Nenhum corte foi aplicado.
+## Lacuna adicional encontrada na resposta de iniciativa
+
+- A RPC registrar_iniciativa_d20(bigint,text,integer) é exclusiva do papel PLAYER e retorna o combat_data completo: quando a iniciativa já foi registrada retorna v_data diretamente; no caminho normal devolve o retorno completo de public.registrar_iniciativa. Portanto, ao contrário das rotas de GM-only, essa resposta precisa da projeção de jogador.
+- A migration candidata 20261112160000_filter_player_damage_rpc_results.sql foi ampliada para mover a implementação para priv e devolver a resposta por priv.cba_filter_rpc_result. O fixture filter_player_damage_rpc_results_fixture.sql agora verifica que o jogador mantém sua própria entrada de iniciativa, mas não recebe pending_reactions nem atores ocultos. A verificação ACL também passou a incluir essa assinatura.
+- Esta correção está somente na branch e depende da migration de snapshot 20261112140000; ambas continuam ausentes do ledger remoto.
