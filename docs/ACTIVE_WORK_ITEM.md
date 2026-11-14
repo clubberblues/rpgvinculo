@@ -1399,3 +1399,11 @@ O script salva o snapshot schema-only fora do repo, sem enviar dados ou segredos
 - Advisors de performance: 51 índices sem uso registrado (INFO). Não remover índices apenas por esse aviso; workload e período de estatística precisam ser avaliados. Health advisor sem findings.
 - O advisor de segurança atual permanece com 7 tabelas RLS-enabled sem policy (5 public + 2 priv), 99 funções SECURITY DEFINER executáveis por authenticated e leaked-password protection desabilitada. Os avisos de SECURITY DEFINER requerem revisão de guardas e EXECUTE; não justificam revogação em massa.
 - Não houve alteração de ACL, RLS, policy, publicação, Auth ou dados.
+
+
+## Ampliação da superfície CBA por call graph — 2026-11-14
+
+- A auditoria inicial de 53 overloads considerava apenas referências diretas a cba_data/combat_data no corpo público. A varredura recursiva por chamadas priv.* até profundidade 4 encontrou 85 funções públicas authenticated com dependência transitiva de código que referencia estado CBA/combate: 83 JSONB e 2 escalares.
+- 32 dessas raízes públicas não mencionam as colunas no próprio corpo; chamam implementações/helpers privados. O filtro candidato cobre 13 overloads do subconjunto direto, deixando 72 raízes fora dessa cobertura nominal. Não declarar 85 vazamentos: é conjunto de revisão por dependência, e cada retorno precisa ser rastreado até o payload.
+- O call graph é estático e limitado a chamadas priv.* qualificadas até 4 níveis; SQL dinâmico, chamadas não qualificadas e profundidade maior ainda não foram cobertos. A configuração PostgREST de schemas expostos não pôde ser lida via current_setting (NULL); requer confirmação no Dashboard e teste HTTP.
+- Segurança CBA continua bloqueada: snapshot RPC não instalado; SELECT de campaigns/cba_data/combat_data e Realtime campaigns ainda ativos; nenhum corte remoto aplicado.
