@@ -52,6 +52,19 @@ CREATE OR REPLACE FUNCTION public.usar_habilidade_classe_srd(p_character_id text
 RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,pg_temp
 AS $$ SELECT jsonb_build_object('cba_data',(SELECT cba_data FROM public.campaigns c JOIN public.characters ch ON ch.campaign_id=c.id WHERE ch.id::text=p_character_id),'combat_data',(SELECT combat_data FROM public.campaigns c JOIN public.characters ch ON ch.campaign_id=c.id WHERE ch.id::text=p_character_id),'feature_key',p_feature_key) $$;
 
+-- The production RPC returns combat_data as a top-level JSON object.
+-- This fixture stub preserves that contract for the filtered wrapper test.
+CREATE OR REPLACE FUNCTION public.avancar_turno(p_campaign_id bigint)
+RETURNS jsonb
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $
+  SELECT coalesce(c.combat_data, '{}'::jsonb)
+    FROM public.campaigns AS c
+   WHERE c.id = p_campaign_id
+$;
+
 CREATE OR REPLACE FUNCTION public.srd_finalizar_movimento_aoo_pendente_srd(p_campaign_id bigint,p_pending_id uuid)
 RETURNS jsonb LANGUAGE sql SECURITY DEFINER SET search_path=public,pg_temp
 AS $$ SELECT jsonb_build_object('committed',true,'movement_result',jsonb_build_object(
