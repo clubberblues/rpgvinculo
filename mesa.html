@@ -5939,6 +5939,7 @@ async function abrirModalEquipamentos(){
   }
 
   function alternarAlvoTokenTeste(item,element){
+    if(!item||item.tipo==='player')return;
     var tokenId=String(item.key||item.id),index=alvosNpcSelecionados.indexOf(tokenId);
     if(index<0){alvosNpcSelecionados.push(tokenId);element.classList.add('selecionado-para-teste');}
     else{alvosNpcSelecionados.splice(index,1);element.classList.remove('selecionado-para-teste');}
@@ -6343,7 +6344,8 @@ async function abrirModalEquipamentos(){
       var roster=document.querySelector('.painel-aventureiros');if(roster)roster.insertBefore(container,roster.querySelector('#cards-strip'));else document.getElementById('acoes-dir').appendChild(container);
     }
     if(Array.from(container.querySelectorAll('.btn-rolar-teste')).some(function(btn){return btn.dataset.responseKey===responseKey;}))return;
-    var token=(cbaState&&Array.isArray(cbaState.tokens)?cbaState.tokens:[]).find(function(t){return String(t.key||t.id)===String(tokenId);});
+    var tokenSource=cbaPublishedState&&Array.isArray(cbaPublishedState.tokens)?cbaPublishedState:(cbaState&&Array.isArray(cbaState.tokens)?cbaState:null);
+    var token=(tokenSource&&Array.isArray(tokenSource.tokens)?tokenSource.tokens:[]).find(function(t){return String(t.key||t.id)===String(tokenId);});
     var nome=token?String(token.nome||token.name||'Alvo NPC'):'Alvo NPC';
     var btn=document.createElement('button');btn.className='btn-rolar-teste';btn.type='button';btn.dataset.responseKey=responseKey;btn.dataset.characterId=String(tokenId);btn.dataset.requestKey=String(requestKey);
     btn.textContent=isNpcConfusion?'🎲 Rolar comportamento aleatório D100 · '+nome:(isNpcDying?'🩸 Rolar estabilização D100 · '+nome:(requestData&&(requestData.resolution_type==='spell_save'||requestData.resolution_type==='condition_break')?'🛡️ Rolar resistência · '+nome:'🎲 Rolar teste · '+nome));
