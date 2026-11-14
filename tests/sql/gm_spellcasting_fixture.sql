@@ -61,6 +61,13 @@ GRANT EXECUTE ON FUNCTION public.conjurar_magia_dano_multialvo_srd(text,text,sma
 GRANT EXECUTE ON FUNCTION public.conjurar_magia_efeitos_multialvo(text,text,smallint,text[]) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.conjurar_magia_srd_manual(text,text,smallint,text,integer[]) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.conjurar_magia_srd_multialvo_v3(text,text,smallint,text[],integer[]) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.conjurar_missil_magico_srd_manual(text,text,smallint,text,integer[]) TO authenticated;
+CREATE OR REPLACE FUNCTION public.conjurar_missil_magico_srd_manual(p_character_id text,p_spell_id text,p_slot_level smallint,p_target_token_key text,p_damage_rolls integer[])
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,priv,pg_temp AS $s7$
+DECLARE v_campaign_id bigint;
+BEGIN SELECT ch.campaign_id INTO v_campaign_id FROM public.characters ch WHERE ch.id::text=BTRIM(p_character_id) AND ch.user_id=auth.uid();
+ IF NOT FOUND THEN RAISE EXCEPTION 'Owner only'; END IF; RETURN jsonb_build_object('allowed',true); END
+$s7$;
 CREATE OR REPLACE FUNCTION public.fixture_assert_gm_spell(p_sql text,p_allow boolean)
 RETURNS void LANGUAGE plpgsql SECURITY INVOKER AS $assert$
 DECLARE denied boolean:=false;
@@ -81,6 +88,7 @@ SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_dano_multial
 SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_efeitos_multialvo(''gm-control-pc-spells'',''spell'',1,ARRAY[]::text[])',true);
 SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_srd_manual(''gm-control-pc-spells'',''spell'',1,NULL,NULL)',true);
 SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_srd_multialvo_v3(''gm-control-pc-spells'',''spell'',1,ARRAY[]::text[],NULL)',true);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_missil_magico_srd_manual(''gm-control-pc-spells'',''spell'',1,NULL,ARRAY[4])',true);
 RESET ROLE;
 
 SET ROLE authenticated;
@@ -91,6 +99,7 @@ SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_dano_multial
 SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_efeitos_multialvo(''gm-control-pc-spells'',''spell'',1,ARRAY[]::text[])',true);
 SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_srd_manual(''gm-control-pc-spells'',''spell'',1,NULL,NULL)',true);
 SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_srd_multialvo_v3(''gm-control-pc-spells'',''spell'',1,ARRAY[]::text[],NULL)',true);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_missil_magico_srd_manual(''gm-control-pc-spells'',''spell'',1,NULL,ARRAY[4])',true);
 RESET ROLE;
 
 SET ROLE authenticated;
@@ -101,6 +110,7 @@ SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_dano_multial
 SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_efeitos_multialvo(''gm-control-pc-spells'',''spell'',1,ARRAY[]::text[])',false);
 SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_srd_manual(''gm-control-pc-spells'',''spell'',1,NULL,NULL)',false);
 SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_srd_multialvo_v3(''gm-control-pc-spells'',''spell'',1,ARRAY[]::text[],NULL)',false);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_missil_magico_srd_manual(''gm-control-pc-spells'',''spell'',1,NULL,ARRAY[4])',false);
 RESET ROLE;
 
 SET ROLE authenticated;
@@ -111,6 +121,7 @@ SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_dano_multial
 SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_efeitos_multialvo(''gm-control-pc-spells'',''spell'',1,ARRAY[]::text[])',false);
 SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_srd_manual(''gm-control-pc-spells'',''spell'',1,NULL,NULL)',false);
 SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_magia_srd_multialvo_v3(''gm-control-pc-spells'',''spell'',1,ARRAY[]::text[],NULL)',false);
+SELECT public.fixture_assert_gm_spell('SELECT public.conjurar_missil_magico_srd_manual(''gm-control-pc-spells'',''spell'',1,NULL,ARRAY[4])',false);
 RESET ROLE;
 
 DO $ownership$
@@ -121,6 +132,7 @@ END
 $ownership$;
 
 DROP FUNCTION public.fixture_assert_gm_spell(text,boolean);
+DROP FUNCTION public.conjurar_missil_magico_srd_manual(text,text,smallint,text,integer[]);
 DROP FUNCTION public.conjurar_magia_srd_multialvo_v3(text,text,smallint,text[],integer[]);
 DROP FUNCTION public.conjurar_magia_srd_manual(text,text,smallint,text,integer[]);
 DROP FUNCTION public.conjurar_magia_efeitos_multialvo(text,text,smallint,text[]);
