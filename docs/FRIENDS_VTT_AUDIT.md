@@ -253,3 +253,13 @@ No HEAD consultado do PR #76 (`e93f40800494afb36361cd129880cc5f5e351117`), os tr
 Isso comprova somente os testes automatizados cobertos pelos workflows. Não comprova funcionamento em navegador, celular, multiplayer, autenticação, economia ou equipagem real.
 
 Nenhuma tabela, função, policy ou grant foi alterado no Supabase. Nenhuma migration foi aplicada. PR #76 continua draft, aberto e sem merge.
+
+
+#### Verificação agregada dos saldos existentes
+Consulta somente de leitura às fichas atuais:
+- 6 fichas SRD; nenhuma com ouro nulo ou negativo.
+- As 6 possuem saldo fracionário terminado em `,90` PO; valores observados entre 54,90 e 72,90 PO.
+- Em todas as 6 fichas, `characters.ouro` coincide com `FLOOR(srd_character_sheets.ouro)`; não há divergência atual no espelho inteiro.
+- 2 das 6 fichas estão vinculadas a campanha.
+
+Implicação: **não é correto restringir a economia a PO inteiras**. O saldo SRD deve permanecer NUMERIC e as operações precisam aceitar preços fracionários compatíveis com o catálogo (sem conversão prematura para INTEGER). O espelho legado continuará recebendo apenas a parte inteira por FLOOR, como já ocorre na finalização do equipamento inicial. Essa regra deve ser mantida na mesma transação de compra/venda/recompensa SRD.
