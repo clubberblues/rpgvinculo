@@ -328,3 +328,21 @@ Pendências antes de conectar a UI:
 3. Verificar triggers de inventário/instâncias de armas após compra e venda.
 4. Definir a tela da loja do Mestre e a tela individual do jogador, com chave UUID nova por ação e reutilizada apenas em retry.
 5. Revisar a correção separada de `equipar_item_srd`; não conceder grants gerais ao navegador.
+
+
+### Correção de privilégio de equipagem — migration em branch — 2026-11-14
+
+A revisão detalhada esclareceu a falha: a policy RLS `srd_character_equipment_owner_or_gm_update` já existe e limita linhas ao dono da ficha ou Mestre, mas o papel authenticated não tinha grant SQL para UPDATE. A função `equipar_item_srd` é SECURITY INVOKER e atualiza somente a coluna `equipado` para armaduras, escudos e acessórios.
+
+Em vez de elevar a função para SECURITY DEFINER ou conceder UPDATE da tabela inteira, foi criada a migration mínima:
+- `supabase/migrations/20261114100500_srd_equipment_toggle_column_grant.sql`
+- Concede somente `UPDATE(equipado)` a authenticated; não concede alteração de quantidade, item, mão ou propriedade.
+- A policy RLS existente continua sendo a barreira por linha.
+
+Foi adicionada a matriz `supabase/tests/srd_equipment_toggle_test_plan.sql`. A migration não foi aplicada. A eficácia final depende de teste em ambiente isolado.
+
+### Gatilho de instâncias de armas e comércio
+Consulta à função privada do gatilho confirmou que INSERT de equipamento do tipo arma cria instâncias de armas; redução de quantidade remove primeiro instâncias não equipadas e rejeita a operação se houver armas equipadas/em uso que impeçam a redução; DELETE remove instâncias vinculadas. Portanto, a loja usa o inventário SRD existente e preserva o mecanismo de armas. Venda de armas equipadas pode ser rejeitada pelo gatilho; a UI deverá orientar o jogador a desequipar antes da venda.
+
+### Estado das migrations em revisão
+As duas migrations da loja e a correção de equipagem existem somente na branch. Foram criados arquivos de matriz de testes para cada caminho. Nenhuma migration foi aplicada no Supabase de produção nem em projeto de teste nesta sessão. A revisão realizada até aqui é estática; sintaxe PostgreSQL, RLS, execução das RPCs e concorrência ainda precisam de validação real em projeto isolado.
