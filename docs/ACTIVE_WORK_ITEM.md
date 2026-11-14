@@ -1,3 +1,19 @@
+## Estado de execução — 2026-11-13 (atualização)
+
+- **HEAD atual:** `aa82336e2462b5fdfb5b80306deadbdd8ae4de0f`; PR #74 permanece draft, sem merge/deploy. PR temporário #75 foi fechado.
+- **Migrations:** 976 arquivos locais / 966 aplicadas remotamente / 10 pendentes. A contagem foi conferida novamente; nenhuma migration foi aplicada ao remoto.
+- **Mesa/rolagens:** `mesa.html` reutiliza `dice.html`; modal centralizado; rolagens dos jogadores públicas no chat; Mestre escolhe visibilidade por rolagem. Foi corrigida a condição de reset para não tornar pública uma rolagem privada enquanto o callback assíncrono ainda grava o resultado.
+- **Chat:** `campaign_log` está na publicação Realtime. RLS remoto confirma: jogador/observador lê somente PUBLIC; Mestre lê PUBLIC e PRIVATE; jogadores só inserem rolagem pública própria. Teste ponta a ponta com duas sessões ainda pendente.
+- **Mapa:** grid fixo 1,5 m; scroll/pinça altera somente zoom; fog of war removido do escopo e do estado ativo. Documentação de arquitetura/roadmap atualizada para não contradizer essa decisão.
+- **CBA:** a migration candidata 12160000 agora filtra também quatro RPCs de ações/magias (`consumir_acao_turno_srd`, conjuração manual single/multi e imposição de mãos). Fixture PostgreSQL cobre jogador filtrado e Mestre com estado completo.
+- **CI confirmado:** no commit `5e7642b`, PostgreSQL fixture tests, validação estática e validações JavaScript passaram. No commit `392dd81`, os mesmos checks passaram novamente. Novo run no HEAD `aa82336` foi disparado após ampliar as asserções estáticas; aguardar conclusão.
+- **Replay integral:** falha por ausência do bootstrap pré-ledger; banco descartável não tem `public.campaigns` antes da primeira migration. A árvore contém snapshot descritivo, não bootstrap restaurável. Não inventar schema nem mascarar o bloqueio.
+- **Segurança P1 ainda aberta:** membros autenticados podem consultar diretamente `campaigns.cba_data/combat_data`; `campaigns` também permanece em `supabase_realtime`. Não revogar SELECT nem retirar publicação até classificar e filtrar todas as respostas RPC. Plano e evidência em `CBA_SECURITY_CUTOVER_PLAN.md`.
+- **Controle do Mestre ainda incompleto:** várias RPCs de ação continuam exigindo propriedade do personagem; a decisão de controle temporário do Mestre foi auditada em `GM_CHARACTER_CONTROL_AUDIT.md`. Próximo trabalho: helper/autorizações owner-or-GM e fixtures de quatro identidades, preservando turno, recursos e propriedade.
+- **Sem alterações remotas:** nenhum dado da campanha TESTE 2, ACL, policy ou migration do Supabase foi alterado.
+
+---
+
 ## ATUALIZAÇÃO MAIS RECENTE — 2026-11-13
 
 - **Frente ativa:** executar a arquitetura aprovada e fechar o isolamento da Mesa CBA. O usuário autorizou a execução do trabalho alinhado; alterações continuam em branch e não devem tocar campanha/dados reais.
