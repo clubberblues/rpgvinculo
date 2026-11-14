@@ -120,3 +120,8 @@
 - Consulta remota por OID/assinatura: 26 raízes INVOKER; 24 não contêm auth.uid() no wrapper e delegam a implementações priv SECURITY DEFINER que contêm guarda auth.uid(); 2 são os leitores GM acima.
 - Três funções privadas chamadas pelos dois leitores GM não concedem EXECUTE a authenticated; por isso, além do risco de contexto de segurança, esses dois leitores podem falhar ao executar como invoker. A migration pendente 20261110150000 corrige o contexto para SECURITY DEFINER com search_path fixo, mantendo a guarda GM antes dos helpers.
 - Esse padrão reduz a hipótese de 24 wrappers serem aberturas anônimas, mas não comprova que a resposta JSONB está filtrada: o retorno das 24 implementações privadas ainda precisa ser classificado quanto a cba_data/combat_data e payload privado.
+## Situação efetiva do corte CBA no Supabase remoto
+
+- Consulta remota em 2026-11-14: priv.cba_filter_rpc_result(jsonb,bigint), priv.cba_visible_tabletop_snapshot(bigint) e public.obter_snapshot_seguro_mesa(bigint) retornam NULL em to_regprocedure; as migrations 20261112140000, 20261112150000 e 20261112160000 não constam no ledger remoto.
+- Portanto, as 13 wrappers com filtragem preparadas em 20261112160000 são candidatas na branch, não proteção ativa em produção. Não contar essas 13 como filtradas na matriz efetiva.
+- campaigns ainda concede SELECT a authenticated nas colunas cba_data/combat_data e permanece na publicação supabase_realtime. O risco de leitura direta de estado privado por membro de campanha permanece confirmado. Nenhum corte foi aplicado.
