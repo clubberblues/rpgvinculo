@@ -5935,7 +5935,7 @@ async function abrirModalEquipamentos(){
     if(index === -1){ alvosSelecionados.push(charId); card.classList.add('selecionado-para-teste'); }
     else { alvosSelecionados.splice(index,1); card.classList.remove('selecionado-para-teste'); }
     var texto = document.getElementById('txt-teste-selecionado');
-    texto.textContent = testeAtual+' — '+alvosSelecionados.length+' alvo(s) selecionado(s)';
+    texto.textContent = testeAtual+' — '+alvosSelecionados.length+' personagem(ns), '+alvosNpcSelecionados.length+' NPC/monstro(s)';
   }
 
   function alternarAlvoTokenTeste(item,element){
