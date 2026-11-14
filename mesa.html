@@ -1626,7 +1626,16 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var gear=document.createElement('p');gear.className='feature-detail';gear.textContent='Equipamentos carregados: '+(equipment.length?equipment.map(function(it){return String(it.nome||it.equipment_id||'Item')+(it.equipado?' (equipado)':'')+(Number(it.quantidade)>1?' ×'+it.quantidade:'');}).join(' · '):'nenhum item carregado na leitura da mesa.');
     panel.appendChild(gear);
     var actions=document.createElement('div');actions.className='player-action-groups';
-    var gmActionGroups=[
+    var gmActionGroups=[],activeTurn=combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
+    if(activeTurn&&!activeTurn.is_monster&&String(activeTurn.id)===String(p.ch.id)){
+      gmActionGroups.push({title:'Combate · turno ativo',actions:[
+        {id:'gm-attack-melee',ic:'⚔️',txt:'Ataque corpo a corpo',onClick:function(){overlay.remove();iniciarSelecaoAtaque('atk-corpo');}},
+        {id:'gm-attack-ranged',ic:'🏹',txt:'Ataque à distância',onClick:function(){overlay.remove();iniciarSelecaoAtaque('atk-dist');}},
+        {id:'gm-full-attack-melee',ic:'⚔️',txt:'Ataque Total corpo a corpo',onClick:function(){overlay.remove();iniciarSelecaoAtaque('atk-total-corpo');}},
+        {id:'gm-full-attack-ranged',ic:'🏹',txt:'Ataque Total à distância',onClick:function(){overlay.remove();iniciarSelecaoAtaque('atk-total-dist');}}
+      ]});
+    }
+    gmActionGroups.push(
       {title:'Personagem',actions:[
         {id:'gm-racial',ic:'⛰️',txt:'Características raciais',onClick:function(){overlay.remove();abrirDetalhesRaciaisMesa35(p);}},
         {id:'gm-talents',ic:'🏅',txt:'Talentos escolhidos',onClick:function(){overlay.remove();abrirTalentosJogadorUI(p.ch.id);}},
@@ -1640,7 +1649,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       {title:'Gestão do Mestre',actions:[
         {id:'gm-hp',ic:'❤️',txt:'Ajustar PV',onClick:function(){overlay.remove();abrirAjustePV(p.ch.id);}}
       ]}
-    ];
+    );
     montarPainelAcaoUI(actions,gmActionGroups,String(p.ch.nome||item.nome||'Aventureiro')+' · '+classeUI(p),p);
     panel.appendChild(actions);
     var note=document.createElement('p');note.className='skill-roll-hint';note.textContent='O Mestre pode consultar a ficha e ajustar seus PV. Ataques, testes e conjuração continuam sujeitos às regras de turno, solicitações e rolagens da mesa.';
@@ -2349,7 +2358,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     board.addEventListener('touchend',function(e){if(e.touches.length<2){pinchStart=0;window.setTimeout(function(){cbaPinchInProgress=false;},120);}});
   }
   function iniciarSelecaoAtaque(tipo){
-    if(!personagemDoTurnoDoJogador()){alert('Apenas o personagem do jogador no turno atual pode atacar.');return;}
+    var actingCharacter=ehGM?personagemDoTurnoAtual():personagemDoTurnoDoJogador();if(!actingCharacter){alert('Apenas o personagem do turno ativo pode atacar.');return;}
     if(!cbaPublishedState){alert('O Mestre ainda não publicou um campo de batalha.');return;}
     ataqueSelecionado=tipo; suppressTokenClickUntil=0; var board=document.getElementById('area-tabuleiro'); board.classList.add('selecionando-alvo');
     document.getElementById('iniciativa-status').textContent='Mira ativa: selecione um alvo no tabuleiro. Ataque Total também aceita personagens jogadores; ataques simples ainda exigem NPC ou monstro.';
@@ -3014,7 +3023,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     var type=requestedType==='atk-total-dist'?'atk-dist':requestedType==='atk-total-corpo'?'atk-corpo':requestedType;
     ataqueSelecionado=null; document.getElementById('area-tabuleiro').classList.remove('selecionando-alvo');
     var state=cbaPublishedState||normalizarCBAData(campanha.cba_data), target=state&&state.tokens.find(function(t){return String(t.key)===String(tokenKey);});
-    var own=personagemDoTurnoDoJogador(), ownToken=own&&state&&state.tokens.find(function(t){return t.tipo==='player'&&String(t.id)===String(own.ch.id);});
+    var own=ehGM?personagemDoTurnoAtual():personagemDoTurnoDoJogador(), ownToken=own&&state&&state.tokens.find(function(t){return t.tipo==='player'&&String(t.id)===String(own.ch.id);});
     if(!target||!ownToken){alert('Não foi possível localizar seu token e o alvo publicado.');return;}
     if(target.tipo==='player'&&!iterativeAttack){alert('Ataques simples contra outros jogadores ainda não estão habilitados neste fluxo. Use Ataque Total quando a regra permitir.');return;}
     await carregarEfeitosCampanha();
