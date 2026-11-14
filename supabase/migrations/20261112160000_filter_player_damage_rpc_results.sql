@@ -242,6 +242,116 @@ $wrapper$;
 REVOKE ALL ON FUNCTION public.usar_habilidade_classe_srd(text,text,text,integer) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.usar_habilidade_classe_srd(text,text,text,integer) TO authenticated;
 
+-- Player-owned action RPCs also return full combat/scene JSON. Move their
+-- implementations behind the same response filter so players never receive
+-- hidden actors or private campaign state in mutation responses.
+ALTER FUNCTION public.consumir_acao_turno_srd(bigint,text,text) SET SCHEMA priv;
+REVOKE ALL ON FUNCTION priv.consumir_acao_turno_srd(bigint,text,text) FROM PUBLIC, anon, authenticated;
+ALTER FUNCTION public.conjurar_magia_com_acao_srd_manual(text,text,smallint,text,integer[]) SET SCHEMA priv;
+REVOKE ALL ON FUNCTION priv.conjurar_magia_com_acao_srd_manual(text,text,smallint,text,integer[]) FROM PUBLIC, anon, authenticated;
+ALTER FUNCTION public.conjurar_magia_com_acao_srd_multialvo_v3(text,text,smallint,text[],integer[]) SET SCHEMA priv;
+REVOKE ALL ON FUNCTION priv.conjurar_magia_com_acao_srd_multialvo_v3(text,text,smallint,text[],integer[]) FROM PUBLIC, anon, authenticated;
+ALTER FUNCTION public.usar_imposicao_maos_mortos_vivos_srd(text,text,integer,integer) SET SCHEMA priv;
+REVOKE ALL ON FUNCTION priv.usar_imposicao_maos_mortos_vivos_srd(text,text,integer,integer) FROM PUBLIC, anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.consumir_acao_turno_srd(
+  p_campaign_id bigint, p_character_id text, p_acao text
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public, priv, auth
+AS $wrapper$
+DECLARE
+  v_result jsonb;
+BEGIN
+  v_result := priv.consumir_acao_turno_srd(p_campaign_id,p_character_id,p_acao);
+  RETURN priv.cba_filter_rpc_result(v_result,p_campaign_id);
+END
+$wrapper$;
+REVOKE ALL ON FUNCTION public.consumir_acao_turno_srd(bigint,text,text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.consumir_acao_turno_srd(bigint,text,text) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.conjurar_magia_com_acao_srd_manual(
+  p_character_id text,
+  p_spell_id text,
+  p_slot_level smallint,
+  p_target_token_key text DEFAULT NULL::text,
+  p_roll_results integer[] DEFAULT NULL::integer[]
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public, priv, auth
+AS $wrapper$
+DECLARE
+  v_campaign_id bigint;
+  v_result jsonb;
+BEGIN
+  SELECT ch.campaign_id INTO v_campaign_id
+    FROM public.characters AS ch
+   WHERE ch.id::text = p_character_id;
+  v_result := priv.conjurar_magia_com_acao_srd_manual(
+    p_character_id,p_spell_id,p_slot_level,p_target_token_key,p_roll_results
+  );
+  RETURN priv.cba_filter_rpc_result(v_result,v_campaign_id);
+END
+$wrapper$;
+REVOKE ALL ON FUNCTION public.conjurar_magia_com_acao_srd_manual(text,text,smallint,text,integer[]) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.conjurar_magia_com_acao_srd_manual(text,text,smallint,text,integer[]) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.conjurar_magia_com_acao_srd_multialvo_v3(
+  p_character_id text,
+  p_spell_id text,
+  p_slot_level smallint,
+  p_target_token_keys text[],
+  p_roll_results integer[]
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public, priv, auth
+AS $wrapper$
+DECLARE
+  v_campaign_id bigint;
+  v_result jsonb;
+BEGIN
+  SELECT ch.campaign_id INTO v_campaign_id
+    FROM public.characters AS ch
+   WHERE ch.id::text = p_character_id;
+  v_result := priv.conjurar_magia_com_acao_srd_multialvo_v3(
+    p_character_id,p_spell_id,p_slot_level,p_target_token_keys,p_roll_results
+  );
+  RETURN priv.cba_filter_rpc_result(v_result,v_campaign_id);
+END
+$wrapper$;
+REVOKE ALL ON FUNCTION public.conjurar_magia_com_acao_srd_multialvo_v3(text,text,smallint,text[],integer[]) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.conjurar_magia_com_acao_srd_multialvo_v3(text,text,smallint,text[],integer[]) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.usar_imposicao_maos_mortos_vivos_srd(
+  p_character_id text, p_target_token_key text, p_d20 integer, p_amount integer
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = pg_catalog, public, priv, auth
+AS $wrapper$
+DECLARE
+  v_campaign_id bigint;
+  v_result jsonb;
+BEGIN
+  SELECT ch.campaign_id INTO v_campaign_id
+    FROM public.characters AS ch
+   WHERE ch.id::text = p_character_id;
+  v_result := priv.usar_imposicao_maos_mortos_vivos_srd(
+    p_character_id,p_target_token_key,p_d20,p_amount
+  );
+  RETURN priv.cba_filter_rpc_result(v_result,v_campaign_id);
+END
+$wrapper$;
+REVOKE ALL ON FUNCTION public.usar_imposicao_maos_mortos_vivos_srd(text,text,integer,integer) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.usar_imposicao_maos_mortos_vivos_srd(text,text,integer,integer) TO authenticated;
+
 -- Pending-movement completion nests the mover RPC result; the recursive
 -- filter protects private scene/combat JSON even when nested in movement_result.
 ALTER FUNCTION public.srd_finalizar_movimento_aoo_pendente_srd(bigint,uuid) SET SCHEMA priv;
