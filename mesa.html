@@ -4197,9 +4197,9 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     try{
       var result=await sb.rpc('srd_campaign_shop_configure_item',{p_campaign_id:Number(MESA_ID),p_equipment_id:id,p_buy_price:buy,p_sell_price:sell,p_stock_quantity:stock,p_unlimited_stock:unlimited,p_active:active});
       if(result.error)throw new Error(result.error.message);
-      await carregarDadosLoja();
       atualizarStatusLoja('Item salvo na loja da campanha.');
-      await enviarMensagemChat('🪙 O Mestre atualizou o estoque da loja.','sistema',{evento:'loja_estoque_atualizado',equipment_id:id});
+      try{await carregarDadosLoja();}catch(refreshError){atualizarStatusLoja('Item salvo, mas a lista não atualizou. Feche e abra a loja novamente.',true);}
+      try{await enviarMensagemChat('🪙 O Mestre atualizou o estoque da loja.','sistema',{evento:'loja_estoque_atualizado',equipment_id:id});}catch(logError){console.warn('Estoque salvo; evento de LOG não enviado:',logError);}
     }catch(error){atualizarStatusLoja('Não foi possível salvar o item: '+error.message,true);}
     finally{button.disabled=false;lojaBusy=false;}
   }
@@ -4211,15 +4211,19 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     button.disabled=true;lojaBusy=true;
     try{
       var result=await sb.rpc(operacao==='buy'?'srd_campaign_shop_buy':'srd_campaign_shop_sell',{
-        p_campaign_id:Number(MESA_ID),p_character_id:Number(p.ch.id),p_equipment_id:id,p_quantity:qty,p_idempotency_key:chaveIdempotenciaLoja()
+        p_campaign_id:Number(MESA_ID),p_character_id:String(p.ch.id),p_equipment_id:id,p_quantity:qty,p_idempotency_key:chaveIdempotenciaLoja()
       });
       if(result.error)throw new Error(result.error.message);
       var receipt=result.data||{},item=lojaListings.find(function(row){return String(row.equipment_id)===String(id);}),name=item&&item.equipment&&item.equipment.nome||id;
-      await carregarPersonagens();
-      await carregarDadosLoja();
       var textEvent=operacao==='buy'?'comprou':'vendeu';
-      await enviarMensagemChat('🪙 '+p.ch.nome+' '+textEvent+' '+qty+' × '+name+'.','sistema',{evento:operacao==='buy'?'loja_compra':'loja_venda',character_id:String(p.ch.id),equipment_id:id,quantity:qty,total:Number(receipt.total)||null});
-      atualizarStatusLoja((operacao==='buy'?'Compra':'Venda')+' concluída: '+qty+' × '+name+'. Saldo atualizado.');
+      try{await enviarMensagemChat('🪙 '+p.ch.nome+' '+textEvent+' '+qty+' × '+name+'.','sistema',{evento:operacao==='buy'?'loja_compra':'loja_venda',character_id:String(p.ch.id),equipment_id:id,quantity:qty,total:Number(receipt.total)||null});}catch(logError){console.warn('Transação concluída; evento de LOG não enviado:',logError);}
+      try{
+        await carregarPersonagens();
+        await carregarDadosLoja();
+        atualizarStatusLoja((operacao==='buy'?'Compra':'Venda')+' concluída: '+qty+' × '+name+'. Saldo atualizado.');
+      }catch(refreshError){
+        atualizarStatusLoja((operacao==='buy'?'Compra':'Venda')+' concluída, mas a tela não atualizou. Reabra a loja antes de outra operação.',true);
+      }
     }catch(error){atualizarStatusLoja('Operação não concluída: '+error.message,true);}
     finally{lojaBusy=false;if(button&&button.isConnected)button.disabled=false;}
   }
