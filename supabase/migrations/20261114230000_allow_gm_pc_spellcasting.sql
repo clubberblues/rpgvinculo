@@ -20,8 +20,6 @@ BEGIN
   ('public.conjurar_magia_srd_manual(text,text,smallint,text,integer[])',
    'c\.user_id\s*=\s*auth\.uid\(\)','priv.srd_can_control_character(c.id::text)'),
   ('public.conjurar_missil_magico_srd_manual(text,text,smallint,text,integer[])',
-   'ch\\.user_id\\s*=\\s*auth\\.uid\\(\\)','priv.srd_can_control_character(ch.id::text)'),
-  ('public.conjurar_magia_srd_multialvo_v3(text,text,smallint,text[],integer[])',
    'ch\.user_id\s*=\s*auth\.uid\(\)','priv.srd_can_control_character(ch.id::text)')
  ) AS targets(signature,pattern,replacement)
  LOOP
