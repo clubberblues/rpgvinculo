@@ -98,3 +98,32 @@ Consulta read-only ao Supabase em 2026-11-12 confirmou:
 - O snapshot de jogador preserva agora somente `action_economy.by_character` do próprio personagem, e apenas quando a rodada do estado de ações coincide com a rodada atual. `movement_usage` é retornado somente quando pertence a uma ficha do usuário; `expected_character_ids` é filtrado para as fichas do próprio usuário. Isso mantém o painel de ações e a prévia de movimento sem revelar os estados dos demais.
 - A migration candidata `20261112160000` também envolve `avancar_turno(bigint)`: a implementação original retorna o objeto `combat_data` diretamente no topo do JSONB, não dentro de uma chave `combat_data`. O wrapper envolve o retorno para executar o filtro recursivo e depois devolve a projeção no formato original, preservando o contrato do frontend.
 - A fixture modela o retorno top-level real, testa que jogador não recebe reações/atores ocultos e que o GM mantém o estado completo. O CI dessa extensão ainda está pendente; não considerar aprovada antes do resultado.
+
+
+## Verificação de ACL direta e ordem final do cutover — 2026-11-13
+
+Consulta read-only ao Supabase ativo confirmou uma exposição que o endpoint de snapshot, sozinho, não fecha:
+
+- Policy `campaigns_member_read`: qualquer membro com `public.my_role(id) IS NOT NULL` pode ler a linha da campanha.
+- ACL efetivo de `public.campaigns`: `authenticated=r`; `anon` não tem SELECT.
+- `has_column_privilege('authenticated', 'public.campaigns', 'cba_data', 'SELECT')` e o equivalente para `combat_data` retornam **true**.
+- Portanto, qualquer jogador autenticado membro pode consultar diretamente o JSONB integral da campanha e obter dados que o snapshot filtrado pretende ocultar. O mesmo risco alcança a publicação `supabase_realtime`, que ainda contém `campaigns`.
+
+A integração de frontend na branch avançou:
+- `mesa.html` inicializa/atualiza por `obter_snapshot_seguro_mesa`, usa Broadcast privado `campaign:{id}` e não assina `campaigns` por `postgres_changes`.
+- `ficha.html` usa o snapshot para as consultas de tokens NPC vinculados.
+- `lobby.html` lê diretamente apenas `id,owner_id` para identificar o proprietário e atualiza `capa_url`; os metadados da lista vêm da RPC `lobby_list_v2`.
+- Isso elimina os leitores diretos dos clientes ativos, mas não impede um membro de chamar a Data API diretamente nem fecha os retornos RPC ainda não classificados.
+
+A consulta remota anterior encontrou 65 overloads em 62 nomes públicos que referenciam `cba_data` ou `combat_data`; 52 têm EXECUTE para `authenticated`. A migration candidata `20261112160000` cobre uma primeira família de oito implementações, não todos os retornos. As demais assinaturas precisam ser classificadas como GM-only, player-accessible com resposta segura, ou internas sem execução direta.
+
+**Ordem obrigatória preservada:**
+1. Classificar todos os overloads executáveis por authenticated e localizar quais retornam estado privado em contexto de jogador.
+2. Filtrar ou substituir cada resposta RPC player-accessible, mantendo os campos mecânicos necessários ao cliente.
+3. Validar com fixtures de GM, jogador dono, outro jogador e usuário externo.
+4. Somente então revogar SELECT de tabela/colunas privadas em `campaigns` e retirar `campaigns` da publicação `supabase_realtime`.
+5. Revalidar todas as consultas, RPCs, Broadcast, Storage e reconexão.
+
+Dois leitores GM-only ainda são SECURITY INVOKER e leem `campaigns.cba_data`: a sobrecarga de seis argumentos de `srd_consultar_modificadores_manobra_srd` e `srd_listar_ataques_naturais_oportunidade_srd`. Ambos verificam `auth.uid()` e `my_role(...)=GM`; antes de retirar privilégios de coluna, deverão executar sob SECURITY DEFINER com search_path fixo ou migrar para helper interno autorizado.
+
+Uma migration preliminar de revogação de SELECT foi preparada durante a revisão, mas foi retirada de `supabase/migrations` e seu fixture removido, pois seria prematuro enquanto as respostas RPC restantes não estiverem cobertas. Nenhuma alteração foi aplicada ao Supabase remoto. **A exposição está confirmada e permanece aberta; não declarar o corte de CBA concluído.**
