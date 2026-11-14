@@ -107,3 +107,11 @@
 2. Seguir a implementação até o ponto em que lê ou grava CBA/combate e classificar o retorno: estado completo, estado parcial, payload filtrado ou escalar sem estado privado.
 3. Validar cada RPC com fixtures por papel e teste HTTP/PostgREST; a presença de auth.uid() não demonstra autorização correta, e ausência no wrapper não demonstra ausência de guardas transitivas.
 4. Só depois de todas as raízes e canais Realtime estarem cobertos, preparar a migration de corte de SELECT/Realtime. Não aplicar revogação em massa.
+
+## Subconjunto SECURITY INVOKER e wrappers privados
+
+- 26 dos 85 overloads são SECURITY INVOKER; os outros 59 são SECURITY DEFINER. A classificação por texto não determina, sozinha, se a autorização está correta: nos wrappers INVOKER, a guarda pode estar na implementação priv chamada.
+- A revisão de dependências encontrou 32 arestas de chamada para priv.* nesses wrappers; 30 destinos são SECURITY DEFINER e 2 são SECURITY INVOKER. Em 27 destinos, authenticated tem EXECUTE; em 5, não tem. A execução efetiva depende do contexto e da cadeia de chamadas.
+- Dois leitores GM-only estão no caso especial já identificado: srd_consultar_modificadores_manobra_srd(bigint,text,text,text,boolean,boolean) e srd_listar_ataques_naturais_oportunidade_srd(bigint,text). Ambos leem campaigns.cba_data, verificam auth.uid() + my_role='GM', mas o banco remoto ainda os mostra SECURITY INVOKER. A migration candidata 20261110150000_fix_invoker_maneuver_catalog_helper_permissions.sql muda ambos para SECURITY DEFINER, fixa search_path e restringe EXECUTE; ela existe no repositório e possui fixture/verificação, mas NÃO consta no ledger remoto em 2026-11-14. Não aplicar ACL cutover antes de reconciliar essa migration e confirmar o teste.
+- O conjunto de wrappers INVOKER encaminha ações de NPC/GM, Ataque Total, movimento, descanso longo de NPC, manobras e reações AOO para implementações priv.*. As implementações SECURITY DEFINER devem ser revisadas individualmente quanto à autorização, validação de turno e conteúdo do retorno; não basta o wrapper invoker ser fino.
+- Duas assinaturas não retornam JSONB: srd35_deslocamento_personagem(text,numeric) retorna numeric e srd_apply_campaign_condition(bigint,text,text,text,integer,jsonb) retorna bigint. Retornos escalares ainda precisam ser classificados pelo efeito colateral e pelos dados que leem.
