@@ -296,3 +296,35 @@ Remediações oficiais:
 - [Advisor: SECURITY DEFINER executável por authenticated](https://supabase.com/docs/guides/database/database-linter?lint=0029_authenticated_security_definer_function_executable)
 - [Advisor: RLS habilitado sem policy](https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy)
 - [Proteção contra senhas vazadas](https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection)
+
+
+### Implementação em branch — primeira migration da loja — 2026-11-14
+
+Foram adicionados ao branch simplificado, sem aplicar no Supabase:
+- `supabase/migrations/20261114100000_srd_campaign_shop.sql`
+- `supabase/tests/srd_campaign_shop_test_plan.sql`
+
+A migration cria:
+- `srd_campaign_shop_items`: catálogo de itens por campanha, preço de compra, preço de recompra opcional, estoque finito ou ilimitado, ativação e auditoria do Mestre.
+- `srd_campaign_shop_receipts`: recibos imutáveis com campanha, personagem, ator, operação, item, quantidade, preço unitário, total, saldo anterior/posterior e chave idempotente.
+- RPC `srd_campaign_shop_configure_item`: somente GM configura preço, estoque e disponibilidade.
+- RPC `srd_campaign_shop_buy`: jogador compra apenas para sua própria ficha na campanha.
+- RPC `srd_campaign_shop_sell`: jogador vende apenas itens de seu próprio inventário; o saldo é creditado e o estoque finito é reposto.
+
+Salvaguardas incluídas no rascunho:
+- Bloqueios `FOR UPDATE` em ficha, saldo, anúncio de loja e inventário; lock transacional por chave idempotente.
+- Repetição idêntica retorna o recibo original; reutilização da chave com parâmetros diferentes é rejeitada.
+- Saldo SRD NUMERIC preservado e espelho `characters.ouro` atualizado com FLOOR na mesma transação.
+- Limite explícito para evitar overflow do espelho INTEGER legado.
+- RLS de leitura para membros e recibos para ator/dono/Mestre; sem grants de escrita direta às tabelas.
+- RPCs SECURITY DEFINER com `search_path` fixo, grants somente a authenticated e checagem explícita de `auth.uid()`, campanha e papel.
+- Preços e estoque são locais à campanha; nenhum preço global do catálogo SRD é alterado.
+
+Revisão estática preliminar do arquivo confirma 3 RPCs, 3 blocos SECURITY DEFINER, 3 search_paths fixos, bloco transacional, grants de execução, locks e caminho de idempotência. **Isso não equivale a validação de sintaxe pelo PostgreSQL nem a teste funcional.** A migration permanece somente no GitHub; não foi aplicada ao banco. O arquivo de testes é uma matriz de casos a executar em projeto Supabase isolado com contextos JWT de GM, PLAYER e usuário externo.
+
+Pendências antes de conectar a UI:
+1. Aplicar somente em projeto de teste isolado e corrigir qualquer erro real do PostgreSQL.
+2. Executar testes negativos, repetição idempotente e concorrência da matriz.
+3. Verificar triggers de inventário/instâncias de armas após compra e venda.
+4. Definir a tela da loja do Mestre e a tela individual do jogador, com chave UUID nova por ação e reutilizada apenas em retry.
+5. Revisar a correção separada de `equipar_item_srd`; não conceder grants gerais ao navegador.
