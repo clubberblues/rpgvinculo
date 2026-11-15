@@ -69,3 +69,15 @@ button,input,textarea,select{font-family:inherit}
 button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--vtt-focus);outline-offset:2px}
 @media(max-width:760px){.mesa-header{padding:7px 10px;gap:8px}.titulo-mesa .nome{font-size:14px;letter-spacing:1px}.turno-info{font-size:9px;min-width:auto;letter-spacing:.7px}.painel-cab{letter-spacing:1px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
+
+/* Ficha completa em modal: reaproveita ficha.html e seus fluxos já existentes. */
+.vtt-sheet-modal{position:fixed;inset:0;z-index:11000;display:flex;align-items:center;justify-content:center;padding:clamp(6px,1.5vw,20px);background:rgba(5,7,9,.84);backdrop-filter:blur(9px)}
+.vtt-sheet-modal-panel{display:flex;flex-direction:column;width:min(1480px,98vw);height:min(960px,96dvh);min-height:0;overflow:hidden;background:#191c20;border:1px solid #5a6067;border-radius:14px;box-shadow:0 24px 70px #000b}
+.vtt-sheet-modal-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:0 0 48px;padding:7px 14px;background:linear-gradient(180deg,#2c3036,#202429);border-bottom:1px solid #4a5057}
+.vtt-sheet-modal-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e4c58d;font:700 12px/1.2 Cinzel,Georgia,serif;letter-spacing:.8px}
+.vtt-sheet-modal-close{flex:0 0 auto;padding:7px 12px;border:1px solid #65543a;border-radius:7px;background:#302a21;color:#f0d7a5;font:600 11px Inter,system-ui,sans-serif;cursor:pointer}
+.vtt-sheet-modal-close:hover{border-color:#dfbd80;background:#3c3327}
+.vtt-sheet-modal-status{padding:8px 14px;color:#c5c0b6;background:#202429;font:12px Inter,system-ui,sans-serif}
+.vtt-sheet-modal-status[hidden]{display:none}
+.vtt-sheet-modal-frame{display:block;flex:1 1 auto;width:100%;height:calc(100% - 48px);min-height:0;border:0;background:#151719}
+@media(max-width:760px){.vtt-sheet-modal{padding:0}.vtt-sheet-modal-panel{width:100vw;height:100dvh;max-height:100dvh;border:0;border-radius:0}.vtt-sheet-modal-head{flex-basis:44px;padding:6px 9px}.vtt-sheet-modal-title{font-size:10px}.vtt-sheet-modal-close{padding:7px 9px}.vtt-sheet-modal-frame{height:calc(100% - 44px)}}
