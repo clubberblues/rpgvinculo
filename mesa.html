@@ -1497,7 +1497,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     ligarGestosCBA();
     ligarMenuContextualToken();
     var tokenLayer=document.getElementById('cba-token-layer');
-    tokenLayer.addEventListener('click',function(e){var hpButton=e.target.closest&&e.target.closest('.token-pv-btn');if(hpButton){e.preventDefault();e.stopPropagation();abrirAjustePVToken(hpButton.dataset.cbaPvKey);return;}if(modoSelecaoTeste&&ehGM)return;var token=e.target.closest&&e.target.closest('.token-cba');if(!token)return;var item=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key)===String(token.dataset.cbaTokenKey);});if(!item)return;if(Date.now()<suppressTokenClickUntil)return;if(ataqueMestreSelecionado){selecionarAlvoAtaqueMestre(item);return;}if(ataqueSelecionado){selecionarAlvoAtaque(item.key);return;}abrirMenuContextualToken(item,token);});
+    tokenLayer.addEventListener('click',function(e){var hpButton=e.target.closest&&e.target.closest('.token-pv-btn');if(hpButton){e.preventDefault();e.stopPropagation();abrirAjustePVToken(hpButton.dataset.cbaPvKey);return;}var token=e.target.closest&&e.target.closest('.token-cba');if(!token)return;var item=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key)===String(token.dataset.cbaTokenKey);});if(!item)return;if(modoSelecaoTeste&&ehGM){e.preventDefault();e.stopPropagation();alternarAlvoTokenTeste(item,token);return;}if(Date.now()<suppressTokenClickUntil)return;if(ataqueMestreSelecionado){selecionarAlvoAtaqueMestre(item);return;}if(ataqueSelecionado){selecionarAlvoAtaque(item.key);return;}abrirMenuContextualToken(item,token);});
     tokenLayer.addEventListener('dblclick',function(e){var token=e.target.closest&&e.target.closest('.token-cba');if(token&&ehGM&&!ataqueSelecionado)abrirAjustePVToken(token.dataset.cbaTokenKey);});
     tokenLayer.addEventListener('contextmenu',function(e){var el=e.target.closest&&e.target.closest('.token-cba');if(!el)return;var t=cbaPublishedState&&cbaPublishedState.tokens.find(function(x){return String(x.key)===String(el.dataset.cbaTokenKey);});if(!t||t.tipo!=='monstro'||!t.monsterId)return;e.preventDefault();var m=cbaMonsterCatalog.find(function(x){return String(x.id)===String(t.monsterId);});if(m)publicarInfoMonstro(m);else if(t.monsterStats){publicarInfoMonstro({id:t.monsterId,nome:t.nome,nd:t.monsterStats.nd,ca:t.ac,pv:t.maxHp,ataques:t.monsterStats.ataques,srd_source_url:t.srdSourceUrl});}});
   }
@@ -5494,6 +5494,7 @@ async function abrirModalEquipamentos(){
     cbaState.tokens.push({
       key:'cba-'+Date.now()+'-'+Math.random().toString(36).slice(2,8),
       id:String(id),nome:String(nome||'Criatura'),imagem:imagem||'',tipo:tipo==='monstro'?'monstro':'npc',
+      sourceCharacterId:tipo==='npc'?String(id):null,
       detalhe:detalhe||'',gridX:gridX,gridY:gridY,x:gridX*cell,y:gridY*cell
     });
     var added=cbaState.tokens[cbaState.tokens.length-1];if(tipo==='monstro'&&monster){added.monsterId=String(monster.id);added.hp=monster.hp;added.maxHp=monster.maxHp;added.dexMod=monster.dexMod;added.ac=monster.ac;added.monsterStats=monster.monsterStats;added.srdSourceUrl=monster.srdSourceUrl;}
@@ -5511,14 +5512,7 @@ async function abrirModalEquipamentos(){
       // A seleção do alvo é tratada no pointerdown, antes da lógica de arraste.
       // Isso evita que pointer capture/drag suprima o click e deixe o fluxo sem alvo.
       if(!ePreview && ehGM && modoSelecaoTeste){
-        var targetToken=e.target.closest?e.target.closest('.token-cba'):null;
-        var tokenKey=targetToken&&String(targetToken.dataset.cbaTokenKey||'');
-        var targetScenes=[cbaState,cbaPublishedState].filter(function(scene,index,list){return scene&&Array.isArray(scene.tokens)&&list.indexOf(scene)===index;});
-        var targetItem=null;
-        for(var targetSceneIndex=0;targetSceneIndex<targetScenes.length&&!targetItem;targetSceneIndex++){
-          targetItem=targetScenes[targetSceneIndex].tokens.find(function(t){return String(t.key||'')===tokenKey||String(t.id||'')===tokenKey;})||null;
-        }
-        if(targetItem&&targetToken){e.preventDefault();e.stopPropagation();alternarAlvoTokenTeste(targetItem,targetToken);}
+        // Mantém o token fora do arraste; a seleção é confirmada no evento click da camada.
         return;
       }
       var token = e.target.closest ? e.target.closest('.token-cba') : null;
