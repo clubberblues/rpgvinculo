@@ -1515,8 +1515,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     }else{var p=personagemAtivoDaInterface(),magic=possuiMagiasUI(p),combat=estado==='COMBATE';var groups=combat?[
       {title:'Ataque',actions:[{id:'atk-corpo',ic:'⚔️',txt:'Ataque corpo a corpo'},{id:'atk-dist',ic:'🏹',txt:'Ataque à distância'},{id:'atk-total-corpo',ic:'⚔️',txt:'Ataque Total corpo a corpo'},{id:'atk-total-dist',ic:'🏹',txt:'Ataque Total à distância'}].concat(magic?[{id:'atk-mag',ic:'✨',txt:'Conjurar magia'}]:[])},
       {title:'Tática e defesa',actions:[{id:'manobras-ui',ic:'🛡️',txt:'Manobras de combate'},{id:'defesa-ui',ic:'🧱',txt:'Ações defensivas'},{id:'movimento-ui',ic:'👣',txt:'Movimentação'}]},
-      {title:'Personagem',actions:[{id:'loja',ic:'🪙',txt:'Loja da campanha'},{id:'ficha',ic:'📜',txt:'Minha ficha'},{id:'inventario',ic:'🎒',txt:'Equipamentos'},{id:'pericia',ic:'📚',txt:'Perícias'},{id:'racial-ui',ic:'⛰️',txt:'Características raciais'},{id:'talentos-ui',ic:'🏅',txt:'Talentos'},{id:'habilidades',ic:'⚔️',txt:'Características da classe'},{id:'dados',ic:'🎲',txt:'Dados livres'},{id:'avancar-turno',ic:'⏭️',txt:'Encerrar turno'}]}
-    ]:[{title:'Aventureiro',actions:[{id:'loja',ic:'🪙',txt:'Loja da campanha'},{id:'movimento-ui',ic:'👣',txt:'Movimentação'},{id:'ficha',ic:'📜',txt:'Minha ficha'},{id:'inventario',ic:'🎒',txt:'Equipamentos e mochila'},{id:'pericia',ic:'📚',txt:'Perícias'},{id:'racial-ui',ic:'⛰️',txt:'Características raciais'},{id:'talentos-ui',ic:'🏅',txt:'Talentos'},{id:'habilidades',ic:'⚔️',txt:'Características da classe'},{id:'dados',ic:'🎲',txt:'Dados livres'}].concat(magic?[{id:'atk-mag',ic:'✨',txt:'Magias disponíveis'}]:[])}];montarPainelAcaoUI(el,groups,(p&&p.ch.nome||'Aventureiro')+' · '+classeUI(p),p);}
+      {title:'Personagem',actions:[{id:'loja',ic:'🪙',txt:'Loja da campanha'},{id:'ficha',ic:'📜',txt:'Minha ficha'},{id:'inventario',ic:'🎒',txt:'Equipamentos'},{id:'pericia',ic:'📚',txt:'Perícias'},{id:'testes-jogador',ic:'🎲',txt:'Testes de atributo e resistência'},{id:'racial-ui',ic:'⛰️',txt:'Características raciais'},{id:'talentos-ui',ic:'🏅',txt:'Talentos'},{id:'habilidades',ic:'⚔️',txt:'Características da classe'},{id:'dados',ic:'🎲',txt:'Dados livres'},{id:'avancar-turno',ic:'⏭️',txt:'Encerrar turno'}]}
+    ]:[{title:'Aventureiro',actions:[{id:'loja',ic:'🪙',txt:'Loja da campanha'},{id:'movimento-ui',ic:'👣',txt:'Movimentação'},{id:'ficha',ic:'📜',txt:'Minha ficha'},{id:'inventario',ic:'🎒',txt:'Equipamentos e mochila'},{id:'pericia',ic:'📚',txt:'Perícias'},{id:'testes-jogador',ic:'🎲',txt:'Testes de atributo e resistência'},{id:'racial-ui',ic:'⛰️',txt:'Características raciais'},{id:'talentos-ui',ic:'🏅',txt:'Talentos'},{id:'habilidades',ic:'⚔️',txt:'Características da classe'},{id:'dados',ic:'🎲',txt:'Dados livres'}].concat(magic?[{id:'atk-mag',ic:'✨',txt:'Magias disponíveis'}]:[])}];montarPainelAcaoUI(el,groups,(p&&p.ch.nome||'Aventureiro')+' · '+classeUI(p),p);}
     var economy=document.getElementById('painel-economia');if(economy&&economy.parentNode)economy.parentNode.removeChild(economy);var combatPanel=document.createElement('section');combatPanel.id='painel-combate-acoes';combatPanel.hidden=true;combatPanel.innerHTML='<h3>CONTROLE DO TURNO</h3><p id="turno-controle-status">Aguardando a iniciativa.</p><div id="iniciativa-acoes-mestre"></div>';el.appendChild(combatPanel);if(ehGM){var aooQueueButton=document.createElement('button');aooQueueButton.type='button';aooQueueButton.className='btn-acao';aooQueueButton.textContent='⚔️ Reações pendentes';aooQueueButton.addEventListener('click',abrirPainelFilaAOO);combatPanel.appendChild(aooQueueButton);}if(economy)combatPanel.appendChild(economy);if(tokenMenu)el.appendChild(tokenMenu);var oldRoster=document.querySelector('.mesa-footer .painel-aventureiros');if(oldRoster)oldRoster.remove();var roster=document.createElement('section');roster.className='painel painel-aventureiros';roster.setAttribute('aria-label','Aventureiros da mesa');roster.innerHTML='<div class="painel-cab">AVENTUREIROS</div><div class="painel-corpo" id="cards-strip" aria-label="Cards de personagens, NPCs e monstros"></div>';var footer=document.querySelector('.mesa-footer');if(footer)footer.appendChild(roster);else el.appendChild(roster);if(diceOverlay){if(diceOverlay.parentElement!==document.body)document.body.appendChild(diceOverlay);diceOverlay.classList.add('dado-modal-global');}if(document.getElementById('painel-iniciativa'))renderizarIniciativa(combatDataState);
   }
   async function alternarEstadoMesa(){
@@ -3517,6 +3517,31 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     ];
     return validIds.indexOf(id)!==-1;
   }
+  function abrirTestesAtributosResistenciasJogador(){
+    var p=personagemAtivoDaInterface();if(!p){alert('Nenhuma ficha própria disponível.');return;}
+    var old=document.getElementById('modal-testes-jogador');if(old)old.remove();
+    var modal=document.createElement('div');modal.id='modal-testes-jogador';modal.className='skill-roll-overlay';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');
+    var panel=document.createElement('section');panel.className='skill-roll-panel';var head=document.createElement('header');head.className='skill-roll-head';
+    var heading=document.createElement('div'),title=document.createElement('h2'),subtitle=document.createElement('p');title.textContent='Testes de atributo e resistência';subtitle.textContent='Escolha o teste de '+String(p.ch.nome||'seu personagem')+'. Role o D20 físico.';heading.append(title,subtitle);
+    var close=document.createElement('button');close.type='button';close.className='skill-roll-close';close.textContent='✕';close.onclick=function(){modal.remove();};head.append(heading,close);
+    var grid=document.createElement('div');grid.className='skill-roll-grid';
+    function section(label){var d=document.createElement('div');d.className='testes-divisor';var t=document.createElement('span');t.textContent=label;d.appendChild(t);grid.appendChild(d);}
+    function add(label,kind,key){
+      var b=document.createElement('button');b.type='button';b.className='skill-roll-card';var n=document.createElement('strong');n.textContent=label;var m=document.createElement('span');m.textContent=kind==='ability'?'D20 + modificador de atributo':'D20 + bônus de resistência';b.append(n,m);
+      b.onclick=function(){if(b.disabled)return;b.disabled=true;modal.remove();abrirDado(label+' · '+String(p.ch.nome||'Personagem')+' · D20',async function(d20){
+        var bonus=0,detail={};if(kind==='ability'){var attrs=p.sh&&p.sh.atributos||{};if(typeof attrs==='string'){try{attrs=JSON.parse(attrs);}catch(e){attrs={};}}bonus=modifier35(attrs[key]);detail={ability:key,ability_modifier:bonus};}
+        else{var r=calcularBonusResistenciaPersonagem35(p,key,null);bonus=Number(r.bonus)||0;detail=r;}
+        var total=Number(d20)+bonus,txt='🎲 '+String(p.ch.nome||'Personagem')+' — '+label+': D20 '+d20+' + bônus '+(bonus>=0?'+':'')+bonus+' = '+total+'.';
+        var data={evento:kind==='ability'?'ability_check_dnd35':'saving_throw_dnd35',character_id:String(p.ch.id),teste:label,d20:Number(d20),bonus:bonus,total:total};
+        if(kind==='ability'){data.ability=key;data.ability_breakdown=detail;}else{data.save_type=key;data.save_breakdown=detail;}
+        var sent=await enviarMensagemChat(txt,'rolagem',data);if(sent&&sent.error)throw new Error(sent.error.message||'Não foi possível publicar o resultado no chat.');
+      },true,true,'1d20');};grid.appendChild(b);
+    }
+    section('TESTES DE ATRIBUTOS');[['Força','FOR'],['Destreza','DES'],['Constituição','CON'],['Inteligência','INT'],['Sabedoria','SAB'],['Carisma','CAR']].forEach(function(x){add(x[0],'ability',x[1]);});
+    section('TESTES DE RESISTÊNCIA');add('Fortitude','save','fortitude');add('Reflexos','save','reflex');add('Vontade','save','will');
+    panel.append(head,grid);modal.appendChild(panel);document.body.appendChild(modal);modal.addEventListener('click',function(e){if(e.target===modal)modal.remove();});
+  }
+
   async function abrirTestePericiaJogador(characterId,somenteConsulta){
     var p=characterId&&ehGM?personagens.find(function(x){return String(x.ch.id)===String(characterId);}):(personagemDoTurnoDoJogador()||personagens.find(function(x){return x.ch.user_id===eu.id;}));
     if(!p){alert(somenteConsulta?'Não foi possível localizar a ficha selecionada.':'Nenhuma ficha própria disponível.');return;}
@@ -4405,6 +4430,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     if(id === 'token-image-manager'){ if(ehGM) abrirSeletorImagemToken(); return; }
     if(id === 'inventario'){ abrirInventarioSRD(); return; }
     if(id === 'pericia'){ abrirTestePericiaJogador(); return; }
+    if(id === 'testes-jogador'){ abrirTestesAtributosResistenciasJogador(); return; }
     
     // Ação genérica de Dados
     if(id === 'dados'){ 
