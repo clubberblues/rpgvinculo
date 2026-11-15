@@ -1270,6 +1270,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   var eu = null, meuPerfil = null, meuPapel = 'PLAYER', ehGM = false;
   var campanha = null, membros = [], personagens = [];
   var ctxTokenAtualKey = null, ctxFocusTokenKey = null, suppressTokenClickUntil = 0;
+  var personagemSelecionadoId = null;
   var cbaSignedMediaCache=Object.create(null);
   var cbaState = { backgroundUrl:'', backgroundPath:'', backgroundObjectUrl:'', imgScale:1, gridSize:50, gridOpacity:0.3, gridRatio:null, tokens:[], fog:{enabled:false,reveals:[]} };
   var cbaPublishedState = null;
@@ -1492,6 +1493,10 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         if(token)abrirMenuContextualToken(token,cardAcao);return;
       }
       if(ehGM && cardAcao && !modoSelecaoTeste){ e.preventDefault(); abrirAjustePV(cardAcao.dataset.char); return; }
+      if(!ehGM && cardAcao && !modoSelecaoTeste){
+        var tokenDaFicha=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key||'')===String(cardAcao.dataset.cbaTokenKey||'')||String(t.id)===String(cardAcao.dataset.tokenId||'');});
+        if(tokenDaFicha&&selecionarPersonagemDoToken(tokenDaFicha)){e.preventDefault();e.stopPropagation();return;}
+      }
       if(!modoSelecaoTeste) return;
       var card = e.target.closest ? e.target.closest('.jogador-faixa') : null;
       if(!card || !cardsStrip.contains(card)) return;
@@ -1505,26 +1510,91 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     ligarGestosCBA();
     ligarMenuContextualToken();
     var tokenLayer=document.getElementById('cba-token-layer');
-    tokenLayer.addEventListener('click',function(e){var hpButton=e.target.closest&&e.target.closest('.token-pv-btn');if(hpButton){e.preventDefault();e.stopPropagation();abrirAjustePVToken(hpButton.dataset.cbaPvKey);return;}var token=e.target.closest&&e.target.closest('.token-cba');if(!token)return;var item=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key)===String(token.dataset.cbaTokenKey);});if(!item)return;if(modoSelecaoTeste&&ehGM){e.preventDefault();e.stopPropagation();alternarAlvoTokenTeste(item,token);return;}if(Date.now()<suppressTokenClickUntil)return;if(ataqueMestreSelecionado){selecionarAlvoAtaqueMestre(item);return;}if(ataqueSelecionado){selecionarAlvoAtaque(item.key);return;}abrirMenuContextualToken(item,token);});
+    tokenLayer.addEventListener('click',function(e){var hpButton=e.target.closest&&e.target.closest('.token-pv-btn');if(hpButton){e.preventDefault();e.stopPropagation();abrirAjustePVToken(hpButton.dataset.cbaPvKey);return;}var token=e.target.closest&&e.target.closest('.token-cba');if(!token)return;var item=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key)===String(token.dataset.cbaTokenKey);});if(!item)return;if(modoSelecaoTeste&&ehGM){e.preventDefault();e.stopPropagation();alternarAlvoTokenTeste(item,token);return;}if(Date.now()<suppressTokenClickUntil)return;if(ataqueMestreSelecionado){selecionarAlvoAtaqueMestre(item);return;}if(ataqueSelecionado){selecionarAlvoAtaque(item.key);return;}if(!ehGM&&item.tipo==='player'){selecionarPersonagemDoToken(item);return;}abrirMenuContextualToken(item,token);});
     tokenLayer.addEventListener('dblclick',function(e){var token=e.target.closest&&e.target.closest('.token-cba');if(token&&ehGM&&!ataqueSelecionado)abrirAjustePVToken(token.dataset.cbaTokenKey);});
     tokenLayer.addEventListener('contextmenu',function(e){var el=e.target.closest&&e.target.closest('.token-cba');if(!el)return;var t=cbaPublishedState&&cbaPublishedState.tokens.find(function(x){return String(x.key)===String(el.dataset.cbaTokenKey);});if(!t||t.tipo!=='monstro'||!t.monsterId)return;e.preventDefault();var m=cbaMonsterCatalog.find(function(x){return String(x.id)===String(t.monsterId);});if(m)publicarInfoMonstro(m);else if(t.monsterStats){publicarInfoMonstro({id:t.monsterId,nome:t.nome,nd:t.monsterStats.nd,ca:t.ac,pv:t.maxHp,ataques:t.monsterStats.ataques,srd_source_url:t.srdSourceUrl});}});
   }
 
-  function personagemAtivoDaInterface(){return personagemDoTurnoDoJogador()||personagens.find(function(p){return p.ch&&p.ch.user_id===eu.id;})||null;}
+  function personagemAtivoDaInterface(){
+    if(!ehGM&&personagemSelecionadoId){
+      var selected=personagens.find(function(p){return p.ch&&String(p.ch.id)===String(personagemSelecionadoId)&&String(p.ch.user_id)===String(eu.id);});
+      if(selected)return selected;
+      personagemSelecionadoId=null;
+    }
+    var fallback=personagemDoTurnoDoJogador()||personagens.find(function(p){return p.ch&&String(p.ch.user_id)===String(eu.id);})||null;
+    if(!ehGM&&fallback&&!personagemSelecionadoId)personagemSelecionadoId=String(fallback.ch.id);
+    return fallback;
+  }
   function listaTalentosUI(value){if(Array.isArray(value))return value;if(typeof value==='string'){try{var x=JSON.parse(value);return Array.isArray(x)?x:[];}catch(e){return [];}}return [];}
   function possuiMagiasUI(p){if(!p)return false;var r=parseJsonSeguro35(p.sh&&p.sh.magias_preparadas,null);if(r&&((r.conhecidas||[]).length||(r.preparadas||[]).length||(r.dominio_preparadas||[]).length))return true;return ['bard','cleric','druid','sorcerer','wizard','paladin','ranger'].indexOf(String(p.cl&&p.cl.class_key||''))>=0&&Number(p.sh&&p.sh.nivel)>0;}
   function classeUI(p){var v=[p&&p.sh&&p.sh.classe_id,p&&p.cl&&p.cl.class_key,p&&p.cl&&p.cl.nome].join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();if(/fighter|guerreiro/.test(v))return 'Guerreiro';if(/barbarian|barbaro/.test(v))return 'Bárbaro';if(/rogue|ladino/.test(v))return 'Ladino';if(/ranger|patrulheiro/.test(v))return 'Patrulheiro';if(/paladin|paladino/.test(v))return 'Paladino';if(/wizard|mago/.test(v))return 'Mago';if(/sorcerer|feiticeiro/.test(v))return 'Feiticeiro';if(/cleric|clerigo/.test(v))return 'Clérigo';if(/druid|druida/.test(v))return 'Druida';if(/bard|bardo/.test(v))return 'Bardo';if(/monk|monge/.test(v))return 'Monge';return String(p&&p.cl&&p.cl.nome||'Aventureiro');}
-  function criarBotaoAcaoUI(a){var b=document.createElement('button');b.type='button';b.className='btn-acao';b.dataset.acao=a.id;var i=document.createElement('span');i.className='icone';i.textContent=a.ic;var t=document.createElement('span');t.textContent=a.txt;b.append(i,t);b.onclick=function(){if(typeof a.onClick==='function'){a.onClick();return;}acao(a.id);};return b;}
-  function montarPainelAcaoUI(host,groups,heading,p){host.replaceChildren();var identity=document.createElement('section');identity.className='player-action-identity';var name=document.createElement('strong');name.textContent=heading;identity.appendChild(name);if(p){var sub=document.createElement('span');sub.textContent=String(p.raca&&p.raca.nome||p.sh.raca_id||'Raça não identificada')+' · Nível '+Math.max(1,Number(p.sh.nivel)||1);identity.appendChild(sub);var hp=Number(p.sh.pv_atual);if(!Number.isFinite(hp))hp=pvMax(p.sh,p.cl);var vitals=document.createElement('div');vitals.className='player-action-vitals';[['❤',hp+'/'+pvMax(p.sh,p.cl)+' PV'],['🛡',caFichaMesa(p)+' CA'],['↔',(p.deslocamento_m==null?'—':p.deslocamento_m)+' m']].forEach(function(x){var span=document.createElement('span');span.textContent=x[0]+' '+x[1];vitals.appendChild(span);});identity.appendChild(vitals);}host.appendChild(identity);var seenActionIds=new Set();groups=groups.map(function(g){return Object.assign({},g,{actions:(g.actions||[]).filter(function(action){var key=String(action&&action.id||'');if(!key)return true;if(seenActionIds.has(key))return false;seenActionIds.add(key);return true;})});}).filter(function(g){return g.actions.length>0;});if(!groups.length)return;var tabs=document.createElement('nav');tabs.className='action-group-tabs';var previous=host.dataset.activeGroup||'',active=groups.some(function(g){return g.title===previous;})?previous:groups[0].title;groups.forEach(function(g,index){var id='player-actions-'+index,tab=document.createElement('button');tab.type='button';tab.className='action-group-tab';tab.textContent=g.title;tab.setAttribute('aria-selected',String(g.title===active));var section=document.createElement('section');section.className='player-action-section';section.id=id;section.hidden=g.title!==active;var grid=document.createElement('div');grid.className='player-action-grid';g.actions.forEach(function(x){grid.appendChild(criarBotaoAcaoUI(x));});section.appendChild(grid);host.appendChild(section);tab.onclick=function(){host.dataset.activeGroup=g.title;host.querySelectorAll('.action-group-tab').forEach(function(t){t.setAttribute('aria-selected',String(t===tab));});host.querySelectorAll('.player-action-section').forEach(function(x){x.hidden=x.id!==id;});};tabs.appendChild(tab);});if(groups.length>1)host.prepend(tabs);host.dataset.activeGroup=active;}
+  function criarBotaoAcaoUI(a){var b=document.createElement('button');b.type='button';b.className='btn-acao player-action-card';b.dataset.acao=a.id;var i=document.createElement('span');i.className='icone';i.textContent=a.ic;var t=document.createElement('span');t.className='action-card-label';t.textContent=a.txt;b.append(i,t);b.onclick=function(){if(typeof a.onClick==='function'){a.onClick();return;}acao(a.id);};return b;}
+  function montarPainelAcaoUI(host,groups,heading,p){host.replaceChildren();host.classList.toggle('painel-jogador-contextual',!!p&&!ehGM);host.dataset.classKey=chaveClassePainelUI(p);var identity=document.createElement('section');identity.className='player-action-identity';var name=document.createElement('strong');name.textContent=heading;identity.appendChild(name);if(p){var sub=document.createElement('span');sub.textContent=String(p.raca&&p.raca.nome||p.sh.raca_id||'Raça não identificada')+' · Nível '+Math.max(1,Number(p.sh.nivel)||1);identity.appendChild(sub);var hp=Number(p.sh.pv_atual);if(!Number.isFinite(hp))hp=pvMax(p.sh,p.cl);var vitals=document.createElement('div');vitals.className='player-action-vitals';[['❤',hp+'/'+pvMax(p.sh,p.cl)+' PV'],['🛡',caFichaMesa(p)+' CA'],['↔',(p.deslocamento_m==null?'—':p.deslocamento_m)+' m']].forEach(function(x){var span=document.createElement('span');span.textContent=x[0]+' '+x[1];vitals.appendChild(span);});identity.appendChild(vitals);}host.appendChild(identity);var seenActionIds=new Set();groups=groups.map(function(g){return Object.assign({},g,{actions:(g.actions||[]).filter(function(action){var key=String(action&&action.id||'');if(!key)return true;if(seenActionIds.has(key))return false;seenActionIds.add(key);return true;})});}).filter(function(g){return g.actions.length>0;});if(!groups.length)return;var tabs=document.createElement('nav');tabs.className='action-group-tabs';var previous=host.dataset.activeGroup||'',active=groups.some(function(g){return g.title===previous;})?previous:groups[0].title;groups.forEach(function(g,index){var id='player-actions-'+index,tab=document.createElement('button');tab.type='button';tab.className='action-group-tab';tab.dataset.groupKey=g.key||g.title;tab.textContent=(g.icon?g.icon+' ':'')+g.title;tab.setAttribute('aria-selected',String(g.title===active));var section=document.createElement('section');section.className='player-action-section';section.dataset.groupKey=g.key||g.title;section.id=id;section.hidden=g.title!==active;var grid=document.createElement('div');grid.className='player-action-grid';g.actions.forEach(function(x){grid.appendChild(criarBotaoAcaoUI(x));});section.appendChild(grid);host.appendChild(section);tab.onclick=function(){host.dataset.activeGroup=g.title;host.querySelectorAll('.action-group-tab').forEach(function(t){t.setAttribute('aria-selected',String(t===tab));});host.querySelectorAll('.player-action-section').forEach(function(x){x.hidden=x.id!==id;});};tabs.appendChild(tab);});if(groups.length>1)host.prepend(tabs);host.dataset.activeGroup=active;}
+  function chaveClassePainelUI(p){
+    var raw=[p&&p.cl&&p.cl.class_key,p&&p.cl&&p.cl.canonical_key,p&&p.cl&&p.cl.nome,p&&p.sh&&p.sh.classe_id,p&&p.sh&&p.sh.classe].join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+    if(/wizard|mago/.test(raw))return 'wizard';
+    if(/sorcerer|feiticeiro/.test(raw))return 'sorcerer';
+    if(/druid|druida/.test(raw))return 'druid';
+    if(/cleric|clerigo/.test(raw))return 'cleric';
+    if(/bard|bardo/.test(raw))return 'bard';
+    if(/paladin|paladino/.test(raw))return 'paladin';
+    if(/ranger|patrulheiro/.test(raw))return 'ranger';
+    if(/barbarian|barbaro/.test(raw))return 'barbarian';
+    if(/fighter|guerreiro/.test(raw))return 'fighter';
+    if(/rogue|ladino/.test(raw))return 'rogue';
+    if(/monk|monge/.test(raw))return 'monk';
+    return 'adventurer';
+  }
+  function construirGruposPainelJogador(p,estado){
+    var classKey=chaveClassePainelUI(p),className=classeUI(p),classIcons={wizard:'📖',sorcerer:'🔮',druid:'🌿',cleric:'✦',bard:'🎼',paladin:'🛡️',ranger:'🏹',barbarian:'🪓',fighter:'⚔️',rogue:'🗡️',monk:'🥋'};
+    var groups=[
+      {key:'aventura',title:'Aventureiro',icon:'🧭',actions:[
+        {id:'movimento-ui',ic:'👣',txt:'Movimentação'},
+        {id:'ficha',ic:'📜',txt:'Minha ficha'},
+        {id:'inventario',ic:'🎒',txt:'Equipamentos e mochila'},
+        {id:'dados',ic:'🎲',txt:'Dados livres'}
+      ]},
+      {key:'pericias',title:'Perícias e testes',icon:'🎯',actions:[
+        {id:'pericia',ic:'📚',txt:'Perícias'},
+        {id:'testes-jogador',ic:'🎲',txt:'Testes de atributo e resistência'}
+      ]},
+      {key:'caracteristicas',title:'Características',icon:'✦',actions:[
+        {id:'racial-ui',ic:'⛰️',txt:'Características raciais'},
+        {id:'talentos-ui',ic:'🏅',txt:'Talentos'}
+      ]},
+      {key:'classe',title:'Classe · '+className,icon:classIcons[classKey]||'⚔️',actions:[
+        {id:'habilidades',ic:classIcons[classKey]||'⚔️',txt:'Habilidades de '+className}
+      ]}
+    ];
+    if(possuiMagiasUI(p)){
+      var spellTitles={wizard:'Grimório',sorcerer:'Magias espontâneas',druid:'Magias da natureza',cleric:'Magias divinas',bard:'Repertório mágico',paladin:'Magias de classe',ranger:'Magias de classe'};
+      var spellLabels={wizard:'Consultar grimório e conjurar',sorcerer:'Magias conhecidas e conjuração',druid:'Consultar magias e conjurar',cleric:'Consultar magias e conjurar',bard:'Consultar repertório e conjurar',paladin:'Magias disponíveis',ranger:'Magias disponíveis'};
+      groups.push({key:'magias',title:spellTitles[classKey]||'Magias',icon:'✨',actions:[{id:'atk-mag',ic:'✨',txt:spellLabels[classKey]||'Magias disponíveis'}]});
+    }
+    if(String(estado||'EXPLORACAO').toUpperCase()==='COMBATE'){
+      groups.push(
+        {key:'combate',title:'Combate',icon:'⚔️',actions:[
+          {id:'atk-corpo',ic:'⚔️',txt:'Ataque corpo a corpo'},
+          {id:'atk-dist',ic:'🏹',txt:'Ataque à distância'},
+          {id:'atk-total-corpo',ic:'⚔️',txt:'Ataque Total corpo a corpo'},
+          {id:'atk-total-dist',ic:'🏹',txt:'Ataque Total à distância'}
+        ]},
+        {key:'tatica',title:'Tática e defesa',icon:'🛡️',actions:[
+          {id:'manobras-ui',ic:'🛡️',txt:'Manobras de combate'},
+          {id:'defesa-ui',ic:'🧱',txt:'Ações defensivas'}
+        ]},
+        {key:'turno',title:'Turno',icon:'⏭️',actions:[
+          {id:'avancar-turno',ic:'⏭️',txt:'Encerrar turno'}
+        ]}
+      );
+    }
+    return groups;
+  }
   function renderBotoesAcao(){
     var el=document.getElementById('acoes-dir'),tokenMenu=document.getElementById('token-context-menu'),diceOverlay=document.getElementById('dado-iframe-overlay');if(!el)return;if(tokenMenu&&tokenMenu.parentNode)tokenMenu.parentNode.removeChild(tokenMenu);
     var estado=campanha?(campanha.state||'EXPLORACAO'):'EXPLORACAO';
     if(ehGM){var gm=[{id:'loja',ic:'🪙',txt:'Loja da campanha'},{id:'alternar-combate',ic:'⚔️',txt:estado==='COMBATE'?'Encerrar combate':'Iniciar combate'},{id:'cba',ic:'🗺️',txt:'Campo de batalha'},{id:'npc',ic:'👤',txt:'Adicionar NPC'},{id:'monstros',ic:'🐉',txt:'Bestiário'},{id:'testes',ic:'📜',txt:'Solicitar teste'},{id:'manobras-mestre',ic:'🛡️',txt:'Consultar manobras'},{id:'avancar-turno',ic:'⏭️',txt:'Avançar turno'},{id:'equipamentos',ic:'🛡️',txt:'Distribuir equipamento'},{id:'xp',ic:'⭐',txt:'Experiência'},{id:'dados',ic:'🎲',txt:'Dados'},{id:'token-image-manager',ic:'🖼️',txt:'Imagens dos tokens'}];if(estado==='COMBATE')gm.splice(1,0,{id:'iniciativa',ic:'🎲',txt:'Solicitar iniciativa'});var wrap=document.createElement('div');wrap.className='player-action-grid';gm.forEach(function(x){wrap.appendChild(criarBotaoAcaoUI(x));});el.replaceChildren(wrap);
-    }else{var p=personagemAtivoDaInterface(),magic=possuiMagiasUI(p),combat=estado==='COMBATE';var groups=combat?[
-      {title:'Ataque',actions:[{id:'atk-corpo',ic:'⚔️',txt:'Ataque corpo a corpo'},{id:'atk-dist',ic:'🏹',txt:'Ataque à distância'},{id:'atk-total-corpo',ic:'⚔️',txt:'Ataque Total corpo a corpo'},{id:'atk-total-dist',ic:'🏹',txt:'Ataque Total à distância'}].concat(magic?[{id:'atk-mag',ic:'✨',txt:'Conjurar magia'}]:[])},
-      {title:'Tática e defesa',actions:[{id:'manobras-ui',ic:'🛡️',txt:'Manobras de combate'},{id:'defesa-ui',ic:'🧱',txt:'Ações defensivas'},{id:'movimento-ui',ic:'👣',txt:'Movimentação'}]},
-      {title:'Personagem',actions:[{id:'ficha',ic:'📜',txt:'Minha ficha'},{id:'inventario',ic:'🎒',txt:'Equipamentos'},{id:'pericia',ic:'📚',txt:'Perícias'},{id:'testes-jogador',ic:'🎲',txt:'Testes de atributo e resistência'},{id:'racial-ui',ic:'⛰️',txt:'Características raciais'},{id:'talentos-ui',ic:'🏅',txt:'Talentos'},{id:'habilidades',ic:'⚔️',txt:'Características da classe'},{id:'dados',ic:'🎲',txt:'Dados livres'},{id:'avancar-turno',ic:'⏭️',txt:'Encerrar turno'}]}
-    ]:[{title:'Aventureiro',actions:[{id:'movimento-ui',ic:'👣',txt:'Movimentação'},{id:'ficha',ic:'📜',txt:'Minha ficha'},{id:'inventario',ic:'🎒',txt:'Equipamentos e mochila'},{id:'pericia',ic:'📚',txt:'Perícias'},{id:'testes-jogador',ic:'🎲',txt:'Testes de atributo e resistência'},{id:'racial-ui',ic:'⛰️',txt:'Características raciais'},{id:'talentos-ui',ic:'🏅',txt:'Talentos'},{id:'habilidades',ic:'⚔️',txt:'Características da classe'},{id:'dados',ic:'🎲',txt:'Dados livres'}].concat(magic?[{id:'atk-mag',ic:'✨',txt:'Magias disponíveis'}]:[])}];montarPainelAcaoUI(el,groups,(p&&p.ch.nome||'Aventureiro')+' · '+classeUI(p),p);}
+    }else{var p=personagemAtivoDaInterface(),groups=construirGruposPainelJogador(p,estado);montarPainelAcaoUI(el,groups,(p&&p.ch.nome||'Aventureiro')+' · '+classeUI(p),p);}
     var economy=document.getElementById('painel-economia');if(economy&&economy.parentNode)economy.parentNode.removeChild(economy);var combatPanel=document.createElement('section');combatPanel.id='painel-combate-acoes';combatPanel.hidden=true;combatPanel.innerHTML='<h3>CONTROLE DO TURNO</h3><p id="turno-controle-status">Aguardando a iniciativa.</p><div id="iniciativa-acoes-mestre"></div>';el.appendChild(combatPanel);if(ehGM){var aooQueueButton=document.createElement('button');aooQueueButton.type='button';aooQueueButton.className='btn-acao';aooQueueButton.textContent='⚔️ Reações pendentes';aooQueueButton.addEventListener('click',abrirPainelFilaAOO);combatPanel.appendChild(aooQueueButton);}if(economy)combatPanel.appendChild(economy);if(tokenMenu)el.appendChild(tokenMenu);var oldRoster=document.querySelector('.mesa-footer .painel-aventureiros');if(oldRoster)oldRoster.remove();if(diceOverlay){if(diceOverlay.parentElement!==document.body)document.body.appendChild(diceOverlay);diceOverlay.classList.add('dado-modal-global');}if(document.getElementById('painel-iniciativa'))renderizarIniciativa(combatDataState);
   }
   async function alternarEstadoMesa(){
@@ -1569,6 +1639,33 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var p=personagemDoTurnoDoJogador(); return !!(p&&String(p.ch.id)===String(token.id));
   }
   function acharPersonagemDoToken(item){return item&&item.tipo==='player'?personagens.find(function(p){return String(p.ch.id)===String(item.id);}):null;}
+  function atualizarDestaquePersonagemSelecionado(){
+    var selectedId=String(personagemSelecionadoId||'');
+    document.querySelectorAll('#cards-strip .jogador-faixa').forEach(function(card){
+      var isSelected=card.dataset.tokenType==='player'&&card.dataset.char&&String(card.dataset.char)===selectedId;
+      card.classList.toggle('ficha-selecionada',!!isSelected);
+      card.setAttribute('aria-pressed',String(!!isSelected));
+    });
+    document.querySelectorAll('#cba-token-layer .token-cba').forEach(function(tokenEl){
+      var item=cbaPublishedState&&Array.isArray(cbaPublishedState.tokens)?cbaPublishedState.tokens.find(function(t){return String(t.key)===String(tokenEl.dataset.cbaTokenKey);}):null;
+      var owner=item&&acharPersonagemDoToken(item);
+      var isSelected=!!(item&&owner&&String(owner.ch.user_id)===String(eu.id)&&String(item.id)===selectedId);
+      tokenEl.classList.toggle('personagem-selecionado',isSelected);
+      tokenEl.setAttribute('aria-pressed',String(isSelected));
+    });
+  }
+  function selecionarPersonagemDoToken(item){
+    if(ehGM||!item||item.tipo!=='player')return false;
+    var p=acharPersonagemDoToken(item);
+    if(!p||!p.ch||String(p.ch.user_id)!==String(eu.id))return false;
+    personagemSelecionadoId=String(p.ch.id);
+    fecharMenuContextualToken(false);
+    var panel=document.getElementById('acoes-dir');
+    if(panel)panel.dataset.activeGroup='';
+    renderBotoesAcao();
+    atualizarDestaquePersonagemSelecionado();
+    return true;
+  }
   function tokenEstaCaidoMesa(item){
     if(!item)return false;
     var conditions=efeitosCampanhaMesa&&Array.isArray(efeitosCampanhaMesa.conditions)?efeitosCampanhaMesa.conditions:[];
@@ -1585,7 +1682,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   function adicionarBotaoContextual(menu,acao,texto,vermelho){var b=document.createElement('button');b.type='button';b.className='ctx-btn'+(vermelho?' vermelho':'');b.dataset.ctxAction=acao;b.setAttribute('role','menuitem');b.textContent=texto;menu.appendChild(b);return b;}
   function abrirMenuContextualToken(item,tokenEl){
     if(!item||!tokenEl||ataqueSelecionado||Date.now()<suppressTokenClickUntil)return;
-    var own=acharPersonagemDoToken(item),isOwn=!!(own&&own.ch.user_id===eu.id);
+    var own=acharPersonagemDoToken(item),isOwn=!!(own&&String(own.ch.user_id)===String(eu.id));
     if(!ehGM&&(!isOwn||item.tipo!=='player'))return;
     var menu=document.getElementById('token-context-menu');if(!menu)return;
     if(menu.classList.contains('ativo')&&String(ctxTokenAtualKey)===String(item.key))return;
@@ -3670,8 +3767,13 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
   function magicEffect35(spell){var tech=parseJsonSeguro35(spell&&spell.dados_tecnicos,{}),declared=String(tech.tipo_efeito||'').toLowerCase(),typed=String(spell&&spell.typed_effect_kind||'').toLowerCase();if(typed){if(typed==='healing')return tech.cura||tech.healing?'cura':'resolucao_manual';if(typed==='damage'||typed==='attack')return 'ataque_pendente';if(typed==='utility')return 'utilitaria';return 'resolucao_manual';}if(declared==='cura'||declared==='healing'||tech.cura||tech.healing)return 'cura';if(String(spell&&spell.id)==='srd35_magic_missile')return 'missil_magico';if(['ataque','dano','damage','attack'].indexOf(declared)>=0)return 'ataque_pendente';if(declared==='utilitaria'||declared==='utility')return 'utilitaria';var text=[spell&&spell.descricao,spell&&spell.alvo,spell&&spell.area].join(' ').toLowerCase();if(text.indexOf('damage')>=0||text.indexOf('dano')>=0||/(touch attack|ranged touch|melee touch|attack roll)/i.test(text))return 'ataque_pendente';return 'resolucao_manual';}
   function personagemParaMagia(preferredId){
     var combatando=String(campanha&&campanha.state||'').toUpperCase()==='COMBATE';
-    if(combatando){var atual=personagemDoTurnoDoJogador();return !preferredId||atual&&String(atual.ch.id)===String(preferredId)?atual:null;}
-    return (preferredId?personagens.find(function(x){return String(x.ch.id)===String(preferredId)&&x.ch.user_id===eu.id;}):personagens.find(function(x){return x.ch.user_id===eu.id;}))||null;
+    if(combatando){
+      var atual=personagemDoTurnoDoJogador(),selecionado=personagemAtivoDaInterface();
+      if(!atual||!selecionado||String(atual.ch.id)!==String(selecionado.ch.id))return null;
+      return !preferredId||String(atual.ch.id)===String(preferredId)?atual:null;
+    }
+    if(preferredId)return personagens.find(function(x){return String(x.ch.id)===String(preferredId)&&String(x.ch.user_id)===String(eu.id);})||null;
+    return personagemAtivoDaInterface();
   }
   function attrModifier35(attrs,key){return modifier35((attrs||{})[key]===undefined?10:(attrs||{})[key]);}
   function abilitySpellKey(spell){var tech=parseJsonSeguro35(spell.dados_tecnicos,{});var k=String(tech.atributo_conjuracao||tech.atributo||tech.habilidade_conjuracao||spell.atributo||'INT').toUpperCase();return ({SAB:'SAB',WIS:'SAB',CHA:'CAR',CAR:'CAR',INT:'INT'}[k]||'INT');}
@@ -4934,10 +5036,10 @@ async function abrirModalEquipamentos(){
       item.x = item.gridX*cell;
       item.y = item.gridY*cell;
       var token = document.createElement('div');
-      token.className = 'token-cba '+(item.tipo === 'monstro' ? 'monstro' : (item.tipo === 'player' ? 'player' : 'npc'));
+      token.className = 'token-cba '+(item.tipo === 'monstro' ? 'monstro' : (item.tipo === 'player' ? 'player' : 'npc'))+(item.tipo==='player'&&String(item.id)===String(personagemSelecionadoId||'')?' personagem-selecionado':'');
       token.dataset.cbaTokenKey = item.key;
       token.tabIndex=0;token.setAttribute('role','group');token.setAttribute('aria-label','Token '+String(item.nome||'criatura')+(item.tipo==='player'?' · personagem jogador':item.tipo==='monstro'?' · monstro':' · NPC'));token.setAttribute('aria-haspopup','menu');token.setAttribute('aria-expanded','false');
-      token.addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' ')&&!ataqueSelecionado){e.preventDefault();abrirMenuContextualToken(item,token);}});
+      token.addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' ')&&!ataqueSelecionado){e.preventDefault();if(!ehGM&&item.tipo==='player'){selecionarPersonagemDoToken(item);return;}abrirMenuContextualToken(item,token);}});
       token.dataset.gridX = String(item.gridX);
       token.dataset.gridY = String(item.gridY);
       token.style.width = (cell*ocupacao)+'px';
@@ -7561,7 +7663,7 @@ async function abrirModalEquipamentos(){
       var initText=entry?'INI '+String(entry.valor==null?'—':entry.valor):'INI —';
       var selected=isPlayer&&p?alvosSelecionados.indexOf(String(p.ch.id))!==-1:alvosNpcSelecionados.indexOf(tokenId)!==-1;
       var rowClass='jogador-faixa '+(isPlayer?'token-jogador':token.tipo==='monstro'?'token-monstro':token.tipo==='npc'?'token-npc':'token-mestre')+
-        (p&&p.ch.user_id===eu.id?' eu':'')+(activeRow?' turno-ativo':'')+(selected?' selecionado-para-teste':'');
+        (p&&p.ch.user_id===eu.id?' eu':'')+(activeRow?' turno-ativo':'')+(selected?' selecionado-para-teste':'')+(p&&String(p.ch.user_id)===String(eu.id)&&String(p.ch.id)===String(personagemSelecionadoId||'')?' ficha-selecionada':'');
       var status=hpText+(ac==null?'':' · CA '+ac)+' · '+initText;
       var html='<article class="'+rowClass+'" data-actor-key="'+esc((isPlayer?'p:':'g:')+String(token.id))+'" data-cba-token-key="'+esc(token.key||'')+'" data-token-id="'+esc(token.id)+'" data-token-type="'+esc(token.tipo||'npc')+'"'+(p?' data-char="'+esc(p.ch.id)+'"':'')+' tabindex="0" role="button" aria-label="'+esc(name)+'">'+
         '<div class="jogador-faixa-avatar">'+portrait+'</div>'+
@@ -8083,6 +8185,19 @@ html,body{width:100%;max-width:100%;min-width:0;overflow-x:hidden}
   #botoes-rolagem-pendente .btn-rolar-teste{width:min(420px,calc(100vw - 28px))!important;min-height:76px;font-size:14px!important}
 }
 
+
+/* Painel do jogador: categorias claras, cards de ação e seleção contextual da ficha. */
+#acoes-dir.painel-jogador-contextual .action-group-tabs{gap:6px;padding:4px 0 10px;scrollbar-width:thin}
+#acoes-dir.painel-jogador-contextual .action-group-tab{min-height:38px;padding:8px 11px;border-radius:9px;border:1px solid rgba(194,157,91,.5);background:linear-gradient(145deg,#162116,#0c130d);color:#d8c79c;box-shadow:inset 0 1px rgba(255,255,255,.035);font-size:10px;letter-spacing:.45px}
+#acoes-dir.painel-jogador-contextual .action-group-tab[aria-selected="true"]{background:linear-gradient(145deg,#5a4523,#292014);border-color:#e1bc70;color:#fff0c7;box-shadow:inset 0 0 0 1px rgba(255,224,154,.18),0 3px 10px rgba(0,0,0,.25)}
+#acoes-dir.painel-jogador-contextual .player-action-grid{gap:8px}
+#acoes-dir.painel-jogador-contextual .player-action-grid .btn-acao{min-height:62px;padding:9px 10px;border:1px solid rgba(148,126,83,.72);border-radius:10px;background:linear-gradient(145deg,rgba(34,48,31,.98),rgba(13,21,15,.98));box-shadow:inset 0 1px rgba(255,255,255,.045),0 3px 8px rgba(0,0,0,.2);font-size:10px;letter-spacing:.25px;line-height:1.25;white-space:normal;transform:none}
+#acoes-dir.painel-jogador-contextual .player-action-grid .btn-acao:hover{transform:translateY(-2px);border-color:#d5af62;background:linear-gradient(145deg,#35452b,#17251a);box-shadow:inset 0 1px rgba(255,255,255,.08),0 6px 13px rgba(0,0,0,.32)}
+#acoes-dir.painel-jogador-contextual .player-action-grid .btn-acao .icone{display:grid;place-items:center;width:32px;height:32px;flex:0 0 32px;border:1px solid rgba(201,160,80,.36);border-radius:8px;background:linear-gradient(145deg,rgba(201,160,80,.15),rgba(5,10,7,.5));font-size:18px}
+#acoes-dir.painel-jogador-contextual .player-action-grid .btn-acao .action-card-label{display:block;min-width:0;color:#eadcb9;font:700 10px 'Cinzel',serif;letter-spacing:.3px}
+#cards-strip .jogador-faixa.ficha-selecionada{position:relative;border-color:#e1bc70;background:linear-gradient(120deg,rgba(101,75,31,.58),rgba(20,32,23,.96));box-shadow:0 0 0 1px rgba(225,188,112,.35),0 0 14px rgba(201,160,80,.2)}
+#cards-strip .jogador-faixa.ficha-selecionada:before{content:'';position:absolute;inset:7px auto 7px 0;width:3px;border-radius:3px;background:#f0cc79;box-shadow:0 0 10px rgba(240,204,121,.7)}
+#cba-token-layer .token-cba.personagem-selecionado{outline:2px solid #f0cc79;outline-offset:3px;box-shadow:0 0 0 4px rgba(240,204,121,.2),0 0 20px rgba(240,204,121,.45);z-index:9}
 </style>
 <script src="friends-vtt-ui.js"></script>
 <style id="mesa-footer-cards-scale-fix">
