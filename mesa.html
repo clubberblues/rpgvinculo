@@ -6160,7 +6160,11 @@ async function abrirModalEquipamentos(){
       if(key==='fortitude'&&(ctx==='poison'||ctx==='veneno'))racial=2;
       if(ctx==='spell'||ctx==='magia')racial=2;
     }
-    return {bonus:base+abilityBonus+racial,base:base,ability:ability,abilityBonus:abilityBonus,racialBonus:racial,level:level};
+    var feats=sh.talentos||[];if(typeof feats==='string'){try{feats=JSON.parse(feats);}catch(e){feats=[];}}
+    var featBonus=Array.isArray(feats)&&feats.some(function(feat){var id=String(feat&&feat.id||feat).toLowerCase();return (key==='fortitude'&&id==='srd35_feat_great_fortitude')||(key==='reflex'&&id==='srd35_feat_lightning_reflexes')||(key==='will'&&id==='srd35_feat_iron_will');})?2:0;
+    var divineGrace=cls&&String(cls.id||'').toLowerCase()==='paladino'&&level>=2?modifier35(attrs.CAR):0;
+    var trapSense=key==='reflex'&&ctx==='trap'&&String(cls&&cls.id||'').toLowerCase()==='barbaro'?Math.floor(level/3):0;
+    return {bonus:base+abilityBonus+racial+featBonus+divineGrace+trapSense,base:base,ability:ability,abilityBonus:abilityBonus,racialBonus:racial,featBonus:featBonus,divineGrace:divineGrace,trapSense:trapSense,level:level};
   }
 
   async function calcularBonusTokenMestre35(token, requestData){
@@ -6252,6 +6256,7 @@ async function abrirModalEquipamentos(){
       (isD100?'':' + bônus '+(bonus>=0?'+':'')+bonus+' = '+total)+'.';
     var extras={request_id:requestKey,token_id:String(tokenId),teste:String(requestData.tipo||'Teste'),dado:dado,total:isD100?dado:total,bonus:isD100?0:bonus,automatico_mestre:true,skill_id:requestData.skill_id||null};
     if(bonusResult.breakdown)extras.skill_breakdown=bonusResult.breakdown;
+    if(requestData&&requestData.resolution_type==='saving_throw'){extras.saving_throw=true;extras.save_type=requestData.save_type;extras.context=requestData.context||null;extras.save_breakdown=bonusResult.breakdown;}
     var log=await enviarMensagemChat(texto,'rolagem',extras);
     if(log&&log.error)throw new Error('Rolagem calculada, mas não foi registrada no chat.');
     pedidosTesteRespondidos[String(requestKey)+'|npc|'+String(tokenId)]=true;
