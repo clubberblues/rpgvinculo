@@ -8510,6 +8510,22 @@ html,body,#root{width:100%!important;height:100%!important;min-width:0!important
 #magia-configuracao select{width:100%!important;min-width:0!important;min-height:38px!important;padding:8px!important;border:1px solid #75613d!important;border-radius:7px!important;background:#0e140f!important;color:#f5ecd6!important}
 .magia-requisitos{font-size:11px!important;line-height:1.45!important;color:#c9c0a9!important;margin:8px 0 0!important}
 @media(max-width:600px){#modal-magias .modal-final-card{width:96vw!important;max-height:88dvh!important;padding:13px!important}#modal-magias-lista{grid-template-columns:1fr!important;max-height:38dvh!important}#magia-configuracao .magia-config-grid{grid-template-columns:1fr!important}}
+
+/* Distribuição final solicitada: controles à esquerda, tabuleiro ao centro, painel social à direita. */
+@media (min-width:761px){
+  .mesa>.mesa-corpo{grid-template-columns:clamp(220px,17vw,290px) minmax(0,1fr) clamp(260px,21vw,340px)!important}
+  .mesa>.mesa-corpo>.col-dir#acoes-dir{grid-column:1!important;grid-row:1!important;border-left:0!important;border-right:1px solid #75613d!important}
+  .mesa>.mesa-corpo>.col-esq{grid-column:3!important;grid-row:1!important;border-right:0!important;border-left:1px solid #75613d!important}
+}
+@media screen and (max-width:900px) and (orientation:landscape){
+  .mesa>.mesa-corpo{grid-template-columns:clamp(158px,22vw,218px) minmax(0,1fr) clamp(126px,19vw,205px)!important}
+  .mesa>.mesa-corpo>.col-dir#acoes-dir{grid-column:1!important;grid-row:1!important;border-left:0!important;border-right:1px solid #75613d!important}
+  .mesa>.mesa-corpo>.col-esq{grid-column:3!important;grid-row:1!important;border-right:0!important;border-left:1px solid #75613d!important}
+}
+@media screen and (max-width:760px) and (orientation:portrait){
+  .mesa.mobile-actions-open>.mesa-corpo>#acoes-dir{left:0!important;right:auto!important;box-shadow:12px 0 32px #000b!important;border-right:1px solid #806b42!important;border-left:0!important}
+  .mesa.mobile-chat-open>.mesa-corpo>.col-esq{right:0!important;left:auto!important;box-shadow:-12px 0 32px #000b!important;border-left:1px solid #806b42!important;border-right:0!important}
+}
 </style>
 </body>
 </html>
