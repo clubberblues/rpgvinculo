@@ -1015,6 +1015,27 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
 </style>
 <link rel="stylesheet" href="mesa-theme.css?v=1">
 <link rel="stylesheet" href="vtt-theme.css?v=1">
+<style id="battlefield-layout-repair">
+/* Estrutura do estúdio: ferramentas na coluna lateral; tabuleiro ocupa o espaço restante. */
+#modal-cba{overflow:hidden}
+#modal-cba>.cba-header{flex:0 0 auto;min-height:66px}
+#modal-cba>.cba-workspace{display:flex!important;flex:1 1 auto!important;flex-direction:row!important;min-width:0;min-height:0;overflow:hidden!important}
+#modal-cba .cba-tools{display:flex!important;flex:0 0 clamp(238px,22vw,290px)!important;width:clamp(238px,22vw,290px)!important;max-width:34vw;min-width:0;max-height:none!important;overflow-x:hidden;overflow-y:auto;padding:14px;gap:12px}
+#modal-cba .cba-tool-group{width:100%;min-width:0}
+#modal-cba .cba-tool-btn{width:100%;min-height:38px;padding:8px 10px;font:600 11px/1.25 Inter,system-ui,sans-serif;letter-spacing:.02em;white-space:normal}
+#modal-cba .cba-tool-group label{font:600 10px/1.35 Inter,system-ui,sans-serif;letter-spacing:.07em}
+#modal-cba .cba-tool-group small{font:11px/1.4 Inter,system-ui,sans-serif;color:#a9a49a!important}
+#modal-cba .cba-preview-wrap{display:flex!important;flex:1 1 auto!important;width:auto!important;min-width:0;min-height:0;overflow:hidden;padding:14px;background:#090b0d}
+#modal-cba .cba-preview-area{flex:0 0 auto;max-width:100%;max-height:100%;border:1px solid #343b42;box-shadow:0 12px 34px #0009}
+#modal-cba .cba-grid-lines{background-image:linear-gradient(rgba(190,170,130,.25) 1px,transparent 1px),linear-gradient(90deg,rgba(190,170,130,.25) 1px,transparent 1px)}
+#modal-cba .cba-tool-divider{border-color:#343b42!important}
+#modal-cba .cba-fog-tools{padding-top:10px}
+#modal-cba .cba-fog-check{display:flex;align-items:center;gap:8px;font:500 11px/1.35 Inter,system-ui,sans-serif!important;letter-spacing:0!important}
+#modal-cba .cba-fog-check input{flex:0 0 auto;accent-color:#b59663}
+#modal-cba .cba-status{flex:0 0 auto;padding:8px;border:1px solid #30373e;border-radius:6px;background:#101418;font:11px/1.4 Inter,system-ui,sans-serif}
+@media(max-width:800px){#modal-cba>.cba-workspace{flex-direction:column!important;overflow:auto!important}#modal-cba .cba-tools{flex:0 0 auto!important;width:100%!important;max-width:none;max-height:38vh!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;overflow-y:auto}#modal-cba .cba-preview-wrap{flex:1 0 300px!important;width:100%!important;min-height:300px;padding:8px}#modal-cba .cba-status{grid-column:1/-1}}
+@media(max-width:480px){#modal-cba>.cba-header{align-items:flex-start;padding:9px 10px;gap:8px}#modal-cba .cba-header h2{font-size:15px}#modal-cba .cba-sync-note{display:none}#modal-cba .cba-tools{grid-template-columns:repeat(2,minmax(0,1fr));max-height:42vh!important;padding:9px;gap:9px}#modal-cba .cba-tool-btn{min-height:34px;padding:7px;font-size:10px}}
+</style>
 </head>
 <body>
 
@@ -1157,7 +1178,6 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         <input type="range" id="fog-brush-size" min="20" max="220" step="5" value="60">
         <button type="button" class="cba-tool-btn" id="fog-clear">Limpar áreas reveladas</button>
         <small>Arraste sobre o mapa para revelar. As áreas podem ser destinadas a todos ou a um jogador.</small>
-      </div>
       </div>
       <div class="cba-tool-group cba-tool-divider">
         <label>ADICIONAR À CENA</label>
@@ -1516,9 +1536,9 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     ligarGestosCBA();
     ligarMenuContextualToken();
     var tokenLayer=document.getElementById('cba-token-layer');
-    tokenLayer.addEventListener('click',function(e){var hpButton=e.target.closest&&e.target.closest('.token-pv-btn');if(hpButton){e.preventDefault();e.stopPropagation();abrirAjustePVToken(hpButton.dataset.cbaPvKey);return;}var token=e.target.closest&&e.target.closest('.token-cba');if(!token)return;var item=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key)===String(token.dataset.cbaTokenKey);});if(!item)return;if(modoSelecaoTeste&&ehGM){e.preventDefault();e.stopPropagation();alternarAlvoTokenTeste(item,token);return;}if(Date.now()<suppressTokenClickUntil)return;if(ataqueMestreSelecionado){selecionarAlvoAtaqueMestre(item);return;}if(ataqueSelecionado){selecionarAlvoAtaque(item.key);return;}if(!ehGM&&item.tipo==='player'){selecionarPersonagemDoToken(item);return;}abrirMenuContextualToken(item,token);});
+    tokenLayer.addEventListener('click',function(e){var hpButton=e.target.closest&&e.target.closest('.token-pv-btn');if(hpButton){e.preventDefault();e.stopPropagation();abrirAjustePVToken(hpButton.dataset.cbaPvKey);return;}var token=e.target.closest&&e.target.closest('.token-cba');if(!token)return;var item=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key)===String(token.dataset.cbaTokenKey);});if(!item)return;if(modoSelecaoTeste&&ehGM){e.preventDefault();e.stopPropagation();alternarAlvoTokenTeste(item,token);return;}if(Date.now()<suppressTokenClickUntil)return;if(ataqueMestreSelecionado){selecionarAlvoAtaqueMestre(item);return;}if(ataqueSelecionado){selecionarAlvoAtaque(item.key);return;}if(!ehGM&&item.tipo==='player'){selecionarPersonagemDoToken(item);return;}fecharMenuContextualToken(false);});
     tokenLayer.addEventListener('dblclick',function(e){var token=e.target.closest&&e.target.closest('.token-cba');if(token&&ehGM&&!ataqueSelecionado)abrirAjustePVToken(token.dataset.cbaTokenKey);});
-    tokenLayer.addEventListener('contextmenu',function(e){var el=e.target.closest&&e.target.closest('.token-cba');if(!el)return;var t=cbaPublishedState&&cbaPublishedState.tokens.find(function(x){return String(x.key)===String(el.dataset.cbaTokenKey);});if(!t||t.tipo!=='monstro'||!t.monsterId)return;e.preventDefault();var m=cbaMonsterCatalog.find(function(x){return String(x.id)===String(t.monsterId);});if(m)publicarInfoMonstro(m);else if(t.monsterStats){publicarInfoMonstro({id:t.monsterId,nome:t.nome,nd:t.monsterStats.nd,ca:t.ac,pv:t.maxHp,ataques:t.monsterStats.ataques,srd_source_url:t.srdSourceUrl});}});
+    tokenLayer.addEventListener('contextmenu',function(e){var el=e.target.closest&&e.target.closest('.token-cba');if(!el)return;var t=cbaPublishedState&&cbaPublishedState.tokens.find(function(x){return String(x.key)===String(el.dataset.cbaTokenKey);});if(!t)return;e.preventDefault();if(ehGM){abrirMenuContextualToken(t,el);return;}if(t.tipo!=='monstro'||!t.monsterId)return;var m=cbaMonsterCatalog.find(function(x){return String(x.id)===String(t.monsterId);});if(m)publicarInfoMonstro(m);else if(t.monsterStats){publicarInfoMonstro({id:t.monsterId,nome:t.nome,nd:t.monsterStats.nd,ca:t.ac,pv:t.maxHp,ataques:t.monsterStats.ataques,srd_source_url:t.srdSourceUrl});}});
   }
 
   function personagemAtivoDaInterface(){
