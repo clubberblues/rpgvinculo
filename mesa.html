@@ -6080,8 +6080,28 @@ async function abrirModalEquipamentos(){
     alvosSelecionados = [];
     alvosNpcSelecionados = [];
     document.getElementById('modal-testes').style.display = 'none';
-    var testBar=document.getElementById('barra-confirmar-teste');if(!testBar)throw new Error('Barra de confirmação dos testes não encontrada.');testBar.style.display='block';
-    document.getElementById('txt-teste-selecionado').textContent = nomeTeste+' — selecione os alvos';
+    var testBar=document.getElementById('barra-confirmar-teste');
+    if(!testBar)throw new Error('Barra de confirmação dos testes não encontrada.');
+    // A barra não pode depender do layout da mesa: a coluna de ações e o rodapé
+    // são reconstruídos dinamicamente. Mantê-la diretamente no body evita que
+    // fique presa em um painel/contêiner recortado ou coberto.
+    if(testBar.parentElement!==document.body)document.body.appendChild(testBar);
+    testBar.style.setProperty('display','block','important');
+    testBar.style.setProperty('position','fixed','important');
+    testBar.style.setProperty('left','50%','important');
+    testBar.style.setProperty('right','auto','important');
+    testBar.style.setProperty('bottom','calc(18px + env(safe-area-inset-bottom))','important');
+    testBar.style.setProperty('top','auto','important');
+    testBar.style.setProperty('transform','translateX(-50%)','important');
+    testBar.style.setProperty('width','min(94vw,520px)','important');
+    testBar.style.setProperty('max-width','520px','important');
+    testBar.style.setProperty('z-index','2147483000','important');
+    testBar.style.setProperty('background','#1b2419','important');
+    testBar.style.setProperty('border','2px solid #c9a050','important');
+    testBar.style.setProperty('box-shadow','0 10px 30px rgba(0,0,0,.9)','important');
+    testBar.style.setProperty('pointer-events','auto','important');
+    var testLabel=document.getElementById('txt-teste-selecionado');
+    if(testLabel)testLabel.textContent=nomeTeste+' — selecione os alvos';
     document.getElementById('cards-strip').classList.add('selecionando-teste');
     document.querySelectorAll('.card-pers').forEach(function(card){ card.classList.remove('selecionado-para-teste'); });
     document.querySelectorAll('.token-cba').forEach(function(token){token.classList.remove('selecionado-para-teste');});
