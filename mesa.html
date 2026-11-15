@@ -6105,7 +6105,11 @@ async function abrirModalEquipamentos(){
     try{
       var requestId=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():(Date.now()+'-'+Math.random().toString(36).slice(2));
       var saveSpec=specResistenciaDnd35(testeAtual);
-      var requestPayload={tipo:testeAtual,alvos:alvos,npc_alvos:npcAlvos,skill_id:skillAtualId,mestre:meuPerfil.username,mestre_id:eu.id,request_id:requestId};
+      var targetNames=[];
+      alvos.forEach(function(id){var p=personagens.find(function(item){return String(item.ch.id)===String(id);});if(p)targetNames.push(String(p.ch.nome||'Personagem'));});
+      var scene=cbaPublishedState&&Array.isArray(cbaPublishedState.tokens)?cbaPublishedState:(cbaState&&Array.isArray(cbaState.tokens)?cbaState:null);
+      npcAlvos.forEach(function(id){var token=scene&&scene.tokens.find(function(item){return String(item.key||item.id)===String(id);});if(token)targetNames.push(String(token.nome||token.name||'NPC/Monstro'));});
+      var requestPayload={tipo:testeAtual,alvos:alvos,npc_alvos:npcAlvos,alvos_nomes:targetNames,chat_only:true,skill_id:skillAtualId,mestre:meuPerfil.username,mestre_id:eu.id,request_id:requestId};
       if(saveSpec){
         requestPayload.resolution_type='saving_throw';
         requestPayload.save_type=saveSpec.save_type;
@@ -6133,12 +6137,16 @@ async function abrirModalEquipamentos(){
     if(pedidosTesteVistos[key])return;
     pedidosTesteVistos[key]=true;
     if(ehGM){
-      if((Array.isArray(data.npc_alvos)&&data.npc_alvos.length)
-        ||((data.resolution_type==='spell_resistance'||data.resolution_type==='saving_throw')&&Array.isArray(data.alvos)&&data.alvos.length)){
+      if(Array.isArray(data.npc_alvos)&&data.npc_alvos.length){
+        ativarPedidoTeste(data,key,false);
+      }else if(!data.chat_only&&((data.resolution_type==='spell_resistance'||data.resolution_type==='saving_throw')&&Array.isArray(data.alvos)&&data.alvos.length)){
         ativarPedidoTeste(data,key,false);
       }
       return;
     }
+    // Solicitações do Mestre são registros no chat para personagens de jogadores.
+    // O jogador continua usando a rolagem manual da própria ficha.
+    if(data.chat_only)return;
     if(!Array.isArray(data.alvos))return;
     if(!personagensCarregados){pedidosTestePendentes.push({data:data,key:key,abrirDice:!!abrirDice});return;}
     ativarPedidoTeste(data,key,!!abrirDice);
@@ -7414,8 +7422,11 @@ async function abrirModalEquipamentos(){
     if(m.type === 'test_request'){
       receberPedidoTeste(d, m.id, !!pedidoEmTempoReal);
       var initiativeRequest=String(d.tipo||'').toLocaleLowerCase('pt-BR').includes('iniciativa');
-      var solicitante=String(d.mestre||'')==='Sistema'?'O sistema solicitou:':'O Mestre solicitou:';
-      return '<div class="chat-msg sistema">📜 '+solicitante+' <b>'+esc(d.tipo||'Teste de habilidade')+'</b>.'+(initiativeRequest?' Todos os jogadores podem rolar simultaneamente; não há ordem de chamada.':'')+'</div>';
+      var solicitante=String(d.mestre||'')==='Sistema'?'O sistema':'O Mestre';
+      var nomesAlvos=Array.isArray(d.alvos_nomes)?d.alvos_nomes.filter(Boolean):[];
+      var destino=nomesAlvos.length?' para <b>'+nomesAlvos.map(esc).join('</b>, <b>')+'</b>':'';
+      var frase=solicitante+' solicita o teste de <b>'+esc(d.tipo||'Teste de habilidade')+'</b>'+destino+'.';
+      return '<div class="chat-msg sistema">📜 '+frase+(initiativeRequest?' Todos os jogadores podem rolar simultaneamente; não há ordem de chamada.':'')+'</div>';
     }
     if(m.type === 'sistema' || m.type === 'xp' || m.type === 'nivel'){ return '<div class="chat-msg sistema">'+esc(d.texto||'')+'</div>'; }
     if(m.type === 'rolagem'){
