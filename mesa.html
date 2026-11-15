@@ -6277,9 +6277,14 @@ async function abrirModalEquipamentos(){
   }
 
   async function resolverTesteAutomaticoToken(tokenId, requestKey, requestData){
-    var source=cbaPublishedState&&Array.isArray(cbaPublishedState.tokens)?cbaPublishedState:(cbaState&&Array.isArray(cbaState.tokens)?cbaState:null);
-    var token=source&&source.tokens?source.tokens.find(function(t){return String(t.key||t.id)===String(tokenId);}):null;
-    if(!token)throw new Error('Token não encontrado no tabuleiro para realizar o teste.');
+    // O estado publicado pode ficar um ciclo atrás do mapa que o Mestre acabou de editar.
+    // Procura primeiro no estado vivo e usa a cópia publicada apenas como reserva.
+    var scenes=[cbaState,cbaPublishedState].filter(function(scene,index,list){return scene&&Array.isArray(scene.tokens)&&list.indexOf(scene)===index;});
+    var token=null;
+    for(var sceneIndex=0;sceneIndex<scenes.length&&!token;sceneIndex++){
+      token=scenes[sceneIndex].tokens.find(function(t){return String(t.key||t.id)===String(tokenId);})||null;
+    }
+    if(!token)throw new Error('Token '+String(tokenId)+' não encontrado no mapa atual. Atualize a mesa e tente novamente.');
     var nome=String(token.nome||token.name||'NPC/Monstro');
     var isD100=requestData&&requestData.resolution_type==='confusion_d100';
     var dado=isD100?Math.floor(Math.random()*100)+1:Math.floor(Math.random()*20)+1;
@@ -6301,9 +6306,13 @@ async function abrirModalEquipamentos(){
     if(ehGM){
       if(Array.isArray(data.npc_alvos)&&data.npc_alvos.length){
         data.npc_alvos.forEach(function(tokenId){
-          resolverTesteAutomaticoToken(String(tokenId),requestKey,data).catch(function(error){
+          resolverTesteAutomaticoToken(String(tokenId),requestKey,data).catch(async function(error){
             console.error('Falha na rolagem automática do token:',error);
-            alert('Não foi possível rolar para '+String(tokenId)+': '+(error.message||error));
+            var tokenName=String(tokenId),allScenes=[cbaState,cbaPublishedState];
+            allScenes.some(function(scene){var found=scene&&Array.isArray(scene.tokens)&&scene.tokens.find(function(t){return String(t.key||t.id)===String(tokenId);});if(found){tokenName=String(found.nome||found.name||tokenId);return true;}return false;});
+            var message='⚠️ Não foi possível realizar '+String(data.tipo||'o teste')+' para '+tokenName+': '+String(error&&error.message||error);
+            var posted=await enviarMensagemChat(message,'sistema',{evento:'falha_teste_automatico',request_id:requestKey,token_id:String(tokenId)});
+            if(posted&&posted.error)alert(message);
           });
         });
       }else if((data.resolution_type==='spell_resistance'||data.resolution_type==='saving_throw')&&Array.isArray(data.alvos)){
