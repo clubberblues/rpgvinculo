@@ -6368,14 +6368,15 @@ async function abrirModalEquipamentos(){
         request={tipo:'Iniciativa (DES)',alvos:expected};
         requestKey='iniciativa-recuperada-'+String(MESA_ID)+'-'+expected.slice().sort().join('-');
       }
-      ativarPedidoTeste(request,requestKey);
+      // Iniciativa é uma solicitação explícita do Mestre: abrir o Dice automaticamente no jogador.
+      ativarPedidoTeste(request,requestKey,true);
     }catch(error){
       console.warn('A ordem do servidor está aguardando iniciativa; o botão será tentado novamente.',error);
       // Mesmo com falha ao ler o chat, cria a ação usando o estado oficial da campanha.
       var expectedFallback=Array.isArray(combatDataState.expected_character_ids)?combatDataState.expected_character_ids.map(String):[];
       var rolled=Object.create(null);(combatDataState.turn_order||[]).forEach(function(entry){if(entry&&!entry.is_monster)rolled[String(entry.id)]=true;});
       var mine=personagens.filter(function(p){return p.ch&&p.ch.user_id===eu.id&&expectedFallback.indexOf(String(p.ch.id))!==-1&&!rolled[String(p.ch.id)];});
-      if(mine.length)ativarPedidoTeste({tipo:'Iniciativa (DES)',alvos:expectedFallback},'iniciativa-recuperada-'+String(MESA_ID)+'-'+expectedFallback.slice().sort().join('-'));
+      if(mine.length)ativarPedidoTeste({tipo:'Iniciativa (DES)',alvos:expectedFallback},'iniciativa-recuperada-'+String(MESA_ID)+'-'+expectedFallback.slice().sort().join('-'),true);
     }finally{iniciativaRecuperacaoBusy=false;}
   }
 
