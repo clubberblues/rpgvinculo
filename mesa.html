@@ -249,6 +249,7 @@ html,body{width:100%;max-width:100%;min-width:0}
 .token-cba.monstro{border-color:#d75a4a;box-shadow:0 0 14px rgba(184,50,50,.5),0 4px 14px rgba(0,0,0,.75)}
 .token-cba.npc{border-color:#86efac}
 .token-cba.player{border-color:#60a5fa;box-shadow:0 0 14px rgba(96,165,250,.4),0 4px 14px rgba(0,0,0,.75)}
+.token-cba.selecionado-para-teste{outline:4px solid #fbbf24!important;outline-offset:4px!important;box-shadow:0 0 24px #fbbf24!important;transform:scale(1.06)!important}
 .token-cba img{width:100%;height:100%;border-radius:50%;object-fit:cover;pointer-events:none}
 .token-cba .token-nome{position:absolute;top:calc(100% + 3px);left:50%;transform:translateX(-50%);max-width:130px;padding:2px 5px;border-radius:3px;background:rgba(5,5,5,.88);color:#f5ecd6;font:10px 'EB Garamond',serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center;pointer-events:none}
 #cba-distancia-preview{position:absolute;z-index:4;display:none;pointer-events:none;transform:translate(-50%,-100%);margin-top:-10px;padding:5px 10px;border:1px solid #c9a050;border-radius:4px;background:rgba(0,0,0,.88);color:#c9a050;font:14px 'Cinzel',serif;white-space:nowrap}
@@ -6206,7 +6207,8 @@ async function abrirModalEquipamentos(){
     var skill=skillResult.data;
     if(!skill)throw new Error('Perícia não encontrada no catálogo D&D 3.5.');
     var rawSkills=tokenStats.pericias||tokenStats.skills||tokenStats.skill_modifiers||{};
-    if(typeof rawSkills==='string'){try{rawSkills=JSON.parse(rawSkills);}catch(e){rawSkills={};}}
+    var skillText='';
+    if(typeof rawSkills==='string'){skillText=rawSkills;try{rawSkills=JSON.parse(rawSkills);}catch(e){rawSkills={};}}
     var normalizeSkill=function(v){return String(v||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');};
     var skillValue=rawSkills[String(skill.id)];
     if(skillValue==null)skillValue=rawSkills[String(skill.nome)];
@@ -6214,12 +6216,20 @@ async function abrirModalEquipamentos(){
       var target=normalizeSkill(skill.nome);
       Object.keys(rawSkills).some(function(key){if(normalizeSkill(key)===target){skillValue=rawSkills[key];return true;}return false;});
     }
+    if(skillValue==null&&skillText){
+      var plainSkillName=normalizeSkill(skill.nome).replace(/_/g,'\\\\s+');
+      var skillMatch=skillText.match(new RegExp('(?:^|[,;\\\\n])\\\\s*'+plainSkillName+'\\\\s*([+-]\\\\d+)','i'));
+      if(skillMatch)skillValue=Number(skillMatch[1]);
+    }
     if(skillValue!=null){
-      if(typeof skillValue==='object')skillValue=skillValue.bonus!=null?skillValue.bonus:(skillValue.modificador!=null?skillValue.modificador:skillValue.total);
+      if(typeof skillValue==='object')skillValue=skillValue.bonus!=null?skillValue.bonus:(skillValue.modificador!=null?skillValue.modificador:(skillValue.total!=null?skillValue.total:skillValue.mod));
       var explicit=Number(skillValue);
       if(Number.isFinite(explicit))return {bonus:explicit,breakdown:{monster_skill_bonus:explicit}};
     }
-    var attrs=tokenStats.atributos||tokenStats.attributes||{};
+    var attrs=tokenStats.atributos||tokenStats.attributes||{
+      FOR:tokenStats.forca,DES:tokenStats.destreza,CON:tokenStats.constituicao,
+      INT:tokenStats.inteligencia,SAB:tokenStats.sabedoria,CAR:tokenStats.carisma
+    };
     if(typeof attrs==='string'){try{attrs=JSON.parse(attrs);}catch(e){attrs={};}}
     var attr=String(skill.atributo||'INT').toUpperCase();
     var value=attrs[attr];
