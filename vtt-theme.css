@@ -1,0 +1,261 @@
+/* VÍNCULO — SISTEMA VISUAL GLOBAL / CARVÃO PROFUNDO
+   Camada de apresentação compartilhada. Não altera lógica, IDs, eventos, regras ou persistência. */
+:root{
+  color-scheme:dark;
+  --vtt-bg-void:#070809;
+  --vtt-bg-deep:#0a0c0e;
+  --vtt-bg:#0e1114;
+  --vtt-surface:#12161a;
+  --vtt-surface-2:#171c21;
+  --vtt-surface-3:#1d2329;
+  --vtt-surface-hover:#242b32;
+  --vtt-line:#292f36;
+  --vtt-line-strong:#3a424b;
+  --vtt-text:#e5e1d9;
+  --vtt-text-soft:#b5b2ab;
+  --vtt-muted:#858a90;
+  --vtt-bronze:#987747;
+  --vtt-bronze-soft:#b59663;
+  --vtt-bronze-bright:#d0b27c;
+  --vtt-bronze-wash:rgba(152,119,71,.13);
+  --vtt-danger:#a94d4b;
+  --vtt-danger-soft:#d27a72;
+  --vtt-success:#77917d;
+  --vtt-focus:#d6bd8b;
+  --vtt-shadow:0 18px 48px rgba(0,0,0,.55);
+  --vtt-radius:8px;
+  --vtt-radius-sm:6px;
+  --vtt-font-ui:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --vtt-font-display:Cinzel,Georgia,serif;
+  --vtt-font-story:"EB Garamond",Georgia,serif;
+}
+*{box-sizing:border-box}
+html{background:var(--vtt-bg-void);color-scheme:dark}
+body{background-color:var(--vtt-bg-deep);color:var(--vtt-text);font-family:var(--vtt-font-ui);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button,input,select,textarea{font-family:var(--vtt-font-ui)}
+h1,h2,h3,h4,.titulo,.card-nome,.card-pers-nome,.secao-titulo,.modal-cab h2,.painel-cab{font-family:var(--vtt-font-display)}
+p,.narrativa,.descricao-longa,.card-briefing{font-family:var(--vtt-font-story)}
+::selection{background:rgba(181,150,99,.28);color:#fff}
+:focus-visible{outline:2px solid var(--vtt-focus);outline-offset:2px}
+button:disabled{cursor:not-allowed}
+input,select,textarea{color:var(--vtt-text)}
+input::placeholder,textarea::placeholder{color:#777d83}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:#0a0c0e}
+::-webkit-scrollbar-thumb{background:#343b43;border:2px solid #0a0c0e;border-radius:8px}
+::-webkit-scrollbar-thumb:hover{background:var(--vtt-bronze)}
+/* Controles comuns */
+button,.btn,.btn-criar,.btn-entrar,.btn-dourado,.btn-sec,.btn-titulo,.eqp-btn,.btn-salvar-atr,.grimorio-cta{
+  transition:background-color .16s,border-color .16s,color .16s,box-shadow .16s,transform .16s;
+}
+input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]),
+select,textarea,.input-codigo,.srd-library-search{
+  background:#0b0e11!important;color:var(--vtt-text)!important;border:1px solid var(--vtt-line-strong)!important;border-radius:7px!important;
+  box-shadow:inset 0 1px 3px rgba(0,0,0,.38)!important;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--vtt-bronze-soft)!important;outline:2px solid rgba(181,150,99,.2)!important}
+.btn-dourado,.btn-criar,.btn-entrar,.btn-salvar-atr,.eqp-btn,.grimorio-cta{
+  background:linear-gradient(180deg,#a48654,#80633d)!important;color:#f5efe4!important;border:1px solid #b59663!important;
+  border-radius:7px!important;box-shadow:0 4px 12px rgba(0,0,0,.32)!important;
+}
+.btn-dourado:hover:not(:disabled),.btn-criar:hover:not(:disabled),.btn-entrar:hover:not(:disabled),.btn-salvar-atr:hover:not(:disabled),.eqp-btn:hover:not(:disabled),.grimorio-cta:hover:not(:disabled){
+  background:linear-gradient(180deg,#b59663,#987747)!important;color:#fff!important;transform:translateY(-1px)
+}
+.btn-sec,.btn-voltar,.btn-titulo,.b-tab,.btn-voltar-explorar{
+  background:#171c21!important;color:var(--vtt-text-soft)!important;border:1px solid var(--vtt-line-strong)!important;border-radius:7px!important
+}
+.btn-sec:hover:not(:disabled),.btn-voltar:hover,.btn-titulo:hover,.b-tab:hover,.btn-voltar-explorar:hover{
+  background:#222930!important;border-color:var(--vtt-bronze-soft)!important;color:var(--vtt-bronze-bright)!important
+}
+.btn-perigo,.btn-excluir-ficha,.btn-kick{background:#542a2b!important;border:1px solid #8d4545!important;color:#f0d7d3!important;border-radius:7px!important}
+/* Entrada */
+body:has(.login-shell){background:radial-gradient(ellipse at 50% 10%,#17191b 0,#0b0d0f 42%,#070809 100%)!important;color:var(--vtt-text)!important}
+.login-shell .card{background:linear-gradient(155deg,#171b1f,#101316)!important;border:1px solid #343a40!important;border-radius:12px!important;box-shadow:0 28px 90px #000b,inset 0 1px rgba(255,255,255,.025)!important}
+.login-shell .subtitle{color:var(--vtt-bronze-bright)!important}
+.login-shell label{color:var(--vtt-text-soft)!important;font-family:var(--vtt-font-ui)!important;letter-spacing:.09em}
+.login-shell input{background:#090b0d!important;border-color:#343b42!important;color:var(--vtt-text)!important}
+.login-shell button{font-family:var(--vtt-font-ui)!important;font-size:11px!important;letter-spacing:.12em!important}
+.login-shell button:not(.secondary){background:linear-gradient(180deg,#9b7b4c,#765a38)!important;color:#f4eee3!important;border:1px solid #b59663!important}
+.login-shell .secondary{background:#171c21!important;color:var(--vtt-bronze-bright)!important;border:1px solid #494238!important}
+/* Lobby: sidebar, navegação, cards de campanha e modais */
+body:has(.lobby){background:var(--vtt-bg-void)!important;color:var(--vtt-text)!important}
+.lobby{background:linear-gradient(135deg,#080a0c,#0e1114 55%,#090b0d)!important}
+.sidebar{
+  background:linear-gradient(180deg,rgba(8,10,12,.97),rgba(12,14,17,.985))!important;
+  border-right:1px solid #343a40!important;box-shadow:8px 0 28px rgba(0,0,0,.48)!important;
+  padding:22px 16px!important
+}
+.side-user{background:#111519!important;border:1px solid #30373e!important;border-radius:8px!important;box-shadow:inset 0 1px 8px #0008!important}
+.side-user .nome{font-family:var(--vtt-font-ui)!important;font-size:12px!important;color:var(--vtt-text)!important}
+.side-user .papel{color:var(--vtt-bronze-soft)!important;font-family:var(--vtt-font-ui)!important}
+.side-divisor{background:linear-gradient(90deg,transparent,#806b4c,transparent)!important}
+.side-nav{gap:5px!important}
+.side-nav a{padding:10px 11px!important;border-radius:7px!important;border-left:2px solid transparent!important;color:#b9bbc0!important;font-family:var(--vtt-font-ui)!important;font-size:11px!important;font-weight:600!important;letter-spacing:.045em!important;text-shadow:none!important}
+.side-nav a:hover{background:#1b2025!important;color:var(--vtt-bronze-bright)!important}
+.side-nav a.ativo{background:linear-gradient(90deg,rgba(152,119,71,.2),rgba(152,119,71,.045))!important;border-left:2px solid var(--vtt-bronze-soft)!important;color:#eee7dc!important}
+.side-nav a.nav-biblioteca-srd{background:#171b1f!important;border:1px solid #514536!important;border-left:2px solid var(--vtt-bronze)!important;color:var(--vtt-bronze-bright)!important;box-shadow:none!important}
+.side-sair{background:#14181c!important;border:1px solid #343a40!important;color:#aeb1b4!important;border-radius:7px!important;font-family:var(--vtt-font-ui)!important;font-size:10px!important;letter-spacing:.08em!important}
+.main{padding:clamp(22px,3vw,40px) clamp(18px,3.4vw,46px) 56px!important}
+.topo{margin-bottom:clamp(20px,2.5vw,32px)!important;align-items:center!important}
+.titulo{font-family:var(--vtt-font-display)!important;font-size:clamp(24px,2.5vw,32px)!important;letter-spacing:.08em!important;color:#e8e2d8!important}
+.subtitulo{font-family:var(--vtt-font-story)!important;color:var(--vtt-bronze-soft)!important}
+.grid{grid-template-columns:repeat(auto-fill,minmax(min(100%,270px),1fr))!important;gap:20px!important}
+.grid>.card{background:linear-gradient(155deg,#171b1f,#111518)!important;border:1px solid #343b42!important;border-radius:10px!important;padding:10px!important;box-shadow:0 14px 32px #0007!important;backdrop-filter:none!important}
+.grid>.card:hover{border-color:#766044!important;box-shadow:0 18px 38px #0009,0 0 0 1px rgba(152,119,71,.13)!important}
+.card-capa{height:clamp(126px,13vw,164px)!important;border-radius:7px!important;background:#090b0d!important;margin-bottom:10px!important}
+.card-estado{background:#0a0d10!important;border:1px solid #41474d!important;color:var(--vtt-bronze-bright)!important}
+.card-nome{font-family:var(--vtt-font-display)!important;font-size:16px!important;color:#eee9e0!important;letter-spacing:.025em}
+.card-mestre{font-family:var(--vtt-font-ui)!important;font-size:10px!important;color:#a6a8aa!important}
+.card-briefing{font-family:var(--vtt-font-story)!important;font-size:14px!important;color:#c2beb6!important}
+.vazio{border-color:#514536!important;color:var(--vtt-muted)!important}
+.input-codigo{width:min(190px,100%)!important;letter-spacing:.12em!important}
+.modal,.modal-estante,.modal-briefing{background:rgba(3,4,5,.88)!important;backdrop-filter:blur(8px)!important}
+.modal-box,.briefing-card,.confirm-box{
+  background:linear-gradient(150deg,#1b2025,#111518)!important;color:var(--vtt-text)!important;
+  border:1px solid #424951!important;border-radius:12px!important;box-shadow:var(--vtt-shadow)!important
+}
+.modal-box h2,.modal-cab h2{color:var(--vtt-bronze-bright)!important;border-color:#343b42!important}
+.modal-tabs{border-color:#343b42!important}
+.modal-tabs button{font-family:var(--vtt-font-ui)!important;color:var(--vtt-text-soft)!important}
+.modal-tabs button.ativo{background:var(--vtt-bronze-wash)!important;color:var(--vtt-bronze-bright)!important}
+.campo label{font-family:var(--vtt-font-ui)!important;color:var(--vtt-text-soft)!important}
+.campo input,.campo textarea{background:#0b0e11!important;color:var(--vtt-text)!important;border-color:#3a424b!important}
+.grid-fichas{background:#0e1114!important;gap:12px!important;padding:14px!important}
+.card-ficha-user{background:linear-gradient(150deg,#191e23,#111519)!important;border:1px solid #353d44!important;border-radius:10px!important;padding:12px!important;min-height:148px!important;color:var(--vtt-text)!important}
+.card-ficha-user:hover{border-color:var(--vtt-bronze)!important;box-shadow:0 10px 22px #0008!important}
+.card-ficha-user img,.avatar-placeholder{width:66px!important;height:66px!important;border:1px solid #806b4c!important;background:#20252a!important}
+.card-ficha-user .nome{font-family:var(--vtt-font-display)!important;font-size:13px!important;color:var(--vtt-bronze-bright)!important}
+.card-ficha-user .info{font-family:var(--vtt-font-ui)!important;font-size:10px!important;color:var(--vtt-text-soft)!important}
+.btn-add-ficha{border-color:#424951!important;border-radius:10px!important;color:var(--vtt-text-soft)!important}
+.btn-add-ficha:hover{background:#171c21!important;border-color:var(--vtt-bronze)!important;color:var(--vtt-bronze-bright)!important}
+.srd-library-toolbar,.srd-library-content,.srd-library-results,.srd-library-result{background:#101418!important}
+.srd-library-toolbar,.srd-library-results{border-color:#343b42!important}
+.srd-library-result{border-color:#30373e!important;color:var(--vtt-text)!important}
+.srd-library-result strong{color:#eee9e0!important}
+.srd-library-result:hover,.srd-library-result.ativo{background:#1a2025!important;border-color:var(--vtt-bronze)!important}
+.srd-library-detail{background:#14191d!important;color:var(--vtt-text)!important}
+.srd-library-detail h3{color:var(--vtt-bronze-bright)!important}
+/* Ficha: abandona a folha clara/verde e usa superfícies grafite em toda a hierarquia */
+body:has(.ficha){display:block!important;background:radial-gradient(ellipse at 50% -20%,#171b1f 0,#0c0f12 48%,#070809 100%)!important;color:var(--vtt-text)!important;padding:12px!important}
+.ficha,.ficha.dnd35-mode{
+  width:min(1220px,100%)!important;max-width:1220px!important;margin:0 auto!important;padding:clamp(14px,2vw,26px)!important;
+  background:linear-gradient(155deg,#171c20,#101417 60%,#0d1013)!important;color:var(--vtt-text)!important;
+  border:1px solid #3a4148!important;border-radius:12px!important;box-shadow:0 22px 65px #0009!important;background-image:none!important
+}
+.ficha:before,.ficha:after,.ficha.dnd35-mode:before{display:none!important}
+.ficha .info-bloco .nome,.ficha .vit td:nth-child(2),.ficha .def td:nth-child(2),.ficha .atr-val,.ficha .item-nome,.ficha .mochila-info b{color:#e9e4db!important}
+.ficha .info-bloco .nome{font-family:var(--vtt-font-display)!important}
+.ficha .col{border-color:#30373e!important}
+.ficha .secao{background:#12171b!important;border:1px solid #343b42!important;border-radius:8px!important}
+.ficha .secao-titulo{background:linear-gradient(90deg,#20262c,#171c21)!important;color:var(--vtt-bronze-bright)!important;border-bottom:1px solid #514536!important;font-family:var(--vtt-font-display)!important;font-size:10px!important;letter-spacing:.13em!important}
+.ficha .secao-corpo{background:#12171b!important;color:var(--vtt-text)!important}
+.ficha .sub-tab-titulo{color:var(--vtt-bronze-bright)!important;border-color:#3a424b!important}
+.ficha .tab,.ficha .tab td,.ficha .tab th{color:var(--vtt-text-soft)!important;border-color:#30373e!important}
+.ficha .tab th{color:#9c927f!important}
+.ficha .def td:nth-child(1),.ficha .vit td:nth-child(3),.ficha .def td:nth-child(3),.ficha .per td:nth-child(2),.ficha .per td:nth-child(3),.ficha .per td:nth-child(4){color:var(--vtt-text-soft)!important}
+.ficha .atrs{gap:6px!important}
+.ficha .atr{background:linear-gradient(160deg,#20262b,#151a1e)!important;border:1px solid #3d454d!important;border-radius:7px!important;padding:7px 3px!important}
+.ficha .atr-rot{color:#a9a69e!important;font-family:var(--vtt-font-ui)!important;font-size:9px!important;letter-spacing:.07em!important}
+.ficha .atr-val{font-family:var(--vtt-font-display)!important;color:var(--vtt-bronze-bright)!important;font-size:19px!important}
+.ficha .atb{background:#262d33!important;border:1px solid #4a535c!important;color:#e7e1d7!important;border-radius:5px!important}
+.ficha .card-rpg,.ficha .card-cat,.ficha .conhec-card,.ficha .card-talent,.ficha .card-habilidade{
+  background:linear-gradient(150deg,#20262c,#151a1e)!important;border:1px solid #3b434b!important;border-radius:8px!important;color:var(--vtt-text)!important;box-shadow:0 5px 16px #0004!important
+}
+.ficha .card-titulo-rpg,.ficha .card-cat .titulo,.ficha .conhec-card .cc-nome{color:#e9e4dc!important}
+.ficha .card-body-rpg,.ficha .card-cat .sub,.ficha .conhec-card .cc-desc{color:#b9b7b0!important}
+.ficha .card-tag-rpg,.ficha .card-cat .count{color:var(--vtt-bronze-bright)!important}
+.ficha .card-footer-rpg{border-color:#343b42!important;color:#a9a69e!important}
+.ficha .eqp-resumo,.ficha .anot-lista{background:#12171b!important;color:var(--vtt-text-soft)!important}
+.ficha .eqp-linha{color:var(--vtt-text-soft)!important;border-color:#30373e!important}
+.ficha .eqp-linha b,.ficha .mochila-info b{color:var(--vtt-text)!important}
+.ficha .rod{background:#0b0e11!important;color:var(--vtt-text-soft)!important;border-top:1px solid #514536!important}
+.ficha .rod button{border-color:#514536!important;color:var(--vtt-bronze-bright)!important}
+.ficha .rod button:hover{background:#262d33!important}
+.ficha .dnd35-help-content{background:#171d22!important;color:#c8c4bb!important;border-color:#806b4c!important}
+.ficha .levelup-flag{background:linear-gradient(90deg,#765a38,#a48654)!important;color:#fff!important;border-color:#b59663!important}
+.ficha .dnd35-levelup-section>h3{color:var(--vtt-bronze-bright)!important}
+.ficha .grimorio-box{background:linear-gradient(155deg,#1b2025,#101418)!important;color:var(--vtt-text)!important;border:1px solid #4a5057!important;border-radius:12px!important;box-shadow:var(--vtt-shadow)!important}
+.ficha .grimorio-titulo{color:var(--vtt-bronze-bright)!important;border-color:#514536!important}
+.ficha .grimorio-subtitulo,.ficha .grimorio-status{color:var(--vtt-text-soft)!important}
+.ficha .grimorio-grid{scrollbar-color:#343b42 #101418}
+.ficha .grimorio-grid>*{background:#171d22!important;border-color:#3b434b!important;color:var(--vtt-text)!important}
+.ficha .grimorio-grid button{color:var(--vtt-text)!important}
+.ficha .modal,.ficha .modal:before{background:rgba(3,4,5,.88)!important;backdrop-filter:blur(8px)!important}
+.ficha .modal-box,.ficha .anot-modal-box,.ficha .crop-box,.ficha .confirm-box{
+  background:linear-gradient(150deg,#1b2025,#111518)!important;color:var(--vtt-text)!important;border:1px solid #424951!important;border-radius:12px!important
+}
+.ficha .modal-cab,.ficha .modal-box .modal-cab{background:#0c1013!important;color:var(--vtt-text)!important;border-color:#514536!important}
+.ficha .inv-theme,.ficha .inv-theme .mochila-lista,.ficha .inv-theme .slots-equip,.ficha .inv-theme .mochila-info,.ficha .inv-theme .item-card{
+  background:#11161a!important;color:var(--vtt-text)!important;border-color:#343b42!important
+}
+.ficha .inv-theme .slot{background:#1b2127!important;border:1px dashed #4a535c!important;color:var(--vtt-text)!important}
+.ficha .inv-theme .slot-label,.ficha .inv-theme .slot-nome,.ficha .inv-theme .item-nome,.ficha .inv-theme .item-info,.ficha .inv-theme .item-info b{color:var(--vtt-text-soft)!important}
+.ficha .inv-theme .item-info{background:#191f24!important;border-color:#514536!important}
+.ficha .inv-theme .mochila-rodape{background:#0c1013!important;border-color:#514536!important}
+.ficha .anot-modal-box{background:#151a1e!important;color:var(--vtt-text)!important}
+.ficha .erro{background:#211719!important;color:#e18b83!important}
+/* Mesa: aplica a paleta mais profunda sobre a camada visual anterior, sem tocar no grid/fluxos */
+body:has(.mesa){background:var(--vtt-bg-void)!important;color:var(--vtt-text)!important}
+.mesa,.mesa-corpo{background:var(--vtt-bg)!important}
+.mesa-header{background:linear-gradient(180deg,#171c20,#101417)!important;border-bottom:1px solid #343b42!important}
+.mesa-header .titulo-mesa .nome{color:#eee9e0!important;font-family:var(--vtt-font-display)!important}
+.mesa-header .turno-info{color:var(--vtt-text-soft)!important;font-family:var(--vtt-font-ui)!important}
+.col-esq,.col-dir{background:linear-gradient(180deg,#11161a,#0d1114)!important;border-color:#30373e!important}
+.painel-cab{background:linear-gradient(90deg,#1b2126,#14191d)!important;color:var(--vtt-bronze-bright)!important;border-bottom:1px solid #343b42!important;font-family:var(--vtt-font-display)!important;font-size:10px!important;letter-spacing:.12em!important}
+.painel-corpo{color:var(--vtt-text)!important}
+#acoes-dir{background:linear-gradient(180deg,#151a1e,#101417)!important}
+#acoes-dir .player-action-identity,#acoes-dir .player-action-grid .btn-acao{background:linear-gradient(150deg,#20262c,#151a1e)!important;border-color:#3b434b!important;color:var(--vtt-text)!important;border-radius:8px!important}
+#acoes-dir .player-action-grid .btn-acao{min-height:48px!important;padding:9px 11px!important;font-family:var(--vtt-font-ui)!important;font-size:12px!important;letter-spacing:0!important}
+#acoes-dir .player-action-grid .btn-acao:hover:not(:disabled){background:#252d34!important;border-color:#806b4c!important}
+#acoes-dir .player-action-grid .btn-acao .action-card-label{font-family:var(--vtt-font-ui)!important;color:#e8e3da!important;font-size:12px!important}
+#acoes-dir .player-action-grid .btn-acao .action-card-description{font-family:var(--vtt-font-ui)!important;color:#9da1a5!important;font-size:10px!important}
+.btn-acao{font-family:var(--vtt-font-ui)!important}
+.jogador,.card-pers,.iniciativa-item{background:#171d22!important;border-color:#343b42!important;color:var(--vtt-text)!important}
+.jogador-avatar,.card-pers-avatar{background-color:#20262c!important;border-color:#514536!important}
+.card-pers{min-width:190px!important;max-width:260px!important;border-radius:8px!important}
+.card-pers-nome{font-family:var(--vtt-font-display)!important;color:#eee8de!important;font-size:11px!important}
+.cards-strip{background:#0b0f12!important;border-top:1px solid #343b42!important}
+.chat-input{background:#11161a!important;border-color:#30373e!important}
+.chat-input input{background:#090c0f!important;border-color:#343b42!important;color:var(--vtt-text)!important}
+.chat-input button{background:#29231a!important;border:1px solid #665238!important;color:var(--vtt-bronze-bright)!important}
+#painel-iniciativa{background:rgba(10,13,16,.97)!important;border-color:#514536!important;color:var(--vtt-text)!important}
+.iniciativa-item.ativo{background:#80633d!important;color:#fff!important;border-color:#b59663!important;box-shadow:0 0 12px rgba(152,119,71,.25)!important}
+#modal-testes,#modal-equipamentos,#modal-npc-rapido,#botoes-rolagem-pendente{background:rgba(3,4,5,.9)!important}
+.equip-modal-card,.modal-reforco-card{background:#151a1e!important;border:1px solid #41484f!important;color:var(--vtt-text)!important;border-radius:12px!important}
+.equip-modal-header,.modal-reforco-head,.quick-tabs{background:#0e1215!important;border-color:#343b42!important}
+.card-equipamento,.destinatario-equipamento,.quick-tabs button,.quick-catalog-grid .card-catalogo{background:#1a2025!important;border-color:#3b434b!important;color:var(--vtt-text)!important}
+#botoes-rolagem-pendente .btn-rolar-teste{background:#171d22!important;border-color:#806b4c!important;color:#eee7dc!important;font-family:var(--vtt-font-ui)!important}
+/* Dados 3D: os botões brancos do seletor deixam de destoar do resto do VTT */
+body:has(#stage){background:#080a0c!important;color:var(--vtt-text)!important}
+body:has(#stage) .info .title,body:has(#stage) .menu-header .title{font-family:var(--vtt-font-display)!important;font-style:normal!important;color:var(--vtt-bronze-bright)!important}
+body:has(#stage) .menu-panel{background:rgba(9,12,15,.98)!important;border-color:#343b42!important}
+body:has(#stage) .action-stack button,body:has(#stage) .throw-button{background:#171d22!important;border-color:#665238!important;color:var(--vtt-bronze-bright)!important;border-radius:7px!important;font-family:var(--vtt-font-ui)!important;letter-spacing:.1em!important}
+body:has(#stage) .action-stack button:hover,body:has(#stage) .throw-button:hover{background:#252c32!important;border-color:#987747!important}
+body:has(#stage) .throw-control,body:has(#stage) .modifier-strip{background:rgba(12,15,18,.96)!important;border-color:#343b42!important;border-radius:9px!important}
+body:has(#stage) .pad-stepper .pad-btn{background:#272e34!important;color:#e5e1d9!important;border:1px solid #4a535c!important}
+body:has(#stage) .pad-stepper .pad-btn:hover{background:#343d45!important}
+body:has(#stage) .die-label,body:has(#stage) .pad-stepper .count{color:#e5e1d9!important}
+body:has(#stage) .setting-row .setting-label{color:#d5d0c6!important}
+body:has(#stage) .setting-row .setting-value{color:var(--vtt-bronze-bright)!important}
+/* Responsividade: conserva o comportamento já implementado, só ajusta densidade e toque */
+@media(max-width:900px){
+  .main{padding:22px 20px 40px!important}
+  .grid{gap:14px!important}
+}
+@media(max-width:700px){
+  .sidebar{padding:14px 10px!important}
+  .side-nav a{padding:9px 8px!important;font-size:10px!important;gap:8px!important}
+  .main{padding:18px 14px 32px!important}
+  .grid>.card{padding:8px!important}
+  .card-capa{height:132px!important}
+  .ficha,.ficha.dnd35-mode{padding:12px!important;border-radius:0!important}
+}
+@media(max-width:480px){
+  .topo{gap:12px!important}
+  .titulo{font-size:23px!important}
+  .card-ficha-user{min-height:136px!important}
+  .card-ficha-user img,.avatar-placeholder{width:58px!important;height:58px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}
+}
