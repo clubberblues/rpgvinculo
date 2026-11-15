@@ -6140,9 +6140,32 @@ async function abrirModalEquipamentos(){
     pendentes.forEach(function(item){ ativarPedidoTeste(item.data,item.key); });
   }
 
+  function calcularBonusResistenciaPersonagem35(personagem,saveType,context){
+    var sh=personagem&&personagem.sh||{},cl=personagem&&personagem.cl||{},ch=personagem&&personagem.ch||{};
+    var cls=String(cl.class_key||cl.id||sh.classe_id||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();
+    var level=Math.max(1,Math.min(20,Number(sh.nivel)||Number(sh.nivel_personagem)||nivelXP(ch.xp)||1));
+    var good={
+      fortitude:['barbaro','barbarian','guerreiro','fighter','paladino','paladin','ranger','patrulheiro','monge','monk'],
+      reflex:['bardo','bard','ladino','rogue','ranger','patrulheiro','monge','monk'],
+      will:['bardo','bard','clerigo','cleric','druida','druid','monge','monk','paladino','paladin','feiticeiro','sorcerer','mago','wizard']
+    };
+    var key=String(saveType||'').toLowerCase(),ability=key==='fortitude'?'CON':key==='reflex'?'DES':'SAB';
+    var base=(good[key]||[]).indexOf(cls)>=0?2+Math.floor(level/2):Math.floor(level/3);
+    var attrs=sh.atributos||{};if(typeof attrs==='string'){try{attrs=JSON.parse(attrs);}catch(e){attrs={};}}
+    var abilityBonus=modifier35(attrs[ability]);
+    var racial=0,race=String(sh.raca_id||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();
+    var ctx=String(context||'').toLowerCase();
+    if(race==='anao'||race==='dwarf'){
+      if(key==='fortitude'&&(ctx==='poison'||ctx==='veneno'))racial=2;
+      if(ctx==='spell'||ctx==='magia')racial=2;
+    }
+    return {bonus:base+abilityBonus+racial,base:base,ability:ability,abilityBonus:abilityBonus,racialBonus:racial,level:level};
+  }
+
   async function calcularBonusTokenMestre35(token, requestData){
     var skillId=requestData&&requestData.skill_id;
-    if(!skillId)return {bonus:0,breakdown:null};
+    var isSave=requestData&&requestData.resolution_type==='saving_throw';
+    if(!skillId&&!isSave)return {bonus:0,breakdown:null};
     var sourceId=token&&token.tipo==='npc'?(token.sourceCharacterId||token.source_character_id):null;
     if(sourceId){
       var rows=await Promise.all([
@@ -6162,11 +6185,22 @@ async function abrirModalEquipamentos(){
         if(equipmentResult.error)throw new Error('Não foi possível carregar os equipamentos do NPC: '+equipmentResult.error.message);
         var equipment=(equipmentResult.data||[]).map(function(row){return Object.assign({},row.equipment||{},{quantidade:row.quantidade,equipado:!!row.equipado});});
         var ficha={ch:rows[0].data,sh:sheet,cl:cls,equipamento:equipment};
+        if(isSave){var saveResult=calcularBonusResistenciaPersonagem35(ficha,requestData.save_type,requestData.context);return {bonus:saveResult.bonus,breakdown:saveResult};}
         var result=await calcularBonusPericiaSolicitada35(ficha,skillId);
         return {bonus:Number(result.bonus)||0,breakdown:result};
       }
     }
     var tokenStats=token&&token.monsterStats||{};
+    if(isSave){
+      var saveKey=String(requestData.save_type||'fortitude').toLowerCase();
+      var saveField=saveKey==='fortitude'?'fortitude':saveKey==='reflex'?'reflexos':'vontade';
+      var saves=tokenStats.saves||tokenStats.saving_throws||tokenStats;
+      var rawSave=saves[saveField];
+      if(rawSave==null&&saveKey==='reflex')rawSave=saves.reflex;
+      if(rawSave==null&&saveKey==='will')rawSave=saves.will;
+      var saveBonus=Number(String(rawSave==null?'0':rawSave).match(/[+-]?\\d+/)?.[0]||0);
+      return {bonus:saveBonus,breakdown:{save_type:saveKey,monster_save_bonus:saveBonus}};
+    }
     var skillResult=await sb.from('srd_skills').select('id,nome,atributo').eq('id',String(skillId)).maybeSingle();
     if(skillResult.error)throw new Error('Não foi possível consultar a perícia: '+skillResult.error.message);
     var skill=skillResult.data;
@@ -6510,22 +6544,13 @@ async function abrirModalEquipamentos(){
           }else if(isSavingThrow){
             var d20Save=Number(resultado);
             if(!Number.isInteger(d20Save)||d20Save<1||d20Save>20)throw new Error('O resultado precisa ser um d20 entre 1 e 20.');
-            var resolvedSave=await sb.rpc('srd_resolve_requested_saving_throw_srd',{
-              p_campaign_id:Number(MESA_ID),
-              p_character_id:String(personagemId),
-              p_request_id:String(requestData.request_id),
-              p_d20:d20Save
-            });
-            if(resolvedSave.error)throw new Error(resolvedSave.error.message);
-            var saveOutcome=resolvedSave.data||{};
+            var saveBonusResult=calcularBonusResistenciaPersonagem35(ficha,requestData.save_type,requestData.context);
+            var saveTotal=d20Save+saveBonusResult.bonus;
             extras.request_id=requestData.request_id||requestKey;
-            extras.d20=d20Save;extras.saving_throw=true;extras.save_type=saveOutcome.save_type;
-            extras.context=saveOutcome.context;extras.bonus=saveOutcome.bonus;extras.total=saveOutcome.total;
-            extras.dc=saveOutcome.dc;extras.success=saveOutcome.success;extras.trap_sense_bonus=saveOutcome.trap_sense_bonus;
-            var contextNote=Number(saveOutcome.trap_sense_bonus)>0?' (inclui Sentido para Armadilhas +'+saveOutcome.trap_sense_bonus+')':'';
-            var resultNote=saveOutcome.dc==null?' — resultado registrado':(saveOutcome.success?' — SUCESSO':' — FALHA');
-            texto='🛡️ '+ficha.ch.nome+' — '+tipoTeste+': D20 '+d20Save+' + bônus '+saveOutcome.bonus+' = '+saveOutcome.total+
-              (saveOutcome.dc!=null?' contra CD '+saveOutcome.dc:'')+contextNote+resultNote+'.';
+            extras.d20=d20Save;extras.saving_throw=true;extras.save_type=requestData.save_type;
+            extras.context=requestData.context||null;extras.bonus=saveBonusResult.bonus;extras.total=saveTotal;
+            extras.save_breakdown=saveBonusResult;
+            texto='🛡️ '+ficha.ch.nome+' — '+tipoTeste+': D20 '+d20Save+' + bônus '+(saveBonusResult.bonus>=0?'+':'')+saveBonusResult.bonus+' = '+saveTotal+'.';
           }else{
             var skillResult=requestData&&requestData.skill_id?await calcularBonusPericiaSolicitada35(ficha,requestData.skill_id):null;
             var bonus=skillResult?skillResult.bonus:bonusDoTeste(tipoTeste,ficha.sh?ficha.sh.atributos:null);
