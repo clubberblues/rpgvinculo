@@ -94,7 +94,7 @@
   }
   function levelOf(input){
     var sheet=input&&(input.sh||input.sheet)||{},stats=input&&input.monsterStats||{};
-    return Math.max(1,Math.min(20,Number(sheet.nivel||stats.level||input.level)||1));
+    return Math.max(1,Math.min(20,Number(sheet.nivel||stats.level||(input&&input.level))||1));
   }
   function canCast(key,level){
     if(key==='paladin'||key==='ranger')return level>=4;
