@@ -1,1 +1,1 @@
-Trigger the Android APK build workflow.
+Trigger Android APK build workflow — retry with supported SDK package list.
