@@ -4266,6 +4266,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
       'srd35_equipment_shields_shield_spikes':'Espinhos para escudo'
     };
     if(names[id])return names[id];
+    if(/^\\+\\d+\\s+(armadura|escudo|armadura\\/escudo)$/i.test(name))return name.replace(/^\\+(\\d+)/,'+ $1').replace('armadura/escudo','armadura ou escudo');
     var exact={'Glaive':'Glaive','Guisarme':'Guisarme','Ranseur':'Ranseur','Kama':'Kama','Kukri':'Kukri','Sai':'Sai','Siangham':'Siangham','Shuriken (10)':'Shuriken (10)'};
     if(exact[name])return exact[name];
     // Registros já traduzidos são preservados; nomes importados sem tradução não entram na interface.
