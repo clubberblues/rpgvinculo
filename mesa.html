@@ -4367,7 +4367,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     var item=row.equipment||{},price=Number(row.buy_price)||0,balance=Number(p.sh&&p.sh.ouro)||0;
     if(balance<price){statusLoja('Ouro insuficiente para comprar '+(item.nome||id)+'.',true);return;}
     lojaCompraPendente={id:String(id),button:button};
-    document.getElementById('loja-confirm-text').textContent='Deseja comprar '+(item.nome||id)+' por '+moedaLoja(price)+'?';
+    document.getElementById('loja-confirm-text').textContent='Deseja comprar '+(nomeEquipamentoLojaPT(item)||'este equipamento')+' por '+moedaLoja(price)+'?';
     document.getElementById('loja-confirm-restante').textContent=moedaLoja(balance-price);
     document.getElementById('loja-confirm-buy').disabled=false;
     document.getElementById('loja-confirm-buy').textContent='Confirmar compra';
@@ -4380,7 +4380,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     try{
       var r=await sb.rpc('srd_campaign_shop_buy',{p_campaign_id:Number(MESA_ID),p_character_id:Number(p.ch.id),p_equipment_id:id,p_quantity:1,p_idempotency_key:chaveIdempotenciaLoja()});
       if(r.error)throw new Error(r.error.message);
-      var item=lojaListings.find(function(x){return String(x.equipment_id)===id;}),name=item&&item.equipment&&item.equipment.nome||id;
+      var item=lojaListings.find(function(x){return String(x.equipment_id)===id;}),name=item&&item.equipment&&nomeEquipamentoLojaPT(item.equipment)||'Equipamento';
       fecharConfirmacaoLoja();
       try{await enviarMensagemChat('🪙 '+p.ch.nome+' adquiriu '+name+' por '+moedaLoja(r.data&&r.data.total)+'.','sistema',{evento:'loja_compra',character_id:String(p.ch.id),equipment_id:id,quantity:1,total:r.data&&r.data.total});}catch(logError){console.warn('Compra concluída; registro de chat não enviado:',logError);}
       await carregarPersonagens();
@@ -4514,7 +4514,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
   }
   function nomeCategoriaEquipamento35(value){
     var raw=String(value||'outro').trim(),cat=raw.toLowerCase();
-    var names={arma:'Armas',armadura:'Armaduras',escudo:'Escudos',acessorio:'Acessórios',mochila:'Mochilas',consumivel:'Consumíveis',gear:'Equipamentos de aventura',outro:'Outros',Extras:'Acessórios e melhorias',Shields:'Escudos',specific_weapons:'Armas especiais',specific_armors:'Armaduras especiais',specific_shields:'Escudos especiais',armor_and_shields:'Armaduras e escudos',rings:'Anéis',rods:'Bastões',staffs:'Cajados',wands:'Varinhas',wondrous_items:'Itens maravilhosos',potions_and_oils:'Poções e óleos',specific_cursed_items:'Itens amaldiçoados',shields:'Escudos','light armor':'Armaduras leves','medium armor':'Armaduras médias','heavy armor':'Armaduras pesadas'};
+    var names={arma:'Armas',armadura:'Armaduras',escudo:'Escudos',acessorio:'Acessórios',mochila:'Mochilas',consumivel:'Consumíveis',gear:'Equipamentos de aventura',outro:'Outros',extras:'Acessórios e melhorias',shields:'Escudos',specific_weapons:'Armas especiais',specific_armors:'Armaduras especiais',specific_shields:'Escudos especiais',armor_and_shields:'Armaduras e escudos',rings:'Anéis',rods:'Bastões',staffs:'Cajados',wands:'Varinhas',wondrous_items:'Itens maravilhosos',potions_and_oils:'Poções e óleos',specific_cursed_items:'Itens amaldiçoados',shields:'Escudos','light armor':'Armaduras leves','medium armor':'Armaduras médias','heavy armor':'Armaduras pesadas'};
     if(names[cat])return names[cat];
     if(cat.indexOf('weapon')>=0||cat.indexOf('weapons')>=0){var end=cat.split('·').pop().trim(),suffix=end.indexOf('ranged')>=0?' à distância':end.indexOf('two-handed')>=0?' de duas mãos':end.indexOf('one-handed')>=0?' de uma mão':end.indexOf('light')>=0?' leves':'';return 'Armas'+suffix;}
     return raw.charAt(0).toLocaleUpperCase('pt-BR')+raw.slice(1);
