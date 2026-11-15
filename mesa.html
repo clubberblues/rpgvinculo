@@ -6199,7 +6199,7 @@ async function abrirModalEquipamentos(){
       var rawSave=saves[saveField];
       if(rawSave==null&&saveKey==='reflex')rawSave=saves.reflex;
       if(rawSave==null&&saveKey==='will')rawSave=saves.will;
-      var saveBonus=Number(String(rawSave==null?'0':rawSave).match(/[+-]?\\d+/)?.[0]||0);
+      var saveBonus=Number(String(rawSave==null?'0':rawSave).match(/[+-]?\d+/)?.[0]||0);
       return {bonus:saveBonus,breakdown:{save_type:saveKey,monster_save_bonus:saveBonus}};
     }
     var skillResult=await sb.from('srd_skills').select('id,nome,atributo').eq('id',String(skillId)).maybeSingle();
