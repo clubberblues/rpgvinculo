@@ -1439,13 +1439,17 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         '</header>'+
         '<div class="mesa-corpo">'+
           '<aside class="col-esq">'+
-            '<section class="painel" style="flex:1.4">'+
+            '<section class="painel painel-chat-mesa">'+
               '<div class="painel-cab">Chat da Mesa</div>'+
               '<div class="painel-corpo" id="chat-lista"></div>'+
               '<div class="chat-input">'+
                 '<input type="text" id="chat-txt" placeholder="Fale algo..." maxlength="500">'+
                 '<button id="chat-enviar">➤</button>'+
               '</div>'+
+            '</section>'+
+            '<section class="painel painel-lista-jogadores">'+
+              '<div class="painel-cab">Jogadores da Mesa</div>'+
+              '<div class="painel-corpo" id="cards-strip" aria-label="Lista de jogadores"></div>'+
             '</section>'+
           '</aside>'+
           '<main class="tabuleiro" id="area-tabuleiro">'+
@@ -1482,18 +1486,14 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     cardsStrip.addEventListener('click', function(e){
       var moveButton=e.target.closest?e.target.closest('[data-initiative-move]'):null;
       if(moveButton){e.preventDefault();e.stopPropagation();var moveIndex=Number(moveButton.dataset.initiativeMove),moveDirection=Number(moveButton.dataset.direction);if(Number.isInteger(moveIndex)&&Math.abs(moveDirection)===1)moverNaIniciativa(moveIndex,moveDirection);return;}
-      var racialInfoButton=e.target.closest?e.target.closest('[data-racial-info]'):null;if(racialInfoButton){e.preventDefault();e.stopPropagation();var racialCard=racialInfoButton.closest('.card-pers'),racialCharacter=racialCard&&racialCard.dataset.char?personagens.find(function(p){return String(p.ch.id)===String(racialCard.dataset.char);}):null;if(racialCharacter)abrirDetalhesRaciaisMesa35(racialCharacter);return;}
-      var flipButton=e.target.closest?e.target.closest('[data-card-flip]'):null;
-      if(flipButton){e.preventDefault();e.stopPropagation();var flipCard=flipButton.closest('.card-pers');if(flipCard)flipCard.classList.toggle('is-flipped');return;}
-      var cardAcao = e.target.closest ? e.target.closest('.card-pers') : null;
-      if(cardAcao && !modoSelecaoTeste){e.preventDefault();cardAcao.classList.toggle('is-flipped');return;}
+      var cardAcao = e.target.closest ? e.target.closest('.jogador-faixa') : null;
       if(ehGM && cardAcao && cardAcao.dataset.cbaTokenKey && !modoSelecaoTeste){
         e.preventDefault();var token=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key)===String(cardAcao.dataset.cbaTokenKey);});
         if(token)abrirMenuContextualToken(token,cardAcao);return;
       }
       if(ehGM && cardAcao && !modoSelecaoTeste){ e.preventDefault(); abrirAjustePV(cardAcao.dataset.char); return; }
       if(!modoSelecaoTeste) return;
-      var card = e.target.closest ? e.target.closest('.card-pers') : null;
+      var card = e.target.closest ? e.target.closest('.jogador-faixa') : null;
       if(!card || !cardsStrip.contains(card)) return;
       e.preventDefault();
       e.stopPropagation();
@@ -1524,7 +1524,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       {title:'Tática e defesa',actions:[{id:'manobras-ui',ic:'🛡️',txt:'Manobras de combate'},{id:'defesa-ui',ic:'🧱',txt:'Ações defensivas'},{id:'movimento-ui',ic:'👣',txt:'Movimentação'}]},
       {title:'Personagem',actions:[{id:'ficha',ic:'📜',txt:'Minha ficha'},{id:'inventario',ic:'🎒',txt:'Equipamentos'},{id:'pericia',ic:'📚',txt:'Perícias'},{id:'testes-jogador',ic:'🎲',txt:'Testes de atributo e resistência'},{id:'racial-ui',ic:'⛰️',txt:'Características raciais'},{id:'talentos-ui',ic:'🏅',txt:'Talentos'},{id:'habilidades',ic:'⚔️',txt:'Características da classe'},{id:'dados',ic:'🎲',txt:'Dados livres'},{id:'avancar-turno',ic:'⏭️',txt:'Encerrar turno'}]}
     ]:[{title:'Aventureiro',actions:[{id:'movimento-ui',ic:'👣',txt:'Movimentação'},{id:'ficha',ic:'📜',txt:'Minha ficha'},{id:'inventario',ic:'🎒',txt:'Equipamentos e mochila'},{id:'pericia',ic:'📚',txt:'Perícias'},{id:'testes-jogador',ic:'🎲',txt:'Testes de atributo e resistência'},{id:'racial-ui',ic:'⛰️',txt:'Características raciais'},{id:'talentos-ui',ic:'🏅',txt:'Talentos'},{id:'habilidades',ic:'⚔️',txt:'Características da classe'},{id:'dados',ic:'🎲',txt:'Dados livres'}].concat(magic?[{id:'atk-mag',ic:'✨',txt:'Magias disponíveis'}]:[])}];montarPainelAcaoUI(el,groups,(p&&p.ch.nome||'Aventureiro')+' · '+classeUI(p),p);}
-    var economy=document.getElementById('painel-economia');if(economy&&economy.parentNode)economy.parentNode.removeChild(economy);var combatPanel=document.createElement('section');combatPanel.id='painel-combate-acoes';combatPanel.hidden=true;combatPanel.innerHTML='<h3>CONTROLE DO TURNO</h3><p id="turno-controle-status">Aguardando a iniciativa.</p><div id="iniciativa-acoes-mestre"></div>';el.appendChild(combatPanel);if(ehGM){var aooQueueButton=document.createElement('button');aooQueueButton.type='button';aooQueueButton.className='btn-acao';aooQueueButton.textContent='⚔️ Reações pendentes';aooQueueButton.addEventListener('click',abrirPainelFilaAOO);combatPanel.appendChild(aooQueueButton);}if(economy)combatPanel.appendChild(economy);if(tokenMenu)el.appendChild(tokenMenu);var oldRoster=document.querySelector('.mesa-footer .painel-aventureiros');if(oldRoster)oldRoster.remove();var roster=document.createElement('section');roster.className='painel painel-aventureiros';roster.setAttribute('aria-label','Aventureiros da mesa');roster.innerHTML='<div class="painel-cab">AVENTUREIROS</div><div class="painel-corpo" id="cards-strip" aria-label="Cards de personagens, NPCs e monstros"></div>';var footer=document.querySelector('.mesa-footer');if(footer)footer.appendChild(roster);else el.appendChild(roster);if(diceOverlay){if(diceOverlay.parentElement!==document.body)document.body.appendChild(diceOverlay);diceOverlay.classList.add('dado-modal-global');}if(document.getElementById('painel-iniciativa'))renderizarIniciativa(combatDataState);
+    var economy=document.getElementById('painel-economia');if(economy&&economy.parentNode)economy.parentNode.removeChild(economy);var combatPanel=document.createElement('section');combatPanel.id='painel-combate-acoes';combatPanel.hidden=true;combatPanel.innerHTML='<h3>CONTROLE DO TURNO</h3><p id="turno-controle-status">Aguardando a iniciativa.</p><div id="iniciativa-acoes-mestre"></div>';el.appendChild(combatPanel);if(ehGM){var aooQueueButton=document.createElement('button');aooQueueButton.type='button';aooQueueButton.className='btn-acao';aooQueueButton.textContent='⚔️ Reações pendentes';aooQueueButton.addEventListener('click',abrirPainelFilaAOO);combatPanel.appendChild(aooQueueButton);}if(economy)combatPanel.appendChild(economy);if(tokenMenu)el.appendChild(tokenMenu);var oldRoster=document.querySelector('.mesa-footer .painel-aventureiros');if(oldRoster)oldRoster.remove();if(diceOverlay){if(diceOverlay.parentElement!==document.body)document.body.appendChild(diceOverlay);diceOverlay.classList.add('dado-modal-global');}if(document.getElementById('painel-iniciativa'))renderizarIniciativa(combatDataState);
   }
   async function alternarEstadoMesa(){
     if(!ehGM || estadoMesaBusy) return;
@@ -7522,31 +7522,30 @@ async function abrirModalEquipamentos(){
     var el=document.getElementById('cards-strip');if(!el)return;
     var ordem=combatDataState&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order:[];
     var active=!!(combatDataState&&combatDataState.active&&ordem.length),turnIndex=Math.max(0,Math.min(Math.max(0,ordem.length-1),Number(combatDataState&&combatDataState.current_turn)||0));
-    var tokens=cbaPublishedState&&Array.isArray(cbaPublishedState.tokens)?cbaPublishedState.tokens:[],cards=[];
+    var tokens=cbaPublishedState&&Array.isArray(cbaPublishedState.tokens)?cbaPublishedState.tokens:[],rows=[];
     tokens.forEach(function(token,originalIndex){
-      if(!token||token.id==null)return;
-      var p=token.tipo==='player'?acharPersonagemDoToken(token):null,gmActor=token.tipo!=='player'||!!(p&&ehGM&&p.ch.user_id===eu.id),actorKey=(gmActor?'g:':'p:')+String(token.id);
-      var initIndex=entradaIniciativaToken(token,ordem),entry=initIndex>=0?ordem[initIndex]:null,activeCard=!!(active&&initIndex===turnIndex);
-      var rank=initIndex>=0?(active?(initIndex-turnIndex+ordem.length)%ordem.length:initIndex):100000+originalIndex;
-      var name=String(token.nome||(p&&p.ch.nome)||'Combatente'),detail=token.tipo==='monstro'?'Monstro · ND '+String((token.monsterStats||{}).nd||'—'):token.tipo==='npc'?(token.sourceCharacterId?'NPC · Ficha SRD vinculada':'NPC · Nv '+String((token.monsterStats||{}).level||'—')):p?String((p.raca&&p.raca.nome)||'Raça não definida')+' · '+String((p.cl&&p.cl.nome)||p.sh.classe||'Personagem'):'Ficha do Mestre';
-      var max=p?pvMax(p.sh,p.cl):(token.maxHp==null?null:Number(token.maxHp)),hp=p?Number(p.sh.pv_atual==null?max:p.sh.pv_atual):(token.hp==null?max:Number(token.hp)),ac=caToken35(token);
-      var url=String(token.imagem||(p&&((p.perfil&&p.perfil.avatar_url)||p.ch.retrato_url||p.ch.arte_url))||'').trim(),img=/^https?:\/\/[^\s"'<>]+$/i.test(url);
-      var portrait=img?'<img class="portrait-only-image" src="'+esc(url)+'" alt="" draggable="false">':'<span class="portrait-placeholder" aria-hidden="true">'+(token.tipo==='monstro'?'🐉':token.tipo==='npc'?'👤':'✦')+'</span>';
-      var initiative=entry?'Iniciativa '+String(entry.valor==null?'—':entry.valor):'Aguardando iniciativa',hpText=hp==null?'PV não definido':Math.max(-10,hp)+' / '+(max==null?'—':max)+' PV';
-      var ms=token.monsterStats||{},linkedAttrs=token.tipo==='npc'?linkedNpcSheetAttributes[String(token.id)]:null,attrs=p?(p.sh.atributos||{}):(linkedAttrs||ms.attributes||{}),hasSheetAttributes=!!(p||linkedAttrs),attributeText=hasSheetAttributes?['FOR','DES','CON','INT','SAB','CAR'].map(function(k){var score=Number(attrs[k]||10),mod=modifier35(score);return k+' '+score+' ('+(mod>=0?'+':'')+mod+')';}).join(' · '):['Fort '+(ms.fortitude==null?'—':ms.fortitude),'Ref '+(ms.reflexos==null?'—':ms.reflexos),'Von '+(ms.vontade==null?'—':ms.vontade)].join(' · ');
-      var selected=p&&alvosSelecionados.indexOf(String(p.ch.id))!==-1?' selecionado-para-teste':'',controls=ehGM&&initIndex>=0?'<div class="portrait-order-controls"><button type="button" data-initiative-move="'+initIndex+'" data-direction="-1" '+(initIndex===0?'disabled':'')+' aria-label="Mover para a esquerda">←</button><button type="button" data-initiative-move="'+initIndex+'" data-direction="1" '+(initIndex===ordem.length-1?'disabled':'')+' aria-label="Mover para a direita">→</button></div>':'';
-      var statusActor=statusAtivoDoAlvo(token.tipo==='player'?'character':'token',token.tipo==='player'?[token.id]:[token.key,token.id]);
-      var statusText=(statusActor.conditions.length?'Condições: '+statusActor.conditions.join(', '):'')+(statusActor.effects.length?(statusActor.conditions.length?' · ':'')+'Efeitos: '+statusActor.effects.join(', '):'');
-      var racialTraits=p&&p.raca&&Array.isArray(p.raca.habilidades_raciais)?p.raca.habilidades_raciais.join(' · '):'';
-      var classTraits=p&&p.sh&&p.sh.classe_id==='barbaro'?'Bárbaro · '+(p.sh.identidade&&p.sh.identidade.alfabetizado===true?'alfabetizado':'analfabeto'):'';
-      var back='<div class="portrait-back-content"><strong>'+esc(name)+'</strong><span>'+esc(detail)+'</span><span>'+esc(initiative)+'</span><span>'+esc(hpText)+(ac==null?'':' · CA '+ac)+'</span>'+(statusText?'<small class="card-status-effects">'+esc(statusText)+'</small>':'')+'<small>'+esc(attributeText)+'</small>'+(racialTraits?'<small>Traços raciais: '+esc(racialTraits.slice(0,120))+(racialTraits.length>120?'…':'')+'</small><button type="button" class="card-racial-info-button" data-racial-info>Ver todos os traços raciais</button>':'')+(classTraits?'<small>Condição de classe: '+esc(classTraits)+'</small>':'')+'<small>'+esc(String(ms.qualidades_especiais||ms.ataques||ms.descricao||'').replace(/<[^>]*>/g,' ').slice(0,180))+'</small>'+controls+'<button type="button" class="card-flip-button" data-card-flip aria-label="Voltar ao retrato">↻</button></div>';
-      var html='<article class="card-pers deck-card token-card '+(token.tipo==='monstro'?'monstro':token.tipo==='npc'?'npc':'player-token')+(p&&p.ch.user_id===eu.id?' eu':'')+selected+(activeCard?' turno-ativo':'')+'" data-actor-key="'+esc(actorKey)+'" data-cba-token-key="'+esc(token.key||'')+'"'+(p?' data-char="'+esc(p.ch.id)+'"':'')+' tabindex="0" role="button" aria-label="Retrato de '+esc(name)+'"><div class="card-pers-inner"><div class="card-pers-face card-pers-front portrait-only-front">'+portrait+'</div><div class="card-pers-face card-pers-back">'+back+'</div></div></article>';
-      cards.push({key:actorKey,rank:rank,html:html});
+      if(!token||token.id==null||token.tipo!=='player')return;
+      var p=acharPersonagemDoToken(token);if(!p)return;
+      var initIndex=entradaIniciativaToken(token,ordem),entry=initIndex>=0?ordem[initIndex]:null,activeRow=!!(active&&initIndex===turnIndex);
+      var name=String(token.nome||(p.ch&&p.ch.nome)||'Aventureiro');
+      var detail=String((p.raca&&p.raca.nome)||'Raça não definida')+' · '+String((p.cl&&p.cl.nome)||p.sh.classe||'Personagem');
+      var max=pvMax(p.sh,p.cl),hp=Number(p.sh.pv_atual==null?max:p.sh.pv_atual),ac=caToken35(token);
+      var url=String(token.imagem||(p.perfil&&p.perfil.avatar_url)||p.ch.retrato_url||p.ch.arte_url||'').trim();
+      var img=(url.indexOf('https://')===0||url.indexOf('http://')===0)&&!(/\s/.test(url));
+      var portrait=img?'<img class="jogador-faixa-foto" src="'+esc(url)+'" alt="" draggable="false">':'<span class="jogador-faixa-placeholder" aria-hidden="true">✦</span>';
+      var hpText=hp==null?'PV —':'PV '+Math.max(-10,hp)+'/'+(max==null?'—':max);
+      var initText=entry?'INI '+String(entry.valor==null?'—':entry.valor):'INI —';
+      var selected=alvosSelecionados.indexOf(String(p.ch.id))!==-1?' selecionado-para-teste':'';
+      var html='<article class="jogador-faixa'+(p.ch.user_id===eu.id?' eu':'')+(activeRow?' turno-ativo':'')+selected+'" data-actor-key="'+esc('p:'+String(token.id))+'" data-cba-token-key="'+esc(token.key||'')+'" data-char="'+esc(p.ch.id)+'" tabindex="0" role="button" aria-label="'+esc(name)+'">'+
+        '<div class="jogador-faixa-avatar">'+portrait+'</div>'+
+        '<div class="jogador-faixa-info"><strong class="jogador-faixa-nome">'+esc(name)+'</strong><span class="jogador-faixa-classe">'+esc(detail)+'</span>'+
+        '<span class="jogador-faixa-status">'+esc(hpText)+(ac==null?'':' · CA '+ac)+' · '+esc(initText)+'</span></div></article>';
+      rows.push({rank:initIndex>=0?(active?(initIndex-turnIndex+ordem.length)%ordem.length:initIndex):100000+originalIndex,html:html});
     });
-    cards.sort(function(a,b){return a.rank-b.rank;});el.replaceChildren();
-    if(!cards.length){var empty=document.createElement('div');empty.className='cards-empty';empty.textContent='Adicione tokens ao mapa para que seus retratos apareçam aqui.';el.appendChild(empty);}
-    cards.forEach(function(card){var wrap=document.createElement('div');wrap.innerHTML=card.html;var node=wrap.firstElementChild;if(node){el.appendChild(node);node.dataset.actorKey=card.key;}});
-    var pager=document.getElementById('cards-strip-pager');if(pager)pager.remove();
+    rows.sort(function(a,b){return a.rank-b.rank;});
+    el.replaceChildren();
+    if(!rows.length){var empty=document.createElement('div');empty.className='jogadores-lista-vazia';empty.textContent='Nenhum jogador presente na mesa.';el.appendChild(empty);}
+    rows.forEach(function(row){var wrap=document.createElement('div');wrap.innerHTML=row.html;var node=wrap.firstElementChild;if(node)el.appendChild(node);});
     if(cbaPublishedState)renderizarTokensCBA(document.getElementById('cba-token-layer'),cbaPublishedState);
   }
 
@@ -8060,87 +8059,35 @@ html,body{width:100%;max-width:100%;min-width:0;overflow-x:hidden}
 </style>
 <script src="friends-vtt-ui.js"></script>
 <style id="mesa-footer-cards-scale-fix">
-/* Layout definitivo em flex-column: evita conflito entre tracks de grid legados no desktop. */
+/* Área central flexível, rodapé reservado e lista compacta abaixo do chat. */
 html,body,#root{width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;overflow:hidden!important}
-.mesa{
- display:flex!important;flex-direction:column!important;flex-wrap:nowrap!important;
- position:relative!important;box-sizing:border-box!important;
- width:100%!important;max-width:100%!important;min-width:0!important;
- height:100vh!important;height:100dvh!important;min-height:0!important;
- margin:0!important;overflow:hidden!important;
-}
-.mesa>.mesa-header{
- display:flex!important;position:relative!important;flex:0 0 64px!important;
- width:100%!important;min-width:0!important;max-width:100%!important;
- height:64px!important;min-height:64px!important;max-height:64px!important;
-}
-.mesa>.mesa-corpo{
- display:grid!important;position:relative!important;flex:1 1 0!important;
- grid-template-columns:minmax(250px,17.2vw) minmax(0,1fr) minmax(230px,16.2vw)!important;
- grid-template-rows:minmax(0,1fr)!important;
- width:100%!important;min-width:0!important;max-width:100%!important;
- height:auto!important;min-height:0!important;max-height:none!important;
- margin:0!important;overflow:hidden!important;
-}
-.mesa>.mesa-footer{
- display:flex!important;position:relative!important;flex:0 0 174px!important;
- flex-direction:column!important;box-sizing:border-box!important;
- width:100%!important;min-width:0!important;max-width:100%!important;
- height:174px!important;min-height:174px!important;max-height:174px!important;
- margin:0!important;padding:7px 12px 10px!important;gap:5px!important;
- overflow:hidden!important;
-}
-.mesa>.mesa-footer>.painel-aventureiros{
- display:flex!important;position:relative!important;flex:1 1 0!important;
- flex-direction:column!important;box-sizing:border-box!important;
- width:100%!important;min-width:0!important;max-width:100%!important;
- height:auto!important;min-height:0!important;max-height:none!important;
- margin:0!important;overflow:hidden!important;
-}
-.mesa>.mesa-footer>.painel-aventureiros>.painel-cab{display:block!important;flex:0 0 auto!important;min-height:16px!important;padding:2px 8px!important}
-.mesa>.mesa-footer>.painel-aventureiros>#cards-strip{
- display:flex!important;position:relative!important;flex:1 1 0!important;
- flex-direction:row!important;flex-wrap:nowrap!important;align-items:stretch!important;
- box-sizing:border-box!important;width:100%!important;min-width:0!important;max-width:100%!important;
- height:auto!important;min-height:0!important;max-height:none!important;
- margin:0!important;padding:9px 12px 13px!important;gap:10px!important;
- overflow-x:auto!important;overflow-y:hidden!important;
- overscroll-behavior-x:contain!important;scroll-snap-type:x proximity!important;
- scrollbar-width:thin!important;scrollbar-color:#b99a58 #24291f!important;
-}
-#cards-strip::-webkit-scrollbar{height:7px!important}
-#cards-strip::-webkit-scrollbar-track{background:#24291f!important;border-radius:8px!important}
-#cards-strip::-webkit-scrollbar-thumb{background:linear-gradient(90deg,#806b42,#c5a45b)!important;border:1px solid #24291f!important;border-radius:8px!important}
-#cards-strip>.card-pers{
- display:block!important;position:relative!important;box-sizing:border-box!important;
- flex:0 0 188px!important;width:188px!important;min-width:188px!important;max-width:188px!important;
- height:140px!important;min-height:140px!important;max-height:140px!important;
- margin:0 0 2px!important;padding:0!important;overflow:hidden!important;
- border:1px solid #a58a53!important;border-radius:9px!important;
- background:#11170f!important;perspective:1000px!important;scroll-snap-align:start!important;
-}
-#cards-strip>.card-pers.turno-ativo{border:2px solid #e8c56f!important;box-shadow:0 0 14px #e8c56f80,0 0 0 1px #e8c56f55!important}
-#cards-strip .card-pers-inner{display:block!important;position:relative!important;width:100%!important;height:100%!important;min-height:0!important;transform-style:preserve-3d!important;transition:transform .58s cubic-bezier(.2,.7,.2,1)!important}
-#cards-strip .card-pers.is-flipped .card-pers-inner{transform:rotateY(180deg)!important}
-#cards-strip .card-pers-face{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;box-sizing:border-box!important;backface-visibility:hidden!important;-webkit-backface-visibility:hidden!important;overflow:hidden!important}
-#cards-strip .portrait-only-front{display:flex!important;align-items:center!important;justify-content:center!important;padding:0!important}
-#cards-strip .portrait-only-image{display:block!important;width:100%!important;height:100%!important;object-fit:cover!important;object-position:center!important}
-#cards-strip .card-pers-back{transform:rotateY(180deg)!important;display:flex!important;align-items:stretch!important;justify-content:center!important;padding:9px 11px!important;background:linear-gradient(145deg,#263322,#11170f)!important;color:#eee5ce!important}
-#cards-strip .portrait-back-content{display:flex!important;flex-direction:column!important;justify-content:center!important;gap:4px!important;width:100%!important;height:100%!important;min-width:0!important;font-size:10px!important;line-height:1.25!important;overflow:auto!important;scrollbar-width:thin!important;scrollbar-color:#92794b transparent!important}
-#cards-strip .portrait-back-content strong{font:700 11px Cinzel,serif!important;color:#f0d48e!important}
-#cards-strip .portrait-back-content span{font-size:10px!important;color:#e5d9bd!important}
-#cards-strip .portrait-back-content small{font-size:9px!important;line-height:1.25!important;color:#d0c5a9!important}
-#cards-strip .card-flip-button{display:none!important}
-#cards-strip .card-racial-info-button{font-size:8px!important}
-@media(max-width:700px){
- .mesa>.mesa-footer{flex-basis:166px!important;height:166px!important;min-height:166px!important;max-height:166px!important;padding:6px 8px 8px!important}
- #cards-strip>.card-pers{flex-basis:172px!important;width:172px!important;min-width:172px!important;max-width:172px!important;height:132px!important;min-height:132px!important;max-height:132px!important}
-}
-@media(max-height:520px){
- .mesa>.mesa-footer{flex-basis:156px!important;height:156px!important;min-height:156px!important;max-height:156px!important}
- #cards-strip>.card-pers{height:124px!important;min-height:124px!important;max-height:124px!important}
-}
-@media(prefers-reduced-motion:reduce){#cards-strip .card-pers-inner{transition:none!important}}
+.mesa{display:flex!important;flex-direction:column!important;flex-wrap:nowrap!important;position:relative!important;box-sizing:border-box!important;width:100%!important;max-width:100%!important;min-width:0!important;height:100vh!important;height:100dvh!important;min-height:0!important;margin:0!important;overflow:hidden!important}
+.mesa>.mesa-header{display:flex!important;position:relative!important;flex:0 0 64px!important;width:100%!important;min-width:0!important;max-width:100%!important;height:64px!important;min-height:64px!important;max-height:64px!important}
+.mesa>.mesa-corpo{display:grid!important;position:relative!important;flex:1 1 0!important;grid-template-columns:minmax(250px,17.2vw) minmax(0,1fr) minmax(230px,16.2vw)!important;grid-template-rows:minmax(0,1fr)!important;width:100%!important;min-width:0!important;max-width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;margin:0!important;overflow:hidden!important}
+.mesa>.mesa-footer{display:block!important;position:relative!important;flex:0 0 174px!important;box-sizing:border-box!important;width:100%!important;min-width:0!important;max-width:100%!important;height:174px!important;min-height:174px!important;max-height:174px!important;margin:0!important;padding:0!important;overflow:hidden!important;background:#0b120d!important;border-top:1px solid #665638!important}
+.mesa>.mesa-footer>*{display:none!important}
+.col-esq{display:flex!important;flex-direction:column!important;min-width:0!important;min-height:0!important;overflow:hidden!important;padding:0!important;gap:0!important}
+.painel-chat-mesa{display:flex!important;flex:1 1 58%!important;flex-direction:column!important;min-height:130px!important;overflow:hidden!important}
+.painel-chat-mesa>#chat-lista{flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important}
+.painel-lista-jogadores{display:flex!important;flex:0 1 42%!important;flex-direction:column!important;min-height:116px!important;max-height:44%!important;overflow:hidden!important;border-top:2px solid #665638!important}
+.painel-lista-jogadores>.painel-cab{flex:0 0 auto!important;padding:7px 10px!important;font-size:9px!important;letter-spacing:2px!important}
+.painel-lista-jogadores>#cards-strip{display:flex!important;flex:1 1 auto!important;flex-direction:column!important;flex-wrap:nowrap!important;align-items:stretch!important;gap:5px!important;min-width:0!important;min-height:0!important;width:100%!important;max-width:100%!important;overflow-x:hidden!important;overflow-y:auto!important;padding:7px 8px 9px!important;box-sizing:border-box!important;scrollbar-width:thin!important;scrollbar-color:#a58a53 #172017!important}
+#cards-strip::-webkit-scrollbar{width:5px}
+#cards-strip::-webkit-scrollbar-thumb{background:#a58a53;border-radius:6px}
+#cards-strip>.jogador-faixa{display:flex!important;position:relative!important;flex:0 0 52px!important;align-items:center!important;gap:8px!important;box-sizing:border-box!important;width:100%!important;min-width:0!important;max-width:100%!important;height:52px!important;min-height:52px!important;margin:0!important;padding:5px 7px!important;overflow:hidden!important;border:1px solid #665638!important;border-radius:5px!important;background:linear-gradient(100deg,#1b2419,#111a13)!important;color:#f5ecd6!important;cursor:pointer!important}
+#cards-strip>.jogador-faixa.eu{border-left:3px solid #86efac!important}
+#cards-strip>.jogador-faixa.turno-ativo{border-color:#e8c56f!important;box-shadow:inset 0 0 10px #e8c56f30,0 0 8px #e8c56f35!important}
+#cards-strip>.jogador-faixa.selecionado-para-teste{border-color:#fbbf24!important;box-shadow:0 0 9px #fbbf2466!important}
+.jogador-faixa-avatar{display:flex!important;flex:0 0 38px!important;align-items:center!important;justify-content:center!important;width:38px!important;height:38px!important;overflow:hidden!important;border:1px solid #a58a53!important;border-radius:4px!important;background:#10170f!important;color:#c9a050!important}
+.jogador-faixa-foto{display:block!important;width:100%!important;height:100%!important;object-fit:cover!important;object-position:center!important}
+.jogador-faixa-placeholder{font:900 18px Cinzel,serif!important}
+.jogador-faixa-info{display:flex!important;flex:1 1 auto!important;flex-direction:column!important;justify-content:center!important;gap:2px!important;min-width:0!important;overflow:hidden!important}
+.jogador-faixa-nome{display:block!important;overflow:hidden!important;color:#f5ecd6!important;font:700 10px Cinzel,serif!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+.jogador-faixa-classe{display:block!important;overflow:hidden!important;color:#c5b995!important;font-size:9px!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+.jogador-faixa-status{display:block!important;overflow:hidden!important;color:#d8c79e!important;font-size:9px!important;font-weight:700!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+.jogadores-lista-vazia{padding:12px 6px!important;color:#9b927b!important;font-size:10px!important;text-align:center!important}
+@media(max-width:700px){.mesa>.mesa-footer{flex-basis:140px!important;height:140px!important;min-height:140px!important;max-height:140px!important}.mesa>.mesa-corpo{grid-template-columns:minmax(0,1fr)!important}.col-esq,.col-dir{display:none!important}}
+@media(max-height:520px){.mesa>.mesa-footer{flex-basis:120px!important;height:120px!important;min-height:120px!important;max-height:120px!important}.painel-lista-jogadores{min-height:90px!important}}
 </style>
 </body>
 </html>
