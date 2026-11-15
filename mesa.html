@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Vínculo · Mesa</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=EB+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden}
@@ -1013,6 +1013,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
  .mesa.mobile-chat-open:after,.mesa.mobile-actions-open:after{content:'';position:fixed;inset:52px 0 112px;background:#0008;z-index:10010;pointer-events:none}
 }
 </style>
+<link rel="stylesheet" href="mesa-theme.css?v=1">
 </head>
 <body>
 
@@ -7297,7 +7298,57 @@ async function abrirModalEquipamentos(){
   function abrirMinhaFicha(){
     var personagem=personagemAtivoDaInterface();
     if(!personagem||!personagem.ch){alert('Não foi possível localizar a ficha selecionada nesta mesa.');return;}
-    location.href='ficha.html?char='+personagem.ch.id+'&mesa='+encodeURIComponent(MESA_ID)+(ehGM?'&role=gm':'');
+    if(ehGM){alert('A consulta administrativa de fichas do Mestre permanece disponível ao selecionar o token correspondente.');return;}
+    abrirFichaModalMesa(personagem);
+  }
+
+  function abrirFichaModalMesa(personagem){
+    if(!personagem||!personagem.ch||!personagem.ch.id)return;
+    var existente=document.getElementById('modal-ficha-personagem-mesa');
+    if(existente){existente.remove();return;}
+    var focoAnterior=document.activeElement;
+    var overlay=document.createElement('div');
+    overlay.id='modal-ficha-personagem-mesa';
+    overlay.className='vtt-sheet-modal';
+    overlay.setAttribute('role','dialog');
+    overlay.setAttribute('aria-modal','true');
+    overlay.setAttribute('aria-label','Ficha completa de '+String(personagem.ch.nome||'personagem'));
+    var panel=document.createElement('section');
+    panel.className='vtt-sheet-modal-panel';
+    var head=document.createElement('header');
+    head.className='vtt-sheet-modal-head';
+    var title=document.createElement('div');
+    title.className='vtt-sheet-modal-title';
+    title.textContent=String(personagem.ch.nome||'Personagem')+' · Ficha completa';
+    var close=document.createElement('button');
+    close.type='button';
+    close.className='vtt-sheet-modal-close';
+    close.textContent='Fechar ✕';
+    close.setAttribute('aria-label','Fechar ficha e retornar à mesa');
+    var status=document.createElement('div');
+    status.className='vtt-sheet-modal-status';
+    status.textContent='Carregando ficha do personagem…';
+    var frame=document.createElement('iframe');
+    frame.className='vtt-sheet-modal-frame';
+    frame.title='Ficha completa de '+String(personagem.ch.nome||'personagem');
+    frame.loading='eager';
+    frame.src='ficha.html?char='+encodeURIComponent(String(personagem.ch.id));
+    function fechar(){
+      document.removeEventListener('keydown',onKeyDown,true);
+      overlay.remove();
+      if(focoAnterior&&typeof focoAnterior.focus==='function')focoAnterior.focus();
+    }
+    function onKeyDown(event){if(event.key==='Escape'){event.preventDefault();fechar();}}
+    close.addEventListener('click',fechar);
+    frame.addEventListener('load',function(){status.hidden=true;});
+    frame.addEventListener('error',function(){status.textContent='Não foi possível carregar a ficha. Feche esta janela e tente novamente.';});
+    overlay.addEventListener('click',function(event){if(event.target===overlay)fechar();});
+    document.addEventListener('keydown',onKeyDown,true);
+    head.append(title,close);
+    panel.append(head,status,frame);
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+    close.focus();
   }
 
   // ============ LÓGICA DO DADO (IFRAME) ============
