@@ -6196,7 +6196,7 @@ async function abrirModalEquipamentos(){
 
   function calcularBonusResistenciaPersonagem35(personagem,saveType,context){
     var sh=personagem&&personagem.sh||{},cl=personagem&&personagem.cl||{},ch=personagem&&personagem.ch||{};
-    var cls=String(cl.class_key||cl.key||cl.nome||cl.id||sh.classe_id||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();
+    var cls=String(cl.class_key||cl.key||cl.nome||cl.id||sh.classe_id||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
     var clsCompact=cls.replace(/[^a-z0-9]/g,'');
     function classeEh35(){for(var i=0;i<arguments.length;i++){var k=String(arguments[i]).replace(/[^a-z0-9]/g,'');if(clsCompact===k||clsCompact.endsWith(k))return true;}return false;}
     var level=Math.max(1,Math.min(20,Number(sh.nivel)||Number(sh.nivel_personagem)||nivelXP(ch.xp)||1));
@@ -6210,7 +6210,7 @@ async function abrirModalEquipamentos(){
     var base=progressionBoa?2+Math.floor(level/2):Math.floor(level/3);
     var attrs=sh.atributos||{};if(typeof attrs==='string'){try{attrs=JSON.parse(attrs);}catch(e){attrs={};}}
     var abilityBonus=modifier35(attrs[ability]);
-    var racial=0,race=String(sh.raca_id||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();
+    var racial=0,race=String(sh.raca_id||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
     var ctx=String(context||'').toLowerCase();
     if(race==='anao'||race==='dwarf'){
       if(key==='fortitude'&&(ctx==='poison'||ctx==='veneno'))racial=2;
