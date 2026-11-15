@@ -6127,7 +6127,7 @@ async function abrirModalEquipamentos(){
     }
   }
 
-  function receberPedidoTeste(data, logId){
+  function receberPedidoTeste(data, logId, abrirDice){
     if(!data)return;
     var key=String(data.request_id||logId||(data.tipo+'|'+(Array.isArray(data.alvos)?data.alvos.join(','):'')+'|'+(Array.isArray(data.npc_alvos)?data.npc_alvos.join(','):'')));
     if(pedidosTesteVistos[key])return;
@@ -6135,20 +6135,20 @@ async function abrirModalEquipamentos(){
     if(ehGM){
       if((Array.isArray(data.npc_alvos)&&data.npc_alvos.length)
         ||((data.resolution_type==='spell_resistance'||data.resolution_type==='saving_throw')&&Array.isArray(data.alvos)&&data.alvos.length)){
-        ativarPedidoTeste(data,key);
+        ativarPedidoTeste(data,key,false);
       }
       return;
     }
     if(!Array.isArray(data.alvos))return;
-    if(!personagensCarregados){pedidosTestePendentes.push({data:data,key:key});return;}
-    ativarPedidoTeste(data,key);
+    if(!personagensCarregados){pedidosTestePendentes.push({data:data,key:key,abrirDice:!!abrirDice});return;}
+    ativarPedidoTeste(data,key,!!abrirDice);
   }
 
   function processarPedidosTestePendentes(){
     if(!personagensCarregados || !pedidosTestePendentes.length) return;
     var pendentes = pedidosTestePendentes.slice();
     pedidosTestePendentes = [];
-    pendentes.forEach(function(item){ ativarPedidoTeste(item.data,item.key); });
+    pendentes.forEach(function(item){ ativarPedidoTeste(item.data,item.key,!!item.abrirDice); });
   }
 
   function calcularBonusResistenciaPersonagem35(personagem,saveType,context){
@@ -6272,7 +6272,7 @@ async function abrirModalEquipamentos(){
     pedidosTesteRespondidos[String(requestKey)+'|npc|'+String(tokenId)]=true;
   }
 
-  function ativarPedidoTeste(data, requestKey){
+  function ativarPedidoTeste(data, requestKey, abrirDice){
     if(!data) return;
     if(ehGM){
       if(Array.isArray(data.npc_alvos)&&data.npc_alvos.length){
@@ -6286,7 +6286,7 @@ async function abrirModalEquipamentos(){
         personagens.forEach(function(personagemAlvo){
           if(personagemAlvo.ch.user_id===eu.id&&data.alvos.map(String).includes(String(personagemAlvo.ch.id))
             &&!(data.results&&data.results[String(personagemAlvo.ch.id)])){
-            criarBotaoRolagemTeste(String(data.tipo||'Teste de resistência'),personagemAlvo.ch.id,requestKey,data);
+            criarBotaoRolagemTeste(String(data.tipo||'Teste de resistência'),personagemAlvo.ch.id,requestKey,data,!!abrirDice);
           }
         });
       }
@@ -6300,7 +6300,7 @@ async function abrirModalEquipamentos(){
       var isInitiative=String(data.tipo||'').toLocaleLowerCase('pt-BR').includes('iniciativa');
       if(isInitiative){
         var expected=combatDataState&&Array.isArray(combatDataState.expected_character_ids)?combatDataState.expected_character_ids.map(String):[];
-        if(expected.indexOf(String(personagemAlvo.ch.id))===-1){if(!pedidosTestePendentes.some(function(pendente){return String(pendente.key)===String(requestKey);}))pedidosTestePendentes.push({data:data,key:requestKey});return;}
+        if(expected.indexOf(String(personagemAlvo.ch.id))===-1){if(!pedidosTestePendentes.some(function(pendente){return String(pendente.key)===String(requestKey);}))pedidosTestePendentes.push({data:data,key:requestKey,abrirDice:!!abrirDice});return;}
         if(Array.isArray(combatDataState.turn_order)&&combatDataState.turn_order.some(function(entry){return !entry.is_monster&&String(entry.id)===String(personagemAlvo.ch.id);})){removerPedidosIniciativaDaFicha(personagemAlvo.ch.id);return;}
       }
       var responseKey=String(requestKey)+'|'+String(personagemAlvo.ch.id);
@@ -6492,7 +6492,7 @@ async function abrirModalEquipamentos(){
     if(!container.querySelector('.btn-rolar-teste')) container.remove();
   }
 
-  function criarBotaoRolagemTeste(tipoTeste,personagemId,requestKey,requestData){
+  function criarBotaoRolagemTeste(tipoTeste,personagemId,requestKey,requestData,abrirDiceAutomaticamente){
     var personagem=personajesById(personagemId);
     var responseKey=String(requestKey)+'|'+String(personagemId);
     if(pedidosTesteRespondidos[responseKey])return;
@@ -6610,7 +6610,7 @@ async function abrirModalEquipamentos(){
       },true,true,(isDyingSave||isConfusion)?'1d100':'1d20');
     };
     container.appendChild(btn);
-    if(!ehGM){
+    if(!ehGM&&abrirDiceAutomaticamente){
       window.setTimeout(function(){
         if(btn.isConnected&&!btn.disabled&&!pedidoTesteAtivo)btn.click();
       },0);
@@ -7393,10 +7393,10 @@ async function abrirModalEquipamentos(){
     return saida.innerHTML;
   }
 
-  function renderMsg(m){
+  function renderMsg(m, pedidoEmTempoReal){
     var d = m.data || {};
     if(m.type === 'test_request'){
-      receberPedidoTeste(d, m.id);
+      receberPedidoTeste(d, m.id, !!pedidoEmTempoReal);
       var initiativeRequest=String(d.tipo||'').toLocaleLowerCase('pt-BR').includes('iniciativa');
       var solicitante=String(d.mestre||'')==='Sistema'?'O sistema solicitou:':'O Mestre solicitou:';
       return '<div class="chat-msg sistema">📜 '+solicitante+' <b>'+esc(d.tipo||'Teste de habilidade')+'</b>.'+(initiativeRequest?' Todos os jogadores podem rolar simultaneamente; não há ordem de chamada.':'')+'</div>';
@@ -7452,7 +7452,7 @@ async function abrirModalEquipamentos(){
   function ligarRealtime(){
     sb.channel('mesa-'+MESA_ID+'-chat').on('postgres_changes', { event:'INSERT', schema:'public', table:'campaign_log', filter:'campaign_id=eq.'+MESA_ID }, function(p){
       var el = document.getElementById('chat-lista');
-      if(el){ var estavaNoFim = (el.scrollHeight - el.scrollTop - el.clientHeight) < 80; el.insertAdjacentHTML('beforeend', renderMsg(p.new)); if(estavaNoFim) el.scrollTop = el.scrollHeight; }
+      if(el){ var estavaNoFim = (el.scrollHeight - el.scrollTop - el.clientHeight) < 80; el.insertAdjacentHTML('beforeend', renderMsg(p.new,true)); if(estavaNoFim) el.scrollTop = el.scrollHeight; }
     }).subscribe(function(status,error){
       if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'){
         console.error('Canal de chat/solicitações da mesa indisponível:',status,error||'');
