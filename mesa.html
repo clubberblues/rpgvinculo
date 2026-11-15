@@ -4249,23 +4249,47 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
   function moedaLoja(v){var n=Number(v);return (Number.isFinite(n)?n:0).toLocaleString('pt-BR',{minimumFractionDigits:0,maximumFractionDigits:2})+' PO';}
   function statusLoja(texto,erro){var el=document.getElementById('loja-status');if(el){el.textContent=String(texto||'');el.style.borderColor=erro?'#b83232':'#665638';}}
   function mostrarModalLoja(id,aberto){var el=document.getElementById(id);if(!el)return;el.hidden=!aberto;el.classList.toggle('ativo',!!aberto);}
+  // Texto público da loja: somente português claro; metadados internos nunca são exibidos.
+  function nomeEquipamentoLojaPT(item){
+    var id=String(item&&item.id||''),name=String(item&&item.nome||'').trim();
+    var names={
+      'srd35_equipment_extras_armor_spikes':'Espinhos para armadura','srd35_equipment_extras_gauntlet_locked':'Manopla presa',
+      'srd35_equipment_heavy_armor_banded_mail':'Armadura de bandas','srd35_equipment_heavy_armor_full_plate':'Armadura completa',
+      'srd35_equipment_heavy_armor_half_plate':'Meia-armadura','srd35_equipment_heavy_armor_splint_mail':'Armadura de talas',
+      'srd35_equipment_light_armor_chain_shirt':'Camisa de cota de malha','srd35_equipment_light_armor_leather':'Armadura de couro',
+      'srd35_equipment_light_armor_padded':'Armadura acolchoada','srd35_equipment_light_armor_studded_leather':'Armadura de couro batido',
+      'srd35_equipment_medium_armor_breastplate':'Peitoral','srd35_equipment_medium_armor_chainmail':'Cota de malha',
+      'srd35_equipment_medium_armor_hide':'Armadura de peles','srd35_equipment_medium_armor_scale_mail':'Armadura de escamas',
+      'srd35_equipment_shields_buckler':'Broquel','srd35_equipment_shields_shield_heavy_steel':'Escudo pesado de aço',
+      'srd35_equipment_shields_shield_heavy_wooden':'Escudo pesado de madeira','srd35_equipment_shields_shield_light_steel':'Escudo leve de aço',
+      'srd35_equipment_shields_shield_light_wooden':'Escudo leve de madeira','srd35_equipment_shields_shield_tower':'Escudo de torre',
+      'srd35_equipment_shields_shield_spikes':'Espinhos para escudo'
+    };
+    if(names[id])return names[id];
+    var exact={'Glaive':'Glaive','Guisarme':'Guisarme','Ranseur':'Ranseur','Kama':'Kama','Kukri':'Kukri','Sai':'Sai','Siangham':'Siangham','Shuriken (10)':'Shuriken (10)'};
+    if(exact[name])return exact[name];
+    // Registros já traduzidos são preservados; nomes importados sem tradução não entram na interface.
+    if(/[áéíóúãõçÁÉÍÓÚÃÕÇ]/.test(name)||/^(Adaga|Alabarda|Arco|Besta|Bordão|Chicote|Cimitarra|Clava|Corrente|Dardo|Espada|Foice|Funda|Guisarme|Lança|Maça|Machado|Mangual|Martelo|Nunchaku|Picareta|Porrete|Rapieira|Rede|Tridente|Broquel|Escudo|Armadura|Camisa|Cota|Couro|Meia|Peitoral|Peles|Anel|Poção|Pergaminho|Varinha|Cajado|Bastão|Mochila|Corda|Tocha|Ração|Manto|Cinto|Amuleto|Luvas|Botas|Elmo|Capacete|Ferramentas|Kit|Óleo|Ácido|Fogo|Sela|Cavalo|Pônei|Burro|Mula|Carroça|Vagão|Barril|Cesto|Saco|Manta|Cobertor|Cantil|Luneta|Lanterna|Vela|Espelho|Algema|Corrente|Pá|Picareta|Martelo|Serrote|Agulha|Linha|Tenda|Barraca|Livro|Tinta|Pena|Papel|Vinho|Pão|Queijo|Cerveja|Refeição|Hospedagem|Banquete|Serviço|Transporte|Passagem|Barco|Navio)\b/i.test(name))return name;
+    return '';
+  }
   function fatosLoja(item){
-    var d=detalhesEquipamento35(item),facts=[];
+    var facts=[],slot=slotEquipamento35(item),damageTypes={'slashing':'Cortante','piercing':'Perfurante','bludgeoning':'Impacto','slashing_or_piercing':'Cortante ou perfurante','piercing_or_slashing':'Perfurante ou cortante'};
     if(item.dano)facts.push(['Dano',item.dano]);
-    if(item.critico)facts.push(['Crítico',item.critico]);
-    if(item.tipo_dano)facts.push(['Tipo de dano',item.tipo_dano]);
-    if(bonusCAEquipamento35(item))facts.push(['Bônus de CA','+'+bonusCAEquipamento35(item)]);
-    var slot=slotEquipamento35(item);
-    if(item.max_des!=null&&['armadura','escudo'].indexOf(slot)>=0)facts.push(['DES máxima',item.max_des]);
+    if(item.critico)facts.push(['Crítico',String(item.critico).replace(/x(\d+)/i,'×$1')]);
+    if(item.tipo_dano)facts.push(['Tipo de dano',damageTypes[String(item.tipo_dano).toLowerCase()]||item.tipo_dano]);
+    var ac=bonusCAEquipamento35(item);
+    if(ac)facts.push([slot==='armadura'?'Bônus na CA':'Bônus de defesa','+'+ac]);
+    if(item.max_des!=null&&['armadura','escudo'].indexOf(slot)>=0)facts.push(['Destreza máxima',item.max_des]);
     if(item.penalidade_armadura!=null&&['armadura','escudo'].indexOf(slot)>=0)facts.push(['Penalidade de armadura',item.penalidade_armadura]);
-    if(item.peso!=null&&Number(item.peso)>0)facts.push(['Peso',item.peso+' kg']);
-    if(item.alcance_incremento)facts.push(['Incremento de alcance',item.alcance_incremento]);
-    return {description:d.description,facts:facts,price:item.custo_po!=null?item.custo_po:item.preco};
+    if(item.peso!=null&&Number(item.peso)>0)facts.push(['Peso',Number(item.peso).toLocaleString('pt-BR')+' kg']);
+    if(item.alcance_incremento)facts.push(['Alcance',String(item.alcance_incremento).replace(/\bft\.?/gi,'pés')]);
+    return {description:'',facts:facts,price:item.custo_po!=null?item.custo_po:item.preco};
   }
   async function carregarCatalogoLoja(){
     var r=await sb.from('srd_equipment').select('*').order('nome',{ascending:true}).range(0,1999);
     if(r.error)throw new Error('Não foi possível carregar o catálogo SRD: '+r.error.message);
     lojaCatalogo=r.data||[];
+    lojaCatalogo=lojaCatalogo.filter(function(item){return !!nomeEquipamentoLojaPT(item);});
     var cats=Array.from(new Set(lojaCatalogo.map(function(x){return String(x.categoria||'outro');}))).sort(function(a,b){return nomeCategoriaEquipamento35(a).localeCompare(nomeCategoriaEquipamento35(b),'pt-BR');});
     lojaCategoriaAtiva=cats[0]||'';
     renderizarCategoriasLoja();renderizarCatalogoLoja();
@@ -4326,7 +4350,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     list.innerHTML=items.map(function(row){
       var item=row.equipment||{},meta=fatosLoja(item),price=Number(row.buy_price)||0,canBuy=balance>=price;
       var facts=meta.facts.map(function(x){return '<span><b>'+esc(x[0])+':</b> '+esc(x[1])+'</span>';}).join('');
-      return '<article class="shop-player-item"><div class="shop-player-item-main"><div class="shop-item-icon">'+(slotEquipamento35(item)==='arma'?'⚔️':['armadura','escudo'].indexOf(slotEquipamento35(item))>=0?'🛡️':'📦')+'</div><div class="shop-catalog-info"><h3>'+esc(item.nome||row.equipment_id)+'</h3><small>'+esc(nomeCategoriaEquipamento35(item.categoria||'outro'))+'</small>'+(facts?'<div class="shop-facts">'+facts+'</div>':'')+(meta.description?'<p>'+esc(meta.description)+'</p>':'')+'</div></div><div class="shop-player-buy"><strong>'+moedaLoja(price)+'</strong><button type="button" class="shop-coin-buy" data-shop-buy="'+esc(row.equipment_id)+'" '+(canBuy?'':'disabled')+' aria-label="Comprar '+esc(item.nome||row.equipment_id)+'">🪙</button>'+(canBuy?'':'<small>Saldo insuficiente</small>')+'</div></article>';
+      return '<article class="shop-player-item"><div class="shop-player-item-main"><div class="shop-item-icon">'+(slotEquipamento35(item)==='arma'?'⚔️':['armadura','escudo'].indexOf(slotEquipamento35(item))>=0?'🛡️':'📦')+'</div><div class="shop-catalog-info"><h3>'+esc(item.nome||row.equipment_id)+'</h3><small>'+esc(nomeCategoriaEquipamento35(item.categoria||'outro'))+'</small>'+(facts?'<div class="shop-facts">'+facts+'</div>':'')+(meta.description?'<p>'+esc(meta.description)+'</p>':'')+'</div></div><div class="shop-player-buy"><strong>'+moedaLoja(price)+'</strong><button type="button" class="shop-coin-buy" data-shop-buy="'+esc(row.equipment_id)+'" '+(canBuy?'':'disabled')+' aria-label="Comprar '+esc(nomeEquipamentoLojaPT(item)||'equipamento')+'">🪙</button>'+(canBuy?'':'<small>Saldo insuficiente</small>')+'</div></article>';
     }).join('');
     statusLoja('Escolha um equipamento e confirme a compra. O item será enviado diretamente ao seu inventário.');
   }
@@ -4490,7 +4514,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
   }
   function nomeCategoriaEquipamento35(value){
     var raw=String(value||'outro').trim(),cat=raw.toLowerCase();
-    var names={arma:'Armas',armadura:'Armaduras',escudo:'Escudos',acessorio:'Acessórios',mochila:'Mochilas',consumivel:'Consumíveis',gear:'Equipamento de aventura',outro:'Outros',specific_weapons:'Armas especiais',specific_armors:'Armaduras especiais',specific_shields:'Escudos especiais',armor_and_shields:'Armaduras e escudos',rings:'Anéis',rods:'Bastões',staffs:'Cajados',wands:'Varinhas',wondrous_items:'Itens maravilhosos',potions_and_oils:'Poções e óleos',specific_cursed_items:'Itens amaldiçoados',shields:'Escudos','light armor':'Armadura leve','medium armor':'Armadura média','heavy armor':'Armadura pesada'};
+    var names={arma:'Armas',armadura:'Armaduras',escudo:'Escudos',acessorio:'Acessórios',mochila:'Mochilas',consumivel:'Consumíveis',gear:'Equipamentos de aventura',outro:'Outros',Extras:'Acessórios e melhorias',Shields:'Escudos',specific_weapons:'Armas especiais',specific_armors:'Armaduras especiais',specific_shields:'Escudos especiais',armor_and_shields:'Armaduras e escudos',rings:'Anéis',rods:'Bastões',staffs:'Cajados',wands:'Varinhas',wondrous_items:'Itens maravilhosos',potions_and_oils:'Poções e óleos',specific_cursed_items:'Itens amaldiçoados',shields:'Escudos','light armor':'Armaduras leves','medium armor':'Armaduras médias','heavy armor':'Armaduras pesadas'};
     if(names[cat])return names[cat];
     if(cat.indexOf('weapon')>=0||cat.indexOf('weapons')>=0){var end=cat.split('·').pop().trim(),suffix=end.indexOf('ranged')>=0?' à distância':end.indexOf('two-handed')>=0?' de duas mãos':end.indexOf('one-handed')>=0?' de uma mão':end.indexOf('light')>=0?' leves':'';return 'Armas'+suffix;}
     return raw.charAt(0).toLocaleUpperCase('pt-BR')+raw.slice(1);
