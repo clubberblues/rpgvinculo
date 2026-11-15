@@ -1553,6 +1553,20 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var edit=document.createElement('button');edit.type='button';edit.className='btn-acao';edit.textContent='📖 Abrir ficha para alterar o vínculo';edit.onclick=function(){abrirFichaClasseEmNovaAba(p.ch.id);};panel.appendChild(edit);
     overlay.appendChild(panel);overlay.addEventListener('click',function(event){if(event.target===overlay)overlay.remove();});document.body.appendChild(overlay);
   }
+  async function abrirPainelCompanheiroAnimalDoToken(item){
+    if(!item||!item.sourceCharacterId)return;
+    var p=personagens.find(function(entry){return entry.ch&&String(entry.ch.id)===String(item.sourceCharacterId);});
+    if(!p){
+      var loaded=await Promise.all([
+        sb.from('characters').select('*').eq('id',String(item.sourceCharacterId)).maybeSingle(),
+        sb.from('srd_character_sheets').select('*').eq('character_id',String(item.sourceCharacterId)).maybeSingle()
+      ]);
+      if(loaded[0].error||loaded[1].error||!loaded[0].data||!loaded[1].data){alert('Não foi possível carregar a ficha vinculada a este NPC para consultar o companheiro.');return;}
+      var cls=await sb.from('srd_classes').select('*').eq('id',String(loaded[1].data.classe_id)).maybeSingle();
+      p={ch:loaded[0].data,sh:loaded[1].data,cl:cls.data||{}};
+    }
+    abrirPainelCompanheiroAnimal(p);
+  }
   function grupoControlesClasseUI(p,aoFechar){
     if(!p||!p.ch||!window.VinculoClassControls)return null;
     var profile=window.VinculoClassControls.actionsFor(p);if(!profile.key||!profile.actions.length)return null;
@@ -1831,6 +1845,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     if(item.sourceCharacterId&&tokenClassProfile&&tokenClassProfile.key){
       tokenClassProfile.actions.forEach(function(classAction){
         if(classAction.kind==='sheet')addAction(classAction.icon+' '+classAction.label,function(){abrirFichaClasseEmNovaAba(item.sourceCharacterId);});
+        else if(classAction.kind==='companion')addAction(classAction.icon+' '+classAction.label,function(){overlay.remove();abrirPainelCompanheiroAnimalDoToken(item).catch(function(error){alert('Não foi possível abrir o companheiro: '+String(error.message||error));});});
         else addAction(classAction.icon+' '+classAction.label,function(){overlay.remove();abrirHabilidadesClasse(item.id);});
       });
     }else if(item.sourceCharacterId){
