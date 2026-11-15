@@ -6232,7 +6232,7 @@ async function abrirModalEquipamentos(){
     var isSave=requestData&&requestData.resolution_type==='saving_throw';
     var isAbility=requestData&&requestData.resolution_type==='ability_check';
     if(!skillId&&!isSave&&!isAbility)return {bonus:0,breakdown:null};
-    var sourceId=token&&token.tipo==='npc'?(token.sourceCharacterId||token.source_character_id):null;
+    var sourceId=token&&token.tipo==='npc'?(token.sourceCharacterId||token.source_character_id||token.id):null;
     if(sourceId){
       var rows=await Promise.all([
         sb.from('characters').select('id,user_id,nome').eq('id',String(sourceId)).maybeSingle(),
