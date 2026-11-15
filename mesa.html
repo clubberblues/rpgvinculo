@@ -1528,8 +1528,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   function listaTalentosUI(value){if(Array.isArray(value))return value;if(typeof value==='string'){try{var x=JSON.parse(value);return Array.isArray(x)?x:[];}catch(e){return [];}}return [];}
   function possuiMagiasUI(p){if(!p)return false;var r=parseJsonSeguro35(p.sh&&p.sh.magias_preparadas,null);if(r&&((r.conhecidas||[]).length||(r.preparadas||[]).length||(r.dominio_preparadas||[]).length))return true;return ['bard','cleric','druid','sorcerer','wizard','paladin','ranger'].indexOf(String(p.cl&&p.cl.class_key||''))>=0&&Number(p.sh&&p.sh.nivel)>0;}
   function classeUI(p){var v=[p&&p.sh&&p.sh.classe_id,p&&p.cl&&p.cl.class_key,p&&p.cl&&p.cl.nome].join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();if(/fighter|guerreiro/.test(v))return 'Guerreiro';if(/barbarian|barbaro/.test(v))return 'Bárbaro';if(/rogue|ladino/.test(v))return 'Ladino';if(/ranger|patrulheiro/.test(v))return 'Patrulheiro';if(/paladin|paladino/.test(v))return 'Paladino';if(/wizard|mago/.test(v))return 'Mago';if(/sorcerer|feiticeiro/.test(v))return 'Feiticeiro';if(/cleric|clerigo/.test(v))return 'Clérigo';if(/druid|druida/.test(v))return 'Druida';if(/bard|bardo/.test(v))return 'Bardo';if(/monk|monge/.test(v))return 'Monge';return String(p&&p.cl&&p.cl.nome||'Aventureiro');}
-  function criarBotaoAcaoUI(a,cardStyle){var b=document.createElement('button');b.type='button';b.className='btn-acao'+(cardStyle?' player-action-card':'');b.dataset.acao=a.id;var i=document.createElement('span');i.className='icone';i.textContent=a.ic;var t=document.createElement('span');if(cardStyle)t.className='action-card-label';t.textContent=a.txt;b.append(i,t);b.onclick=function(){if(typeof a.onClick==='function'){a.onClick();return;}acao(a.id);};return b;}
-  function montarPainelAcaoUI(host,groups,heading,p){host.replaceChildren();host.classList.toggle('painel-jogador-contextual',!!p&&!ehGM);host.dataset.classKey=chaveClassePainelUI(p);var identity=document.createElement('section');identity.className='player-action-identity';var name=document.createElement('strong');name.textContent=heading;identity.appendChild(name);if(p){var sub=document.createElement('span');sub.textContent=String(p.raca&&p.raca.nome||p.sh.raca_id||'Raça não identificada')+' · Nível '+Math.max(1,Number(p.sh.nivel)||1);identity.appendChild(sub);var hp=Number(p.sh.pv_atual);if(!Number.isFinite(hp))hp=pvMax(p.sh,p.cl);var vitals=document.createElement('div');vitals.className='player-action-vitals';[['❤',hp+'/'+pvMax(p.sh,p.cl)+' PV'],['🛡',caFichaMesa(p)+' CA'],['↔',(p.deslocamento_m==null?'—':p.deslocamento_m)+' m']].forEach(function(x){var span=document.createElement('span');span.textContent=x[0]+' '+x[1];vitals.appendChild(span);});identity.appendChild(vitals);}host.appendChild(identity);var seenActionIds=new Set();groups=groups.map(function(g){return Object.assign({},g,{actions:(g.actions||[]).filter(function(action){var key=String(action&&action.id||'');if(!key)return true;if(seenActionIds.has(key))return false;seenActionIds.add(key);return true;})});}).filter(function(g){return g.actions.length>0;});if(!groups.length)return;groups.forEach(function(g,index){var section=document.createElement('section');section.className='player-action-section';section.dataset.groupKey=g.key||g.title;var title=document.createElement('h3');title.className='player-action-section-title';title.textContent=(g.icon?g.icon+' ':'')+g.title;section.appendChild(title);var grid=document.createElement('div');grid.className='player-action-grid';g.actions.forEach(function(x){grid.appendChild(criarBotaoAcaoUI(x,true));});section.appendChild(grid);host.appendChild(section);});}
+  function criarBotaoAcaoUI(a,cardStyle){var b=document.createElement('button');b.type='button';b.className='btn-acao'+(cardStyle?' player-action-card':'');b.dataset.acao=a.id;var i=document.createElement('span');i.className='icone';i.textContent=a.ic;var copy=document.createElement('span');copy.className='action-card-copy';var t=document.createElement('span');if(cardStyle)t.className='action-card-label';t.textContent=a.txt;copy.appendChild(t);if(cardStyle&&a.desc){var d=document.createElement('span');d.className='action-card-description';d.textContent=a.desc;copy.appendChild(d);b.title=a.desc;b.setAttribute('aria-label',a.txt+'. '+a.desc);}b.append(i,copy);b.onclick=function(){if(typeof a.onClick==='function'){a.onClick();return;}acao(a.id);};return b;}
+  function montarPainelAcaoUI(host,groups,heading,p){host.replaceChildren();host.classList.toggle('painel-jogador-contextual',!!p&&!ehGM);host.dataset.classKey=chaveClassePainelUI(p);var identity=document.createElement('section');identity.className='player-action-identity';var name=document.createElement('strong');name.textContent=heading;identity.appendChild(name);if(p){var sub=document.createElement('span');sub.textContent=String(p.raca&&p.raca.nome||p.sh.raca_id||'Raça não identificada')+' · Nível '+Math.max(1,Number(p.sh.nivel)||1);identity.appendChild(sub);var hp=Number(p.sh.pv_atual);if(!Number.isFinite(hp))hp=pvMax(p.sh,p.cl);var vitals=document.createElement('div');vitals.className='player-action-vitals';[['❤',hp+'/'+pvMax(p.sh,p.cl)+' PV'],['🛡',caFichaMesa(p)+' CA'],['↔',(p.deslocamento_m==null?'—':p.deslocamento_m)+' m']].forEach(function(x){var span=document.createElement('span');span.textContent=x[0]+' '+x[1];vitals.appendChild(span);});identity.appendChild(vitals);}host.appendChild(identity);var seenActionIds=new Set();groups=groups.map(function(g){return Object.assign({},g,{actions:(g.actions||[]).filter(function(action){var key=String(action&&action.id||'');if(!key)return true;if(seenActionIds.has(key))return false;seenActionIds.add(key);return true;})});}).filter(function(g){return g.actions.length>0;});if(!groups.length)return;groups.forEach(function(g,index){var section=document.createElement('section');section.className='player-action-section';section.dataset.groupKey=g.key||g.title;var title=document.createElement('h3');title.className='player-action-section-title';title.textContent=(g.icon?g.icon+' ':'')+g.title;section.appendChild(title);if(g.description){var intro=document.createElement('p');intro.className='player-action-section-description';intro.textContent=g.description;section.appendChild(intro);}var grid=document.createElement('div');grid.className='player-action-grid';g.actions.forEach(function(x){grid.appendChild(criarBotaoAcaoUI(x,true));});section.appendChild(grid);host.appendChild(section);});}
   function chaveClassePainelUI(p){
     var raw=[p&&p.cl&&p.cl.class_key,p&&p.cl&&p.cl.canonical_key,p&&p.cl&&p.cl.nome,p&&p.sh&&p.sh.classe_id,p&&p.sh&&p.sh.classe].join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
     if(/wizard|mago/.test(raw))return 'wizard';
@@ -1548,43 +1548,43 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   function construirGruposPainelJogador(p,estado){
     var classKey=chaveClassePainelUI(p),className=classeUI(p),classIcons={wizard:'📖',sorcerer:'🔮',druid:'🌿',cleric:'✦',bard:'🎼',paladin:'🛡️',ranger:'🏹',barbarian:'🪓',fighter:'⚔️',rogue:'🗡️',monk:'🥋'};
     var groups=[
-      {key:'aventura',title:'Aventureiro',icon:'🧭',actions:[
-        {id:'movimento-ui',ic:'👣',txt:'Movimentação'},
-        {id:'ficha',ic:'📜',txt:'Minha ficha'},
-        {id:'inventario',ic:'🎒',txt:'Equipamentos e mochila'},
-        {id:'dados',ic:'🎲',txt:'Dados livres'}
+      {key:'aventura',title:'Aventureiro',icon:'🧭',description:'Informações e ferramentas para explorar a mesa e cuidar do seu personagem.',actions:[
+        {id:'movimento-ui',ic:'👣',txt:'Movimentação',desc:'Ative o movimento e arraste seu próprio token pelo mapa. No combate, respeita seu deslocamento e seu turno.'},
+        {id:'ficha',ic:'📜',txt:'Minha ficha',desc:'Consulte atributos, pontos de vida, defesa e demais dados do personagem.'},
+        {id:'inventario',ic:'🎒',txt:'Equipamentos e mochila',desc:'Veja seus itens, armas, armaduras e equipamentos carregados.'},
+        {id:'dados',ic:'🎲',txt:'Dados livres',desc:'Abra os dados para fazer uma rolagem quando precisar.'}
       ]},
-      {key:'pericias',title:'Perícias e testes',icon:'🎯',actions:[
-        {id:'pericia',ic:'📚',txt:'Perícias'},
-        {id:'testes-jogador',ic:'🎲',txt:'Testes de atributo e resistência'}
+      {key:'pericias',title:'Perícias e testes',icon:'🎯',description:'Faça testes usando os bônus que sua ficha já possui.',actions:[
+        {id:'pericia',ic:'📚',txt:'Perícias',desc:'Escolha uma perícia para testar, como Furtividade, Percepção ou Atletismo.'},
+        {id:'testes-jogador',ic:'🎲',txt:'Testes de atributo e resistência',desc:'Role para situações que exigem força, reflexos, vontade ou resistência.'}
       ]},
-      {key:'caracteristicas',title:'Características',icon:'✦',actions:[
-        {id:'racial-ui',ic:'⛰️',txt:'Características raciais'},
-        {id:'talentos-ui',ic:'🏅',txt:'Talentos'}
+      {key:'caracteristicas',title:'Características',icon:'✦',description:'Consulte os benefícios que vêm da sua raça e dos seus talentos.',actions:[
+        {id:'racial-ui',ic:'⛰️',txt:'Características raciais',desc:'Veja sentidos, resistências, bônus e particularidades da sua raça.'},
+        {id:'talentos-ui',ic:'🏅',txt:'Talentos',desc:'Consulte os talentos escolhidos e seus efeitos.'}
       ]},
-      {key:'classe',title:'Classe · '+className,icon:classIcons[classKey]||'⚔️',actions:[
-        {id:'habilidades',ic:classIcons[classKey]||'⚔️',txt:'Habilidades de '+className}
+      {key:'classe',title:'Classe · '+className,icon:classIcons[classKey]||'⚔️',description:'Ações e capacidades próprias da sua classe.',actions:[
+        {id:'habilidades',ic:classIcons[classKey]||'⚔️',txt:'Habilidades de '+className,desc:'Consulte e utilize as habilidades que seu personagem adquiriu.'}
       ]}
     ];
     if(possuiMagiasUI(p)){
       var spellTitles={wizard:'Grimório',sorcerer:'Magias espontâneas',druid:'Magias da natureza',cleric:'Magias divinas',bard:'Repertório mágico',paladin:'Magias de classe',ranger:'Magias de classe'};
       var spellLabels={wizard:'Consultar grimório e conjurar',sorcerer:'Magias conhecidas e conjuração',druid:'Consultar magias e conjurar',cleric:'Consultar magias e conjurar',bard:'Consultar repertório e conjurar',paladin:'Magias disponíveis',ranger:'Magias disponíveis'};
-      groups.push({key:'magias',title:spellTitles[classKey]||'Magias',icon:'✨',actions:[{id:'atk-mag',ic:'✨',txt:spellLabels[classKey]||'Magias disponíveis'}]});
+      groups.push({key:'magias',title:spellTitles[classKey]||'Magias',icon:'✨',description:'Consulte suas opções mágicas. A disponibilidade depende da classe, da preparação e dos recursos da ficha.',actions:[{id:'atk-mag',ic:'✨',txt:spellLabels[classKey]||'Magias disponíveis',desc:classKey==='wizard'?'Abra o grimório para consultar suas magias e os controles disponíveis para preparação e conjuração.': 'Abra suas opções mágicas para consultar o que seu personagem pode conjurar.'}]});
     }
     if(String(estado||'EXPLORACAO').toUpperCase()==='COMBATE'&&combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)&&combatDataState.turn_order.length){
       groups.push(
-        {key:'combate',title:'Combate',icon:'⚔️',actions:[
-          {id:'atk-corpo',ic:'⚔️',txt:'Ataque corpo a corpo'},
-          {id:'atk-dist',ic:'🏹',txt:'Ataque à distância'},
-          {id:'atk-total-corpo',ic:'⚔️',txt:'Ataque Total corpo a corpo'},
-          {id:'atk-total-dist',ic:'🏹',txt:'Ataque Total à distância'}
+        {key:'combate',title:'Combate',icon:'⚔️',description:'Ações de ataque disponíveis durante o combate.',actions:[
+          {id:'atk-corpo',ic:'⚔️',txt:'Ataque corpo a corpo',desc:'Ataque um alvo próximo com uma arma de combate corpo a corpo.'},
+          {id:'atk-dist',ic:'🏹',txt:'Ataque à distância',desc:'Ataque um alvo usando uma arma de disparo ou arremesso.'},
+          {id:'atk-total-corpo',ic:'⚔️',txt:'Ataque Total corpo a corpo',desc:'Faça uma sequência de ataques corpo a corpo quando as regras permitirem.'},
+          {id:'atk-total-dist',ic:'🏹',txt:'Ataque Total à distância',desc:'Faça uma sequência de ataques à distância quando as regras permitirem.'}
         ]},
-        {key:'tatica',title:'Tática e defesa',icon:'🛡️',actions:[
-          {id:'manobras-ui',ic:'🛡️',txt:'Manobras de combate'},
-          {id:'defesa-ui',ic:'🧱',txt:'Ações defensivas'}
+        {key:'tatica',title:'Tática e defesa',icon:'🛡️',description:'Opções para se proteger, reposicionar ou executar manobras.',actions:[
+          {id:'manobras-ui',ic:'🛡️',txt:'Manobras de combate',desc:'Consulte ações como derrubar, desarmar e outras manobras.'},
+          {id:'defesa-ui',ic:'🧱',txt:'Ações defensivas',desc:'Consulte opções para melhorar sua defesa ou reagir a ameaças.'}
         ]},
-        {key:'turno',title:'Turno',icon:'⏭️',actions:[
-          {id:'avancar-turno',ic:'⏭️',txt:'Encerrar turno'}
+        {key:'turno',title:'Turno',icon:'⏭️',description:'Finalize suas ações quando terminar sua vez.',actions:[
+          {id:'avancar-turno',ic:'⏭️',txt:'Encerrar turno',desc:'Informe que terminou sua vez na ordem de iniciativa.'}
         ]}
       );
     }
@@ -8539,6 +8539,19 @@ html,body,#root{width:100%!important;height:100%!important;min-width:0!important
 #acoes-dir.painel-jogador-contextual .player-action-grid .btn-acao{display:flex!important;flex:0 0 auto!important;width:100%!important;min-width:0!important;min-height:42px!important;white-space:normal!important;transform:none!important}
 #acoes-dir.painel-jogador-contextual .player-action-identity{flex:0 0 auto!important;width:100%!important}
 @media(max-width:900px){#acoes-dir.painel-jogador-contextual{padding:9px!important;gap:7px!important}#acoes-dir.painel-jogador-contextual .player-action-section{padding:7px 0 9px!important}#acoes-dir.painel-jogador-contextual .player-action-grid .btn-acao{min-height:40px!important}}
+</style>
+
+
+<style id="mesa-painel-orientacao-visual">
+/* Orientação visual: cada controle explica sua função sem alterar a ação vinculada. */
+#acoes-dir.painel-jogador-contextual .player-action-section-description{margin:-2px 2px 2px;color:#aebbd0;font:italic 12px/1.4 'EB Garamond',serif}
+#acoes-dir.painel-jogador-contextual .player-action-grid .btn-acao{align-items:center;gap:10px;padding:9px 11px;min-height:56px;border:1px solid rgba(201,160,80,.42);border-radius:8px;background:linear-gradient(145deg,rgba(31,46,60,.98),rgba(14,23,31,.98));box-shadow:inset 0 1px rgba(255,255,255,.045),0 3px 9px rgba(0,0,0,.18)}
+#acoes-dir.painel-jogador-contextual .player-action-grid .btn-acao .action-card-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px}
+#acoes-dir.painel-jogador-contextual .player-action-grid .btn-acao .action-card-label{font-size:11px;line-height:1.3;color:#f0e5ca}
+#acoes-dir.painel-jogador-contextual .player-action-grid .btn-acao .action-card-description{display:block;color:#aebbd0;font:12px/1.3 'EB Garamond',serif;letter-spacing:0;white-space:normal}
+#acoes-dir.painel-jogador-contextual .player-action-grid .btn-acao:focus-visible{outline:2px solid #f3d993;outline-offset:2px}
+#acoes-dir.painel-jogador-contextual .player-action-grid .btn-acao:disabled{opacity:.55;filter:saturate(.55);cursor:not-allowed}
+@media(max-width:900px){#acoes-dir.painel-jogador-contextual .player-action-grid .btn-acao{min-height:54px;padding:8px 9px}#acoes-dir.painel-jogador-contextual .player-action-grid .btn-acao .action-card-description{font-size:11px}}
 </style>
 
 </body>
