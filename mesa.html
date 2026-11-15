@@ -6305,7 +6305,7 @@ async function abrirModalEquipamentos(){
       }
       var responseKey=String(requestKey)+'|'+String(personagemAlvo.ch.id);
       if(pedidosTesteRespondidos[responseKey])return;
-      criarBotaoRolagemTeste(String(data.tipo||'Teste de habilidade'),personagemAlvo.ch.id,requestKey,data);
+      criarBotaoRolagemTeste(String(data.tipo||'Teste de habilidade'),personagemAlvo.ch.id,requestKey,data,!!abrirDice);
     });
   }
 
