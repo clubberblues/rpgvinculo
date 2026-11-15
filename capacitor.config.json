@@ -1,0 +1,8 @@
+{
+  "appId": "com.vinculo.vtt",
+  "appName": "Vínculo RPG",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false
+  }
+}
