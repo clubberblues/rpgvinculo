@@ -4266,6 +4266,8 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
       'srd35_equipment_shields_shield_spikes':'Espinhos para escudo'
     };
     if(names[id])return names[id];
+    var details=item&&item.detalhes||{};if(typeof details==='string'){try{details=JSON.parse(details);}catch(e){details={};}}
+    if(details&&details.nome_pt_br_revisado===true)return name;
     if(/^\\+\\d+\\s+(armadura|escudo|armadura\\/escudo)$/i.test(name))return name.replace(/^\\+(\\d+)/,'+ $1').replace('armadura/escudo','armadura ou escudo');
     var exact={'Glaive':'Glaive','Guisarme':'Guisarme','Ranseur':'Ranseur','Kama':'Kama','Kukri':'Kukri','Sai':'Sai','Siangham':'Siangham','Shuriken (10)':'Shuriken (10)'};
     if(exact[name])return exact[name];
@@ -4298,7 +4300,8 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
   function renderizarCategoriasLoja(){
     var nav=document.getElementById('loja-categorias');if(!nav)return;
     var cats=Array.from(new Set(lojaCatalogo.map(function(x){return String(x.categoria||'outro');}))).sort(function(a,b){return nomeCategoriaEquipamento35(a).localeCompare(nomeCategoriaEquipamento35(b),'pt-BR');});
-    nav.innerHTML=cats.map(function(cat){var count=lojaCatalogo.filter(function(x){return String(x.categoria||'outro')===cat;}).length;return '<button type="button" class="shop-category'+(cat===lojaCategoriaAtiva?' ativo':'')+'" data-shop-category="'+esc(cat)+'">'+esc(nomeCategoriaEquipamento35(cat))+' <small>'+count+'</small></button>';}).join('');
+    function buttonsFor(tipo){return cats.filter(function(cat){return lojaCatalogo.some(function(x){return String(x.categoria||'outro')===cat&&(tipo==='magic_item'?x.tipo==='magic_item':x.tipo!=='magic_item');});}).map(function(cat){var count=lojaCatalogo.filter(function(x){return String(x.categoria||'outro')===cat&&(tipo==='magic_item'?x.tipo==='magic_item':x.tipo!=='magic_item');}).length;return '<button type="button" class="shop-category'+(cat===lojaCategoriaAtiva?' ativo':'')+'" data-shop-category="'+esc(cat)+'">'+esc(nomeCategoriaEquipamento35(cat))+' <small>'+count+'</small></button>';}).join('');}
+    nav.innerHTML='<div class="shop-category-group"><strong>Equipamentos comuns</strong>'+buttonsFor('mundano')+'</div><div class="shop-category-group shop-magic-group"><strong>Itens mágicos</strong>'+buttonsFor('magic_item')+'</div>';
   }
   function renderizarCatalogoLoja(){
     var host=document.getElementById('loja-catalogo-lista'),search=document.getElementById('loja-catalogo-busca');if(!host)return;
@@ -4518,9 +4521,14 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
   }
   function nomeCategoriaEquipamento35(value){
     var raw=String(value||'outro').trim(),cat=raw.toLowerCase();
-    var names={arma:'Armas',armadura:'Armaduras',escudo:'Escudos',acessorio:'Acessórios',mochila:'Mochilas',consumivel:'Consumíveis',gear:'Equipamentos de aventura',outro:'Outros',extras:'Acessórios e melhorias',shields:'Escudos',specific_weapons:'Armas especiais',specific_armors:'Armaduras especiais',specific_shields:'Escudos especiais',armor_and_shields:'Armaduras e escudos',rings:'Anéis',rods:'Bastões',staffs:'Cajados',wands:'Varinhas',wondrous_items:'Itens maravilhosos',potions_and_oils:'Poções e óleos',specific_cursed_items:'Itens amaldiçoados',shields:'Escudos','light armor':'Armaduras leves','medium armor':'Armaduras médias','heavy armor':'Armaduras pesadas'};
+    var names={arma:'Armas',armadura:'Armaduras',escudo:'Escudos',acessorio:'Acessórios',mochila:'Mochilas',consumivel:'Consumíveis',gear:'Equipamentos de aventura',outro:'Outros',extras:'Acessórios e melhorias',shields:'Escudos',specific_weapons:'Armas específicas',specific_armors:'Armaduras específicas',specific_shields:'Escudos específicos',armor_and_shields:'Armaduras e escudos mágicos',rings:'Anéis mágicos',rods:'Bastões mágicos',staffs:'Cajados mágicos',wands:'Varinhas mágicas',wondrous_items:'Itens maravilhosos',potions_and_oils:'Poções e óleos',specific_cursed_items:'Itens amaldiçoados','light armor':'Armaduras leves','medium armor':'Armaduras médias','heavy armor':'Armaduras pesadas'};
     if(names[cat])return names[cat];
-    if(cat.indexOf('weapon')>=0||cat.indexOf('weapons')>=0){var end=cat.split('·').pop().trim(),suffix=end.indexOf('ranged')>=0?' à distância':end.indexOf('two-handed')>=0?' de duas mãos':end.indexOf('one-handed')>=0?' de uma mão':end.indexOf('light')>=0?' leves':'';return 'Armas'+suffix;}
+    if(cat.indexOf('weapon')>=0||cat.indexOf('weapons')>=0){
+      var parts=raw.split('·').map(function(x){return x.trim().toLowerCase();}),group=parts[0]||'',end=parts[parts.length-1]||'';
+      var kind=group.indexOf('exotic')>=0?'exóticas':group.indexOf('martial')>=0?'marciais':'simples';
+      var form=end.indexOf('ranged')>=0?'à distância':end.indexOf('two-handed')>=0?'corpo a corpo de duas mãos':end.indexOf('one-handed')>=0?'corpo a corpo de uma mão':end.indexOf('light')>=0?'corpo a corpo leves':end.indexOf('unarmed')>=0?'ataques desarmados':'';
+      return 'Armas '+kind+(form?' · '+form:'');
+    }
     return raw.charAt(0).toLocaleUpperCase('pt-BR')+raw.slice(1);
   }
 
@@ -7977,6 +7985,9 @@ body > #dado-iframe-overlay.dado-modal-global,
 .shop-filter-row{display:flex;align-items:center;gap:12px}.shop-filter-row input{flex:1;min-width:0;background:#0b111c;border:1px solid #34475f;border-radius:7px;color:#f5ecd6;padding:10px 12px}.shop-filter-row span{color:#e0b65c;font:700 11px Cinzel,serif;white-space:nowrap}
 .shop-browser{display:grid;grid-template-columns:minmax(180px,230px) minmax(0,1fr);gap:14px;min-height:0;flex:1;overflow:hidden}
 .shop-categories{display:flex;flex-direction:column;align-items:stretch;gap:7px;overflow-y:auto;overflow-x:hidden;padding:2px 8px 8px 2px;min-height:0;border-right:1px solid #34475f}
+.shop-category-group{display:flex;flex-direction:column;gap:7px;padding-bottom:10px}
+.shop-category-group>strong{font:700 10px Cinzel,serif;letter-spacing:1.2px;color:#e0b65c;padding:7px 5px 3px;text-transform:uppercase}
+.shop-magic-group{border-top:1px solid #75613d;padding-top:8px}
 .shop-category{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;border:1px solid #34475f;background:linear-gradient(100deg,#111b2a,#0c1420);color:#c5b995;border-radius:7px;padding:11px 12px;white-space:normal;cursor:pointer;font:700 11px Cinzel,serif;transition:transform .18s ease,border-color .18s ease,background .18s ease}
 .shop-category:hover{transform:translateX(3px);border-color:#8b7548}
 .shop-category.ativo{background:linear-gradient(100deg,#493a20,#211c15);border-color:#e0b65c;color:#ffe4a2;box-shadow:inset 3px 0 #e0b65c}
