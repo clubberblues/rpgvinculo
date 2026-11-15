@@ -1,0 +1,71 @@
+/* VTT · Sistema visual Carvão
+   Camada exclusivamente visual: não altera regras, eventos, dados ou permissões. */
+:root{color-scheme:dark;--vtt-bg:#151719;--vtt-bg-deep:#101214;--vtt-surface:#1d2024;--vtt-surface-raised:#25292e;--vtt-surface-soft:#2b3036;--vtt-border:#3a4047;--vtt-border-strong:#535b64;--vtt-text:#e8e5df;--vtt-text-soft:#b8b7b2;--vtt-muted:#898d91;--vtt-bronze:#bd985c;--vtt-bronze-bright:#dfbd80;--vtt-bronze-dim:#786344;--vtt-danger:#b75b55;--vtt-success:#83a98b;--vtt-focus:#e3c58c;--vtt-shadow:0 18px 48px rgba(0,0,0,.42)}
+html,body{background:var(--vtt-bg-deep);color:var(--vtt-text)}
+body{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--vtt-bg-deep);color:var(--vtt-text)}
+button,input,textarea,select{font-family:inherit}
+::selection{background:rgba(189,152,92,.32);color:#fff}
+::-webkit-scrollbar-track{background:#171a1d}
+::-webkit-scrollbar-thumb{background:#50565d;border:2px solid #171a1d;border-radius:8px}
+::-webkit-scrollbar-thumb:hover{background:var(--vtt-bronze)}
+.mesa{background:var(--vtt-bg)}
+.mesa-header{background:linear-gradient(180deg,#25292e,#1b1e22);border-bottom:1px solid var(--vtt-bronze-dim);box-shadow:0 5px 18px #0005}
+.btn-voltar{border-color:var(--vtt-border-strong);color:var(--vtt-text-soft);border-radius:7px;letter-spacing:1px}
+.btn-voltar:hover{border-color:var(--vtt-bronze);color:var(--vtt-bronze-bright);background:#ffffff08}
+.titulo-mesa .nome{color:#f1eee8;text-shadow:0 2px 8px #000;letter-spacing:2px}
+.titulo-mesa .estado{letter-spacing:1.8px}
+.estado.EXPLORACAO{color:#9bb8a0}.estado.COMBATE{color:#d77b73}.estado.PAUSA{color:var(--vtt-bronze-bright)}
+.turno-info{color:var(--vtt-text-soft);letter-spacing:1.3px}
+.mesa-corpo{background:var(--vtt-bg)}
+.col-esq,.col-dir{background:linear-gradient(180deg,#1b1e22,#171a1d);border-color:var(--vtt-border)!important}
+.painel{background:transparent}.painel+.painel{border-color:var(--vtt-border)!important}
+.painel-cab{background:linear-gradient(90deg,#292d32,#22262a);color:var(--vtt-bronze-bright);border-bottom:1px solid #ffffff0b;letter-spacing:1.5px}
+.painel-corpo{color:var(--vtt-text)}
+#acoes-dir{background:linear-gradient(180deg,#202429,#191c20)!important}
+#acoes-dir.painel-jogador-contextual .player-action-section{border-color:#3c4249!important}
+#acoes-dir.painel-jogador-contextual .player-action-section-title{color:var(--vtt-bronze-bright)!important;letter-spacing:1px!important}
+#acoes-dir.painel-jogador-contextual .player-action-section-description{color:var(--vtt-muted)!important}
+#acoes-dir .player-action-identity{background:linear-gradient(145deg,#30353b,#22262b)!important;border:1px solid var(--vtt-border)!important;border-radius:10px!important;box-shadow:inset 0 1px #ffffff0a,0 8px 20px #0002}
+#acoes-dir .player-action-identity strong{color:#f1eee8!important;font-family:Cinzel,Georgia,serif!important;letter-spacing:.7px}
+#acoes-dir .player-action-identity>span{color:var(--vtt-text-soft)!important}
+#acoes-dir .player-action-vitals span{background:#171a1e!important;border:1px solid #41474e!important;color:#dedbd4!important;border-radius:6px!important}
+#acoes-dir.painel-jogador-contextual .player-action-grid .btn-acao{background:linear-gradient(145deg,#30353b,#22262b)!important;border:1px solid #4a5159!important;border-radius:8px!important;color:var(--vtt-text)!important;box-shadow:inset 0 1px #ffffff0a,0 3px 9px #0003!important;transition:background .16s,border-color .16s,transform .16s,box-shadow .16s!important}
+#acoes-dir.painel-jogador-contextual .player-action-grid .btn-acao:hover:not(:disabled){background:linear-gradient(145deg,#3a4047,#292e34)!important;border-color:var(--vtt-bronze)!important;box-shadow:0 0 0 1px #bd985c20,0 6px 15px #0004!important;transform:translateY(-1px)!important}
+#acoes-dir.painel-jogador-contextual .player-action-grid .btn-acao .action-card-label{color:#f0ede6!important;font-family:Inter,system-ui,sans-serif!important;font-weight:650}
+#acoes-dir.painel-jogador-contextual .player-action-grid .btn-acao .action-card-description{color:#aeb1b3!important}
+#acoes-dir.painel-jogador-contextual .player-action-grid .btn-acao:focus-visible{outline:2px solid var(--vtt-focus)!important;outline-offset:2px!important}
+#acoes-dir .action-group-tab{background:#252a30!important;border-color:#454c54!important;color:var(--vtt-text-soft)!important}
+#acoes-dir .action-group-tab[aria-selected=true]{background:#3a3328!important;border-color:var(--vtt-bronze)!important;color:var(--vtt-bronze-bright)!important}
+#area-tabuleiro{background:#111315!important}.tabuleiro-vazio{color:#c6c2b9}.tabuleiro-vazio .txt{color:var(--vtt-bronze-bright);letter-spacing:2px}.tabuleiro-vazio .sub{color:var(--vtt-muted)}
+#cards-strip{background:transparent}#cards-strip>*{border-color:var(--vtt-border)!important}
+.chat-msg{color:var(--vtt-text-soft)}.chat-input{background:#202429!important;border-top:1px solid var(--vtt-border)!important}
+.chat-input input{background:#14171a!important;border:1px solid #41474c!important;color:var(--vtt-text)!important;border-radius:7px!important}
+.chat-input button{background:#393329!important;border:1px solid var(--vtt-bronze-dim)!important;color:var(--vtt-bronze-bright)!important;border-radius:7px!important}
+.btn-acao{border-radius:7px}
+.modal-final,.skill-roll-overlay,.modal-reforco{background:rgba(5,7,9,.78)!important;backdrop-filter:blur(8px)}
+.modal-final-card,.skill-roll-panel,.modal-reforco-card{background:linear-gradient(150deg,#292e34,#1b1f23)!important;border:1px solid var(--vtt-border-strong)!important;border-radius:14px!important;box-shadow:var(--vtt-shadow)!important;color:var(--vtt-text)!important}
+.modal-final-card h2,.skill-roll-head h2,.modal-reforco-head h2{color:var(--vtt-bronze-bright)!important;font-family:Cinzel,Georgia,serif!important}
+.modal-final-card p,.skill-roll-panel p{color:var(--vtt-text-soft)}.modal-final-actions{border-color:var(--vtt-border)!important}
+.modal-final-actions button,.skill-roll-panel button{border-radius:7px}
+.modal-final-actions button.confirm{background:linear-gradient(135deg,#987647,#735a36)!important;border:1px solid #d0ad73!important;color:#fff!important}
+#modal-magias .magia-gamificada-card{background:linear-gradient(150deg,#292e34,#1b1f23)!important;border:1px solid var(--vtt-bronze-dim)!important;color:var(--vtt-text)!important}
+#modal-magias .magia-modal-header{border-color:var(--vtt-border)!important}
+#modal-magias .magia-kicker,#modal-magias .magia-modal-header h2{color:var(--vtt-bronze-bright)!important}
+#modal-magias .magia-modal-header p{color:var(--vtt-text-soft)!important}
+#modal-magias .magia-fechar{background:#24292e!important;border-color:var(--vtt-border-strong)!important;color:var(--vtt-text)!important}
+#modal-magias .magia-busca-wrap,#modal-magias #magia-configuracao{background:#171a1e!important;border-color:var(--vtt-border)!important}
+#modal-magias .magia-busca-wrap input,#modal-magias .magia-config-grid select{background:transparent!important;color:var(--vtt-text)!important}
+#modal-magias .magia-config-grid label,#modal-magias .magia-detalhe-facts small{color:var(--vtt-bronze-bright)!important}
+#modal-magias #magia-alerta{background:#bd985c12!important;color:#d7d2c8!important}
+#modal-magias-lista .magia-opcao{background:linear-gradient(135deg,#30363d,#22272d)!important;border-color:#4b535b!important;color:var(--vtt-text)!important}
+#modal-magias-lista .magia-opcao[aria-pressed=true]{background:linear-gradient(135deg,#413a2e,#292720)!important;border-color:var(--vtt-bronze-bright)!important}
+#modal-magias-lista .magia-card-copy strong,#magia-detalhe .magia-detalhe-head h3{color:var(--vtt-bronze-bright)!important}
+#modal-magias-lista .magia-meta,#modal-magias-lista .magia-descricao{color:var(--vtt-text-soft)!important}
+#magia-detalhe{background:#191d21!important;border-color:var(--vtt-border)!important}
+#magia-detalhe .magia-detalhe-facts>div{background:#22272c!important;border-color:#3d444b!important}
+#magia-detalhe .magia-detalhe-facts b{color:var(--vtt-text)!important}
+#modal-habilidades-classe .modal-final-card{background:linear-gradient(150deg,#292e34,#1b1f23)!important}
+#painel-iniciativa{color:var(--vtt-text)}#painel-iniciativa [class*="item"],#painel-iniciativa [class*="card"]{border-color:var(--vtt-border)!important}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--vtt-focus);outline-offset:2px}
+@media(max-width:760px){.mesa-header{padding:7px 10px;gap:8px}.titulo-mesa .nome{font-size:14px;letter-spacing:1px}.turno-info{font-size:9px;min-width:auto;letter-spacing:.7px}.painel-cab{letter-spacing:1px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}}
