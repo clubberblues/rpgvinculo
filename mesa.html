@@ -1102,7 +1102,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   <section class="modal-final-card shop-card shop-player">
     <header class="shop-head"><div><h2 id="titulo-loja-campanha">🏪 Loja da campanha</h2><p id="loja-personagem-contexto">Equipamentos selecionados pelo Mestre</p></div><button type="button" data-shop-close aria-label="Fechar loja">✕</button></header>
     <p id="loja-status" class="shop-status" role="status" aria-live="polite">Carregando loja…</p>
-    <div id="loja-lista" class="shop-list"></div>
+    <div class="shop-browser"><nav id="loja-categorias-jogador" class="shop-categories" aria-label="Categorias da loja"></nav>
+      <div id="loja-lista" class="shop-list shop-catalog-list" aria-live="polite"></div></div>
     <footer class="shop-player-footer"><div><small>SEU SALDO</small><strong id="loja-saldo-jogador">— PO</strong></div><button type="button" data-shop-close class="shop-secondary">Fechar loja</button></footer>
   </section>
 </div>
@@ -4240,7 +4241,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
   }
 
   // ============ LOJA DA CAMPANHA · CATÁLOGO SRD E COMPRAS ============
-  var lojaListings=[],lojaCatalogo=[],lojaSelecionados=new Set(),lojaCategoriaAtiva='',lojaBusy=false,lojaCompraPendente=null;
+  var lojaListings=[],lojaCatalogo=[],lojaSelecionados=new Set(),lojaCategoriaAtiva='',lojaCategoriaJogadorAtiva='',lojaBusy=false,lojaCompraPendente=null;
   function chaveIdempotenciaLoja(){
     if(window.crypto&&typeof window.crypto.randomUUID==='function')return window.crypto.randomUUID();
     var bytes=new Uint8Array(16);window.crypto.getRandomValues(bytes);bytes[6]=(bytes[6]&15)|64;bytes[8]=(bytes[8]&63)|128;
@@ -4349,6 +4350,14 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     if(result.error)throw new Error(result.error.message);
     lojaListings=result.data||[];renderizarLojaJogador();return true;
   }
+  function renderizarCategoriasLojaJogador(){
+    var nav=document.getElementById('loja-categorias-jogador');if(!nav)return;
+    var cats=Array.from(new Set(lojaListings.map(function(row){return String((row.equipment||{}).categoria||'outro');}))).sort(function(a,b){return nomeCategoriaEquipamento35(a).localeCompare(nomeCategoriaEquipamento35(b),'pt-BR');});
+    if(cats.indexOf(lojaCategoriaJogadorAtiva)<0)lojaCategoriaJogadorAtiva=cats[0]||'';
+    function buttonsFor(tipo){return cats.filter(function(cat){return lojaListings.some(function(row){var item=row.equipment||{};return String(item.categoria||'outro')===cat&&(tipo==='magic_item'?item.tipo==='magic_item':item.tipo!=='magic_item');});}).map(function(cat){var count=lojaListings.filter(function(row){var item=row.equipment||{};return String(item.categoria||'outro')===cat&&(tipo==='magic_item'?item.tipo==='magic_item':item.tipo!=='magic_item');}).length;return '<button type="button" class="shop-category'+(cat===lojaCategoriaJogadorAtiva?' ativo':'')+'" data-shop-player-category="'+esc(cat)+'">'+esc(nomeCategoriaEquipamento35(cat))+' <small>'+count+'</small></button>';}).join('');}
+    var common=buttonsFor('mundano'),magic=buttonsFor('magic_item');
+    nav.innerHTML=(common?'<div class="shop-category-group"><strong>Equipamentos comuns</strong>'+common+'</div>':'')+(magic?'<div class="shop-category-group shop-magic-group"><strong>Itens mágicos</strong>'+magic+'</div>':'');
+  }
   function renderizarLojaJogador(){
     var list=document.getElementById('loja-lista');if(!list)return;
     var p=personagemAtivoDaInterface();
@@ -4356,8 +4365,11 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     var balance=Number(p.sh&&p.sh.ouro)||0,items=lojaListings;
     document.getElementById('loja-personagem-contexto').textContent=(p.ch.nome||'Aventureiro')+' · Equipamentos escolhidos pelo Mestre';
     document.getElementById('loja-saldo-jogador').textContent=moedaLoja(balance);
-    if(!items.length){list.innerHTML='<div class="shop-empty">O Mestre ainda não selecionou equipamentos para esta loja.</div>';return;}
-    list.innerHTML=items.map(function(row){
+    if(!items.length){renderizarCategoriasLojaJogador();list.innerHTML='<div class="shop-empty">O Mestre ainda não selecionou equipamentos para esta loja.</div>';return;}
+    renderizarCategoriasLojaJogador();
+    var filteredItems=items.filter(function(row){return String((row.equipment||{}).categoria||'outro')===lojaCategoriaJogadorAtiva;});
+    list.classList.remove('shop-sliding');void list.offsetWidth;list.classList.add('shop-sliding');
+    list.innerHTML=filteredItems.map(function(row){
       var item=row.equipment||{},meta=fatosLoja(item),price=Number(row.buy_price)||0,canBuy=balance>=price;
       var facts=meta.facts.map(function(x){return '<span><b>'+esc(x[0])+':</b> '+esc(x[1])+'</span>';}).join('');
       return '<article class="shop-player-item"><div class="shop-player-item-main"><div class="shop-item-icon">'+(slotEquipamento35(item)==='arma'?'⚔️':['armadura','escudo'].indexOf(slotEquipamento35(item))>=0?'🛡️':'📦')+'</div><div class="shop-catalog-info"><h3>'+esc(nomeEquipamentoLojaPT(item)||'Equipamento')+'</h3><small>'+esc(nomeCategoriaEquipamento35(item.categoria||'outro'))+'</small>'+(facts?'<div class="shop-facts">'+facts+'</div>':'')+(meta.description?'<p>'+esc(meta.description)+'</p>':'')+'</div></div><div class="shop-player-buy"><strong>'+moedaLoja(price)+'</strong><button type="button" class="shop-coin-buy" data-shop-buy="'+esc(row.equipment_id)+'" '+(canBuy?'':'disabled')+' aria-label="Comprar '+esc(nomeEquipamentoLojaPT(item)||'equipamento')+'">🪙</button>'+(canBuy?'':'<small>Saldo insuficiente</small>')+'</div></article>';
@@ -4410,6 +4422,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     document.getElementById('loja-publicar').addEventListener('click',publicarLojaCampanha);
     player.addEventListener('click',function(event){
       if(event.target===player||event.target.closest('[data-shop-close]')){mostrarModalLoja('modal-loja-campanha',false);return;}
+      var category=event.target.closest('[data-shop-player-category]');if(category){lojaCategoriaJogadorAtiva=category.dataset.shopPlayerCategory;renderizarCategoriasLojaJogador();renderizarLojaJogador();return;}
       var buy=event.target.closest('[data-shop-buy]');if(buy)pedirConfirmacaoCompra(buy.dataset.shopBuy,buy);
     });
     document.getElementById('loja-confirm-cancel').addEventListener('click',fecharConfirmacaoLoja);
