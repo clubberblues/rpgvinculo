@@ -4074,9 +4074,9 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
   function registrarIntencaoTaticaUI(kind,label,detail,targetKey){
     var p=personagemDoTurnoDoJogador();if(!p){alert('Esta ação só pode ser solicitada durante seu turno ativo.');return;}
     var state=cbaPublishedState||normalizarCBAData(campanha&&campanha.cba_data),tokens=state&&Array.isArray(state.tokens)?state.tokens:[],ownToken=tokens.find(function(t){return t.tipo==='player'&&String(t.id)===String(p.ch.id);}),target=targetKey&&tokens.find(function(t){return String(t.key)===String(targetKey);});
-    if(!targetKey||!target||ownToken&&String(target.key)===String(ownToken.key)){alert('Escolha um alvo válido no campo de batalha antes de solicitar a manobra.');return;}
-    enviarMensagemChat('🛡️ '+p.ch.nome+' solicita '+label+' contra '+String(target.nome||'alvo')+'.','sistema',{evento:'acao_tatica_solicitada',acao:kind,character_id:String(p.ch.id),character_name:String(p.ch.nome||''),target_token_key:String(target.key),target_name:String(target.nome||''),detalhe:String(detail||'')});
-    var status=document.getElementById('iniciativa-status');if(status)status.textContent=label+' contra '+String(target.nome||'alvo')+' enviado ao Mestre. Aguarde a resolução.';
+    var needsTarget=['derrubar','desarmar','agarrar','separar','fintar'].indexOf(String(kind))>=0;if(needsTarget&&(!targetKey||!target||ownToken&&String(target.key)===String(ownToken.key))){alert('Escolha um alvo válido no campo de batalha antes de solicitar a manobra.');return;}
+    enviarMensagemChat('🛡️ '+p.ch.nome+' solicita '+label+(target?' contra '+String(target.nome||'alvo'):'')+'.','sistema',{evento:'acao_tatica_solicitada',acao:kind,character_id:String(p.ch.id),character_name:String(p.ch.nome||''),target_token_key:target?String(target.key):null,target_name:target?String(target.nome||''):null,detalhe:String(detail||'')});
+    var status=document.getElementById('iniciativa-status');if(status)status.textContent=label+(target?' contra '+String(target.nome||'alvo'):'')+' enviado ao Mestre. Aguarde a resolução.';
   }
   function abrirOpcoesTaticasUI(kind){
     var isDefense=kind==='defesa',entries=isDefense?[
