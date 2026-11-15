@@ -4286,7 +4286,10 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     if(item.penalidade_armadura!=null&&['armadura','escudo'].indexOf(slot)>=0)facts.push(['Penalidade de armadura',item.penalidade_armadura]);
     if(item.peso!=null&&Number(item.peso)>0)facts.push(['Peso',Number(item.peso).toLocaleString('pt-BR')+' kg']);
     if(item.alcance_incremento)facts.push(['Alcance',String(item.alcance_incremento).replace(/\bft\.?/gi,'pés')]);
-    return {description:'',facts:facts,price:item.custo_po!=null?item.custo_po:item.preco};
+    var detail=item&&item.detalhes||{};if(typeof detail==='string'){try{detail=JSON.parse(detail);}catch(e){detail={};}}
+    var description='';
+    if(item&&item.descricao&&(detail.nome_pt_br_revisado===true||detail.display_note_pt_br))description=String(item.descricao);
+    return {description:description,facts:facts,price:item.custo_po!=null?item.custo_po:item.preco};
   }
   async function carregarCatalogoLoja(){
     var r=await sb.from('srd_equipment').select('*').order('nome',{ascending:true}).range(0,1999);
@@ -4357,7 +4360,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     list.innerHTML=items.map(function(row){
       var item=row.equipment||{},meta=fatosLoja(item),price=Number(row.buy_price)||0,canBuy=balance>=price;
       var facts=meta.facts.map(function(x){return '<span><b>'+esc(x[0])+':</b> '+esc(x[1])+'</span>';}).join('');
-      return '<article class="shop-player-item"><div class="shop-player-item-main"><div class="shop-item-icon">'+(slotEquipamento35(item)==='arma'?'⚔️':['armadura','escudo'].indexOf(slotEquipamento35(item))>=0?'🛡️':'📦')+'</div><div class="shop-catalog-info"><h3>'+esc(item.nome||row.equipment_id)+'</h3><small>'+esc(nomeCategoriaEquipamento35(item.categoria||'outro'))+'</small>'+(facts?'<div class="shop-facts">'+facts+'</div>':'')+(meta.description?'<p>'+esc(meta.description)+'</p>':'')+'</div></div><div class="shop-player-buy"><strong>'+moedaLoja(price)+'</strong><button type="button" class="shop-coin-buy" data-shop-buy="'+esc(row.equipment_id)+'" '+(canBuy?'':'disabled')+' aria-label="Comprar '+esc(nomeEquipamentoLojaPT(item)||'equipamento')+'">🪙</button>'+(canBuy?'':'<small>Saldo insuficiente</small>')+'</div></article>';
+      return '<article class="shop-player-item"><div class="shop-player-item-main"><div class="shop-item-icon">'+(slotEquipamento35(item)==='arma'?'⚔️':['armadura','escudo'].indexOf(slotEquipamento35(item))>=0?'🛡️':'📦')+'</div><div class="shop-catalog-info"><h3>'+esc(nomeEquipamentoLojaPT(item)||'Equipamento')+'</h3><small>'+esc(nomeCategoriaEquipamento35(item.categoria||'outro'))+'</small>'+(facts?'<div class="shop-facts">'+facts+'</div>':'')+(meta.description?'<p>'+esc(meta.description)+'</p>':'')+'</div></div><div class="shop-player-buy"><strong>'+moedaLoja(price)+'</strong><button type="button" class="shop-coin-buy" data-shop-buy="'+esc(row.equipment_id)+'" '+(canBuy?'':'disabled')+' aria-label="Comprar '+esc(nomeEquipamentoLojaPT(item)||'equipamento')+'">🪙</button>'+(canBuy?'':'<small>Saldo insuficiente</small>')+'</div></article>';
     }).join('');
     statusLoja('Escolha um equipamento e confirme a compra. O item será enviado diretamente ao seu inventário.');
   }
@@ -4372,7 +4375,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     var p=personagemAtivoDaInterface();if(!p)return;
     var row=lojaListings.find(function(x){return String(x.equipment_id)===String(id);});if(!row)return;
     var item=row.equipment||{},price=Number(row.buy_price)||0,balance=Number(p.sh&&p.sh.ouro)||0;
-    if(balance<price){statusLoja('Ouro insuficiente para comprar '+(item.nome||id)+'.',true);return;}
+    if(balance<price){statusLoja('Ouro insuficiente para comprar '+(nomeEquipamentoLojaPT(item)||'este equipamento')+'.',true);return;}
     lojaCompraPendente={id:String(id),button:button};
     document.getElementById('loja-confirm-text').textContent='Deseja comprar '+(nomeEquipamentoLojaPT(item)||'este equipamento')+' por '+moedaLoja(price)+'?';
     document.getElementById('loja-confirm-restante').textContent=moedaLoja(balance-price);
