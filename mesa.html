@@ -8059,5 +8059,19 @@ html,body{width:100%;max-width:100%;min-width:0;overflow-x:hidden}
 
 </style>
 <script src="friends-vtt-ui.js"></script>
+<style id="mesa-footer-cards-scale-fix">
+/* Redimensiona os cards do rodapé para caberem na área útil sem vazar verticalmente. */
+.mesa-footer,.painel-aventureiros,.painel-aventureiros>#cards-strip.cards-strip{box-sizing:border-box!important;min-width:0!important;min-height:0!important}
+.painel-aventureiros>#cards-strip.cards-strip{height:0!important;flex:1 1 0!important;padding:2px 2px 3px!important;overflow-x:auto!important;overflow-y:hidden!important;align-items:stretch!important}
+#cards-strip>.card-pers{box-sizing:border-box!important;flex:0 0 clamp(150px,15vw,200px)!important;width:clamp(150px,15vw,200px)!important;min-width:clamp(150px,15vw,200px)!important;max-width:clamp(150px,15vw,200px)!important;height:100%!important;min-height:0!important;max-height:100%!important;padding:5px 7px!important;gap:6px!important;overflow:hidden!important}
+#cards-strip>.card-pers .card-pers-avatar{width:38px!important;height:38px!important;flex:0 0 38px!important}
+#cards-strip>.card-pers .card-pers-nome{font-size:10px!important;line-height:1.15!important}
+#cards-strip>.card-pers .card-pers-classe{font-size:9px!important;margin-bottom:3px!important}
+#cards-strip>.card-pers .card-pers-pv-txt{font-size:8px!important;line-height:1.1!important}
+#cards-strip>.card-pers .card-pers-initiative{gap:2px 5px!important;font-size:8px!important}
+@media(max-width:900px){#cards-strip>.card-pers{flex-basis:160px!important;width:160px!important;min-width:160px!important;max-width:160px!important}}
+@media(max-width:700px){#cards-strip>.card-pers{flex-basis:148px!important;width:148px!important;min-width:148px!important;max-width:148px!important}}
+@media(max-height:520px){#cards-strip>.card-pers{flex-basis:140px!important;width:140px!important;min-width:140px!important;max-width:140px!important}}
+</style>
 </body>
 </html>
