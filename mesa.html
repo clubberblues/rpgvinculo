@@ -4288,7 +4288,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     if(item.alcance_incremento)facts.push(['Alcance',String(item.alcance_incremento).replace(/\bft\.?/gi,'pés')]);
     var detail=item&&item.detalhes||{};if(typeof detail==='string'){try{detail=JSON.parse(detail);}catch(e){detail={};}}
     var description='';
-    if(item&&item.descricao&&(detail.nome_pt_br_revisado===true||detail.display_note_pt_br))description=String(item.descricao);
+    if(item&&item.descricao&&(detail.descricao_pt_br_revisada===true||detail.display_note_pt_br))description=String(item.descricao);
     return {description:description,facts:facts,price:item.custo_po!=null?item.custo_po:item.preco};
   }
   async function carregarCatalogoLoja(){
