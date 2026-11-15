@@ -6196,7 +6196,9 @@ async function abrirModalEquipamentos(){
 
   function calcularBonusResistenciaPersonagem35(personagem,saveType,context){
     var sh=personagem&&personagem.sh||{},cl=personagem&&personagem.cl||{},ch=personagem&&personagem.ch||{};
-    var cls=String(cl.class_key||cl.id||sh.classe_id||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();
+    var cls=String(cl.class_key||cl.key||cl.nome||cl.id||sh.classe_id||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();
+    var clsCompact=cls.replace(/[^a-z0-9]/g,'');
+    function classeEh35(){for(var i=0;i<arguments.length;i++){var k=String(arguments[i]).replace(/[^a-z0-9]/g,'');if(clsCompact===k||clsCompact.endsWith(k))return true;}return false;}
     var level=Math.max(1,Math.min(20,Number(sh.nivel)||Number(sh.nivel_personagem)||nivelXP(ch.xp)||1));
     var good={
       fortitude:['barbaro','barbarian','guerreiro','fighter','paladino','paladin','ranger','patrulheiro','monge','monk'],
@@ -6204,7 +6206,8 @@ async function abrirModalEquipamentos(){
       will:['bardo','bard','clerigo','cleric','druida','druid','monge','monk','paladino','paladin','feiticeiro','sorcerer','mago','wizard']
     };
     var key=String(saveType||'').toLowerCase(),ability=key==='fortitude'?'CON':key==='reflex'?'DES':'SAB';
-    var base=(good[key]||[]).indexOf(cls)>=0?2+Math.floor(level/2):Math.floor(level/3);
+    var progressionBoa=(good[key]||[]).some(function(name){return classeEh35(name);});
+    var base=progressionBoa?2+Math.floor(level/2):Math.floor(level/3);
     var attrs=sh.atributos||{};if(typeof attrs==='string'){try{attrs=JSON.parse(attrs);}catch(e){attrs={};}}
     var abilityBonus=modifier35(attrs[ability]);
     var racial=0,race=String(sh.raca_id||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();
@@ -6215,8 +6218,8 @@ async function abrirModalEquipamentos(){
     }
     var feats=sh.talentos||[];if(typeof feats==='string'){try{feats=JSON.parse(feats);}catch(e){feats=[];}}
     var featBonus=Array.isArray(feats)&&feats.some(function(feat){var id=String(feat&&feat.id||feat).toLowerCase();return (key==='fortitude'&&id==='srd35_feat_great_fortitude')||(key==='reflex'&&id==='srd35_feat_lightning_reflexes')||(key==='will'&&id==='srd35_feat_iron_will');})?2:0;
-    var divineGrace=cls&&String(cls.id||'').toLowerCase()==='paladino'&&level>=2?modifier35(attrs.CAR):0;
-    var trapSense=key==='reflex'&&ctx==='trap'&&String(cls&&cls.id||'').toLowerCase()==='barbaro'?Math.floor(level/3):0;
+    var divineGrace=classeEh35('paladino','paladin')&&level>=2?modifier35(attrs.CAR):0;
+    var trapSense=key==='reflex'&&ctx==='trap'&&classeEh35('barbaro','barbarian')?Math.floor(level/3):0;
     return {bonus:base+abilityBonus+racial+featBonus+divineGrace+trapSense,base:base,ability:ability,abilityBonus:abilityBonus,racialBonus:racial,featBonus:featBonus,divineGrace:divineGrace,trapSense:trapSense,level:level};
   }
 
@@ -6275,6 +6278,7 @@ async function abrirModalEquipamentos(){
     var skill=skillResult.data;
     if(!skill)throw new Error('Perícia não encontrada no catálogo D&D 3.5.');
     var rawSkills=tokenStats.pericias||tokenStats.skills||tokenStats.skill_modifiers||{};
+    if(Array.isArray(rawSkills)){var skillArray={};rawSkills.forEach(function(row){if(!row)return;var name=row.nome||row.name||row.id;if(name!=null){var value=row.bonus!=null?row.bonus:(row.modificador!=null?row.modificador:(row.total!=null?row.total:(row.mod!=null?row.mod:(row.graduacoes!=null?row.graduacoes:row.ranks))));if(value!=null)skillArray[String(name)]=value;}});rawSkills=skillArray;}
     var skillText='';
     if(typeof rawSkills==='string'){skillText=rawSkills;try{rawSkills=JSON.parse(rawSkills);}catch(e){rawSkills={};}}
     var normalizeSkill=function(v){return String(v||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');};
