@@ -4309,7 +4309,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
   function renderizarCatalogoLoja(){
     var host=document.getElementById('loja-catalogo-lista'),search=document.getElementById('loja-catalogo-busca');if(!host)return;
     var q=normalizarTextoCBA(search&&search.value||'');
-    var rows=lojaCatalogo.filter(function(item){return (!lojaCategoriaAtiva||String(item.categoria||'outro')===lojaCategoriaAtiva)&&(!q||normalizarTextoCBA([item.nome,item.descricao,item.dano,item.tipo_dano,item.categoria].join(' ')).includes(q));});
+    var rows=lojaCatalogo.filter(function(item){return (!lojaCategoriaAtiva||String(item.categoria||'outro')===lojaCategoriaAtiva)&&(!q||normalizarTextoCBA([nomeEquipamentoLojaPT(item),item.descricao,item.dano,item.tipo_dano,nomeCategoriaEquipamento35(item.categoria)].join(' ')).includes(q));});
     if(!rows.length){host.innerHTML='<div class="shop-empty">Nenhum equipamento encontrado nesta categoria.</div>';return;}
     host.classList.remove('shop-sliding');
     void host.offsetWidth;
