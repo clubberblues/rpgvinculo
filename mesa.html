@@ -1497,7 +1497,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     ligarGestosCBA();
     ligarMenuContextualToken();
     var tokenLayer=document.getElementById('cba-token-layer');
-    tokenLayer.addEventListener('click',function(e){var hpButton=e.target.closest&&e.target.closest('.token-pv-btn');if(hpButton){e.preventDefault();e.stopPropagation();abrirAjustePVToken(hpButton.dataset.cbaPvKey);return;}var token=e.target.closest&&e.target.closest('.token-cba');if(!token)return;var item=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key)===String(token.dataset.cbaTokenKey);});if(!item)return;if(modoSelecaoTeste&&ehGM){alternarAlvoTokenTeste(item,token);return;}if(Date.now()<suppressTokenClickUntil)return;if(ataqueMestreSelecionado){selecionarAlvoAtaqueMestre(item);return;}if(ataqueSelecionado){selecionarAlvoAtaque(item.key);return;}abrirMenuContextualToken(item,token);});
+    tokenLayer.addEventListener('click',function(e){var hpButton=e.target.closest&&e.target.closest('.token-pv-btn');if(hpButton){e.preventDefault();e.stopPropagation();abrirAjustePVToken(hpButton.dataset.cbaPvKey);return;}if(modoSelecaoTeste&&ehGM)return;var token=e.target.closest&&e.target.closest('.token-cba');if(!token)return;var item=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key)===String(token.dataset.cbaTokenKey);});if(!item)return;if(Date.now()<suppressTokenClickUntil)return;if(ataqueMestreSelecionado){selecionarAlvoAtaqueMestre(item);return;}if(ataqueSelecionado){selecionarAlvoAtaque(item.key);return;}abrirMenuContextualToken(item,token);});
     tokenLayer.addEventListener('dblclick',function(e){var token=e.target.closest&&e.target.closest('.token-cba');if(token&&ehGM&&!ataqueSelecionado)abrirAjustePVToken(token.dataset.cbaTokenKey);});
     tokenLayer.addEventListener('contextmenu',function(e){var el=e.target.closest&&e.target.closest('.token-cba');if(!el)return;var t=cbaPublishedState&&cbaPublishedState.tokens.find(function(x){return String(x.key)===String(el.dataset.cbaTokenKey);});if(!t||t.tipo!=='monstro'||!t.monsterId)return;e.preventDefault();var m=cbaMonsterCatalog.find(function(x){return String(x.id)===String(t.monsterId);});if(m)publicarInfoMonstro(m);else if(t.monsterStats){publicarInfoMonstro({id:t.monsterId,nome:t.nome,nd:t.monsterStats.nd,ca:t.ac,pv:t.maxHp,ataques:t.monsterStats.ataques,srd_source_url:t.srdSourceUrl});}});
   }
@@ -5508,8 +5508,16 @@ async function abrirModalEquipamentos(){
     layer.addEventListener('pointerdown',function(e){
       if(e.target.closest&&e.target.closest('.token-pv-btn')) return;
       if(e.isPrimary === false || cbaPinchInProgress) return;
-      // Durante a escolha dos alvos, o token recebe clique de seleção, nunca inicia arraste/menu contextual.
-      if(!ePreview && ehGM && modoSelecaoTeste) return;
+      // A seleção do alvo é tratada no pointerdown, antes da lógica de arraste.
+      // Isso evita que pointer capture/drag suprima o click e deixe o fluxo sem alvo.
+      if(!ePreview && ehGM && modoSelecaoTeste){
+        var targetToken=e.target.closest?e.target.closest('.token-cba'):null;
+        var targetScene=cbaPublishedState;
+        var targetItem=targetToken&&targetScene&&Array.isArray(targetScene.tokens)
+          ?targetScene.tokens.find(function(t){return String(t.key)===String(targetToken.dataset.cbaTokenKey);}):null;
+        if(targetItem){e.preventDefault();e.stopPropagation();alternarAlvoTokenTeste(targetItem,targetToken);}
+        return;
+      }
       var token = e.target.closest ? e.target.closest('.token-cba') : null;
       if(!token || !layer.contains(token)) return;
       var scene = ePreview ? cbaState : cbaPublishedState;
@@ -6108,10 +6116,10 @@ async function abrirModalEquipamentos(){
         type:'test_request',
         visibilidade:'PUBLIC',
         data:requestPayload
-      }).select('id').single();
+      });
       if(r.error)throw new Error(r.error.message||'Não foi possível enviar o teste.');
-      // Processa imediatamente no navegador do Mestre; não depende do eco do Realtime.
-      receberPedidoTeste(requestPayload,r.data&&r.data.id);
+      // O UUID do pedido identifica a mesma solicitação em todos os navegadores.
+      receberPedidoTeste(requestPayload,requestId);
       cancelarSelecaoTeste();
     }catch(error){
       confirmar.disabled=false;
@@ -6121,7 +6129,7 @@ async function abrirModalEquipamentos(){
 
   function receberPedidoTeste(data, logId){
     if(!data)return;
-    var key=String(logId||data.request_id||(data.tipo+'|'+(Array.isArray(data.alvos)?data.alvos.join(','):'')+'|'+(Array.isArray(data.npc_alvos)?data.npc_alvos.join(','):'')));
+    var key=String(data.request_id||logId||(data.tipo+'|'+(Array.isArray(data.alvos)?data.alvos.join(','):'')+'|'+(Array.isArray(data.npc_alvos)?data.npc_alvos.join(','):'')));
     if(pedidosTesteVistos[key])return;
     pedidosTesteVistos[key]=true;
     if(ehGM){
@@ -6602,6 +6610,11 @@ async function abrirModalEquipamentos(){
       },true,true,(isDyingSave||isConfusion)?'1d100':'1d20');
     };
     container.appendChild(btn);
+    if(!ehGM){
+      window.setTimeout(function(){
+        if(btn.isConnected&&!btn.disabled&&!pedidoTesteAtivo)btn.click();
+      },0);
+    }
   }
 
   function criarBotaoRolagemNpcTeste(tipoTeste,tokenId,requestKey,requestData){
@@ -7436,31 +7449,16 @@ async function abrirModalEquipamentos(){
     inp.addEventListener('keydown', function(e){ if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); enviar(); } });
   }
 
-  var sincronizacaoPedidosTesteTimer=null;
-  var sincronizacaoPedidosTesteBusy=false;
-  async function sincronizarPedidosTesteRecentes(){
-    if(sincronizacaoPedidosTesteBusy||!eu||!MESA_ID)return;
-    sincronizacaoPedidosTesteBusy=true;
-    try{
-      // Recupera solicitações mesmo quando o Realtime não entrega o evento ao jogador.
-      var result=await sb.from('campaign_log').select('id,data').eq('campaign_id',MESA_ID).eq('type','test_request').order('ts',{ascending:false}).limit(30);
-      if(result.error)throw result.error;
-      (result.data||[]).slice().reverse().forEach(function(row){
-        if(row&&row.data)receberPedidoTeste(row.data,row.id);
-      });
-    }catch(error){console.warn('Não foi possível sincronizar os pedidos de teste:',error);}
-    finally{sincronizacaoPedidosTesteBusy=false;}
-  }
-
   function ligarRealtime(){
     sb.channel('mesa-'+MESA_ID+'-chat').on('postgres_changes', { event:'INSERT', schema:'public', table:'campaign_log', filter:'campaign_id=eq.'+MESA_ID }, function(p){
       var el = document.getElementById('chat-lista');
       if(el){ var estavaNoFim = (el.scrollHeight - el.scrollTop - el.clientHeight) < 80; el.insertAdjacentHTML('beforeend', renderMsg(p.new)); if(estavaNoFim) el.scrollTop = el.scrollHeight; }
-    }).subscribe();
-    if(!sincronizacaoPedidosTesteTimer){
-      sincronizarPedidosTesteRecentes();
-      sincronizacaoPedidosTesteTimer=window.setInterval(sincronizarPedidosTesteRecentes,2500);
-    }
+    }).subscribe(function(status,error){
+      if(status==='CHANNEL_ERROR'||status==='TIMED_OUT'){
+        console.error('Canal de chat/solicitações da mesa indisponível:',status,error||'');
+        atualizarStatusMesa('Conexão em tempo real indisponível; pedidos e chat não serão entregues.','erro');
+      }
+    });
     sb.channel('mesa-'+MESA_ID+'-chars').on('postgres_changes', { event:'*', schema:'public', table:'characters', filter:'campaign_id=eq.'+MESA_ID }, function(){ carregarPersonagens(); }).subscribe();
     sb.channel('mesa-'+MESA_ID+'-srd').on('postgres_changes',{event:'*',schema:'public',table:'srd_character_sheets'},function(payload){var id=String((payload.new&&payload.new.character_id)||(payload.old&&payload.old.character_id)||'');if(personagens.some(function(p){return String(p.ch.id)===id;}))carregarPersonagens();var linkedNpc=cbaPublishedState&&Array.isArray(cbaPublishedState.tokens)&&cbaPublishedState.tokens.some(function(token){return token&&token.tipo==='npc'&&String(token.sourceCharacterId||'')===id;});if(linkedNpc)carregarEquipamentosTokens();}).subscribe();
     sb.channel('mesa-'+MESA_ID+'-gear').on('postgres_changes',{event:'*',schema:'public',table:'srd_character_equipment'},function(payload){var id=String((payload.new&&payload.new.character_id)||(payload.old&&payload.old.character_id)||'');if(personagens.some(function(p){return String(p.ch.id)===id;}))carregarPersonagens();var linkedNpc=cbaPublishedState&&Array.isArray(cbaPublishedState.tokens)&&cbaPublishedState.tokens.some(function(token){return token&&token.tipo==='npc'&&String(token.sourceCharacterId||'')===id;});if(linkedNpc)carregarEquipamentosTokens();}).subscribe();
