@@ -6108,8 +6108,10 @@ async function abrirModalEquipamentos(){
         type:'test_request',
         visibilidade:'PUBLIC',
         data:requestPayload
-      });
+      }).select('id').single();
       if(r.error)throw new Error(r.error.message||'Não foi possível enviar o teste.');
+      // Processa imediatamente no navegador do Mestre; não depende do eco do Realtime.
+      receberPedidoTeste(requestPayload,r.data&&r.data.id);
       cancelarSelecaoTeste();
     }catch(error){
       confirmar.disabled=false;
@@ -6254,7 +6256,7 @@ async function abrirModalEquipamentos(){
     var total=dado+bonus;
     var texto=(isD100?'🎲 ':'🎲 ')+nome+' — '+String(requestData.tipo||'Teste')+': D'+(isD100?'100 ':'20 ')+dado+
       (isD100?'':' + bônus '+(bonus>=0?'+':'')+bonus+' = '+total)+'.';
-    var extras={request_id:requestKey,token_id:String(tokenId),teste:String(requestData.tipo||'Teste'),dado:dado,total:isD100?dado:total,bonus:isD100?0:bonus,automatico_mestre:true,skill_id:requestData.skill_id||null};
+    var extras={request_id:requestKey,token_id:String(tokenId),token_nome:nome,teste:String(requestData.tipo||'Teste'),dado:dado,total:isD100?dado:total,bonus:isD100?0:bonus,automatico_mestre:true,skill_id:requestData.skill_id||null};
     if(bonusResult.breakdown)extras.skill_breakdown=bonusResult.breakdown;
     if(requestData&&requestData.resolution_type==='saving_throw'){extras.saving_throw=true;extras.save_type=requestData.save_type;extras.context=requestData.context||null;extras.save_breakdown=bonusResult.breakdown;}
     var log=await enviarMensagemChat(texto,'rolagem',extras);
@@ -7406,7 +7408,14 @@ async function abrirModalEquipamentos(){
         }
         if(d.iniciativa) removerPedidosIniciativaDaFicha(d.character_id);
       }
-      return '<div class="chat-msg rolagem">🎲 <b>'+esc(d.autor_nome||'—')+'</b>: '+sanitizarHTMLRolagem(d.texto||'')+'</div>';
+      var rollText=String(d.texto||'');
+      if(d.automatico_mestre){
+        var die=Number(d.dado),mod=Number(d.bonus)||0,grand=Number(d.total);
+        if(Number.isFinite(die)&&Number.isFinite(grand)){
+          rollText=String(d.token_nome||d.nome||'')+' — '+String(d.teste||'Teste')+': D20 '+die+' + bônus '+(mod>=0?'+':'')+mod+' = '+grand+'.';
+        }
+      }
+      return '<div class="chat-msg rolagem">🎲 <b>'+esc(d.autor_nome||'Mestre')+'</b>: '+sanitizarHTMLRolagem(rollText)+'</div>';
     }
     var euMesmo = d.autor_id === eu.id ? ' eu' : '';
     return '<div class="chat-msg'+euMesmo+'"><span class="autor">'+esc(d.autor_nome||'—')+':</span>'+esc(d.texto||'')+'</div>';
@@ -7427,11 +7436,31 @@ async function abrirModalEquipamentos(){
     inp.addEventListener('keydown', function(e){ if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); enviar(); } });
   }
 
+  var sincronizacaoPedidosTesteTimer=null;
+  var sincronizacaoPedidosTesteBusy=false;
+  async function sincronizarPedidosTesteRecentes(){
+    if(sincronizacaoPedidosTesteBusy||!eu||!MESA_ID)return;
+    sincronizacaoPedidosTesteBusy=true;
+    try{
+      // Recupera solicitações mesmo quando o Realtime não entrega o evento ao jogador.
+      var result=await sb.from('campaign_log').select('id,data').eq('campaign_id',MESA_ID).eq('type','test_request').order('ts',{ascending:false}).limit(30);
+      if(result.error)throw result.error;
+      (result.data||[]).slice().reverse().forEach(function(row){
+        if(row&&row.data)receberPedidoTeste(row.data,row.id);
+      });
+    }catch(error){console.warn('Não foi possível sincronizar os pedidos de teste:',error);}
+    finally{sincronizacaoPedidosTesteBusy=false;}
+  }
+
   function ligarRealtime(){
     sb.channel('mesa-'+MESA_ID+'-chat').on('postgres_changes', { event:'INSERT', schema:'public', table:'campaign_log', filter:'campaign_id=eq.'+MESA_ID }, function(p){
       var el = document.getElementById('chat-lista');
       if(el){ var estavaNoFim = (el.scrollHeight - el.scrollTop - el.clientHeight) < 80; el.insertAdjacentHTML('beforeend', renderMsg(p.new)); if(estavaNoFim) el.scrollTop = el.scrollHeight; }
     }).subscribe();
+    if(!sincronizacaoPedidosTesteTimer){
+      sincronizarPedidosTesteRecentes();
+      sincronizacaoPedidosTesteTimer=window.setInterval(sincronizarPedidosTesteRecentes,2500);
+    }
     sb.channel('mesa-'+MESA_ID+'-chars').on('postgres_changes', { event:'*', schema:'public', table:'characters', filter:'campaign_id=eq.'+MESA_ID }, function(){ carregarPersonagens(); }).subscribe();
     sb.channel('mesa-'+MESA_ID+'-srd').on('postgres_changes',{event:'*',schema:'public',table:'srd_character_sheets'},function(payload){var id=String((payload.new&&payload.new.character_id)||(payload.old&&payload.old.character_id)||'');if(personagens.some(function(p){return String(p.ch.id)===id;}))carregarPersonagens();var linkedNpc=cbaPublishedState&&Array.isArray(cbaPublishedState.tokens)&&cbaPublishedState.tokens.some(function(token){return token&&token.tipo==='npc'&&String(token.sourceCharacterId||'')===id;});if(linkedNpc)carregarEquipamentosTokens();}).subscribe();
     sb.channel('mesa-'+MESA_ID+'-gear').on('postgres_changes',{event:'*',schema:'public',table:'srd_character_equipment'},function(payload){var id=String((payload.new&&payload.new.character_id)||(payload.old&&payload.old.character_id)||'');if(personagens.some(function(p){return String(p.ch.id)===id;}))carregarPersonagens();var linkedNpc=cbaPublishedState&&Array.isArray(cbaPublishedState.tokens)&&cbaPublishedState.tokens.some(function(token){return token&&token.tipo==='npc'&&String(token.sourceCharacterId||'')===id;});if(linkedNpc)carregarEquipamentosTokens();}).subscribe();
