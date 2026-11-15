@@ -7670,6 +7670,31 @@ body > #dado-iframe-overlay.dado-modal-global,
 .shop-empty{padding:22px;text-align:center;color:#c5b995;font-style:italic}
 @media(max-width:560px){.shop-admin-grid{grid-template-columns:1fr}.shop-item{grid-template-columns:1fr}.shop-item-actions{justify-content:flex-start}#modal-loja-campanha .shop-card{max-height:94vh;padding:13px}}
 
+
+/* Correção consolidada de viewport e centralização das solicitações de rolagem. */
+html,body{width:100%;max-width:100%;min-width:0;overflow-x:hidden}
+.mesa{width:100%;max-width:100vw;min-width:0;overflow:hidden}
+.mesa-corpo{width:100%;max-width:100vw;min-width:0;overflow:hidden}
+.col-esq,.col-dir,.tabuleiro,.painel,.painel-corpo,.mesa-footer{min-width:0;max-width:100%}
+#botoes-rolagem-pendente{
+  position:fixed!important;inset:0!important;left:0!important;right:0!important;top:0!important;bottom:0!important;
+  transform:none!important;width:100vw!important;height:100dvh!important;max-width:100vw!important;max-height:100dvh!important;
+  margin:0!important;padding:20px!important;z-index:2147482500!important;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+  overflow-y:auto!important;overflow-x:hidden!important;pointer-events:none;
+  background:rgba(0,0,0,.68);backdrop-filter:blur(5px);
+}
+#botoes-rolagem-pendente:empty{display:none!important}
+#botoes-rolagem-pendente .btn-rolar-teste{
+  flex:0 0 auto;width:min(440px,calc(100vw - 36px))!important;max-width:440px!important;
+  min-height:76px;padding:18px 22px!important;font-size:15px!important;text-align:center!important;
+  white-space:normal;pointer-events:auto;
+}
+@media(max-width:640px){
+  #botoes-rolagem-pendente{padding:14px!important}
+  #botoes-rolagem-pendente .btn-rolar-teste{width:min(420px,calc(100vw - 28px))!important;min-height:76px;font-size:14px!important}
+}
+
 </style>
 <script src="friends-vtt-ui.js"></script>
 </body>
