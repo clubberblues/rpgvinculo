@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 
 const root = process.cwd();
 const htmlFiles = ['index.html', 'lobby.html', 'ficha.html', 'mesa.html', 'dice.html'];
-const standaloneScripts = ['vinculo-ui.js'];
+const standaloneScripts = ['vinculo-ui.js', 'class-controls-ui.js'];
 const failures = [];
 let checkedInlineScripts = 0;
 
