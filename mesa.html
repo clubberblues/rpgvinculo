@@ -6029,6 +6029,13 @@ async function abrirModalEquipamentos(){
     }
   }
 
+  function specAtributoDnd35(nomeTeste){
+    var texto=String(nomeTeste||'').toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');
+    var map=[['forca','FOR'],['destreza','DES'],['constituicao','CON'],['inteligencia','INT'],['sabedoria','SAB'],['carisma','CAR']];
+    for(var i=0;i<map.length;i++)if(texto.includes(map[i][0]))return {ability:map[i][1]};
+    return null;
+  }
+
   function specResistenciaDnd35(nomeTeste){
     var texto=String(nomeTeste||'').toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
     var context=texto.includes('veneno')?'poison':(texto.includes('magia')||texto.includes('magico')||texto.includes('efeito similar')||texto.includes('efeito similar a magia')?'spell':'');
@@ -6108,11 +6115,16 @@ async function abrirModalEquipamentos(){
     try{
       var requestId=(window.crypto&&crypto.randomUUID)?crypto.randomUUID():(Date.now()+'-'+Math.random().toString(36).slice(2));
       var saveSpec=specResistenciaDnd35(testeAtual);
+      var abilitySpec=specAtributoDnd35(testeAtual);
       var targetNames=[];
       alvos.forEach(function(id){var p=personagens.find(function(item){return String(item.ch.id)===String(id);});if(p)targetNames.push(String(p.ch.nome||'Personagem'));});
       var scenes=[cbaState,cbaPublishedState].filter(function(scene,index,list){return scene&&Array.isArray(scene.tokens)&&list.indexOf(scene)===index;});
       npcAlvos.forEach(function(id){var token=null;for(var i=0;i<scenes.length&&!token;i++)token=scenes[i].tokens.find(function(item){return String(item.key||'')===String(id)||String(item.id||'')===String(id);})||null;if(token)targetNames.push(String(token.nome||token.name||'NPC/Monstro'));});
       var requestPayload={tipo:testeAtual,alvos:alvos,npc_alvos:npcAlvos,alvos_nomes:targetNames,chat_only:true,skill_id:skillAtualId,mestre:meuPerfil.username,mestre_id:eu.id,request_id:requestId};
+      if(abilitySpec){
+        requestPayload.resolution_type='ability_check';
+        requestPayload.ability=abilitySpec.ability;
+      }
       if(saveSpec){
         requestPayload.resolution_type='saving_throw';
         requestPayload.save_type=saveSpec.save_type;
@@ -6191,7 +6203,8 @@ async function abrirModalEquipamentos(){
   async function calcularBonusTokenMestre35(token, requestData){
     var skillId=requestData&&requestData.skill_id;
     var isSave=requestData&&requestData.resolution_type==='saving_throw';
-    if(!skillId&&!isSave)return {bonus:0,breakdown:null};
+    var isAbility=requestData&&requestData.resolution_type==='ability_check';
+    if(!skillId&&!isSave&&!isAbility)return {bonus:0,breakdown:null};
     var sourceId=token&&token.tipo==='npc'?(token.sourceCharacterId||token.source_character_id):null;
     if(sourceId){
       var rows=await Promise.all([
@@ -6212,11 +6225,21 @@ async function abrirModalEquipamentos(){
         var equipment=(equipmentResult.data||[]).map(function(row){return Object.assign({},row.equipment||{},{quantidade:row.quantidade,equipado:!!row.equipado});});
         var ficha={ch:rows[0].data,sh:sheet,cl:cls,equipamento:equipment};
         if(isSave){var saveResult=calcularBonusResistenciaPersonagem35(ficha,requestData.save_type,requestData.context);return {bonus:saveResult.bonus,breakdown:saveResult};}
+        if(isAbility){var attrs=sheet.atributos||{};if(typeof attrs==='string'){try{attrs=JSON.parse(attrs);}catch(e){attrs={};}}var ability=String(requestData.ability||'FOR').toUpperCase();var abilityMod=modifier35(attrs[ability]);return {bonus:abilityMod,breakdown:{ability:ability,ability_modifier:abilityMod}};}
         var result=await calcularBonusPericiaSolicitada35(ficha,skillId);
         return {bonus:Number(result.bonus)||0,breakdown:result};
       }
     }
     var tokenStats=token&&token.monsterStats||{};
+    if(isAbility){
+      var abilityAttrs=tokenStats.atributos||tokenStats.attributes||{FOR:tokenStats.forca,DES:tokenStats.destreza,CON:tokenStats.constituicao,INT:tokenStats.inteligencia,SAB:tokenStats.sabedoria,CAR:tokenStats.carisma};
+      if(typeof abilityAttrs==='string'){try{abilityAttrs=JSON.parse(abilityAttrs);}catch(e){abilityAttrs={};}}
+      var abilityKey=String(requestData.ability||'FOR').toUpperCase();
+      var abilityValue=abilityAttrs[abilityKey];
+      if(abilityValue==null)abilityValue=abilityAttrs[{FOR:'forca',DES:'destreza',CON:'constituicao',INT:'inteligencia',SAB:'sabedoria',CAR:'carisma'}[abilityKey]];
+      var abilityMod=abilityValue==null?0:modifier35(abilityValue);
+      return {bonus:abilityMod,breakdown:{ability:abilityKey,ability_modifier:abilityMod,monster_ability_data_missing:abilityValue==null}};
+    }
     if(isSave){
       var saveKey=String(requestData.save_type||'fortitude').toLowerCase();
       var saveField=saveKey==='fortitude'?'fortitude':saveKey==='reflex'?'reflexos':'vontade';
@@ -6299,6 +6322,7 @@ async function abrirModalEquipamentos(){
     var extras={request_id:requestKey,token_id:String(tokenId),token_nome:nome,teste:String(requestData.tipo||'Teste'),dado:dado,total:isD100?dado:total,bonus:isD100?0:bonus,automatico_mestre:true,skill_id:requestData.skill_id||null};
     if(bonusResult.breakdown)extras.skill_breakdown=bonusResult.breakdown;
     if(requestData&&requestData.resolution_type==='saving_throw'){extras.saving_throw=true;extras.save_type=requestData.save_type;extras.context=requestData.context||null;extras.save_breakdown=bonusResult.breakdown;}
+    if(requestData&&requestData.resolution_type==='ability_check'){extras.ability_check=true;extras.ability=requestData.ability;extras.ability_breakdown=bonusResult.breakdown;}
     var log=await enviarMensagemChat(texto,'rolagem',extras);
     if(log&&log.error)throw new Error('Rolagem calculada, mas não foi registrada no chat.');
     pedidosTesteRespondidos[String(requestKey)+'|npc|'+String(tokenId)]=true;
