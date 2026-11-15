@@ -6224,16 +6224,32 @@ async function abrirModalEquipamentos(){
     var skillText='';
     if(typeof rawSkills==='string'){skillText=rawSkills;try{rawSkills=JSON.parse(rawSkills);}catch(e){rawSkills={};}}
     var normalizeSkill=function(v){return String(v||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');};
+    var skillAliases={
+      ouvir:['listen'],observar:['spot'],escalar:['climb'],nadar:['swim'],
+      saltar:['jump'],sobrevivencia:['survival'],cavalgar:['ride'],
+      equilibrio:['balance'],blefar:['bluff'],diplomacia:['diplomacy'],
+      disfarces:['disguise'],falsificacao:['forgery'],intimidar:['intimidate'],
+      obter_informacao:['gather information'],procurar:['search'],
+      sentir_motivacao:['sense motive'],usar_instrumento_magico:['use magic device'],
+      usar_cordas:['use rope'],abrir_fechaduras:['open lock'],
+      desarmar_armadilhas:['disable device'],prestidigitacao:['sleight of hand'],
+      esconder_se:['hide'],mover_se_em_silencio:['move silently']
+    };
     var skillValue=rawSkills[String(skill.id)];
     if(skillValue==null)skillValue=rawSkills[String(skill.nome)];
+    var aliases=skillAliases[normalizeSkill(skill.id)]||[];
     if(skillValue==null){
-      var target=normalizeSkill(skill.nome);
-      Object.keys(rawSkills).some(function(key){if(normalizeSkill(key)===target){skillValue=rawSkills[key];return true;}return false;});
+      var targetNames=[normalizeSkill(skill.nome)].concat(aliases.map(normalizeSkill));
+      Object.keys(rawSkills).some(function(key){if(targetNames.indexOf(normalizeSkill(key))>=0){skillValue=rawSkills[key];return true;}return false;});
     }
     if(skillValue==null&&skillText){
-      var plainSkillName=normalizeSkill(skill.nome).replace(/_/g,'\\\\s+');
-      var skillMatch=skillText.match(new RegExp('(?:^|[,;\\\\n])\\\\s*'+plainSkillName+'\\\\s*([+-]\\\\d+)','i'));
-      if(skillMatch)skillValue=Number(skillMatch[1]);
+      var candidates=[skill.nome].concat(aliases);
+      candidates.some(function(candidate){
+        var plainSkillName=normalizeSkill(candidate).replace(/_/g,'\\s+');
+        var skillMatch=skillText.match(new RegExp('(?:^|[,;\\n])\\s*'+plainSkillName+'\\s*([+-]\\d+)','i'));
+        if(skillMatch){skillValue=Number(skillMatch[1]);return true;}
+        return false;
+      });
     }
     if(skillValue!=null){
       if(typeof skillValue==='object')skillValue=skillValue.bonus!=null?skillValue.bonus:(skillValue.modificador!=null?skillValue.modificador:(skillValue.total!=null?skillValue.total:skillValue.mod));
