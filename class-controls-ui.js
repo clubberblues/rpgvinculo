@@ -120,7 +120,7 @@
       actions.push({key:'manage_spells',label:preparationLabel(key),icon:key==='wizard'?'📘':key==='sorcerer'||key==='bard'?'🔮':'✨',level:key==='paladin'||key==='ranger'?4:1,kind:'sheet'});
     }
     if(key==='druid'||(key==='ranger'&&level>=4)){
-      actions.push({key:'manage_companion',label:'Ficha do Companheiro Animal',icon:'🐾',level:key==='druid'?1:4,kind:'sheet'});
+      actions.push({key:'manage_companion',label:'Companheiro Animal · ficha e controle',icon:'🐾',level:key==='druid'?1:4,kind:'companion'});
     }
     if(key==='wizard'||key==='sorcerer')actions.push({key:'manage_familiar',label:'Ficha do Familiar',icon:'🦉',level:1,kind:'sheet'});
     return {key:key,name:profile.name,level:level,theme:profile.theme,actions:actions};
