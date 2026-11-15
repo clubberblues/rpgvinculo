@@ -7363,7 +7363,7 @@ async function abrirModalEquipamentos(){
     var r = await sb.from('campaign_log').select('*').eq('campaign_id', MESA_ID).in('type', ['texto','sistema','rolagem','test_request']).order('ts',{ascending:true}).limit(200);
     if(r.error){ return; }
     var el = document.getElementById('chat-lista');
-    el.innerHTML = (r.data||[]).map(renderMsg).join('');
+    el.innerHTML = (r.data||[]).map(function(row){return renderMsg(row,false);}).join('');
     el.scrollTop = el.scrollHeight;
   }
 
