@@ -8060,149 +8060,82 @@ html,body{width:100%;max-width:100%;min-width:0;overflow-x:hidden}
 </style>
 <script src="friends-vtt-ui.js"></script>
 <style id="mesa-footer-cards-scale-fix">
-/* Bandeja fixa de aventureiros: o tabuleiro absorve a variação da viewport. */
+/* Bandeja inferior real: .mesa tem três faixas (cabeçalho, mesa-corpo, rodapé). */
 .mesa{
+  display:grid!important;
   grid-template-rows:auto minmax(0,1fr) 174px!important;
-  min-height:0!important;
+  height:100vh!important;height:100dvh!important;
+  min-height:0!important;overflow:hidden!important;
 }
-.mesa-footer{
+.mesa>.mesa-corpo{min-height:0!important;min-width:0!important;overflow:hidden!important}
+.mesa>.mesa-footer{
   grid-row:3!important;
-  box-sizing:border-box!important;
-  display:flex!important;
-  flex:0 0 174px!important;
-  width:100%!important;
-  height:174px!important;
-  min-height:174px!important;
-  max-height:174px!important;
-  padding:7px 12px 9px!important;
+  display:flex!important;flex:0 0 174px!important;flex-direction:column!important;
+  box-sizing:border-box!important;width:100%!important;height:174px!important;
+  min-height:174px!important;max-height:174px!important;
+  gap:5px!important;padding:7px 12px 10px!important;
   overflow:hidden!important;
 }
-.painel-aventureiros{
-  position:relative!important;
-  display:flex!important;
-  flex:1 1 auto!important;
-  flex-direction:column!important;
-  width:100%!important;
-  height:100%!important;
-  min-width:0!important;
-  min-height:0!important;
+.mesa-footer>.painel-aventureiros{
+  display:flex!important;position:relative!important;flex:1 1 auto!important;
+  flex-direction:column!important;width:100%!important;height:auto!important;
+  min-width:0!important;min-height:0!important;max-height:none!important;
   overflow:hidden!important;
 }
-.painel-aventureiros>#cards-strip.cards-strip{
-  display:flex!important;
-  flex:1 1 auto!important;
-  flex-direction:row!important;
-  flex-wrap:nowrap!important;
-  align-items:stretch!important;
-  gap:10px!important;
-  width:100%!important;
-  height:100%!important;
-  min-width:0!important;
-  min-height:0!important;
-  max-height:none!important;
-  padding:9px 12px 13px!important;
-  overflow-x:auto!important;
-  overflow-y:hidden!important;
-  overscroll-behavior-x:contain!important;
-  scroll-snap-type:x proximity!important;
-  scrollbar-width:thin!important;
-  scrollbar-color:#b99a58 #24291f!important;
+.mesa-footer .painel-aventureiros>.painel-cab{
+  flex:0 0 auto!important;min-height:16px!important;padding:2px 8px!important;
+}
+.mesa-footer .painel-aventureiros>#cards-strip,
+.mesa-footer #cards-strip{
+  display:flex!important;position:relative!important;
+  flex:1 1 auto!important;flex-direction:row!important;flex-wrap:nowrap!important;
+  align-items:stretch!important;align-content:stretch!important;
+  width:100%!important;height:auto!important;min-width:0!important;
+  min-height:0!important;max-height:none!important;
+  gap:10px!important;padding:9px 12px 13px!important;
+  overflow-x:auto!important;overflow-y:hidden!important;
+  overscroll-behavior-x:contain!important;scroll-snap-type:x proximity!important;
+  scrollbar-width:thin!important;scrollbar-color:#b99a58 #24291f!important;
 }
 #cards-strip::-webkit-scrollbar{height:7px!important}
 #cards-strip::-webkit-scrollbar-track{background:#24291f!important;border-radius:8px!important}
 #cards-strip::-webkit-scrollbar-thumb{background:linear-gradient(90deg,#806b42,#c5a45b)!important;border:1px solid #24291f!important;border-radius:8px!important}
 #cards-strip>.card-pers{
-  box-sizing:border-box!important;
-  display:block!important;
-  position:relative!important;
-  flex:0 0 188px!important;
-  width:188px!important;
-  min-width:188px!important;
-  max-width:188px!important;
-  height:140px!important;
-  min-height:140px!important;
-  max-height:140px!important;
-  padding:0!important;
-  margin:0 0 2px!important;
-  overflow:hidden!important;
-  border:1px solid #a58a53!important;
-  border-radius:9px!important;
-  background:#11170f!important;
-  perspective:1000px!important;
-  scroll-snap-align:start!important;
-  cursor:pointer!important;
+  box-sizing:border-box!important;display:block!important;position:relative!important;
+  flex:0 0 188px!important;width:188px!important;min-width:188px!important;max-width:188px!important;
+  height:140px!important;min-height:140px!important;max-height:140px!important;
+  padding:0!important;margin:0 0 2px!important;overflow:hidden!important;
+  border:1px solid #a58a53!important;border-radius:9px!important;
+  background:#11170f!important;perspective:1000px!important;scroll-snap-align:start!important;
 }
-#cards-strip>.card-pers.turno-ativo{
-  border:2px solid #e8c56f!important;
-  box-shadow:0 0 14px #e8c56f80,0 0 0 1px #e8c56f55!important;
-}
-#cards-strip .card-pers-inner{
-  position:relative!important;
-  width:100%!important;
-  height:100%!important;
-  min-height:0!important;
-  transform-style:preserve-3d!important;
-  transition:transform .58s cubic-bezier(.2,.7,.2,1)!important;
-}
+#cards-strip>.card-pers.turno-ativo{border:2px solid #e8c56f!important;box-shadow:0 0 14px #e8c56f80,0 0 0 1px #e8c56f55!important}
+#cards-strip .card-pers-inner{position:relative!important;width:100%!important;height:100%!important;min-height:0!important;transform-style:preserve-3d!important;transition:transform .58s cubic-bezier(.2,.7,.2,1)!important}
 #cards-strip .card-pers.is-flipped .card-pers-inner{transform:rotateY(180deg)!important}
-#cards-strip .card-pers-face{
-  position:absolute!important;
-  inset:0!important;
-  width:100%!important;
-  height:100%!important;
-  box-sizing:border-box!important;
-  backface-visibility:hidden!important;
-  -webkit-backface-visibility:hidden!important;
-  overflow:hidden!important;
-}
+#cards-strip .card-pers-face{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;box-sizing:border-box!important;backface-visibility:hidden!important;-webkit-backface-visibility:hidden!important;overflow:hidden!important}
 #cards-strip .portrait-only-front{display:flex!important;align-items:center!important;justify-content:center!important;padding:0!important}
 #cards-strip .portrait-only-image{display:block!important;width:100%!important;height:100%!important;object-fit:cover!important;object-position:center!important}
-#cards-strip .card-pers-back{
-  transform:rotateY(180deg)!important;
-  display:flex!important;
-  align-items:stretch!important;
-  justify-content:center!important;
-  padding:9px 11px!important;
-  background:linear-gradient(145deg,#263322,#11170f)!important;
-  color:#eee5ce!important;
-}
-#cards-strip .portrait-back-content{
-  display:flex!important;
-  flex-direction:column!important;
-  justify-content:center!important;
-  gap:4px!important;
-  width:100%!important;
-  height:100%!important;
-  min-width:0!important;
-  font-size:10px!important;
-  line-height:1.25!important;
-  overflow:auto!important;
-  scrollbar-width:thin!important;
-  scrollbar-color:#92794b transparent!important;
-}
+#cards-strip .card-pers-back{transform:rotateY(180deg)!important;display:flex!important;align-items:stretch!important;justify-content:center!important;padding:9px 11px!important;background:linear-gradient(145deg,#263322,#11170f)!important;color:#eee5ce!important}
+#cards-strip .portrait-back-content{display:flex!important;flex-direction:column!important;justify-content:center!important;gap:4px!important;width:100%!important;height:100%!important;min-width:0!important;font-size:10px!important;line-height:1.25!important;overflow:auto!important;scrollbar-width:thin!important;scrollbar-color:#92794b transparent!important}
 #cards-strip .portrait-back-content strong{font:700 11px Cinzel,serif!important;color:#f0d48e!important}
 #cards-strip .portrait-back-content span{font-size:10px!important;color:#e5d9bd!important}
 #cards-strip .portrait-back-content small{font-size:9px!important;line-height:1.25!important;color:#d0c5a9!important}
 #cards-strip .card-flip-button{display:none!important}
 #cards-strip .card-racial-info-button{font-size:8px!important}
 @media(max-width:900px){
-  .mesa{grid-template-rows:auto minmax(0,1fr) 174px!important}
-  .mesa-footer{height:174px!important;min-height:174px!important;max-height:174px!important}
-  #cards-strip>.card-pers{flex-basis:180px!important;width:180px!important;min-width:180px!important;max-width:180px!important}
+ .mesa{grid-template-rows:auto minmax(0,1fr) 174px!important}
+ #cards-strip>.card-pers{flex-basis:180px!important;width:180px!important;min-width:180px!important;max-width:180px!important}
 }
 @media(max-width:700px){
-  .mesa{grid-template-rows:auto minmax(0,1fr) 166px!important}
-  .mesa-footer{flex-basis:166px!important;height:166px!important;min-height:166px!important;max-height:166px!important;padding:6px 8px 8px!important}
-  #cards-strip>.card-pers{flex-basis:172px!important;width:172px!important;min-width:172px!important;max-width:172px!important;height:132px!important;min-height:132px!important;max-height:132px!important}
+ .mesa{grid-template-rows:auto minmax(0,1fr) 166px!important}
+ .mesa>.mesa-footer{flex-basis:166px!important;height:166px!important;min-height:166px!important;max-height:166px!important;padding:6px 8px 8px!important}
+ #cards-strip>.card-pers{flex-basis:172px!important;width:172px!important;min-width:172px!important;max-width:172px!important;height:132px!important;min-height:132px!important;max-height:132px!important}
 }
 @media(max-height:520px){
-  .mesa{grid-template-rows:auto minmax(0,1fr) 156px!important}
-  .mesa-footer{flex-basis:156px!important;height:156px!important;min-height:156px!important;max-height:156px!important}
-  #cards-strip>.card-pers{height:124px!important;min-height:124px!important;max-height:124px!important}
+ .mesa{grid-template-rows:auto minmax(0,1fr) 156px!important}
+ .mesa>.mesa-footer{flex-basis:156px!important;height:156px!important;min-height:156px!important;max-height:156px!important}
+ #cards-strip>.card-pers{height:124px!important;min-height:124px!important;max-height:124px!important}
 }
-@media(prefers-reduced-motion:reduce){
-  #cards-strip .card-pers-inner{transition:none!important}
-}
+@media(prefers-reduced-motion:reduce){#cards-strip .card-pers-inner{transition:none!important}}
 </style>
 </body>
 </html>
