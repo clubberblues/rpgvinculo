@@ -13,6 +13,7 @@ on:
       - '*.css'
       - '*.png'
       - 'package.json'
+      - 'mobile-build-trigger.txt'
       - 'capacitor.config.json'
       - 'scripts/prepare-mobile.mjs'
       - '.github/workflows/android-apk.yml'
