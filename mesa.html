@@ -2483,7 +2483,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     board.addEventListener('touchend',function(e){if(e.touches.length<2){pinchStart=0;window.setTimeout(function(){cbaPinchInProgress=false;},120);}});
   }
   function iniciarSelecaoAtaque(tipo){
-    if(!personagemDoTurnoDoJogador()){alert('Apenas o personagem do jogador no turno atual pode atacar.');return;}
+    var fichaSelecionada=personagemAtivoDaInterface(),personagemDoTurno=personagemDoTurnoDoJogador();
+    if(!personagemDoTurno||!fichaSelecionada||String(personagemDoTurno.ch.id)!==String(fichaSelecionada.ch.id)){alert('Selecione o personagem cujo turno está ativo para realizar ataques.');return;}
     if(!cbaPublishedState){alert('O Mestre ainda não publicou um campo de batalha.');return;}
     ataqueSelecionado=tipo; suppressTokenClickUntil=0; var board=document.getElementById('area-tabuleiro'); board.classList.add('selecionando-alvo');
     document.getElementById('iniciativa-status').textContent='Mira ativa: selecione um alvo no tabuleiro. Ataque Total também aceita personagens jogadores; ataques simples ainda exigem NPC ou monstro.';
@@ -3476,7 +3477,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     });});
   }
   async function abrirInventarioSRD(characterId){
-    var p=characterId?personagens.find(function(x){return String(x.ch.id)===String(characterId)&&(ehGM||x.ch.user_id===eu.id);}):(personagemDoTurnoDoJogador()||personagens.find(function(x){return x.ch.user_id===eu.id;}));if(!p){alert('Nenhuma ficha acessível está disponível nesta mesa.');return;}inventarioPersonagemAtivo=p;
+    var p=characterId?personagens.find(function(x){return String(x.ch.id)===String(characterId)&&(ehGM||String(x.ch.user_id)===String(eu.id));}):personagemAtivoDaInterface();if(!p){alert('Nenhuma ficha acessível está disponível nesta mesa.');return;}inventarioPersonagemAtivo=p;
     var gmControlandoFichaAlheia=!!(ehGM&&p.ch.user_id!==eu.id);
     var modal=document.getElementById('modal-inventario-srd'),list=document.getElementById('inventario-srd-lista'),status=document.getElementById('inventario-srd-status');document.getElementById('titulo-inventario-srd').textContent='Mochila · '+p.ch.nome;status.textContent='Carregando mochila de '+p.ch.nome+'…';list.replaceChildren();modal.classList.add('ativo');
     var r=await sb.from('srd_character_equipment').select('equipment_id,quantidade,equipado,equipment:srd_equipment(*)').eq('character_id',String(p.ch.id));
@@ -3652,7 +3653,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
   }
 
   async function abrirTestePericiaJogador(characterId,somenteConsulta){
-    var p=characterId&&ehGM?personagens.find(function(x){return String(x.ch.id)===String(characterId);}):(personagemDoTurnoDoJogador()||personagens.find(function(x){return x.ch.user_id===eu.id;}));
+    var p=characterId&&ehGM?personagens.find(function(x){return String(x.ch.id)===String(characterId);}):personagemAtivoDaInterface();
     if(!p){alert(somenteConsulta?'Não foi possível localizar a ficha selecionada.':'Nenhuma ficha própria disponível.');return;}
     var result=await sb.from('srd_skills').select('id,nome,atributo,source_status,treinada_apenas,penalidade_armadura,descricao');
     if(result.error){alert('Catálogo de perícias indisponível: '+result.error.message);return;}
@@ -3767,7 +3768,8 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
   function magicEffect35(spell){var tech=parseJsonSeguro35(spell&&spell.dados_tecnicos,{}),declared=String(tech.tipo_efeito||'').toLowerCase(),typed=String(spell&&spell.typed_effect_kind||'').toLowerCase();if(typed){if(typed==='healing')return tech.cura||tech.healing?'cura':'resolucao_manual';if(typed==='damage'||typed==='attack')return 'ataque_pendente';if(typed==='utility')return 'utilitaria';return 'resolucao_manual';}if(declared==='cura'||declared==='healing'||tech.cura||tech.healing)return 'cura';if(String(spell&&spell.id)==='srd35_magic_missile')return 'missil_magico';if(['ataque','dano','damage','attack'].indexOf(declared)>=0)return 'ataque_pendente';if(declared==='utilitaria'||declared==='utility')return 'utilitaria';var text=[spell&&spell.descricao,spell&&spell.alvo,spell&&spell.area].join(' ').toLowerCase();if(text.indexOf('damage')>=0||text.indexOf('dano')>=0||/(touch attack|ranged touch|melee touch|attack roll)/i.test(text))return 'ataque_pendente';return 'resolucao_manual';}
   function personagemParaMagia(preferredId){
     var combatando=String(campanha&&campanha.state||'').toUpperCase()==='COMBATE';
-    if(combatando){
+    var iniciativaAtiva=!!(combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)&&combatDataState.turn_order.length);
+    if(combatando&&iniciativaAtiva){
       var atual=personagemDoTurnoDoJogador(),selecionado=personagemAtivoDaInterface();
       if(!atual||!selecionado||String(atual.ch.id)!==String(selecionado.ch.id))return null;
       return !preferredId||String(atual.ch.id)===String(preferredId)?atual:null;
@@ -3791,7 +3793,13 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     var level=Number(slot.slot_level),spell=spells.find(function(x){return String(x.id)===String(slot.spell_id);});if(!Number.isFinite(level))level=spell?nivelMagia(spell,classKey):0;
     var spent=Number(slot.expended||0),total=Number(slotsDia[level]||0);return {level:level,spent:!!slot.expended,info:total?('Espaços/dia nível '+level+': '+total):('Espaço nível '+level)};
   }
-  function magiaAindaNoTurno(p){return String(campanha&&campanha.state||'').toUpperCase()!=='COMBATE'||!!(personagemDoTurnoDoJogador()&&String(personagemDoTurnoDoJogador().ch.id)===String(p&&p.ch&&p.ch.id));}
+  function magiaAindaNoTurno(p){
+    if(String(campanha&&campanha.state||'').toUpperCase()!=='COMBATE')return true;
+    var iniciativaAtiva=!!(combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)&&combatDataState.turn_order.length);
+    if(!iniciativaAtiva)return true;
+    var atual=personagemDoTurnoDoJogador();
+    return !!(atual&&String(atual.ch.id)===String(p&&p.ch&&p.ch.id));
+  }
   function fecharModalMagias(){var m=document.getElementById('modal-magias');m.classList.remove('ativo');m.hidden=true;magiaPersonagemAtiva=null;magiaSelecionada=null;magiaTokenMestreAtiva=null;if(focoAnteriorMagia&&focoAnteriorMagia.focus)focoAnteriorMagia.focus();}
   function popularSlotsMagia(){
     var p=magiaPersonagemAtiva,spell=magiaSelecionada,select=document.getElementById('magia-slot'),config=document.getElementById('magia-configuracao');select.replaceChildren();if(!p||!spell){if(config)config.hidden=true;return;}if(config)config.hidden=false;
@@ -4606,7 +4614,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
       if(!cbaPublishedState){alert('O Mestre ainda não publicou o Grid.');return;}
       var playerToken=(cbaPublishedState.tokens||[]).find(function(t){return t.tipo==='player'&&String(t.id)===String(mp.ch.id);});
       if(!playerToken){alert('Não existe um token associado a esta ficha no Grid. Peça ao Mestre para vincular/publicar o token.');return;}
-      if(String(campanha&&campanha.state||'').toUpperCase()==='COMBATE'&&!ehMeuTokenNoTurno(playerToken)){
+      if(String(campanha&&campanha.state||'').toUpperCase()==='COMBATE'&&combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)&&combatDataState.turn_order.length&&!ehMeuTokenNoTurno(playerToken)){
         document.getElementById('iniciativa-status').textContent='Aguarde seu turno na iniciativa para movimentar.';return;
       }
       modoMovimentoJogadorAtivo=!modoMovimentoJogadorAtivo;
@@ -7280,9 +7288,9 @@ async function abrirModalEquipamentos(){
   }
 
   function abrirMinhaFicha(){
-    var meus = personagens.filter(function(p){ return p.ch.user_id === eu.id; });
-    if(meus.length === 0){ alert('Voce ainda nao tem ficha nesta mesa.'); return; }
-    location.href = 'ficha.html?char='+meus[0].ch.id+'&mesa='+encodeURIComponent(MESA_ID)+(ehGM?'&role=gm':'');
+    var personagem=personagemAtivoDaInterface();
+    if(!personagem||!personagem.ch){alert('Não foi possível localizar a ficha selecionada nesta mesa.');return;}
+    location.href='ficha.html?char='+personagem.ch.id+'&mesa='+encodeURIComponent(MESA_ID)+(ehGM?'&role=gm':'');
   }
 
   // ============ LÓGICA DO DADO (IFRAME) ============
