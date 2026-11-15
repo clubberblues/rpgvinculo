@@ -6030,7 +6030,7 @@ async function abrirModalEquipamentos(){
   }
 
   function specAtributoDnd35(nomeTeste){
-    var texto=String(nomeTeste||'').toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'');
+    var texto=String(nomeTeste||'').toLocaleLowerCase('pt-BR').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
     var map=[['forca','FOR'],['destreza','DES'],['constituicao','CON'],['inteligencia','INT'],['sabedoria','SAB'],['carisma','CAR']];
     for(var i=0;i<map.length;i++)if(texto.includes(map[i][0]))return {ability:map[i][1]};
     return null;
