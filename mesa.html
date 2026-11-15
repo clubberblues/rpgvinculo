@@ -5512,10 +5512,13 @@ async function abrirModalEquipamentos(){
       // Isso evita que pointer capture/drag suprima o click e deixe o fluxo sem alvo.
       if(!ePreview && ehGM && modoSelecaoTeste){
         var targetToken=e.target.closest?e.target.closest('.token-cba'):null;
-        var targetScene=cbaPublishedState;
-        var targetItem=targetToken&&targetScene&&Array.isArray(targetScene.tokens)
-          ?targetScene.tokens.find(function(t){return String(t.key)===String(targetToken.dataset.cbaTokenKey);}):null;
-        if(targetItem){e.preventDefault();e.stopPropagation();alternarAlvoTokenTeste(targetItem,targetToken);}
+        var tokenKey=targetToken&&String(targetToken.dataset.cbaTokenKey||'');
+        var targetScenes=[cbaState,cbaPublishedState].filter(function(scene,index,list){return scene&&Array.isArray(scene.tokens)&&list.indexOf(scene)===index;});
+        var targetItem=null;
+        for(var targetSceneIndex=0;targetSceneIndex<targetScenes.length&&!targetItem;targetSceneIndex++){
+          targetItem=targetScenes[targetSceneIndex].tokens.find(function(t){return String(t.key||'')===tokenKey||String(t.id||'')===tokenKey;})||null;
+        }
+        if(targetItem&&targetToken){e.preventDefault();e.stopPropagation();alternarAlvoTokenTeste(targetItem,targetToken);}
         return;
       }
       var token = e.target.closest ? e.target.closest('.token-cba') : null;
@@ -6107,8 +6110,8 @@ async function abrirModalEquipamentos(){
       var saveSpec=specResistenciaDnd35(testeAtual);
       var targetNames=[];
       alvos.forEach(function(id){var p=personagens.find(function(item){return String(item.ch.id)===String(id);});if(p)targetNames.push(String(p.ch.nome||'Personagem'));});
-      var scene=cbaPublishedState&&Array.isArray(cbaPublishedState.tokens)?cbaPublishedState:(cbaState&&Array.isArray(cbaState.tokens)?cbaState:null);
-      npcAlvos.forEach(function(id){var token=scene&&scene.tokens.find(function(item){return String(item.key||item.id)===String(id);});if(token)targetNames.push(String(token.nome||token.name||'NPC/Monstro'));});
+      var scenes=[cbaState,cbaPublishedState].filter(function(scene,index,list){return scene&&Array.isArray(scene.tokens)&&list.indexOf(scene)===index;});
+      npcAlvos.forEach(function(id){var token=null;for(var i=0;i<scenes.length&&!token;i++)token=scenes[i].tokens.find(function(item){return String(item.key||'')===String(id)||String(item.id||'')===String(id);})||null;if(token)targetNames.push(String(token.nome||token.name||'NPC/Monstro'));});
       var requestPayload={tipo:testeAtual,alvos:alvos,npc_alvos:npcAlvos,alvos_nomes:targetNames,chat_only:true,skill_id:skillAtualId,mestre:meuPerfil.username,mestre_id:eu.id,request_id:requestId};
       if(saveSpec){
         requestPayload.resolution_type='saving_throw';
@@ -6282,7 +6285,7 @@ async function abrirModalEquipamentos(){
     var scenes=[cbaState,cbaPublishedState].filter(function(scene,index,list){return scene&&Array.isArray(scene.tokens)&&list.indexOf(scene)===index;});
     var token=null;
     for(var sceneIndex=0;sceneIndex<scenes.length&&!token;sceneIndex++){
-      token=scenes[sceneIndex].tokens.find(function(t){return String(t.key||t.id)===String(tokenId);})||null;
+      token=scenes[sceneIndex].tokens.find(function(t){return String(t.key||'')===String(tokenId)||String(t.id||'')===String(tokenId);})||null;
     }
     if(!token)throw new Error('Token '+String(tokenId)+' não encontrado no mapa atual. Atualize a mesa e tente novamente.');
     var nome=String(token.nome||token.name||'NPC/Monstro');
