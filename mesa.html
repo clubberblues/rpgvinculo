@@ -3539,6 +3539,10 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     }
     section('TESTES DE ATRIBUTOS');[['Força','FOR'],['Destreza','DES'],['Constituição','CON'],['Inteligência','INT'],['Sabedoria','SAB'],['Carisma','CAR']].forEach(function(x){add(x[0],'ability',x[1]);});
     section('TESTES DE RESISTÊNCIA');add('Fortitude','save','fortitude');add('Reflexos','save','reflex');add('Vontade','save','will');
+    section('SITUAÇÕES PREVISTAS NAS REGRAS');
+    [['Fortitude contra veneno','fortitude','poison'],['Fortitude contra efeito de magia','fortitude','spell'],['Reflexos contra armadilhas','reflex','trap'],['Reflexos contra efeito de magia','reflex','spell'],['Vontade contra encantamento','will','enchantment'],['Vontade contra medo','will','fear']].forEach(function(x){
+      var b=document.createElement('button');b.type='button';b.className='skill-roll-card';var n=document.createElement('strong');n.textContent=x[0];var m=document.createElement('span');m.textContent='D20 + bônus de resistência aplicáveis';b.append(n,m);b.onclick=function(){if(b.disabled)return;b.disabled=true;modal.remove();abrirDado(x[0]+' · '+String(p.ch.nome||'Personagem')+' · D20',async function(d20){var r=calcularBonusResistenciaPersonagem35(p,x[1],x[2]),bonus=Number(r.bonus)||0,total=Number(d20)+bonus,txt='🎲 '+String(p.ch.nome||'Personagem')+' — '+x[0]+': D20 '+d20+' + bônus '+(bonus>=0?'+':'')+bonus+' = '+total+'.';var sent=await enviarMensagemChat(txt,'rolagem',{evento:'saving_throw_dnd35',character_id:String(p.ch.id),teste:x[0],save_type:x[1],context:x[2],d20:Number(d20),bonus:bonus,total:total,save_breakdown:r});if(sent&&sent.error)throw new Error(sent.error.message||'Não foi possível publicar o resultado no chat.');},true,true,'1d20');};grid.appendChild(b);
+    });
     panel.append(head,grid);modal.appendChild(panel);document.body.appendChild(modal);modal.addEventListener('click',function(e){if(e.target===modal)modal.remove();});
   }
 
