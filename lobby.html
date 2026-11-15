@@ -482,8 +482,6 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
         <div class="subtitulo">Mesa virtual D&D 3.5 · jogue com seus amigos</div>
       </div>
       <div class="acoes">
-        <input type="text" class="input-codigo" id="codigo" placeholder="CÓDIGO (0000)" maxlength="4" inputmode="numeric">
-        <button class="btn btn-sec" id="btn-codigo">Sentar</button>
         <button class="btn btn-dourado" id="btn-criar">+ Criar Mesa</button>
       </div>
     </header>
@@ -648,7 +646,7 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
 </div>
 
 <!-- MODAIS PADRÃO ESCONDIDOS (Para manter o código funcional) -->
-<div class="modal" id="modal-criar"><div class="modal-box"><button class="fechar" onclick="document.getElementById('modal-criar').classList.remove('ativo')">✕</button><h2>Forjar Nova Mesa</h2><div class="campo"><label>Nome</label><input type="text" id="m-nome" maxlength="60"></div><div class="campo"><label for="m-codigo">Código de convite (4 números)</label><input type="text" id="m-codigo" inputmode="numeric" maxlength="4" autocomplete="off"></div><button class="btn btn-dourado" id="m-confirmar">Criar Mesa</button></div></div>
+<div class="modal" id="modal-criar"><div class="modal-box"><button class="fechar" onclick="document.getElementById('modal-criar').classList.remove('ativo')">✕</button><h2>Forjar Nova Mesa</h2><div class="campo"><label>Nome</label><input type="text" id="m-nome" maxlength="60"></div><button class="btn btn-dourado" id="m-confirmar">Criar Mesa</button></div></div>
 <div class="modal" id="modal-config"><div class="modal-box"><h2>Configurações</h2><button class="fechar" onclick="document.getElementById('modal-config').classList.remove('ativo')">✕</button></div></div>
 
 <!-- MODAL PERFIL -->
@@ -1465,7 +1463,7 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
         '<div class="card-corpo"><div class="card-nome">' + escapeHtml(m.name || 'Mesa sem nome') + '</div>' +
         '<div class="card-mestre">Mestre: <b>' + escapeHtml(mestreNome) + '</b> · ' + qtdJogadores + ' participante(s)</div>' +
         '<div class="card-briefing">' + escapeHtml(m.briefing || (m.cidade ? 'Local: ' + m.cidade : 'Uma nova aventura aguarda...')) + '</div>' +
-        (isDono && m.codigo_convite ? '<div class="card-briefing">Código de convite: <b>' + escapeHtml(m.codigo_convite) + '</b></div>' : '') +
+        
         '<button type="button" class="btn-entrar js-entrar-mesa" data-id="' + escapeHtml(m.id) + '" data-dono="' + (isDono ? 'true' : 'false') + '" style="cursor:pointer">' + (isDono ? 'Administrar Mesa' : 'Escolher ficha e sentar') + '</button></div></article>';
     }).join('');
 
@@ -1624,11 +1622,10 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
     if(!eu)return;
     var old=document.getElementById('modal-config-mesa');if(old)old.remove();
     var overlay=document.createElement('div');overlay.id='modal-config-mesa';overlay.className='campaign-settings-overlay';overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-labelledby','campaign-settings-title');
-    overlay.innerHTML='<section class="campaign-settings-panel"><header><div><span class="campaign-settings-kicker">PAINEL DO CRIADOR</span><h2 id="campaign-settings-title">Configurações da mesa</h2><p>Personalize o lobby e controle quem pode entrar.</p></div><button type="button" data-settings-close aria-label="Fechar">✕</button></header><label class="campaign-settings-field">Nome da mesa<input id="campaign-settings-name" type="text" maxlength="60" minlength="2"></label><label class="campaign-settings-toggle"><input id="campaign-settings-require-code" type="checkbox"><span><b>Exigir código para entrar</b><small>Quando desligado, jogadores podem entrar diretamente e escolher uma ficha.</small></span></label><label class="campaign-settings-field" id="campaign-settings-code-wrap">Código de acesso<input id="campaign-settings-code" type="text" inputmode="numeric" maxlength="4" placeholder="4 números"></label><div class="campaign-settings-actions"><button type="button" data-settings-cover>Alterar capa</button><button type="button" data-settings-delete class="danger">Excluir campanha</button><span></span><button type="button" data-settings-cancel>Cancelar</button><button type="button" data-settings-save class="primary">Salvar alterações</button></div><p id="campaign-settings-status" role="status" aria-live="polite"></p></section>';
+    overlay.innerHTML='<section class="campaign-settings-panel"><header><div><span class="campaign-settings-kicker">PAINEL DO CRIADOR</span><h2 id="campaign-settings-title">Configurações da mesa</h2><p>Todas as mesas são abertas. Qualquer usuário pode entrar como jogador; somente o criador mantém o controle de Mestre.</p></div><button type="button" data-settings-close aria-label="Fechar">✕</button></header><label class="campaign-settings-field">Nome da mesa<input id="campaign-settings-name" type="text" maxlength="60" minlength="2"></label><div class="campaign-settings-actions"><button type="button" data-settings-cover>Alterar capa</button><button type="button" data-settings-delete class="danger">Excluir campanha</button><span></span><button type="button" data-settings-cancel>Cancelar</button><button type="button" data-settings-save class="primary">Salvar alterações</button></div><p id="campaign-settings-status" role="status" aria-live="polite"></p></section>';
     document.body.appendChild(overlay);
-    var nameInput=overlay.querySelector('#campaign-settings-name'),requireInput=overlay.querySelector('#campaign-settings-require-code'),codeInput=overlay.querySelector('#campaign-settings-code'),codeWrap=overlay.querySelector('#campaign-settings-code-wrap'),status=overlay.querySelector('#campaign-settings-status');
-    nameInput.value=nomeAtual||'';requireInput.checked=!!codigoAtual;codeInput.value=codigoAtual||'';codeWrap.hidden=!requireInput.checked;
-    requireInput.addEventListener('change',function(){codeWrap.hidden=!requireInput.checked;});
+    var nameInput=overlay.querySelector('#campaign-settings-name'),status=overlay.querySelector('#campaign-settings-status');
+    nameInput.value=nomeAtual||'';
     function close(){overlay.remove();}
     overlay.querySelectorAll('[data-settings-close],[data-settings-cancel]').forEach(function(btn){btn.addEventListener('click',close);});
     overlay.addEventListener('click',function(e){if(e.target===overlay)close();});
@@ -1657,11 +1654,10 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
       }catch(error){button.disabled=false;status.textContent='Não foi possível concluir a exclusão. Você pode tentar novamente; os arquivos já removidos não serão listados de novo. '+(error.message||error);}
     });
     overlay.querySelector('[data-settings-save]').addEventListener('click',async function(){
-      var button=this,nome=nameInput.value.trim(),exigeCodigo=requireInput.checked,codigo=codeInput.value.trim();
+      var button=this,nome=nameInput.value.trim();
       if(nome.length<2||nome.length>60){status.textContent='O nome deve ter entre 2 e 60 caracteres.';nameInput.focus();return;}
-      if(exigeCodigo&&!/^\d{4}$/.test(codigo)){status.textContent='O código deve conter exatamente 4 números.';codeInput.focus();return;}
       button.disabled=true;status.textContent='Salvando configurações…';
-      try{var saved=await sb.rpc('atualizar_configuracoes_campanha',{p_campaign_id:Number(mesaId),p_name:nome,p_require_code:exigeCodigo,p_code:exigeCodigo?codigo:null});if(saved.error)throw saved.error;if(!saved.data||!saved.data.ok)throw new Error('O banco não confirmou as alterações.');status.textContent='Configurações salvas.';await carregarMesas();window.setTimeout(close,350);}
+      try{var saved=await sb.rpc('atualizar_configuracoes_campanha',{p_campaign_id:Number(mesaId),p_name:nome,p_require_code:false,p_code:null});if(saved.error)throw saved.error;if(!saved.data||!saved.data.ok)throw new Error('O banco não confirmou as alterações.');status.textContent='Configurações salvas.';await carregarMesas();window.setTimeout(close,350);}
       catch(error){button.disabled=false;status.textContent='Não foi possível salvar: '+(error.message||error);}
     });
     nameInput.focus();
@@ -2006,40 +2002,19 @@ function uploadCapaMesa(mesaId) {
     await sb.auth.signOut();
     location.replace('index.html');
   });
-  document.getElementById('btn-codigo').addEventListener('click', async function() {
-    var input = document.getElementById('codigo');
-    var codigo = input.value.trim();
-    var button = document.getElementById('btn-codigo');
-    if (!/^\d{4}$/.test(codigo)) return alert('Informe o código de convite com 4 números.');
-    button.disabled = true;
-    try {
-      var joined = await sb.rpc('join_campaign', { p_code: codigo });
-      if (joined.error) throw new Error(joined.error.message);
-      if (!joined.data || !joined.data.ok) throw new Error((joined.data && joined.data.erro) || 'Não foi possível entrar com esse código.');
-      input.value = '';
-      await abrirModalEntrarMesa(String(joined.data.id));
-    } catch (err) {
-      alert('Não foi possível entrar na mesa: ' + (err.message || err));
-    } finally {
-      button.disabled = false;
-    }
-  });
   document.getElementById('btn-criar').addEventListener('click', function() { modalCriar.classList.add('ativo'); });
   document.getElementById('m-confirmar').addEventListener('click', async function() {
     var nome = document.getElementById('m-nome').value.trim();
-    var codigo = document.getElementById('m-codigo').value.trim();
     if (!nome) return alert('Digite um nome para a mesa.');
-    if (!/^\d{4}$/.test(codigo)) return alert('Defina um código de convite com 4 números.');
     if (!eu) return alert('Sua sessão expirou. Entre novamente.');
     var btn = document.getElementById('m-confirmar');
     btn.disabled = true;
     try {
-      var r = await sb.rpc('create_campaign', { p_name: nome, p_code: codigo, p_location: null });
+      var r = await sb.rpc('create_campaign', { p_name: nome, p_code: null, p_location: null });
       if (r.error) throw new Error(r.error.message);
       if (!r.data || !r.data.ok) throw new Error((r.data && r.data.erro) || 'Não foi possível criar a mesa.');
       modalCriar.classList.remove('ativo');
       document.getElementById('m-nome').value = '';
-      document.getElementById('m-codigo').value = '';
       await carregarMesas();
     } catch (err) {
       alert('Erro ao criar mesa: ' + (err.message || err));
