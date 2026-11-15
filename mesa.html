@@ -1259,6 +1259,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="class-controls-ui.js"></script>
 <script>
 (function(){
   var SUPABASE_URL = 'https://grrgwxcagvvafdmzsmro.supabase.co';
@@ -1512,8 +1513,65 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
 
   function personagemAtivoDaInterface(){return personagemDoTurnoDoJogador()||personagens.find(function(p){return p.ch&&p.ch.user_id===eu.id;})||null;}
   function listaTalentosUI(value){if(Array.isArray(value))return value;if(typeof value==='string'){try{var x=JSON.parse(value);return Array.isArray(x)?x:[];}catch(e){return [];}}return [];}
-  function possuiMagiasUI(p){if(!p)return false;var r=parseJsonSeguro35(p.sh&&p.sh.magias_preparadas,null);if(r&&((r.conhecidas||[]).length||(r.preparadas||[]).length||(r.dominio_preparadas||[]).length))return true;return ['bard','cleric','druid','sorcerer','wizard','paladin','ranger'].indexOf(String(p.cl&&p.cl.class_key||''))>=0&&Number(p.sh&&p.sh.nivel)>0;}
+  function possuiMagiasUI(p){if(!p)return false;var key=window.VinculoClassControls&&window.VinculoClassControls.classKey(p),level=Math.max(1,Number(p.sh&&p.sh.nivel)||1);if(key)return window.VinculoClassControls.canCast(key,level);var r=parseJsonSeguro35(p.sh&&p.sh.magias_preparadas,null);return !!(r&&((r.conhecidas||[]).length||(r.preparadas||[]).length||(r.dominio_preparadas||[]).length));}
   function classeUI(p){var v=[p&&p.sh&&p.sh.classe_id,p&&p.cl&&p.cl.class_key,p&&p.cl&&p.cl.nome].join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();if(/fighter|guerreiro/.test(v))return 'Guerreiro';if(/barbarian|barbaro/.test(v))return 'Bárbaro';if(/rogue|ladino/.test(v))return 'Ladino';if(/ranger|patrulheiro/.test(v))return 'Patrulheiro';if(/paladin|paladino/.test(v))return 'Paladino';if(/wizard|mago/.test(v))return 'Mago';if(/sorcerer|feiticeiro/.test(v))return 'Feiticeiro';if(/cleric|clerigo/.test(v))return 'Clérigo';if(/druid|druida/.test(v))return 'Druida';if(/bard|bardo/.test(v))return 'Bardo';if(/monk|monge/.test(v))return 'Monge';return String(p&&p.cl&&p.cl.nome||'Aventureiro');}
+
+  function abrirFichaClasseEmNovaAba(characterId){if(!characterId)return;window.open('ficha.html?char='+encodeURIComponent(String(characterId))+'&mesa='+encodeURIComponent(String(MESA_ID||'')),'_blank','noopener');}
+  async function abrirPainelCompanheiroAnimal(p){
+    if(!p||!p.ch||!p.sh)return;
+    var identity=parseJsonSeguro35(p.sh.identidade,{})||{},animalId=String(identity.druid_animal_companion_id||identity.ranger_animal_companion_id||identity.animal_companion_id||'');
+    var old=document.getElementById('modal-companheiro-animal');if(old)old.remove();
+    var overlay=document.createElement('div');overlay.id='modal-companheiro-animal';overlay.className='skill-roll-overlay';overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');
+    var panel=document.createElement('section');panel.className='skill-roll-panel';
+    var head=document.createElement('header');head.className='skill-roll-head';
+    var title=document.createElement('h2');title.textContent='Companheiro Animal · '+String(p.ch.nome||'Aventureiro');
+    var close=document.createElement('button');close.type='button';close.className='skill-roll-close';close.textContent='✕';close.onclick=function(){overlay.remove();};head.append(title,close);panel.appendChild(head);
+    var hint=document.createElement('p');hint.className='skill-roll-hint';hint.textContent='Vínculo registrado na ficha. Os ajustes de companheiro dependem do nível efetivo e devem ser conferidos pelo Mestre.';panel.appendChild(hint);
+    if(!animalId){
+      var empty=document.createElement('p');empty.className='feature-empty';empty.textContent='Nenhum animal foi selecionado na ficha. Abra a ficha para registrar o companheiro disponível para esta classe e nível.';panel.appendChild(empty);
+    }else{
+      var loading=document.createElement('p');loading.className='feature-empty';loading.textContent='Carregando os dados da criatura…';panel.appendChild(loading);
+      try{
+        var result=await sb.from('srd_monsters').select('id,nome,nome_original,nd,tamanho,tipo,tendencia,dados_vida,pv,iniciativa,deslocamento,ca,base_attack_grapple,ataques,espaco_alcance,fortitude,reflexos,vontade,forca,destreza,constituicao,inteligencia,sabedoria,carisma,pericias,talentos,qualidades_especiais,descricao,srd_source_url').eq('id',animalId).maybeSingle();
+        if(result.error)throw new Error(result.error.message);
+        loading.remove();
+        var animal=result.data;
+        if(!animal){var missing=document.createElement('p');missing.className='feature-empty';missing.textContent='O animal está registrado na ficha, mas não foi encontrado no bestiário SRD.';panel.appendChild(missing);}
+        else{
+          var name=document.createElement('h3');name.textContent=String(animal.nome||animal.nome_original||animal.id);name.style.color='#e7d39c';panel.appendChild(name);
+          var meta=document.createElement('p');meta.className='feature-detail';meta.textContent=['Animal',animal.tamanho||null,'ND '+(animal.nd||'—'),'PV '+(animal.pv==null?'—':animal.pv),'CA '+(animal.ca||'—')].filter(Boolean).join(' · ');panel.appendChild(meta);
+          [['Deslocamento',animal.deslocamento],['Ataques',animal.ataques],['FOR / DES / CON',[animal.forca,animal.destreza,animal.constituicao].join(' / ')],['INT / SAB / CAR',[animal.inteligencia,animal.sabedoria,animal.carisma].join(' / ')],['Salvaguardas',['Fortitude '+(animal.fortitude||'—'),'Reflexos '+(animal.reflexos||'—'),'Vontade '+(animal.vontade||'—')].join(' · ')],['Perícias',animal.pericias],['Talentos',animal.talentos],['Qualidades especiais',animal.qualidades_especiais],['Descrição',animal.descricao]].forEach(function(pair){if(pair[1]==null||pair[1]==='')return;var row=document.createElement('p');row.className='feature-detail';var label=document.createElement('strong');label.textContent=pair[0]+': ';row.append(label,document.createTextNode(formatarValorMonstro35(pair[1])));panel.appendChild(row);});
+          var token=(cbaPublishedState&&Array.isArray(cbaPublishedState.tokens)?cbaPublishedState.tokens:[]).find(function(t){return String(t.companionOfCharacterId||t.companion_of_character_id||t.ownerCharacterId||t.owner_character_id||'')===String(p.ch.id);});
+          if(token&&ehGM&&token.tipo==='npc'){var control=document.createElement('button');control.type='button';control.className='feature-use-btn';control.textContent='Abrir controle do token';control.onclick=function(){overlay.remove();abrirPainelControleNPC35(token);};panel.appendChild(control);}
+          else{
+            var request=document.createElement('button');request.type='button';request.className='feature-use-btn';request.textContent=ehGM?'Abrir Bestiário para adicionar token':'Solicitar token de combate ao Mestre';
+            request.onclick=async function(){if(ehGM){overlay.remove();abrirMonstrosRapido();return;}request.disabled=true;try{var sent=await enviarMensagemChat('🐾 '+String(p.ch.nome)+' solicita que o Mestre adicione à mesa o companheiro animal '+String(animal.nome||animal.nome_original||animal.id)+'.','sistema',{evento:'companion_token_request',character_id:String(p.ch.id),monster_id:String(animal.id)});if(sent&&sent.error)throw new Error(sent.error.message);request.textContent='Solicitação enviada ao Mestre';}catch(error){request.disabled=false;alert('Não foi possível enviar a solicitação: '+String(error.message||error));}};panel.appendChild(request);
+          }
+        }
+      }catch(error){loading.textContent='Não foi possível carregar o companheiro: '+String(error.message||error);}
+    }
+    var edit=document.createElement('button');edit.type='button';edit.className='btn-acao';edit.textContent='📖 Abrir ficha para alterar o vínculo';edit.onclick=function(){abrirFichaClasseEmNovaAba(p.ch.id);};panel.appendChild(edit);
+    overlay.appendChild(panel);overlay.addEventListener('click',function(event){if(event.target===overlay)overlay.remove();});document.body.appendChild(overlay);
+  }
+  async function abrirPainelCompanheiroAnimalDoToken(item){
+    if(!item||!item.sourceCharacterId)return;
+    var p=personagens.find(function(entry){return entry.ch&&String(entry.ch.id)===String(item.sourceCharacterId);});
+    if(!p){
+      var loaded=await Promise.all([
+        sb.from('characters').select('*').eq('id',String(item.sourceCharacterId)).maybeSingle(),
+        sb.from('srd_character_sheets').select('*').eq('character_id',String(item.sourceCharacterId)).maybeSingle()
+      ]);
+      if(loaded[0].error||loaded[1].error||!loaded[0].data||!loaded[1].data){alert('Não foi possível carregar a ficha vinculada a este NPC para consultar o companheiro.');return;}
+      var cls=await sb.from('srd_classes').select('*').eq('id',String(loaded[1].data.classe_id)).maybeSingle();
+      p={ch:loaded[0].data,sh:loaded[1].data,cl:cls.data||{}};
+    }
+    abrirPainelCompanheiroAnimal(p);
+  }
+  function grupoControlesClasseUI(p,aoFechar){
+    if(!p||!p.ch||!window.VinculoClassControls)return null;
+    var profile=window.VinculoClassControls.actionsFor(p);if(!profile.key||!profile.actions.length)return null;
+    return {title:profile.name,actions:profile.actions.map(function(action){return {id:'class-'+profile.key+'-'+action.key,ic:action.icon,txt:action.label,onClick:function(){if(action.kind==='sheet'){abrirFichaClasseEmNovaAba(p.ch.id);return;}if(action.kind==='companion'){abrirPainelCompanheiroAnimal(p);return;}if(typeof aoFechar==='function')aoFechar();abrirHabilidadesClasse(p.ch.id);}};})};
+  }
   function criarBotaoAcaoUI(a){var b=document.createElement('button');b.type='button';b.className='btn-acao';b.dataset.acao=a.id;var i=document.createElement('span');i.className='icone';i.textContent=a.ic;var t=document.createElement('span');t.textContent=a.txt;b.append(i,t);b.onclick=function(){if(typeof a.onClick==='function'){a.onClick();return;}acao(a.id);};return b;}
   function montarPainelAcaoUI(host,groups,heading,p){host.replaceChildren();var identity=document.createElement('section');identity.className='player-action-identity';var name=document.createElement('strong');name.textContent=heading;identity.appendChild(name);if(p){var sub=document.createElement('span');sub.textContent=String(p.raca&&p.raca.nome||p.sh.raca_id||'Raça não identificada')+' · Nível '+Math.max(1,Number(p.sh.nivel)||1);identity.appendChild(sub);var hp=Number(p.sh.pv_atual);if(!Number.isFinite(hp))hp=pvMax(p.sh,p.cl);var vitals=document.createElement('div');vitals.className='player-action-vitals';[['❤',hp+'/'+pvMax(p.sh,p.cl)+' PV'],['🛡',caFichaMesa(p)+' CA'],['↔',(p.deslocamento_m==null?'—':p.deslocamento_m)+' m']].forEach(function(x){var span=document.createElement('span');span.textContent=x[0]+' '+x[1];vitals.appendChild(span);});identity.appendChild(vitals);}host.appendChild(identity);var seenActionIds=new Set();groups=groups.map(function(g){return Object.assign({},g,{actions:(g.actions||[]).filter(function(action){var key=String(action&&action.id||'');if(!key)return true;if(seenActionIds.has(key))return false;seenActionIds.add(key);return true;})});}).filter(function(g){return g.actions.length>0;});if(!groups.length)return;var tabs=document.createElement('nav');tabs.className='action-group-tabs';var previous=host.dataset.activeGroup||'',active=groups.some(function(g){return g.title===previous;})?previous:groups[0].title;groups.forEach(function(g,index){var id='player-actions-'+index,tab=document.createElement('button');tab.type='button';tab.className='action-group-tab';tab.textContent=g.title;tab.setAttribute('aria-selected',String(g.title===active));var section=document.createElement('section');section.className='player-action-section';section.id=id;section.hidden=g.title!==active;var grid=document.createElement('div');grid.className='player-action-grid';g.actions.forEach(function(x){grid.appendChild(criarBotaoAcaoUI(x));});section.appendChild(grid);host.appendChild(section);tab.onclick=function(){host.dataset.activeGroup=g.title;host.querySelectorAll('.action-group-tab').forEach(function(t){t.setAttribute('aria-selected',String(t===tab));});host.querySelectorAll('.player-action-section').forEach(function(x){x.hidden=x.id!==id;});};tabs.appendChild(tab);});if(groups.length>1)host.prepend(tabs);host.dataset.activeGroup=active;}
   function renderBotoesAcao(){
@@ -1523,8 +1581,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     }else{var p=personagemAtivoDaInterface(),magic=possuiMagiasUI(p),combat=estado==='COMBATE';var groups=combat?[
       {title:'Ataque',actions:[{id:'atk-corpo',ic:'⚔️',txt:'Ataque corpo a corpo'},{id:'atk-dist',ic:'🏹',txt:'Ataque à distância'},{id:'atk-total-corpo',ic:'⚔️',txt:'Ataque Total corpo a corpo'},{id:'atk-total-dist',ic:'🏹',txt:'Ataque Total à distância'}].concat(magic?[{id:'atk-mag',ic:'✨',txt:'Conjurar magia'}]:[])},
       {title:'Tática e defesa',actions:[{id:'manobras-ui',ic:'🛡️',txt:'Manobras de combate'},{id:'defesa-ui',ic:'🧱',txt:'Ações defensivas'},{id:'movimento-ui',ic:'👣',txt:'Movimentação'}]},
-      {title:'Personagem',actions:[{id:'ficha',ic:'📜',txt:'Minha ficha'},{id:'inventario',ic:'🎒',txt:'Equipamentos'},{id:'pericia',ic:'📚',txt:'Perícias'},{id:'testes-jogador',ic:'🎲',txt:'Testes de atributo e resistência'},{id:'racial-ui',ic:'⛰️',txt:'Características raciais'},{id:'talentos-ui',ic:'🏅',txt:'Talentos'},{id:'habilidades',ic:'⚔️',txt:'Características da classe'},{id:'dados',ic:'🎲',txt:'Dados livres'},{id:'avancar-turno',ic:'⏭️',txt:'Encerrar turno'}]}
-    ]:[{title:'Aventureiro',actions:[{id:'movimento-ui',ic:'👣',txt:'Movimentação'},{id:'ficha',ic:'📜',txt:'Minha ficha'},{id:'inventario',ic:'🎒',txt:'Equipamentos e mochila'},{id:'pericia',ic:'📚',txt:'Perícias'},{id:'testes-jogador',ic:'🎲',txt:'Testes de atributo e resistência'},{id:'racial-ui',ic:'⛰️',txt:'Características raciais'},{id:'talentos-ui',ic:'🏅',txt:'Talentos'},{id:'habilidades',ic:'⚔️',txt:'Características da classe'},{id:'dados',ic:'🎲',txt:'Dados livres'}].concat(magic?[{id:'atk-mag',ic:'✨',txt:'Magias disponíveis'}]:[])}];montarPainelAcaoUI(el,groups,(p&&p.ch.nome||'Aventureiro')+' · '+classeUI(p),p);}
+      {title:'Personagem',actions:[{id:'ficha',ic:'📜',txt:'Minha ficha'},{id:'inventario',ic:'🎒',txt:'Equipamentos'},{id:'pericia',ic:'📚',txt:'Perícias'},{id:'testes-jogador',ic:'🎲',txt:'Testes de atributo e resistência'},{id:'racial-ui',ic:'⛰️',txt:'Características raciais'},{id:'talentos-ui',ic:'🏅',txt:'Talentos'},{id:'dados',ic:'🎲',txt:'Dados livres'},{id:'avancar-turno',ic:'⏭️',txt:'Encerrar turno'}]}
+    ]:[{title:'Aventureiro',actions:[{id:'movimento-ui',ic:'👣',txt:'Movimentação'},{id:'ficha',ic:'📜',txt:'Minha ficha'},{id:'inventario',ic:'🎒',txt:'Equipamentos e mochila'},{id:'pericia',ic:'📚',txt:'Perícias'},{id:'testes-jogador',ic:'🎲',txt:'Testes de atributo e resistência'},{id:'racial-ui',ic:'⛰️',txt:'Características raciais'},{id:'talentos-ui',ic:'🏅',txt:'Talentos'},{id:'dados',ic:'🎲',txt:'Dados livres'}].concat(magic?[{id:'atk-mag',ic:'✨',txt:'Magias disponíveis'}]:[])}];var classGroup=grupoControlesClasseUI(p);if(classGroup)groups.push(classGroup);montarPainelAcaoUI(el,groups,(p&&p.ch.nome||'Aventureiro')+' · '+classeUI(p),p);}
     var economy=document.getElementById('painel-economia');if(economy&&economy.parentNode)economy.parentNode.removeChild(economy);var combatPanel=document.createElement('section');combatPanel.id='painel-combate-acoes';combatPanel.hidden=true;combatPanel.innerHTML='<h3>CONTROLE DO TURNO</h3><p id="turno-controle-status">Aguardando a iniciativa.</p><div id="iniciativa-acoes-mestre"></div>';el.appendChild(combatPanel);if(ehGM){var aooQueueButton=document.createElement('button');aooQueueButton.type='button';aooQueueButton.className='btn-acao';aooQueueButton.textContent='⚔️ Reações pendentes';aooQueueButton.addEventListener('click',abrirPainelFilaAOO);combatPanel.appendChild(aooQueueButton);}if(economy)combatPanel.appendChild(economy);if(tokenMenu)el.appendChild(tokenMenu);var oldRoster=document.querySelector('.mesa-footer .painel-aventureiros');if(oldRoster)oldRoster.remove();if(diceOverlay){if(diceOverlay.parentElement!==document.body)document.body.appendChild(diceOverlay);diceOverlay.classList.add('dado-modal-global');}if(document.getElementById('painel-iniciativa'))renderizarIniciativa(combatDataState);
   }
   async function alternarEstadoMesa(){
@@ -1664,8 +1722,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var gmActionGroups=[
       {title:'Personagem',actions:[
         {id:'gm-racial',ic:'⛰️',txt:'Características raciais',onClick:function(){overlay.remove();abrirDetalhesRaciaisMesa35(p);}},
-        {id:'gm-talents',ic:'🏅',txt:'Talentos escolhidos',onClick:function(){overlay.remove();abrirTalentosJogadorUI(p.ch.id);}},
-        {id:'gm-class',ic:'⚔️',txt:'Características da classe',onClick:function(){overlay.remove();abrirHabilidadesClasse(p.ch.id);}}
+        {id:'gm-talents',ic:'🏅',txt:'Talentos escolhidos',onClick:function(){overlay.remove();abrirTalentosJogadorUI(p.ch.id);}}
       ]},
       {title:'Recursos',actions:[
         {id:'gm-inventory',ic:'🎒',txt:'Mochila e equipamento',onClick:function(){overlay.remove();abrirInventarioSRD(p.ch.id);}},
@@ -1675,6 +1732,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         {id:'gm-hp',ic:'❤️',txt:'Ajustar PV',onClick:function(){overlay.remove();abrirAjustePV(p.ch.id);}}
       ]}
     ];
+    var classGroup=grupoControlesClasseUI(p,function(){overlay.remove();});if(classGroup)gmActionGroups.push(classGroup);
     montarPainelAcaoUI(actions,gmActionGroups,String(p.ch.nome||item.nome||'Aventureiro')+' · '+classeUI(p),p);
     panel.appendChild(actions);
     var note=document.createElement('p');note.className='skill-roll-hint';note.textContent='O Mestre pode consultar a ficha e ajustar seus PV. Ataques, testes e conjuração continuam sujeitos às regras de turno, solicitações e rolagens da mesa.';
@@ -1782,15 +1840,24 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     }
     addAction('❤️ Ajustar PV',function(){overlay.remove();abrirAjustePVToken(item.key);});
     addAction('🎒 Inventário',function(){overlay.remove();abrirInventarioTokenSRD(item);});
-    if(ehGM&&item.sourceCharacterId)addAction('📖 Abrir ficha SRD',function(){window.open('ficha.html?char='+encodeURIComponent(String(item.sourceCharacterId))+'&mesa='+encodeURIComponent(MESA_ID),'_blank','noopener');});
-    if(item.sourceCharacterId)addAction('⚔️ Características da classe',function(){overlay.remove();abrirHabilidadesClasse(item.id);});
+    if(ehGM&&item.sourceCharacterId)addAction('📖 Abrir ficha SRD',function(){abrirFichaClasseEmNovaAba(item.sourceCharacterId);});
+    var tokenClassProfile=window.VinculoClassControls?window.VinculoClassControls.actionsFor(item):null;
+    if(item.sourceCharacterId&&tokenClassProfile&&tokenClassProfile.key){
+      tokenClassProfile.actions.forEach(function(classAction){
+        if(classAction.kind==='sheet')addAction(classAction.icon+' '+classAction.label,function(){abrirFichaClasseEmNovaAba(item.sourceCharacterId);});
+        else if(classAction.kind==='companion')addAction(classAction.icon+' '+classAction.label,function(){overlay.remove();abrirPainelCompanheiroAnimalDoToken(item).catch(function(error){alert('Não foi possível abrir o companheiro: '+String(error.message||error));});});
+        else addAction(classAction.icon+' '+classAction.label,function(){overlay.remove();abrirHabilidadesClasse(item.id);});
+      });
+    }else if(item.sourceCharacterId){
+      addAction('⚔️ Características da classe',function(){overlay.remove();abrirHabilidadesClasse(item.id);});
+    }
     addAction('📣 Publicar ficha no chat',function(){publicarFichaNPC35(item).catch(function(err){alert('Não foi possível publicar a ficha do NPC: '+err.message);});});
     if(tokenEhTurnoMestre35(item)){
       addAction('⚔️ Atacar',function(){overlay.remove();solicitarAtaqueMestre(item);});
       if(item.tipo==='npc'&&item.sourceCharacterId)addAction('⚔️ Ataque Total',function(){overlay.remove();iniciarAtaqueTotalNpcMestre(item).catch(function(err){alert('Ataque Total indisponível: '+err.message);});});
       addAction('📜 Registrar ação',function(){overlay.remove();registrarOutraAcaoMestre(item);});
       addAction('↔️ Mover token',function(){overlay.remove();document.getElementById('iniciativa-status').textContent='Mova '+item.nome+' arrastando seu token no tabuleiro.';});
-      if(tokenTemMagiaPreparada35(item))addAction('✨ Magias',function(){overlay.remove();abrirMagiasTokenMestre(item);});
+      if(tokenTemMagiaPreparada35(item))addAction('✨ Conjurar magia',function(){overlay.remove();abrirMagiasTokenMestre(item);});
     }
     organizarAcoesPainelToken(actions);panel.appendChild(actions);
     var note=document.createElement('p');note.className='skill-roll-hint';note.textContent='Ficha genérica de NPC controlada pelo Mestre. Ataques, ações e magias só ficam disponíveis no turno ativo do NPC.';

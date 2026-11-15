@@ -1,10 +1,12 @@
 import { existsSync, readFileSync } from 'node:fs';
+import assert from 'node:assert/strict';
 import { dirname, resolve } from 'node:path';
+import { runInNewContext } from 'node:vm';
 import { spawnSync } from 'node:child_process';
 
 const root = process.cwd();
 const htmlFiles = ['index.html', 'lobby.html', 'ficha.html', 'mesa.html', 'dice.html'];
-const standaloneScripts = ['vinculo-ui.js'];
+const standaloneScripts = ['vinculo-ui.js', 'class-controls-ui.js'];
 const failures = [];
 let checkedInlineScripts = 0;
 
@@ -72,6 +74,39 @@ for (const relativePath of standaloneScripts) {
   }
   checkJavaScript(readFileSync(absolutePath, 'utf8'), relativePath);
 }
+
+// Class-control manifest: every basic class has its own level-1 controls and level gates.
+const classControlsWindow = {};
+runInNewContext(readFileSync(resolve(root, 'class-controls-ui.js'), 'utf8'), { window: classControlsWindow });
+const classControls = classControlsWindow.VinculoClassControls;
+assert.ok(classControls, 'Class controls module must expose its API.');
+const classFixtures = [
+  ['barbaro', 'barbarian', 'rage'],
+  ['bardo', 'bard', 'bardic_music'],
+  ['clerigo', 'cleric', 'turn_undead'],
+  ['druida', 'druid', 'animal_companion'],
+  ['guerreiro', 'fighter', 'bonus_combat_feat'],
+  ['monge', 'monk', 'flurry_of_blows'],
+  ['paladino', 'paladin', 'smite_evil'],
+  ['ranger', 'ranger', 'favored_enemy'],
+  ['ladino', 'rogue', 'sneak_attack'],
+  ['feiticeiro', 'sorcerer', 'familiar'],
+  ['mago', 'wizard', 'spellbook']
+];
+for (const [classId, key, actionKey] of classFixtures) {
+  const profile = classControls.actionsFor({ sh: { classe_id: classId, nivel: 1 }, cl: { class_key: key } });
+  assert.equal(profile.key, key, classId + ' must resolve to its class profile.');
+  assert.ok(profile.actions.some((action) => action.key === actionKey), classId + ' must expose its level-1 signature control.');
+}
+assert.equal(classControls.actionsFor(null).key, '', 'An empty selection must not crash class controls.');
+assert.equal(classControls.canCast('paladin', 3), false, 'Paladin must not cast before level 4.');
+assert.equal(classControls.canCast('ranger', 3), false, 'Ranger must not cast before level 4.');
+assert.equal(classControls.canCast('paladin', 4), true, 'Paladin spell controls unlock at level 4.');
+assert.equal(classControls.canCast('ranger', 4), true, 'Ranger spell controls unlock at level 4.');
+assert.equal(classControls.actionsFor({ sh: { classe_id: 'druida', nivel: 4 } }).actions.some((action) => action.key === 'wild_shape'), false, 'Druid Wild Shape must remain hidden before level 5.');
+assert.equal(classControls.actionsFor({ sh: { classe_id: 'druida', nivel: 5 } }).actions.some((action) => action.key === 'wild_shape'), true, 'Druid Wild Shape must appear at level 5.');
+assert.equal(classControls.actionsFor({ sh: { classe_id: 'paladino', nivel: 1 } }).actions.some((action) => action.key === 'manage_spells'), false, 'Paladin preparation controls must remain hidden at level 1.');
+assert.equal(classControls.actionsFor({ sh: { classe_id: 'ranger', nivel: 1 } }).actions.some((action) => action.key === 'manage_spells'), false, 'Ranger preparation controls must remain hidden at level 1.');
 
 // Product invariant: a requested roll must wait for the user's click in the Dice iframe.
 const mesa = readFileSync(resolve(root, 'mesa.html'), 'utf8');
