@@ -496,6 +496,46 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2938
 .dnd35-wizard-school{margin:12px 0;padding:12px;border:1px solid #80683f;border-radius:6px;background:rgba(28,37,29,.55)}.dnd35-wizard-school h3{margin-top:0}
 
 .dnd35-class-resource-panel{margin:12px 0}.dnd35-cleric-deity-detail{display:grid;gap:4px;padding:10px;margin:10px 0;border-left:3px solid #b89050;background:rgba(184,144,80,.12);color:#e8d8b7}.dnd35-cleric-deity-detail span{font-size:12px}
+
+/* Seleção gamificada inicial: cartões com área reservada para artes próprias. */
+.dnd35-selection-page{max-width:1160px}
+.dnd35-selection-progress{display:flex;align-items:center;gap:10px;overflow-x:auto;padding:12px 4px 18px;color:#8f9a83;font:700 10px Cinzel,serif;letter-spacing:.08em;white-space:nowrap}
+.dnd35-selection-progress span{padding:8px 10px;border:1px solid #465640;border-radius:999px;background:#111810}
+.dnd35-selection-progress .done{color:#e6d19a;border-color:#a9894d}
+.dnd35-selection-progress .current{color:#17150f;background:linear-gradient(180deg,#e2c178,#b89050);border-color:#e2c178}
+.dnd35-selection-progress i{height:1px;min-width:18px;flex:1;background:#75613d}
+.dnd35-selection-section{margin:12px 0 24px}
+.dnd35-selection-heading{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:12px}
+.dnd35-selection-heading h2{margin:4px 0;color:#f0dca7;font:700 clamp(20px,3vw,27px) Cinzel,serif}
+.dnd35-selection-heading p{color:#b8c0a9;font-size:14px}
+.dnd35-selection-count{color:#d5b46a;font:700 11px Cinzel,serif;white-space:nowrap}
+.dnd35-choice-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.dnd35-class-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+.dnd35-choice-card{min-width:0;min-height:255px;perspective:1000px}
+.dnd35-choice-inner{position:relative;min-height:255px;height:100%;transform-style:preserve-3d;transition:transform .48s cubic-bezier(.2,.7,.2,1)}
+.dnd35-choice-card.is-flipped .dnd35-choice-inner{transform:rotateY(180deg)}
+.dnd35-choice-face{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden;border:1px solid #59694d;border-radius:10px;background:linear-gradient(145deg,#253322,#121a12);backface-visibility:hidden;box-shadow:0 8px 22px #0005}
+.dnd35-choice-card.is-selected .dnd35-choice-face{border:2px solid #d5b46a;box-shadow:0 0 0 2px #d5b46a33,0 10px 28px #0008}
+.dnd35-choice-art{height:118px;flex:0 0 118px;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 35%,#53613d 0,#263322 45%,#141c13 100%);border-bottom:1px solid #75613d;color:#d5b46a}
+.dnd35-choice-art span{padding:7px 10px;border:1px dashed #a58a55;border-radius:5px;background:#10170f88;font:700 9px Cinzel,serif;letter-spacing:.12em;text-align:center}
+.dnd35-choice-copy{padding:11px 12px 5px;flex:1}
+.dnd35-choice-copy small,.dnd35-choice-backhead small{color:#d5b46a;font:700 9px Cinzel,serif;letter-spacing:.1em;text-transform:uppercase}
+.dnd35-choice-copy h3,.dnd35-choice-backhead h3{margin:4px 0;color:#f5ecd6;font:700 17px Cinzel,serif}
+.dnd35-choice-copy p{color:#b8c0a9;font-size:12px;line-height:1.35}
+.dnd35-choice-actions{display:flex;gap:7px;padding:9px 11px 11px;margin-top:auto}
+.dnd35-choice-actions button{flex:1;min-width:0;min-height:34px;padding:6px 8px;border:1px solid #75613d;border-radius:5px;background:#182318;color:#eadbb9;font:700 10px Cinzel,serif;cursor:pointer}
+.dnd35-choice-actions .dnd35-choice-select{background:linear-gradient(180deg,#d8bd79,#a9894d);border-color:#e0c77e;color:#17150f}
+.dnd35-choice-card.is-selected .dnd35-choice-actions .dnd35-choice-select{background:linear-gradient(180deg,#e2c178,#b89050)}
+.dnd35-choice-back{transform:rotateY(180deg);padding:13px}
+.dnd35-choice-details{overflow:auto;flex:1;color:#e8eadc;font-size:12px;line-height:1.45}
+.dnd35-choice-details p{margin:7px 0}
+.dnd35-choice-details b{color:#e7d39c}
+.dnd35-selection-footer{position:sticky;bottom:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:14px;margin:20px -4px -4px;padding:12px 14px;border:1px solid #75613d;border-radius:9px;background:linear-gradient(145deg,#1b2419f5,#10160ff7);box-shadow:0 -8px 28px #0005}
+.dnd35-selection-footer p{color:#c5b995;font-size:13px}
+.dnd35-selection-footer button:disabled{opacity:.45;filter:grayscale(.5);cursor:not-allowed}
+@media(max-width:900px){.dnd35-choice-grid,.dnd35-class-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:620px){.dnd35-choice-grid,.dnd35-class-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.dnd35-choice-card,.dnd35-choice-inner{min-height:242px}.dnd35-choice-art{height:96px;flex-basis:96px}.dnd35-choice-copy h3{font-size:14px}.dnd35-choice-actions{gap:5px;padding:7px}.dnd35-choice-actions button{font-size:9px;padding:5px 4px}.dnd35-selection-heading{align-items:start}.dnd35-selection-footer{align-items:stretch;flex-direction:column}.dnd35-selection-footer button{width:100%}}
+@media(prefers-reduced-motion:reduce){.dnd35-choice-inner{transition:none}}
 </style>
 </head>
 <body>
@@ -2869,7 +2909,7 @@ function dnd35LanguageNormalize(value){
     }).join('');
     var skillsView=dnd35RenderSkills(state,attrs,creating,classMap), featsView=dnd35RenderFeats(state,attrs,creating);
     var skillBudgetNote='Pontos de perícia: '+skillsView.spent+' / '+skillsView.budget+' gastos';
-    var createStep=state.activeStep||'identity',spellAccess=dnd35GrimoireAvailability(state,attrs,level),magicClass=!!spellAccess.key&&Object.keys(spellAccess.slots).some(function(circle){return Number(spellAccess.slots[circle])>0;}),createSteps=[['identity','1 · Herói','Nome e identidade'],['attributes','2 · Atributos','Distribua 25 pontos'],['class','3 · Classe','Recursos e escolhas'],['training','4 · Treino','Perícias e talentos']];if(magicClass)createSteps.push(['magic','5 · Magias','Conhecer e preparar']);createSteps.push(['equipment',(magicClass?'6':'5')+' · Equipamento','Kit ou ouro inicial']);
+    var createStep=state.activeStep||'identity',spellAccess=dnd35GrimoireAvailability(state,attrs,level),magicClass=!!spellAccess.key&&Object.keys(spellAccess.slots).some(function(circle){return Number(spellAccess.slots[circle])>0;}),createSteps=[['identity','1 · Herói','Nome e identidade'],['class','2 · Classe','Recursos e escolhas'],['attributes','3 · Atributos','Distribua 25 pontos'],['training','4 · Treino','Perícias e talentos']];if(magicClass)createSteps.push(['magic','5 · Magias','Conhecer e preparar']);createSteps.push(['equipment',(magicClass?'6':'5')+' · Equipamento','Kit ou ouro inicial']);
     var createNav=creating?'<nav class="dnd35-create-nav" aria-label="Etapas da ficha">'+createSteps.map(function(s){return '<button type="button" class="dnd35-create-step '+(createStep===s[0]?'active':'')+'" data-create-step="'+s[0]+'">'+s[1]+'<small>'+s[2]+'</small></button>';}).join('')+'</nav>':'';
     var initialClassBonusHtml=creating?dnd35InitialClassBonusMarkup(state,attrs):'';var initialClassFeaturesHtml=creating?dnd35ClassFeaturesMarkup(state):'';var skillPanel=creating?'<div class="dnd35-tabs" role="tablist"><button type="button" class="dnd35-tab '+(state.activeTab==='pericias'?'active':'')+'" data-tab="pericias">Perícias</button><button type="button" class="dnd35-tab '+(state.activeTab==='talentos'?'active':'')+'" data-tab="talentos">Talentos</button><button type="button" class="dnd35-tab '+(state.activeTab==='idiomas'?'active':'')+'" data-tab="idiomas">Idiomas</button></div><section class="dnd35-build-panel dnd35-tab-panel" data-tab-panel="pericias" '+(state.activeTab!=='pericias'?'hidden':'')+'><h2>Perícias · Nível 1 <button type="button" class="dnd35-help" data-dnd35-help="skill">?</button></h2><p class="dnd35-budget">'+skillBudgetNote+'</p>'+dnd35BarbarianLiteracyMarkup(state)+'<p class="dnd35-note">Orçamento = max(1, perícias por nível + modificador final de INT) × 4'+(dnd35IsHuman(state.raca)?' + 4 (humano)':'')+'. Graduações de classe custam 1 ponto; fora de classe custam 2 e avançam em passos de 0,5. Falar Idioma custa 1 ponto por idioma.</p><div class="dnd35-skill-list">'+skillsView.html+'</div></section><section class="dnd35-build-panel dnd35-tab-panel" data-tab-panel="talentos" '+(state.activeTab!=='talentos'?'hidden':'')+'><h2>Talentos básicos <button type="button" class="dnd35-help" data-dnd35-help="feat">?</button></h2><p class="dnd35-note">Escolha exatamente '+(dnd35IsHuman(state.raca)?'2 talentos (talento básico + extra humano).':'1 talento básico.')+' Pré-requisitos são verificados contra os atributos finais e o BBA disponível.</p><div class="dnd35-feat-list">'+featsView+'</div>'+initialClassBonusHtml+'</section><section class="dnd35-tab-panel" data-tab-panel="idiomas" '+(state.activeTab!=='idiomas'?'hidden':'')+'>'+dnd35DwarfLanguagesMarkup(state,attrs)+'</section>' : '<div class="dnd35-grid" style="margin-top:16px"><section class="dnd35-panel"><h2>Perícias</h2><ul class="dnd35-list"><li>'+esc(skillBudgetNote)+'</li></ul><div class="dnd35-skill-list">'+skillsView.html+'</div></section><section class="dnd35-panel"><h2>Talentos</h2>'+featsView+'</section>'+dnd35LanguageSummaryMarkup(state)+'</div>';
     var profs=dnd35Objeto(state.classe.dados_tecnicos).proficiencias||{};
@@ -2944,8 +2984,48 @@ function dnd35LanguageNormalize(value){
   }
   async function renderizarEscolhaInicialDND35(races,classes) {
     var root=document.getElementById('root');root.classList.add('dnd35-mode');
-    root.innerHTML='<div class="dnd35-page"><header class="dnd35-header"><div><div class="dnd35-kicker">VÍNCULO · D&amp;D 3.5</div><h1>Criação de personagem</h1><p>Nesta etapa, você poderá escolher entre as sete raças e as onze classes básicas de D&amp;D 3.5.</p></div><a class="dnd35-link" href="lobby.html">Voltar ao Lobby</a></header><section class="dnd35-panel"><h2>1 · Escolha sua raça</h2><p>Escolha uma das sete raças básicas disponíveis no Livro do Jogador de D&amp;D 3.5.</p><label>Raça <select id="dnd35-first-race">'+races.map(function(r){return '<option value="'+esc(r.id)+'"'+(String(r.id)==='anao'?' selected':'')+'>'+esc(r.nome)+'</option>';}).join('')+'</select></label><h2>2 · Escolha sua classe</h2><p>As onze classes básicas estão disponíveis para todas as raças. Restrições próprias, como tendência, serão verificadas nas próximas etapas.</p><label>Classe <select id="dnd35-first-class">'+classes.map(function(c){return '<option value="'+esc(c.id)+'"'+(String(c.id)==='guerreiro'?' selected':'')+'>'+esc(c.nome)+'</option>';}).join('')+'</select></label><div class="dnd35-actions"><button type="button" id="dnd35-begin-creation" class="dnd35-save">Continuar com esta combinação</button></div></section></div>';
-    document.getElementById('dnd35-begin-creation').addEventListener('click',function(){RACE_ID=document.getElementById('dnd35-first-race').value;CLASS_ID=document.getElementById('dnd35-first-class').value;carregarNovaFichaSRD35();});
+    var selectedRace=RACE_ID&&races.some(function(x){return String(x.id)===String(RACE_ID);})?String(RACE_ID):'';
+    var selectedClass=CLASS_ID&&classes.some(function(x){return String(x.id)===String(CLASS_ID);})?String(CLASS_ID):'';
+    function compactList(value){
+      if(Array.isArray(value))return value.map(function(x){return typeof x==='string'?x:(x&& (x.nome||x.name||x.id))||'';}).filter(Boolean).slice(0,4).join(' · ');
+      if(value&&typeof value==='object')return Object.keys(value).map(function(k){return k+': '+value[k];}).join(' · ');
+      return String(value||'');
+    }
+    function makeCard(item,type){
+      var isRace=type==='race',id=String(item.id),name=esc(item.nome||item.name||id);
+      var details='';
+      if(isRace){
+        var mods=dnd35Objeto(item.ajustes_atributos),modText=Object.keys(mods).length?Object.keys(mods).map(function(k){return k+' '+(Number(mods[k])>0?'+':'')+mods[k];}).join(' · '):'Sem ajustes de atributo';
+        details='<p><b>Atributos:</b> '+esc(modText)+'</p><p><b>Tamanho:</b> '+esc(item.tamanho||'—')+' · <b>Deslocamento:</b> '+esc(item.deslocamento==null?'—':item.deslocamento+' m')+'</p><p><b>Características:</b> '+esc(compactList(item.habilidades_raciais)||'Consulte a descrição racial na ficha.')+'</p><p><b>Idiomas:</b> '+esc(compactList(item.idiomas)||'Conforme as regras da raça.')+'</p>';
+      }else{
+        var prof=dnd35Objeto(item.dados_tecnicos).proficiencias||{};
+        details='<p><b>Dado de vida:</b> d'+esc(item.dado_vida||'—')+'</p><p><b>Perícias por nível:</b> '+esc(item.pericias_por_nivel==null?'—':item.pericias_por_nivel)+'</p><p><b>Perícias de classe:</b> '+esc(compactList(item.pericias_classe)||'Consulte a ficha da classe.')+'</p><p><b>Proficiências:</b> '+esc(compactList(prof.armas)||'Conforme a classe')+'</p>';
+      }
+      var subtitle=isRace?'Raça · D&D 3.5':'Classe · D&D 3.5';
+      var artLabel=isRace?'ESPAÇO PARA ARTE DA RAÇA':'ESPAÇO PARA ARTE DA CLASSE';
+      var attr=isRace?'data-select-race':'data-select-class';
+      return '<article class="dnd35-choice-card '+((isRace?selectedRace:selectedClass)===id?'is-selected':'')+'" data-choice-card="'+type+'" data-choice-id="'+esc(id)+'"><div class="dnd35-choice-inner"><div class="dnd35-choice-face dnd35-choice-front"><div class="dnd35-choice-art" data-art-slot="'+type+'-'+esc(id)+'"><span>'+artLabel+'</span></div><div class="dnd35-choice-copy"><small>'+subtitle+'</small><h3>'+name+'</h3><p>'+(isRace?'Características raciais e identidade do personagem.':'Progressão, recursos e habilidades da classe.')+'</p></div><div class="dnd35-choice-actions"><button type="button" class="dnd35-choice-select" '+attr+'="'+esc(id)+'">'+(((isRace?selectedRace:selectedClass)===id)?'Selecionado':'Escolher')+'</button><button type="button" class="dnd35-choice-flip" data-flip-card>Detalhes ↻</button></div></div><div class="dnd35-choice-face dnd35-choice-back"><div class="dnd35-choice-backhead"><small>'+subtitle+'</small><h3>'+name+'</h3></div><div class="dnd35-choice-details">'+details+'</div><div class="dnd35-choice-actions"><button type="button" class="dnd35-choice-select" '+attr+'="'+esc(id)+'">'+(((isRace?selectedRace:selectedClass)===id)?'Selecionado':'Escolher')+'</button><button type="button" class="dnd35-choice-flip" data-flip-card>Voltar ↻</button></div></div></div></article>';
+    }
+    root.innerHTML='<div class="dnd35-page dnd35-selection-page"><header class="dnd35-header"><div><div class="dnd35-kicker">VÍNCULO · D&amp;D 3.5</div><h1>Crie seu personagem</h1><p>Escolha a origem e o caminho do seu herói. As próximas etapas serão organizadas conforme suas escolhas.</p></div><a class="dnd35-link" href="lobby.html">Voltar ao Lobby</a></header><div class="dnd35-selection-progress"><span class="done">01 · RAÇA</span><i></i><span class="current">02 · CLASSE</span><i></i><span>03 · CONSTRUÇÃO</span><i></i><span>04 · CONCLUSÃO</span></div><section class="dnd35-selection-section"><div class="dnd35-selection-heading"><div><span class="dnd35-kicker">SUA ORIGEM</span><h2>Escolha uma raça</h2><p>Selecione um cartão. Use “Detalhes” para conhecer suas características.</p></div><span class="dnd35-selection-count">'+races.length+' opções</span></div><div class="dnd35-choice-grid dnd35-race-grid">'+races.map(function(r){return makeCard(r,'race');}).join('')+'</div></section><section class="dnd35-selection-section"><div class="dnd35-selection-heading"><div><span class="dnd35-kicker">SEU CAMINHO</span><h2>Escolha uma classe</h2><p>Cada classe oferece habilidades, progressão e formas diferentes de jogar.</p></div><span class="dnd35-selection-count">'+classes.length+' opções</span></div><div class="dnd35-choice-grid dnd35-class-grid">'+classes.map(function(x){return makeCard(x,'class');}).join('')+'</div></section><footer class="dnd35-selection-footer"><p id="dnd35-selection-status" role="status" aria-live="polite">Escolha uma raça e uma classe para continuar.</p><button type="button" id="dnd35-begin-creation" class="dnd35-save" disabled>Continuar para construir a ficha <span aria-hidden="true">→</span></button></footer></div>';
+    function updateSelection(){
+      root.querySelectorAll('[data-choice-card]').forEach(function(card){
+        var chosen=card.dataset.choiceCard==='race'?selectedRace:selectedClass;
+        var active=String(card.dataset.choiceId)===String(chosen);
+        card.classList.toggle('is-selected',active);
+        card.querySelectorAll('.dnd35-choice-select').forEach(function(btn){btn.textContent=active?'Selecionado':'Escolher';});
+      });
+      var ready=!!selectedRace&&!!selectedClass,button=document.getElementById('dnd35-begin-creation'),status=document.getElementById('dnd35-selection-status');
+      if(button)button.disabled=!ready;
+      if(status)status.textContent=ready?'Origem e classe selecionadas. Você já pode continuar.':'Escolha uma raça e uma classe para continuar.';
+    }
+    root.querySelectorAll('[data-select-race]').forEach(function(button){button.addEventListener('click',function(){selectedRace=String(button.dataset.selectRace);updateSelection();});});
+    root.querySelectorAll('[data-select-class]').forEach(function(button){button.addEventListener('click',function(){selectedClass=String(button.dataset.selectClass);updateSelection();});});
+    root.querySelectorAll('[data-flip-card]').forEach(function(button){button.addEventListener('click',function(){var card=button.closest('.dnd35-choice-card');if(card)card.classList.toggle('is-flipped');});});
+    document.getElementById('dnd35-begin-creation').addEventListener('click',function(){
+      if(!selectedRace||!selectedClass)return;
+      RACE_ID=selectedRace;CLASS_ID=selectedClass;carregarNovaFichaSRD35();
+    });
+    updateSelection();
   }
   async function carregarNovaFichaSRD35() {
     var catalogsResult=await Promise.all([sb.from('srd_races').select('*').order('nome'),sb.from('srd_classes').select('*').order('nome')]);
