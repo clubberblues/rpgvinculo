@@ -1497,7 +1497,8 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       if(!card || !cardsStrip.contains(card)) return;
       e.preventDefault();
       e.stopPropagation();
-      alternarAlvoTeste(card);
+      var selectedToken=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key||'')===String(card.dataset.cbaTokenKey||'')||String(t.id)===String(card.dataset.tokenId||'');});
+      if(selectedToken)alternarAlvoTokenTeste(selectedToken,card);
     });
     document.getElementById('btn-voltar').onclick = function(){ location.href='lobby.html'; };
     ligarModaisFinais();
@@ -6185,7 +6186,7 @@ async function abrirModalEquipamentos(){
     var testLabel=document.getElementById('txt-teste-selecionado');
     if(testLabel)testLabel.textContent=nomeTeste+' — selecione os alvos';
     document.getElementById('cards-strip').classList.add('selecionando-teste');
-    document.querySelectorAll('.card-pers').forEach(function(card){ card.classList.remove('selecionado-para-teste'); });
+    document.querySelectorAll('.jogador-faixa').forEach(function(card){ card.classList.remove('selecionado-para-teste'); });
     document.querySelectorAll('.token-cba').forEach(function(token){token.classList.remove('selecionado-para-teste');});
   }
 
@@ -7524,27 +7525,37 @@ async function abrirModalEquipamentos(){
     var active=!!(combatDataState&&combatDataState.active&&ordem.length),turnIndex=Math.max(0,Math.min(Math.max(0,ordem.length-1),Number(combatDataState&&combatDataState.current_turn)||0));
     var tokens=cbaPublishedState&&Array.isArray(cbaPublishedState.tokens)?cbaPublishedState.tokens:[],rows=[];
     tokens.forEach(function(token,originalIndex){
-      if(!token||token.id==null||token.tipo!=='player')return;
-      var p=acharPersonagemDoToken(token);if(!p)return;
+      if(!token||token.id==null)return;
+      var p=token.tipo==='player'?acharPersonagemDoToken(token):null;
+      var isPlayer=token.tipo==='player',tokenId=String(token.key||token.id);
       var initIndex=entradaIniciativaToken(token,ordem),entry=initIndex>=0?ordem[initIndex]:null,activeRow=!!(active&&initIndex===turnIndex);
-      var name=String(token.nome||(p.ch&&p.ch.nome)||'Aventureiro');
-      var detail=String((p.raca&&p.raca.nome)||'Raça não definida')+' · '+String((p.cl&&p.cl.nome)||p.sh.classe||'Personagem');
-      var max=pvMax(p.sh,p.cl),hp=Number(p.sh.pv_atual==null?max:p.sh.pv_atual),ac=caToken35(token);
-      var url=String(token.imagem||(p.perfil&&p.perfil.avatar_url)||p.ch.retrato_url||p.ch.arte_url||'').trim();
+      var name=String(token.nome||(p&&p.ch&&p.ch.nome)||'Combatente');
+      var ms=token.monsterStats||{},linkedAttrs=token.tipo==='npc'?linkedNpcSheetAttributes[String(token.id)]:null;
+      var detail=isPlayer&&p?String((p.raca&&p.raca.nome)||'Raça não definida')+' · '+String((p.cl&&p.cl.nome)||p.sh.classe||'Personagem'):
+        token.tipo==='monstro'?'Monstro · ND '+String(ms.nd||'—'):
+        token.tipo==='npc'?(token.sourceCharacterId?'NPC · Ficha SRD vinculada':'NPC · Nv '+String(ms.level||'—')):
+        'Ficha do Mestre';
+      var max=p?pvMax(p.sh,p.cl):(token.maxHp==null?null:Number(token.maxHp));
+      var hp=p?Number(p.sh.pv_atual==null?max:p.sh.pv_atual):(token.hp==null?max:Number(token.hp));
+      var ac=caToken35(token);
+      var url=String(token.imagem||(p&&((p.perfil&&p.perfil.avatar_url)||p.ch.retrato_url||p.ch.arte_url))||'').trim();
       var img=(url.indexOf('https://')===0||url.indexOf('http://')===0)&&!(/\s/.test(url));
-      var portrait=img?'<img class="jogador-faixa-foto" src="'+esc(url)+'" alt="" draggable="false">':'<span class="jogador-faixa-placeholder" aria-hidden="true">✦</span>';
+      var portrait=img?'<img class="jogador-faixa-foto" src="'+esc(url)+'" alt="" draggable="false">':'<span class="jogador-faixa-placeholder" aria-hidden="true">'+(token.tipo==='monstro'?'🐉':token.tipo==='npc'?'👤':'✦')+'</span>';
       var hpText=hp==null?'PV —':'PV '+Math.max(-10,hp)+'/'+(max==null?'—':max);
       var initText=entry?'INI '+String(entry.valor==null?'—':entry.valor):'INI —';
-      var selected=alvosSelecionados.indexOf(String(p.ch.id))!==-1?' selecionado-para-teste':'';
-      var html='<article class="jogador-faixa'+(p.ch.user_id===eu.id?' eu':'')+(activeRow?' turno-ativo':'')+selected+'" data-actor-key="'+esc('p:'+String(token.id))+'" data-cba-token-key="'+esc(token.key||'')+'" data-char="'+esc(p.ch.id)+'" tabindex="0" role="button" aria-label="'+esc(name)+'">'+
+      var selected=isPlayer&&p?alvosSelecionados.indexOf(String(p.ch.id))!==-1:alvosNpcSelecionados.indexOf(tokenId)!==-1;
+      var rowClass='jogador-faixa '+(isPlayer?'token-jogador':token.tipo==='monstro'?'token-monstro':token.tipo==='npc'?'token-npc':'token-mestre')+
+        (p&&p.ch.user_id===eu.id?' eu':'')+(activeRow?' turno-ativo':'')+(selected?' selecionado-para-teste':'');
+      var status=hpText+(ac==null?'':' · CA '+ac)+' · '+initText;
+      var html='<article class="'+rowClass+'" data-actor-key="'+esc((isPlayer?'p:':'g:')+String(token.id))+'" data-cba-token-key="'+esc(token.key||'')+'" data-token-id="'+esc(token.id)+'" data-token-type="'+esc(token.tipo||'npc')+'"'+(p?' data-char="'+esc(p.ch.id)+'"':'')+' tabindex="0" role="button" aria-label="'+esc(name)+'">'+
         '<div class="jogador-faixa-avatar">'+portrait+'</div>'+
         '<div class="jogador-faixa-info"><strong class="jogador-faixa-nome">'+esc(name)+'</strong><span class="jogador-faixa-classe">'+esc(detail)+'</span>'+
-        '<span class="jogador-faixa-status">'+esc(hpText)+(ac==null?'':' · CA '+ac)+' · '+esc(initText)+'</span></div></article>';
+        '<span class="jogador-faixa-status">'+esc(status)+'</span></div></article>';
       rows.push({rank:initIndex>=0?(active?(initIndex-turnIndex+ordem.length)%ordem.length:initIndex):100000+originalIndex,html:html});
     });
     rows.sort(function(a,b){return a.rank-b.rank;});
     el.replaceChildren();
-    if(!rows.length){var empty=document.createElement('div');empty.className='jogadores-lista-vazia';empty.textContent='Nenhum jogador presente na mesa.';el.appendChild(empty);}
+    if(!rows.length){var empty=document.createElement('div');empty.className='jogadores-lista-vazia';empty.textContent='Nenhum token adicionado à mesa.';el.appendChild(empty);}
     rows.forEach(function(row){var wrap=document.createElement('div');wrap.innerHTML=row.html;var node=wrap.firstElementChild;if(node)el.appendChild(node);});
     if(cbaPublishedState)renderizarTokensCBA(document.getElementById('cba-token-layer'),cbaPublishedState);
   }
