@@ -8278,7 +8278,7 @@ html,body{width:100%;max-width:100%;min-width:0;overflow-x:hidden}
 #acoes-dir[data-class-key="rogue"] .action-group-tab[aria-selected="true"]{border-color:#8795a8;background:linear-gradient(145deg,#344051,#1a2430);color:#e6edf8}
 #acoes-dir[data-class-key="bard"] .action-group-tab[aria-selected="true"]{border-color:#b58ac4;background:linear-gradient(145deg,#51385f,#291d32);color:#f4e3fa}
 </style>
-<script src="friends-vtt-ui.js"></script>
+<script src="friends-vtt-ui.js?v=2"></script>
 <style id="mesa-footer-cards-scale-fix">
 /* Área central flexível, rodapé reservado e lista compacta abaixo do chat. */
 html,body,#root{width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;overflow:hidden!important}
@@ -8636,5 +8636,60 @@ html,body,#root{width:100%!important;height:100%!important;min-width:0!important
 #modal-magias .modal-final-actions{padding-top:8px;border-top:1px solid rgba(201,160,80,.28)}
 @media(max-width:700px){#modal-magias .magia-gamificada-card{max-height:96dvh;padding:12px}#modal-magias .magia-modal-layout{grid-template-columns:1fr;grid-template-rows:minmax(150px,30dvh) auto;overflow:auto}#modal-magias-lista{max-height:30dvh}#magia-detalhe{max-height:24dvh}#modal-magias .magia-config-grid{grid-template-columns:1fr}}
 </style>
+
+<style id="mesa-chat-roster-polish">
+/* Comunicação e lista de combatentes — hierarquia visual da sidebar */
+.painel-chat-mesa{flex:1 1 56%!important;min-height:150px!important}
+.painel-chat-mesa>.painel-cab{background:linear-gradient(90deg,#171c20,#101417)!important;color:#d0b27c!important;border-bottom:1px solid #343b42!important;font:700 10px Cinzel,serif!important;letter-spacing:1.6px!important}
+.friends-chat-tabs{display:flex!important;flex:0 0 auto!important;gap:6px!important;padding:7px 9px!important;background:#0b0e11!important;border-bottom:1px solid #292f36!important}
+.friends-chat-tabs button{flex:1 1 50%!important;min-height:32px!important;padding:6px 10px!important;border:1px solid #343b42!important;border-radius:6px!important;background:#151a1e!important;color:#aeb1b3!important;font:700 9px Inter,system-ui,sans-serif!important;letter-spacing:.12em!important;cursor:pointer!important}
+.friends-chat-tabs button[aria-pressed="true"]{background:linear-gradient(180deg,#383027,#211e19)!important;border-color:#987747!important;color:#e3c58e!important;box-shadow:inset 0 -2px #987747!important}
+.friends-chat-tabs button:hover{border-color:#987747!important;color:#e3c58e!important}
+.painel-chat-mesa>#chat-lista{flex:1 1 auto!important;min-height:0!important;padding:9px 10px!important;gap:7px!important;overflow-x:hidden!important;overflow-y:auto!important;background:#0c1013!important}
+#chat-lista .chat-msg{font:400 12px/1.42 Inter,system-ui,sans-serif!important;color:#d0d0cc!important;padding:5px 7px!important;overflow-wrap:anywhere!important}
+#chat-lista .chat-msg .autor{font:700 10px Inter,system-ui,sans-serif!important;letter-spacing:.02em!important;color:#c5a36c!important}
+#chat-lista .chat-msg.sistema{background:#171b1f!important;border:1px solid #30373e!important;border-left:2px solid #806b4c!important;border-radius:5px!important;color:#aaaead!important;font:italic 11px/1.4 Inter,system-ui,sans-serif!important}
+#chat-lista .chat-msg.rolagem{background:linear-gradient(90deg,rgba(152,119,71,.13),rgba(152,119,71,.025))!important;border-left:2px solid #987747!important;border-radius:5px!important;color:#e0d5c1!important;font:500 11px/1.4 Inter,system-ui,sans-serif!important}
+#chat-lista .chat-msg.eu .autor{color:#d0b27c!important}
+.painel-chat-mesa .chat-input{flex:0 0 auto!important;gap:6px!important;padding:7px 9px!important;background:#101418!important;border-top:1px solid #292f36!important}
+.painel-chat-mesa .chat-input input{height:36px!important;min-height:36px!important;padding:7px 10px!important;background:#080b0e!important;border:1px solid #343b42!important;border-radius:6px!important;color:#e5e1d9!important;font:400 12px Inter,system-ui,sans-serif!important}
+.painel-chat-mesa .chat-input button{flex:0 0 38px!important;width:38px!important;height:36px!important;min-height:36px!important;padding:0!important;border:1px solid #806b4c!important;border-radius:6px!important;background:#29231a!important;color:#d0b27c!important;font-size:15px!important}
+.painel-lista-jogadores{flex:0 1 44%!important;min-height:142px!important;max-height:48%!important;border-top:1px solid #343b42!important;background:#0e1215!important}
+.painel-lista-jogadores>.painel-cab{padding:7px 10px!important;background:#14191d!important;border-bottom:1px solid #292f36!important;color:#b59663!important;font:700 9px Cinzel,serif!important;letter-spacing:1.5px!important}
+.painel-lista-jogadores>#cards-strip{gap:6px!important;padding:8px 9px!important;background:#0b0f12!important;scrollbar-color:#665238 #0b0f12!important}
+#cards-strip>.jogador-faixa{flex:0 0 62px!important;height:62px!important;min-height:62px!important;max-height:62px!important;gap:9px!important;padding:6px 8px!important;border:1px solid #303941!important;border-left:2px solid #665238!important;border-radius:7px!important;background:linear-gradient(110deg,#1a2025,#11161a)!important;color:#e5e1d9!important;box-shadow:0 3px 9px #0004!important;transition:background .16s,border-color .16s,box-shadow .16s!important}
+#cards-strip>.jogador-faixa:hover{background:linear-gradient(110deg,#232a30,#171d22)!important;border-color:#806b4c!important;box-shadow:0 5px 13px #0006!important}
+#cards-strip>.jogador-faixa.eu{border-left:3px solid #b59663!important}
+#cards-strip>.jogador-faixa.ficha-selecionada{border-color:#b59663!important;box-shadow:inset 0 0 0 1px #98774755,0 0 10px #98774722!important}
+#cards-strip>.jogador-faixa.turno-ativo{border-color:#d0b27c!important;box-shadow:inset 0 0 0 1px #d0b27c66,0 0 12px #98774744!important;background:linear-gradient(110deg,#29251e,#171b1f)!important}
+#cards-strip>.jogador-faixa.selecionado-para-teste{border-color:#d0b27c!important;box-shadow:0 0 0 1px #d0b27c66!important}
+.jogador-faixa-avatar{flex:0 0 46px!important;width:46px!important;height:46px!important;border:1px solid #665238!important;border-radius:5px!important;background:#090d10!important;color:#d0b27c!important}
+.jogador-faixa-foto{width:100%!important;height:100%!important;object-fit:cover!important}
+.jogador-faixa-placeholder{font:700 19px Cinzel,serif!important;color:#b59663!important}
+.jogador-faixa-info{gap:3px!important;justify-content:center!important}
+.jogador-faixa-nome{font:700 11px Cinzel,Georgia,serif!important;color:#eee8de!important;letter-spacing:.025em!important}
+.jogador-faixa-classe{font:500 9px Inter,system-ui,sans-serif!important;color:#b5b2ab!important}
+.jogador-faixa-status{font:600 9px Inter,system-ui,sans-serif!important;color:#c5a36c!important}
+.jogadores-lista-vazia{padding:18px 8px!important;color:#858a90!important;font:italic 12px "EB Garamond",Georgia,serif!important;text-align:center!important}
+@media screen and (max-width:900px) and (orientation:landscape){
+ .friends-chat-tabs{gap:4px!important;padding:4px 5px!important}
+ .friends-chat-tabs button{min-height:27px!important;padding:4px 6px!important;font-size:8px!important}
+ .painel-chat-mesa>#chat-lista{padding:5px!important;gap:4px!important}
+ #chat-lista .chat-msg{font-size:10px!important;line-height:1.25!important;padding:4px 5px!important}
+ .painel-lista-jogadores>#cards-strip{padding:4px!important;gap:3px!important}
+ #cards-strip>.jogador-faixa{flex-basis:46px!important;height:46px!important;min-height:46px!important;max-height:46px!important;padding:3px 4px!important;gap:5px!important}
+ .jogador-faixa-avatar{flex-basis:34px!important;width:34px!important;height:34px!important}
+ .jogador-faixa-nome{font-size:8px!important}
+ .jogador-faixa-classe,.jogador-faixa-status{font-size:7px!important}
+ .painel-chat-mesa .chat-input{padding:3px!important}
+ .painel-chat-mesa .chat-input input,.painel-chat-mesa .chat-input button{height:29px!important;min-height:29px!important}
+}
+@media screen and (max-width:760px) and (orientation:portrait){
+ .friends-chat-tabs{padding:7px!important}
+ .friends-chat-tabs button{min-height:38px!important}
+ #cards-strip>.jogador-faixa{flex-basis:64px!important;height:64px!important;min-height:64px!important}
+}
+</style>
+
 </body>
 </html>
