@@ -368,59 +368,6 @@ body{background:#0d0b07;font-family:'EB Garamond',Georgia,serif;color:#2b1f0f;
 
 @media(max-width:460px){.dnd35-tabs{gap:4px}.dnd35-tab{flex:1;padding:10px 7px;font-size:11px}.dnd35-build-panel{padding:10px}.dnd35-attr{padding:10px 2px}.dnd35-attr strong{font-size:20px}.dnd35-skill-head,.dnd35-feat-head{flex-direction:column;align-items:flex-start}.dnd35-badge{white-space:normal;text-align:left;overflow-wrap:anywhere}.dnd35-skill-control select,.dnd35-feat-control select,.dnd35-feat-control input{width:100%}}
 
-/* HUD arcano — identidade Vínculo: verde profundo, bronze e pergaminho; sem azul elétrico. */
-:root{--arc-ink:#0d0b07;--arc-panel:#10170f;--arc-raised:#1b2419;--arc-raised-2:#273222;--arc-gold:#c9a050;--arc-gold-light:#f4d07a;--arc-paper:#f5ecd6;--arc-muted:#c5b995;--arc-line:#665638}
-body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#273222 0,#10170f 42%,#0d0b07 84%)}
-.ficha.dnd35-mode{background:linear-gradient(145deg,#1b2419f5,#10170ff7);border-color:#c9a050}
-.dnd35-header{border-color:#665638}.dnd35-kicker{border-color:#75613d;background:#10170f;color:#f4d07a}
-.dnd35-header h1{color:#f5ecd6}.dnd35-header p{color:#c5b995}
-.dnd35-link{border-color:#75613d;background:#10170f;color:#f4d07a}.dnd35-link:hover{background:#273222;border-color:#c9a050}
-.dnd35-panel,.dnd35-build-panel{border-color:#665638;background:linear-gradient(145deg,#1b2419,#10170f);box-shadow:0 8px 22px #0006}
-.dnd35-panel h2,.dnd35-build-panel h2{color:#f4d07a}
-.dnd35-stat{border-color:#665638;background:linear-gradient(145deg,#1b2419,#10170f)}.dnd35-stat small{color:#c5b995}.dnd35-stat strong{color:#f5ecd6}
-.dnd35-attr{border-color:#665638;background:linear-gradient(180deg,#273222,#10170f)}.dnd35-attr:hover{border-color:#c9a050}
-.dnd35-attr select,.dnd35-name-input,.dnd35-skill-control select,.dnd35-feat-control select,.dnd35-feat-control input{border-color:#75613d;background:#0d0b07;color:#f5ecd6}
-.dnd35-point-budget,.dnd35-budget{border-color:#75613d;background:#332b1c;color:#f4d07a}
-.dnd35-note{color:#c5b995}.dnd35-list{color:#e8dec8}
-.dnd35-tabs{border-color:#665638}.dnd35-tab{border-color:#665638;background:#10170f;color:#c5b995}.dnd35-tab.active{background:linear-gradient(180deg,#f4d07a,#b89050);color:#17130b;border-color:#c9a050}
-.dnd35-skill,.dnd35-feat{border-color:#665638;background:linear-gradient(145deg,#1b2419,#10170f)}.dnd35-skill strong,.dnd35-feat strong{color:#f5ecd6}.dnd35-skill p,.dnd35-feat p{color:#c5b995}
-.dnd35-badge{border-color:#8a6a3a;color:#f4d07a}.dnd35-skill-control label,.dnd35-feat-control label{color:#f4d07a}
-.dnd35-save{border-color:#f4d07a!important;background:linear-gradient(180deg,#f4d07a,#b89050)!important;color:#17130b!important}
-.dnd35-grimoire{color:#2b1f0f;background:linear-gradient(145deg,#f5ecd6,#e4d4ad);border-color:#c9a050}.dnd35-grimoire-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.dnd35-grimoire-actions button{min-height:40px}
-.dnd35-grimoire h2{color:#273222}.dnd35-grimoire-btn,.dnd35-grimoire-action{background:#1b2419;border-color:#c9a050;color:#f4d07a}.dnd35-grimoire-btn:hover,.dnd35-grimoire-action:hover:not(:disabled){background:#273222}
-.dnd35-grimoire-modal{background:rgba(5,8,5,.88)}.dnd35-grimoire-box{border-color:#c9a050;background:#f5ecd6;color:#2b1f0f}
-.dnd35-grimoire-modalhead{background:#1b2419;border-color:#c9a050}.dnd35-grimoire-modalhead h2{color:#f4d07a}
-.dnd35-grimoire-tools{background:#e4d4ad}.dnd35-grimoire-tools input{background:#fff8e8;color:#2b1f0f;border-color:#8a6a3a}
-.dnd35-spell-card{background:linear-gradient(145deg,#fff9e9,#eee2c4);border-color:#b89050}
-.dnd35-spell-card h3{color:#273222}.dnd35-spell-meta{color:#665638}.dnd35-spell-description{color:#3f382b}
-.dnd35-spell-controls{color:#3f382b}.dnd35-spell-controls select{background:#fff8e8;color:#2b1f0f;border-color:#8a6a3a}
-.dnd35-grimoire-save{background:linear-gradient(#d8b66b,#b89050);border-color:#8a6a3a;color:#17130b}
-.dnd35-tutorial-card{background:radial-gradient(ellipse at 50% 0,#273222,#10170f 68%);color:#f5ecd6}.dnd35-tutorial-card h2{color:#f4d07a}.dnd35-tutorial-card p{color:#d8ceb7}.dnd35-tutorial-actions button{border-color:#75613d;background:#1b2419;color:#f5ecd6}
-.dnd35-feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,245px),1fr));gap:10px;margin-top:12px}
-.dnd35-feature-card{position:relative;overflow:hidden;padding:14px 14px 12px;border:1px solid #75613d;border-radius:9px;background:linear-gradient(145deg,#273222,#10170f);box-shadow:inset 0 1px rgba(244,208,122,.08),0 7px 18px #0004}
-.dnd35-feature-card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(#f4d07a,#8a6a3a)}
-.dnd35-feature-card strong{display:block;color:#f4d07a;font:700 13px Cinzel,serif;letter-spacing:.4px}
-.dnd35-feature-card p{margin:8px 0;color:#e7ddc7;font-size:14px;line-height:1.45}
-.dnd35-feature-card small{display:inline-block;margin-top:5px;padding:3px 7px;border:1px solid #75613d;border-radius:20px;color:#c5b995;font:10px Cinzel,serif}
-.dnd35-feat-collection{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:10px;margin-top:10px}
-.dnd35-feat-owned{padding:13px;border:1px solid #75613d;border-radius:9px;background:linear-gradient(145deg,#273222,#10170f);box-shadow:0 6px 16px #0004}
-.dnd35-feat-owned strong{display:block;color:#f4d07a;font:700 12px Cinzel,serif}
-.dnd35-feat-owned p{margin:7px 0 0;color:#e7ddc7;font-size:14px;line-height:1.45}
-.dnd35-feat-owned small{display:block;margin-top:8px;color:#c5b995;font-size:11px}
-.dnd35-spell-steps{display:flex;gap:7px;flex-wrap:wrap;padding:10px 16px;background:#1b2419;border-bottom:1px solid #75613d}
-.dnd35-spell-steps button{flex:1;min-width:130px;padding:9px 11px;border:1px solid #75613d;border-radius:6px;background:#10170f;color:#c5b995;font:700 10px Cinzel,serif;cursor:pointer}
-.dnd35-spell-steps button.active{border-color:#c9a050;background:linear-gradient(145deg,#3b3320,#1b2419);color:#f4d07a;box-shadow:inset 0 0 0 1px #c9a050}
-.dnd35-spell-steps button:disabled{opacity:.35;cursor:not-allowed}
-.dnd35-learn-board{margin:12px 16px 0;padding:13px;border:1px solid #b89050;border-radius:8px;background:linear-gradient(145deg,#f8efd9,#e4d4ad)}
-.dnd35-learn-board b{display:block;color:#273222;font:700 12px Cinzel,serif}
-.dnd35-learn-board p{margin:6px 0;color:#51432d;font-size:14px}
-.dnd35-learn-board select{width:100%;max-width:440px;padding:8px;border:1px solid #8a6a3a;border-radius:5px;background:#fff8e8;color:#2b1f0f}
-.dnd35-learn-count{display:inline-flex;margin-top:8px;padding:4px 9px;border-radius:20px;background:#1b2419;color:#f4d07a;font:10px Cinzel,serif}
-.dnd35-learn-confirm{margin:12px 16px 15px;align-self:flex-end;padding:11px 18px;border:1px solid #8a6a3a;border-radius:5px;background:linear-gradient(#d8b66b,#b89050);color:#17130b;font:900 11px Cinzel,serif;cursor:pointer}
-.dnd35-learn-confirm:disabled{opacity:.45;cursor:not-allowed}
-.dnd35-spell-card.is-forbidden{filter:grayscale(1);opacity:.42}
-@media(max-width:600px){.dnd35-feature-grid,.dnd35-feat-collection{grid-template-columns:1fr}.dnd35-spell-steps{padding:8px}.dnd35-spell-steps button{min-width:0;font-size:9px}.dnd35-learn-board{margin:10px 10px 0}.dnd35-learn-confirm{width:calc(100% - 20px);margin:10px}}
-
 /* VÍNCULO CHARACTER HUD · ficha do jogador */
 :root{--char-ink:#080d15;--char-panel:#121d2c;--char-raised:#1a293d;--char-gold:#e0b65c;--char-gold-soft:#f4d993;--char-paper:#f5ecd6;--char-muted:#a9b6c7;--char-line:#394d65}
 body:has(.ficha.dnd35-mode){display:block;background:radial-gradient(ellipse at 50% -12%,#2b4054 0,#121d2b 40%,#080d15 82%);color:var(--char-paper);padding:1px}
@@ -1910,7 +1857,10 @@ function dnd35TranslateCatalogText(value){
   }
   function dnd35ClassFeatureDescription(name,source){
     var key=String(name||'').toLowerCase();
-    if(key.indexOf('deslocamento rápido')>=0)return 'Seu deslocamento terrestre aumenta em 3 m (10 pés) enquanto você não usa armadura pesada e não carrega carga pesada.';
+    if(key.indexOf('scribe scroll')>=0||key.indexOf('escrever pergaminho')>=0)return 'Você recebe o talento Escrever Pergaminho e pode criar pergaminhos de magias que conhece, respeitando os requisitos, o tempo e os custos de criação.';
+    if(key.indexOf('summon familiar')>=0||key.indexOf('invocar familiar')>=0||key==='familiar')return 'Você pode convocar um familiar, uma criatura mágica que compartilha um vínculo especial com o Mago. A escolha e os benefícios seguem as regras de familiares do D&D 3.5.';
+    if(key.indexOf('spellcasting')>=0||key.indexOf('conjuração')>=0||key.indexOf('arcane spells')>=0||key.indexOf('magias arcanas')>=0)return 'Você conjura magias arcanas de Mago. A quantidade de magias por dia depende do nível da classe e do modificador de Inteligência; o grimório registra as magias conhecidas e a preparação define quais ficam disponíveis no dia.';
+    if(key.indexOf('deslocamento rápido')>=0) 'Seu deslocamento terrestre aumenta em 3 m (10 pés) enquanto você não usa armadura pesada e não carrega carga pesada.';
     if(key.indexOf('analfabetismo')>=0)return 'O bárbaro não sabe ler nem escrever. Pode tornar-se alfabetizado gastando 2 pontos de perícia; essa escolha permite ler e escrever todos os idiomas que já sabe falar, não 2 pontos por idioma.';
     if(key.indexOf('fúria')>=0&&key.indexOf('poderosa')<0&&key.indexOf('maior')<0&&key.indexOf('incansável')<0)return 'Uma vez por dia no 1º nível (usos adicionais conforme a progressão da classe), entra em fúria por 3 + modificador de Constituição rodadas, calculado já com o aumento de Constituição: +4 Força, +4 Constituição, +2 de bônus moral nos testes de Vontade e –2 na Classe de Armadura. O aumento de Constituição também eleva os pontos de vida em 2 por nível enquanto durar a fúria; esses pontos não são PV temporários e desaparecem quando a Constituição volta ao valor normal, podendo deixar o bárbaro inconsciente ou morto se os PV atuais caírem a 0 ou menos. Durante a fúria, não pode usar perícias baseadas em Carisma, Destreza ou Inteligência (exceto Equilíbrio, Escapar, Intimidar e Cavalgar), nem habilidades que exijam concentração ou paciência, conjurar magias ou ativar itens mágicos que exijam palavras de comando, gatilho de magia ou complemento de magia. Ao terminar, fica fatigado. A fadiga permanece até completar 8 horas de descanso; a característica Fúria Incansável elimina a fadiga causada pelo término da fúria.';
     if(key.indexOf('esquiva sobrenatural aprimorada')>=0)return 'Não pode mais ser flanqueado; ladinos não podem aplicar ataque furtivo por flanqueamento, salvo se tiverem pelo menos 4 níveis de ladino a mais.';
@@ -1921,7 +1871,7 @@ function dnd35TranslateCatalogText(value){
     if(key.indexOf('fúria maior')>=0)return 'Os bônus de Força e Constituição da fúria aumentam para +6; o bônus de Vontade passa a +3 e a penalidade na CA permanece –2.';
     if(key.indexOf('fúria incansável')>=0)return 'Não fica mais fatigado ao terminar a fúria.';
     if(key.indexOf('fúria poderosa')>=0)return 'Os bônus de Força e Constituição da fúria aumentam para +8; o bônus de Vontade passa a +4 e a penalidade na CA permanece –2.';
-    return String(source||'Característica de classe registrada na progressão oficial. Consulte a descrição da classe para detalhes completos.');
+    return 'Característica registrada na progressão oficial da classe. Consulte o Mestre para confirmar a aplicação específica enquanto a descrição detalhada em português não estiver cadastrada.';
   }
   function dnd35ClassFeatureNamePt(name){
     var raw=String(name||'').trim(),key=raw.toLowerCase().replace(/[_-]+/g,' ').replace(/\s+/g,' ');
@@ -2262,12 +2212,12 @@ function dnd35LanguageNormalize(value){
       return '<article class="dnd35-feat"><div class="dnd35-feat-head"><strong>'+esc(spec.label)+'</strong></div><div class="dnd35-feat-control"><label for="lu-feat-'+i+'">Escolha</label><select id="lu-feat-'+i+'" data-lu-feat="'+i+'" data-lu-feat-type="'+spec.type+'">'+options+'</select></div>'+(selected?'<p>'+esc(selected.descricao||'Sem descrição.')+'</p>'+(dnd35Objeto(selected.requisitos).raw?'<p>Pré-requisitos: '+esc(dnd35Objeto(selected.requisitos).raw)+'</p>':'')+paramHtml+(warnings.length?'<div class="dnd35-warning">'+warnings.map(esc).join(' ')+'</div>':''):'')+'</article>';
     }).join('');
     var featureRows=Array.isArray(state.nextLevelFeatures)?state.nextLevelFeatures:[];
-    var featuresHtml=featureRows.length?'<ul class="dnd35-list">'+featureRows.map(function(feature){
-      var status=dnd35Objeto(feature.mechanics).engine_status,featureName=String(feature.name||feature.summary||'Característica'),normalizedName=dnd35Norm(featureName);
+    var featuresHtml=featureRows.length?'<div class="dnd35-feature-grid dnd35-next-features">'+featureRows.map(function(feature){
+      var status=dnd35Objeto(feature.mechanics).engine_status,rawFeatureName=String(feature.name||feature.summary||'Característica'),featureName=dnd35ClassFeatureNamePt(rawFeatureName),normalizedName=dnd35Norm(featureName);
       var coveredBonus=normalizedName==='talento adicional'&&dnd35LevelupFeatSpec(state,nextLevel).length>0;
       var statusText=coveredBonus?' · escolha de talento feita na seção acima':(status==='needs_implementation'?' · catálogo verificado; efeito automático ainda não implementado':'');
-      return '<li><b>'+esc(featureName)+'</b>'+(feature.summary&&feature.summary!==feature.name?': '+esc(feature.summary):'')+(statusText?' <small>'+statusText+'</small>':'')+'</li>';
-    }).join('')+'</ul>':'<p class="dnd35-note">Não há características de classe catalogadas para este nível. Isso não bloqueia o avanço, mas o Mestre deve conferir a progressão de classe.</p>';
+      return '<article class="dnd35-feature-card"><strong>'+esc(featureName)+'</strong><p>'+(feature.summary&&feature.summary!==feature.name?esc(dnd35ClassFeatureDescription(rawFeatureName,feature.summary)):esc(dnd35ClassFeatureDescription(rawFeatureName,'')))+'</p><small>Nível '+nextLevel+(statusText?esc(statusText):' · nova característica')+'</small></article>';
+    }).join('')+'</div>':'<p class="dnd35-note">Não há características de classe catalogadas para este nível. Isso não bloqueia o avanço, mas o Mestre deve conferir a progressão de classe.</p>';
     var attrHtml=nextLevel%4===0?'<div class="dnd35-feat-control"><label for="lu-attribute">Aumento de atributo (+1)</label><select id="lu-attribute" data-lu-attribute><option value="">Escolha um atributo…</option>'+ATR.map(function(a){return '<option value="'+a+'"'+(lu.attribute===a?' selected':'')+'>'+esc(ROT[a]||a)+' ('+Number(attrs[a]||10)+' → '+(Number(attrs[a]||10)+1)+')</option>';}).join('')+'</select></div>':'<p class="dnd35-note">Aumento de atributo nos níveis múltiplos de 4.</p>';
     var languageHtml=dnd35LevelupLanguageMarkup(state,attrs,lu);
     var featCount=featSpec.length,featsReady=lu.feats.length===featCount&&lu.feats.every(function(p){return p&&p.id&&(!((state.feats||[]).find(function(f){return String(f.id)===String(p.id);})||{}).exige_parametro||String(p.parametro||'').trim());});
@@ -2599,7 +2549,7 @@ function dnd35LanguageNormalize(value){
         else if(avail.key==='sorcerer'||avail.key==='bard')controls='<label><input type="checkbox" data-spell-known="'+esc(id)+'" '+(known?'checked':'')+'> Conhecida</label>';
 
       }
-      return '<article class="dnd35-spell-card dnd35-school-'+esc(schoolKey)+' '+(prohibitedSchools.indexOf(schoolKey)>=0?'is-forbidden':'')+'" data-spell-card data-school="'+esc(schoolKey)+'"><header class="dnd35-spell-card-head"><span class="dnd35-school-icon">'+schoolIcon+'</span><div><h3>'+esc(sp.nome||'Magia sem nome')+'</h3><div class="dnd35-spell-meta">'+esc(meta)+'</div></div>'+(prohibitedSchools.indexOf(schoolKey)>=0?'<b class="dnd35-forbidden-tag">ESCOLA PROIBIDA</b>':'')+'</header>'+(sp.descricao?'<div class="dnd35-spell-description">'+esc(sp.descricao)+'</div>':'')+(sp.srd_source_url?'<a class="dnd35-spell-meta" href="'+esc(sp.srd_source_url)+'" target="_blank" rel="noopener noreferrer">Consultar descrição SRD (OGL) ↗</a>':'')+(controls?'<div class="dnd35-spell-controls">'+controls+'</div>':'')+'</article>';
+      return '<article class="dnd35-spell-card dnd35-school-'+esc(schoolKey)+' '+(prohibitedSchools.indexOf(schoolKey)>=0?'is-forbidden':'')+'" data-spell-card data-school="'+esc(schoolKey)+'"><header class="dnd35-spell-card-head"><span class="dnd35-school-icon">'+schoolIcon+'</span><div><h3>'+esc(sp.nome_pt||sp.nome||'Magia sem nome')+'</h3><div class="dnd35-spell-meta">'+esc(meta)+'</div></div>'+(prohibitedSchools.indexOf(schoolKey)>=0?'<b class="dnd35-forbidden-tag">ESCOLA PROIBIDA</b>':'')+'</header>'+(sp.descricao_pt||sp.descricao?'<div class="dnd35-spell-description">'+esc(sp.descricao_pt||sp.descricao)+'</div>':'<div class="dnd35-spell-description">Descrição em português ainda não cadastrada.</div>')+(sp.srd_source_url?'<a class="dnd35-spell-meta" href="'+esc(sp.srd_source_url)+'" target="_blank" rel="noopener noreferrer">Consultar descrição SRD (OGL) ↗</a>':'')+(controls?'<div class="dnd35-spell-controls">'+controls+'</div>':'')+'</article>';
     }).join('')+'</div>';
     var wizardBookCount=s.conhecidas.filter(function(id){var sp=spells.find(function(x){return String(x.id)===String(id);});return sp&&dnd35SpellLevel(sp,avail.key)===1;}).length;var wizardBookQuota=avail.key==='wizard'&&avail.max>=1?Math.max(0,3+dnd35Modificador(Number(attrs.INT)||10)):0;var wizardBookBoard=avail.key==='wizard'&&wizardStage==='book'?'<section class="dnd35-spell-step-board"><div class="dnd35-step-board-head"><b>📖 Seu grimório</b><strong>'+wizardBookCount+' / '+wizardBookQuota+'</strong></div><div class="dnd35-book-slots">'+Array.from({length:Math.min(12,wizardBookQuota)},function(_,i){return '<span data-book-slot class="dnd35-book-slot '+(i<wizardBookCount?'filled':'')+'">'+(i<wizardBookCount?'✦':'')+'</span>';}).join('')+'</div><small>Escolha as magias de 1º círculo que farão parte do livro.</small></section>':'',wizardDailyBoard='';if(avail.key==='wizard'&&wizardStage==='prepare')wizardDailyBoard='<section class="dnd35-spell-step-board"><div class="dnd35-step-board-head"><b>🃏 Espaços de hoje</b><span>Escolha magias do grimório para preparar</span></div><div class="dnd35-daily-slots">'+Object.keys(avail.slots).map(Number).sort(function(a,b){return a-b;}).filter(function(level){return Number(avail.slots[level]||0)>0;}).map(function(level){var used=s.preparadas.filter(function(p){return Number(p.slot_level)===level;}).length,total=Number(avail.slots[level]||0);return '<div class="dnd35-daily-level" data-daily-level="'+level+'" data-daily-total="'+total+'"><b>'+(level===0?'Truques':level+'º círculo')+'</b><span data-daily-count>'+used+' / '+total+'</span><div class="dnd35-daily-cells">'+Array.from({length:Math.min(12,total)},function(_,i){return '<i data-daily-cell class="'+(i<used?'filled':'')+'">'+(i<used?'✦':'')+'</i>';}).join('')+'</div></div>';}).join('')+'</div></section>';
     var wizardLearnBoard=avail.key==='wizard'&&wizardStage==='learn'?'<section class="dnd35-learn-board"><b>Aprender uma nova magia</b><p>Escolha a origem do aprendizado. Magias copiadas de pergaminhos ou de outro grimório precisam de validação do Mestre quanto à fonte, ao teste de Identificar Magia, ao tempo e ao custo antes de serem registradas.</p><label for="wizard-learn-source">Como a magia foi obtida?</label><select id="wizard-learn-source" data-grimoire-learn-source><option value="level">Progressão ao subir de nível · até 2 magias autorizadas</option><option value="copy">Cópia de pergaminho ou de outro grimório · aprovação do Mestre</option></select><span class="dnd35-learn-count" data-grimoire-learn-count>'+state.grimoireLearnSelection.length+' magia(s) selecionada(s)</span></section>':'',modal='<div class="dnd35-grimoire-modal '+(state.grimoireOpen?'open':'')+'" data-grimoire-modal role="dialog" aria-modal="true" aria-label="Catálogo de magias SRD"><div class="dnd35-grimoire-box"><div class="dnd35-grimoire-modalhead"><h2>'+esc(bookTitle.toLocaleUpperCase('pt-BR'))+' · '+esc(classNames[avail.key]||'SRD 3.5')+'</h2><button class="dnd35-grimoire-close" type="button" data-grimoire-close aria-label="Fechar">Fechar ×</button></div>'+(avail.key==='wizard'?'<nav class="dnd35-spell-steps"><button type="button" data-grimoire-stage="book" class="'+(wizardStage==='book'?'active':'')+'">Meu grimório</button><button type="button" data-grimoire-stage="learn" class="'+(wizardStage==='learn'?'active':'')+'" '+(creating?'hidden':'')+'>Aprender magia</button><button type="button" data-grimoire-stage="prepare" '+(wizardBookCount!==wizardBookQuota?'disabled':'')+' class="'+(wizardStage==='prepare'?'active':'')+'">Preparar o dia</button></nav>':'')+wizardBookBoard+wizardDailyBoard+wizardLearnBoard+'<div class="dnd35-grimoire-tools"><input type="search" data-spell-search placeholder="Buscar por nome, escola ou descrição" aria-label="Buscar magias"><span>'+visibleSpells.length+' magia(s) · círculos 0–'+avail.max+'</span></div><div class="dnd35-grimoire-body"><p class="dnd35-grimoire-guide">'+(avail.key==='wizard'?'<strong>Mago:</strong> escolha primeiro as magias para o grimório; depois escolha quais ficam preparadas para cada círculo.':'<strong>Como escolher:</strong> '+(isSpontaneous?'registre magias conhecidas; não use “preparar”. Cada conjuração consome um espaço de magia.':'marque “Preparar” e confira o círculo do espaço. Magias de círculo baixo podem usar espaço superior, mas não o contrário.'))+'</p>'+catalog+'</div><div class="dnd35-grimoire-footer">'+(avail.key==='wizard'&&wizardStage==='book'?'<button class="dnd35-grimoire-save" type="button" data-grimoire-stage-next '+(wizardBookCount!==wizardBookQuota?'disabled':'')+'>Continuar para preparação →</button>':(avail.key==='wizard'&&wizardStage==='prepare'?'<button class="dnd35-grimoire-back" type="button" data-grimoire-stage-back>← Voltar ao grimório</button>':''))+(avail.key==='wizard'&&wizardStage==='learn'?'<button class="dnd35-learn-confirm" type="button" data-grimoire-learn-confirm '+(!state.grimoireLearnSelection.length?'disabled':'')+'>Confirmar aprendizado</button>':(avail.key==='wizard'&&wizardStage==='book'?'':'<button class="dnd35-grimoire-save" type="button" data-grimoire-save>'+(creating?'Concluir':'Salvar seleções')+'</button>'))+'</div></div></div>';
@@ -3352,6 +3302,61 @@ function dnd35LanguageNormalize(value){
 
 <style id="dnd35-grimoire-school-icons">
 .dnd35-school-abjuration .dnd35-school-icon{background:#e1edf1}.dnd35-school-conjuration .dnd35-school-icon{background:#eee2f3}.dnd35-school-divination .dnd35-school-icon{background:#f4edcf}.dnd35-school-enchantment .dnd35-school-icon{background:#f3e1eb}.dnd35-school-evocation .dnd35-school-icon{background:#f5e1d7}.dnd35-school-illusion .dnd35-school-icon{background:#e4e5f4}.dnd35-school-necromancy .dnd35-school-icon{background:#e2e0e4}.dnd35-school-transmutation .dnd35-school-icon{background:#e0eee2}
+/* HUD arcano — identidade Vínculo: verde profundo, bronze e pergaminho; sem azul elétrico. */
+:root{--arc-ink:#0d0b07;--arc-panel:#10170f;--arc-raised:#1b2419;--arc-raised-2:#273222;--arc-gold:#c9a050;--arc-gold-light:#f4d07a;--arc-paper:#f5ecd6;--arc-muted:#c5b995;--arc-line:#665638}
+body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#273222 0,#10170f 42%,#0d0b07 84%)}
+.ficha.dnd35-mode{background:linear-gradient(145deg,#1b2419f5,#10170ff7);border-color:#c9a050}
+.dnd35-header{border-color:#665638}.dnd35-kicker{border-color:#75613d;background:#10170f;color:#f4d07a}
+.dnd35-header h1{color:#f5ecd6}.dnd35-header p{color:#c5b995}
+.dnd35-link{border-color:#75613d;background:#10170f;color:#f4d07a}.dnd35-link:hover{background:#273222;border-color:#c9a050}
+.dnd35-panel,.dnd35-build-panel{border-color:#665638;background:linear-gradient(145deg,#1b2419,#10170f);box-shadow:0 8px 22px #0006}
+.dnd35-panel h2,.dnd35-build-panel h2{color:#f4d07a}
+.dnd35-stat{border-color:#665638;background:linear-gradient(145deg,#1b2419,#10170f)}.dnd35-stat small{color:#c5b995}.dnd35-stat strong{color:#f5ecd6}
+.dnd35-attr{border-color:#665638;background:linear-gradient(180deg,#273222,#10170f)}.dnd35-attr:hover{border-color:#c9a050}
+.dnd35-attr select,.dnd35-name-input,.dnd35-skill-control select,.dnd35-feat-control select,.dnd35-feat-control input{border-color:#75613d;background:#0d0b07;color:#f5ecd6}
+.dnd35-point-budget,.dnd35-budget{border-color:#75613d;background:#332b1c;color:#f4d07a}
+.dnd35-note{color:#c5b995}.dnd35-list{color:#e8dec8}
+.dnd35-tabs{border-color:#665638}.dnd35-tab{border-color:#665638;background:#10170f;color:#c5b995}.dnd35-tab.active{background:linear-gradient(180deg,#f4d07a,#b89050);color:#17130b;border-color:#c9a050}
+.dnd35-skill,.dnd35-feat{border-color:#665638;background:linear-gradient(145deg,#1b2419,#10170f)}.dnd35-skill strong,.dnd35-feat strong{color:#f5ecd6}.dnd35-skill p,.dnd35-feat p{color:#c5b995}
+.dnd35-badge{border-color:#8a6a3a;color:#f4d07a}.dnd35-skill-control label,.dnd35-feat-control label{color:#f4d07a}
+.dnd35-save{border-color:#f4d07a!important;background:linear-gradient(180deg,#f4d07a,#b89050)!important;color:#17130b!important}
+.dnd35-grimoire{color:#2b1f0f;background:linear-gradient(145deg,#f5ecd6,#e4d4ad);border-color:#c9a050}.dnd35-grimoire-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.dnd35-grimoire-actions button{min-height:40px}
+.dnd35-grimoire h2{color:#273222}.dnd35-grimoire-btn,.dnd35-grimoire-action{background:#1b2419;border-color:#c9a050;color:#f4d07a}.dnd35-grimoire-btn:hover,.dnd35-grimoire-action:hover:not(:disabled){background:#273222}
+.dnd35-grimoire-modal{background:rgba(5,8,5,.88)}.dnd35-grimoire-box{border-color:#c9a050;background:#f5ecd6;color:#2b1f0f}
+.dnd35-grimoire-modalhead{background:#1b2419;border-color:#c9a050}.dnd35-grimoire-modalhead h2{color:#f4d07a}
+.dnd35-grimoire-tools{background:#e4d4ad}.dnd35-grimoire-tools input{background:#fff8e8;color:#2b1f0f;border-color:#8a6a3a}
+.dnd35-spell-card{background:linear-gradient(145deg,#fff9e9,#eee2c4);border-color:#b89050}
+.dnd35-spell-card h3{color:#273222}.dnd35-spell-meta{color:#665638}.dnd35-spell-description{color:#3f382b}
+.dnd35-spell-controls{color:#3f382b}.dnd35-spell-controls select{background:#fff8e8;color:#2b1f0f;border-color:#8a6a3a}
+.dnd35-grimoire-save{background:linear-gradient(#d8b66b,#b89050);border-color:#8a6a3a;color:#17130b}
+.dnd35-tutorial-card{background:radial-gradient(ellipse at 50% 0,#273222,#10170f 68%);color:#f5ecd6}.dnd35-tutorial-card h2{color:#f4d07a}.dnd35-tutorial-card p{color:#d8ceb7}.dnd35-tutorial-actions button{border-color:#75613d;background:#1b2419;color:#f5ecd6}
+.dnd35-feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,245px),1fr));gap:10px;margin-top:12px}
+.dnd35-feature-card{position:relative;overflow:hidden;padding:14px 14px 12px;border:1px solid #75613d;border-radius:9px;background:linear-gradient(145deg,#273222,#10170f);box-shadow:inset 0 1px rgba(244,208,122,.08),0 7px 18px #0004}
+.dnd35-feature-card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(#f4d07a,#8a6a3a)}
+.dnd35-feature-card strong{display:block;color:#f4d07a;font:700 13px Cinzel,serif;letter-spacing:.4px}
+.dnd35-feature-card p{margin:8px 0;color:#e7ddc7;font-size:14px;line-height:1.45}
+.dnd35-feature-card small{display:inline-block;margin-top:5px;padding:3px 7px;border:1px solid #75613d;border-radius:20px;color:#c5b995;font:10px Cinzel,serif}
+.dnd35-feat-collection{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:10px;margin-top:10px}
+.dnd35-feat-owned{padding:13px;border:1px solid #75613d;border-radius:9px;background:linear-gradient(145deg,#273222,#10170f);box-shadow:0 6px 16px #0004}
+.dnd35-feat-owned strong{display:block;color:#f4d07a;font:700 12px Cinzel,serif}
+.dnd35-feat-owned p{margin:7px 0 0;color:#e7ddc7;font-size:14px;line-height:1.45}
+.dnd35-feat-owned small{display:block;margin-top:8px;color:#c5b995;font-size:11px}
+.dnd35-spell-steps{display:flex;gap:7px;flex-wrap:wrap;padding:10px 16px;background:#1b2419;border-bottom:1px solid #75613d}
+.dnd35-spell-steps button{flex:1;min-width:130px;padding:9px 11px;border:1px solid #75613d;border-radius:6px;background:#10170f;color:#c5b995;font:700 10px Cinzel,serif;cursor:pointer}
+.dnd35-spell-steps button.active{border-color:#c9a050;background:linear-gradient(145deg,#3b3320,#1b2419);color:#f4d07a;box-shadow:inset 0 0 0 1px #c9a050}
+.dnd35-spell-steps button:disabled{opacity:.35;cursor:not-allowed}
+.dnd35-learn-board{margin:12px 16px 0;padding:13px;border:1px solid #b89050;border-radius:8px;background:linear-gradient(145deg,#f8efd9,#e4d4ad)}
+.dnd35-learn-board b{display:block;color:#273222;font:700 12px Cinzel,serif}
+.dnd35-learn-board p{margin:6px 0;color:#51432d;font-size:14px}
+.dnd35-learn-board select{width:100%;max-width:440px;padding:8px;border:1px solid #8a6a3a;border-radius:5px;background:#fff8e8;color:#2b1f0f}
+.dnd35-learn-count{display:inline-flex;margin-top:8px;padding:4px 9px;border-radius:20px;background:#1b2419;color:#f4d07a;font:10px Cinzel,serif}
+.dnd35-learn-confirm{margin:12px 16px 15px;align-self:flex-end;padding:11px 18px;border:1px solid #8a6a3a;border-radius:5px;background:linear-gradient(#d8b66b,#b89050);color:#17130b;font:900 11px Cinzel,serif;cursor:pointer}
+.dnd35-learn-confirm:disabled{opacity:.45;cursor:not-allowed}
+.dnd35-spell-card.is-forbidden{filter:grayscale(1);opacity:.42}
+@media(max-width:600px){.dnd35-feature-grid,.dnd35-feat-collection{grid-template-columns:1fr}.dnd35-spell-steps{padding:8px}.dnd35-spell-steps button{min-width:0;font-size:9px}.dnd35-learn-board{margin:10px 10px 0}.dnd35-learn-confirm{width:calc(100% - 20px);margin:10px}}
+
+
+ .dnd35-grimoire-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.dnd35-grimoire-actions button{min-height:40px}
 </style>
 </body>
 </html>
