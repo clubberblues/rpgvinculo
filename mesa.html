@@ -6130,12 +6130,88 @@ async function abrirModalEquipamentos(){
     pendentes.forEach(function(item){ ativarPedidoTeste(item.data,item.key); });
   }
 
+  async function calcularBonusTokenMestre35(token, requestData){
+    var skillId=requestData&&requestData.skill_id;
+    if(!skillId)return {bonus:0,breakdown:null};
+    var sourceId=token&&token.tipo==='npc'?(token.sourceCharacterId||token.source_character_id):null;
+    if(sourceId){
+      var rows=await Promise.all([
+        sb.from('characters').select('id,user_id,nome').eq('id',String(sourceId)).maybeSingle(),
+        sb.from('srd_character_sheets').select('*').eq('character_id',String(sourceId)).maybeSingle()
+      ]);
+      if(rows[0].error)throw new Error('Não foi possível carregar a ficha do NPC: '+rows[0].error.message);
+      if(rows[1].error)throw new Error('Não foi possível carregar os dados da ficha do NPC: '+rows[1].error.message);
+      if(rows[0].data&&rows[1].data){
+        var sheet=rows[1].data,cls={};
+        if(sheet.classe_id){
+          var classResult=await sb.from('srd_classes').select('*').eq('id',String(sheet.classe_id)).maybeSingle();
+          if(classResult.error)throw new Error('Não foi possível carregar a classe do NPC: '+classResult.error.message);
+          cls=classResult.data||{};
+        }
+        var equipmentResult=await sb.from('srd_character_equipment').select('quantidade,equipado,equipment:srd_equipment(*)').eq('character_id',String(sourceId));
+        if(equipmentResult.error)throw new Error('Não foi possível carregar os equipamentos do NPC: '+equipmentResult.error.message);
+        var equipment=(equipmentResult.data||[]).map(function(row){return Object.assign({},row.equipment||{},{quantidade:row.quantidade,equipado:!!row.equipado});});
+        var ficha={ch:rows[0].data,sh:sheet,cl:cls,equipamento:equipment};
+        var result=await calcularBonusPericiaSolicitada35(ficha,skillId);
+        return {bonus:Number(result.bonus)||0,breakdown:result};
+      }
+    }
+    var tokenStats=token&&token.monsterStats||{};
+    var skillResult=await sb.from('srd_skills').select('id,nome,atributo').eq('id',String(skillId)).maybeSingle();
+    if(skillResult.error)throw new Error('Não foi possível consultar a perícia: '+skillResult.error.message);
+    var skill=skillResult.data;
+    if(!skill)throw new Error('Perícia não encontrada no catálogo D&D 3.5.');
+    var rawSkills=tokenStats.pericias||tokenStats.skills||tokenStats.skill_modifiers||{};
+    if(typeof rawSkills==='string'){try{rawSkills=JSON.parse(rawSkills);}catch(e){rawSkills={};}}
+    var normalizeSkill=function(v){return String(v||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');};
+    var skillValue=rawSkills[String(skill.id)];
+    if(skillValue==null)skillValue=rawSkills[String(skill.nome)];
+    if(skillValue==null){
+      var target=normalizeSkill(skill.nome);
+      Object.keys(rawSkills).some(function(key){if(normalizeSkill(key)===target){skillValue=rawSkills[key];return true;}return false;});
+    }
+    if(skillValue!=null){
+      if(typeof skillValue==='object')skillValue=skillValue.bonus!=null?skillValue.bonus:(skillValue.modificador!=null?skillValue.modificador:skillValue.total);
+      var explicit=Number(skillValue);
+      if(Number.isFinite(explicit))return {bonus:explicit,breakdown:{monster_skill_bonus:explicit}};
+    }
+    var attrs=tokenStats.atributos||tokenStats.attributes||{};
+    if(typeof attrs==='string'){try{attrs=JSON.parse(attrs);}catch(e){attrs={};}}
+    var attr=String(skill.atributo||'INT').toUpperCase();
+    var value=attrs[attr];
+    if(value==null)value=attrs[{FOR:'forca',DES:'destreza',CON:'constituicao',INT:'inteligencia',SAB:'sabedoria',CAR:'carisma'}[attr]];
+    var abilityBonus=value==null?0:modifier35(value);
+    return {bonus:abilityBonus,breakdown:{ability:attr,ability_bonus:abilityBonus,monster_skill_data_missing:true}};
+  }
+
+  async function resolverTesteAutomaticoToken(tokenId, requestKey, requestData){
+    var source=cbaPublishedState&&Array.isArray(cbaPublishedState.tokens)?cbaPublishedState:(cbaState&&Array.isArray(cbaState.tokens)?cbaState:null);
+    var token=source&&source.tokens?source.tokens.find(function(t){return String(t.key||t.id)===String(tokenId);}):null;
+    if(!token)throw new Error('Token não encontrado no tabuleiro para realizar o teste.');
+    var nome=String(token.nome||token.name||'NPC/Monstro');
+    var isD100=requestData&&requestData.resolution_type==='confusion_d100';
+    var dado=isD100?Math.floor(Math.random()*100)+1:Math.floor(Math.random()*20)+1;
+    var bonusResult=await calcularBonusTokenMestre35(token,requestData);
+    var bonus=Number(bonusResult.bonus)||0;
+    var total=dado+bonus;
+    var texto=(isD100?'🎲 ':'🎲 ')+nome+' — '+String(requestData.tipo||'Teste')+': D'+(isD100?'100 ':'20 ')+dado+
+      (isD100?'':' + bônus '+(bonus>=0?'+':'')+bonus+' = '+total)+'.';
+    var extras={request_id:requestKey,token_id:String(tokenId),teste:String(requestData.tipo||'Teste'),dado:dado,total:isD100?dado:total,bonus:isD100?0:bonus,automatico_mestre:true,skill_id:requestData.skill_id||null};
+    if(bonusResult.breakdown)extras.skill_breakdown=bonusResult.breakdown;
+    var log=await enviarMensagemChat(texto,'rolagem',extras);
+    if(log&&log.error)throw new Error('Rolagem calculada, mas não foi registrada no chat.');
+    pedidosTesteRespondidos[String(requestKey)+'|npc|'+String(tokenId)]=true;
+  }
+
   function ativarPedidoTeste(data, requestKey){
     if(!data) return;
     if(ehGM){
       if(Array.isArray(data.npc_alvos)&&data.npc_alvos.length){
         data.npc_alvos.forEach(function(tokenId){
-          criarBotaoRolagemNpcTeste(String(data.tipo||'Resistência'),String(tokenId),requestKey,data);
+          resolverTesteAutomaticoToken(String(tokenId),requestKey,data).catch(function(error){
+            console.error('Falha na rolagem automática do token:',error);
+            alert('Não foi possível rolar para '+String(tokenId)+': '+(error.message||error));
+          });
         });
       }else if((data.resolution_type==='spell_resistance'||data.resolution_type==='saving_throw')&&Array.isArray(data.alvos)){
         personagens.forEach(function(personagemAlvo){
