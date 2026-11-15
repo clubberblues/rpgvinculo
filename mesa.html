@@ -1496,7 +1496,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     ligarGestosCBA();
     ligarMenuContextualToken();
     var tokenLayer=document.getElementById('cba-token-layer');
-    tokenLayer.addEventListener('click',function(e){var hpButton=e.target.closest&&e.target.closest('.token-pv-btn');if(hpButton){e.preventDefault();e.stopPropagation();abrirAjustePVToken(hpButton.dataset.cbaPvKey);return;}var token=e.target.closest&&e.target.closest('.token-cba');if(!token||Date.now()<suppressTokenClickUntil)return;var item=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key)===String(token.dataset.cbaTokenKey);});if(!item)return;if(modoSelecaoTeste&&ehGM){alternarAlvoTokenTeste(item,token);return;}if(ataqueMestreSelecionado){selecionarAlvoAtaqueMestre(item);return;}if(ataqueSelecionado){selecionarAlvoAtaque(item.key);return;}abrirMenuContextualToken(item,token);});
+    tokenLayer.addEventListener('click',function(e){var hpButton=e.target.closest&&e.target.closest('.token-pv-btn');if(hpButton){e.preventDefault();e.stopPropagation();abrirAjustePVToken(hpButton.dataset.cbaPvKey);return;}var token=e.target.closest&&e.target.closest('.token-cba');if(!token)return;var item=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.key)===String(token.dataset.cbaTokenKey);});if(!item)return;if(modoSelecaoTeste&&ehGM){alternarAlvoTokenTeste(item,token);return;}if(Date.now()<suppressTokenClickUntil)return;if(ataqueMestreSelecionado){selecionarAlvoAtaqueMestre(item);return;}if(ataqueSelecionado){selecionarAlvoAtaque(item.key);return;}abrirMenuContextualToken(item,token);});
     tokenLayer.addEventListener('dblclick',function(e){var token=e.target.closest&&e.target.closest('.token-cba');if(token&&ehGM&&!ataqueSelecionado)abrirAjustePVToken(token.dataset.cbaTokenKey);});
     tokenLayer.addEventListener('contextmenu',function(e){var el=e.target.closest&&e.target.closest('.token-cba');if(!el)return;var t=cbaPublishedState&&cbaPublishedState.tokens.find(function(x){return String(x.key)===String(el.dataset.cbaTokenKey);});if(!t||t.tipo!=='monstro'||!t.monsterId)return;e.preventDefault();var m=cbaMonsterCatalog.find(function(x){return String(x.id)===String(t.monsterId);});if(m)publicarInfoMonstro(m);else if(t.monsterStats){publicarInfoMonstro({id:t.monsterId,nome:t.nome,nd:t.monsterStats.nd,ca:t.ac,pv:t.maxHp,ataques:t.monsterStats.ataques,srd_source_url:t.srdSourceUrl});}});
   }
@@ -5507,6 +5507,8 @@ async function abrirModalEquipamentos(){
     layer.addEventListener('pointerdown',function(e){
       if(e.target.closest&&e.target.closest('.token-pv-btn')) return;
       if(e.isPrimary === false || cbaPinchInProgress) return;
+      // Durante a escolha dos alvos, o token recebe clique de seleção, nunca inicia arraste/menu contextual.
+      if(!ePreview && ehGM && modoSelecaoTeste) return;
       var token = e.target.closest ? e.target.closest('.token-cba') : null;
       if(!token || !layer.contains(token)) return;
       var scene = ePreview ? cbaState : cbaPublishedState;
@@ -5570,7 +5572,7 @@ async function abrirModalEquipamentos(){
         if(editingItem){ editingItem.gridX=arrasto.item.gridX; editingItem.gridY=arrasto.item.gridY; editingItem.x=arrasto.item.x; editingItem.y=arrasto.item.y; }
       }
       if(!ePreview&&didMove){suppressTokenClickUntil=Date.now()+450;if(ehGM)salvarPosicaoTokenCBA(arrasto.item);else salvarPosicaoTokenJogador(arrasto.item);}
-      else if(!ePreview){if(ataqueMestreSelecionado){suppressTokenClickUntil=Date.now()+450;selecionarAlvoAtaqueMestre(arrasto.item);}else if(ataqueSelecionado){suppressTokenClickUntil=Date.now()+450;selecionarAlvoAtaque(arrasto.item.key);}else{suppressTokenClickUntil=0;abrirMenuContextualToken(arrasto.item,arrasto.token);suppressTokenClickUntil=Date.now()+450;}}
+      else if(!ePreview&&!modoSelecaoTeste){if(ataqueMestreSelecionado){suppressTokenClickUntil=Date.now()+450;selecionarAlvoAtaqueMestre(arrasto.item);}else if(ataqueSelecionado){suppressTokenClickUntil=Date.now()+450;selecionarAlvoAtaque(arrasto.item.key);}else{suppressTokenClickUntil=0;abrirMenuContextualToken(arrasto.item,arrasto.token);suppressTokenClickUntil=Date.now()+450;}}
       try { if(arrasto.token.hasPointerCapture(arrasto.pointerId)) arrasto.token.releasePointerCapture(arrasto.pointerId); } catch(err) {}
       arrasto = null;
       var tooltip = document.getElementById('cba-distancia-preview');
@@ -6053,10 +6055,18 @@ async function abrirModalEquipamentos(){
   }
 
   function alternarAlvoTokenTeste(item,element){
-    if(!item||item.tipo==='player')return;
-    var tokenId=String(item.key||item.id),index=alvosNpcSelecionados.indexOf(tokenId);
-    if(index<0){alvosNpcSelecionados.push(tokenId);element.classList.add('selecionado-para-teste');}
-    else{alvosNpcSelecionados.splice(index,1);element.classList.remove('selecionado-para-teste');}
+    if(!item)return;
+    if(item.tipo==='player'){
+      var character=personagens.find(function(p){return String(p.ch.id)===String(item.id);});
+      if(!character)return;
+      var charId=String(character.ch.id),playerIndex=alvosSelecionados.indexOf(charId);
+      if(playerIndex<0){alvosSelecionados.push(charId);element.classList.add('selecionado-para-teste');}
+      else{alvosSelecionados.splice(playerIndex,1);element.classList.remove('selecionado-para-teste');}
+    }else{
+      var tokenId=String(item.key||item.id),index=alvosNpcSelecionados.indexOf(tokenId);
+      if(index<0){alvosNpcSelecionados.push(tokenId);element.classList.add('selecionado-para-teste');}
+      else{alvosNpcSelecionados.splice(index,1);element.classList.remove('selecionado-para-teste');}
+    }
     var texto=document.getElementById('txt-teste-selecionado');
     if(texto)texto.textContent=testeAtual+' — '+alvosSelecionados.length+' personagem(ns), '+alvosNpcSelecionados.length+' NPC/monstro(s)';
   }
