@@ -1887,9 +1887,12 @@ function dnd35TranslateCatalogText(value){
     return labels[String(value||'')]||String(value||'');
   }
   function dnd35ClassFeaturesMarkup(state){
-    var list=Array.isArray(state.classFeatures)?state.classFeatures:[];
-    if(!list.length)return '';
-    return '<section class="dnd35-panel dnd35-class-features"><h2>Habilidades da classe · '+esc(state.classe.nome||'')+'</h2><p class="dnd35-note">'+((String(state.classe.id||'').toLowerCase()==='barbaro')?'No 1º nível, o Bárbaro recebe Deslocamento Rápido, Analfabetismo e Fúria 1/dia; não recebe talento bônus de classe. Um personagem humano ainda recebe o talento adicional da raça, além do talento geral do 1º nível.':'Estas habilidades são concedidas pela classe; talentos são escolhas separadas.')+'</p><div class="dnd35-feature-grid">'+list.map(function(feature){return String(feature.name||'').split(/[·•]/).map(function(part){var name=part.trim();if(!name)return '';return '<article class="dnd35-feature-card"><strong>'+esc(dnd35ClassFeatureNamePt(name))+'</strong><p>'+esc(dnd35ClassFeatureDescription(name,feature.summary))+'</p><small>Nível '+Number(feature.class_level)+' · habilidade de classe</small></article>';}).join('');}).join('')+'</div></section>';
+    var list=Array.isArray(state.classFeatures)?state.classFeatures:[],classId=String(state.classe.id||state.classe.class_key||'').toLowerCase(),isWizard=classId==='mago'||classId==='wizard',level=Math.max(1,Number(state.sheet.nivel)||1);
+    if(!list.length&&!isWizard)return '';
+    var intro=classId==='barbaro'?'No 1º nível, o Bárbaro recebe Deslocamento Rápido, Analfabetismo e Fúria 1/dia; não recebe talento bônus de classe. Um personagem humano ainda recebe o talento adicional da raça, além do talento geral do 1º nível.':(isWizard?'O Mago mantém no grimório as magias que aprendeu e escolhe após cada descanso quais serão preparadas. Ao avançar de nível, aprende duas novas magias de Mago sem custo; também pode copiar magias de pergaminhos ou de outros grimórios, com validação do Mestre.':'Estas habilidades são concedidas pela classe; talentos são escolhas separadas.');
+    var cards=list.map(function(feature){return String(feature.name||'').split(/[·•]/).map(function(part){var name=part.trim();if(!name)return '';return '<article class="dnd35-feature-card"><strong>'+esc(dnd35ClassFeatureNamePt(name))+'</strong><p>'+esc(dnd35ClassFeatureDescription(name,feature.summary))+'</p><small>Nível '+Number(feature.class_level)+' · habilidade de classe</small></article>';}).join('');}).join('');
+    if(isWizard)cards+='<article class="dnd35-feature-card"><strong>Aprendizado arcano</strong><p>A cada novo nível de Mago, escolha duas magias adicionais para registrar no grimório. Para aprender por cópia, use a opção “Aprender nova magia” e solicite a validação do Mestre.</p><small>Nível atual '+level+' · progressão do grimório</small></article>';
+    return '<section class="dnd35-panel dnd35-class-features"><h2>Habilidades da classe · '+esc(state.classe.nome||'')+'</h2><p class="dnd35-note">'+intro+'</p><div class="dnd35-feature-grid">'+cards+'</div></section>';
   }
   
     function dnd35SkillUsePt35(skill){
