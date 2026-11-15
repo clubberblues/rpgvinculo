@@ -4276,7 +4276,7 @@ var targetRaceId=String(target.raca_id||target.race_id||target.monsterStats&&tar
     return '';
   }
   function fatosLoja(item){
-    var facts=[],slot=slotEquipamento35(item),damageTypes={'slashing':'Cortante','piercing':'Perfurante','bludgeoning':'Impacto','slashing_or_piercing':'Cortante ou perfurante','piercing_or_slashing':'Perfurante ou cortante'};
+    var facts=[],slot=slotEquipamento35(item),damageTypes={'slashing':'Cortante','piercing':'Perfurante','bludgeoning':'Impacto','bludgeoning and piercing':'Impacto ou perfurante','slashing_or_piercing':'Cortante ou perfurante','piercing_or_slashing':'Perfurante ou cortante','slashing or piercing':'Cortante ou perfurante','piercing or slashing':'Perfurante ou cortante'};
     if(item.dano)facts.push(['Dano',item.dano]);
     if(item.critico)facts.push(['Crítico',String(item.critico).replace(/x(\d+)/i,'×$1')]);
     if(item.tipo_dano)facts.push(['Tipo de dano',damageTypes[String(item.tipo_dano).toLowerCase()]||item.tipo_dano]);
