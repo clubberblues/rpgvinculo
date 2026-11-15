@@ -1571,7 +1571,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       var spellLabels={wizard:'Consultar grimório e conjurar',sorcerer:'Magias conhecidas e conjuração',druid:'Consultar magias e conjurar',cleric:'Consultar magias e conjurar',bard:'Consultar repertório e conjurar',paladin:'Magias disponíveis',ranger:'Magias disponíveis'};
       groups.push({key:'magias',title:spellTitles[classKey]||'Magias',icon:'✨',actions:[{id:'atk-mag',ic:'✨',txt:spellLabels[classKey]||'Magias disponíveis'}]});
     }
-    if(String(estado||'EXPLORACAO').toUpperCase()==='COMBATE'){
+    if(String(estado||'EXPLORACAO').toUpperCase()==='COMBATE'&&combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)&&combatDataState.turn_order.length){
       groups.push(
         {key:'combate',title:'Combate',icon:'⚔️',actions:[
           {id:'atk-corpo',ic:'⚔️',txt:'Ataque corpo a corpo'},
