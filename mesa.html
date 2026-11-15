@@ -6080,7 +6080,7 @@ async function abrirModalEquipamentos(){
     alvosSelecionados = [];
     alvosNpcSelecionados = [];
     document.getElementById('modal-testes').style.display = 'none';
-    var testBar=document.getElementById('barra-confirmar-teste'),testRoster=document.querySelector('.painel-aventureiros');if(testRoster)testRoster.insertBefore(testBar,document.getElementById('cards-strip'));testBar.style.display = 'block';
+    var testBar=document.getElementById('barra-confirmar-teste');if(!testBar)throw new Error('Barra de confirmação dos testes não encontrada.');testBar.style.display='block';
     document.getElementById('txt-teste-selecionado').textContent = nomeTeste+' — selecione os alvos';
     document.getElementById('cards-strip').classList.add('selecionando-teste');
     document.querySelectorAll('.card-pers').forEach(function(card){ card.classList.remove('selecionado-para-teste'); });
