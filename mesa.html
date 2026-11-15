@@ -1418,6 +1418,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       falhas=falhas.concat(extraResults.filter(function(r){return r.status==='rejected';}));
       renderizarIniciativa(combatDataState);
       await sincronizarPedidoIniciativaPendente();
+      if(!ehGM){var lojaEstadoInicial=await sb.from('srd_campaign_shop_state').select('is_open').eq('campaign_id',Number(MESA_ID)).maybeSingle();if(!lojaEstadoInicial.error&&lojaEstadoInicial.data&&lojaEstadoInicial.data.is_open)abrirLojaJogador();}
       if(falhas.length)atualizarStatusMesa('Mesa aberta; alguns dados não sincronizaram. Recarregue para tentar novamente.','erro');
       else{atualizarStatusMesa('Mesa pronta.');window.setTimeout(function(){atualizarStatusMesa('');},1800);}
     }).catch(function(err){console.warn('A mesa abriu, mas houve falha ao carregar dados secundários:',err);atualizarStatusMesa('Mesa aberta; a sincronização está instável.','erro');});
