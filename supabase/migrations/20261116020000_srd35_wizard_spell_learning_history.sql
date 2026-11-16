@@ -73,8 +73,11 @@ BEGIN
     IF v_key !~ '^[0-9]+$' OR v_key::integer < 2 OR v_key::integer > 20 OR v_key::integer > v_level THEN
       RAISE EXCEPTION 'Nível inválido em aprendidas_por_nivel: %',v_key;
     END IF;
-    IF jsonb_typeof(v_learned_entry) <> 'array' OR jsonb_array_length(v_learned_entry) > 2 THEN
-      RAISE EXCEPTION 'Cada nível deve conter uma lista de até duas magias gratuitas';
+    IF jsonb_typeof(v_learned_entry) <> 'array' THEN
+      RAISE EXCEPTION 'Cada nível deve conter uma lista de magias gratuitas';
+    END IF;
+    IF jsonb_array_length(v_learned_entry) > 2 THEN
+      RAISE EXCEPTION 'Cada nível pode conter no máximo duas magias gratuitas';
     END IF;
     IF EXISTS (SELECT 1 FROM jsonb_array_elements(v_learned_entry) AS x(value) WHERE jsonb_typeof(x.value) <> 'string') THEN
       RAISE EXCEPTION 'IDs de magias aprendidas por nível devem ser textos';
@@ -85,6 +88,19 @@ BEGIN
     END IF;
     IF EXISTS (SELECT 1 FROM jsonb_array_elements_text(v_learned_entry) AS x(id) WHERE NOT (v_known ? x.id)) THEN
       RAISE EXCEPTION 'Toda magia aprendida por progressão precisa constar no grimório';
+    END IF;
+    IF v_class <> 'wizard' AND jsonb_array_length(v_learned_entry) > 0 THEN
+      RAISE EXCEPTION 'O histórico de magias gratuitas por nível é exclusivo do Mago';
+    END IF;
+    IF EXISTS (
+      SELECT 1
+        FROM jsonb_array_elements_text(v_learned_entry) AS x(id)
+        JOIN public.srd_spells sp ON sp.id=x.id
+       WHERE coalesce((SELECT (slots_by_level -> (v_key::integer-1) ->> sp.circulo)::integer
+                         FROM public.srd_spell_progressions WHERE class_key='wizard'),0)=0
+          OR v_score < 10+sp.circulo
+    ) THEN
+      RAISE EXCEPTION 'Magia registrada em nível no qual ainda não era acessível: %',v_key;
     END IF;
   END LOOP;
   SELECT count(*) INTO v_learned_total FROM (
