@@ -5787,7 +5787,7 @@ async function abrirModalEquipamentos(){
   function ligarMovimentoPorCliqueCBA(host,ePreview){
     if(!host||host.dataset.clickMoveBound==='1')return;
     host.dataset.clickMoveBound='1';
-    host.addEventListener('keydown',function(e){if(e.key==='Escape'&&cbaMoveSelectionKey!=null&&cbaMoveSelectionPreview===!!ePreview){e.preventDefault();cancelarSelecaoMovimentoCBA();}});
+    if(!document.documentElement.dataset.cbaMoveEscapeBound){document.documentElement.dataset.cbaMoveEscapeBound='1';document.addEventListener('keydown',function(e){if(e.key==='Escape'&&cbaMoveSelectionKey!=null){e.preventDefault();cancelarSelecaoMovimentoCBA();}});}
     host.addEventListener('click',function(e){
       if(cbaMoveSaving||cbaPinchInProgress)return;
       if(e.target.closest&&e.target.closest('button,input,select,textarea,a,#token-context-menu'))return;
