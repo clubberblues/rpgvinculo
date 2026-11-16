@@ -138,3 +138,13 @@ Inspeção somente de leitura da implementação e do banco de produção:
 6. Auditar o uso de `srd_character_class_levels` e das rotinas de avanço para garantir que o fluxo final aceite somente uma classe, preservando compatibilidade com dados existentes.
 
 Nenhuma alteração de aplicação ou banco foi feita durante esta auditoria inicial; o único artefato criado nesta branch é esta especificação de produto.
+
+
+## Auditoria inicial do painel do jogador na mesa
+
+- `mesa.html` atualmente monta para o jogador grupos de ações: Aventureiro, Perícias e testes, Características, Classe, Magias e, durante combate, Combate/Tática/Turno.
+- Esses grupos incluem atalhos de rolagem, testes, conjuração, consulta/uso de habilidades e ações de combate. Esse é o modelo que será simplificado conforme a nova decisão.
+- O Mestre tem um conjunto próprio de controles em `renderBotoesAcao()`. Ele deve permanecer independente e preservado nesta mudança.
+- A ficha completa já é aberta pelo jogador em um modal/iframe via `abrirFichaModalMesa()`, carregando `ficha.html?char=...`.
+- Direção aprovada: o painel do jogador deixa de apresentar categorias e botões de execução. Ele passa a ser uma área de consulta da ficha do personagem ativo. Movimento continua sendo feito diretamente pelo token na mesa; rolagens, testes, interpretação e narração ficam fora desse painel e são conduzidos manualmente conforme o livro e o Discord.
+- A auditoria/implementação deve preservar a ficha completa e suas seções consultivas; não basta trocar os botões por uma ficha-resumo que esconda dados necessários. A organização poderá usar navegação interna/abas para manter a leitura clara, mas todas as informações pertinentes precisam continuar acessíveis.
