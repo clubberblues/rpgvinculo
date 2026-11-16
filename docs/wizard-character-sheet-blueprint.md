@@ -190,3 +190,83 @@ Todos os números exibidos devem mostrar a origem do total (base + atributo + ra
 - Não automatizar rolagens ou conjuração no painel do jogador.
 - Não alterar controles do Mestre.
 - Não declarar teste manual concluído sem executar o fluxo real.
+
+
+## Auditoria aprofundada do código e da RPC (16/11/2026)
+
+### Especialização — UI existe; validação server-side incompleta
+
+A função `dnd35WizardSpecializationMarkup` já oferece universalista ou uma das oito escolas e calcula duas escolas proibidas, ou uma para Adivinhação. O formulário impede, visualmente, repetir a escola especializada e duplicar escolhas.
+
+Entretanto, a RPC `salvar_grimorio_srd` lê `wizard_specialization` e `wizard_prohibited_schools` da identidade, mas a inspeção do corpo da função não encontrou validação server-side de:
+- especialização pertencente ao conjunto válido;
+- Universal como não selecionável;
+- quantidade exata de escolas proibidas (duas, ou uma para Adivinhação);
+- escolas proibidas distintas entre si e diferentes da especialização;
+- imutabilidade dessas escolhas depois da criação.
+
+Como a RPC é `SECURITY DEFINER`, a validação das regras precisa existir no servidor, e não depender apenas dos controles do navegador. A RPC verifica autenticação e propriedade do personagem, mas isso não substitui a validação semântica das escolhas de escola.
+
+### Familiar — erro de conteúdo já confirmado
+
+A lista atual hardcoded em `dnd35FamiliarChoiceMarkup` tem dez opções, mas não corresponde à tabela de familiares do SRD:
+- Inclui **Texugo**, que não é opção padrão de familiar.
+- Omite **Doninha** (Weasel), que é opção padrão.
+- A lista atual dá ao Rato +3 em Fortitude; o SRD concede +2.
+- A lista atual dá ao Texugo +3 em Reflexos; o SRD concede +2 em Reflexos à Doninha.
+- O Gato está descrito como +3 em Furtividade, mas a perícia correta é **Mover-se em Silêncio**.
+- O texto de vínculo diz 1,5 km; o SRD diz 1 milha.
+- O texto diz que níveis de Mago e Feiticeiro se acumulam. Isso é regra geral para personagens que tenham níveis nas duas classes, mas o produto decidiu não permitir multiclasse; na ficha do Mago, a progressão deve usar o nível de Mago, sem sugerir uma opção de multiclasse.
+- O próprio código informa que estatísticas completas e progressão do familiar ainda serão conectadas ao bestiário. Portanto, a ficha atual registra a escolha e um benefício resumido, mas não entrega a ficha completa do familiar.
+
+Tabela oficial de benefícios (SRD):
+- Morcego: +3 Ouvir.
+- Gato: +3 Mover-se em Silêncio.
+- Falcão: +3 Observar sob luz intensa.
+- Lagarto: +3 Escalar.
+- Coruja: +3 Observar na penumbra.
+- Rato: +2 em testes de Fortitude.
+- Corvo: +3 Avaliação; pode falar um idioma escolhido pelo mestre.
+- Cobra (víbora Miúda): +3 Blefar.
+- Sapo: +3 PV.
+- Doninha: +2 em testes de Reflexos.
+
+O SRD também exige a ficha do familiar: DV, PV (metade dos PV do mestre, arredondado para baixo), ataques, salvamentos, perícias, talentos, armadura natural, Inteligência e habilidades progressivas. A progressão por nível do mestre concede benefícios cumulativos: 1–2, 3–4, 5–6, 7–8, 11–12 e 13–14, conforme a tabela de familiares. Isso não deve ser substituído por um nome e um bônus fixo.
+
+### Grimório — discrepância entre UI e RPC na contagem inicial
+
+A interface usa `Math.max(0, 3 + modificador de INT)` para a quantidade inicial de magias de 1º círculo. A RPC usa uma condição diferente (`INT >= 11`) e, abaixo disso, define capacidade zero. Essas regras divergem para INT abaixo de 11 e podem permitir que UI e servidor aceitem/rejeitem estados diferentes.
+
+A regra de criação do grimório deve ser modelada literalmente:
+- base de três magias de 1º círculo;
+- uma adicional por ponto de bônus de Inteligência;
+- atributo mínimo de 10 + círculo para aprender, preparar ou conjurar uma magia daquele círculo.
+Separar o conteúdo inicial do grimório da capacidade atual de preparar/conjurar. A validação deve decidir claramente o tratamento de personagens com Inteligência insuficiente para círculos específicos, sem reduzir silenciosamente as três escolhas iniciais.
+
+### Progressão mágica — duas fontes com status diferentes
+
+- `srd_spell_level_progressions`: 200 linhas para Mago, 10 círculos × 20 níveis, todas `derived_pending_review`.
+- `srd_spell_progressions`: contém um vetor `slots_by_level` para Mago com 20 níveis; a RPC atual `salvar_grimorio_srd` consulta essa tabela para validar círculos acessíveis e calcular capacidade por meio de `_srd35_slots`.
+- O vetor `slots_by_level` foi comparado com a tabela SRD consultada: os valores-base visíveis para Mago seguem a progressão oficial de 1º a 20º nível; círculos ainda não acessíveis estão representados por -1.
+- Ainda é necessário identificar a origem, versionamento e mecanismo de geração desse vetor, e garantir que bônus de Inteligência e espaço de especialista sejam adicionados uma única vez. Não substituir a fonte ativa sem mapear dependências.
+
+### Segurança e persistência
+
+A RPC `salvar_grimorio_srd` é `SECURITY DEFINER`, exige `auth.uid()`, verifica se o personagem pertence ao usuário autenticado e bloqueia a ficha para atualização. As políticas SELECT das tabelas específicas permitem leitura pelo proprietário e Mestre. A ficha principal tem políticas próprias de leitura/atualização por proprietário ou campanha.
+
+Não foi executada gravação de teste nem alteração em produção. O retorno zero linhas nas tabelas de grimório significa que a persistência ainda não foi comprovada por um personagem real neste ciclo de auditoria.
+
+### Ajustes prioritários antes da implementação visual
+
+1. Corrigir catálogo e descrições dos familiares usando a tabela oficial.
+2. Criar ficha vinculada completa do familiar com estatísticas e progressão.
+3. Unificar a fórmula de magias iniciais na UI e RPC, com testes para INT 8, 10, 11, 12, 14, 18 e 20.
+4. Adicionar validação server-side da especialização e escolas proibidas.
+5. Validar o grimório inicial com todos os truques permitidos, magias iniciais, escolas proibidas e requisito de atributo por círculo.
+6. Confirmar se a preparação respeita slots-base, bônus de Inteligência e slot adicional de especialista sem dupla contagem.
+7. Testar gravação e recarga de personagem Mago em ambiente seguro antes de tocar no banco de produção.
+8. Só depois completar a tela consultiva da ficha e conectar a ficha vinculada do familiar.
+
+Fontes SRD usadas nesta auditoria:
+- Mago, tabela de progressão, grimório, especialização e familiares: https://www.35srd.com/players/classes/base-classes/wizard/
+- Referência alternativa de Mago e magia: https://www.d20srd.org/srd/classes/sorcererWizard.htm
