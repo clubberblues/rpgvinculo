@@ -116,3 +116,20 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .monster-add-button:hover{background:linear-gradient(145deg,#45403a,#292a2b)!important;border-color:var(--vtt-bronze)!important;color:#fff0d0!important}
 .npc-archetype-card button{background:#24292f!important;border-color:var(--vtt-border-strong)!important;color:var(--vtt-text)!important}
 .npc-archetype-card button:hover{background:#3b3f43!important;border-color:var(--vtt-bronze)!important;color:#fff0d0!important}
+
+
+/* Grimório/conjuração: cartões fluidos, sem cortes ou texto escapando. */
+#modal-magias-lista{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(100%,245px),1fr))!important;align-content:start;gap:8px!important;max-height:min(42dvh,480px)!important;overflow-y:auto!important;overflow-x:hidden!important;min-width:0;box-sizing:border-box}
+#modal-magias-lista .magia-opcao{display:grid!important;grid-template-columns:34px minmax(0,1fr)!important;align-items:start!important;gap:9px!important;width:100%!important;min-width:0!important;max-width:100%!important;min-height:84px;margin:0!important;padding:10px!important;box-sizing:border-box!important;white-space:normal!important;text-align:left!important;background:linear-gradient(145deg,#202d21,#111a13)!important;border:1px solid #586747!important;border-radius:10px!important;overflow:hidden!important}
+#modal-magias-lista .magia-opcao[aria-pressed=true]{background:linear-gradient(145deg,#3b3826,#1b281d)!important;border-color:#d0ae62!important;box-shadow:0 0 0 1px #d0ae6240!important}
+#modal-magias-lista .magia-school-icon{width:34px!important;height:34px!important;display:grid!important;place-items:center;box-sizing:border-box}
+#modal-magias-lista .magia-card-copy{display:flex!important;flex-direction:column;gap:4px;min-width:0!important;width:100%;overflow:hidden}
+#modal-magias-lista .magia-card-copy strong,#modal-magias-lista .magia-meta,#modal-magias-lista .magia-descricao{display:block;min-width:0!important;max-width:100%!important;white-space:normal!important;overflow-wrap:anywhere!important;word-break:normal!important}
+#modal-magias-lista .magia-card-copy strong{color:#f1d58e!important;font:700 12px 'Cinzel',serif;line-height:1.35}
+#modal-magias-lista .magia-meta{color:#c4b995!important;font-size:11px;line-height:1.35}
+#modal-magias-lista .magia-descricao{color:#d8d2c2!important;font-size:11px;line-height:1.4}
+#magia-detalhe{min-width:0!important;max-width:100%;overflow-x:hidden!important;overflow-wrap:anywhere;background:linear-gradient(145deg,#1b281d,#101710)!important;border-color:#596747!important}
+#magia-detalhe *{min-width:0;max-width:100%;overflow-wrap:anywhere;word-break:normal}
+#magia-detalhe .magia-detalhe-head h3,#magia-detalhe .magia-detalhe-description,#magia-detalhe .magia-detalhe-facts b{white-space:normal;overflow-wrap:anywhere;color:#eee8d8!important}
+#magia-detalhe .magia-detalhe-head h3,#magia-detalhe .magia-detalhe-facts small{color:#f1d58e!important}
+@media(max-width:620px){#modal-magias-lista{grid-template-columns:minmax(0,1fr)!important;max-height:36dvh!important}#modal-magias-lista .magia-opcao{min-height:72px}}
