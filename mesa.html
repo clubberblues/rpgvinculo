@@ -1013,7 +1013,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
  .mesa.mobile-chat-open:after,.mesa.mobile-actions-open:after{content:'';position:fixed;inset:52px 0 112px;background:#0008;z-index:10010;pointer-events:none}
 }
 </style>
-<link rel="stylesheet" href="mesa-theme.css?v=1">
+<link rel="stylesheet" href="mesa-theme.css?v=2">
 <link rel="stylesheet" href="vtt-theme.css?v=1">
 <style id="battlefield-layout-repair">
 /* Estrutura do estúdio: ferramentas na coluna lateral; tabuleiro ocupa o espaço restante. */
@@ -1575,7 +1575,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     var classKey=chaveClassePainelUI(p),className=classeUI(p),classIcons={wizard:'📖',sorcerer:'🔮',druid:'🌿',cleric:'✦',bard:'🎼',paladin:'🛡️',ranger:'🏹',barbarian:'🪓',fighter:'⚔️',rogue:'🗡️',monk:'🥋'};
     var groups=[
       {key:'aventura',title:'Aventureiro',icon:'🧭',description:'Informações e ferramentas para explorar a mesa e cuidar do seu personagem.',actions:[
-        {id:'movimento-ui',ic:'👣',txt:'Movimentação',desc:'Ative o movimento e arraste seu próprio token pelo mapa. No combate, respeita seu deslocamento e seu turno.'},
+        {id:'movimento-ui',ic:'👣',txt:'Localizar meu token',desc:'Arraste seu token diretamente no campo. Não é necessário ativar modo de movimento.'},
         {id:'ficha',ic:'📜',txt:'Minha ficha',desc:'Consulte atributos, pontos de vida, defesa e demais dados do personagem.'},
         {id:'inventario',ic:'🎒',txt:'Equipamentos e mochila',desc:'Veja seus itens, armas, armaduras e equipamentos carregados.'},
         {id:'dados',ic:'🎲',txt:'Dados livres',desc:'Abra os dados para fazer uma rolagem quando precisar.'}
@@ -4635,27 +4635,17 @@ function filtrarCartasMagiaMesa35(){var input=document.getElementById('magia-bus
     if(id === 'defesa-ui'){abrirOpcoesTaticasUI('defesa');return;}
     if(id === 'movimento-ui'){
       var mp=personagemAtivoDaInterface();
-      if(!mp){alert('Não foi possível localizar a ficha ativa para movimentação.');return;}
-      if(!cbaPublishedState){alert('O Mestre ainda não publicou o Grid.');return;}
+      if(!mp){alert('Não foi possível localizar a ficha ativa.');return;}
+      if(!cbaPublishedState){alert('O Mestre ainda não publicou o campo de batalha.');return;}
       var playerToken=(cbaPublishedState.tokens||[]).find(function(t){return t.tipo==='player'&&String(t.id)===String(mp.ch.id);});
-      if(!playerToken){alert('Não existe um token associado a esta ficha no Grid. Peça ao Mestre para vincular/publicar o token.');return;}
-      if(String(campanha&&campanha.state||'').toUpperCase()==='COMBATE'&&combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)&&combatDataState.turn_order.length&&!ehMeuTokenNoTurno(playerToken)){
-        document.getElementById('iniciativa-status').textContent='Aguarde seu turno na iniciativa para movimentar.';return;
-      }
-      modoMovimentoJogadorAtivo=!modoMovimentoJogadorAtivo;
-      var moveButton=document.querySelector('[data-acao="movimento-ui"]');
-      if(moveButton){moveButton.classList.toggle('ativo',modoMovimentoJogadorAtivo);var label=moveButton.querySelector('span:last-child');if(label)label.textContent=modoMovimentoJogadorAtivo?'Concluir movimento':'Movimentação';}
+      if(!playerToken){alert('Não existe um token associado a esta ficha no campo. Peça ao Mestre para vinculá-lo.');return;}
       var tokenElement=Array.from(document.querySelectorAll('#cba-token-layer .token-cba')).find(function(t){return String(t.dataset.cbaTokenKey)===String(playerToken.key);});
-      if(modoMovimentoJogadorAtivo){
-        if(tokenElement){tokenElement.classList.add('movimento-ativo');tokenElement.scrollIntoView({behavior:'smooth',block:'nearest',inline:'nearest'});}
-        var speed=Number(mp.deslocamento_m)||0;
-        document.getElementById('iniciativa-status').textContent=String(campanha&&campanha.state||'').toUpperCase()==='COMBATE'?'Movimentação habilitada · até '+speed.toLocaleString('pt-BR')+' m neste turno. Arraste seu token no Grid.':'Movimentação livre habilitada. Arraste seu token no Grid.';
-        var preview=document.getElementById('cba-live-movement-preview');if(preview){preview.textContent=String(campanha&&campanha.state||'').toUpperCase()==='COMBATE'?'Deslocamento disponível: '+speed.toLocaleString('pt-BR')+' m':'Exploração · movimento livre';preview.hidden=false;preview.style.display='block';}
-      }else{
-        document.querySelectorAll('#cba-token-layer .token-cba.movimento-ativo').forEach(function(t){t.classList.remove('movimento-ativo');});
-        var preview=document.getElementById('cba-live-movement-preview');if(preview){preview.hidden=true;preview.style.display='none';}
-        document.getElementById('iniciativa-status').textContent='Modo de movimentação encerrado.';
+      if(tokenElement){
+        tokenElement.scrollIntoView({behavior:'smooth',block:'nearest',inline:'nearest'});
+        if(typeof tokenElement.focus==='function')tokenElement.focus({preventScroll:true});
       }
+      var status=document.getElementById('iniciativa-status');
+      if(status)status.textContent='Seu token está no campo. Arraste-o diretamente para qualquer posição; não precisa ativar modo nem aguardar turno.';
       return;
     }
     if(id === 'ficha'){ abrirMinhaFicha(); return; }
