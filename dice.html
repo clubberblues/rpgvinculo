@@ -3154,7 +3154,25 @@ window.addEventListener('libs-ready', function() {
     const totalEl = document.getElementById('result-total');
     const breakdownEl = document.getElementById('result-breakdown');
     totalEl.textContent = result.total.toString();
-    totalEl.dataset.individualValues = JSON.stringify(result.groupResults.flatMap(group => group.diceValues.map(die => die.value)));
+    // Retorna um valor lógico por dado solicitado. O d100 usa dois corpos
+    // físicos (dezenas + unidades), mas deve chegar à mesa como um único resultado.
+    const individualValues = result.groupResults.flatMap((group, groupIdx) => {
+      const spec = currentRoll.dice[groupIdx];
+      if (!spec || spec.sides !== 100) {
+        return group.diceValues.map(die => die.value);
+      }
+      const pairs = new Map();
+      group.diceValues.forEach(die => {
+        if (!pairs.has(die.pairId)) pairs.set(die.pairId, { tens: 0, ones: 0 });
+        const pair = pairs.get(die.pairId);
+        if (die.role === 'tens') pair.tens = die.value;
+        else pair.ones = die.value;
+      });
+      return Array.from(pairs.values()).map(pair =>
+        pair.tens === 0 && pair.ones === 0 ? 100 : pair.tens + pair.ones
+      );
+    });
+    totalEl.dataset.individualValues = JSON.stringify(individualValues);
     // Build breakdown text: per-group breakdown plus modifier
     const groupStrings = currentRoll.dice.map((groupSpec, groupIdx) => {
       const group = result.groupResults[groupIdx];
