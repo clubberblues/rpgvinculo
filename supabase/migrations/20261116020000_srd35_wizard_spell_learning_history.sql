@@ -69,7 +69,7 @@ BEGIN
   IF jsonb_typeof(v_learned_by_level) <> 'object' THEN
     RAISE EXCEPTION 'aprendidas_por_nivel deve ser um objeto por nível';
   END IF;
-  FOR v_level_key,v_learned_entry IN SELECT key,value FROM jsonb_each(v_learned_by_level) LOOP
+  FOR v_key,v_learned_entry IN SELECT key,value FROM jsonb_each(v_learned_by_level) LOOP
     IF v_level_key !~ '^(2|[3-9]|1[0-9]|20)    SELECT known_by_level -> (v_level-1) INTO v_known_limits
       FROM public.srd_spell_progressions WHERE class_key='sorcerer';
     FOR v_circle IN 0..9 LOOP
@@ -164,7 +164,7 @@ BEGIN
   RETURN jsonb_build_object('version',1,'conhecidas',v_known_out,'preparadas',v_prepared_out,'usos',v_usos_out,'aprendidas_por_nivel',v_learned_by_level);
 END
 $fn$; OR v_level_key::integer > v_level THEN
-      RAISE EXCEPTION 'Nível inválido em aprendidas_por_nivel: %',v_level_key;
+      RAISE EXCEPTION 'Nível inválido em aprendidas_por_nivel: %',v_key;
     END IF;
     IF jsonb_typeof(v_learned_entry) <> 'array' THEN
       RAISE EXCEPTION 'Cada nível em aprendidas_por_nivel deve conter uma lista de IDs';
@@ -186,7 +186,7 @@ $fn$; OR v_level_key::integer > v_level THEN
   SELECT count(*) INTO v_learned_total FROM (
     SELECT jsonb_array_elements_text(value) AS spell_id FROM jsonb_each(v_learned_by_level)
   ) learned;
-  IF v_learned_total <> (SELECT count(DISTINCT jsonb_array_elements_text(value)) FROM jsonb_each(v_learned_by_level)) THEN
+  IF v_learned_total <> (SELECT count(DISTINCT spell_id) FROM (SELECT jsonb_array_elements_text(value) AS spell_id FROM jsonb_each(v_learned_by_level)) all_learned) THEN
     RAISE EXCEPTION 'Uma magia não pode ser registrada como aprendizado gratuito em mais de um nível';
   END IF;
   IF v_class='sorcerer' THEN
