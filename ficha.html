@@ -3464,5 +3464,70 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2732
 .dnd35-spell-description-label{margin-top:10px;color:#d4bd82;font:700 10px Cinzel,serif;letter-spacing:.5px;text-transform:uppercase}
 .dnd35-spell-description{white-space:pre-wrap;overflow-wrap:anywhere}
 @media(max-width:520px){.dnd35-spell-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style><style id="dnd35-grimoire-flow-layout">
+/* Fluxo do grimório: leitura, seleção e rolagem sem vazamento de conteúdo. */
+.dnd35-grimoire{background:linear-gradient(145deg,#1b281d,#101710)!important;color:#f0ead9!important;border:1px solid #b99a58!important;overflow:visible!important;box-sizing:border-box}
+.dnd35-grimoire:before{border-color:#b99a5844!important}
+.dnd35-grimoire h2{color:#f1d58e!important}
+.dnd35-grimoire p,.dnd35-grimoire-guide{color:#d8d1bf!important;overflow-wrap:anywhere}
+.dnd35-grimoire-btn,.dnd35-grimoire-action{background:#1b2a1e!important;color:#f1d58e!important;border-color:#9d814b!important;letter-spacing:.4px}
+.dnd35-grimoire-btn:hover,.dnd35-grimoire-action:hover:not(:disabled){background:#2c3d2b!important}
+.dnd35-grimoire-ledger article{background:#18231a!important;border-color:#536044!important;min-width:0}
+.dnd35-grimoire-ledger b{color:#f1d58e!important}
+.dnd35-grimoire-ledger span{color:#d9d2c0!important;overflow-wrap:anywhere}
+.dnd35-grimoire-modal{padding:clamp(6px,1.5vw,18px)!important;box-sizing:border-box}
+.dnd35-grimoire-box{width:min(1240px,100%)!important;height:min(920px,94dvh)!important;max-height:94dvh!important;min-width:0!important;min-height:0!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;background:linear-gradient(145deg,#1b281d,#101710)!important;color:#f0ead9!important;border:1px solid #b99a58!important;border-radius:14px!important;box-sizing:border-box}
+.dnd35-grimoire-modalhead,.dnd35-spell-steps,.dnd35-grimoire-tools,.dnd35-grimoire-footer{flex:0 0 auto;min-width:0;box-sizing:border-box}
+.dnd35-grimoire-modalhead{background:#1b281d!important}
+.dnd35-grimoire-modalhead h2{min-width:0;overflow-wrap:anywhere;color:#f1d58e!important;font-size:clamp(13px,1.7vw,19px)!important}
+.dnd35-spell-steps{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important;padding:10px clamp(10px,2vw,18px)!important}
+.dnd35-spell-steps button{min-width:0!important;white-space:normal!important;overflow-wrap:anywhere!important;padding:8px 6px!important}
+.dnd35-grimoire-body{flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;overflow-x:hidden!important;padding:12px clamp(10px,2vw,18px) 18px!important;box-sizing:border-box}
+.dnd35-grimoire-tools{display:flex!important;align-items:center!important;gap:8px!important;flex-wrap:wrap!important;padding:10px clamp(10px,2vw,18px)!important;background:#111a13!important}
+.dnd35-grimoire-tools input{flex:2 1 220px!important;min-width:0!important;width:auto!important;max-width:100%!important;box-sizing:border-box!important}
+.dnd35-grimoire-tools select{flex:1 1 135px;min-width:0;max-width:100%;min-height:40px;padding:7px 9px;border:1px solid #58694a;border-radius:8px;background:#0b120d;color:#f4ecd8;font:13px 'EB Garamond',serif;box-sizing:border-box}
+.dnd35-grimoire-tools>span{flex:0 1 auto;min-width:0;overflow-wrap:anywhere;color:#d0c6a9!important}
+.dnd35-spell-list{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(min(100%,270px),1fr))!important;gap:12px!important;align-items:stretch!important;width:100%;min-width:0}
+.dnd35-spell-card{display:flex!important;flex-direction:column!important;gap:9px!important;width:100%!important;min-width:0!important;max-width:100%!important;min-height:0!important;padding:12px!important;overflow:hidden!important;box-sizing:border-box!important}
+.dnd35-spell-card[hidden]{display:none!important}
+.dnd35-spell-card-head{display:grid!important;grid-template-columns:36px minmax(0,1fr)!important;align-items:center!important;gap:8px!important;width:100%;min-width:0!important}
+.dnd35-school-icon{width:36px!important;height:36px!important;box-sizing:border-box}
+.dnd35-spell-card-title{min-width:0!important;width:100%;overflow:hidden}
+.dnd35-spell-card h3{max-width:100%;overflow-wrap:anywhere!important;word-break:normal!important;white-space:normal!important;line-height:1.3!important}
+.dnd35-forbidden-tag,.dnd35-spell-lock{grid-column:2;justify-self:start;max-width:100%;overflow-wrap:anywhere}
+.dnd35-spell-tags{min-width:0;max-width:100%}
+.dnd35-spell-tags span{max-width:100%;overflow-wrap:anywhere}
+.dnd35-spell-teaser{min-width:0;max-width:100%;min-height:0!important;overflow-wrap:anywhere!important;word-break:normal!important;line-height:1.45!important}
+.dnd35-spell-details{min-width:0;max-width:100%;overflow:hidden}
+.dnd35-spell-details summary{display:block;width:auto!important;max-width:100%!important;white-space:normal;overflow-wrap:anywhere}
+.dnd35-spell-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;min-width:0}
+.dnd35-spell-detail-grid>div{min-width:0!important;max-width:100%;overflow:hidden;box-sizing:border-box}
+.dnd35-spell-detail-grid b,.dnd35-spell-detail-grid small{overflow-wrap:anywhere!important;word-break:normal!important}
+.dnd35-spell-description,.dnd35-spell-meta{display:block;max-width:100%;min-width:0;overflow-wrap:anywhere!important;word-break:normal!important;white-space:pre-wrap}
+.dnd35-spell-controls{min-width:0!important;max-width:100%;flex-wrap:wrap!important;overflow-wrap:anywhere}
+.dnd35-spell-controls label{min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere}
+.dnd35-spell-controls select{min-width:0;max-width:100%;width:auto}
+.dnd35-card-action{display:flex;align-items:center;gap:7px;min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere}
+.dnd35-card-action input{flex:0 0 auto}
+.dnd35-grimoire-footer{display:flex!important;flex-wrap:wrap!important;justify-content:center!important;gap:8px!important;padding:10px!important;background:#111a13!important}
+.dnd35-grimoire-footer button{min-width:min(190px,100%)!important;max-width:100%;white-space:normal;overflow-wrap:anywhere}
+.dnd35-learn-board{min-width:0;box-sizing:border-box;overflow-wrap:anywhere}
+.dnd35-learn-board p{line-height:1.5}
+.dnd35-learn-board select{max-width:100%;min-width:0;box-sizing:border-box}
+.dnd35-grimoire-status{overflow-wrap:anywhere}
+@media(max-width:700px){
+ .dnd35-grimoire-box{height:100dvh!important;max-height:100dvh!important;width:100%!important;border-radius:0!important}
+ .dnd35-grimoire-modal{padding:0!important}
+ .dnd35-spell-steps{gap:5px!important;padding:8px!important}
+ .dnd35-spell-steps button{font-size:10px!important;min-height:42px}
+ .dnd35-spell-list{grid-template-columns:repeat(auto-fill,minmax(min(100%,245px),1fr))!important;gap:9px!important}
+ .dnd35-grimoire-tools input{flex-basis:100%!important}
+ .dnd35-grimoire-tools select{flex:1 1 calc(50% - 8px)}
+ .dnd35-grimoire-footer button{flex:1 1 100%;min-width:0!important}
+}
+@media(max-width:380px){
+ .dnd35-spell-detail-grid{grid-template-columns:minmax(0,1fr)!important}
+ .dnd35-spell-steps{grid-template-columns:1fr!important}
+}
 </style></body>
 </html>
