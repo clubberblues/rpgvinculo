@@ -81,3 +81,38 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .vtt-sheet-modal-status[hidden]{display:none}
 .vtt-sheet-modal-frame{display:block;flex:1 1 auto;width:100%;height:calc(100% - 48px);min-height:0;border:0;background:#151719}
 @media(max-width:760px){.vtt-sheet-modal{padding:0}.vtt-sheet-modal-panel{width:100vw;height:100dvh;max-height:100dvh;border:0;border-radius:0}.vtt-sheet-modal-head{flex-basis:44px;padding:6px 9px}.vtt-sheet-modal-title{font-size:10px}.vtt-sheet-modal-close{padding:7px 9px}.vtt-sheet-modal-frame{height:calc(100% - 44px)}}
+
+/* Identidade carvão/bronze — Campo de Batalha e Bestiário SRD.
+   Apenas apresentação; não altera regras, conteúdo ou comportamento. */
+#modal-cba{background:rgba(8,10,13,.97)!important}
+#modal-cba .cba-header{background:linear-gradient(180deg,#292d32,#1c2025)!important;border-bottom:1px solid #786344!important}
+#modal-cba .cba-header h2,#modal-cba .cba-sub-head h3{color:var(--vtt-bronze-bright)!important}
+#modal-cba .cba-sync-note,#modal-cba .cba-status,#modal-cba .cba-tool-group label{color:var(--vtt-text-soft)!important}
+#modal-cba .btn-publicar{background:linear-gradient(145deg,#c5a16a,#8e7046)!important;border:1px solid #dfbd80!important;color:#17191b!important}
+#modal-cba .btn-publicar:hover{background:linear-gradient(145deg,#dfbd80,#b48c54)!important}
+#modal-cba .cba-tools{background:linear-gradient(180deg,#202429,#171a1e)!important;border-color:var(--vtt-border)!important}
+#modal-cba .cba-tool-btn{background:linear-gradient(145deg,#30353b,#22262b)!important;border-color:var(--vtt-bronze-dim)!important;color:var(--vtt-bronze-bright)!important}
+#modal-cba .cba-tool-btn:hover{background:linear-gradient(145deg,#45403a,#292a2b)!important;border-color:var(--vtt-bronze)!important;color:#fff0d0!important}
+#modal-cba .cba-preview-wrap{background:#101316!important}
+#modal-cba .cba-grid-lines{background-image:linear-gradient(rgba(189,152,92,.22) 1px,transparent 1px),linear-gradient(90deg,rgba(189,152,92,.22) 1px,transparent 1px)!important}
+#modal-cba .cba-preview-empty{color:#858b91!important}
+#modal-cba .token-cba.npc{border-color:var(--vtt-bronze)!important}
+#modal-cba .token-cba.player{border-color:#8baac4!important}
+#modal-cba .token-cba.monstro{border-color:#bd6d63!important}
+#modal-cba .token-cba .token-hp span{background:var(--vtt-success)!important}
+#modal-cba .sub-modal{background:rgba(17,20,24,.98)!important}
+#modal-cba .cba-monster-filters input,#modal-cba .cba-monster-filters select{background:#111519!important;border:1px solid var(--vtt-border-strong)!important;color:var(--vtt-text)!important}
+#modal-cba .card-catalogo,#modal-cba .card-equipamento,#modal-cba .destinatario-equipamento{background:linear-gradient(145deg,#292e34,#1c2025)!important;border-color:var(--vtt-border-strong)!important;color:var(--vtt-text)!important}
+#modal-cba .card-catalogo:hover,#modal-cba .card-equipamento:hover,#modal-cba .destinatario-equipamento:hover{background:linear-gradient(145deg,#383e45,#24292f)!important;border-color:var(--vtt-bronze)!important}
+#modal-cba .card-catalogo .nome{color:#f0ede6!important}
+#modal-cba .card-catalogo .detalhe{color:var(--vtt-text-soft)!important}
+#modal-cba .monster-add-button,#sub-modal-monstro .monster-add-button,#lista-monstros-rapida .monster-add-button{background:linear-gradient(145deg,#30353b,#22262b)!important;border-color:var(--vtt-bronze-dim)!important;color:var(--vtt-bronze-bright)!important}
+#modal-cba .monster-add-button:hover,#sub-modal-monstro .monster-add-button:hover,#lista-monstros-rapida .monster-add-button:hover{background:linear-gradient(145deg,#45403a,#292a2b)!important;border-color:var(--vtt-bronze)!important;color:#fff0d0!important}
+#sub-modal-monstro .cba-sub-head,#sub-modal-monstro .cba-monster-filters{color:var(--vtt-text)!important}
+#sub-modal-monstro .cba-monster-filters input,#sub-modal-monstro .cba-monster-filters select{background:#111519!important;border-color:var(--vtt-border-strong)!important;color:var(--vtt-text)!important}
+#sub-modal-monstro .card-catalogo{background:linear-gradient(145deg,#292e34,#1c2025)!important;border-color:var(--vtt-border-strong)!important;color:var(--vtt-text)!important}
+#sub-modal-monstro .card-catalogo:hover{background:linear-gradient(145deg,#383e45,#24292f)!important;border-color:var(--vtt-bronze)!important}
+.monster-add-button{background:linear-gradient(145deg,#30353b,#22262b)!important;border:1px solid var(--vtt-bronze-dim)!important;color:var(--vtt-bronze-bright)!important}
+.monster-add-button:hover{background:linear-gradient(145deg,#45403a,#292a2b)!important;border-color:var(--vtt-bronze)!important;color:#fff0d0!important}
+.npc-archetype-card button{background:#24292f!important;border-color:var(--vtt-border-strong)!important;color:var(--vtt-text)!important}
+.npc-archetype-card button:hover{background:#3b3f43!important;border-color:var(--vtt-bronze)!important;color:#fff0d0!important}

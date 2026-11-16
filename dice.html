@@ -28,7 +28,7 @@
 <title>Project-Swords RPG Dice Roller — 3D Physics Dice for D&amp;D and Tabletop RPGs</title>
 <meta name="description" content="Physics-based 3D dice roller for tabletop RPGs. All seven standard polyhedra (d4–d100), charge throws, cinematic camera. Vanilla HTML/JS — no build, no npm.">
 <meta name="author" content="John Gillespie / Hackworth Labs LLC">
-<meta name="keywords" content="dice roller, 3D dice, D&amp;D, dnd 5e, tabletop RPG, ttrpg, physics dice, polyhedral dice, d20, three.js, cannon-es, vanilla javascript, no build">
+<meta name="keywords" content="dice roller, 3D dice, D&amp;D 3.5, tabletop RPG, ttrpg, physics dice, polyhedral dice, d20, three.js, cannon-es, vanilla javascript, no build">
 <link rel="canonical" href="https://johnbarongillespie.github.io/project-swords-rpg-dice-roller/">
 
 <!-- Open Graph / social previews (Facebook, LinkedIn, Slack, Discord, etc.) -->
@@ -2595,8 +2595,12 @@ window.addEventListener('libs-ready', function() {
     if (role === 'tens') {
       // Multiply base values by 10 → 0, 80, 60, 40, 20, 90, 10, 30, 50, 70
       faceValues = D10_BASE_VALUES.map(v => v * 10);
+    } else if (role === 'standalone') {
+      // Um d10 isolado usa resultados de 1 a 10; a face marcada 0 representa 10.
+      // No d100, o dado de unidades continua usando 0 a 9.
+      faceValues = D10_BASE_VALUES.map(v => v === 0 ? 10 : v);
     } else {
-      // 'standalone' and 'ones' both use the same labels: 0..9
+      // 'ones' is the units die of a percentile roll: 0..9.
       faceValues = D10_BASE_VALUES.slice();
     }
 
@@ -3150,7 +3154,25 @@ window.addEventListener('libs-ready', function() {
     const totalEl = document.getElementById('result-total');
     const breakdownEl = document.getElementById('result-breakdown');
     totalEl.textContent = result.total.toString();
-    totalEl.dataset.individualValues = JSON.stringify(result.groupResults.flatMap(group => group.diceValues.map(die => die.value)));
+    // Retorna um valor lógico por dado solicitado. O d100 usa dois corpos
+    // físicos (dezenas + unidades), mas deve chegar à mesa como um único resultado.
+    const individualValues = result.groupResults.flatMap((group, groupIdx) => {
+      const spec = currentRoll.dice[groupIdx];
+      if (!spec || spec.sides !== 100) {
+        return group.diceValues.map(die => die.value);
+      }
+      const pairs = new Map();
+      group.diceValues.forEach(die => {
+        if (!pairs.has(die.pairId)) pairs.set(die.pairId, { tens: 0, ones: 0 });
+        const pair = pairs.get(die.pairId);
+        if (die.role === 'tens') pair.tens = die.value;
+        else pair.ones = die.value;
+      });
+      return Array.from(pairs.values()).map(pair =>
+        pair.tens === 0 && pair.ones === 0 ? 100 : pair.tens + pair.ones
+      );
+    });
+    totalEl.dataset.individualValues = JSON.stringify(individualValues);
     // Build breakdown text: per-group breakdown plus modifier
     const groupStrings = currentRoll.dice.map((groupSpec, groupIdx) => {
       const group = result.groupResults[groupIdx];
@@ -3920,7 +3942,7 @@ window.addEventListener('libs-ready', function() {
         });
         let groupSum = 0;
         Object.values(pairs).forEach(p => {
-          // D&D 5e percentile rule: tens=0, ones=0 → 100
+          // Convenção percentual D&D 3.5: dezenas 00 + unidades 0 resulta em 100.
           const combined = (p.tens === 0 && p.ones === 0) ? 100 : (p.tens + p.ones);
           groupSum += combined;
         });
