@@ -148,3 +148,8 @@ Nenhuma alteração de aplicação ou banco foi feita durante esta auditoria ini
 - A ficha completa já é aberta pelo jogador em um modal/iframe via `abrirFichaModalMesa()`, carregando `ficha.html?char=...`.
 - Direção aprovada: o painel do jogador deixa de apresentar categorias e botões de execução. Ele passa a ser uma área de consulta da ficha do personagem ativo. Movimento continua sendo feito diretamente pelo token na mesa; rolagens, testes, interpretação e narração ficam fora desse painel e são conduzidos manualmente conforme o livro e o Discord.
 - A auditoria/implementação deve preservar a ficha completa e suas seções consultivas; não basta trocar os botões por uma ficha-resumo que esconda dados necessários. A organização poderá usar navegação interna/abas para manter a leitura clara, mas todas as informações pertinentes precisam continuar acessíveis.
+
+
+## Primeiro modelo de classe: Mago
+
+A auditoria detalhada inicial do Mago, incluindo inventário do código existente, persistência, progressão, lacunas confirmadas e sequência de implementação, está em [docs/wizard-character-sheet-blueprint.md](wizard-character-sheet-blueprint.md). Este documento deve orientar a primeira implementação da ficha-base e do complemento de Mago; não iniciar uma ficha paralela.
