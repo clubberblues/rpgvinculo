@@ -112,3 +112,29 @@ Não automatizar rolagens, decisões narrativas, resolução de testes, interpre
 - Totais automáticos são corretos, explicáveis e testados contra D&D 3.5.
 - O jogador consulta o bônus, rola por conta própria e informa o resultado ao Mestre; não há automação de rolagens no painel do jogador.
 - O Mestre mantém as ferramentas próprias já definidas.
+
+
+## Snapshot da auditoria inicial do projeto (2026-11-16)
+
+Inspeção somente de leitura da implementação e do banco de produção:
+
+- `ficha.html` já implementa seleção de raça/classe, identidade, compra de atributos (25 pontos), perícias, talentos, idiomas, recursos específicos para algumas classes, magia condicional, riqueza/equipamento inicial, revisão, progressão de nível e consulta da ficha.
+- O fluxo de criação atualmente apresenta as etapas: Herói/identidade, Classe, Atributos, Treino, Magias (quando aplicável), Equipamento e Revisão. Raça e classe também aparecem como seletores no cabeçalho durante a criação.
+- A etapa de identidade exige nome do personagem, sexo, idade, altura, peso e tendência. Não foi identificado nesse bloco um campo explícito para o nome do jogador; verificar se isso é coberto pelo perfil da conta ou se precisa ser exibido na ficha.
+- A ficha atual já mostra atributos, defesas, perícias, talentos, idiomas, traços raciais, proficiências, recursos e equipamento. A consulta não deve ser confundida com o painel de execução de ações da mesa.
+- O banco possui 11 linhas em `srd_classes`, 7 em `srd_races`, 220 progressões de classe (20 por classe, todas `verified_srd`), 131 características de classe (todas `verified_srd`), 1.400 linhas de progressão de magia (todas `derived_pending_review`) e 607 magias.
+- As 11 classes cadastradas estão identificadas como Bárbaro, Bardo, Clérigo, Druida, Feiticeiro, Guerreiro, Ladino, Mago, Monge, Paladino e Patrulheiro.
+- As tabelas `srd_character_sheets` e `srd_character_class_levels` existem. A primeira guarda um `classe_id` singular; a segunda é uma estrutura de níveis de classe que exige auditoria de uso. A decisão do produto é manter uma única classe por personagem; não remover tabela ou dados legados sem mapear dependências.
+- As 7 progressões mágicas correspondem às classes conjuradoras básicas (Bardo, Clérigo, Druida, Feiticeiro, Mago, Paladino e Patrulheiro), mas seus 1.400 registros ainda não estão aprovados como fonte final.
+- O gerador Dyslexic confirma as 11 classes básicas e apresenta várias classes de suplementos. Entretanto, a própria documentação do projeto informa que edição/cálculos/salvamento automáticos não se aplicam às fichas D&D 3.5. Portanto, ele é referência visual/estrutural, não implementação pronta nem prova de cálculo correto.
+
+### Lacunas já identificadas para a próxima rodada
+
+1. Conferir se a ficha expõe o nome do jogador e todos os campos descritivos da folha de referência.
+2. Auditar os campos de inventário detalhado: moedas por denominação, recipientes, munição, cargas de varinhas/cajados, itens mágicos e carga total.
+3. Comparar as seções e escolhas específicas de cada uma das 11 classes, nível por nível; os 131 registros não bastam por si só para provar que toda característica está representada na ficha.
+4. Revisar os 1.400 registros de progressão de magia antes de usá-los para validar criação e consulta.
+5. Separar claramente o modo de criação (editável e orientado) do modo de consulta do jogador (somente leitura), sem afetar ferramentas do Mestre.
+6. Auditar o uso de `srd_character_class_levels` e das rotinas de avanço para garantir que o fluxo final aceite somente uma classe, preservando compatibilidade com dados existentes.
+
+Nenhuma alteração de aplicação ou banco foi feita durante esta auditoria inicial; o único artefato criado nesta branch é esta especificação de produto.
