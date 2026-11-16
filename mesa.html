@@ -1013,7 +1013,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
  .mesa.mobile-chat-open:after,.mesa.mobile-actions-open:after{content:'';position:fixed;inset:52px 0 112px;background:#0008;z-index:10010;pointer-events:none}
 }
 </style>
-<link rel="stylesheet" href="mesa-theme.css?v=3">
+<link rel="stylesheet" href="mesa-theme.css?v=4">
 <link rel="stylesheet" href="vtt-theme.css?v=1">
 <style id="battlefield-layout-repair">
 /* Estrutura do estúdio: ferramentas na coluna lateral; tabuleiro ocupa o espaço restante. */
@@ -1327,6 +1327,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
   var personagemPVSelecionado = null;
   var cbaZoom = 1;
   var cbaPinchInProgress = false;
+  var cbaMoveSelectionKey = null, cbaMoveSelectionPreview = false, cbaMoveSaving = false;
   var inventarioPersonagemAtivo = null;
   var cbaMonsterCatalog = [];
   var cbaMonsterCatalogLoaded = false;
@@ -1912,7 +1913,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
       addAction('⚔️ Atacar',function(){overlay.remove();solicitarAtaqueMestre(item);});
       if(item.tipo==='npc'&&item.sourceCharacterId)addAction('⚔️ Ataque Total',function(){overlay.remove();iniciarAtaqueTotalNpcMestre(item).catch(function(err){alert('Ataque Total indisponível: '+err.message);});});
       addAction('📜 Registrar ação',function(){overlay.remove();registrarOutraAcaoMestre(item);});
-      addAction('↔️ Mover token',function(){overlay.remove();document.getElementById('iniciativa-status').textContent='Mova '+item.nome+' arrastando seu token no tabuleiro.';});
+      addAction('↔️ Mover token',function(){overlay.remove();selecionarTokenParaMoverCBA(item,false);});
       if(tokenTemMagiaPreparada35(item))addAction('✨ Magias',function(){overlay.remove();abrirMagiasTokenMestre(item);});
     }
     organizarAcoesPainelToken(actions);panel.appendChild(actions);
@@ -5059,10 +5060,10 @@ async function abrirModalEquipamentos(){
       item.x = item.gridX*cell;
       item.y = item.gridY*cell;
       var token = document.createElement('div');
-      token.className = 'token-cba '+(item.tipo === 'monstro' ? 'monstro' : (item.tipo === 'player' ? 'player' : 'npc'))+(item.tipo==='player'&&String(item.id)===String(personagemSelecionadoId||'')?' personagem-selecionado':'');
+      token.className = 'token-cba '+(item.tipo === 'monstro' ? 'monstro' : (item.tipo === 'player' ? 'player' : 'npc'))+(item.tipo==='player'&&String(item.id)===String(personagemSelecionadoId||'')?' personagem-selecionado':'')+(String(cbaMoveSelectionKey||'')===String(item.key)&&cbaMoveSelectionPreview===(layer.id==='cba-preview-tokens')?' movimento-ativo':'');
       token.dataset.cbaTokenKey = item.key;
-      token.tabIndex=0;token.setAttribute('role','group');token.setAttribute('aria-label','Token '+String(item.nome||'criatura')+(item.tipo==='player'?' · personagem jogador':item.tipo==='monstro'?' · monstro':' · NPC'));token.setAttribute('aria-haspopup','menu');token.setAttribute('aria-expanded','false');
-      token.addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' ')&&!ataqueSelecionado){e.preventDefault();if(!ehGM&&item.tipo==='player'){selecionarPersonagemDoToken(item);return;}abrirMenuContextualToken(item,token);}});
+      token.tabIndex=0;token.setAttribute('role','button');token.setAttribute('aria-label','Selecionar '+String(item.nome||'criatura')+' para mover');token.setAttribute('aria-pressed',String(String(cbaMoveSelectionKey||'')===String(item.key)&&cbaMoveSelectionPreview===(layer.id==='cba-preview-tokens')));
+      token.addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' ')&&!ataqueSelecionado&&!ataqueMestreSelecionado&&!modoSelecaoTeste){e.preventDefault();selecionarTokenParaMoverCBA(item,layer.id==='cba-preview-tokens');}});
       token.dataset.gridX = String(item.gridX);
       token.dataset.gridY = String(item.gridY);
       token.style.width = (cell*ocupacao)+'px';
@@ -5181,7 +5182,7 @@ async function abrirModalEquipamentos(){
     document.getElementById('fog-brush-label').textContent=document.getElementById('fog-brush-size').value;
     popularAudienciaNevoaCBA();
     document.getElementById('modal-cba').classList.add('ativo');
-    setStatusCBA('Arraste os tokens; ao soltar, eles se alinham ao centro do quadrado. 1 quadrado = 1,5 m (5 pés).');
+    setStatusCBA('Para posicionar: clique no token e depois no quadrado desejado. 1 quadrado = 1,5 m (5 pés).');
     window.requestAnimationFrame(function(){
       atualizarProporcaoPreviewCBA();
       var previewWidth=document.getElementById('cba-preview-area').getBoundingClientRect().width;
@@ -5754,111 +5755,106 @@ async function abrirModalEquipamentos(){
     var added=cbaState.tokens[cbaState.tokens.length-1];if(tipo==='monstro'&&monster){added.monsterId=String(monster.id);added.hp=monster.hp;added.maxHp=monster.maxHp;added.dexMod=monster.dexMod;added.ac=monster.ac;added.monsterStats=monster.monsterStats;added.srdSourceUrl=monster.srdSourceUrl;}
     fecharSubModaisCBA();
     renderizarTokensCBA(layer,cbaState);
-    setStatusCBA(nome+' adicionado. Arraste e solte para encaixar o token no centro de um quadrado.');
+    setStatusCBA(nome+' adicionado. Clique no token e depois no quadrado desejado para reposicioná-lo.');
   }
 
-  function fazerArrastavelCBA(layer){
-    var arrasto = null;
-    var ePreview = layer.id === 'cba-preview-tokens';
-    function escalaDaCamada(rect){
-      var width=Number(layer.clientWidth)||rect.width||1;
-      var height=Number(layer.clientHeight)||rect.height||1;
-      return {x:rect.width/width||1,y:rect.height/height||1};
+  function selecionarTokenParaMoverCBA(item,ePreview){
+    if(!item||cbaMoveSaving)return false;
+    if(!ePreview&&!ehGM){
+      if(item.tipo!=='player')return false;
+      var owned=personagens.find(function(p){return String(p.ch.id)===String(item.id)&&p.ch.user_id===eu.id;});
+      if(!owned)return false;
+      selecionarPersonagemDoToken(item);
     }
-    layer.addEventListener('pointerdown',function(e){
-      if(e.target.closest&&e.target.closest('.token-pv-btn')) return;
-      if(e.isPrimary === false || cbaPinchInProgress || (e.pointerType==='mouse'&&e.button!==0)) return;
-      if(!ePreview && ehGM && modoSelecaoTeste) return;
-      var token = e.target.closest ? e.target.closest('.token-cba') : null;
-      if(!token || !layer.contains(token)) return;
-      var scene = ePreview ? cbaState : cbaPublishedState;
-      if(!scene) return;
-      var item = scene.tokens.find(function(t){ return String(t.key) === String(token.dataset.cbaTokenKey); });
-      if(!item) return;
-      if(!ePreview && !ehGM){
-        if(item.tipo!=='player')return;
-        var ownedCharacter=personagens.find(function(p){return String(p.ch.id)===String(item.id)&&p.ch.user_id===eu.id;});
-        if(!ownedCharacter)return;
-      }
-      var layerRect=layer.getBoundingClientRect(),scale=escalaDaCamada(layerRect);
-      var localX=(e.clientX-layerRect.left)/scale.x,localY=(e.clientY-layerRect.top)/scale.y;
-      arrasto={token:token,item:item,scene:scene,pointerId:e.pointerId,cell:tamanhoCelulaLayerCBA(layer,scene),
-        offsetX:localX-(Number(item.x)||0),offsetY:localY-(Number(item.y)||0),
-        startClientX:e.clientX,startClientY:e.clientY,startGridX:Number(item.gridX)||0,startGridY:Number(item.gridY)||0,moved:false};
-      if(!ePreview)fecharMenuContextualToken(false);
-      token.style.zIndex='100';
-      try{token.setPointerCapture(e.pointerId);}catch(err){}
-      e.preventDefault();
-      e.stopPropagation();
-    });
-    layer.addEventListener('pointermove',function(e){
-      if(!arrasto||e.pointerId!==arrasto.pointerId)return;
-      if(cbaPinchInProgress)return;
-      if(!arrasto.moved){
-        if(Math.hypot(e.clientX-arrasto.startClientX,e.clientY-arrasto.startClientY)<4)return;
-        arrasto.moved=true;
-        suppressTokenClickUntil=Date.now()+500;
-        fecharMenuContextualToken(false);
-      }
-      var rect=layer.getBoundingClientRect(),scale=escalaDaCamada(rect),cell=arrasto.cell;
-      var baseWidth=Number(layer.clientWidth)||rect.width/scale.x;
-      var baseHeight=Number(layer.clientHeight)||rect.height/scale.y;
-      var ocupacao=tamanhoOcupacaoTokenCBA(arrasto.item);
-      var maxLeft=Math.max(0,baseWidth-cell*ocupacao),maxTop=Math.max(0,baseHeight-cell*ocupacao);
-      var left=Math.max(0,Math.min(maxLeft,(e.clientX-rect.left)/scale.x-arrasto.offsetX));
-      var top=Math.max(0,Math.min(maxTop,(e.clientY-rect.top)/scale.y-arrasto.offsetY));
-      arrasto.item.x=left;arrasto.item.y=top;
-      arrasto.token.style.left=left+'px';arrasto.token.style.top=top+'px';
-      if(ePreview)atualizarReguaCBA(arrasto.item,left,top,cell);
-      e.preventDefault();
-      e.stopPropagation();
-    });
-    function encerrar(e,cancelled){
-      if(!arrasto||(e&&e.pointerId!==arrasto.pointerId))return;
-      var current=arrasto;
-      if(cancelled||cbaPinchInProgress){
-        current.item.gridX=current.startGridX;current.item.gridY=current.startGridY;
-        current.item.x=current.startGridX*current.cell;current.item.y=current.startGridY*current.cell;
-        current.token.style.left=current.item.x+'px';current.token.style.top=current.item.y+'px';current.token.style.zIndex='';
-        if(!ePreview&&cbaState&&Array.isArray(cbaState.tokens)){
-          var original=cbaState.tokens.find(function(t){return String(t.key)===String(current.item.key);});
-          if(original){original.gridX=current.startGridX;original.gridY=current.startGridY;original.x=current.item.x;original.y=current.item.y;}
-        }
-        arrasto=null;
-        try{if(current.token.hasPointerCapture(current.pointerId))current.token.releasePointerCapture(current.pointerId);}catch(err){}
+    cbaMoveSelectionKey=String(item.key);
+    cbaMoveSelectionPreview=!!ePreview;
+    var layer=document.getElementById(ePreview?'cba-preview-tokens':'cba-token-layer');
+    if(layer)renderizarTokensCBA(layer,ePreview?cbaState:cbaPublishedState);
+    var status=document.getElementById(ePreview?'cba-status':'iniciativa-status');
+    if(status)status.textContent='Token selecionado: '+String(item.nome||'criatura')+'. Agora clique no quadrado de destino. Pressione Esc para cancelar.';
+    return true;
+  }
+
+  function cancelarSelecaoMovimentoCBA(){
+    if(cbaMoveSelectionKey==null)return;
+    var wasPreview=cbaMoveSelectionPreview;
+    cbaMoveSelectionKey=null;cbaMoveSelectionPreview=false;
+    var layer=document.getElementById(wasPreview?'cba-preview-tokens':'cba-token-layer');
+    if(layer)renderizarTokensCBA(layer,wasPreview?cbaState:cbaPublishedState);
+    var status=document.getElementById(wasPreview?'cba-status':'iniciativa-status');
+    if(status)status.textContent='Seleção de movimento cancelada.';
+  }
+
+  function ligarMovimentoPorCliqueCBA(host,ePreview){
+    if(!host||host.dataset.clickMoveBound==='1')return;
+    host.dataset.clickMoveBound='1';
+    host.addEventListener('click',function(e){
+      if(cbaMoveSaving||cbaPinchInProgress)return;
+      if(e.target.closest&&e.target.closest('button,input,select,textarea,a,[role="button"],#token-context-menu'))return;
+      var tokenEl=e.target.closest?e.target.closest('.token-cba'):null;
+      var scene=ePreview?cbaState:cbaPublishedState;
+      if(!scene||!Array.isArray(scene.tokens))return;
+      var tokenItem=tokenEl?scene.tokens.find(function(t){return String(t.key)===String(tokenEl.dataset.cbaTokenKey);}):null;
+
+      // Testes, ataques e seleção de alvos mantêm prioridade sobre a movimentação.
+      if(!ePreview&&(modoSelecaoTeste||ataqueSelecionado||ataqueMestreSelecionado))return;
+
+      if(cbaMoveSelectionKey==null){
+        if(!tokenItem)return;
+        if(!selecionarTokenParaMoverCBA(tokenItem,ePreview))return;
+        e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();
         return;
       }
-      var rect=layer.getBoundingClientRect(),scale=escalaDaCamada(rect);
-      var columns=Math.max(1,Math.floor((Number(layer.clientWidth)||rect.width/scale.x)/current.cell));
-      var rows=Math.max(1,Math.floor((Number(layer.clientHeight)||rect.height/scale.y)/current.cell));
-      var ocupacao=tamanhoOcupacaoTokenCBA(current.item);
-      current.item.gridX=Math.max(0,Math.min(Math.max(0,columns-ocupacao),Math.round((Number(current.item.x)||0)/current.cell)));
-      current.item.gridY=Math.max(0,Math.min(Math.max(0,rows-ocupacao),Math.round((Number(current.item.y)||0)/current.cell)));
-      var didMove=current.item.gridX!==current.startGridX||current.item.gridY!==current.startGridY;
-      current.item.x=current.item.gridX*current.cell;current.item.y=current.item.gridY*current.cell;
-      current.token.dataset.gridX=String(current.item.gridX);current.token.dataset.gridY=String(current.item.gridY);
-      current.token.style.left=current.item.x+'px';current.token.style.top=current.item.y+'px';current.token.style.zIndex='';
-      if(!ePreview&&cbaState&&Array.isArray(cbaState.tokens)){
-        var editingItem=cbaState.tokens.find(function(t){return String(t.key)===String(current.item.key);});
-        if(editingItem){editingItem.gridX=current.item.gridX;editingItem.gridY=current.item.gridY;editingItem.x=current.item.x;editingItem.y=current.item.y;}
+
+      if(cbaMoveSelectionPreview!==!!ePreview)return;
+      var selected=scene.tokens.find(function(t){return String(t.key)===String(cbaMoveSelectionKey);});
+      if(!selected){cancelarSelecaoMovimentoCBA();return;}
+      if(tokenItem&&String(tokenItem.key)===String(selected.key)){
+        cancelarSelecaoMovimentoCBA();
+        e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();
+        return;
       }
-      arrasto=null;
-      try{if(current.token.hasPointerCapture(current.pointerId))current.token.releasePointerCapture(current.pointerId);}catch(err){}
-      if(!ePreview&&didMove){
-        suppressTokenClickUntil=Date.now()+500;
-        if(ehGM)salvarPosicaoTokenCBA(current.item);else salvarPosicaoTokenJogador(current.item);
-      }else if(!ePreview&&!didMove){
-        // Clique simples não abre menu contextual; ações do token são acionadas pelo painel
-        // e o menu administrativo fica reservado ao botão direito.
-        suppressTokenClickUntil=0;
+      if(tokenItem&&String(tokenItem.key)!==String(selected.key)){
+        // Clicar em outro token escolhe o quadrado ocupado por ele como destino.
       }
-      var tooltip=document.getElementById('cba-distancia-preview');if(tooltip)tooltip.style.display='none';
-      var livePreview=document.getElementById('cba-live-movement-preview');if(livePreview){livePreview.hidden=true;livePreview.style.display='none';}
-      if(e&&e.cancelable)e.preventDefault();
-    }
-    layer.addEventListener('pointerup',function(e){encerrar(e,false);});
-    layer.addEventListener('pointercancel',function(e){encerrar(e,true);});
-    layer.addEventListener('lostpointercapture',function(e){encerrar(e,true);});
+
+      var layer=document.getElementById(ePreview?'cba-preview-tokens':'cba-token-layer');
+      if(!layer)return;
+      var cell=tamanhoCelulaLayerCBA(layer,scene),rect=layer.getBoundingClientRect();
+      var width=Number(layer.clientWidth)||rect.width||1,height=Number(layer.clientHeight)||rect.height||1;
+      var scaleX=rect.width/width||1,scaleY=rect.height/height||1;
+      var gridX,gridY;
+      if(tokenItem){
+        gridX=Number(tokenItem.gridX)||0;gridY=Number(tokenItem.gridY)||0;
+      }else{
+        var localX=(e.clientX-rect.left)/scaleX,localY=(e.clientY-rect.top)/scaleY;
+        gridX=Math.floor(localX/cell);gridY=Math.floor(localY/cell);
+      }
+      var columns=Math.max(1,Math.floor(width/cell)),rows=Math.max(1,Math.floor(height/cell));
+      var footprint=tamanhoOcupacaoTokenCBA(selected);
+      gridX=Math.max(0,Math.min(Math.max(0,columns-footprint),Math.floor(Number(gridX)||0)));
+      gridY=Math.max(0,Math.min(Math.max(0,rows-footprint),Math.floor(Number(gridY)||0)));
+      var changed=gridX!==(Number(selected.gridX)||0)||gridY!==(Number(selected.gridY)||0);
+      cbaMoveSelectionKey=null;cbaMoveSelectionPreview=false;
+      if(changed){
+        selected.gridX=gridX;selected.gridY=gridY;selected.x=gridX*cell;selected.y=gridY*cell;
+        renderizarTokensCBA(layer,scene);
+        var status=document.getElementById(ePreview?'cba-status':'iniciativa-status');
+        if(status)status.textContent='Movendo '+String(selected.nome||'token')+' para o quadrado ('+(gridX+1)+', '+(gridY+1)+')…';
+        e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();
+        if(ePreview){
+          if(status)status.textContent=String(selected.nome||'Token')+' reposicionado no rascunho. Publique o campo para aplicar a nova posição.';
+        }else{
+          cbaMoveSaving=true;
+          Promise.resolve(ehGM?salvarPosicaoTokenCBA(selected):salvarPosicaoTokenJogador(selected)).finally(function(){cbaMoveSaving=false;});
+        }
+      }else{
+        renderizarTokensCBA(layer,scene);
+        var unchangedStatus=document.getElementById(ePreview?'cba-status':'iniciativa-status');
+        if(unchangedStatus)unchangedStatus.textContent='O token já está nesse quadrado.';
+        e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();
+      }
+    },true);
   }
 
   function atualizarReguaCBA(token,x,y,cell){
@@ -6197,8 +6193,8 @@ async function abrirModalEquipamentos(){
     ligarEventosNevoaCBA();
     document.getElementById('cba-monstro-busca').addEventListener('input',renderizarMonstrosCBA);
     document.getElementById('cba-monstro-regiao').addEventListener('change',renderizarMonstrosCBA);
-    fazerArrastavelCBA(document.getElementById('cba-preview-tokens'));
-    fazerArrastavelCBA(document.getElementById('cba-token-layer'));
+    ligarMovimentoPorCliqueCBA(document.getElementById('cba-preview-area'),true);
+    ligarMovimentoPorCliqueCBA(document.getElementById('area-tabuleiro'),false);
     var previewWrap = document.getElementById('cba-preview-wrap');
     var palco = document.getElementById('area-tabuleiro');
     if(window.ResizeObserver){
@@ -7257,7 +7253,7 @@ async function abrirModalEquipamentos(){
     if(cbaPublishedState) renderizarTokensCBA(document.getElementById('cba-token-layer'),cbaPublishedState);
     var eMinhaVez=!ehGM && ativo && atual && !atual.is_monster && personagens.some(function(p){return String(p.ch.id)===String(atual.id)&&p.ch.user_id===eu.id;});
     var turnoTokenMestre=ehGM&&ativo&&atual&&atual.is_monster;
-    if(turnoTokenMestre){var controlToken=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.id)===String(atual.id);});if(controlToken){var gmTitle=document.createElement('span');gmTitle.textContent='Turno do Mestre · '+controlToken.nome;gmActions.appendChild(gmTitle);if(controlToken.tipo!=='player'||(acharPersonagemDoToken(controlToken)&&acharPersonagemDoToken(controlToken).ch.user_id===eu.id)){var attackBtn=document.createElement('button');attackBtn.type='button';attackBtn.textContent='⚔️ Atacar';attackBtn.onclick=function(){solicitarAtaqueMestre(controlToken);};gmActions.appendChild(attackBtn);}if(tokenTemMagiaPreparada35(controlToken)){var magicBtn=document.createElement('button');magicBtn.type='button';magicBtn.textContent='✨ Magia preparada';magicBtn.onclick=function(){abrirMagiasTokenMestre(controlToken);};gmActions.appendChild(magicBtn);}var moveBtn=document.createElement('button');moveBtn.type='button';moveBtn.textContent='↔️ Mover';moveBtn.onclick=function(){document.getElementById('iniciativa-status').textContent='Mova '+controlToken.nome+' arrastando seu token no tabuleiro. O deslocamento e a ação serão validados ao soltar.';var tokenEl=Array.from(document.querySelectorAll('#cba-token-layer .token-cba')).find(function(el){return String(el.dataset.cbaTokenKey)===String(controlToken.key);});if(tokenEl)tokenEl.focus();};gmActions.appendChild(moveBtn);['padrao','rapida'].forEach(function(actionName){var actionBtn=document.createElement('button');actionBtn.type='button';actionBtn.textContent=({padrao:'Ação padrão',rapida:'Ação rápida'})[actionName];actionBtn.onclick=async function(){var note=await window.vttUI.ask({title:'Ação de '+controlToken.nome,label:'Descreva brevemente a ação',defaultValue:''});if(note&&note.trim())registrarAcaoTokenGM(controlToken,actionName,note);};gmActions.appendChild(actionBtn);});var finish=document.createElement('button');finish.type='button';finish.textContent='⏭️ Encerrar turno do token';finish.onclick=avancarTurno;gmActions.appendChild(finish);}}
+    if(turnoTokenMestre){var controlToken=cbaPublishedState&&cbaPublishedState.tokens.find(function(t){return String(t.id)===String(atual.id);});if(controlToken){var gmTitle=document.createElement('span');gmTitle.textContent='Turno do Mestre · '+controlToken.nome;gmActions.appendChild(gmTitle);if(controlToken.tipo!=='player'||(acharPersonagemDoToken(controlToken)&&acharPersonagemDoToken(controlToken).ch.user_id===eu.id)){var attackBtn=document.createElement('button');attackBtn.type='button';attackBtn.textContent='⚔️ Atacar';attackBtn.onclick=function(){solicitarAtaqueMestre(controlToken);};gmActions.appendChild(attackBtn);}if(tokenTemMagiaPreparada35(controlToken)){var magicBtn=document.createElement('button');magicBtn.type='button';magicBtn.textContent='✨ Magia preparada';magicBtn.onclick=function(){abrirMagiasTokenMestre(controlToken);};gmActions.appendChild(magicBtn);}var moveBtn=document.createElement('button');moveBtn.type='button';moveBtn.textContent='↔️ Mover';moveBtn.onclick=function(){selecionarTokenParaMoverCBA(controlToken,false);var tokenEl=Array.from(document.querySelectorAll('#cba-token-layer .token-cba')).find(function(el){return String(el.dataset.cbaTokenKey)===String(controlToken.key);});if(tokenEl)tokenEl.focus();};gmActions.appendChild(moveBtn);['padrao','rapida'].forEach(function(actionName){var actionBtn=document.createElement('button');actionBtn.type='button';actionBtn.textContent=({padrao:'Ação padrão',rapida:'Ação rápida'})[actionName];actionBtn.onclick=async function(){var note=await window.vttUI.ask({title:'Ação de '+controlToken.nome,label:'Descreva brevemente a ação',defaultValue:''});if(note&&note.trim())registrarAcaoTokenGM(controlToken,actionName,note);};gmActions.appendChild(actionBtn);});var finish=document.createElement('button');finish.type='button';finish.textContent='⏭️ Encerrar turno do token';finish.onclick=avancarTurno;gmActions.appendChild(finish);}}
     if(eMinhaVez){
       if(!antigo){
         antigo=document.createElement('button');
@@ -8767,6 +8763,13 @@ html,body,#root{width:100%!important;height:100%!important;min-width:0!important
  .mesa-sidebar-toggle.is-left{left:8px!important}.mesa-sidebar-toggle.is-right{right:8px!important}
 }
 @media(prefers-reduced-motion:reduce){.mesa>.mesa-corpo{transition:none!important}}
+</style>
+<style id="mesa-click-to-move">
+.token-cba{cursor:pointer!important;touch-action:manipulation!important}
+.token-cba:active{cursor:pointer!important;transform:none!important}
+.token-cba.movimento-ativo{outline:3px solid #79e3a0!important;outline-offset:4px!important;box-shadow:0 0 0 7px rgba(112,213,154,.22),0 0 24px rgba(112,213,154,.8)!important;filter:brightness(1.2)!important;cursor:crosshair!important;z-index:120!important}
+#cba-preview-tokens .token-cba.movimento-ativo{z-index:120!important}
+#area-tabuleiro{cursor:crosshair}
 </style>
 </body>
 </html>
