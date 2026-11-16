@@ -28,7 +28,7 @@
 <title>Project-Swords RPG Dice Roller — 3D Physics Dice for D&amp;D and Tabletop RPGs</title>
 <meta name="description" content="Physics-based 3D dice roller for tabletop RPGs. All seven standard polyhedra (d4–d100), charge throws, cinematic camera. Vanilla HTML/JS — no build, no npm.">
 <meta name="author" content="John Gillespie / Hackworth Labs LLC">
-<meta name="keywords" content="dice roller, 3D dice, D&amp;D, dnd 5e, tabletop RPG, ttrpg, physics dice, polyhedral dice, d20, three.js, cannon-es, vanilla javascript, no build">
+<meta name="keywords" content="dice roller, 3D dice, D&amp;D 3.5, tabletop RPG, ttrpg, physics dice, polyhedral dice, d20, three.js, cannon-es, vanilla javascript, no build">
 <link rel="canonical" href="https://johnbarongillespie.github.io/project-swords-rpg-dice-roller/">
 
 <!-- Open Graph / social previews (Facebook, LinkedIn, Slack, Discord, etc.) -->
@@ -3942,7 +3942,7 @@ window.addEventListener('libs-ready', function() {
         });
         let groupSum = 0;
         Object.values(pairs).forEach(p => {
-          // D&D 5e percentile rule: tens=0, ones=0 → 100
+          // Convenção percentual D&D 3.5: dezenas 00 + unidades 0 resulta em 100.
           const combined = (p.tens === 0 && p.ones === 0) ? 100 : (p.tens + p.ones);
           groupSum += combined;
         });
