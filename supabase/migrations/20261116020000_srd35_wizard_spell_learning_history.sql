@@ -62,8 +62,8 @@ BEGIN
     JOIN public.srd_spells sp ON sp.id=k.spell_id
     WHERE public._srd35_spell_level_for_class(sp.nivel,v_class,sp.circulo)=1;
     v_capacity:=CASE WHEN v_score>=11 THEN greatest(0,3+floor((v_score-10)/2)::integer) ELSE 0 END;
-    IF v_count_known<>v_capacity THEN
-      RAISE EXCEPTION 'O grimório inicial do Mago deve conter exatamente % magia(s) de 1º círculo (3 + modificador de Inteligência, quando o atributo permite aprender).',v_capacity;
+    IF v_count_known<v_capacity THEN
+      RAISE EXCEPTION 'O grimório do Mago deve conter ao menos % magia(s) iniciais de 1º círculo (3 + modificador de Inteligência, quando o atributo permite aprender).',v_capacity;
     END IF;
   END IF;
   v_domain_input := coalesce(p_estado->'dominio_preparadas',v_old->'dominio_preparadas','[]'::jsonb);
