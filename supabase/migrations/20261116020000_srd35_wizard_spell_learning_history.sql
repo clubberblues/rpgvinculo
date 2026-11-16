@@ -1,10 +1,11 @@
 -- Track the Wizard's two free spellbook additions for each level.
--- Existing spellbooks remain valid; missing history is treated as an empty object.
+-- Preserve the domain-spell support and initial-spellbook validation already in production.
 CREATE OR REPLACE FUNCTION public.salvar_grimorio_srd(p_character_id text, p_estado jsonb)
-RETURNS jsonb
-LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = pg_catalog, public
-AS $fn$
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
 DECLARE
   v_sheet public.srd_character_sheets%ROWTYPE;
   v_doc jsonb; v_class text; v_level integer; v_score integer;
@@ -15,6 +16,8 @@ DECLARE
   v_known_out jsonb := '[]'::jsonb; v_usos_out jsonb := '{}'::jsonb;
   v_key text; v_count_value integer; v_known_limits jsonb;
   v_learned_by_level jsonb; v_learned_entry jsonb; v_learned_total integer;
+  v_domain_input jsonb; v_domain_out jsonb := '[]'::jsonb; v_domain_id text; v_domain_spell_id text;
+  v_domain_level integer; v_domain_expended boolean; v_has_domain boolean;
 BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Autenticação obrigatória'; END IF;
   IF NOT EXISTS (SELECT 1 FROM public.characters c
@@ -42,10 +45,30 @@ BEGIN
     ELSE public._srd35_attr(v_doc,ARRAY['SAB','sabedoria','wisdom','wis','wis_score','score_sabedoria'])::integer END;
   IF v_score IS NULL OR v_score < 1 THEN RAISE EXCEPTION 'Atributo-chave ausente ou inválido'; END IF;
   v_known := p_estado->'conhecidas'; v_prepared := p_estado->'preparadas'; v_usos := p_estado->'usos';
+  IF v_class='wizard' THEN
+    IF EXISTS (
+      SELECT 1 FROM public.srd_spells sp
+      WHERE sp.circulo=0 AND public._srd35_spell_class_ok(sp.classes,'wizard')
+        AND NOT (v_known ? sp.id)
+    ) THEN
+      RAISE EXCEPTION 'O grimório inicial do Mago deve conter todos os truques (círculo 0) permitidos.';
+    END IF;
+    SELECT count(*)::integer INTO v_count_known
+    FROM jsonb_array_elements_text(v_known) AS k(spell_id)
+    JOIN public.srd_spells sp ON sp.id=k.spell_id
+    WHERE sp.circulo=1;
+    v_capacity:=3+greatest(0,floor((v_score-10)/2)::integer);
+    IF v_count_known<v_capacity THEN
+      RAISE EXCEPTION 'O grimório do Mago deve conter ao menos % magias de 1º círculo (3 + bônus de Inteligência).',v_capacity;
+    END IF;
+  END IF;
+  v_domain_input := coalesce(p_estado->'dominio_preparadas',v_old->'dominio_preparadas','[]'::jsonb);
   IF EXISTS (SELECT 1 FROM jsonb_array_elements(v_known) AS x(value) WHERE jsonb_typeof(x.value) <> 'string')
      OR EXISTS (SELECT 1 FROM jsonb_array_elements(v_prepared) AS x(value) WHERE jsonb_typeof(x.value) <> 'object') THEN
     RAISE EXCEPTION 'Conhecidas deve conter IDs string e preparadas deve conter objetos';
   END IF;
+  IF jsonb_typeof(v_domain_input)<>'array' THEN RAISE EXCEPTION 'dominio_preparadas deve ser uma lista'; END IF;
+  IF v_class<>'cleric' AND jsonb_array_length(v_domain_input)>0 THEN RAISE EXCEPTION 'Somente clérigos têm espaços de domínio'; END IF;
   IF (SELECT count(*) FROM jsonb_array_elements_text(v_known)) <>
      (SELECT count(DISTINCT x) FROM jsonb_array_elements_text(v_known) AS t(x)) THEN
     RAISE EXCEPTION 'IDs duplicados em conhecidas';
@@ -165,6 +188,51 @@ BEGIN
     v_prepared_out := v_prepared_out || jsonb_build_array(jsonb_build_object(
       'spell_id',v_spell_id,'slot_level',v_slot,'expended',coalesce((v_entry->>'expended')::boolean,false)));
   END LOOP;
+  -- Domain slots are a separate daily slot, one per accessible circle for clerics.
+  IF v_class='cleric' THEN
+    IF (SELECT count(*) FROM jsonb_array_elements(v_domain_input)) <>
+       (SELECT count(DISTINCT (value->>'slot_level')::integer) FROM jsonb_array_elements(v_domain_input)) THEN
+      RAISE EXCEPTION 'Há mais de uma preparação no mesmo espaço de domínio';
+    END IF;
+    FOR v_entry IN SELECT value FROM jsonb_array_elements(v_domain_input) LOOP
+      v_domain_id:=v_entry->>'domain_id'; v_domain_spell_id:=v_entry->>'spell_id';
+      IF v_domain_id IS NULL OR v_domain_spell_id IS NULL
+         OR jsonb_typeof(v_entry->'slot_level')<>'number'
+         OR jsonb_typeof(v_entry->'expended')<>'boolean'
+         OR (v_entry->>'slot_level') !~ '^[1-9]$' THEN
+        RAISE EXCEPTION 'Cada espaço de domínio requer domain_id, spell_id, círculo 1..9 e expended';
+      END IF;
+      v_domain_level:=(v_entry->>'slot_level')::integer;
+      SELECT EXISTS (
+        SELECT 1 FROM public.srd_character_domain_choices choice
+        JOIN public.srd_domain_spells ds USING (domain_id)
+        WHERE choice.character_id::text=p_character_id AND choice.domain_id=v_domain_id
+          AND ds.spell_id=v_domain_spell_id AND ds.spell_level=v_domain_level
+      ) INTO v_has_domain;
+      IF NOT v_has_domain THEN RAISE EXCEPTION 'A magia não pertence a um domínio escolhido ou círculo informado'; END IF;
+      IF coalesce((SELECT (slots_by_level -> (v_level-1) ->> v_domain_level)::integer
+                     FROM public.srd_spell_progressions WHERE class_key='cleric'),0)=0
+         OR v_score < 10+v_domain_level THEN
+        RAISE EXCEPTION 'O círculo de domínio não está acessível para este nível/atributo';
+      END IF;
+      v_domain_expended:=coalesce((v_entry->>'expended')::boolean,false);
+      IF EXISTS (SELECT 1 FROM jsonb_array_elements(coalesce(v_old->'dominio_preparadas','[]'::jsonb)) old_slot
+                   WHERE (old_slot->>'slot_level')::integer=v_domain_level
+                     AND coalesce((old_slot->>'expended')::boolean,false)) THEN
+        v_domain_expended:=true;
+      END IF;
+      v_domain_out:=v_domain_out||jsonb_build_array(jsonb_build_object(
+        'domain_id',v_domain_id,'spell_id',v_domain_spell_id,'slot_level',v_domain_level,'expended',v_domain_expended));
+    END LOOP;
+    -- A spent domain slot cannot be restored by changing its spell; only a daily rest resets it.
+    FOR v_entry IN SELECT value FROM jsonb_array_elements(coalesce(v_old->'dominio_preparadas','[]'::jsonb)) old_slot(value)
+      WHERE coalesce((value->>'expended')::boolean,false) LOOP
+      IF NOT EXISTS (SELECT 1 FROM jsonb_array_elements(v_domain_out) x(value)
+                     WHERE (value->>'slot_level')::integer=(v_entry->>'slot_level')::integer) THEN
+        v_domain_out:=v_domain_out||jsonb_build_array(v_entry);
+      END IF;
+    END LOOP;
+  END IF;
   -- Preserve previously expended slots by occurrence of the same spell/slot pair.
   FOR v_count IN 0..jsonb_array_length(v_prepared_out)-1 LOOP
     v_entry := v_prepared_out -> v_count;
@@ -201,8 +269,8 @@ BEGIN
     IF v_count>v_capacity THEN RAISE EXCEPTION 'Preparadas excedem espaços diários do círculo % (% > %)',v_circle,v_count,v_capacity; END IF;
   END LOOP;
   UPDATE public.srd_character_sheets
-     SET magias_preparadas=jsonb_build_object('version',1,'conhecidas',v_known_out,'preparadas',v_prepared_out,'usos',v_usos_out,'aprendidas_por_nivel',v_learned_by_level)
+     SET magias_preparadas=jsonb_build_object('version',1,'conhecidas',v_known_out,'preparadas',v_prepared_out,'dominio_preparadas',v_domain_out,'usos',v_usos_out,'aprendidas_por_nivel',v_learned_by_level)
    WHERE character_id::text=p_character_id;
-  RETURN jsonb_build_object('version',1,'conhecidas',v_known_out,'preparadas',v_prepared_out,'usos',v_usos_out,'aprendidas_por_nivel',v_learned_by_level);
+  RETURN jsonb_build_object('version',1,'conhecidas',v_known_out,'preparadas',v_prepared_out,'dominio_preparadas',v_domain_out,'usos',v_usos_out,'aprendidas_por_nivel',v_learned_by_level);
 END
-$fn$;
+$function$;
