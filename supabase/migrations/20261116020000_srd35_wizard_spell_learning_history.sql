@@ -14,7 +14,7 @@ DECLARE
   v_old_expended integer; v_new_ordinal integer; v_slot_key text; v_prepared_out jsonb := '[]'::jsonb;
   v_known_out jsonb := '[]'::jsonb; v_usos_out jsonb := '{}'::jsonb;
   v_key text; v_count_value integer; v_known_limits jsonb;
-  v_learned_by_level jsonb; v_learned_entry jsonb; v_learned_level integer; v_learned_total integer;
+  v_learned_by_level jsonb; v_learned_entry jsonb; v_learned_total integer;
 BEGIN
   IF auth.uid() IS NULL THEN RAISE EXCEPTION 'Autenticação obrigatória'; END IF;
   IF NOT EXISTS (SELECT 1 FROM public.characters c
@@ -63,121 +63,25 @@ BEGIN
     IF v_score < 10+v_spell.circulo THEN RAISE EXCEPTION 'Atributo insuficiente para conhecer a magia: %',v_spell_id; END IF;
     v_known_out := v_known_out || to_jsonb(v_spell_id);
   END LOOP;
-  -- Preserve the Wizard's two free spells learned at each character level.
-  -- Copying from scrolls/other spellbooks is tracked separately by the table and does not consume this quota.
+  -- Histórico das duas magias gratuitas que o Mago aprende em cada nível.
+  -- Magias copiadas são registradas no grimório, mas não consomem essa cota.
   v_learned_by_level := coalesce(p_estado->'aprendidas_por_nivel', v_old->'aprendidas_por_nivel', '{}'::jsonb);
   IF jsonb_typeof(v_learned_by_level) <> 'object' THEN
     RAISE EXCEPTION 'aprendidas_por_nivel deve ser um objeto por nível';
   END IF;
   FOR v_key,v_learned_entry IN SELECT key,value FROM jsonb_each(v_learned_by_level) LOOP
-    IF v_level_key !~ '^(2|[3-9]|1[0-9]|20)    SELECT known_by_level -> (v_level-1) INTO v_known_limits
-      FROM public.srd_spell_progressions WHERE class_key='sorcerer';
-    FOR v_circle IN 0..9 LOOP
-      SELECT count(*) INTO v_count_known
-        FROM jsonb_array_elements_text(v_known) AS k(spell_id)
-        JOIN public.srd_spells sp ON sp.id=k.spell_id WHERE sp.circulo=v_circle;
-      v_capacity := coalesce((v_known_limits ->> v_circle)::integer,0);
-      IF v_count_known > v_capacity THEN RAISE EXCEPTION 'Magias conhecidas excedem o limite do círculo %',v_circle; END IF;
-    END LOOP;
-  ELSIF v_usos <> '{}'::jsonb THEN
-    RAISE EXCEPTION 'O mapa usos só é aceito para feiticeiro';
-  END IF;
-  IF v_class='sorcerer' AND (jsonb_object_length(v_usos)>0 OR jsonb_object_length(coalesce(v_old->'usos','{}'::jsonb))>0) THEN
-    FOR v_key,v_count_value IN
-      SELECT k, greatest(coalesce((v_usos->>k)::integer,0),coalesce((v_old->'usos'->>k)::integer,0))
-        FROM (SELECT key AS k FROM jsonb_each(v_usos)
-              UNION SELECT key AS k FROM jsonb_each(coalesce(v_old->'usos','{}'::jsonb))) AS all_keys
-    LOOP
-      IF v_key !~ '^(0|[1-9])$' OR v_count_value<0 THEN RAISE EXCEPTION 'Usos deve mapear círculos 0..9 a inteiros não negativos'; END IF;
-      v_circle := v_key::integer;
-      IF coalesce((SELECT (slots_by_level -> (v_level-1) ->> v_circle)::integer
-                     FROM public.srd_spell_progressions WHERE class_key='sorcerer'),0)=0
-         OR v_count_value > public._srd35_slots(v_class,v_level,v_score,v_circle) THEN
-        RAISE EXCEPTION 'Usos excedem os espaços diários no círculo %',v_circle;
-      END IF;
-      v_usos_out := jsonb_set(v_usos_out,ARRAY[v_key],to_jsonb(v_count_value),true);
-    END LOOP;
-  END IF;
-  FOR v_entry IN SELECT value FROM jsonb_array_elements(v_prepared) LOOP
-    v_spell_id := v_entry->>'spell_id';
-    IF v_spell_id IS NULL OR jsonb_typeof(v_entry->'slot_level') <> 'number'
-       OR jsonb_typeof(v_entry->'expended') <> 'boolean' THEN
-      RAISE EXCEPTION 'Cada preparado requer spell_id, slot_level inteiro e expended boolean';
-    END IF;
-    IF (v_entry->>'slot_level') !~ '^(0|[1-9])$' THEN RAISE EXCEPTION 'slot_level deve estar entre 0 e 9'; END IF;
-    v_slot := (v_entry->>'slot_level')::integer;
-    SELECT id,circulo,classes INTO v_spell FROM public.srd_spells WHERE id=v_spell_id;
-    IF NOT FOUND OR v_spell.circulo NOT BETWEEN 0 AND 9 OR v_slot < v_spell.circulo
-       OR NOT public._srd35_spell_class_ok(v_spell.classes,v_class) THEN
-      RAISE EXCEPTION 'Magia preparada inexistente, nível/slot inválido ou incompatível: %',v_spell_id;
-    END IF;
-    IF v_class='sorcerer' THEN RAISE EXCEPTION 'Feiticeiro usa conhecidas/usos, não prepara magias'; END IF;
-    IF v_class='wizard' AND NOT (v_known ? v_spell_id) THEN
-      RAISE EXCEPTION 'Mago só pode preparar magias conhecidas/no grimório: %',v_spell_id;
-    END IF;
-    IF coalesce((SELECT (slots_by_level -> (v_level-1) ->> v_spell.circulo)::integer
-                   FROM public.srd_spell_progressions WHERE class_key=v_class),0)=0 THEN
-      RAISE EXCEPTION 'Círculo da magia não acessível neste nível: %',v_spell_id;
-    END IF;
-    IF v_score < 10+v_spell.circulo THEN RAISE EXCEPTION 'Atributo insuficiente para preparar a magia: %',v_spell_id; END IF;
-    v_prepared_out := v_prepared_out || jsonb_build_array(jsonb_build_object(
-      'spell_id',v_spell_id,'slot_level',v_slot,'expended',coalesce((v_entry->>'expended')::boolean,false)));
-  END LOOP;
-  -- Preserve previously expended slots by occurrence of the same spell/slot pair.
-  FOR v_count IN 0..jsonb_array_length(v_prepared_out)-1 LOOP
-    v_entry := v_prepared_out -> v_count;
-    v_spell_id := v_entry->>'spell_id'; v_slot := (v_entry->>'slot_level')::integer;
-    v_slot_key := v_spell_id || ':' || v_slot::text;
-    SELECT count(*) INTO v_new_ordinal FROM jsonb_array_elements(v_prepared_out) WITH ORDINALITY q(value,ord)
-      WHERE value->>'spell_id'=v_spell_id AND (value->>'slot_level')::integer=v_slot AND ord<=v_count+1;
-    SELECT count(*) INTO v_old_expended FROM jsonb_array_elements(coalesce(v_old->'preparadas','[]'::jsonb)) q(value)
-      WHERE value->>'spell_id'=v_spell_id AND (value->>'slot_level')::integer=v_slot
-        AND coalesce((value->>'expended')::boolean,false);
-    IF v_new_ordinal<=v_old_expended THEN
-      v_prepared_out := jsonb_set(v_prepared_out,ARRAY[v_count::text,'expended'],'true'::jsonb,true);
-    END IF;
-  END LOOP;
-  -- Preserve previously expended slots even if the client submits a different spell list.
-  FOR v_entry IN SELECT value FROM jsonb_array_elements(coalesce(v_old->'preparadas','[]'::jsonb)) q(value)
-    WHERE coalesce((value->>'expended')::boolean,false)
-  LOOP
-    v_spell_id:=v_entry->>'spell_id'; v_slot:=(v_entry->>'slot_level')::integer;
-    SELECT count(*) INTO v_old_expended FROM jsonb_array_elements(coalesce(v_old->'preparadas','[]'::jsonb)) q(value)
-      WHERE value->>'spell_id'=v_spell_id AND (value->>'slot_level')::integer=v_slot
-        AND coalesce((value->>'expended')::boolean,false);
-    SELECT count(*) INTO v_new_ordinal FROM jsonb_array_elements(v_prepared_out) q(value)
-      WHERE value->>'spell_id'=v_spell_id AND (value->>'slot_level')::integer=v_slot
-        AND coalesce((value->>'expended')::boolean,false);
-    IF v_new_ordinal<v_old_expended THEN
-      v_prepared_out:=v_prepared_out||jsonb_build_array(jsonb_set(v_entry,'{expended}','true'::jsonb,true));
-    END IF;
-  END LOOP;
-  FOR v_circle IN 0..9 LOOP
-    SELECT count(*) INTO v_count FROM jsonb_array_elements(v_prepared_out) e
-      WHERE (e->>'slot_level')::integer=v_circle;
-    v_capacity := public._srd35_slots(v_class,v_level,v_score,v_circle);
-    IF v_count>v_capacity THEN RAISE EXCEPTION 'Preparadas excedem espaços diários do círculo % (% > %)',v_circle,v_count,v_capacity; END IF;
-  END LOOP;
-  UPDATE public.srd_character_sheets
-     SET magias_preparadas=jsonb_build_object('version',1,'conhecidas',v_known_out,'preparadas',v_prepared_out,'usos',v_usos_out,'aprendidas_por_nivel',v_learned_by_level)
-   WHERE character_id::text=p_character_id;
-  RETURN jsonb_build_object('version',1,'conhecidas',v_known_out,'preparadas',v_prepared_out,'usos',v_usos_out,'aprendidas_por_nivel',v_learned_by_level);
-END
-$fn$; OR v_level_key::integer > v_level THEN
+    IF v_key !~ '^[0-9]+$' OR v_key::integer < 2 OR v_key::integer > 20 OR v_key::integer > v_level THEN
       RAISE EXCEPTION 'Nível inválido em aprendidas_por_nivel: %',v_key;
     END IF;
-    IF jsonb_typeof(v_learned_entry) <> 'array' THEN
-      RAISE EXCEPTION 'Cada nível em aprendidas_por_nivel deve conter uma lista de IDs';
-    END IF;
-    IF jsonb_array_length(v_learned_entry) > 2 THEN
-      RAISE EXCEPTION 'O Mago pode aprender no máximo duas magias gratuitas por nível';
+    IF jsonb_typeof(v_learned_entry) <> 'array' OR jsonb_array_length(v_learned_entry) > 2 THEN
+      RAISE EXCEPTION 'Cada nível deve conter uma lista de até duas magias gratuitas';
     END IF;
     IF EXISTS (SELECT 1 FROM jsonb_array_elements(v_learned_entry) AS x(value) WHERE jsonb_typeof(x.value) <> 'string') THEN
       RAISE EXCEPTION 'IDs de magias aprendidas por nível devem ser textos';
     END IF;
     IF (SELECT count(*) FROM jsonb_array_elements_text(v_learned_entry) AS x(id)) <>
        (SELECT count(DISTINCT id) FROM jsonb_array_elements_text(v_learned_entry) AS x(id)) THEN
-      RAISE EXCEPTION 'Há magias duplicadas no registro de progressão do nível %',v_level_key;
+      RAISE EXCEPTION 'Há magias duplicadas no registro de progressão do nível %',v_key;
     END IF;
     IF EXISTS (SELECT 1 FROM jsonb_array_elements_text(v_learned_entry) AS x(id) WHERE NOT (v_known ? x.id)) THEN
       RAISE EXCEPTION 'Toda magia aprendida por progressão precisa constar no grimório';
@@ -186,7 +90,9 @@ $fn$; OR v_level_key::integer > v_level THEN
   SELECT count(*) INTO v_learned_total FROM (
     SELECT jsonb_array_elements_text(value) AS spell_id FROM jsonb_each(v_learned_by_level)
   ) learned;
-  IF v_learned_total <> (SELECT count(DISTINCT spell_id) FROM (SELECT jsonb_array_elements_text(value) AS spell_id FROM jsonb_each(v_learned_by_level)) all_learned) THEN
+  IF v_learned_total <> (SELECT count(DISTINCT spell_id) FROM (
+    SELECT jsonb_array_elements_text(value) AS spell_id FROM jsonb_each(v_learned_by_level)
+  ) all_learned) THEN
     RAISE EXCEPTION 'Uma magia não pode ser registrada como aprendizado gratuito em mais de um nível';
   END IF;
   IF v_class='sorcerer' THEN
@@ -279,8 +185,8 @@ $fn$; OR v_level_key::integer > v_level THEN
     IF v_count>v_capacity THEN RAISE EXCEPTION 'Preparadas excedem espaços diários do círculo % (% > %)',v_circle,v_count,v_capacity; END IF;
   END LOOP;
   UPDATE public.srd_character_sheets
-     SET magias_preparadas=jsonb_build_object('version',1,'conhecidas',v_known_out,'preparadas',v_prepared_out,'usos',v_usos_out)
+     SET magias_preparadas=jsonb_build_object('version',1,'conhecidas',v_known_out,'preparadas',v_prepared_out,'usos',v_usos_out,'aprendidas_por_nivel',v_learned_by_level)
    WHERE character_id::text=p_character_id;
-  RETURN jsonb_build_object('version',1,'conhecidas',v_known_out,'preparadas',v_prepared_out,'usos',v_usos_out);
+  RETURN jsonb_build_object('version',1,'conhecidas',v_known_out,'preparadas',v_prepared_out,'usos',v_usos_out,'aprendidas_por_nivel',v_learned_by_level);
 END
 $fn$;
