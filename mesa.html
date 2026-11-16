@@ -1013,7 +1013,7 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
  .mesa.mobile-chat-open:after,.mesa.mobile-actions-open:after{content:'';position:fixed;inset:52px 0 112px;background:#0008;z-index:10010;pointer-events:none}
 }
 </style>
-<link rel="stylesheet" href="mesa-theme.css?v=2">
+<link rel="stylesheet" href="mesa-theme.css?v=3">
 <link rel="stylesheet" href="vtt-theme.css?v=1">
 <style id="battlefield-layout-repair">
 /* Estrutura do estúdio: ferramentas na coluna lateral; tabuleiro ocupa o espaço restante. */
@@ -5760,85 +5760,105 @@ async function abrirModalEquipamentos(){
   function fazerArrastavelCBA(layer){
     var arrasto = null;
     var ePreview = layer.id === 'cba-preview-tokens';
+    function escalaDaCamada(rect){
+      var width=Number(layer.clientWidth)||rect.width||1;
+      var height=Number(layer.clientHeight)||rect.height||1;
+      return {x:rect.width/width||1,y:rect.height/height||1};
+    }
     layer.addEventListener('pointerdown',function(e){
       if(e.target.closest&&e.target.closest('.token-pv-btn')) return;
-      if(e.isPrimary === false || cbaPinchInProgress) return;
-      // A seleção do alvo é tratada no pointerdown, antes da lógica de arraste.
-      // Isso evita que pointer capture/drag suprima o click e deixe o fluxo sem alvo.
-      if(!ePreview && ehGM && modoSelecaoTeste){
-        // Mantém o token fora do arraste; a seleção é confirmada no evento click da camada.
-        return;
-      }
+      if(e.isPrimary === false || cbaPinchInProgress || (e.pointerType==='mouse'&&e.button!==0)) return;
+      if(!ePreview && ehGM && modoSelecaoTeste) return;
       var token = e.target.closest ? e.target.closest('.token-cba') : null;
       if(!token || !layer.contains(token)) return;
       var scene = ePreview ? cbaState : cbaPublishedState;
       if(!scene) return;
-      var item = scene.tokens.find(function(t){ return t.key === token.dataset.cbaTokenKey; });
+      var item = scene.tokens.find(function(t){ return String(t.key) === String(token.dataset.cbaTokenKey); });
       if(!item) return;
       if(!ePreview && !ehGM){
         if(item.tipo!=='player')return;
         var ownedCharacter=personagens.find(function(p){return String(p.ch.id)===String(item.id)&&p.ch.user_id===eu.id;});
         if(!ownedCharacter)return;
       }
-      var rect = token.getBoundingClientRect();
-      arrasto = {token:token,item:item,scene:scene,pointerId:e.pointerId,cell:tamanhoCelulaLayerCBA(layer,scene),offsetX:(e.clientX-rect.left)/cbaZoom,offsetY:(e.clientY-rect.top)/cbaZoom,startClientX:e.clientX,startClientY:e.clientY,startGridX:Number(item.gridX)||0,startGridY:Number(item.gridY)||0,moved:false};
+      var layerRect=layer.getBoundingClientRect(),scale=escalaDaCamada(layerRect);
+      var localX=(e.clientX-layerRect.left)/scale.x,localY=(e.clientY-layerRect.top)/scale.y;
+      arrasto={token:token,item:item,scene:scene,pointerId:e.pointerId,cell:tamanhoCelulaLayerCBA(layer,scene),
+        offsetX:localX-(Number(item.x)||0),offsetY:localY-(Number(item.y)||0),
+        startClientX:e.clientX,startClientY:e.clientY,startGridX:Number(item.gridX)||0,startGridY:Number(item.gridY)||0,moved:false};
       if(!ePreview)fecharMenuContextualToken(false);
-      token.style.zIndex = '100';
-      try { token.setPointerCapture(e.pointerId); } catch(err) {}
+      token.style.zIndex='100';
+      try{token.setPointerCapture(e.pointerId);}catch(err){}
       e.preventDefault();
+      e.stopPropagation();
     });
     layer.addEventListener('pointermove',function(e){
-      if(cbaPinchInProgress || !arrasto || e.pointerId !== arrasto.pointerId) return;
-      if(!arrasto.moved&&Math.hypot(e.clientX-arrasto.startClientX,e.clientY-arrasto.startClientY)>6){arrasto.moved=true;suppressTokenClickUntil=Date.now()+450;fecharMenuContextualToken(false);}
-      var rect = layer.getBoundingClientRect();
-      var cell = arrasto.cell;
-      var baseWidth=layer.clientWidth||rect.width/cbaZoom, baseHeight=layer.clientHeight||rect.height/cbaZoom;
-      var ocupacao=tamanhoOcupacaoTokenCBA(arrasto.item);
-      var maxLeft = Math.max(0,baseWidth-cell*ocupacao);
-      var maxTop = Math.max(0,baseHeight-cell*ocupacao);
-      var left = Math.max(0,Math.min(maxLeft,(e.clientX-rect.left)/cbaZoom-arrasto.offsetX));
-      var top = Math.max(0,Math.min(maxTop,(e.clientY-rect.top)/cbaZoom-arrasto.offsetY));
-      arrasto.item.x = left;
-      arrasto.item.y = top;
-      arrasto.token.style.left = left+'px';
-      arrasto.token.style.top = top+'px';
-      if(ePreview) atualizarReguaCBA(arrasto.item,left,top,cell);
-
-    });
-    function encerrar(e){
-      if(!arrasto || (e && e.pointerId !== arrasto.pointerId)) return;
-      if(cbaPinchInProgress){try{if(arrasto.token.hasPointerCapture(arrasto.pointerId))arrasto.token.releasePointerCapture(arrasto.pointerId);}catch(err){}arrasto=null;return;}
-      var rect = layer.getBoundingClientRect();
-      var cell = arrasto.cell;
-      var columns = Math.max(1,Math.floor((layer.clientWidth||rect.width/cbaZoom)/cell));
-      var rows = Math.max(1,Math.floor((layer.clientHeight||rect.height/cbaZoom)/cell));
-      var left = Number(arrasto.item.x)||0;
-      var top = Number(arrasto.item.y)||0;
-      var ocupacao=tamanhoOcupacaoTokenCBA(arrasto.item);
-      arrasto.item.gridX = Math.max(0,Math.min(Math.max(0,columns-ocupacao),Math.round(left/cell)));
-      arrasto.item.gridY = Math.max(0,Math.min(Math.max(0,rows-ocupacao),Math.round(top/cell)));
-      var didMove=arrasto.moved||arrasto.item.gridX!==arrasto.startGridX||arrasto.item.gridY!==arrasto.startGridY;
-      arrasto.item.x = arrasto.item.gridX*cell;
-      arrasto.item.y = arrasto.item.gridY*cell;
-      arrasto.token.dataset.gridX = String(arrasto.item.gridX);
-      arrasto.token.dataset.gridY = String(arrasto.item.gridY);
-      arrasto.token.style.left = arrasto.item.x+'px';
-      arrasto.token.style.top = arrasto.item.y+'px';
-      arrasto.token.style.zIndex = '';
-      if(!ePreview && cbaState.tokens){
-        var editingItem = cbaState.tokens.find(function(t){ return t.key === arrasto.item.key; });
-        if(editingItem){ editingItem.gridX=arrasto.item.gridX; editingItem.gridY=arrasto.item.gridY; editingItem.x=arrasto.item.x; editingItem.y=arrasto.item.y; }
+      if(!arrasto||e.pointerId!==arrasto.pointerId)return;
+      if(cbaPinchInProgress)return;
+      if(!arrasto.moved){
+        if(Math.hypot(e.clientX-arrasto.startClientX,e.clientY-arrasto.startClientY)<4)return;
+        arrasto.moved=true;
+        suppressTokenClickUntil=Date.now()+500;
+        fecharMenuContextualToken(false);
       }
-      if(!ePreview&&didMove){suppressTokenClickUntil=Date.now()+450;if(ehGM)salvarPosicaoTokenCBA(arrasto.item);else salvarPosicaoTokenJogador(arrasto.item);}
-      else if(!ePreview&&!modoSelecaoTeste){if(ataqueMestreSelecionado){suppressTokenClickUntil=Date.now()+450;selecionarAlvoAtaqueMestre(arrasto.item);}else if(ataqueSelecionado){suppressTokenClickUntil=Date.now()+450;selecionarAlvoAtaque(arrasto.item.key);}else{suppressTokenClickUntil=0;abrirMenuContextualToken(arrasto.item,arrasto.token);suppressTokenClickUntil=Date.now()+450;}}
-      try { if(arrasto.token.hasPointerCapture(arrasto.pointerId)) arrasto.token.releasePointerCapture(arrasto.pointerId); } catch(err) {}
-      arrasto = null;
-      var tooltip = document.getElementById('cba-distancia-preview');
-      if(tooltip) tooltip.style.display = 'none';
+      var rect=layer.getBoundingClientRect(),scale=escalaDaCamada(rect),cell=arrasto.cell;
+      var baseWidth=Number(layer.clientWidth)||rect.width/scale.x;
+      var baseHeight=Number(layer.clientHeight)||rect.height/scale.y;
+      var ocupacao=tamanhoOcupacaoTokenCBA(arrasto.item);
+      var maxLeft=Math.max(0,baseWidth-cell*ocupacao),maxTop=Math.max(0,baseHeight-cell*ocupacao);
+      var left=Math.max(0,Math.min(maxLeft,(e.clientX-rect.left)/scale.x-arrasto.offsetX));
+      var top=Math.max(0,Math.min(maxTop,(e.clientY-rect.top)/scale.y-arrasto.offsetY));
+      arrasto.item.x=left;arrasto.item.y=top;
+      arrasto.token.style.left=left+'px';arrasto.token.style.top=top+'px';
+      if(ePreview)atualizarReguaCBA(arrasto.item,left,top,cell);
+      e.preventDefault();
+      e.stopPropagation();
+    });
+    function encerrar(e,cancelled){
+      if(!arrasto||(e&&e.pointerId!==arrasto.pointerId))return;
+      var current=arrasto;
+      if(cancelled||cbaPinchInProgress){
+        current.item.gridX=current.startGridX;current.item.gridY=current.startGridY;
+        current.item.x=current.startGridX*current.cell;current.item.y=current.startGridY*current.cell;
+        current.token.style.left=current.item.x+'px';current.token.style.top=current.item.y+'px';current.token.style.zIndex='';
+        if(!ePreview&&cbaState&&Array.isArray(cbaState.tokens)){
+          var original=cbaState.tokens.find(function(t){return String(t.key)===String(current.item.key);});
+          if(original){original.gridX=current.startGridX;original.gridY=current.startGridY;original.x=current.item.x;original.y=current.item.y;}
+        }
+        arrasto=null;
+        try{if(current.token.hasPointerCapture(current.pointerId))current.token.releasePointerCapture(current.pointerId);}catch(err){}
+        return;
+      }
+      var rect=layer.getBoundingClientRect(),scale=escalaDaCamada(rect);
+      var columns=Math.max(1,Math.floor((Number(layer.clientWidth)||rect.width/scale.x)/current.cell));
+      var rows=Math.max(1,Math.floor((Number(layer.clientHeight)||rect.height/scale.y)/current.cell));
+      var ocupacao=tamanhoOcupacaoTokenCBA(current.item);
+      current.item.gridX=Math.max(0,Math.min(Math.max(0,columns-ocupacao),Math.round((Number(current.item.x)||0)/current.cell)));
+      current.item.gridY=Math.max(0,Math.min(Math.max(0,rows-ocupacao),Math.round((Number(current.item.y)||0)/current.cell)));
+      var didMove=current.item.gridX!==current.startGridX||current.item.gridY!==current.startGridY;
+      current.item.x=current.item.gridX*current.cell;current.item.y=current.item.gridY*current.cell;
+      current.token.dataset.gridX=String(current.item.gridX);current.token.dataset.gridY=String(current.item.gridY);
+      current.token.style.left=current.item.x+'px';current.token.style.top=current.item.y+'px';current.token.style.zIndex='';
+      if(!ePreview&&cbaState&&Array.isArray(cbaState.tokens)){
+        var editingItem=cbaState.tokens.find(function(t){return String(t.key)===String(current.item.key);});
+        if(editingItem){editingItem.gridX=current.item.gridX;editingItem.gridY=current.item.gridY;editingItem.x=current.item.x;editingItem.y=current.item.y;}
+      }
+      arrasto=null;
+      try{if(current.token.hasPointerCapture(current.pointerId))current.token.releasePointerCapture(current.pointerId);}catch(err){}
+      if(!ePreview&&didMove){
+        suppressTokenClickUntil=Date.now()+500;
+        if(ehGM)salvarPosicaoTokenCBA(current.item);else salvarPosicaoTokenJogador(current.item);
+      }else if(!ePreview&&!didMove){
+        // Clique simples não abre menu contextual; ações do token são acionadas pelo painel
+        // e o menu administrativo fica reservado ao botão direito.
+        suppressTokenClickUntil=0;
+      }
+      var tooltip=document.getElementById('cba-distancia-preview');if(tooltip)tooltip.style.display='none';
       var livePreview=document.getElementById('cba-live-movement-preview');if(livePreview){livePreview.hidden=true;livePreview.style.display='none';}
+      if(e&&e.cancelable)e.preventDefault();
     }
-    layer.addEventListener('pointerup',encerrar);
-    layer.addEventListener('pointercancel',encerrar);
+    layer.addEventListener('pointerup',function(e){encerrar(e,false);});
+    layer.addEventListener('pointercancel',function(e){encerrar(e,true);});
+    layer.addEventListener('lostpointercapture',function(e){encerrar(e,true);});
   }
 
   function atualizarReguaCBA(token,x,y,cell){
@@ -8024,18 +8044,45 @@ html,body,#root{width:100%;height:100%;min-width:0;min-height:0}
 
 <script id="vinculo-mobile-drawers">
 (function(){
+ 'use strict';
  function attach(){
-  var mesa=document.querySelector('.mesa'),header=mesa&&mesa.querySelector('.mesa-header');
-  if(!mesa||!header||header.dataset.mobileDrawers==='1')return;
-  header.dataset.mobileDrawers='1';
-  function make(id,label,icon,cls){
-   var b=document.createElement('button');b.type='button';b.id=id;b.className='mobile-panel-toggle';b.innerHTML='<span aria-hidden="true">'+icon+'</span><span>'+label+'</span>';b.setAttribute('aria-expanded','false');
-   b.addEventListener('click',function(){var open=mesa.classList.toggle(cls);b.setAttribute('aria-expanded',String(open));var other=cls==='mobile-chat-open'?'mobile-actions-open':'mobile-chat-open';mesa.classList.remove(other);var otherButton=document.getElementById(other==='mobile-chat-open'?'vinculo-mobile-chat':'vinculo-mobile-actions');if(otherButton)otherButton.setAttribute('aria-expanded','false');});
-   return b;
+  var mesa=document.querySelector('.mesa'),board=document.getElementById('area-tabuleiro');
+  if(!mesa||!board||board.dataset.sidebarToggles==='1')return;
+  board.dataset.sidebarToggles='1';
+  function portrait(){return window.matchMedia&&window.matchMedia('(max-width:760px) and (orientation: portrait)').matches;}
+  function make(id,side){
+   var b=document.createElement('button');b.type='button';b.id=id;b.className='mesa-sidebar-toggle '+(side==='actions'?'is-left':'is-right');
+   b.setAttribute('aria-expanded','true');b.setAttribute('aria-controls',side==='actions'?'acoes-dir':'col-esq');
+   b.title=side==='actions'?'Recolher painel de ações':'Recolher chat e jogadores';
+   b.setAttribute('aria-label',b.title);
+   b.textContent=side==='actions'?'‹':'›';
+   b.addEventListener('click',function(e){
+    e.preventDefault();e.stopPropagation();
+    if(portrait()){
+     var openClass=side==='actions'?'mobile-actions-open':'mobile-chat-open';
+     var otherClass=side==='actions'?'mobile-chat-open':'mobile-actions-open';
+     var open=!mesa.classList.contains(openClass);
+     mesa.classList.remove(otherClass);mesa.classList.toggle(openClass,open);
+     sync();
+    }else{
+     var collapsedClass=side==='actions'?'sidebar-actions-collapsed':'sidebar-social-collapsed';
+     mesa.classList.toggle(collapsedClass);
+     sync();
+    }
+   });
+   board.appendChild(b);return b;
   }
-  var chat=make('vinculo-mobile-chat','Chat / Dados','☰','mobile-chat-open');
-  var actions=make('vinculo-mobile-actions','Ações','⚔','mobile-actions-open');
-  header.insertBefore(chat,header.firstChild);header.appendChild(actions);
+  var actions=make('mesa-toggle-actions','actions'),social=make('mesa-toggle-social','social');
+  function syncButton(button,side){
+   var isPortrait=portrait(),open=isPortrait?mesa.classList.contains(side==='actions'?'mobile-actions-open':'mobile-chat-open'):!mesa.classList.contains(side==='actions'?'sidebar-actions-collapsed':'sidebar-social-collapsed');
+   button.setAttribute('aria-expanded',String(open));
+   button.textContent=side==='actions'?(open?'‹':'›'):(open?'›':'‹');
+   var label=side==='actions'?(open?'Recolher painel de ações':'Abrir painel de ações'):(open?'Recolher chat e jogadores':'Abrir chat e jogadores');
+   button.title=label;button.setAttribute('aria-label',label);
+  }
+  function sync(){syncButton(actions,'actions');syncButton(social,'social');}
+  window.addEventListener('resize',sync,{passive:true});
+  sync();
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',attach);else attach();
  new MutationObserver(attach).observe(document.documentElement,{childList:true,subtree:true});
@@ -8695,5 +8742,28 @@ html,body,#root{width:100%!important;height:100%!important;min-width:0!important
 }
 </style>
 
+<style id="mesa-sidebar-drawers-and-token-drag-fix">
+/* Gavetas independentes: o tabuleiro ocupa o espaço liberado sem redimensionar o painel aberto. */
+.mesa-sidebar-toggle{position:absolute!important;top:10px!important;z-index:12030!important;display:grid!important;place-items:center!important;width:27px!important;height:34px!important;min-height:34px!important;padding:0!important;border:1px solid rgba(189,152,92,.58)!important;border-radius:7px!important;background:rgba(18,22,26,.88)!important;color:#dfbd80!important;font:700 23px/1 Inter,system-ui,sans-serif!important;cursor:pointer!important;box-shadow:0 3px 12px #0008!important;backdrop-filter:blur(6px)!important;transition:background .16s,border-color .16s,opacity .16s!important}
+.mesa-sidebar-toggle:hover{background:#302a21!important;border-color:#dfbd80!important;color:#fff0d0!important}
+.mesa-sidebar-toggle:focus-visible{outline:2px solid #dfbd80!important;outline-offset:2px!important}
+.mesa-sidebar-toggle.is-left{left:9px!important}.mesa-sidebar-toggle.is-right{right:9px!important}
+@media(min-width:761px){
+ .mesa{--mesa-actions-width:clamp(220px,17vw,290px);--mesa-social-width:clamp(260px,21vw,340px)}
+ .mesa>.mesa-corpo{transition:grid-template-columns .2s ease!important}
+ .mesa.sidebar-actions-collapsed>.mesa-corpo{grid-template-columns:0 minmax(0,1fr) var(--mesa-social-width)!important}
+ .mesa.sidebar-social-collapsed>.mesa-corpo{grid-template-columns:var(--mesa-actions-width) minmax(0,1fr) 0!important}
+ .mesa.sidebar-actions-collapsed.sidebar-social-collapsed>.mesa-corpo{grid-template-columns:0 minmax(0,1fr) 0!important}
+ .mesa.sidebar-actions-collapsed>.mesa-corpo>#acoes-dir,.mesa.sidebar-social-collapsed>.mesa-corpo>.col-esq{display:none!important;width:0!important;min-width:0!important;max-width:0!important;padding:0!important;border:0!important;overflow:hidden!important;pointer-events:none!important}
+}
+@media screen and (max-width:900px) and (orientation:landscape){
+ .mesa{--mesa-actions-width:clamp(158px,22vw,218px);--mesa-social-width:clamp(126px,19vw,205px)}
+}
+@media screen and (max-width:760px) and (orientation:portrait){
+ .mesa-sidebar-toggle{top:8px!important;width:25px!important;height:32px!important;background:rgba(12,16,20,.94)!important}
+ .mesa-sidebar-toggle.is-left{left:8px!important}.mesa-sidebar-toggle.is-right{right:8px!important}
+}
+@media(prefers-reduced-motion:reduce){.mesa>.mesa-corpo{transition:none!important}}
+</style>
 </body>
 </html>
