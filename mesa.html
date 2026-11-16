@@ -5788,9 +5788,10 @@ async function abrirModalEquipamentos(){
   function ligarMovimentoPorCliqueCBA(host,ePreview){
     if(!host||host.dataset.clickMoveBound==='1')return;
     host.dataset.clickMoveBound='1';
+    host.addEventListener('keydown',function(e){if(e.key==='Escape'&&cbaMoveSelectionKey!=null&&cbaMoveSelectionPreview===!!ePreview){e.preventDefault();cancelarSelecaoMovimentoCBA();}});
     host.addEventListener('click',function(e){
       if(cbaMoveSaving||cbaPinchInProgress)return;
-      if(e.target.closest&&e.target.closest('button,input,select,textarea,a,[role="button"],#token-context-menu'))return;
+      if(e.target.closest&&e.target.closest('button,input,select,textarea,a,#token-context-menu'))return;
       var tokenEl=e.target.closest?e.target.closest('.token-cba'):null;
       var scene=ePreview?cbaState:cbaPublishedState;
       if(!scene||!Array.isArray(scene.tokens))return;
