@@ -8046,8 +8046,9 @@ html,body,#root{width:100%;height:100%;min-width:0;min-height:0}
 (function(){
  'use strict';
  function attach(){
-  var mesa=document.querySelector('.mesa'),board=document.getElementById('area-tabuleiro');
+  var mesa=document.querySelector('.mesa'),board=document.getElementById('area-tabuleiro'),socialPanel=document.querySelector('.mesa>.mesa-corpo>.col-esq');
   if(!mesa||!board||board.dataset.sidebarToggles==='1')return;
+  if(socialPanel&&!socialPanel.id)socialPanel.id='col-esq';
   board.dataset.sidebarToggles='1';
   function portrait(){return window.matchMedia&&window.matchMedia('(max-width:760px) and (orientation: portrait)').matches;}
   function make(id,side){
@@ -8754,7 +8755,9 @@ html,body,#root{width:100%!important;height:100%!important;min-width:0!important
  .mesa.sidebar-actions-collapsed>.mesa-corpo{grid-template-columns:0 minmax(0,1fr) var(--mesa-social-width)!important}
  .mesa.sidebar-social-collapsed>.mesa-corpo{grid-template-columns:var(--mesa-actions-width) minmax(0,1fr) 0!important}
  .mesa.sidebar-actions-collapsed.sidebar-social-collapsed>.mesa-corpo{grid-template-columns:0 minmax(0,1fr) 0!important}
- .mesa.sidebar-actions-collapsed>.mesa-corpo>#acoes-dir,.mesa.sidebar-social-collapsed>.mesa-corpo>.col-esq{display:none!important;width:0!important;min-width:0!important;max-width:0!important;padding:0!important;border:0!important;overflow:hidden!important;pointer-events:none!important}
+ .mesa.sidebar-actions-collapsed>.mesa-corpo>#acoes-dir,.mesa.sidebar-social-collapsed>.mesa-corpo>.col-esq{display:flex!important;width:0!important;min-width:0!important;max-width:0!important;padding:0!important;border:0!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important;transition:transform .2s ease,opacity .16s ease!important}
+ .mesa.sidebar-actions-collapsed>.mesa-corpo>#acoes-dir{transform:translateX(-22px)!important}
+ .mesa.sidebar-social-collapsed>.mesa-corpo>.col-esq{transform:translateX(22px)!important}
 }
 @media screen and (max-width:900px) and (orientation:landscape){
  .mesa{--mesa-actions-width:clamp(158px,22vw,218px);--mesa-social-width:clamp(126px,19vw,205px)}
