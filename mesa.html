@@ -2473,30 +2473,26 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
     try{
       var p=personagens.find(function(x){return String(x.ch.id)===String(token.id)&&x.ch.user_id===eu.id;});
       if(!p) throw new Error('Este token não pertence a uma ficha sua.');
-      if(String(campanha&&campanha.state||'').toUpperCase()==='COMBATE'&&combatDataState&&combatDataState.active){
-        var request=await sb.rpc('srd_solicitar_movimento_com_aoo_srd',{
-          p_campaign_id:Number(MESA_ID),p_mover_token_id:String(token.id),
-          p_destination_x:Number(token.gridX),p_destination_y:Number(token.gridY),p_controller:'player'
-        });
-        if(request.error)throw new Error(request.error.message);
-        if(request.data&&request.data.pending){
-          var freshPending=await sb.from('campaigns').select('cba_data').eq('id',Number(MESA_ID)).single();
-          if(freshPending.error)throw new Error(freshPending.error.message);
-          campanha.cba_data=freshPending.data.cba_data;cbaPublishedState=normalizarCBAData(freshPending.data.cba_data);aplicarCBAnaMesa(freshPending.data.cba_data,false);
-          document.getElementById('iniciativa-status').textContent='Movimento interrompido: o Mestre precisa resolver os ataques de oportunidade antes da conclusão.';
-          return;
-        }
-      }
-      var result=await sb.rpc('mover_token_player_cba',{p_campaign_id:Number(MESA_ID),p_character_id:String(token.id),p_grid_x:Number(token.gridX),p_grid_y:Number(token.gridY)});
-      if(result.error) throw new Error(result.error.message);
-      campanha.cba_data=result.data.cba_data;cbaPublishedState=normalizarCBAData(result.data.cba_data);
+      var result=await sb.rpc('mover_token_cba_livre',{
+        p_campaign_id:Number(MESA_ID),
+        p_token_id:String(token.id),
+        p_grid_x:Number(token.gridX),
+        p_grid_y:Number(token.gridY)
+      });
+      if(result.error) throw new Error(result.error.message||'Não foi possível salvar a posição.');
+      campanha.cba_data=result.data.cba_data;
+      cbaPublishedState=normalizarCBAData(result.data.cba_data);
       aplicarCBAnaMesa(result.data.cba_data,false);
-      var remain=result.data.movement_remaining_m;
-      document.getElementById('iniciativa-status').textContent=remain==null?'Posição atualizada no Grid. Movimento livre durante a exploração.':'Movimento restante neste turno: '+Number(remain).toLocaleString('pt-BR')+' m.';
-      var combatRefresh=await sb.from('campaigns').select('combat_data').eq('id',MESA_ID).maybeSingle();if(!combatRefresh.error&&combatRefresh.data){combatDataState=combatRefresh.data.combat_data||combatDataState;renderizarIniciativa(combatDataState);}
+      var status=document.getElementById('iniciativa-status');
+      if(status)status.textContent='Token reposicionado.';
     }catch(err){
-      alert('Movimento não permitido: '+err.message);
-      if(campanha&&campanha.cba_data) aplicarCBAnaMesa(campanha.cba_data,false);
+      console.error('Falha ao salvar posição do token do jogador:',err);
+      if(campanha&&campanha.cba_data){
+        cbaPublishedState=normalizarCBAData(campanha.cba_data);
+        aplicarCBAnaMesa(campanha.cba_data,false);
+      }
+      var status=document.getElementById('iniciativa-status');
+      if(status)status.textContent='Não foi possível salvar a posição: '+err.message;
     }
   }
 
@@ -5789,12 +5785,10 @@ async function abrirModalEquipamentos(){
       if(!scene) return;
       var item = scene.tokens.find(function(t){ return t.key === token.dataset.cbaTokenKey; });
       if(!item) return;
-      if(!ePreview && ehGM && String(campanha.state||'').toUpperCase()==='COMBATE' && combatDataState&&combatDataState.active){var gmTurn=combatDataState.turn_order&&combatDataState.turn_order[Number(combatDataState.current_turn)||0],gmCanMove=!!(gmTurn&&String(gmTurn.id)===String(item.id)&&(item.tipo==='player'?!gmTurn.is_monster:!!gmTurn.is_monster));if(!gmCanMove)return;}
       if(!ePreview && !ehGM){
-        if(item.tipo!=='player'||!modoMovimentoJogadorAtivo)return;
+        if(item.tipo!=='player')return;
         var ownedCharacter=personagens.find(function(p){return String(p.ch.id)===String(item.id)&&p.ch.user_id===eu.id;});
         if(!ownedCharacter)return;
-        if(String(campanha&&campanha.state||'').toUpperCase()==='COMBATE'&&!ehMeuTokenNoTurno(item))return;
       }
       var rect = token.getBoundingClientRect();
       arrasto = {token:token,item:item,scene:scene,pointerId:e.pointerId,cell:tamanhoCelulaLayerCBA(layer,scene),offsetX:(e.clientX-rect.left)/cbaZoom,offsetY:(e.clientY-rect.top)/cbaZoom,startClientX:e.clientX,startClientY:e.clientY,startGridX:Number(item.gridX)||0,startGridY:Number(item.gridY)||0,moved:false};
@@ -5819,7 +5813,7 @@ async function abrirModalEquipamentos(){
       arrasto.token.style.left = left+'px';
       arrasto.token.style.top = top+'px';
       if(ePreview) atualizarReguaCBA(arrasto.item,left,top,cell);
-      else if(arrasto.item.tipo==='player'&&!ehGM&&modoMovimentoJogadorAtivo)atualizarPreviewMovimento(arrasto.item,left,top,cell,arrasto.startGridX,arrasto.startGridY,e.clientX,e.clientY);
+
     });
     function encerrar(e){
       if(!arrasto || (e && e.pointerId !== arrasto.pointerId)) return;
@@ -6080,31 +6074,29 @@ async function abrirModalEquipamentos(){
   }
 
   async function salvarPosicaoTokenCBA(movedToken){
-    if(!ehGM||!cbaPublishedState)return;
+    if(!ehGM||!cbaPublishedState||!movedToken)return;
     try{
-      var current=combatDataState&&combatDataState.active&&Array.isArray(combatDataState.turn_order)?combatDataState.turn_order[Number(combatDataState.current_turn)||0]:null;
-      if(String(campanha.state||'').toUpperCase()==='COMBATE'&&movedToken){
-        var gmMoveTurnMatches=!!(current&&String(current.id)===String(movedToken.id)&&(movedToken.tipo==='player'?!current.is_monster:!!current.is_monster));
-        if(!combatDataState||!combatDataState.active||!gmMoveTurnMatches)throw new Error('O Mestre só pode mover o token correspondente ao turno ativo da iniciativa.');
-        var request=await sb.rpc('srd_solicitar_movimento_com_aoo_srd',{
-          p_campaign_id:Number(MESA_ID),p_mover_token_id:String(movedToken.id),
-          p_destination_x:Number(movedToken.gridX),p_destination_y:Number(movedToken.gridY),p_controller:'gm'
-        });
-        if(request.error)throw new Error(request.error.message||'A movimentação não foi permitida.');
-        if(request.data&&request.data.pending){
-          var freshPending=await sb.from('campaigns').select('cba_data').eq('id',Number(MESA_ID)).single();
-          if(freshPending.error)throw new Error(freshPending.error.message);
-          campanha.cba_data=freshPending.data.cba_data;cbaPublishedState=normalizarCBAData(freshPending.data.cba_data);aplicarCBAnaMesa(freshPending.data.cba_data,false);
-          document.getElementById('iniciativa-status').textContent='Movimento interrompido por ameaça: resolva a fila de Ataques de Oportunidade.';
-          abrirPainelFilaAOO();return;
-        }
-        var moved=await sb.rpc('mover_token_gm_cba_srd',{p_campaign_id:Number(MESA_ID),p_token_id:String(movedToken.id),p_grid_x:Number(movedToken.gridX),p_grid_y:Number(movedToken.gridY)});
-        if(moved.error)throw new Error(moved.error.message||'A movimentação do token não foi permitida.');
-        campanha.cba_data=moved.data.cba_data;cbaPublishedState=normalizarCBAData(moved.data.cba_data);combatDataState=moved.data.combat_data||combatDataState;aplicarCBAnaMesa(moved.data.cba_data,false);renderizarIniciativa(combatDataState);
-        document.getElementById('iniciativa-status').textContent='Movimento de '+movedToken.nome+' aplicado · '+Number(moved.data.movement_remaining_m||0).toLocaleString('pt-BR')+' m restantes.';return;
+      var moved=await sb.rpc('mover_token_cba_livre',{
+        p_campaign_id:Number(MESA_ID),
+        p_token_id:String(movedToken.id),
+        p_grid_x:Number(movedToken.gridX),
+        p_grid_y:Number(movedToken.gridY)
+      });
+      if(moved.error)throw new Error(moved.error.message||'Não foi possível salvar a posição.');
+      campanha.cba_data=moved.data.cba_data;
+      cbaPublishedState=normalizarCBAData(moved.data.cba_data);
+      aplicarCBAnaMesa(moved.data.cba_data,false);
+      var status=document.getElementById('iniciativa-status');
+      if(status)status.textContent='Token '+String(movedToken.nome||'')+' reposicionado.';
+    }catch(error){
+      console.error('Falha ao salvar posição do token:',error);
+      if(campanha&&campanha.cba_data){
+        cbaPublishedState=normalizarCBAData(campanha.cba_data);
+        aplicarCBAnaMesa(campanha.cba_data,false);
       }
-      var data=serializarEstadoCBA(cbaPublishedState),salvo=await gravarCBAnaCampanha(data);if(salvo)aplicarCBAnaMesa(salvo,false);
-    }catch(e){console.error('Falha ao sincronizar posição do token:',e);if(campanha&&campanha.cba_data)aplicarCBAnaMesa(campanha.cba_data,false);if(document.getElementById('modal-cba').classList.contains('ativo'))setStatusCBA('A posição não foi sincronizada: '+e.message);else alert('Movimento não permitido: '+e.message);}
+      var status=document.getElementById('iniciativa-status');
+      if(status)status.textContent='Não foi possível salvar a posição: '+error.message;
+    }
   }
 
   async function urlPublicaFundoCBA(){
