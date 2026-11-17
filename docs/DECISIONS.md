@@ -50,3 +50,7 @@ A ficha deve apresentar blocos específicos e visualmente intuitivos para o joga
 ## DEC-012 — A ficha deve parecer uma ficha de RPG, não um formulário genérico
 **Status:** vigente · **Data:** 2026-11-16  
 Organizar visualmente os campos em blocos familiares e específicos, com lacunas adequadas e entradas repetíveis para informações múltiplas. Não agrupar tudo em uma única caixa de texto. Reaproveitar o layout real existente quando adequado e conferir referências de fichas D&D 3.5 antes de alterar o desenho.
+
+## DEC-013 — Persistência de anotações livres de equipamento
+**Status:** vigente · **Data:** 2026-11-16  
+Os cartões livres de armas, munições, proteção, objetos, itens mágicos e tesouros serão armazenados no JSONB já existente `srd_character_sheets.identidade`, sob `equipment_notes`. Isso evita tabela de inventário, catálogo e mudança de schema. A ficha envia as anotações no RPC existente durante a criação e atualiza o mesmo JSONB depois, respeitando RLS. O registro é descritivo: não altera atributos nem executa regras.
