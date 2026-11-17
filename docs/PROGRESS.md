@@ -38,3 +38,11 @@ Concluir a auditoria do modelo de persistência de todas as seções da ficha do
 - O bloco JavaScript de `ficha.html` foi compilado estaticamente com `new Function`: sem erro de sintaxe após a correção dos familiares.
 - Foram verificadas as cinco condições da correção: Doninha presente, Texugo ausente da lista básica, bônus do Rato correto, Doninha aceita pela validação e alcance de 1 milha apresentado.
 - Não foi executado teste de navegador nem fluxo real de criação/recarga; portanto, isso não é declarado como teste funcional.
+
+
+## Correção de entendimento — equipamentos como campos manuais
+A orientação anterior de criar um modelo técnico de inventário, tabela própria, estrutura de itens e lógica de persistência dedicada está cancelada. Não implementar sistema de inventário nem criar nova tabela para isso.
+
+A interface deve ter blocos visuais específicos para armas (com várias entradas), munições, armaduras/proteção, equipamentos/objetos, itens mágicos/especiais e dinheiro/tesouros. Cada entrada é texto manual livre, editável e removível. O jogador pode acrescentar entradas durante a campanha ao receber itens do Mestre. Nenhum item altera atributos ou aciona regras.
+
+Durante a criação do Mago, o assistente explica proficiências e equipamento inicial e orienta o registro; o preenchimento dos detalhes continua manual. A próxima auditoria visual deve inspecionar a ficha atual e referências de fichas D&D 3.5 para definir a disposição intuitiva dos campos.
