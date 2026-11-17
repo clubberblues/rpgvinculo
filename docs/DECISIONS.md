@@ -65,4 +65,13 @@ Para o Mago, o Livro do Jogador apresenta o **Pacote Inicial do Mago Elfo** (p. 
 
 ## DEC-015 — Apresentação vertical e leitura da ficha
 **Status:** vigente · **Data:** 2026-11-17
-A ficha D&D 3.5 deve ser percorrida de cima para baixo, em uma única coluna de seções, sem painéis principais lado a lado. A linguagem visual deve seguir a categoria de magias aprovada: fundo verde profundo, cartões escuros, bordas discretas, detalhes dourados e hierarquia visual moderna. Tipografia, tamanhos e espaçamentos gerais devem ser modernizados. A seção de perícias deve preservar a lógica da ficha oficial (perícia, atributo-chave, graduações, modificadores e total), mas explicar esses dados em linguagem curta e direta. A mudança visual não deve alterar regras, fórmulas ou persistência.
+A ficha D&D 3.5 deve ser percorrida de cima para baixo, em uma única coluna de seções, sem painéis principais lado a lado. A identidade visual segue o tema global da mesa: carvão profundo, grafite, superfícies escuras, bronze discreto e tipografia Inter/Cinzel/EB Garamond conforme hierarquia. O verde não é cor de identidade da ficha. Tipografia, tamanhos e espaçamentos gerais devem ser modernos e legíveis. A seção de perícias deve preservar a lógica da ficha oficial (perícia, atributo-chave, graduações, modificadores e total), mas explicar esses dados em linguagem curta e direta. A mudança visual não deve alterar regras, fórmulas ou persistência.
+
+
+## DEC-016 — Equipamento narrativo e riqueza inicial sem compra
+**Status:** vigente · **Data:** 2026-11-17
+A criação não terá loja, compra de itens, catálogo, preço, peso, efeitos automáticos ou motor de inventário. Os itens iniciais expressamente listados no Livro do Jogador serão inseridos como anotações simples nos campos existentes, somente quando houver pacote aplicável à combinação selecionada. A primeira exceção implementada é Elfo + Mago: os itens do pacote do Mago Elfo são distribuídos entre Armas, Munições, Equipamentos e objetos e Itens mágicos/especiais. Outras combinações permanecem sem itens inventados.
+
+O jogador rola a riqueza inicial da classe na etapa de equipamento. Para Mago, a interface usa 3d4 × 10 PO. Essa é uma decisão de produto solicitada pelo usuário para o fluxo atual, sem abrir compra de itens. O RPC existente já valida os três resultados d4, multiplica por 10 e grava o saldo em srd_character_sheets.ouro e characters.ouro; portanto, não é necessária nova tabela nem migration para essa rolagem. O pacote textual é salvo no JSON identidade.equipment_notes já enviado na criação.
+
+A roupa comum gratuita continua como escolha simples do Livro do Jogador.
