@@ -808,6 +808,25 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -18%,#1a1e
 .ficha.dnd35-mode .dnd35-gold-dice-panel header{border-color:#343b42!important}
 .ficha.dnd35-mode .dnd35-gold-dice-panel header strong{color:#d0b27c!important}
 @media(max-width:700px){body:has(.ficha.dnd35-mode){padding:6px!important}.ficha.dnd35-mode{padding:16px 12px!important;border-radius:8px!important}}
+
+/* Refinamento de leitura e consistência carvão/bronze — criação e consulta. */
+.ficha.dnd35-mode .dnd35-skill-list{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+.ficha.dnd35-mode .dnd35-skill{padding:11px 13px;min-width:0}
+.ficha.dnd35-mode .dnd35-skill-head{align-items:center;flex-wrap:wrap}
+.ficha.dnd35-mode .dnd35-skill-meta{font-size:11px;line-height:1.35}
+.ficha.dnd35-mode .dnd35-formula{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap;padding-top:7px;border-top:1px solid #343b42}
+.ficha.dnd35-mode .dnd35-formula strong{font-size:15px;color:#e2c58f}
+.ficha.dnd35-mode .dnd35-specializations{grid-column:1/-1;border-color:#806b4c!important}
+.ficha.dnd35-mode .dnd35-specializations h3{font-family:'Cinzel',serif;color:#d0b27c;font-size:15px;margin-bottom:6px}
+.ficha.dnd35-mode .dnd35-specialization-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:10px;padding:10px 0;border-top:1px solid #343b42}
+.ficha.dnd35-mode .dnd35-specialization-row label{display:grid;gap:6px;color:#d0b27c;font:600 11px Inter,ui-sans-serif,system-ui,sans-serif;letter-spacing:.04em}
+.ficha.dnd35-mode .dnd35-specialization-row button{min-height:38px;padding:8px 13px;background:linear-gradient(180deg,#a48654,#80633d)!important;color:#fff8eb!important;border:1px solid #b59663!important;border-radius:7px;font-weight:700;cursor:pointer}
+.ficha.dnd35-mode .dnd35-grimoire-box .dnd35-book-slots,.ficha.dnd35-mode .dnd35-grimoire-box .dnd35-daily-slots,.ficha.dnd35-mode .dnd35-grimoire-box .dnd35-spell-steps,.ficha.dnd35-mode .dnd35-grimoire-box .dnd35-grimoire-guide{background:#11161a!important;color:#e5e1d9!important;border-color:#414951!important}
+.ficha.dnd35-mode .dnd35-grimoire-box .dnd35-book-slot,.ficha.dnd35-mode .dnd35-grimoire-box .dnd35-daily-cells i{background:linear-gradient(145deg,#20262c,#14191d)!important;color:#d0b27c!important;border:1px solid #514536!important}
+.ficha.dnd35-mode .dnd35-grimoire-box .dnd35-book-slot.filled,.ficha.dnd35-mode .dnd35-grimoire-box .dnd35-daily-cells i.filled{background:linear-gradient(145deg,#493b28,#20262c)!important;color:#f0dfbd!important;border-color:#b59663!important}
+.ficha.dnd35-mode .dnd35-manual-ammunition .dnd35-manual-entry{border-left:2px solid #806b4c!important}
+.ficha.dnd35-mode .dnd35-manual-treasure header h3{letter-spacing:1px}
+@media(max-width:700px){.ficha.dnd35-mode .dnd35-skill-list{grid-template-columns:1fr}.ficha.dnd35-mode .dnd35-specialization-row{grid-template-columns:1fr}.ficha.dnd35-mode .dnd35-specialization-row button{width:100%}}
 </style>
 </head>
 <body>
@@ -2223,8 +2242,8 @@ function dnd35TranslateCatalogText(value){
       html+='<article class="dnd35-skill"><div class="dnd35-skill-head"><strong>'+esc(base.nome)+' ('+esc(name)+')</strong><span class="dnd35-badge">'+(isClass?'Perícia de classe':'Fora de classe')+(base.treinada_apenas?' · Somente treinada':'')+'</span></div><p class="dnd35-skill-meta">Atributo-chave: '+ability+' · Limite: '+max+' graduações · Custo: '+(isClass?'1':'2')+' ponto(s) por graduação</p>'+(creating?'<div class="dnd35-skill-control"><label>Graduações</label><select data-skill="'+esc(key)+'">'+options+'</select></div>':'<p>Graduações: <b>'+rank+'</b></p>')+'<div class="dnd35-formula"><strong>Bônus total atual: '+(rank+abilityMod+bonus>=0?'+':'')+(rank+abilityMod+bonus)+'</strong><span>Graduações '+rank+' · '+ability+' '+(abilityMod>=0?'+':'')+abilityMod+(bonus?' · classe +3':'')+'</span></div></article>';
     });
     if(creating){
-      html+='<section class="dnd35-panel"><h3>Especializações próprias</h3><p>Informe cada ofício ou profissão como uma perícia separada. Você pode adicionar mais de uma.</p>';
-      ['oficio','profissao'].forEach(function(type){var label=type==='oficio'?'Ofício':'Profissão';html+='<div class="dnd35-skill-control"><label>'+label+' — nova especialidade</label><input type="text" maxlength="60" data-skill-specialization-input="'+type+'" placeholder="'+(type==='oficio'?'Ex.: Alquimia, Armoreiro, Carpinteiro':'Ex.: Mercador, Marinheiro, Cozinheiro')+'"><button type="button" data-skill-specialization-add="'+type+'">Adicionar '+label+'</button></div>';});
+      html+='<section class="dnd35-panel"><h3>Especializações</h3><p>Informe cada ofício ou profissão como uma perícia separada. Você pode adicionar mais de uma.</p>';
+      ['oficio','profissao'].forEach(function(type){var label=type==='oficio'?'Ofício':'Profissão';html+='<div class="dnd35-specialization-row"><label>'+label+'<input type="text" maxlength="60" data-skill-specialization-input="'+type+'" placeholder="'+(type==='oficio'?'Ex.: Alquimia, Armoreiro, Carpinteiro':'Ex.: Mercador, Marinheiro, Cozinheiro')+'"><button type="button" data-skill-specialization-add="'+type+'">Adicionar '+label+'</button></div>';});
       html+='</section>';
     }
     return {html:html,spent:spent,budget:budget};
@@ -2963,11 +2982,11 @@ function dnd35LanguageNormalize(value){
   }
   var DND35_MANUAL_EQUIPMENT_SECTIONS=[
     {id:'weapons',title:'Armas',subtitle:'Registre cada arma e suas particularidades.',icon:'⚔',fields:[['nome','Nome da arma'],['quantidade','Quantidade'],['detalhes','Dano, crítico, alcance, tipo e observações']]},
-    {id:'ammunition',title:'Munições',subtitle:'Anote tipos, quantidades e compatibilidades. Os cartuchos são apenas decorativos.',icon:'➶',fields:[['nome','Tipo de munição'],['quantidade','Quantidade / total anotado'],['detalhes','Arma compatível, material e observações']]},
+    {id:'ammunition',title:'Munições',subtitle:'Registro simples: tipo, quantidade e arma compatível.',icon:'➶',fields:[['nome','Tipo de munição'],['quantidade','Quantidade'],['detalhes','Arma compatível, material e observações']]},
     {id:'protection',title:'Armaduras e proteção',subtitle:'Armaduras, escudos e outras formas de proteção.',icon:'🛡',fields:[['nome','Nome da proteção'],['quantidade','Quantidade'],['detalhes','Bônus, penalidade, peso e observações']]},
     {id:'gear',title:'Equipamentos e objetos',subtitle:'Ferramentas, provisões, vestuário e pertences.',icon:'🎒',fields:[['nome','Nome do objeto'],['quantidade','Quantidade'],['detalhes','Descrição, peso ou observações']]},
     {id:'magic',title:'Itens mágicos e especiais',subtitle:'Anote propriedades, cargas ou efeitos conforme sua referência.',icon:'✧',fields:[['nome','Nome do item'],['quantidade','Quantidade / cargas anotadas'],['detalhes','Propriedades, efeitos e observações']]},
-    {id:'treasure',title:'Dinheiro e tesouros',subtitle:'Moedas, gemas, joias, recompensas e valores diversos.',icon:'◈',fields:[['nome','Moeda, tesouro ou valor'],['quantidade','Quantidade / valor'],['detalhes','Origem, unidade e observações']]}
+    {id:'treasure',title:'Patrimônio',subtitle:'Registre PO, PP, PE, PC e PL, além de gemas e objetos valiosos. Sem loja ou cálculo automático.',icon:'◈',fields:[['nome','Moeda, tesouro ou valor'],['quantidade','Quantidade / valor'],['detalhes','Origem, unidade e observações']]}
   ];
   function dnd35ManualEquipmentState(s){
     s=dnd35StartingState(s);var identity=s.identidade||(s.identidade={}),saved=identity.equipment_notes&&typeof identity.equipment_notes==='object'?identity.equipment_notes:{};
@@ -2980,7 +2999,7 @@ function dnd35LanguageNormalize(value){
     var sections=DND35_MANUAL_EQUIPMENT_SECTIONS.map(function(section){
       var entries=notes[section.id];
       return '<section class="dnd35-manual-category dnd35-manual-'+section.id+'"><header><span class="dnd35-manual-category-icon" aria-hidden="true">'+section.icon+'</span><div><h3>'+section.title+'</h3><p>'+section.subtitle+'</p></div><span class="dnd35-manual-count">'+entries.length+'</span></header>'+
-        (section.id==='ammunition'?'<div class="dnd35-ammo-ornament" aria-hidden="true"><span>▰</span><span>▰</span><span>▰</span><span>▰</span><span>▰</span><small>REGISTRO MANUAL</small></div>':'')+
+        
         '<div class="dnd35-manual-entry-list">'+entries.map(function(entry,index){
           var label=section.id==='ammunition'?'Cartucho':section.id==='weapons'?'Arma':section.id==='protection'?'Proteção':section.id==='gear'?'Objeto':section.id==='magic'?'Item especial':'Tesouro';
           return '<article class="dnd35-manual-entry"><div class="dnd35-manual-entry-title"><span>'+label+' '+(index+1)+'</span><button type="button" data-manual-remove="'+section.id+'" data-manual-index="'+index+'" aria-label="Remover registro '+(index+1)+' de '+section.title+'">Remover</button></div>'+
