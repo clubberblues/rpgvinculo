@@ -99,3 +99,5 @@ A auditoria de privilégios confirmou que `authenticated` não possui UPDATE em 
 - Ainda não houve teste em navegador/autenticado nem teste de execução da migration.
 
 - Removido da ficha o painel/integração de ativação da Fúria do Bárbaro. A ficha não deve expor motores de ações de classe; características continuam como informações consultáveis. A remoção foi verificada estaticamente.
+
+- Auditoria das regras de idiomas identificou a exceção do Mago: pode substituir uma escolha de idioma bônus racial por Dracônico. A interface agora oferece Dracônico quando a lista racial é restrita; a migration preparada ajusta a validação do servidor somente para Mago de 1º nível. A regra foi conferida no SRD; não aplicada à produção.
