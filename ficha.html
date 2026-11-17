@@ -624,6 +624,51 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2938
 @media(max-width:390px){.dnd35-spell-list{grid-template-columns:1fr}.dnd35-spell-card{min-height:0}}
 @media(prefers-reduced-motion:reduce){.dnd35-spell-card,.dnd35-book-slot,.dnd35-daily-cells i{animation:none!important;transition:none!important}}
 </style>
+
+<style id="dnd35-equipment-visual-polish">
+/* Arsenal da criação: textura de oficina, escolhas em placas e feedback visual discreto. */
+.dnd35-armory-panel{position:relative;overflow:hidden;border:1px solid #8b7445!important;border-radius:13px!important;background:radial-gradient(ellipse at 92% 0%,#3b442d 0,transparent 38%),linear-gradient(145deg,#202a1e,#111810)!important;box-shadow:0 14px 34px #0005}
+.dnd35-armory-panel:before{content:"";position:absolute;inset:7px;border:1px solid #c4a45b35;border-radius:9px;pointer-events:none}
+.dnd35-armory-heading{position:relative;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:8px 4px 15px;border-bottom:1px solid #b99b5a55}
+.dnd35-armory-kicker{color:#d7b967;font:700 9px Cinzel,serif;letter-spacing:.18em}
+.dnd35-armory-heading h2{margin:5px 0 4px!important;color:#f2d99b!important;font-size:clamp(17px,2.5vw,22px)!important;letter-spacing:.04em}
+.dnd35-armory-heading .dnd35-note{max-width:660px;margin:0;line-height:1.5}
+.dnd35-armory-emblem{display:grid;place-items:center;flex:0 0 54px;width:54px;height:54px;border:1px solid #b99b5a;border-radius:50%;background:radial-gradient(circle,#4b482d,#172117 70%);color:#e0c176;font-size:27px;box-shadow:0 0 0 5px #d5b46a0d,0 5px 18px #0007}
+.dnd35-armory-methods{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;margin:16px 0}
+.dnd35-armory-method{position:relative;display:flex;align-items:center;gap:11px;min-width:0;min-height:76px;padding:12px;border:1px solid #586448;border-radius:10px;background:linear-gradient(145deg,#263326,#151e16);color:#e8e1cb;text-align:left;cursor:pointer;transition:transform .2s,border-color .2s,box-shadow .2s,background .2s}
+.dnd35-armory-method:hover{transform:translateY(-2px);border-color:#c5a45b;box-shadow:0 8px 20px #0005}
+.dnd35-armory-method.is-active{border-color:#e0bd69;background:linear-gradient(145deg,#3b432d,#1b291d);box-shadow:inset 0 0 0 1px #e0bd6940,0 0 20px #d5b46a1c}
+.dnd35-armory-method-icon{display:grid;place-items:center;flex:0 0 40px;width:40px;height:40px;border:1px solid #9c824b;border-radius:8px;background:#10180f;color:#e4c579;font-size:21px}
+.dnd35-armory-method strong,.dnd35-armory-method small{display:block}
+.dnd35-armory-method strong{color:#f1dfb0;font:700 11px Cinzel,serif;letter-spacing:.04em}
+.dnd35-armory-method small{margin-top:4px;color:#b9c1a9;font-size:12px;line-height:1.25}
+.dnd35-armory-check{display:grid;place-items:center;margin-left:auto;flex:0 0 20px;width:20px;height:20px;border:1px solid #6c7659;border-radius:50%;color:transparent;font-size:12px}
+.dnd35-armory-method.is-active .dnd35-armory-check{border-color:#e0bd69;background:#d5b46a;color:#182016;animation:dnd35-armory-check .24s ease-out}
+.dnd35-armory-content{animation:dnd35-armory-reveal .28s ease-out both}
+.dnd35-armory-panel .dnd35-start-roll{position:relative;margin:10px 0;padding:15px;border:1px solid #a58b53;border-radius:10px;background:linear-gradient(145deg,#303b29,#182218);color:#f1e5c6;box-shadow:inset 0 0 24px #d5b46a0a}
+.dnd35-armory-panel .dnd35-start-roll>strong{display:block;color:#f0d38b;font:700 11px Cinzel,serif;letter-spacing:.08em}
+.dnd35-armory-panel .dnd35-start-dice{display:flex;gap:9px;flex-wrap:wrap;margin:12px 0}
+.dnd35-armory-panel .dnd35-start-die{display:grid;place-items:center;gap:2px;width:48px;height:54px;border:1px solid #d1b46e;border-radius:9px;background:linear-gradient(145deg,#e0c57c,#8e713d);color:#282315;font:700 9px Cinzel,serif;box-shadow:0 4px 10px #0005;animation:dnd35-armory-die .36s cubic-bezier(.2,.8,.2,1) both}
+.dnd35-armory-panel .dnd35-start-die strong{font-size:19px}
+.dnd35-armory-panel .dnd35-start-items{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,205px),1fr));gap:9px;margin:12px 0}
+.dnd35-armory-panel .dnd35-start-item{position:relative;display:flex;flex-direction:column;gap:6px;min-width:0;padding:12px;border:1px solid #586448;border-radius:9px;background:linear-gradient(145deg,#263326,#151e16);color:#e7e2d2;transition:transform .18s,border-color .18s,box-shadow .18s}
+.dnd35-armory-panel .dnd35-start-item:hover{transform:translateY(-2px);border-color:#c4a45b;box-shadow:0 7px 17px #0005}
+.dnd35-armory-panel .dnd35-start-item strong{color:#f1d99b;font:700 11px Cinzel,serif}
+.dnd35-armory-panel .dnd35-start-item span,.dnd35-armory-panel .dnd35-start-item small{color:#c1c8b4;line-height:1.35}
+.dnd35-armory-panel .dnd35-start-item button{align-self:flex-start;margin-top:4px;padding:7px 10px;border:1px solid #b99b5a;border-radius:6px;background:#303d2b;color:#f0d797;font:700 9px Cinzel,serif;cursor:pointer;transition:background .18s,transform .18s}
+.dnd35-armory-panel .dnd35-start-item button:hover{transform:translateY(-1px);background:#465437}
+.dnd35-armory-panel #dnd35-start-search{width:100%;min-height:42px;margin-top:8px;padding:9px 12px;border:1px solid #6b7657;border-radius:8px;background:#101810;color:#f2ead5;font:inherit}
+.dnd35-armory-panel .dnd35-start-selected{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.dnd35-armory-panel .dnd35-start-selected-item{display:flex;align-items:center;gap:9px;max-width:100%;padding:8px 10px;border:1px solid #b99b5a;border-radius:8px;background:linear-gradient(145deg,#3b432d,#1c281c);color:#f2e3bd;font-size:12px;animation:dnd35-armory-reveal .24s ease-out both}
+.dnd35-armory-panel .dnd35-start-selected-item button{border:0;background:transparent;color:#e7bb75;font:700 9px Cinzel,serif;cursor:pointer}
+.dnd35-armory-footer{display:flex;justify-content:center;align-items:center;gap:10px;margin-top:15px;padding-top:10px;border-top:1px dashed #8c7548;color:#aeb99f;font-size:11px;text-align:center}
+.dnd35-armory-footer span{color:#d5b46a}
+@keyframes dnd35-armory-reveal{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+@keyframes dnd35-armory-die{0%{opacity:0;transform:rotate(-9deg) scale(.75)}70%{transform:rotate(3deg) scale(1.06)}100%{opacity:1;transform:rotate(0) scale(1)}}
+@keyframes dnd35-armory-check{from{transform:scale(.7)}to{transform:scale(1)}}
+@media(max-width:620px){.dnd35-armory-methods{grid-template-columns:1fr}.dnd35-armory-emblem{flex-basis:43px;width:43px;height:43px;font-size:22px}.dnd35-armory-method{min-height:68px}.dnd35-armory-footer{font-size:10px}}
+@media(prefers-reduced-motion:reduce){.dnd35-armory-panel *{animation:none!important;transition:none!important}}
+</style>
 </head>
 <body>
 
@@ -2805,7 +2850,7 @@ function dnd35LanguageNormalize(value){
         body='<div class="dnd35-start-roll"><strong>OURO INICIAL · '+wealthLabel+'</strong><p class="dnd35-note">Role '+d[0]+' dados de quatro faces. O resultado será multiplicado por '+d[1]+' para definir seu ouro.</p><button type="button" data-start-roll>Rolar '+d[0]+'d4</button></div>';
       }
     }
-    return '<section class="dnd35-panel"><h2>Equipamento inicial</h2><p class="dnd35-note">Escolha o kit recomendado ou role o ouro e compre itens do catálogo. Itens mágicos não entram na compra inicial.</p><div class="dnd35-actions"><button type="button" data-start-method="pacote">Kit recomendado</button><button type="button" data-start-method="ouro">Ouro inicial</button></div>'+body+'</section>';
+    return '<section class="dnd35-panel dnd35-armory-panel"><div class="dnd35-armory-heading"><div><span class="dnd35-armory-kicker">PREPARAÇÃO DO AVENTUREIRO</span><h2>Equipamento inicial</h2><p class="dnd35-note">Registre o que acompanha seu personagem. O Mestre pode orientar escolhas e riqueza; os detalhes dos pertences continuam sendo anotações do jogador.</p></div><span class="dnd35-armory-emblem" aria-hidden="true">⚒</span></div><div class="dnd35-armory-methods"><button type="button" class="dnd35-armory-method '+(x.metodo==='pacote'?'is-active':'')+'" data-start-method="pacote" aria-pressed="'+(x.metodo==='pacote'?'true':'false')+'"><span class="dnd35-armory-method-icon" aria-hidden="true">⚔</span><span><strong>Kit sugerido</strong><small>Consultar a sugestão inicial da classe</small></span><span class="dnd35-armory-check" aria-hidden="true">✓</span></button><button type="button" class="dnd35-armory-method '+(x.metodo==='ouro'?'is-active':'')+'" data-start-method="ouro" aria-pressed="'+(x.metodo==='ouro'?'true':'false')+'"><span class="dnd35-armory-method-icon" aria-hidden="true">◈</span><span><strong>Riqueza inicial</strong><small>Definir recursos iniciais pelos dados</small></span><span class="dnd35-armory-check" aria-hidden="true">✓</span></button></div><div class="dnd35-armory-content">'+body+'</div><div class="dnd35-armory-footer"><span>✦</span> Os registros são parte da história do personagem <span>✦</span></div></section>';
   }
   var dnd35GoldRollState=null,dnd35GoldRollFrame=null;
   function fecharDadosOuroInicial(){var modal=document.getElementById('dnd35-gold-dice-modal');if(modal)modal.remove();dnd35GoldRollFrame=null;}
