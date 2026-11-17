@@ -233,3 +233,7 @@ Os seis grupos de registros livres já possuem interface editável também na fi
 A opção Doninha permanece disponível no cliente e é aceita pela migration preparada, que substitui Texugo na allowlist de familiares básicos do RPC. Familiar continua opcional e meramente informativo na ficha.
 
 **Estado de homologação:** a migration ainda não foi aplicada ao Supabase; a edição pós-criação e a escolha Doninha não estão funcionais na instância publicada até a aplicação da migration. Ainda faltam testes autenticados em navegador e auditoria de edição das demais seções.
+
+### Idiomas — exceção do Mago
+
+O Mago pode substituir uma das escolhas de idioma bônus disponíveis pela raça por Dracônico. A criação deve oferecer essa opção mesmo quando a lista racial normal não contém Dracônico, sem permitir repeti-la nem alterar as regras das outras classes. A migration preparada limita a exceção à criação de Mago de 1º nível.
