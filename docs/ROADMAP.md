@@ -42,3 +42,4 @@ Motor de combate, execução de testes, conjuração automatizada, aplicação d
 - [ ] Aplicar a migration em ambiente Supabase de desenvolvimento e testar a RPC antes de qualquer promoção para produção.
 - [ ] Executar teste autenticado de criação do Mago com e sem familiar, gravação e recarga de todos os dados, edição/salvamento dos seis grupos e consulta pelo token.
 - [ ] Auditar e implementar edição pós-criação das demais seções (identidade, atributos, perícias, talentos, idiomas e dados do grimório) sem contornar privilégios nem conceder UPDATE amplo.
+- [~] Idioma Dracônico como substituição de uma escolha bônus racial do Mago: interface e patch do validador preparados na mesma migration; ainda aguardam aplicação e teste autenticado.
