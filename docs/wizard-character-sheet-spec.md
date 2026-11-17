@@ -237,3 +237,13 @@ A opção Doninha permanece disponível no cliente e é aceita pela migration pr
 ### Idiomas — exceção do Mago
 
 O Mago pode substituir uma das escolhas de idioma bônus disponíveis pela raça por Dracônico. A criação deve oferecer essa opção mesmo quando a lista racial normal não contém Dracônico, sem permitir repeti-la nem alterar as regras das outras classes. A migration preparada limita a exceção à criação de Mago de 1º nível.
+
+## 10. Equipamento inicial conforme o Livro do Jogador — correção 2026-11-17
+A etapa de equipamento não usa kit inventado, catálogo de compras nem tabela de itens. O Livro do Jogador 3.5 traz um **Pacote Inicial do Mago Elfo** (p. 58), que deve ser aplicado automaticamente somente quando a combinação selecionada for Elfo + Mago. Seus itens devem ser distribuídos nos campos livres já existentes: bordão e besta leve em Armas; estojo com 10 virotes em Munições; mochila, cantil, rações para um dia, saco de dormir, saco, pederneira, dez velas, estojo de mapas, três folhas de pergaminho, tinta e pena em Equipamentos e objetos; bolsa de componentes e livro de magias em Itens especiais. O pacote determina 3d6 po.
+
+A alternativa de compra individual é distinta: Tabela 7–1 determina para Mago 3d4 × 10 po. Não combinar o equipamento do pacote com a riqueza de compra individual. O personagem também recebe uma roupa comum gratuita, escolhida entre os trajes listados no livro. Para combinações raça/classe sem pacote inicial correspondente no Livro do Jogador, não inventar itens: manter os campos livres vazios e apresentar apenas a alternativa de riqueza inicial aplicável.
+
+**Bloqueio de persistência:** o RPC atual aceita d4 para a compra individual e pacotes de IDs de catálogo, não o pacote textual do Mago Elfo nem 3d6 po. A interface não pode simular essa regra até o salvamento aceitar os dois caminhos corretamente. Adaptar o RPC com migration estreita; não criar banco de consulta de equipamentos.
+
+## 11. Direção visual vertical — correção 2026-11-17
+A ficha deve ser uma coluna vertical de leitura contínua. Painéis principais, lista de perícias, lista de magias e grupos de pertences ficam empilhados. Modernizar tipografia geral para sans-serif legível, preservar a paleta verde escura/dourado e a linguagem de cartões aprovada no grimório. Perícias devem comunicar de forma concisa: nome, atributo-chave, graduações, condição de classe/fora de classe, modificadores aplicáveis e bônus total. Explicações extensas ficam recolhidas em detalhes, quando possível.
