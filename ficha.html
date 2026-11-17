@@ -838,6 +838,104 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -18%,#1a1e
 .ficha.dnd35-mode .dnd35-grimoire-box .dnd35-book-slots>* ,.ficha.dnd35-mode .dnd35-grimoire-box .dnd35-daily-slots>*{background-color:#171d22!important;color:#e5e1d9!important;border-color:#514536!important}
 .ficha.dnd35-mode .dnd35-grimoire-box .dnd35-book-slots .filled,.ficha.dnd35-mode .dnd35-grimoire-box .dnd35-daily-slots .filled{background:linear-gradient(145deg,#493b28,#20262c)!important;color:#f0dfbd!important;border-color:#b59663!important}
 </style>
+<style id="dnd35-visual-refinement">
+/* Refinamento visual D&D 3.5: grafite, bronze e ouro; elimina tons verdes herdados. */
+.ficha.dnd35-mode .dnd35-stat,
+.ficha.dnd35-mode .dnd35-skill,
+.ficha.dnd35-mode .dnd35-feat,
+.ficha.dnd35-mode .dnd35-class-choice,
+.ficha.dnd35-mode .dnd35-wizard-school,
+.ficha.dnd35-mode .dnd35-language-panel,
+.ficha.dnd35-mode .dnd35-grimoire,
+.ficha.dnd35-mode .dnd35-grimoire-box,
+.ficha.dnd35-mode .dnd35-grimoire-modalhead,
+.ficha.dnd35-mode .dnd35-grimoire-tools,
+.ficha.dnd35-mode .dnd35-grimoire-ledger article,
+.ficha.dnd35-mode .dnd35-spell-card,
+.ficha.dnd35-mode .dnd35-start-roll,
+.ficha.dnd35-mode .dnd35-choice-face,
+.ficha.dnd35-mode .dnd35-choice-art,
+.ficha.dnd35-mode .dnd35-selection-footer,
+.ficha.dnd35-mode .dnd35-create-step,
+.ficha.dnd35-mode .dnd35-tabs,
+.ficha.dnd35-mode .dnd35-tab,
+.ficha.dnd35-mode input,
+.ficha.dnd35-mode select,
+.ficha.dnd35-mode textarea {
+  background-color:#151b25;
+  border-color:#66563b;
+  color:#eadfc9;
+}
+.ficha.dnd35-mode .dnd35-grimoire,
+.ficha.dnd35-mode .dnd35-grimoire-box {
+  background:linear-gradient(145deg,#202733,#111722)!important;
+  color:#eadfc9!important;border-color:#b49355!important;
+}
+.ficha.dnd35-mode .dnd35-grimoire h2,
+.ficha.dnd35-mode .dnd35-grimoire-modalhead h2,
+.ficha.dnd35-mode .dnd35-grimoire-kicker,
+.ficha.dnd35-mode .dnd35-grimoire-ledger b {color:#e7c77d!important}
+.ficha.dnd35-mode .dnd35-grimoire p,
+.ficha.dnd35-mode .dnd35-grimoire-ledger span,
+.ficha.dnd35-mode .dnd35-grimoire-guide {color:#c9c0ae!important}
+.ficha.dnd35-mode .dnd35-grimoire-modalhead {background:#111722!important;border-color:#a98a51!important}
+.ficha.dnd35-mode .dnd35-grimoire-tools,
+.ficha.dnd35-mode .dnd35-grimoire-ledger article,
+.ficha.dnd35-mode .dnd35-spell-card {background:#18212e!important;border-color:#66563b!important}
+.ficha.dnd35-mode .dnd35-grimoire-btn,
+.ficha.dnd35-mode .dnd35-grimoire-action {background:#252d3a!important;color:#f0d18b!important;border-color:#a98a51!important}
+.ficha.dnd35-mode .dnd35-grimoire-btn:hover,
+.ficha.dnd35-mode .dnd35-grimoire-action:hover:not(:disabled) {background:#394252!important}
+.ficha.dnd35-mode .dnd35-grimoire-status {color:#d8bd7d!important}
+.ficha.dnd35-mode .dnd35-choice-face {background:linear-gradient(145deg,#252d3a,#111722)!important;border-color:#776344!important}
+.ficha.dnd35-mode .dnd35-choice-card.is-selected .dnd35-choice-face {border-color:#e0bd70!important}
+.ficha.dnd35-mode .dnd35-choice-actions button,
+.ficha.dnd35-mode .dnd35-selection-footer button,
+.ficha.dnd35-mode .dnd35-tab.active,
+.ficha.dnd35-mode .dnd35-create-step.active {background:linear-gradient(145deg,#4a4030,#252b35)!important;color:#f1d48d!important;border-color:#c09b58!important}
+.ficha.dnd35-mode .dnd35-choice-card,
+.ficha.dnd35-mode .dnd35-choice-inner,
+.ficha.dnd35-mode .dnd35-choice-face,
+.ficha.dnd35-mode .dnd35-choice-actions,
+.ficha.dnd35-mode .dnd35-choice-actions button {min-width:0;max-width:100%;box-sizing:border-box}
+.ficha.dnd35-mode .dnd35-choice-grid,
+.ficha.dnd35-mode .dnd35-class-grid {grid-template-columns:repeat(auto-fit,minmax(min(100%,205px),1fr));gap:10px}
+.ficha.dnd35-mode .dnd35-choice-card,
+.ficha.dnd35-mode .dnd35-choice-inner {min-height:218px}
+.ficha.dnd35-mode .dnd35-choice-actions {display:flex;flex-wrap:wrap;gap:6px;padding:8px;margin-top:auto}
+.ficha.dnd35-mode .dnd35-choice-actions button {flex:1 1 82px;white-space:normal;overflow-wrap:anywhere;padding:7px 8px;font-size:10px}
+.ficha.dnd35-mode .dnd35-skill-list {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,235px),1fr));gap:6px}
+.ficha.dnd35-mode .dnd35-skill {padding:7px 9px;border-radius:7px;background:linear-gradient(145deg,#1b2431,#111822)!important;border-color:#4b5665!important}
+.ficha.dnd35-mode .dnd35-skill-head {align-items:center;gap:7px}
+.ficha.dnd35-mode .dnd35-skill strong {font-size:12px}
+.ficha.dnd35-mode .dnd35-skill-meta {font-size:10px;margin:3px 0;color:#aeb8c5!important}
+.ficha.dnd35-mode .dnd35-skill .dnd35-formula {margin:4px 0;padding:5px 7px;border-radius:5px;background:#0d141e!important;border-color:#4a5666!important}
+.ficha.dnd35-mode .dnd35-skill .dnd35-skill-control {margin-top:5px}
+.ficha.dnd35-mode .dnd35-manual-add {width:auto;min-width:0;min-height:32px;padding:6px 11px;margin-top:7px;font-size:10px;border-radius:6px}
+.ficha.dnd35-mode .dnd35-manual-category>header {align-items:center}
+.ficha.dnd35-mode .dnd35-manual-grid {gap:10px}
+.ficha.dnd35-mode .dnd35-manual-category {min-width:0;padding:10px}
+.ficha.dnd35-mode .dnd35-manual-category header p {font-size:11px}
+.ficha.dnd35-mode .dnd35-manual-entry {padding:9px;gap:6px}
+.ficha.dnd35-mode .dnd35-manual-entry-title button {padding:4px 7px;font-size:10px}
+.ficha.dnd35-mode .dnd35-grimoire-actions button {min-height:32px;padding:6px 10px;font-size:10px}
+@media(max-width:620px){
+ .ficha.dnd35-mode .dnd35-choice-grid,.ficha.dnd35-mode .dnd35-class-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .ficha.dnd35-mode .dnd35-choice-card,.ficha.dnd35-mode .dnd35-choice-inner{min-height:205px}
+ .ficha.dnd35-mode .dnd35-skill-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:390px){.ficha.dnd35-mode .dnd35-skill-list{grid-template-columns:1fr}}
+/* Retrato de personagem: PNG transparente, enquadramento livre e escala diagonal. */
+.dnd35-profile-portrait{width:104px;height:118px;flex:0 0 104px;position:relative;display:flex;align-items:center;justify-content:center;overflow:visible;border:1px solid #8f7447;border-radius:12px;background:linear-gradient(145deg,#202a38,#0b111b);box-shadow:0 8px 22px #0008}
+.dnd35-profile-portrait img{width:var(--portrait-scale,100%);height:var(--portrait-scale,100%);max-width:none;max-height:none;object-fit:contain;pointer-events:none;user-select:none;filter:drop-shadow(0 5px 7px #0008)}
+.dnd35-profile-portrait .portrait-upload{position:absolute;right:5px;top:5px;width:25px;height:25px;border:1px solid #b49355;border-radius:50%;background:#111722eF;color:#f0d18b;font-size:15px;line-height:1;cursor:pointer;z-index:2}
+.dnd35-profile-portrait .portrait-resize{position:absolute;right:-5px;bottom:-5px;width:19px;height:19px;border:1px solid #f0d18b;border-radius:4px;background:#9c7940;cursor:nwse-resize;z-index:3;touch-action:none}
+.dnd35-profile-portrait .portrait-resize:after{content:"";position:absolute;inset:4px;border-right:2px solid #17130c;border-bottom:2px solid #17130c}
+.dnd35-profile-portrait input{display:none!important}
+.dnd35-header-main{display:flex;align-items:center;gap:14px;min-width:0;flex:1}
+.dnd35-header-copy{min-width:0}
+@media(max-width:520px){.dnd35-profile-portrait{width:82px;height:96px;flex-basis:82px}.dnd35-header-main{gap:10px}}
+</style>
 </head>
 <body>
 
@@ -3000,7 +3098,7 @@ function dnd35LanguageNormalize(value){
   ];
   function dnd35ManualEquipmentState(s){
     s=dnd35StartingState(s);var identity=s.identidade||(s.identidade={}),saved=identity.equipment_notes&&typeof identity.equipment_notes==='object'?identity.equipment_notes:{};
-    DND35_MANUAL_EQUIPMENT_SECTIONS.forEach(function(section){if(!Array.isArray(saved[section.id]))saved[section.id]=section.id==='treasure'?[{nome:'PO',quantidade:'',detalhes:''},{nome:'PP',quantidade:'',detalhes:''},{nome:'PE',quantidade:'',detalhes:''},{nome:'PC',quantidade:'',detalhes:''},{nome:'PL',quantidade:'',detalhes:''},{nome:'Gemas e objetos valiosos',quantidade:'',detalhes:''}]:[];saved[section.id]=saved[section.id].filter(function(entry){return entry&&typeof entry==='object';}).map(function(entry){return {nome:String(entry.nome||''),quantidade:String(entry.quantidade||''),detalhes:String(entry.detalhes||'')};});});
+    DND35_MANUAL_EQUIPMENT_SECTIONS.forEach(function(section){if(!Array.isArray(saved[section.id]))saved[section.id]=[];saved[section.id]=saved[section.id].filter(function(entry){return entry&&typeof entry==='object';}).map(function(entry){return {nome:String(entry.nome||''),quantidade:String(entry.quantidade||''),detalhes:String(entry.detalhes||'')};});});
     identity.equipment_notes=saved;s.equipamentoInicial=s.equipamentoInicial||{metodo:'ouro',resultados:[]};s.equipamentoInicial.metodo='ouro';return saved;
   }
   function dnd35ManualEquipmentMarkup(s,isSheet){
@@ -3654,5 +3752,34 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2732
  .dnd35-spell-detail-grid{grid-template-columns:minmax(0,1fr)!important}
  .dnd35-spell-steps{grid-template-columns:1fr!important}
 }
-</style></body>
+</style>
+<script id="dnd35-profile-portrait-script">
+(function(){
+ function key(){var id=new URLSearchParams(location.search).get('char');return 'dnd35-profile-portrait:'+((id&&id!=='null')?id:'draft');}
+ function mount(){
+  var header=document.querySelector('.ficha.dnd35-mode .dnd35-header');if(!header||header.querySelector('.dnd35-profile-portrait'))return;
+  var copy=header.firstElementChild;if(!copy)return;
+  var wrap=document.createElement('div');wrap.className='dnd35-header-main';
+  var portrait=document.createElement('div');portrait.className='dnd35-profile-portrait';portrait.setAttribute('aria-label','Retrato do personagem');
+  var img=document.createElement('img');img.alt='Retrato do personagem';img.draggable=false;
+  var stored=null;try{stored=JSON.parse(localStorage.getItem(key())||'null')}catch(e){}
+  if(stored&&stored.src){img.src=stored.src;portrait.style.setProperty('--portrait-scale',(Number(stored.scale)||100)+'%')}
+  var file=document.createElement('input');file.type='file';file.accept='image/png';file.setAttribute('aria-label','Enviar retrato PNG');
+  var upload=document.createElement('button');upload.type='button';upload.className='portrait-upload';upload.textContent='+';upload.title='Adicionar retrato PNG';upload.setAttribute('aria-label','Adicionar retrato PNG');
+  var resize=document.createElement('button');resize.type='button';resize.className='portrait-resize';resize.title='Arraste para redimensionar o retrato';resize.setAttribute('aria-label','Arraste na diagonal para redimensionar');
+  upload.addEventListener('click',function(){file.click()});
+  file.addEventListener('change',function(){var f=file.files&&file.files[0];if(!f)return;if(f.type!=='image/png'){alert('Selecione uma imagem PNG.');file.value='';return}var reader=new FileReader();reader.onload=function(){img.src=String(reader.result);portrait.style.setProperty('--portrait-scale','100%');try{localStorage.setItem(key(),JSON.stringify({src:String(reader.result),scale:100}))}catch(e){alert('A imagem é grande demais para o armazenamento local deste navegador. Tente um PNG menor.')}};reader.readAsDataURL(f)});
+  var start=null;
+  resize.addEventListener('pointerdown',function(e){e.preventDefault();start={x:e.clientX,y:e.clientY,scale:parseFloat(getComputedStyle(portrait).getPropertyValue('--portrait-scale'))||100};resize.setPointerCapture(e.pointerId)});
+  resize.addEventListener('pointermove',function(e){if(!start)return;var delta=((e.clientX-start.x)+(e.clientY-start.y))/2;var scale=Math.max(35,Math.min(260,start.scale+delta));portrait.style.setProperty('--portrait-scale',scale+'%');portrait.dataset.scale=String(scale)});
+  function finish(){if(!start)return;var scale=parseFloat(portrait.dataset.scale)||start.scale;try{var old=JSON.parse(localStorage.getItem(key())||'{}');localStorage.setItem(key(),JSON.stringify({src:old.src||img.src,scale:scale}))}catch(e){}start=null}
+  resize.addEventListener('pointerup',finish);resize.addEventListener('pointercancel',finish);
+  portrait.append(img,file,upload,resize);copy.parentNode.insertBefore(wrap,copy);wrap.append(portrait,copy);copy.classList.add('dnd35-header-copy');
+ }
+ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount);else mount();
+ new MutationObserver(mount).observe(document.documentElement,{childList:true,subtree:true});
+})();
+</script>
+
+</body>
 </html>
