@@ -141,3 +141,25 @@ A edição cotidiana deve ser simples e independente do assistente de criação.
 - Jogador tem somente acesso à ficha e rolagem de dados no painel.
 - Clicar no token como Mestre abre a ficha correspondente.
 - Nenhuma automação de sessão foi introduzida.
+
+
+## 9. Auditoria do código existente — 2026-11-16
+
+A leitura de `ficha.html` confirmou que há uma base SRD 3.5 real para criação e consulta, mas o modo de ficha persistida ainda não atende à edição integral:
+
+- O fluxo de criação existente tem etapas de Identidade, Classe, Atributos, Treino, Magias (condicional), Equipamento e Revisão. O fluxo já valida compra de atributos, perícias, talentos, idiomas, escolhas de classe e magias.
+- O modo persistido renderiza perícias e talentos como conteúdo somente de leitura. A identidade e os atributos também não têm edição geral visível. Portanto, edição integral da ficha é uma lacuna de implementação, não uma função já concluída.
+- O grimório possui fluxo próprio e persistência por RPC, mas a interface também exibe controles de descanso/recursos que precisam ser separados da simples consulta e edição de registros.
+- A seção atual de equipamento SRD exige itens do catálogo, classifica armas/armaduras/acessórios, distingue equipado/guardado e permite equipar/desequipar. Também chama rotinas de deslocamento e CA. Isso contradiz a decisão vigente e deve ser substituído por inventário livre, editável e sem aplicação de efeitos.
+- A etapa de equipamento da criação atualmente exige pacote recomendado ou compras no catálogo dentro do orçamento inicial. O novo fluxo deverá continuar explicando riqueza inicial quando pertinente, mas não obrigará o jogador a cadastrar cada objeto em catálogo nem bloqueará a criação por não usar o gerenciador de itens.
+- O RPC `finalizar_criacao_personagem_srd` cria a ficha e grava escolhas, idiomas, talentos bônus, domínios, grimório e equipamento inicial em transação. Ele é a base atual a preservar e auditar, não deve ser substituído sem necessidade.
+- `srd_character_sheets.equipamento_inicial` guarda dados de equipamento inicial; `srd_character_equipment` e `srd_character_weapon_instances` implementam o antigo modelo de catálogo/equipamento. O inventário narrativo livre deve ter persistência própria ou estrutura apropriada; não reutilizar esses campos sem migração planejada.
+- A ficha do Mago já tem seleção de especialização, escolas proibidas, familiar, grimório, magias e progressão de espaços. A auditoria anterior identificou divergências de validação e de catálogo que ainda precisam ser concluídas.
+
+### Modelo recomendado para inventário livre
+
+Criar uma estrutura simples de registros vinculados ao personagem, sem FK para catálogo e sem colunas de categoria, equipado, guardado ou consumível. Campos mínimos sugeridos: identificador, character_id, nome, descrição, quantidade opcional, observações e timestamps. O jogador proprietário poderá incluir/editar/excluir; o Mestre da campanha poderá consultar a ficha. Essa estrutura depende de migração e políticas RLS testadas; nenhuma alteração de banco foi feita nesta etapa.
+
+### Regra para etapa de equipamento da criação
+
+A etapa permanece apenas como orientação e registro opcional do que o personagem começa possuindo. Ela não deve exigir kit do catálogo, estado de equipamento, cálculo de efeito ou preenchimento obrigatório de cada item. A riqueza inicial pode ser explicada conforme a classe e o método definido para a campanha; a lista de itens é narrativa e livre.
