@@ -163,3 +163,28 @@ Criar uma estrutura simples de registros vinculados ao personagem, sem FK para c
 ### Regra para etapa de equipamento da criação
 
 A etapa permanece apenas como orientação e registro opcional do que o personagem começa possuindo. Ela não deve exigir kit do catálogo, estado de equipamento, cálculo de efeito ou preenchimento obrigatório de cada item. A riqueza inicial pode ser explicada conforme a classe e o método definido para a campanha; a lista de itens é narrativa e livre.
+
+
+## 10. Diretriz visual e campos manuais de equipamento — decisão confirmada em 2026-11-16
+
+A seção de equipamentos não será um único campo genérico e tampouco um sistema de inventário. Ela deve ser uma parte visualmente organizada da ficha, com espaços específicos e intuitivos para escrita manual. O jogador registra os detalhes que considerar necessários.
+
+A interface deve oferecer, no mínimo, áreas distintas para:
+- **Armas:** várias entradas independentes, cada uma com espaço para nome e detalhes livres (por exemplo, ataque, dano, alcance, propriedades, observações).
+- **Munições:** entradas próprias para tipo e quantidade/anotações, permitindo registrar diferentes tipos.
+- **Armaduras e proteção:** espaços de escrita para nome e detalhes anotados pelo jogador.
+- **Equipamentos e objetos:** várias entradas independentes para ferramentas, vestuário, itens de viagem e outros pertences.
+- **Itens mágicos e especiais:** entradas livres para descrição, propriedades, cargas ou efeitos anotados manualmente.
+- **Dinheiro, tesouros e outros recursos:** espaços organizados para registrar valores e achados.
+
+O jogador pode acrescentar, editar e apagar entradas livremente, inclusive depois que o Mestre conceder algo durante a campanha. Não há validação de catálogo, cálculo, classificação, vínculo com dados de armas, detecção de item equipado ou efeito automático na ficha. Uma entrada é somente um registro escrito pelo jogador.
+
+### Criação guiada versus ficha durante a campanha
+
+Na criação, o assistente do Mago explica as regras relevantes: proficiências, equipamento inicial permitido, riqueza inicial e escolhas que dependem de classe/raça. A orientação ajuda o jogador a entender o que seu personagem começa possuindo e oferece campos adequados para registrar as escolhas. Ela não deve obrigar a selecionar objetos de um catálogo nem transformar o registro de equipamento em um subsistema.
+
+Depois da criação, a mesma seção continua disponível para edição livre. O jogador pode anotar qualquer item recebido, perder, vender, trocar ou alterar detalhes narrativos sem reabrir o assistente nem passar por validações de equipamento.
+
+### Auditoria visual obrigatória
+
+Antes de redesenhar, inspecionar o layout real da ficha atual e os modelos físicos/digitais de ficha D&D 3.5 já usados como referência. Identificar quais blocos e lacunas visuais podem ser reaproveitados e quais precisam ser adaptados. Não substituir uma ficha intuitiva por formulários genéricos ou uma caixa de texto única.
