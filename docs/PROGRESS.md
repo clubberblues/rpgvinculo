@@ -125,3 +125,15 @@ A auditoria de privilégios confirmou que `authenticated` não possui UPDATE em 
 - Correção adicional após a verificação da etapa: o validador de avanço exigia o identificador antigo `manual`, embora o salvamento real use `ouro`. O validador agora aceita o método `ouro` e continua exigindo exatamente a quantidade correta de d4 e faces válidas. A inserção do pacote Elfo + Mago também ganhou uma marca de aplicação única para não recriar automaticamente itens que o jogador remover durante a criação.
 
 - Verificação final após todos os ajustes: o único script inline de ficha.html compilou sem erros de sintaxe. A validação de prontidão agora aceita `ouro` e exige os 3 resultados d4 válidos para Mago. O caminho de persistência foi conferido: a criação encaminha `equipment_notes` em `p_identidade`, e `criar_personagem_srd_completo` grava esse JSON em `srd_character_sheets.identidade`; a função de riqueza atualiza o saldo em `srd_character_sheets.ouro` e `characters.ouro`. Sem alteração de banco, sem migration, sem deploy e sem teste funcional em navegador.
+
+
+## Ajustes solicitados — interface da ficha e mesa (2026-11-17)
+- Na `main`, a lista de perícias recebeu apresentação compacta em duas colunas em telas largas e uma coluna em telas estreitas, mantendo bônus e regras existentes.
+- A área de especializações foi renomeada e reorganizada com controles separados de Ofício e Profissão e botões de contraste bronze.
+- Removidos os cinco marcadores decorativos de munição. O registro permanece manual e editável.
+- A seção de dinheiro foi reorganizada como Patrimônio e, quando ainda não havia registros prévios, passa a apresentar linhas iniciais para PO, PP, PE, PC, PL e gemas/objetos valiosos. Registros existentes são preservados.
+- Aplicados ajustes de contraste carvão/bronze a botões, campos e espaços do grimório.
+- O botão de criação no lobby agora encaminha diretamente para `ficha.html?mode=criar&ruleset=dnd35`; raça e classe passam a ser escolhidas no fluxo real da ficha.
+- O painel do jogador agora apresenta somente Minha ficha; a construção e as funções do painel do Mestre permanecem inalteradas.
+- **Pendente:** tradução integral dos nomes e descrições de todas as magias exibidas no grimório. A fonte `public.srd_spells` contém 378 magias de Mago com descrições completas em inglês; a tradução integral exige um conjunto de textos revisados por magia. Não alterei o banco nem inseri traduções parciais como se fossem completas.
+- Não foi executado teste visual em navegador nem teste funcional autenticado. As alterações foram gravadas na branch `main`.
