@@ -1783,6 +1783,10 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2938
     var available=raceLanguages.bonus;
     var languages=(state.languages||[]).filter(function(l){return !l.is_secret;});
     var bonusCatalog=languages.filter(function(l){return available===null||available.indexOf(l.nome)>=0;});
+    if(String(state.classe&&state.classe.id)==='mago'&&Array.isArray(available)&&!available.some(function(name){return dnd35LanguageNormalize(name)==='draconico';})){
+      var draconic=languages.find(function(language){return dnd35LanguageNormalize(language.nome)==='draconico';});
+      if(draconic)bonusCatalog.push(draconic);
+    }
     var intBonus=Math.max(0,Math.floor((Number(attrs&&attrs.INT||10)-10)/2));
     var skillId='srd35_skill_speak_language',rankCount=Math.max(0,Math.floor(Number((state.sheet.pericias||{})[skillId])||0));
     function options(selected,catalog){return '<option value="">Selecione</option>'+catalog.map(function(l){return '<option value="'+esc(l.nome)+'"'+(selected===l.nome?' selected':'')+'>'+esc(l.nome)+'</option>';}).join('');}
