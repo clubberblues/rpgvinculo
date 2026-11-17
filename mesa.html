@@ -1036,7 +1036,14 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
 @media(max-width:800px){#modal-cba>.cba-workspace{flex-direction:column!important;overflow:auto!important}#modal-cba .cba-tools{flex:0 0 auto!important;width:100%!important;max-width:none;max-height:38vh!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;overflow-y:auto}#modal-cba .cba-preview-wrap{flex:1 0 300px!important;width:100%!important;min-height:300px;padding:8px}#modal-cba .cba-status{grid-column:1/-1}}
 @media(max-width:480px){#modal-cba>.cba-header{align-items:flex-start;padding:9px 10px;gap:8px}#modal-cba .cba-header h2{font-size:15px}#modal-cba .cba-sync-note{display:none}#modal-cba .cba-tools{grid-template-columns:repeat(2,minmax(0,1fr));max-height:42vh!important;padding:9px;gap:9px}#modal-cba .cba-tool-btn{min-height:34px;padding:7px;font-size:10px}}
 </style>
-</head>
+<style id="mesa-player-shortcuts">
+/* Sidebar do jogador: atalhos quadrados, compactos e sem grupos extensos. */
+.painel-jogador .grupo-acoes,
+.painel-jogador .painel-grupo-acoes {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.painel-jogador .acao-jogador,
+.painel-jogador .painel-acao,
+.painel-jogador [data-acao-jogador] {min-width:0;min-height:76px;padding:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:5px;border:1px solid #65543a;border-radius:8px;background:linear-gradient(145deg,#222a35,#111720);color:#e8d9b8}
+</style></head>
 <body>
 
 <div id="root"><div class="loading-full">Entrando na mesa...</div></div>
@@ -1593,6 +1600,10 @@ body{background:radial-gradient(ellipse at 50% -15%,#293822 0,#151d13 48%,#0d120
         {id:'habilidades',ic:classIcons[classKey]||'⚔️',txt:'Habilidades de '+className,desc:'Consulte e utilize as habilidades que seu personagem adquiriu.'}
       ]}
     ];
+    return [{key:'atalhos',title:'Aventureiro',icon:'✦',description:'Acesso rápido às ferramentas essenciais do jogador.',actions:[
+      {id:'ficha',ic:'📜',txt:'Minha ficha',desc:'Consulte sua ficha completa, atributos, perícias, talentos e equipamentos.'},
+      {id:'dados',ic:'🎲',txt:'Dados livres',desc:'Abra a rolagem livre de dados sem sair da mesa.'}
+    ]}];
     if(possuiMagiasUI(p)){
       var spellTitles={wizard:'Grimório',sorcerer:'Magias espontâneas',druid:'Magias da natureza',cleric:'Magias divinas',bard:'Repertório mágico',paladin:'Magias de classe',ranger:'Magias de classe'};
       var spellLabels={wizard:'Consultar grimório e conjurar',sorcerer:'Magias conhecidas e conjuração',druid:'Consultar magias e conjurar',cleric:'Consultar magias e conjurar',bard:'Consultar repertório e conjurar',paladin:'Magias disponíveis',ranger:'Magias disponíveis'};
