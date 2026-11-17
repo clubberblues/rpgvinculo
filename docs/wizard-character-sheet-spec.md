@@ -188,3 +188,20 @@ Depois da criação, a mesma seção continua disponível para edição livre. O
 ### Auditoria visual obrigatória
 
 Antes de redesenhar, inspecionar o layout real da ficha atual e os modelos físicos/digitais de ficha D&D 3.5 já usados como referência. Identificar quais blocos e lacunas visuais podem ser reaproveitados e quais precisam ser adaptados. Não substituir uma ficha intuitiva por formulários genéricos ou uma caixa de texto única.
+
+## 11. Direção visual gamificada para o preenchimento manual
+
+A ficha deve parecer uma bancada de preparação do aventureiro, não um formulário administrativo. O estilo deve reforçar a fantasia sem alterar as regras ou automatizar o conteúdo anotado.
+
+- **Armas:** cartões individuais com moldura e espaço para nome/detalhes livres; várias entradas podem ser acrescentadas.
+- **Munições:** representação em cartuchos, pequenas cápsulas ou fileiras de marcadores. Cada registro permite escrever o tipo e a quantidade manualmente; os marcadores são apenas uma representação visual, não um contador que consome munição.
+- **Armaduras e proteção:** placas/insígnias de equipamento com campos escritos pelo jogador.
+- **Objetos e provisões:** cartões menores organizados por espaço visual, sem categoria técnica obrigatória.
+- **Itens mágicos/especiais:** cartões com moldura mais rara, brilho discreto ou selo arcano, sem conceder bônus automáticos.
+- **Dinheiro e tesouros:** bolsas, moedas ou pequenas fichas visuais para valores escritos manualmente.
+- **Microinterações:** animação curta ao revelar/adicionar/remover um registro, realce ao focar um campo e transições suaves ao alternar seções. Não usar animações contínuas que distraiam.
+- **Acessibilidade:** respeitar `prefers-reduced-motion`, manter foco visível, contraste legível e controles utilizáveis por teclado e toque.
+
+### Estado da implementação visual
+
+Foi aplicado um primeiro passe visual ao bloco de equipamento inicial existente: cabeçalho de arsenal, placas para as escolhas atuais, cartões e animações discretas. Esse passe não substitui o fluxo legado de catálogo nem implementa ainda os campos livres repetíveis de munição/armas/objetos. A substituição funcional depende da auditoria e adaptação do formato de persistência já existente, sem criar tabela de inventário nem alterar o banco de produção nesta etapa.
