@@ -34,3 +34,11 @@ Motor de combate, execução de testes, conjuração automatizada, aplicação d
 - RPC dedicado para atualizar somente `identidade.equipment_notes`, sem conceder UPDATE amplo em `srd_character_sheets`.
 - Migration para alinhar a allowlist de familiares do RPC ao SRD (`weasel` no lugar de `badger`).
 - Teste autenticado em navegador cobrindo criação de Mago, gravação, recarga, consulta e edição.
+
+### Atualização de execução — 2026-11-16
+
+- [~] Interface pós-criação dos seis grupos manuais agora permite adicionar, editar, remover e salvar; depende da aplicação da migration versionada no branch para a RPC estreita.
+- [~] Doninha liberada na validação do cliente; depende da migration versionada no branch para alinhar a allowlist do RPC de criação.
+- [ ] Aplicar a migration em ambiente Supabase de desenvolvimento e testar a RPC antes de qualquer promoção para produção.
+- [ ] Executar teste autenticado de criação do Mago com e sem familiar, gravação e recarga de todos os dados, edição/salvamento dos seis grupos e consulta pelo token.
+- [ ] Auditar e implementar edição pós-criação das demais seções (identidade, atributos, perícias, talentos, idiomas e dados do grimório) sem contornar privilégios nem conceder UPDATE amplo.
