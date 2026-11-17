@@ -41,3 +41,12 @@ Qualquer plano anterior de ações de combate, testes, conjuração ou ativaçã
 ## DEC-010 — Compatibilidade de dados legados
 **Status:** vigente · **Data:** 2026-11-16  
 Preservar código e dados existentes quando úteis, mas não manter uma funcionalidade antiga apenas por existir. Auditar dependências e compatibilidade antes de remover ou migrar dados.
+
+
+## DEC-011 — Equipamentos como campos de escrita organizados
+**Status:** vigente · **Data:** 2026-11-16  
+A ficha deve apresentar blocos específicos e visualmente intuitivos para o jogador escrever manualmente armas, múltiplas armas, munições, armaduras, equipamentos, itens mágicos, dinheiro e outros pertences. Deve permitir acrescentar várias entradas de cada tipo, editar e apagar. Esses espaços não são um motor de inventário: sem catálogo obrigatório, classificação, estado equipado/guardado/consumível, cálculos, efeitos automáticos ou integração com regras. Durante a criação, o assistente orienta sobre proficiências e equipamento inicial do Mago, mas o registro dos itens permanece manual e livre. Após a criação, os mesmos campos são editáveis durante toda a campanha.
+
+## DEC-012 — A ficha deve parecer uma ficha de RPG, não um formulário genérico
+**Status:** vigente · **Data:** 2026-11-16  
+Organizar visualmente os campos em blocos familiares e específicos, com lacunas adequadas e entradas repetíveis para informações múltiplas. Não agrupar tudo em uma única caixa de texto. Reaproveitar o layout real existente quando adequado e conferir referências de fichas D&D 3.5 antes de alterar o desenho.
