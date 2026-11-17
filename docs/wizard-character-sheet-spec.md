@@ -205,3 +205,23 @@ A ficha deve parecer uma bancada de preparação do aventureiro, não um formul�
 ### Estado da implementação visual
 
 Foi aplicado um primeiro passe visual ao bloco de equipamento inicial existente: cabeçalho de arsenal, placas para as escolhas atuais, cartões e animações discretas. Esse passe não substitui o fluxo legado de catálogo nem implementa ainda os campos livres repetíveis de munição/armas/objetos. A substituição funcional depende da auditoria e adaptação do formato de persistência já existente, sem criar tabela de inventário nem alterar o banco de produção nesta etapa.
+
+## 12. Estado funcional atualizado — campos livres de equipamento
+
+A primeira implementação dos campos repetíveis foi concluída no fluxo de criação e na ficha pós-criação:
+
+- Seis blocos independentes: armas, munições, armaduras/proteção, equipamentos/objetos, itens mágicos/especiais e dinheiro/tesouros.
+- Cada bloco aceita quantas entradas forem necessárias; cada entrada oferece nome, quantidade/valor e detalhes em texto livre, com edição e remoção.
+- Cartuchos e molduras são elementos de apresentação. Não representam inventário, não consomem munição e não calculam valores.
+- O resultado de riqueza inicial é rolado de acordo com a classe. Para o Mago, 3d4 × 10 po; a compra de itens não é calculada nem descontada.
+- Durante a criação, as anotações seguem junto ao JSON de identidade no RPC existente. Após a criação, a ficha recupera e salva o bloco `equipment_notes` em `srd_character_sheets.identidade` com as políticas RLS atuais.
+- O fluxo ativo não consulta catálogo de equipamentos nem pacotes de itens, e não oferece equipar/desequipar.
+
+### 13. Estado de criação do Mago e pendências conhecidas
+
+- A especialização e o número de escolas proibidas são validados no cliente e no servidor.
+- Os truques permitidos são incluídos automaticamente no grimório inicial; as escolas proibidas são excluídas. A seleção de magias de 1º círculo respeita o requisito de Inteligência mínima 11 para aprender/conjurar esse círculo.
+- Escrever Pergaminho é concedido automaticamente no nível 1 pela rotina existente de talentos bônus.
+- O catálogo atual possui 19 truques e 43 magias de 1º círculo para Mago. A progressão de espaços do Mago foi conferida até o nível 20.
+- **Pendência que impede considerar o fluxo totalmente homologado:** o RPC de criação ainda aceita `badger` em vez de `weasel` na lista de familiares. A interface SRD oferece Doninha; a seleção pode ser rejeitada pelo servidor até uma migration corrigir essa allowlist. A escolha de familiar é opcional.
+- A implementação ainda precisa de teste de navegador e criação autenticada para homologação. Nenhum teste funcional é declarado nesta etapa.
