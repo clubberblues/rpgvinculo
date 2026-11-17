@@ -153,3 +153,21 @@ Nenhuma alteração de aplicação ou banco foi feita durante esta auditoria ini
 ## Primeiro modelo de classe: Mago
 
 A auditoria detalhada inicial do Mago, incluindo inventário do código existente, persistência, progressão, lacunas confirmadas e sequência de implementação, está em [docs/wizard-character-sheet-blueprint.md](wizard-character-sheet-blueprint.md). Este documento deve orientar a primeira implementação da ficha-base e do complemento de Mago; não iniciar uma ficha paralela.
+
+
+---
+
+## Aditivo de escopo aprovado — 2026-11-16
+
+Este aditivo substitui qualquer trecho anterior que conflite com a direção atual do produto.
+
+- A ficha é um documento vivo, totalmente editável pelo jogador durante a campanha. O jogador pode consultar, adicionar, alterar e apagar informações e registros pertinentes.
+- O fluxo de criação é guiado e orienta escolhas conforme as regras de D&D 3.5, explicando seus efeitos na ficha e na campanha e validando os requisitos necessários à criação.
+- Depois da criação, a edição cotidiana não deve obrigar o jogador a refazer etapas nem bloquear registros narrativos por não se encaixarem em validações do assistente.
+- Inventário é uma lista simples e narrativa de itens pertencentes ao personagem. Não há estados obrigatórios de equipado, guardado ou consumível; não há interpretação automática de efeitos de itens sobre atributos.
+- O jogador dispõe da própria ficha (consulta e edição) e da rolagem de dados. Não existem painéis de ações de classe, perícias, magias ou combate.
+- O token serve exclusivamente para o Mestre abrir a ficha do personagem correspondente.
+- O Mestre conduz a narrativa e aplica as regras manualmente. Não construir motor de combate, resolução de testes, conjuração ou efeitos.
+- Cálculos determinísticos necessários ao processo de criação podem orientar e apresentar o resultado da ficha; não devem evoluir para automação da sessão. Em especial, itens nunca modificam atributos automaticamente.
+- A ordem de prioridade é: completar a ficha-base e o Mago-modelo; depois validar as demais classes básicas, uma por vez, reutilizando a estrutura comum.
+
