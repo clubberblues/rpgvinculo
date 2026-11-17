@@ -56,3 +56,28 @@ Durante a criação do Mago, o assistente explica proficiências e equipamento i
 - **Limite desta primeira entrega:** o fluxo de equipamento existente ainda usa o modelo legado de kit/catálogo/riqueza. Os campos livres repetíveis de armas, munições, proteção, objetos e itens especiais ainda não foram ligados à persistência; não apresentar esta etapa visual como substituição funcional do inventário antigo.
 - Nenhuma migration, RPC ou alteração de banco foi executada.
 - Verificação estática: o JavaScript inline completo de `ficha.html` foi compilado com `new Function` sem erro de sintaxe. Não foi realizado teste de navegador nem teste funcional de criação/salvamento.
+
+## Implementação do preenchimento manual e fluxo Mago — 2026-11-16
+
+- Substituído o passo de equipamento da criação por seis áreas com cartões repetíveis: armas, munições, armaduras/proteção, equipamentos/objetos, itens mágicos/especiais e dinheiro/tesouros.
+- Cada cartão possui nome, quantidade/valor em texto livre e detalhes. Adicionar/remover registros é local à ficha; nada calcula preço, peso, atributo, bônus, cargas ou consumo.
+- Munições recebem marcadores decorativos de cartuchos sem relação automática com o valor anotado.
+- A riqueza inicial continua seguindo os dados da classe (Mago: 3d4 × 10 po). O resultado é registrado como riqueza inicial, sem subtrair compras ou impor catálogo.
+- Os registros são enviados dentro de `p_identidade.equipment_notes` ao RPC existente de criação. A função existente mantém o JSON de identidade e grava em `srd_character_sheets.identidade`; nenhuma coluna ou tabela nova foi criada.
+- Após a criação, a própria ficha exibe os mesmos cartões e permite adicionar, editar, remover e salvar. O salvamento usa UPDATE em `srd_character_sheets.identidade`; a política RLS atual já permite proprietário e Mestre autorizado.
+- Removidas do caminho ativo as consultas a `srd_equipment` e `srd_starting_packages`, a leitura de equipamento equipado e os handlers antigos de equipar/desequipar. As tabelas legadas não foram apagadas.
+- A revisão da criação mostra a quantidade de registros manuais e o estado da riqueza inicial.
+- Mago: especialização/escolas proibidas já têm validação no cliente e no RPC de criação; Scribe Scroll é concedido automaticamente pelo RPC de talento bônus; 19 truques e 43 magias de 1º círculo estão disponíveis no catálogo atual. A UI agora respeita INT mínima 10 para truques e 11 para aprender magias de 1º círculo, alinhada ao validador existente.
+- Progressão de espaços de magia do Mago e características de classe de níveis 1, 5, 10, 15 e 20 foram lidas no banco. O nível 1 inclui Invocar Familiar e Escrever Pergaminho.
+
+### Bloqueio de backend identificado
+
+- A lista de familiares na interface segue o SRD e oferece Doninha (`weasel`), mas o RPC de criação ainda aceita `badger` e não aceita `weasel`. Escolher Doninha fará o RPC rejeitar a criação. A escolha de familiar é opcional; a criação pode seguir sem familiar ou com outra opção atualmente aceita. É necessária migration para corrigir a allowlist no banco. Não foi alterado o banco de produção.
+- O ambiente de execução não possui Supabase CLI instalado e o projeto só apresenta a branch principal do Supabase; por segurança, não foi executada alteração direta na base de produção nem criada migration sem o fluxo de CLI exigido.
+
+### Verificação e limites
+
+- JavaScript inline de `ficha.html` compilado com `new Function` sem erro após as alterações.
+- Consultas read-only confirmaram RLS de UPDATE para proprietário/Mestre, persistência de `identidade` no RPC, validação de especialização e concessão automática de Escrever Pergaminho.
+- Não houve teste em navegador, criação real autenticada ou teste de recarga. Portanto, o fluxo está implementado no código, mas ainda não está homologado funcionalmente.
+- Nenhuma migration, RPC, tabela ou dado de produção foi alterado; sem deploy e sem PR.
