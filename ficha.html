@@ -2418,7 +2418,16 @@ function dnd35TranslateCatalogText(value){
       'summon monster i':'Invoca uma criatura extraplanar que surge no local escolhido e age imediatamente, atacando os oponentes ou seguindo instruções que consiga compreender.',
       'true strike':'Concede ao conjurador percepção intuitiva do próximo ataque: a próxima jogada de ataque recebe +20 de bônus de intuição e ignora a chance de falha por ocultação.',
       'unseen servant':'Cria uma força invisível e sem mente que executa tarefas simples, como buscar objetos, abrir portas destrancadas, limpar e segurar coisas. Não pode atacar nem realizar tarefas complexas.',
-      'ventriloquism':'Faz a voz do conjurador ou outro som vocal parecer vir de um ponto diferente, mantendo o volume e o tipo de som possíveis para sua voz.'
+      'ventriloquism':'Faz a voz do conjurador ou outro som vocal parecer vir de um ponto diferente, mantendo o volume e o tipo de som possíveis para sua voz.',
+      'detectar magia':'Revela a presença de auras mágicas. Ao manter a concentração, o conjurador descobre gradualmente a quantidade, a intensidade, a localização e, com Identificar Magia, a escola das auras.',
+      'luz':'Faz um objeto brilhar como uma tocha, iluminando a área ao redor.',
+      'maos magicas':'Move à distância um objeto pequeno e leve, com peso de até 2,5 kg. Não permite atacar nem realizar tarefas que exijam força ou controle delicado.',
+      'resistencia':'Concede ao alvo +1 de bônus de resistência em testes de resistência.',
+      'respingos acidos':'Lança uma pequena esfera de ácido que atinge um alvo com um ataque de toque à distância e causa 1d3 pontos de dano.',
+      'armadura arcana':'Envolve o alvo em uma força protetora invisível que concede +4 de bônus de armadura à Classe de Armadura, sem penalidade de armadura ou chance de falha arcana.',
+      'escudo':'Cria um escudo de força que concede +4 de bônus de escudo na CA e bloqueia Mísseis Mágicos.',
+      'maos flamejantes':'Projeta um leque de chamas pelas mãos do conjurador, causando 1d4 pontos de dano de fogo por nível, até o máximo de 5d4.',
+      'missil magico':'Dispara projéteis de energia que atingem automaticamente o alvo, causando 1d4+1 pontos de dano cada. O conjurador recebe um míssil adicional a cada dois níveis acima do 1º, até cinco mísseis.'
     };
     return descriptions[raw]||'';
   }
@@ -3074,7 +3083,7 @@ function dnd35LanguageNormalize(value){
       var savingThrow=techFields['Saving Throw']||techFields['Teste de Resistência']||'—',
           spellDescription=dnd35SpellDescriptionPt(sp)||'Descrição oficial em português pendente de revisão no Livro do Jogador.',
           spellName=dnd35SpellNamePt(sp),
-          hasPortugueseName=!!sp.nome_pt,
+          hasPortugueseName=!!(sp.nome_pt||dnd35SpellNamePt(sp)!=='Magia sem tradução cadastrada'),
           hasPortugueseDescription=!!(sp.descricao_pt||dnd35SpellDescriptionPt(sp)),
           detailMarkup='<div class="dnd35-spell-detail-grid">'+detailRows.map(function(row){return '<div><small>'+esc(row[0])+'</small><b>'+esc(row[1])+'</b></div>';}).join('')+'</div>';
       var controls='';
