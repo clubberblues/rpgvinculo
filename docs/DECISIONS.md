@@ -53,4 +53,5 @@ Organizar visualmente os campos em blocos familiares e específicos, com lacunas
 
 ## DEC-013 — Persistência de anotações livres de equipamento
 **Status:** vigente · **Data:** 2026-11-16  
-Os cartões livres de armas, munições, proteção, objetos, itens mágicos e tesouros serão armazenados no JSONB já existente `srd_character_sheets.identidade`, sob `equipment_notes`. Isso evita tabela de inventário, catálogo e mudança de schema. A ficha envia as anotações no RPC existente durante a criação e atualiza o mesmo JSONB depois, respeitando RLS. O registro é descritivo: não altera atributos nem executa regras.
+Os cartões livres de armas, munições, proteção, objetos, itens mágicos e tesouros serão armazenados no JSONB já existente `srd_character_sheets.identidade`, sob `equipment_notes`. Isso evita tabela de inventário, catálogo e mudança de schema. A ficha envia as anotações no RPC existente durante a criação. A edição posterior exige uma RPC estreita e segura que atualize somente `equipment_notes`; não conceder UPDATE amplo à role `authenticated`, pois isso permitiria alterar outros campos protegidos da ficha. Até essa RPC existir, a ficha pós-criação exibe os registros em modo de consulta. O registro é descritivo: não altera atributos nem executa regras.
+
