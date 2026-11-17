@@ -32,3 +32,9 @@ Concluir a auditoria do modelo de persistência de todas as seções da ficha do
 - A RPC `finalizar_criacao_personagem_srd` já centraliza criação, idiomas, talentos bônus, domínios, grimório e equipamento inicial em transação. Preservar e adaptar apenas quando necessário.
 - Modelo proposto para inventário livre: registros vinculados a character_id com nome, descrição, quantidade opcional e observações; sem categoria, equipado, guardado ou consumível; proprietário edita, Mestre consulta. Requer migração e RLS, ainda não implementadas.
 - Nenhuma alteração no banco de produção foi realizada.
+
+
+## Verificação executada
+- O bloco JavaScript de `ficha.html` foi compilado estaticamente com `new Function`: sem erro de sintaxe após a correção dos familiares.
+- Foram verificadas as cinco condições da correção: Doninha presente, Texugo ausente da lista básica, bônus do Rato correto, Doninha aceita pela validação e alcance de 1 milha apresentado.
+- Não foi executado teste de navegador nem fluxo real de criação/recarga; portanto, isso não é declarado como teste funcional.
