@@ -112,3 +112,13 @@ A auditoria de privilégios confirmou que `authenticated` não possui UPDATE em 
 - Atualização complementar: incluída na etapa de criação a escolha de uma roupa comum gratuita entre os sete trajes indicados no Livro do Jogador. A escolha é registrada nos pertences manuais da ficha e também no JSON de identidade. A opção não aparece como controle de criação na ficha já persistida.
 - A camada visual vertical e a tipografia moderna foram aplicadas em CSS no branch. A orientação geral de perícias foi simplificada; os cartões agora destacam atributo-chave e bônus total atual. Ainda não houve validação visual em navegador.
 - Verificação após os ajustes: o script inline de ficha.html foi compilado com new Function sem erros de sintaxe. Isso é verificação estática, não teste visual ou funcional em navegador.
+
+
+## Atualização 2026-11-17 — equipamento inicial, riqueza e identidade da ficha
+- Removida a interpretação de que seria necessário criar fluxo de compra: não há loja, catálogo, orçamento, preço, peso ou efeitos de itens.
+- A etapa já utiliza o dado 3d4 da classe e o modal de dados; para Mago, a rolagem é 3d4 × 10 PO. O fluxo de criação envia os três resultados ao RPC finalizar_criacao_personagem_srd, que delega a finalizar_equipamento_inicial_srd. A função foi lida no banco e confirma validação dos três d4, multiplicação por 10 e gravação do saldo nas colunas de ouro de srd_character_sheets e characters. Nenhuma migration ou alteração de banco foi necessária.
+- Ajustado o estado da etapa para identificar a riqueza como método ouro, alinhado ao método enviado ao RPC.
+- Implementado o registro automático do pacote textual oficial Elfo + Mago nos campos narrativos existentes: bordão e besta leve; estojo com 10 virotes; mochila, cantil, rações para um dia, saco de dormir, saco, pederneira, dez velas, estojo de mapas, três folhas de pergaminho, tinta e pena; bolsa de componentes de magia e livro de magias. Não usa IDs de catálogo nem cria tabelas. Outras combinações não recebem itens inventados.
+- A camada visual final da ficha agora aplica a identidade da mesa: carvão profundo, grafite, bronze e tipografia moderna. Foram substituídos os fundos e detalhes verdes das seções de criação, grimório, magias, equipamentos e riqueza por superfícies grafite e acentos de bronze. O layout vertical foi preservado.
+- Verificação estática do JavaScript inline: compilação com new Function passou antes do último refinamento do pacote e tema; repetir após a atualização final. Não houve teste visual/funcional em navegador, criação real de ficha, alteração do banco ou deploy.
+- Branch de trabalho atualizado; sem PR e sem publicação.
