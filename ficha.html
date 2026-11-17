@@ -3247,7 +3247,6 @@ function dnd35LanguageNormalize(value){
     }
     if(['mago','feiticeiro'].indexOf(String(state.classe&&state.classe.id||''))>=0){
       var familiarId=String((state.identidade||{}).familiar_id||'');
-      if(familiarId==='weasel'){mostrarErro('A Doninha é uma opção correta do SRD, mas o RPC atual ainda não aceita esse identificador. Escolha outro familiar ou deixe a escolha para depois; a correção do banco é necessária.','class');return;}
       var allowedFamiliars=['bat','cat','hawk','lizard','owl','rat','raven','snake_small_viper','toad','weasel'];
       if(familiarId&&allowedFamiliars.indexOf(familiarId)<0){mostrarErro('Escolha um familiar básico válido.','class');return;}
     }
