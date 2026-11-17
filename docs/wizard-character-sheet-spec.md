@@ -214,7 +214,7 @@ A primeira implementação dos campos repetíveis foi concluída no fluxo de cri
 - Cada bloco aceita quantas entradas forem necessárias; cada entrada oferece nome, quantidade/valor e detalhes em texto livre, com edição e remoção.
 - Cartuchos e molduras são elementos de apresentação. Não representam inventário, não consomem munição e não calculam valores.
 - O resultado de riqueza inicial é rolado de acordo com a classe. Para o Mago, 3d4 × 10 po; a compra de itens não é calculada nem descontada.
-- Durante a criação, as anotações seguem junto ao JSON de identidade no RPC existente. Após a criação, a ficha recupera e salva o bloco `equipment_notes` em `srd_character_sheets.identidade` com as políticas RLS atuais.
+- Durante a criação, as anotações seguem junto ao JSON de identidade no RPC existente. Após a criação, a ficha recupera os mesmos dados em modo de consulta. A edição posterior aguarda uma RPC segura específica; o usuário autenticado não possui UPDATE direto na tabela.
 - O fluxo ativo não consulta catálogo de equipamentos nem pacotes de itens, e não oferece equipar/desequipar.
 
 ### 13. Estado de criação do Mago e pendências conhecidas
