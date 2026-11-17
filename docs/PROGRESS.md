@@ -101,3 +101,11 @@ A auditoria de privilégios confirmou que `authenticated` não possui UPDATE em 
 - Removido da ficha o painel/integração de ativação da Fúria do Bárbaro. A ficha não deve expor motores de ações de classe; características continuam como informações consultáveis. A remoção foi verificada estaticamente.
 
 - Auditoria das regras de idiomas identificou a exceção do Mago: pode substituir uma escolha de idioma bônus racial por Dracônico. A interface agora oferece Dracônico quando a lista racial é restrita; a migration preparada ajusta a validação do servidor somente para Mago de 1º nível. A regra foi conferida no SRD; não aplicada à produção.
+
+## Correção solicitada — equipamento oficial e apresentação vertical (2026-11-17)
+- Registrada a decisão de não usar kits inventados nem catálogo/banco de itens para determinar equipamento inicial.
+- Fonte conferida no Livro do Jogador 3.5: existe Pacote Inicial do Mago Elfo (p. 58), com equipamento específico e ouro 3d6 po. A compra individual é alternativa separada, usando Tabela 7–1: Mago 3d4 × 10 po. O livro também concede uma roupa comum gratuita à escolha entre os modelos listados.
+- O pacote de Mago Elfo não deve ser aplicado a outras combinações raça/classe. Sem pacote correspondente no livro, os campos livres permanecem vazios; apresentar somente a regra de riqueza inicial da classe para compra individual.
+- **Bloqueio confirmado antes de automatizar:** o RPC atual aceita apenas resultados d4 para compra individual e pacotes por IDs de catálogo. Não aceita o pacote narrativo do Mago Elfo nem a rolagem 3d6 po. Não falsificar resultados ou misturar as duas alternativas. A correção exige migration estreita no RPC; nenhuma alteração de produção foi executada.
+- Aplicada em ficha.html uma camada visual vertical: painéis principais, listas de perícias, talentos, magias e pertences empilhados em uma coluna; tipografia geral modernizada e preservada a paleta verde escura/dourada do grimório aprovado. Ajustes apenas visuais, sem mudança de regra ou banco.
+- Ainda falta ajustar a apresentação de perícias para espelhar mais claramente as colunas da ficha oficial e concluir a adaptação segura do salvamento do pacote oficial. Não houve teste em navegador.
