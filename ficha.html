@@ -2142,27 +2142,24 @@ function dnd35TranslateCatalogText(value){
   }
   
   function dnd35RenderSkills(state, attrs, creating, classMap) {
-    var ranks = dnd35Objeto(state.sheet.pericias), budget = dnd35PericiaBudget(state,attrs), spent = dnd35PericiaCostTotal(state,ranks,classMap);
-    var level = Math.max(1,Number(state.sheet.nivel)||1), html = creating ? '<p class="dnd35-note">Atuação e Conhecimento têm especialidades próprias. Ofício e Profissão também: cada atividade escolhida recebe graduações e consome seus próprios pontos.</p>' : '';
-    var sorted = state.skills.slice().sort(function(a,b) { var ac=!!classMap[String(a.id)], bc=!!classMap[String(b.id)]; return ac===bc ? String(a.nome).localeCompare(String(b.nome),'pt-BR') : (ac?-1:1); });
-    sorted.forEach(function(skill) {
-      var id = String(skill.id), isClass = !!classMap[id], rank = Number(ranks[id] || 0), ability = String(skill.atributo || 'INT').toUpperCase();
-      if (['srd35_skill_perform','srd35_skill_knowledge','oficio','profissao'].indexOf(id)>=0 && (creating || rank <= 0)) return;
+    var ranks=dnd35Objeto(state.sheet.pericias),budget=dnd35PericiaBudget(state,attrs),spent=dnd35PericiaCostTotal(state,ranks,classMap);
+    var level=Math.max(1,Number(state.sheet.nivel)||1),html=creating?'<p class="dnd35-note">Atuação e Conhecimento têm especialidades próprias. Ofício e Profissão também: cada atividade escolhida recebe graduações e consome seus próprios pontos.</p>':'';
+    var sorted=state.skills.slice().sort(function(a,b){var ac=!!classMap[String(a.id)],bc=!!classMap[String(b.id)];return ac===bc?String(a.nome).localeCompare(String(b.nome),'pt-BR'):(ac?-1:1);});
+    sorted.forEach(function(skill){
+      var id=String(skill.id),isClass=!!classMap[id],rank=Number(ranks[id]||0),ability=String(skill.atributo||'INT').toUpperCase();
+      if(['srd35_skill_perform','srd35_skill_knowledge','oficio','profissao'].indexOf(id)>=0&&(creating||rank<=0))return;
       var isLanguage=String(skill.id)==='srd35_skill_speak_language',max=isLanguage?budget:(isClass?level+3:(level+3)/2),options='';
-      if (creating) {
-        var step=isLanguage?1:(isClass?1:0.5);
-        for (var v=0; v<=max+0.001; v+=step) options += '<option value="'+v+'"'+(Math.abs(v-rank)<0.001?' selected':'')+'>'+v+'</option>';
-      }
-      var abilityMod = dnd35Modificador(attrs[ability]), classBonus = isClass && rank >= 1 ? 3 : 0, computed = rank + abilityMod + classBonus;
-      var labels = [];
-      labels.push(isClass ? 'Perícia de classe' : 'Fora de classe');
-      if (skill.treinada_apenas) labels.push('Somente treinada');
-      if (skill.penalidade_armadura) labels.push('Penalidade de armadura');
-      var trainedWarning = skill.treinada_apenas && rank < 1 ? '<div class="dnd35-warning">Esta perícia exige treinamento; sem graduações, não pode ser usada.</div>' : '';
-      html += '<article class="dnd35-skill"><div class="dnd35-skill-head"><strong>'+esc(skill.nome)+'</strong><span class="dnd35-badge">'+esc(labels.join(' · '))+'</span></div>'+
+      if(creating){var step=isLanguage?1:(isClass?1:0.5);for(var v=0;v<=max+0.001;v+=step)options+='<option value="'+v+'"'+(Math.abs(v-rank)<0.001?' selected':'')+'>'+v+'</option>';}
+      var abilityMod=dnd35Modificador(attrs[ability]),classBonus=isClass&&rank>=1?3:0,computed=rank+abilityMod+classBonus,labels=[];
+      labels.push(isClass?'Perícia de classe':'Fora de classe');
+      if(skill.treinada_apenas)labels.push('Somente treinada');
+      if(skill.penalidade_armadura)labels.push('Penalidade de armadura');
+      var trainedWarning=skill.treinada_apenas&&rank<1?'<div class="dnd35-warning">Esta perícia exige treinamento; sem graduações, não pode ser usada.</div>':'';
+      html+='<article class="dnd35-skill"><div class="dnd35-skill-head"><strong>'+esc(skill.nome)+'</strong><span class="dnd35-badge">'+esc(labels.join(' · '))+'</span></div>'+
         '<p class="dnd35-skill-meta">Atributo-chave: '+esc(ability)+' · Limite: '+max+' graduações · Custo: '+((isClass||isLanguage)?'1':'2')+' ponto(s) por graduação'+(rank%1?' · passos de 0,5':'')+'</p>'+
-        (creating ? '<div class="dnd35-skill-control"><label for="skill-'+esc(id)+'">Graduações</label><select id="skill-'+esc(id)+'" data-skill="'+esc(id)+'">'+options+'</select></div>' : '<p>Graduações: <b>'+rank+'</b></p>')+
-        (isLanguage?'<div class="dnd35-formula">Sem rolagem: cada graduação compra conhecimento de um idioma. Informe os idiomas na área de notas da ficha.</div>':'<div class="dnd35-formula"><strong>Bônus total atual: '+(computed>=0?'+':'')+computed+'</strong><span>Graduações '+rank+' · '+esc(ability)+' '+(abilityMod>=0?'+':'')+abilityMod+(classBonus?' · classe +3':'')+'</span></div>')+trainedWarning+(skill.descricao?'<details class="dnd35-skill-rules"><summary>Regras e usos da perícia</summary><p>'+esc(dnd35SkillUsePt35(skill))+'</p>'+(skill.srd_source_url?'<a href="'+esc(skill.srd_source_url)+'" target="_blank" rel="noopener noreferrer">Fonte SRD ↗</a>':'')+'</details>':'')+'</article>';
+        (creating?'<div class="dnd35-skill-control"><label for="skill-'+esc(id)+'">Graduações</label><select id="skill-'+esc(id)+'" data-skill="'+esc(id)+'">'+options+'</select></div>':'<p>Graduações: <b>'+rank+'</b></p>')+
+        (isLanguage?'<div class="dnd35-formula">Cada graduação nesta opção representa um idioma. Registre o nome do idioma na seção de idiomas.</div>':'<div class="dnd35-formula"><strong>Bônus total atual: '+(computed>=0?'+':'')+computed+'</strong><span>Graduações '+rank+' · '+esc(ability)+' '+(abilityMod>=0?'+':'')+abilityMod+(classBonus?' · classe +3':'')+'</span></div>')+
+        trainedWarning+(skill.descricao?'<details class="dnd35-skill-rules"><summary>Regras e usos da perícia</summary><p>'+esc(dnd35SkillUsePt35(skill))+'</p>'+(skill.srd_source_url?'<a href="'+esc(skill.srd_source_url)+'" target="_blank" rel="noopener noreferrer">Fonte SRD ↗</a>':'')+'</details>':'')+'</article>';
     });
     var specs=dnd35Objeto(state.identidade).skill_specializations;
     if(!Array.isArray(specs))specs=[];
@@ -2172,7 +2169,11 @@ function dnd35TranslateCatalogText(value){
       if(!base||!/^srd35_skill_(oficio|profissao)_[a-z0-9_]+$/.test(key)||!name)return;
       var rank=Number(ranks[key]||0),isClass=!!classMap[key],max=isClass?level+3:(level+3)/2,ability=String(base.atributo||'INT').toUpperCase(),abilityMod=dnd35Modificador(attrs[ability]),bonus=isClass&&rank>=1?3:0,options='';
       if(creating){for(var v=0;v<=max+0.001;v+=isClass?1:0.5)options+='<option value="'+v+'"'+(Math.abs(v-rank)<0.001?' selected':'')+'>'+v+'</option>';}
-      html+='<article class="dnd35-skill"><div class="dnd35-skill-head"><strong>'+esc(base.nome)+' ('+esc(name)+')</strong><span class="dnd35-badge">'+(isClass?'Perícia de classe':'Fora de classe')+(base.treinada_apenas?' · Somente treinada':'')+'</span></div><p>Atributo: '+ability+' · Máximo: '+max+' graduações · Custo: '+(isClass?'1':'2')+' ponto(s) por graduação</p>'+(creating?'<div class="dnd35-skill-control"><label>Graduações</label><select data-skill="'+esc(key)+'">'+options+'</select></div>':'<p>Graduações: <b>'+rank+'</b></p>')+'<div class="dnd35-formula"><strong>Bônus total atual: '+(rank+abilityMod+bonus>=0?'+':'')+(rank+abilityMod+bonus)+'</strong><span>Graduações '+rank+' · '+ability+' '+(abilityMod>=0?'+':'')+abilityMod+(bonus?' · classe +3':'')+'</span></div>';});
+      html+='<article class="dnd35-skill"><div class="dnd35-skill-head"><strong>'+esc(base.nome)+' ('+esc(name)+')</strong><span class="dnd35-badge">'+(isClass?'Perícia de classe':'Fora de classe')+(base.treinada_apenas?' · Somente treinada':'')+'</span></div><p class="dnd35-skill-meta">Atributo-chave: '+ability+' · Limite: '+max+' graduações · Custo: '+(isClass?'1':'2')+' ponto(s) por graduação</p>'+(creating?'<div class="dnd35-skill-control"><label>Graduações</label><select data-skill="'+esc(key)+'">'+options+'</select></div>':'<p>Graduações: <b>'+rank+'</b></p>')+'<div class="dnd35-formula"><strong>Bônus total atual: '+(rank+abilityMod+bonus>=0?'+':'')+(rank+abilityMod+bonus)+'</strong><span>Graduações '+rank+' · '+ability+' '+(abilityMod>=0?'+':'')+abilityMod+(bonus?' · classe +3':'')+'</span></div></article>';
+    });
+    if(creating){
+      html+='<section class="dnd35-panel"><h3>Especializações próprias</h3><p>Informe cada ofício ou profissão como uma perícia separada. Você pode adicionar mais de uma.</p>';
+      ['oficio','profissao'].forEach(function(type){var label=type==='oficio'?'Ofício':'Profissão';html+='<div class="dnd35-skill-control"><label>'+label+' — nova especialidade</label><input type="text" maxlength="60" data-skill-specialization-input="'+type+'" placeholder="'+(type==='oficio'?'Ex.: Alquimia, Armoreiro, Carpinteiro':'Ex.: Mercador, Marinheiro, Cozinheiro')+'"><button type="button" data-skill-specialization-add="'+type+'">Adicionar '+label+'</button></div>';});
       html+='</section>';
     }
     return {html:html,spent:spent,budget:budget};
