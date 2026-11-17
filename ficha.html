@@ -994,6 +994,20 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -18%,#1a1e
 .ficha.dnd35-mode .dnd35-panel,.ficha.dnd35-mode .dnd35-build-panel{background:linear-gradient(145deg,#202631,#151a22)!important}
 .ficha.dnd35-mode .dnd35-skill,.ficha.dnd35-mode .dnd35-feat,.ficha.dnd35-mode .dnd35-review-grid article{background:#202631!important}
 .ficha.dnd35-mode .dnd35-selection-progress .current{background:#b18b4c!important}
+</style>
+<style id="dnd35-charcoal-bronze-final">
+.ficha.dnd35-mode .dnd35-page{color:#e9e1d2}
+.ficha.dnd35-mode .dnd35-panel,.ficha.dnd35-mode .dnd35-build-panel,.ficha.dnd35-mode .dnd35-section,.ficha.dnd35-mode .dnd35-skill,.ficha.dnd35-mode .dnd35-feat,.ficha.dnd35-mode .dnd35-review-grid article{background:linear-gradient(145deg,#252b34,#151a22)!important;border-color:#806b48!important}
+.ficha.dnd35-mode .dnd35-secao-titulo,.ficha.dnd35-mode .dnd35-section-title{background:#202631!important;color:#f0d18b!important}
+.ficha.dnd35-mode button:not(.dnd35-save):not(.dnd35-tab):not(.dnd35-link),.ficha.dnd35-mode .dnd35-choice-actions button{background:linear-gradient(145deg,#303744,#1b2029)!important;color:#eadfc9!important;border-color:#806b48!important}
+.ficha.dnd35-mode input,.ficha.dnd35-mode select,.ficha.dnd35-mode textarea{background:#111720!important;color:#f1e8d8!important;border-color:#806b48!important}
+.ficha.dnd35-mode input:focus,.ficha.dnd35-mode select:focus,.ficha.dnd35-mode textarea:focus{outline:1px solid #d2ad68!important;box-shadow:0 0 0 2px #d2ad6825!important}
+.ficha.dnd35-mode .dnd35-spell-card{background:linear-gradient(150deg,#2a303a,#171d26)!important}
+.ficha.dnd35-mode .dnd35-spell-card .dnd35-school-icon{background:#202631!important}
+.ficha.dnd35-mode .dnd35-grimoire-footer,.ficha.dnd35-mode .dnd35-learn-board{background:#202631!important;border-color:#806b48!important}
+.ficha.dnd35-mode .dnd35-selection-footer,.ficha.dnd35-mode .dnd35-stage-actions{background:linear-gradient(145deg,#252b34,#151a22)!important}
+.ficha.dnd35-mode .dnd35-skill-summary{background:transparent!important}
+.ficha.dnd35-mode .dnd35-feat-card button{background:#252b34!important;color:#f0d18b!important}
 </style></head>
 <body>
 
@@ -2250,7 +2264,7 @@ function dnd35TranslateCatalogText(value){
   }
     function dnd35FeatNamePt(feat){
     var names={
-      srd35_feat_acrobatic:'Acrobático',srd35_feat_agile:'Ágil',srd35_feat_alertness:'Prontidão',srd35_feat_animal_affinity:'Afinidade com Animais',
+      srd35_feat_armor_proficiency_shield:'Usar Escudo',srd35_feat_armor_proficiency_tower_shield:'Usar Escudo de Corpo',srd35_feat_augment_summoning:'Invocação Aprimorada',srd35_feat_cleave:'Trespassar',srd35_feat_great_cleave:'Trespassar Maior',srd35_feat_improved_bull_rush:'Encontrão Aprimorado',srd35_feat_improved_overrun:'Atropelar Aprimorado',srd35_feat_improved_sunder:'Quebrar Aprimorado',srd35_feat_improved_toughness:'Vitalidade Aprimorada',srd35_feat_improved_two_weapon_fighting:'Combater com Duas Armas Aprimorado',srd35_feat_greater_two_weapon_fighting:'Combater com Duas Armas Maior',srd35_feat_martial_weapon_proficiency:'Usar Arma (Marcial)',srd35_feat_simple_weapon_proficiency:'Usar Arma (Simples)',srd35_feat_exotic_weapon_proficiency:'Usar Arma Exótica',srd35_feat_natural_spell:'Magia Natural',srd35_feat_persistent_spell:'Magia Persistente',srd35_feat_quicken_spell:'Acelerar Magia',srd35_feat_silent_spell:'Magia Silenciosa',srd35_feat_still_spell:'Magia sem Gestos',srd35_feat_extend_spell:'Estender Magia',srd35_feat_enlarge_spell:'Ampliar Magia',srd35_feat_empower_spell:' potencializar Magia',srd35_feat_maximize_spell:'Maximizar Magia',srd35_feat_heighten_spell:'Elevar Magia',srd35_feat_widen_spell:'Alargar Magia',srd35_feat_craft_wondrous_item:'Criar Item Maravilhoso',srd35_feat_craft_magic_arms_and_armor:'Criar Armas e Armaduras Mágicas',srd35_feat_craft_rod:'Criar Bastão',srd35_feat_craft_staff:'Criar Cajado',srd35_feat_craft_wand:'Criar Varinha',srd35_feat_brew_potion:'Preparar Poção',srd35_feat_forge_ring:'Forjar Anel',srd35_feat_combat_mounted:'Combate Montado',srd35_feat_mounted_archery:'Arquearia Montada',srd35_feat_natural_attacks:'Ataques Naturais',srd35_feat_acrobatic:'Acrobático',srd35_feat_agile:'Ágil',srd35_feat_alertness:'Prontidão',srd35_feat_animal_affinity:'Afinidade com Animais',
       srd35_feat_athletic:'Atlético',srd35_feat_armor_proficiency_light:'Usar Armadura (Leve)',srd35_feat_armor_proficiency_medium:'Usar Armadura (Média)',srd35_feat_armor_proficiency_heavy:'Usar Armadura (Pesada)',
       srd35_feat_blind_fight:'Lutar às Cegas',srd35_feat_combat_casting:'Magias em Combate',srd35_feat_combat_expertise:'Especialização em Combate',srd35_feat_combat_reflexes:'Reflexos em Combate',
       srd35_feat_dodge:'Esquiva',srd35_feat_endurance:'Tolerância',srd35_feat_great_fortitude:'Fortitude Maior',srd35_feat_improved_initiative:'Iniciativa Aprimorada',
@@ -2265,7 +2279,7 @@ function dnd35TranslateCatalogText(value){
       srd35_feat_spring_attack:'Ataque em Movimento',srd35_feat_shot_on_the_run:'Tiro em Movimento',srd35_feat_far_shot:'Tiro Longo',
       srd35_feat_improved_critical:'Sucesso Decisivo Aprimorado',srd35_feat_leadership:'Liderança'
     };
-    return names[String(feat&&feat.id||'')]||dnd35TranslateCatalogText(feat&&feat.nome||'Talento');
+    return String(feat&&feat.nome_pt||'').trim()||names[String(feat&&feat.id||'')]||'Talento sem tradução cadastrada';
   }
   function dnd35FeatDescriptionPt(feat){
     var descriptions={
@@ -2333,9 +2347,9 @@ function dnd35TranslateCatalogText(value){
     var raw=String(sp&&(sp.nome_pt||sp.nome)||'').trim();
     var key=raw.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
     var names={
-      'obscuring mist':'Névoa Obscurecente','read magic':'Ler Magias','resistencia':'Resistência','detect magic':'Detectar Magia','light':'Luz','mending':'Consertar','flare':'Clarão','dancing lights':'Luzes Dançantes','daze':'Pasmar','ghost sound':'Som Fantasma','message':'Mensagem','open close':'Abrir/Fechar','prestidigitation':'Prestidigitação','cause fear':'Causar Medo','comprehend languages':'Compreender Idiomas','summon monster i':'Invocar Criaturas I','detect secret doors':'Detectar Portas Secretas','magic aura':'Aura Mágica de Nystul','identify':'Identificação','alarm':'Alarme','animate rope':'Animar Corda','charm person':'Enfeitiçar Pessoa','erase':'Apagar','expeditious retreat':'Recuo Acelerado','feather fall':'Queda Suave','grease':'Graxa','hypnotism':'Hipnotismo','silent image':'Imagem Silenciosa','sleep':'Sono','unseen servant':'Servo Invisível','ventriloquism':'Ventriloquismo','disguise self':'Disfarçar-se','protection from law':'Proteção contra a Lei','detect poison':'Detectar Veneno','endure elements':'Suportar Elementos','protection from good':'Proteção contra o Bem','protection from evil':'Proteção contra o Mal','protection from chaos':'Proteção contra o Caos','detect undead':'Detectar Mortos-Vivos','magic weapon':'Arma Mágica','jump':'Salto','arcane mark':'Marca Arcana','disrupt undead':'Destruir Mortos-Vivos','ray of frost':'Raio de Gelo','acid splash':'Respingos Ácidos','touch of fatigue':'Toque de Fadiga','chill touch':'Toque Macabro','color spray':'Leque Cromático','shield':'Escudo','floating disk':'Disco Flutuante de Tenser','hold portal':'Trancar Portal','magic missile':'Míssil Mágico','mount':'Montaria','ray of enfeeblement':'Raio do Enfraquecimento','reduce person':'Reduzir Pessoa','shocking grasp':'Agarrão Chocante','true strike':'Ataque Certeiro','enlarge person':'Aumentar Pessoa','burning hands':'Mãos Flamejantes'
+      'obscuring mist':'Névoa Obscurecente','read magic':'Ler Magias','resistencia':'Resistência','detect magic':'Detectar Magia','light':'Luz','mending':'Consertar','flare':'Clarão','dancing lights':'Luzes Dançantes','daze':'Pasmar','ghost sound':'Som Fantasma','message':'Mensagem','open close':'Abrir/Fechar','prestidigitation':'Prestidigitação','cause fear':'Causar Medo','comprehend languages':'Compreender Idiomas','summon monster i':'Invocar Criaturas I','detect secret doors':'Detectar Portas Secretas','magic aura':'Aura Mágica de Nystul','identify':'Identificação','alarm':'Alarme','animate rope':'Animar Corda','charm person':'Enfeitiçar Pessoa','erase':'Apagar','expeditious retreat':'Recuo Acelerado','feather fall':'Queda Suave','grease':'Graxa','hypnotism':'Hipnotismo','silent image':'Imagem Silenciosa','sleep':'Sono','unseen servant':'Servo Invisível','ventriloquism':'Ventriloquismo','disguise self':'Disfarçar-se','protection from law':'Proteção contra a Lei','detect poison':'Detectar Veneno','endure elements':'Suportar Elementos','protection from good':'Proteção contra o Bem','protection from evil':'Proteção contra o Mal','protection from chaos':'Proteção contra o Caos','detect undead':'Detectar Mortos-Vivos','magic weapon':'Arma Mágica','jump':'Salto','arcane mark':'Marca Arcana','disrupt undead':'Destruir Mortos-Vivos','ray of frost':'Raio de Gelo','acid splash':'Respingos Ácidos','touch of fatigue':'Toque de Fadiga','chill touch':'Toque Macabro','color spray':'Leque Cromático','shield':'Escudo','floating disk':'Disco Flutuante de Tenser','hold portal':'Trancar Portal','mage armor':'Armadura Arcana','true strike':'Ataque Certeiro','tenser floating disk':'Disco Flutuante de Tenser','magic missile':'Míssil Mágico','mount':'Montaria','ray of enfeeblement':'Raio do Enfraquecimento','reduce person':'Reduzir Pessoa','shocking grasp':'Agarrão Chocante','true strike':'Ataque Certeiro','enlarge person':'Aumentar Pessoa','burning hands':'Mãos Flamejantes'
     };
-    return names[key]||raw||'Magia sem nome';
+    return names[key]||String(sp&&sp.nome_pt||'').trim()||'Magia sem tradução cadastrada';
   }
   function dnd35SpellTechnicalLabelPt(value){
     var labels={'Casting Time':'Tempo de Conjuração','Saving Throw':'Teste de Resistência','Spell Resistance':'Resistência à Magia','Components':'Componentes','Range':'Alcance','Target':'Alvo','Effect':'Efeito','Area':'Área','Duration':'Duração'};
