@@ -2313,8 +2313,7 @@ function dnd35TranslateCatalogText(value){
       srd35_feat_track:'Você pode seguir rastros usando Sobrevivência, respeitando a CD e as condições do terreno.'
     };
     var id=String(feat&&feat.id||'');if(descriptions[id])return descriptions[id];
-    var raw=String(feat&&feat.descricao||'');
-    return dnd35TranslateCatalogText(raw).replace(/\bBenefit:/gi,'Benefício:').replace(/\bPrerequisites?:/gi,'Pré-requisitos:').replace(/\bNormal:/gi,'Normal:').replace(/\bSpecial:/gi,'Especial:');
+    return 'Descrição oficial em português pendente de transcrição do Livro do Jogador.';
   }
   function dnd35ClassFeatureDescription(name,source){
     var key=String(name||'').toLowerCase();
