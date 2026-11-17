@@ -225,3 +225,11 @@ A primeira implementação dos campos repetíveis foi concluída no fluxo de cri
 - O catálogo atual possui 19 truques e 43 magias de 1º círculo para Mago. A progressão de espaços do Mago foi conferida até o nível 20.
 - **Pendência que impede considerar o fluxo totalmente homologado:** o RPC de criação ainda aceita `badger` em vez de `weasel` na lista de familiares. A interface SRD oferece Doninha; a seleção pode ser rejeitada pelo servidor até uma migration corrigir essa allowlist. A escolha de familiar é opcional.
 - A implementação ainda precisa de teste de navegador e criação autenticada para homologação. Nenhum teste funcional é declarado nesta etapa.
+
+## Atualização de implementação — 2026-11-16
+
+Os seis grupos de registros livres já possuem interface editável também na ficha persistida. A gravação é feita pela RPC dedicada `salvar_anotacoes_equipamento_srd`, preparada em migration no branch de trabalho. A interface de edição não deve usar UPDATE direto em `srd_character_sheets`.
+
+A opção Doninha permanece disponível no cliente e é aceita pela migration preparada, que substitui Texugo na allowlist de familiares básicos do RPC. Familiar continua opcional e meramente informativo na ficha.
+
+**Estado de homologação:** a migration ainda não foi aplicada ao Supabase; a edição pós-criação e a escolha Doninha não estão funcionais na instância publicada até a aplicação da migration. Ainda faltam testes autenticados em navegador e auditoria de edição das demais seções.
