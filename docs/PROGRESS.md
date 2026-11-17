@@ -64,7 +64,7 @@ Durante a criação do Mago, o assistente explica proficiências e equipamento i
 - Munições recebem marcadores decorativos de cartuchos sem relação automática com o valor anotado.
 - A riqueza inicial continua seguindo os dados da classe (Mago: 3d4 × 10 po). O resultado é registrado como riqueza inicial, sem subtrair compras ou impor catálogo.
 - Os registros são enviados dentro de `p_identidade.equipment_notes` ao RPC existente de criação. A função existente mantém o JSON de identidade e grava em `srd_character_sheets.identidade`; nenhuma coluna ou tabela nova foi criada.
-- Após a criação, a própria ficha exibe os mesmos cartões e permite adicionar, editar, remover e salvar. O salvamento usa UPDATE em `srd_character_sheets.identidade`; a política RLS atual já permite proprietário e Mestre autorizado.
+- Após a criação, a própria ficha exibe os mesmos cartões em modo de consulta. A edição pós-criação foi mantida desativada até existir uma RPC estreita e segura: embora exista política RLS de UPDATE para proprietário/Mestre, a role `authenticated` não possui privilégio SQL UPDATE na tabela/coluna. Não é correto contornar isso concedendo UPDATE amplo à ficha inteira.
 - Removidas do caminho ativo as consultas a `srd_equipment` e `srd_starting_packages`, a leitura de equipamento equipado e os handlers antigos de equipar/desequipar. As tabelas legadas não foram apagadas.
 - A revisão da criação mostra a quantidade de registros manuais e o estado da riqueza inicial.
 - Mago: especialização/escolas proibidas já têm validação no cliente e no RPC de criação; Scribe Scroll é concedido automaticamente pelo RPC de talento bônus; 19 truques e 43 magias de 1º círculo estão disponíveis no catálogo atual. A UI agora respeita INT mínima 10 para truques e 11 para aprender magias de 1º círculo, alinhada ao validador existente.
@@ -73,7 +73,7 @@ Durante a criação do Mago, o assistente explica proficiências e equipamento i
 ### Bloqueio de backend identificado
 
 - A lista de familiares na interface segue o SRD e oferece Doninha (`weasel`), mas o RPC de criação ainda aceita `badger` e não aceita `weasel`. Escolher Doninha fará o RPC rejeitar a criação. A escolha de familiar é opcional; a criação pode seguir sem familiar ou com outra opção atualmente aceita. É necessária migration para corrigir a allowlist no banco. Não foi alterado o banco de produção.
-- O ambiente de execução não possui Supabase CLI instalado e o projeto só apresenta a branch principal do Supabase; por segurança, não foi executada alteração direta na base de produção nem criada migration sem o fluxo de CLI exigido.
+- O ambiente de execução não possui Supabase CLI instalado e o projeto só apresenta a branch principal do Supabase; por segurança, não foi executada alteração direta na base de produção nem criada migration sem o fluxo de CLI exigido. O mesmo bloqueio impede criar agora a RPC de salvamento seguro das anotações pós-criação.
 
 ### Verificação e limites
 
@@ -81,3 +81,8 @@ Durante a criação do Mago, o assistente explica proficiências e equipamento i
 - Consultas read-only confirmaram RLS de UPDATE para proprietário/Mestre, persistência de `identidade` no RPC, validação de especialização e concessão automática de Escrever Pergaminho.
 - Não houve teste em navegador, criação real autenticada ou teste de recarga. Portanto, o fluxo está implementado no código, mas ainda não está homologado funcionalmente.
 - Nenhuma migration, RPC, tabela ou dado de produção foi alterado; sem deploy e sem PR.
+
+
+### Correção de segurança do salvamento pós-criação
+
+A auditoria de privilégios confirmou que `authenticated` não possui UPDATE em `srd_character_sheets` nem na coluna `identidade`. A política RLS existente, isoladamente, não concede esse privilégio. Por isso, a interface pós-criação foi revertida para consulta somente; o código não tenta executar um UPDATE que falharia. O próximo passo técnico é uma RPC dedicada, validando `auth.uid()` e o vínculo do proprietário/Mestre, que atualize apenas `identidade.equipment_notes` sem liberar UPDATE geral na tabela.
