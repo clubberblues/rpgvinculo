@@ -91,6 +91,12 @@ BEGIN
         RAISE EXCEPTION 'Nome, quantidade e detalhes precisam ser textos.';
       END IF;
 
+      IF length(COALESCE(v_entry->>'nome','')) > 100
+         OR length(COALESCE(v_entry->>'quantidade','')) > 60
+         OR length(COALESCE(v_entry->>'detalhes','')) > 600 THEN
+        RAISE EXCEPTION 'Um dos campos do registro excede o tamanho permitido.';
+      END IF;
+
       v_items := v_items || jsonb_build_array(jsonb_build_object(
         'nome', COALESCE(v_entry->>'nome',''),
         'quantidade', COALESCE(v_entry->>'quantidade',''),
@@ -116,6 +122,10 @@ BEGIN
        true
      )
    WHERE character_id = v_character_id;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Ficha D&D 3.5 não encontrada para este personagem.';
+  END IF;
 
   RETURN v_clean;
 END
