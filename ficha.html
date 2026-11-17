@@ -3115,7 +3115,7 @@ function dnd35LanguageNormalize(value){
   ];
   function dnd35ManualEquipmentState(s){
     s=dnd35StartingState(s);var identity=s.identidade||(s.identidade={}),saved=identity.equipment_notes&&typeof identity.equipment_notes==='object'?identity.equipment_notes:{};
-    DND35_MANUAL_EQUIPMENT_SECTIONS.forEach(function(section){if(!Array.isArray(saved[section.id]))saved[section.id]=[];saved[section.id]=saved[section.id].filter(function(entry){return entry&&typeof entry==='object';}).map(function(entry){return {nome:String(entry.nome||''),quantidade:String(entry.quantidade||''),detalhes:String(entry.detalhes||'')};});});
+    DND35_MANUAL_EQUIPMENT_SECTIONS.forEach(function(section){if(!Array.isArray(saved[section.id]))saved[section.id]=[];saved[section.id]=saved[section.id].filter(function(entry){return entry&&typeof entry==='object';}).map(function(entry){return {nome:String(entry.nome||''),quantidade:String(entry.quantidade||''),detalhes:String(entry.detalhes||'')};});if(section.id==='treasure'&&saved[section.id].length===6&&saved[section.id].map(function(e){return e.nome;}).join('|')==='PO|PP|PE|PC|PL|Gemas e objetos valiosos'&&saved[section.id].every(function(e){return !e.quantidade&&!e.detalhes;}))saved[section.id]=[];});
     identity.equipment_notes=saved;s.equipamentoInicial=s.equipamentoInicial||{metodo:'ouro',resultados:[]};s.equipamentoInicial.metodo='ouro';return saved;
   }
   function dnd35ManualEquipmentMarkup(s,isSheet){
