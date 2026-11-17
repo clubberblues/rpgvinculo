@@ -3153,7 +3153,7 @@ function dnd35LanguageNormalize(value){
     {id:'weapons',title:'Armas',subtitle:'Registre cada arma e suas particularidades.',icon:'⚔',fields:[['nome','Nome da arma'],['quantidade','Quantidade'],['detalhes','Dano, crítico, alcance, tipo e observações']]},
     {id:'ammunition',title:'Munições',subtitle:'Registro simples: tipo, quantidade e arma compatível.',icon:'➶',fields:[['nome','Tipo de munição'],['quantidade','Quantidade'],['detalhes','Arma compatível, material e observações']]},
     {id:'protection',title:'Armaduras e proteção',subtitle:'Armaduras, escudos e outras formas de proteção.',icon:'🛡',fields:[['nome','Nome da proteção'],['quantidade','Quantidade'],['detalhes','Bônus, penalidade, peso e observações']]},
-    {id:'gear',title:'Equipamentos e objetos',subtitle:'Ferramentas, provisões, vestuário e pertences.',icon:'🎒',fields:[['nome','Nome do objeto'],['quantidade','Quantidade'],['detalhes','Descrição, peso ou observações']]},
+    {id:'gear',title:'Equipamentos e objetos',subtitle:'Ferramentas, provisões, vestuário e pertences.',icon:'<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h16v12H4zM8 8V6a4 4 0 0 1 8 0v2M4 13h16M10 13v2h4v-2"/></svg>',fields:[['nome','Nome do objeto'],['quantidade','Quantidade'],['detalhes','Descrição, peso ou observações']]},
     {id:'magic',title:'Itens mágicos e especiais',subtitle:'Anote propriedades, cargas ou efeitos conforme sua referência.',icon:'✧',fields:[['nome','Nome do item'],['quantidade','Quantidade / cargas anotadas'],['detalhes','Propriedades, efeitos e observações']]},
     {id:'treasure',title:'Patrimônio',subtitle:'Registre PO, PP, PE, PC e PL, além de gemas e objetos valiosos. Sem loja ou cálculo automático.',icon:'◈',fields:[['nome','Moeda, tesouro ou valor'],['quantidade','Quantidade / valor'],['detalhes','Origem, unidade e observações']]}
   ];
@@ -3185,7 +3185,7 @@ function dnd35LanguageNormalize(value){
     if(isSheet)return '';
     var selected=String((s.identidade||{}).starting_clothing||'');
     var options=['Traje de artesão','Traje de artista','Traje de explorador','Traje de monge','Traje de plebeu','Traje de estudioso','Traje de viajante'];
-    return '<section class="dnd35-manual-category dnd35-free-clothing"><header><span class="dnd35-manual-category-icon" aria-hidden="true">✦</span><div><h3>Traje comum gratuito</h3><p>O Livro do Jogador concede uma roupa comum à escolha, sem custo. Selecione uma opção para registrá-la na ficha.</p></div></header><label><span>Escolha seu traje</span><select data-starting-clothing><option value="">Escolher depois</option>'+options.map(function(name){return '<option value="'+esc(name)+'"'+(selected===name?' selected':'')+'>'+esc(name)+'</option>';}).join('')+'</select></label></section>';
+    return '<section class="dnd35-manual-category dnd35-free-clothing"><header><span class="dnd35-manual-category-icon dnd35-clothing-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 4 4 6 2 11l4 2 2-3v10h8V10l2 3 4-2-2-5-4-2c-.7 2-2 3-4 3S8.7 6 8 4Z"/></svg></span><div><h3>Traje comum gratuito</h3><p>O Livro do Jogador concede uma roupa comum à escolha, sem custo. Selecione uma opção para registrá-la na ficha.</p></div></header><label><span>Escolha seu traje</span><select data-starting-clothing><option value="">Escolher depois</option>'+options.map(function(name){return '<option value="'+esc(name)+'"'+(selected===name?' selected':'')+'>'+esc(name)+'</option>';}).join('')+'</select></label></section>';
   }
   // Pacote inicial que o Livro do Jogador associa ao Elfo Mago.
   // Mantido como anotações livres: não consulta catálogo, preços, peso ou efeitos.
@@ -3897,5 +3897,16 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2732
 .ficha.dnd35-mode .dnd35-review-spell b,.ficha.dnd35-mode .dnd35-review-equipment b{color:#f0d18b;font:700 12px Cinzel,serif}
 @media(max-width:760px){.ficha.dnd35-mode .dnd35-skill-list{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media(max-width:480px){.ficha.dnd35-mode .dnd35-skill-list,.ficha.dnd35-mode .dnd35-review-feats,.ficha.dnd35-mode .dnd35-review-spells,.ficha.dnd35-mode .dnd35-review-equipment{grid-template-columns:1fr!important}}
+</style><style id="dnd35-neutral-create-and-icons">
+.ficha.dnd35-mode .dnd35-choice-card,.ficha.dnd35-mode .dnd35-choice-inner,.ficha.dnd35-mode .dnd35-choice-face,.ficha.dnd35-mode .dnd35-class-choice,.ficha.dnd35-mode .dnd35-class-grid .dnd35-choice-card,.ficha.dnd35-mode .dnd35-class-grid .dnd35-choice-inner{background-color:#202630!important;background-image:linear-gradient(145deg,#28303b,#151a22)!important;border-color:#78694f!important;color:#eee5d4!important}
+.ficha.dnd35-mode .dnd35-choice-card h3,.ficha.dnd35-mode .dnd35-choice-inner h3,.ficha.dnd35-mode .dnd35-choice-face h3{color:#efd18d!important}
+.ficha.dnd35-mode .dnd35-choice-card p,.ficha.dnd35-mode .dnd35-choice-inner p,.ficha.dnd35-mode .dnd35-choice-face p{color:#d0c8b8!important}
+.ficha.dnd35-mode .dnd35-manual-category,.ficha.dnd35-mode .dnd35-manual-entry{background:linear-gradient(145deg,#252b35,#151a22)!important;border-color:#75664b!important}
+.ficha.dnd35-mode .dnd35-manual-category-icon{background:linear-gradient(145deg,#303744,#171c25)!important;border-color:#8d7955!important;color:#d9bd7b!important}
+.ficha.dnd35-mode .dnd35-manual-category-icon svg{display:block;width:22px;height:22px}
+.ficha.dnd35-mode .dnd35-free-clothing .dnd35-manual-category-icon{background:linear-gradient(145deg,#303744,#171c25)!important;color:#d9bd7b!important}
+.ficha.dnd35-mode .dnd35-manual-entry input,.ficha.dnd35-mode .dnd35-manual-entry textarea,.ficha.dnd35-mode .dnd35-free-clothing select{background:#111720!important;color:#f1e8d6!important;border-color:#75664b!important}
+.ficha.dnd35-mode .dnd35-create-step,.ficha.dnd35-mode .dnd35-tab,.ficha.dnd35-mode .dnd35-help,.ficha.dnd35-mode .dnd35-stage-actions button{background:#252b35!important;color:#e9dfcc!important;border-color:#75664b!important}
+.ficha.dnd35-mode .dnd35-create-step.active,.ficha.dnd35-mode .dnd35-tab.active{background:linear-gradient(145deg,#d0b16c,#8c6e3d)!important;color:#17130d!important;border-color:#e2c987!important}
 </style></body>
 </html>
