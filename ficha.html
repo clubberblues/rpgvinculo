@@ -2280,6 +2280,14 @@ function dnd35TranslateCatalogText(value){
     var key=dnd35SpellSchoolKey(value),names={abjuration:'Abjuração',conjuration:'Conjuração',divination:'Adivinhação',enchantment:'Encantamento',evocation:'Evocação',illusion:'Ilusão',necromancy:'Necromancia',transmutation:'Transmutação'};
     return names[key]||String(value||'Escola não informada');
   }
+  function dnd35SpellNamePt(sp){
+    var raw=String(sp&&(sp.nome_pt||sp.nome)||'').trim();
+    var key=raw.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+    var names={
+      'obscuring mist':'Névoa Obscurecente','read magic':'Ler Magias','resistencia':'Resistência','detect magic':'Detectar Magia','light':'Luz','mending':'Consertar','flare':'Clarão','dancing lights':'Luzes Dançantes','daze':'Pasmar','ghost sound':'Som Fantasma','message':'Mensagem','open close':'Abrir/Fechar','prestidigitation':'Prestidigitação','cause fear':'Causar Medo','comprehend languages':'Compreender Idiomas','summon monster i':'Invocar Criaturas I','detect secret doors':'Detectar Portas Secretas','magic aura':'Aura Mágica de Nystul','identify':'Identificação','alarm':'Alarme','animate rope':'Animar Corda','charm person':'Enfeitiçar Pessoa','erase':'Apagar','expeditious retreat':'Recuo Acelerado','feather fall':'Queda Suave','grease':'Graxa','hypnotism':'Hipnotismo','silent image':'Imagem Silenciosa','sleep':'Sono','unseen servant':'Servo Invisível','ventriloquism':'Ventriloquismo','disguise self':'Disfarçar-se','protection from law':'Proteção contra a Lei','detect poison':'Detectar Veneno','endure elements':'Suportar Elementos','protection from good':'Proteção contra o Bem','protection from evil':'Proteção contra o Mal','protection from chaos':'Proteção contra o Caos','detect undead':'Detectar Mortos-Vivos','magic weapon':'Arma Mágica','jump':'Salto','arcane mark':'Marca Arcana','disrupt undead':'Destruir Mortos-Vivos','ray of frost':'Raio de Gelo','acid splash':'Respingos Ácidos','touch of fatigue':'Toque de Fadiga','chill touch':'Toque Macabro','color spray':'Leque Cromático','shield':'Escudo','floating disk':'Disco Flutuante de Tenser','hold portal':'Trancar Portal','magic missile':'Míssil Mágico','mount':'Montaria','ray of enfeeblement':'Raio do Enfraquecimento','reduce person':'Reduzir Pessoa','shocking grasp':'Agarrão Chocante','true strike':'Ataque Certeiro','enlarge person':'Aumentar Pessoa','burning hands':'Mãos Flamejantes'
+    };
+    return names[key]||raw||'Magia sem nome';
+  }
   function dnd35SpellTechnicalLabelPt(value){
     var labels={'Casting Time':'Tempo de Conjuração','Saving Throw':'Teste de Resistência','Spell Resistance':'Resistência à Magia','Components':'Componentes','Range':'Alcance','Target':'Alvo','Effect':'Efeito','Area':'Área','Duration':'Duração'};
     return labels[String(value||'')]||String(value||'');
@@ -2949,7 +2957,7 @@ function dnd35LanguageNormalize(value){
       ].filter(function(row){return row[1]!==undefined&&row[1]!==null&&String(row[1]).trim()!=='';});
       var savingThrow=techFields['Saving Throw']||techFields['Teste de Resistência']||'—',
           spellDescription=sp.descricao_pt||sp.descricao||'Descrição ainda não cadastrada.',
-          spellName=sp.nome_pt||sp.nome||'Magia sem nome',
+          spellName=dnd35SpellNamePt(sp),
           hasPortugueseName=!!sp.nome_pt,
           hasPortugueseDescription=!!sp.descricao_pt,
           detailMarkup='<div class="dnd35-spell-detail-grid">'+detailRows.map(function(row){return '<div><small>'+esc(row[0])+'</small><b>'+esc(row[1])+'</b></div>';}).join('')+'</div>';
