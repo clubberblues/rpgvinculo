@@ -23,6 +23,29 @@ BEGIN
 END
 $migration$;
 
+-- The Wizard may replace one racial bonus-language choice with Draconic at character creation.
+-- Preserve the existing language validator and narrow the exception to level-1 Wizards.
+DO $wizard_language$
+DECLARE
+  v_definition text;
+  v_old text := $old$IF NOT v_any_bonus AND EXISTS(SELECT 1 FROM unnest(v_bonus_submitted) x WHERE NOT (x=ANY(v_bonus_allowed))) THEN$old$;
+  v_new text := $new$IF NOT v_any_bonus AND EXISTS(SELECT 1 FROM unnest(v_bonus_submitted) x WHERE NOT (x=ANY(v_bonus_allowed) OR (v_class.id='mago' AND v_sheet.nivel=1 AND x='Dracônico'))) THEN$new$;
+BEGIN
+  SELECT pg_get_functiondef(
+    'public.salvar_idiomas_personagem_srd(text,jsonb)'::regprocedure
+  ) INTO v_definition;
+
+  IF position(v_new IN v_definition) > 0 THEN
+    RAISE NOTICE 'A exceção de Dracônico para Mago já está instalada.';
+  ELSIF position(v_old IN v_definition) = 0 THEN
+    RAISE EXCEPTION 'A validação esperada de idiomas não foi encontrada; migração cancelada sem alterar a função.';
+  ELSE
+    v_definition := replace(v_definition, v_old, v_new);
+    EXECUTE v_definition;
+  END IF;
+END
+$wizard_language$;
+
 -- Narrow RPC for the six free-text equipment note groups.
 -- No UPDATE privilege is granted on srd_character_sheets itself.
 CREATE OR REPLACE FUNCTION public.salvar_anotacoes_equipamento_srd(
