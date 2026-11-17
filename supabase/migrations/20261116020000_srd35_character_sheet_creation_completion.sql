@@ -3,8 +3,8 @@
 DO $migration$
 DECLARE
   v_definition text;
-  v_old text := '('',''snake_small_viper'',''cat'',''lizard'',''rat'',''badger'',''owl'',''raven'',''hawk'',''bat'',''toad'')';
-  v_new text := '('',''snake_small_viper'',''cat'',''lizard'',''rat'',''weasel'',''owl'',''raven'',''hawk'',''bat'',''toad'')';
+  v_old text := $old$('','snake_small_viper','cat','lizard','rat','badger','owl','raven','hawk','bat','toad')$old$;
+  v_new text := $new$('','snake_small_viper','cat','lizard','rat','weasel','owl','raven','hawk','bat','toad')$new$;
 BEGIN
   SELECT pg_get_functiondef(
     'public.criar_personagem_srd_completo(text,text,text,jsonb,jsonb,jsonb,jsonb)'::regprocedure
