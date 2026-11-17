@@ -3398,46 +3398,38 @@ function dnd35LanguageNormalize(value){
     var root=document.getElementById('root');root.classList.add('dnd35-mode');
     var selectedRace=RACE_ID&&races.some(function(x){return String(x.id)===String(RACE_ID);})?String(RACE_ID):'';
     var selectedClass=CLASS_ID&&classes.some(function(x){return String(x.id)===String(CLASS_ID);})?String(CLASS_ID):'';
+    var stage='race';
     function compactList(value){
-      if(Array.isArray(value))return value.map(function(x){return typeof x==='string'?x:(x&& (x.nome||x.name||x.id))||'';}).filter(Boolean).slice(0,4).join(' · ');
+      if(Array.isArray(value))return value.map(function(x){return typeof x==='string'?x:(x&&(x.nome||x.name||x.id))||'';}).filter(Boolean).slice(0,5).join(' · ');
       if(value&&typeof value==='object')return Object.keys(value).map(function(k){return k+': '+value[k];}).join(' · ');
       return String(value||'');
     }
-    function makeCard(item,type){
-      var isRace=type==='race',id=String(item.id),name=esc(item.nome||item.name||id);
-      var details='';
-      if(isRace){
+    function detailsFor(item,type){
+      if(type==='race'){
         var mods=dnd35Objeto(item.ajustes_atributos),modText=Object.keys(mods).length?Object.keys(mods).map(function(k){return k+' '+(Number(mods[k])>0?'+':'')+mods[k];}).join(' · '):'Sem ajustes de atributo';
-        details='<p><b>Atributos:</b> '+esc(modText)+'</p><p><b>Tamanho:</b> '+esc(item.tamanho||'—')+' · <b>Deslocamento:</b> '+esc(item.deslocamento==null?'—':item.deslocamento+' m')+'</p><p><b>Características:</b> '+esc(compactList(item.habilidades_raciais)||'Consulte a descrição racial na ficha.')+'</p><p><b>Idiomas:</b> '+esc(compactList(item.idiomas)||'Conforme as regras da raça.')+'</p>';
-      }else{
-        var prof=dnd35Objeto(item.dados_tecnicos).proficiencias||{};
-        details='<p><b>Dado de vida:</b> d'+esc(item.dado_vida||'—')+'</p><p><b>Perícias por nível:</b> '+esc(item.pericias_por_nivel==null?'—':item.pericias_por_nivel)+'</p><p><b>Perícias de classe:</b> '+esc(compactList(item.pericias_classe)||'Consulte a ficha da classe.')+'</p><p><b>Proficiências:</b> '+esc(compactList(prof.armas)||'Conforme a classe')+'</p>';
+        return '<p><b>Atributos:</b> '+esc(modText)+'</p><p><b>Tamanho:</b> '+esc(item.tamanho||'—')+' · <b>Deslocamento:</b> '+esc(item.deslocamento==null?'—':item.deslocamento+' m')+'</p><p><b>Características:</b> '+esc(compactList(item.habilidades_raciais)||'Consulte as características raciais na ficha.')+'</p><p><b>Idiomas:</b> '+esc(compactList(item.idiomas)||'Conforme as regras da raça.')+'</p>';
       }
-      var subtitle=isRace?'Raça · D&D 3.5':'Classe · D&D 3.5';
-      var artLabel=isRace?'ESPAÇO PARA ARTE DA RAÇA':'ESPAÇO PARA ARTE DA CLASSE';
-      var attr=isRace?'data-select-race':'data-select-class';
-      return '<article class="dnd35-choice-card '+((isRace?selectedRace:selectedClass)===id?'is-selected':'')+'" data-choice-card="'+type+'" data-choice-id="'+esc(id)+'"><div class="dnd35-choice-inner"><div class="dnd35-choice-face dnd35-choice-front"><div class="dnd35-choice-art" data-art-slot="'+type+'-'+esc(id)+'"><span>'+artLabel+'</span></div><div class="dnd35-choice-copy"><small>'+subtitle+'</small><h3>'+name+'</h3><p>'+(isRace?'Características raciais e identidade do personagem.':'Progressão, recursos e habilidades da classe.')+'</p></div><div class="dnd35-choice-actions"><button type="button" class="dnd35-choice-select" '+attr+'="'+esc(id)+'">'+(((isRace?selectedRace:selectedClass)===id)?'Selecionado':'Escolher')+'</button><button type="button" class="dnd35-choice-flip" data-flip-card>Detalhes ↻</button></div></div><div class="dnd35-choice-face dnd35-choice-back"><div class="dnd35-choice-backhead"><small>'+subtitle+'</small><h3>'+name+'</h3></div><div class="dnd35-choice-details">'+details+'</div><div class="dnd35-choice-actions"><button type="button" class="dnd35-choice-select" '+attr+'="'+esc(id)+'">'+(((isRace?selectedRace:selectedClass)===id)?'Selecionado':'Escolher')+'</button><button type="button" class="dnd35-choice-flip" data-flip-card>Voltar ↻</button></div></div></div></article>';
+      var prof=dnd35Objeto(item.dados_tecnicos).proficiencias||{};
+      return '<p><b>Dado de vida:</b> d'+esc(item.dado_vida||'—')+'</p><p><b>Perícias por nível:</b> '+esc(item.pericias_por_nivel==null?'—':item.pericias_por_nivel)+'</p><p><b>Perícias de classe:</b> '+esc(compactList(item.pericias_classe)||'Consulte a ficha da classe.')+'</p><p><b>Proficiências:</b> '+esc(compactList(prof.armas)||'Conforme a classe')+'</p>';
     }
-    root.innerHTML='<div class="dnd35-page dnd35-selection-page"><header class="dnd35-header"><div><div class="dnd35-kicker">VÍNCULO · D&amp;D 3.5</div><h1>Crie seu personagem</h1><p>Escolha a origem e o caminho do seu herói. As próximas etapas serão organizadas conforme suas escolhas.</p></div><a class="dnd35-link" href="lobby.html">Voltar ao Lobby</a></header><div class="dnd35-selection-progress"><span class="done">01 · RAÇA</span><i></i><span class="current">02 · CLASSE</span><i></i><span>03 · CONSTRUÇÃO</span><i></i><span>04 · CONCLUSÃO</span></div><section class="dnd35-selection-section"><div class="dnd35-selection-heading"><div><span class="dnd35-kicker">SUA ORIGEM</span><h2>Escolha uma raça</h2><p>Selecione um cartão. Use “Detalhes” para conhecer suas características.</p></div><span class="dnd35-selection-count">'+races.length+' opções</span></div><div class="dnd35-choice-grid dnd35-race-grid">'+races.map(function(r){return makeCard(r,'race');}).join('')+'</div></section><section class="dnd35-selection-section"><div class="dnd35-selection-heading"><div><span class="dnd35-kicker">SEU CAMINHO</span><h2>Escolha uma classe</h2><p>Cada classe oferece habilidades, progressão e formas diferentes de jogar.</p></div><span class="dnd35-selection-count">'+classes.length+' opções</span></div><div class="dnd35-choice-grid dnd35-class-grid">'+classes.map(function(x){return makeCard(x,'class');}).join('')+'</div></section><footer class="dnd35-selection-footer"><p id="dnd35-selection-status" role="status" aria-live="polite">Escolha uma raça e uma classe para continuar.</p><button type="button" id="dnd35-begin-creation" class="dnd35-save" disabled>Continuar para construir a ficha <span aria-hidden="true">→</span></button></footer></div>';
-    function updateSelection(){
-      root.querySelectorAll('[data-choice-card]').forEach(function(card){
-        var chosen=card.dataset.choiceCard==='race'?selectedRace:selectedClass;
-        var active=String(card.dataset.choiceId)===String(chosen);
-        card.classList.toggle('is-selected',active);
-        card.querySelectorAll('.dnd35-choice-select').forEach(function(btn){btn.textContent=active?'Selecionado':'Escolher';});
+    function makeCard(item,type){
+      var id=String(item.id),name=esc(item.nome||item.name||id),isRace=type==='race',chosen=isRace?selectedRace:selectedClass;
+      return '<article class="dnd35-choice-card '+(chosen===id?'is-selected':'')+'" data-choice-card="'+type+'" data-choice-id="'+esc(id)+'"><div class="dnd35-choice-inner"><div class="dnd35-choice-face dnd35-choice-front"><div class="dnd35-choice-copy"><h3>'+name+'</h3><p>'+(isRace?'Origem, atributos e características raciais.':'Habilidades, progressão e recursos de classe.')+'</p></div><div class="dnd35-choice-actions"><button type="button" class="dnd35-choice-select" '+(isRace?'data-select-race':'data-select-class')+'="'+esc(id)+'">'+(chosen===id?'Selecionada':'Escolher')+'</button><button type="button" class="dnd35-choice-flip" data-flip-card>Visualizar</button></div></div><div class="dnd35-choice-face dnd35-choice-back"><div class="dnd35-choice-backhead"><h3>'+name+'</h3></div><div class="dnd35-choice-details">'+detailsFor(item,type)+'</div><div class="dnd35-choice-actions"><button type="button" class="dnd35-choice-select" '+(isRace?'data-select-race':'data-select-class')+'="'+esc(id)+'">'+(chosen===id?'Selecionada':'Escolher')+'</button><button type="button" class="dnd35-choice-flip" data-flip-card>Voltar</button></div></div></div></article>';
+    }
+    function renderStage(){
+      var isRace=stage==='race',items=isRace?races:classes,chosen=isRace?selectedRace:selectedClass;
+      root.innerHTML='<div class="dnd35-page dnd35-selection-page"><header class="dnd35-header"><div><div class="dnd35-kicker">CRIAÇÃO DE PERSONAGEM</div><h1>'+(isRace?'Escolha sua raça':'Escolha sua classe')+'</h1><p>'+(isRace?'Defina primeiro a origem do personagem. Depois, as classes serão apresentadas em uma nova etapa.':'Agora escolha a classe que seguirá a origem selecionada: <strong>'+esc((races.find(function(x){return String(x.id)===String(selectedRace);})||{}).nome||'Raça')+'</strong>.')+'</p></div><a class="dnd35-link" href="lobby.html">Voltar ao Lobby</a></header><div class="dnd35-selection-progress"><span class="'+(isRace?'current':'done')+'">01 · RAÇA</span><i></i><span class="'+(!isRace?'current':'')+'">02 · CLASSE</span><i></i><span>03 · CONSTRUÇÃO</span><i></i><span>04 · CONCLUSÃO</span></div><section class="dnd35-selection-section"><div class="dnd35-selection-heading"><div><h2>'+(isRace?'Sua origem':'Seu caminho')+'</h2><p>'+(isRace?'Escolha uma raça. Use “Visualizar” para consultar suas características.':'Escolha uma classe. Use “Visualizar” para conhecer suas características e progressão.')+'</p></div><span class="dnd35-selection-count">'+items.length+' opções</span></div><div class="dnd35-choice-grid '+(isRace?'dnd35-race-grid':'dnd35-class-grid')+'">'+items.map(function(item){return makeCard(item,stage);}).join('')+'</div></section><footer class="dnd35-selection-footer"><p id="dnd35-selection-status" role="status" aria-live="polite">'+(chosen?'Seleção atual: '+esc((items.find(function(x){return String(x.id)===String(chosen);})||{}).nome||''):'Nenhuma opção selecionada.')+'</p><div class="dnd35-selection-footer-actions">'+(isRace?'':'<button type="button" id="dnd35-back-race" class="dnd35-stage-back">← Voltar às raças</button>')+'<button type="button" id="dnd35-next-stage" class="dnd35-save" '+(!chosen?'disabled':'')+'>'+(isRace?'Continuar para classes':'Continuar para construir a ficha')+' <span aria-hidden="true">→</span></button></div></footer></div>';
+      root.querySelectorAll('[data-select-race]').forEach(function(button){button.addEventListener('click',function(){selectedRace=String(button.dataset.selectRace);RACE_ID=selectedRace;renderStage();});});
+      root.querySelectorAll('[data-select-class]').forEach(function(button){button.addEventListener('click',function(){selectedClass=String(button.dataset.selectClass);CLASS_ID=selectedClass;renderStage();});});
+      root.querySelectorAll('[data-flip-card]').forEach(function(button){button.addEventListener('click',function(){var card=button.closest('.dnd35-choice-card');if(card)card.classList.toggle('is-flipped');});});
+      var back=document.getElementById('dnd35-back-race');if(back)back.addEventListener('click',function(){stage='race';renderStage();});
+      document.getElementById('dnd35-next-stage').addEventListener('click',function(){
+        if(!chosen)return;
+        if(isRace){stage='class';renderStage();var section=root.querySelector('.dnd35-selection-section');if(section)section.scrollIntoView({behavior:'smooth',block:'start'});return;}
+        RACE_ID=selectedRace;CLASS_ID=selectedClass;carregarNovaFichaSRD35();
       });
-      var ready=!!selectedRace&&!!selectedClass,button=document.getElementById('dnd35-begin-creation'),status=document.getElementById('dnd35-selection-status');
-      if(button)button.disabled=!ready;
-      if(status)status.textContent=ready?'Origem e classe selecionadas. Você já pode continuar.':'Escolha uma raça e uma classe para continuar.';
     }
-    root.querySelectorAll('[data-select-race]').forEach(function(button){button.addEventListener('click',function(){selectedRace=String(button.dataset.selectRace);updateSelection();});});
-    root.querySelectorAll('[data-select-class]').forEach(function(button){button.addEventListener('click',function(){selectedClass=String(button.dataset.selectClass);updateSelection();});});
-    root.querySelectorAll('[data-flip-card]').forEach(function(button){button.addEventListener('click',function(){var card=button.closest('.dnd35-choice-card');if(card)card.classList.toggle('is-flipped');});});
-    document.getElementById('dnd35-begin-creation').addEventListener('click',function(){
-      if(!selectedRace||!selectedClass)return;
-      RACE_ID=selectedRace;CLASS_ID=selectedClass;carregarNovaFichaSRD35();
-    });
-    updateSelection();
+    renderStage();
   }
   async function carregarNovaFichaSRD35() {
     var catalogsResult=await Promise.all([sb.from('srd_races').select('*').order('nome'),sb.from('srd_classes').select('*').order('nome')]);
@@ -3814,3 +3806,36 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2732
 
 <script id="dnd35-feat-flip-events">document.addEventListener('click',function(event){var button=event.target.closest('[data-feat-flip]');if(!button)return;var card=button.closest('.dnd35-feat-flip');if(card)card.classList.toggle('is-flipped');});</script></body>
 </html>
+
+<style id="dnd35-selection-flow-refinement">
+/* Seleção em duas etapas: cards compactos, sem moldura reservada para arte. */
+.dnd35-selection-page .dnd35-choice-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px}
+.dnd35-selection-page .dnd35-choice-card,.dnd35-selection-page .dnd35-choice-inner{min-height:176px;height:176px}
+.dnd35-selection-page .dnd35-choice-face{inset:0;min-height:176px}
+.dnd35-selection-page .dnd35-choice-front{justify-content:space-between}
+.dnd35-selection-page .dnd35-choice-copy{padding:20px 16px 8px}
+.dnd35-selection-page .dnd35-choice-copy h3,.dnd35-selection-page .dnd35-choice-backhead h3{font-size:18px;line-height:1.25}
+.dnd35-selection-page .dnd35-choice-copy p{font-size:13px;line-height:1.45}
+.dnd35-selection-page .dnd35-choice-actions{position:relative;z-index:3;flex:0 0 auto;padding:10px 12px 12px;gap:8px}
+.dnd35-selection-page .dnd35-choice-actions button{min-height:40px;font-size:11px;pointer-events:auto}
+.dnd35-selection-page .dnd35-choice-back{padding:14px}
+.dnd35-selection-page .dnd35-choice-details{min-height:0;overflow:auto;padding:2px 3px 8px}
+.dnd35-selection-page .dnd35-choice-backhead{flex:0 0 auto}
+.dnd35-selection-page .dnd35-selection-footer-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.dnd35-selection-page .dnd35-selection-footer-actions button{min-height:42px}
+.dnd35-selection-page .dnd35-selection-footer{flex-wrap:wrap}
+.dnd35-selection-page .dnd35-selection-footer p{flex:1 1 220px}
+.dnd35-selection-page .dnd35-selection-heading h2{margin:0}
+.dnd35-selection-page .dnd35-selection-progress .current{color:#17150f}
+@media(max-width:620px){
+ .dnd35-selection-page .dnd35-choice-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .dnd35-selection-page .dnd35-choice-card,.dnd35-selection-page .dnd35-choice-inner,.dnd35-selection-page .dnd35-choice-face{min-height:166px;height:166px}
+ .dnd35-selection-page .dnd35-choice-copy{padding:15px 10px 6px}
+ .dnd35-selection-page .dnd35-choice-copy h3{font-size:15px}
+ .dnd35-selection-page .dnd35-choice-copy p{font-size:11px}
+ .dnd35-selection-page .dnd35-choice-actions{padding:8px;gap:5px}
+ .dnd35-selection-page .dnd35-choice-actions button{min-height:38px;padding:5px;font-size:9px}
+ .dnd35-selection-page .dnd35-selection-footer-actions{width:100%}
+ .dnd35-selection-page .dnd35-selection-footer-actions button{flex:1 1 100%}
+}
+</style>
