@@ -86,3 +86,14 @@ Durante a criação do Mago, o assistente explica proficiências e equipamento i
 ### Correção de segurança do salvamento pós-criação
 
 A auditoria de privilégios confirmou que `authenticated` não possui UPDATE em `srd_character_sheets` nem na coluna `identidade`. A política RLS existente, isoladamente, não concede esse privilégio. Por isso, a interface pós-criação foi revertida para consulta somente; o código não tenta executar um UPDATE que falharia. O próximo passo técnico é uma RPC dedicada, validando `auth.uid()` e o vínculo do proprietário/Mestre, que atualize apenas `identidade.equipment_notes` sem liberar UPDATE geral na tabela.
+
+## Continuação — edição dos registros livres e familiar SRD (2026-11-16)
+
+- Removido o bloqueio artificial no cliente que impedia concluir a criação ao selecionar Doninha. A opção permanece opcional e é somente registrada na identidade; não foi criado motor, controle ou automação de familiar.
+- Criada no branch a migration `20261116020000_srd35_character_sheet_creation_completion.sql`. Ela substitui de forma condicionada apenas a allowlist do familiar básico no RPC existente (Doninha no lugar de Texugo) e cria a RPC estreita `salvar_anotacoes_equipamento_srd`.
+- A nova RPC valida autenticação e vínculo do usuário como proprietário ou Mestre, valida os seis grupos de registros e atualiza somente `identidade.equipment_notes`. Não concede UPDATE amplo à tabela `srd_character_sheets`.
+- A ficha persistida agora apresenta os seis grupos manuais como campos editáveis, permite adicionar/remover entradas e oferece salvamento explícito pela RPC dedicada. Não há cálculos ou efeitos de itens.
+- A migration está apenas versionada no branch; **não foi aplicada ao Supabase de produção**. Até sua aplicação, a Doninha continuará sendo recusada pelo RPC atual e o botão de salvar anotações retornará função inexistente.
+- Verificação estática após a alteração: script JavaScript inline compilado com `new Function` sem erro; verificadas presença da opção Doninha, ausência do bloqueio de cliente, presença do salvamento RPC e dos controles de edição.
+- A consulta read-only confirmou que a função de criação ativa ainda contém a allowlist antiga (Texugo) e não contém a allowlist com Doninha. Nenhum dado, função ou schema de produção foi alterado.
+- Ainda não houve teste em navegador/autenticado nem teste de execução da migration.
