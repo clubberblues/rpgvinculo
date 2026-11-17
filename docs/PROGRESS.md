@@ -23,3 +23,12 @@
 
 ## Próxima tarefa
 Concluir a auditoria do modelo de persistência de todas as seções da ficha do Mago e desenhar o armazenamento correto para inventário narrativo livre e demais campos editáveis. Em seguida, implementar em branch e testar sem alterar dados de produção.
+
+
+## Auditoria adicional da ficha persistida
+- A criação já tem etapas guiadas e validações reais, mas a ficha existente em modo campanha ainda apresenta perícias e talentos como somente leitura; identidade e atributos também não possuem edição geral. A edição integral é uma lacuna confirmada.
+- A seção SRD de equipamentos exige catálogo e estados equipado/guardado, oferece ações de equipar/desequipar e consulta CA/deslocamento após alterações. Tudo isso está fora do escopo aprovado e deverá ser substituído por inventário narrativo simples.
+- A etapa de equipamento da criação exige atualmente pacote ou compras no catálogo. Deve ser simplificada para orientação de riqueza e registro opcional de itens, sem catálogo obrigatório.
+- A RPC `finalizar_criacao_personagem_srd` já centraliza criação, idiomas, talentos bônus, domínios, grimório e equipamento inicial em transação. Preservar e adaptar apenas quando necessário.
+- Modelo proposto para inventário livre: registros vinculados a character_id com nome, descrição, quantidade opcional e observações; sem categoria, equipado, guardado ou consumível; proprietário edita, Mestre consulta. Requer migração e RLS, ainda não implementadas.
+- Nenhuma alteração no banco de produção foi realizada.
