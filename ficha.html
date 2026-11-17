@@ -936,7 +936,16 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -18%,#1a1e
 .dnd35-header-copy{min-width:0}
 @media(max-width:520px){.dnd35-profile-portrait{width:82px;height:96px;flex-basis:82px}.dnd35-header-main{gap:10px}}
 </style>
-</head>
+<style id="dnd35-skill-compact">
+.ficha.dnd35-mode .dnd35-skill{padding:0;overflow:hidden}
+.ficha.dnd35-mode .dnd35-skill-summary{min-height:38px;display:grid;grid-template-columns:minmax(0,1fr) auto 12px;align-items:center;gap:8px;padding:7px 9px;cursor:pointer;list-style:none}
+.ficha.dnd35-mode .dnd35-skill-summary::-webkit-details-marker{display:none}
+.ficha.dnd35-mode .dnd35-skill-summary-name{font:700 11px Cinzel,serif;color:#eee2c9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ficha.dnd35-mode .dnd35-skill-total{font:700 14px Cinzel,serif;color:#edcc81;font-variant-numeric:tabular-nums}
+.ficha.dnd35-mode .dnd35-skill-chevron{color:#b89b63;transition:transform .15s}
+.ficha.dnd35-mode .dnd35-skill[open] .dnd35-skill-chevron{transform:rotate(180deg)}
+.ficha.dnd35-mode .dnd35-skill-expanded{padding:0 9px 8px;border-top:1px solid #3d4858}
+</style></head>
 <body>
 
 <div class="ficha" id="root"><div class="erro">Carregando ficha...</div></div>
@@ -2333,11 +2342,11 @@ function dnd35TranslateCatalogText(value){
       if(skill.treinada_apenas)labels.push('Somente treinada');
       if(skill.penalidade_armadura)labels.push('Penalidade de armadura');
       var trainedWarning=skill.treinada_apenas&&rank<1?'<div class="dnd35-warning">Esta perícia exige treinamento; sem graduações, não pode ser usada.</div>':'';
-      html+='<article class="dnd35-skill"><div class="dnd35-skill-head"><strong>'+esc(skill.nome)+'</strong><span class="dnd35-badge">'+esc(labels.join(' · '))+'</span></div>'+
+      html+='<details class="dnd35-skill" '+(creating?'open':'')+'><summary class="dnd35-skill-summary"><span class="dnd35-skill-summary-name">'+esc(skill.nome)+'</span><strong class="dnd35-skill-total">'+(computed>=0?'+':'')+computed+'</strong><span class="dnd35-skill-chevron" aria-hidden="true">⌄</span></summary><div class="dnd35-skill-expanded"><div class="dnd35-skill-head"><span class="dnd35-badge">'+esc(labels.join(' · '))+'</span></div>'+
         '<p class="dnd35-skill-meta">Atributo-chave: '+esc(ability)+' · Limite: '+max+' graduações · Custo: '+((isClass||isLanguage)?'1':'2')+' ponto(s) por graduação'+(rank%1?' · passos de 0,5':'')+'</p>'+
         (creating?'<div class="dnd35-skill-control"><label for="skill-'+esc(id)+'">Graduações</label><select id="skill-'+esc(id)+'" data-skill="'+esc(id)+'">'+options+'</select></div>':'<p>Graduações: <b>'+rank+'</b></p>')+
         (isLanguage?'<div class="dnd35-formula">Cada graduação nesta opção representa um idioma. Registre o nome do idioma na seção de idiomas.</div>':'<div class="dnd35-formula"><strong>Bônus total atual: '+(computed>=0?'+':'')+computed+'</strong><span>Graduações '+rank+' · '+esc(ability)+' '+(abilityMod>=0?'+':'')+abilityMod+(classBonus?' · classe +3':'')+'</span></div>')+
-        trainedWarning+(skill.descricao?'<details class="dnd35-skill-rules"><summary>Regras e usos da perícia</summary><p>'+esc(dnd35SkillUsePt35(skill))+'</p>'+(skill.srd_source_url?'<a href="'+esc(skill.srd_source_url)+'" target="_blank" rel="noopener noreferrer">Fonte SRD ↗</a>':'')+'</details>':'')+'</article>';
+        trainedWarning+(skill.descricao?'<details class="dnd35-skill-rules"><summary>Regras e usos da perícia</summary><p>'+esc(dnd35SkillUsePt35(skill))+'</p>'+(skill.srd_source_url?'<a href="'+esc(skill.srd_source_url)+'" target="_blank" rel="noopener noreferrer">Fonte SRD ↗</a>':'')+'</details>':'')+'</div></details>';
     });
     var specs=dnd35Objeto(state.identidade).skill_specializations;
     if(!Array.isArray(specs))specs=[];
