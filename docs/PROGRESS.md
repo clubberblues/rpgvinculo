@@ -46,3 +46,13 @@ A orientação anterior de criar um modelo técnico de inventário, tabela próp
 A interface deve ter blocos visuais específicos para armas (com várias entradas), munições, armaduras/proteção, equipamentos/objetos, itens mágicos/especiais e dinheiro/tesouros. Cada entrada é texto manual livre, editável e removível. O jogador pode acrescentar entradas durante a campanha ao receber itens do Mestre. Nenhum item altera atributos ou aciona regras.
 
 Durante a criação do Mago, o assistente explica proficiências e equipamento inicial e orienta o registro; o preenchimento dos detalhes continua manual. A próxima auditoria visual deve inspecionar a ficha atual e referências de fichas D&D 3.5 para definir a disposição intuitiva dos campos.
+
+## Camada visual gamificada — criação de personagem (2026-11-16)
+
+- Aplicado em `ficha.html` um primeiro passe visual no bloco **Equipamento inicial**: cabeçalho de arsenal, escolhas de método em placas selecionáveis, estado ativo destacado, cartões de itens, marcadores visuais para resultados dos dados e animações leves de entrada/seleção.
+- A direção visual mantém a paleta verde-escura, ouro envelhecido e tipografia Cinzel/EB Garamond já presentes no fluxo D&D 3.5.
+- Incluída adaptação para telas estreitas e respeito a `prefers-reduced-motion`.
+- A alteração é de apresentação e não introduz cálculos, consumo de munição, equipar/desequipar ou efeitos de itens.
+- **Limite desta primeira entrega:** o fluxo de equipamento existente ainda usa o modelo legado de kit/catálogo/riqueza. Os campos livres repetíveis de armas, munições, proteção, objetos e itens especiais ainda não foram ligados à persistência; não apresentar esta etapa visual como substituição funcional do inventário antigo.
+- Nenhuma migration, RPC ou alteração de banco foi executada.
+- Verificação estática: o JavaScript inline completo de `ficha.html` foi compilado com `new Function` sem erro de sintaxe. Não foi realizado teste de navegador nem teste funcional de criação/salvamento.
