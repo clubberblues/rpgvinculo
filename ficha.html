@@ -2350,6 +2350,78 @@ function dnd35TranslateCatalogText(value){
     };
     return names[key]||String(sp&&sp.nome_pt||'').trim()||'Magia sem tradução cadastrada';
   }
+  function dnd35SpellDescriptionPt(sp){
+    if(sp&&sp.descricao_pt)return String(sp.descricao_pt);
+    var raw=String(sp&&(sp.nome_pt||sp.nome)||'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+    var descriptions={
+      'arcane mark':'Inscreve uma runa pessoal, visível ou invisível, em uma superfície. A marca pode ser vista por meios mágicos e removida pelo conjurador ou por Apagar.',
+      'dancing lights':'Cria até quatro luzes móveis, semelhantes a tochas ou lanternas, esferas brilhantes ou uma silhueta humanoide. Elas permanecem próximas umas das outras e se movem conforme a vontade do conjurador.',
+      'daze':'Confunde a mente de um humanoide com até 4 Dados de Vida, fazendo-o perder suas ações por uma rodada. Criaturas com 5 DV ou mais não são afetadas.',
+      'detect poison':'Revela se uma criatura, objeto ou pequena área contém veneno ou é venenosa. Um teste de Sabedoria pode identificar o tipo exato.',
+      'detectar magia':'Revela a presença de auras mágicas. Ao manter a concentração, o conjurador descobre gradualmente a quantidade, a intensidade, a localização e, com Identificar Magia, a escola das auras.',
+      'disrupt undead':'Dispara um raio de energia positiva. Se acertar um morto-vivo com um ataque de toque à distância, causa 1d6 pontos de dano.',
+      'flare':'Produz uma explosão breve de luz. Se direcionada aos olhos de uma criatura, pode deixá-la ofuscada por um minuto.',
+      'ghost sound':'Cria sons ilusórios que podem se aproximar, afastar-se ou permanecer em um ponto. O tipo de som é escolhido ao conjurar e não pode ser alterado depois.',
+      'luz':'Faz um objeto brilhar como uma tocha, iluminando a área ao redor. A magia pode ser lançada sobre um objeto pequeno ou sobre uma criatura.',
+      'maos magicas':'Move à distância um objeto pequeno e leve, com peso de até 2,5 kg. Não permite atacar nem realizar tarefas que exijam força ou controle delicado.',
+      'mending':'Repara pequenos danos em um objeto, como uma corrente partida, uma chave quebrada ou um objeto cerâmico rachado. Não restaura objetos destruídos por completo.',
+      'message':'Permite sussurrar mensagens e receber respostas de criaturas próximas, mesmo quando há obstáculos entre elas, desde que exista uma trajetória possível para a magia.',
+      'open close':'Abre ou fecha um objeto leve, como uma porta, tampa ou recipiente. Não destranca fechaduras nem supera travas mágicas.',
+      'prestidigitation':'Executa pequenos truques mágicos inofensivos: limpar, sujar, aquecer, resfriar, colorir ou produzir efeitos sensoriais simples. Não causa dano nem substitui ferramentas ou perícias.',
+      'ray of frost':'Dispara um raio de frio que causa 1d3 pontos de dano de frio ao atingir o alvo.',
+      'read magic':'Permite decifrar inscrições mágicas em pergaminhos, grimórios e itens semelhantes, identificando o conteúdo escrito sem ativá-lo.',
+      'resistencia':'Concede ao alvo +1 de bônus de resistência em testes de resistência.',
+      'acid splash':'Lança uma pequena esfera de ácido que atinge um alvo com um ataque de toque à distância e causa 1d3 pontos de dano.',
+      'touch of fatigue':'Um toque carregado de energia negativa deixa a criatura fatigada. Criaturas já fatigadas não sofrem um novo efeito de fadiga.',
+      'alarm':'Protege uma área escolhida. Quando uma criatura entra nela, o conjurador recebe um alerta mental ou sonoro, conforme a modalidade escolhida.',
+      'animate rope':'Faz uma corda se mover conforme as instruções do conjurador, podendo enrolar-se, dar nós, amarrar ou soltar objetos e criaturas.',
+      'mage armor':'Envolve o alvo em uma força protetora invisível que concede +4 de bônus de armadura à Classe de Armadura, sem penalidade de armadura ou chance de falha arcana.',
+      'cause fear':'Amedronta uma criatura com até 5 Dados de Vida, fazendo-a fugir por 1d4 rodadas. Um sucesso no teste de Vontade reduz o efeito a abalado por uma rodada.',
+      'charm person':'Torna um humanoide mais receptivo ao conjurador, que passa a tratá-lo como um conhecido amigável. Não controla suas ações nem obriga a criatura a obedecer ordens perigosas.',
+      'chill touch':'Um toque canaliza energia negativa, causando dano e podendo enfraquecer temporariamente a Força do alvo. Mortos-vivos tocados podem reagir de maneira diferente, conforme a descrição da magia.',
+      'color spray':'Libera um cone de cores brilhantes que pode deixar criaturas fracas inconscientes, cegas ou atordoadas. Os efeitos dependem dos Dados de Vida de cada alvo.',
+      'comprehend languages':'Permite compreender o significado literal de idiomas falados ou escritos desconhecidos. Não decifra códigos nem revela mensagens secretas.',
+      'detect secret doors':'Revela a presença de portas e passagens secretas dentro da área examinada, ajudando a localizar mecanismos ocultos.',
+      'detect undead':'Permite perceber a presença de mortos-vivos e, ao concentrar-se, determinar sua quantidade, localização e intensidade da aura.',
+      'disguise self':'Altera a aparência do conjurador, incluindo roupas e equipamentos aparentes. A transformação é ilusória e não muda o tato nem as dimensões reais do corpo.',
+      'endure elements':'Protege uma criatura dos efeitos nocivos de temperaturas extremas, permitindo suportar calor ou frio intensos sem sofrer seus efeitos ambientais normais.',
+      'enlarge person':'Aumenta o tamanho de um humanoide, ampliando sua Força e alcance, mas reduzindo sua Destreza e impondo modificadores próprios de tamanho.',
+      'erase':'Remove escrita mundana ou mágica de um pergaminho ou de algumas páginas. Certas inscrições mágicas podem exigir um teste de conjurador.',
+      'shield':'Cria um escudo de força que concede +4 de bônus de escudo na CA e bloqueia Mísseis Mágicos. Não impõe penalidade de armadura nem chance de falha arcana.',
+      'expeditious retreat':'Aumenta o deslocamento terrestre do conjurador, permitindo recuar ou reposicionar-se com maior rapidez.',
+      'feather fall':'Reduz a velocidade de queda de criaturas ou objetos, fazendo-os descer suavemente e sem sofrer dano pela queda enquanto a magia durar.',
+      'floating disk':'Cria um disco horizontal de força que acompanha o conjurador e transporta carga, mantendo-se próximo ao solo.',
+      'grease':'Recobre uma superfície ou objeto com uma camada escorregadia. Criaturas podem cair ou ter dificuldade para se mover, e objetos podem escapar das mãos.',
+      'hideous laughter':'Faz uma criatura sofrer um acesso de riso incontrolável, impedindo-a de agir normalmente durante o efeito.',
+      'hold portal':'Mantém uma porta, portão ou entrada fechada por meios mágicos. A força necessária para arrombá-la aumenta e a magia pode ser dissipada ou anulada por Arrombar.',
+      'hypnotism':'Fascina criaturas que observam o conjurador, deixando-as receptivas a sugestões simples após a apresentação hipnótica.',
+      'identify':'Revela as propriedades mágicas de um objeto, incluindo seus poderes e formas de ativação, após o conjurador examiná-lo conforme os requisitos da magia.',
+      'jump':'Aprimora a capacidade de salto do alvo, concedendo bônus nos testes da perícia Saltar.',
+      'magic aura':'Altera a aura mágica percebida de um objeto, permitindo mascarar um item mágico como mundano ou fazê-lo parecer mágico.',
+      'magic mouth':'Encanta um objeto para que, quando uma condição definida ocorrer, ele pronuncie uma mensagem gravada pelo conjurador.',
+      'magic weapon':'Concede a uma arma um bônus de melhoria de +1 nas jogadas de ataque e dano, tornando-a mais eficaz contra criaturas que exigem arma mágica.',
+      'burning hands':'Projeta um leque de chamas pelas mãos do conjurador, causando 1d4 pontos de dano de fogo por nível, até o máximo de 5d4.',
+      'magic missile':'Dispara projéteis de energia que atingem automaticamente o alvo, causando 1d4+1 pontos de dano cada. O conjurador recebe um míssil adicional a cada dois níveis acima do 1º, até cinco mísseis.',
+      'mount':'Conjura uma montaria temporária que serve ao conjurador durante a duração da magia.',
+      'obscure object':'Protege um objeto contra magias de adivinhação que tentem localizá-lo ou examiná-lo à distância.',
+      'obscuring mist':'Cria uma névoa densa ao redor do conjurador, reduzindo a visibilidade e concedendo camuflagem às criaturas na área.',
+      'protection from chaos':'Cria uma barreira protetora contra criaturas caóticas, oferecendo bônus defensivos e impedindo certos efeitos de controle mental e possessão.',
+      'protection from evil':'Cria uma barreira protetora contra criaturas malignas, oferecendo bônus defensivos e impedindo certos efeitos de controle mental e possessão.',
+      'protection from good':'Cria uma barreira protetora contra criaturas bondosas, oferecendo bônus defensivos e impedindo certos efeitos de controle mental e possessão.',
+      'protection from law':'Cria uma barreira protetora contra criaturas leais, oferecendo bônus defensivos e impedindo certos efeitos de controle mental e possessão.',
+      'ray of enfeeblement':'Um raio de energia necrótica reduz temporariamente a Força do alvo em 1d6 pontos, mais 1 ponto a cada dois níveis de conjurador.',
+      'reduce person':'Reduz o tamanho de um humanoide, diminuindo sua Força e aumentando sua Destreza, com os modificadores correspondentes de tamanho.',
+      'resist energy':'Concede resistência 10 a um tipo escolhido de energia: ácido, frio, eletricidade, fogo ou sônico. A proteção aumenta em níveis mais altos do conjurador.',
+      'shocking grasp':'Um toque eletrificado causa 1d6 pontos de dano elétrico por nível de conjurador, até 5d6. O ataque recebe bônus contra oponentes usando armadura ou corpo metálico.',
+      'silent image':'Cria uma ilusão visual de objeto, criatura ou força imaginada pelo conjurador. Não produz som, cheiro, textura ou temperatura.',
+      'sleep':'Faz criaturas vivas adormecerem magicamente, afetando primeiro as que possuem menos Dados de Vida, até o limite total da magia.',
+      'summon monster i':'Invoca uma criatura extraplanar que surge no local escolhido e age imediatamente, atacando os oponentes ou seguindo instruções que consiga compreender.',
+      'true strike':'Concede ao conjurador percepção intuitiva do próximo ataque: a próxima jogada de ataque recebe +20 de bônus de intuição e ignora a chance de falha por ocultação.',
+      'unseen servant':'Cria uma força invisível e sem mente que executa tarefas simples, como buscar objetos, abrir portas destrancadas, limpar e segurar coisas. Não pode atacar nem realizar tarefas complexas.',
+      'ventriloquism':'Faz a voz do conjurador ou outro som vocal parecer vir de um ponto diferente, mantendo o volume e o tipo de som possíveis para sua voz.'
+    };
+    return descriptions[raw]||'';
+  }
   function dnd35SpellTechnicalLabelPt(value){
     var labels={'Casting Time':'Tempo de Conjuração','Saving Throw':'Teste de Resistência','Spell Resistance':'Resistência à Magia','Components':'Componentes','Range':'Alcance','Target':'Alvo','Effect':'Efeito','Area':'Área','Duration':'Duração'};
     return labels[String(value||'')]||String(value||'');
@@ -3000,10 +3072,10 @@ function dnd35LanguageNormalize(value){
         ['Resistência à magia',techFields['Spell Resistance']||techFields['Resistência à Magia']]
       ].filter(function(row){return row[1]!==undefined&&row[1]!==null&&String(row[1]).trim()!=='';});
       var savingThrow=techFields['Saving Throw']||techFields['Teste de Resistência']||'—',
-          spellDescription=sp.descricao_pt||sp.descricao||'Descrição ainda não cadastrada.',
+          spellDescription=dnd35SpellDescriptionPt(sp)||'Descrição oficial em português pendente de revisão no Livro do Jogador.',
           spellName=dnd35SpellNamePt(sp),
           hasPortugueseName=!!sp.nome_pt,
-          hasPortugueseDescription=!!sp.descricao_pt,
+          hasPortugueseDescription=!!(sp.descricao_pt||dnd35SpellDescriptionPt(sp)),
           detailMarkup='<div class="dnd35-spell-detail-grid">'+detailRows.map(function(row){return '<div><small>'+esc(row[0])+'</small><b>'+esc(row[1])+'</b></div>';}).join('')+'</div>';
       var controls='';
       if(avail.key){
