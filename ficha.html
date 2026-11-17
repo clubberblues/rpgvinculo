@@ -945,6 +945,19 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -18%,#1a1e
 .ficha.dnd35-mode .dnd35-skill-chevron{color:#b89b63;transition:transform .15s}
 .ficha.dnd35-mode .dnd35-skill[open] .dnd35-skill-chevron{transform:rotate(180deg)}
 .ficha.dnd35-mode .dnd35-skill-expanded{padding:0 9px 8px;border-top:1px solid #3d4858}
+</style><style id="dnd35-feat-flip-cards">
+.dnd35-feat-flip{padding:0!important;min-height:245px;perspective:1100px;background:transparent!important;border:0!important;box-shadow:none!important}
+.dnd35-feat-inner{position:relative;min-height:245px;height:100%;transform-style:preserve-3d;transition:transform .48s cubic-bezier(.2,.7,.2,1)}
+.dnd35-feat-flip.is-flipped .dnd35-feat-inner{transform:rotateY(180deg)}
+.dnd35-feat-face{position:absolute;inset:0;display:flex;flex-direction:column;gap:9px;padding:14px;border:1px solid #66563b;border-radius:10px;background:linear-gradient(145deg,#222b38,#111720)!important;color:#eadfc9;backface-visibility:hidden;overflow:auto}
+.dnd35-feat-front{justify-content:space-between}
+.dnd35-feat-front h3{font:700 16px Cinzel,serif;color:#f0d18b}
+.dnd35-feat-front p,.dnd35-feat-back p{font-size:12px;line-height:1.45;color:#c8c0b2}
+.dnd35-feat-back{transform:rotateY(180deg)}
+.dnd35-feat-flip-action{align-self:flex-start;margin-top:auto;padding:7px 10px;border:1px solid #a98a51;border-radius:6px;background:#2c3542;color:#f0d18b;font:700 10px Cinzel,serif;cursor:pointer}
+.dnd35-feat-back .dnd35-feat-control{margin:0}
+.dnd35-feat-back .dnd35-feat-control select{min-width:0;width:100%}
+@media(prefers-reduced-motion:reduce){.dnd35-feat-inner{transition:none}}
 </style></head>
 <body>
 
@@ -2395,8 +2408,9 @@ function dnd35TranslateCatalogText(value){
       var warnings = feat ? dnd35FeatWarnings(feat,attrs,state,i,pick.parametro) : [];
       if (feat && paramRequired && !String(pick.parametro||'').trim()) warnings.push('Informe o parâmetro exigido.');
       if(feat&&dnd35FeatIsWeaponFocus(feat)){if(!String(pick.parametro||'').trim())warnings.push('Informe a arma escolhida.');else if(!dnd35WeaponProficient(state,pick.parametro))warnings.push('A classe não é proficiente com a arma escolhida.');}
-      html += '<article class="dnd35-feat"><div class="dnd35-feat-head"><strong>Talento '+(i+1)+(dnd35IsHuman(state.raca)&&i===1?' · bônus humano':'')+'</strong></div><div class="dnd35-feat-control"><label for="feat-'+i+'">Escolha</label><select id="feat-'+i+'" data-feat="'+i+'">'+optionHtml+'</select></div>'+
-        (feat ? '<p>'+esc(dnd35FeatDescriptionPt(feat)||'Sem descrição.')+'</p>'+(reqText?'<p>Pré-requisitos: '+esc(reqText)+'</p>':'<p>Pré-requisitos: nenhum.</p>')+(reqData.dynamic_prerequisites?'<p class="dnd35-note">'+esc(String(reqData.dynamic_prerequisites))+'</p>':'')+(feat.srd_source_url?'<p><a href="'+esc(feat.srd_source_url)+'" target="_blank" rel="noopener noreferrer">Consultar fonte SRD ↗</a></p>':'') : '')+paramHtml+(warnings.length?'<div class="dnd35-warning">'+warnings.map(esc).join(' ')+'</div>':'')+'</article>';
+      var featTitle=feat?dnd35FeatNamePt(feat):'Escolha um talento',featDesc=feat?dnd35FeatDescriptionPt(feat)||'Descrição ainda não cadastrada.':'Selecione uma opção para consultar o benefício.';
+      html += '<article class="dnd35-feat dnd35-feat-flip"><div class="dnd35-feat-inner"><section class="dnd35-feat-face dnd35-feat-front"><span class="dnd35-kicker">TALENTO '+(i+1)+(dnd35IsHuman(state.raca)&&i===1?' · BÔNUS HUMANO':'')+'</span><h3>'+esc(featTitle)+'</h3><p>'+esc(featDesc.length>150?featDesc.slice(0,147)+'…':featDesc)+'</p><button type="button" class="dnd35-feat-flip-action" data-feat-flip>Ver detalhes e escolher</button></section><section class="dnd35-feat-face dnd35-feat-back"><div class="dnd35-feat-control"><label for="feat-'+i+'">Escolha</label><select id="feat-'+i+'" data-feat="'+i+'">'+optionHtml+'</select></div>'+
+        (feat ? '<p>'+esc(featDesc)+'</p>'+(reqText?'<p><b>Pré-requisitos:</b> '+esc(reqText)+'</p>':'<p><b>Pré-requisitos:</b> nenhum.</p>')+(reqData.dynamic_prerequisites?'<p class="dnd35-note">'+esc(String(reqData.dynamic_prerequisites))+'</p>':'')+(feat.srd_source_url?'<p><a href="'+esc(feat.srd_source_url)+'" target="_blank" rel="noopener noreferrer">Consultar fonte SRD ↗</a></p>':'') : '<p>Os requisitos e benefícios aparecerão aqui após a seleção.</p>')+paramHtml+(warnings.length?'<div class="dnd35-warning">'+warnings.map(esc).join(' ')+'</div>':'')+'<button type="button" class="dnd35-feat-flip-action" data-feat-flip>Voltar ao resumo</button></section></div></article>';
     }
     return html;
   }
@@ -3798,5 +3812,5 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2732
 })();
 </script>
 
-</body>
+<script id="dnd35-feat-flip-events">document.addEventListener('click',function(event){var button=event.target.closest('[data-feat-flip]');if(!button)return;var card=button.closest('.dnd35-feat-flip');if(card)card.classList.toggle('is-flipped');});</script></body>
 </html>
