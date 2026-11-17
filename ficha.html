@@ -3804,9 +3804,7 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2732
 })();
 </script>
 
-<script id="dnd35-feat-flip-events">document.addEventListener('click',function(event){var button=event.target.closest('[data-feat-flip]');if(!button)return;var card=button.closest('.dnd35-feat-flip');if(card)card.classList.toggle('is-flipped');});</script></body>
-</html>
-
+<script id="dnd35-feat-flip-events">document.addEventListener('click',function(event){var button=event.target.closest('[data-feat-flip]');if(!button)return;var card=button.closest('.dnd35-feat-flip');if(card)card.classList.toggle('is-flipped');});</script>
 <style id="dnd35-selection-flow-refinement">
 /* Seleção em duas etapas: cards compactos, sem moldura reservada para arte. */
 .dnd35-selection-page .dnd35-choice-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:12px}
@@ -3839,3 +3837,6 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2732
  .dnd35-selection-page .dnd35-selection-footer-actions button{flex:1 1 100%}
 }
 </style>
+
+</body>
+</html>
