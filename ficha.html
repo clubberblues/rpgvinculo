@@ -2944,7 +2944,7 @@ function dnd35LanguageNormalize(value){
   function dnd35StartTotal(s){s=dnd35StartingState(s);var x=s.equipamentoInicial,total=0;Object.keys(x.itens).forEach(function(id){var i=(s.equipment||[]).find(function(item){return String(item.id)===id;});if(i){var cost=dnd35StartCost(i);if(cost!=null)total+=cost*Number(x.itens[id]||0);}});return total;}
   function dnd35StartReady(s){
     s=dnd35StartingState(s);var x=s.equipamentoInicial,d=dnd35StartWealth(s.classe),r=x.resultados;
-    return x.metodo==='manual'&&!!d[0]&&Array.isArray(r)&&r.length===d[0]&&r.every(function(n){return Number.isInteger(Number(n))&&Number(n)>=1&&Number(n)<=4;});
+    return (x.metodo==='ouro'||x.metodo==='manual')&&!!d[0]&&Array.isArray(r)&&r.length===d[0]&&r.every(function(n){return Number.isInteger(Number(n))&&Number(n)>=1&&Number(n)<=4;});
   }
   function dnd35PesoKg35(item){
     var details=item&&item.detalhes||{};if(typeof details==='string'){try{details=JSON.parse(details);}catch(e){details={};}}
@@ -2996,6 +2996,7 @@ function dnd35LanguageNormalize(value){
     var race=dnd35Norm(s.raca&&(s.raca.id||s.raca.nome||s.raca.name));
     if(race!=='elfo')return;
     var notes=dnd35ManualEquipmentState(s),marker='[PACOTE INICIAL OFICIAL · ELFO MAGO]';
+    if(s.equipamentoInicial.pacoteInicialAplicado==='elfo-mago')return;
     var pack={
       weapons:[
         ['Bordão','1','Arma do pacote inicial oficial.'],
@@ -3029,6 +3030,7 @@ function dnd35LanguageNormalize(value){
         if(!exists)notes[category].push({nome:name,quantidade:item[1],detalhes:detail});
       });
     });
+    s.equipamentoInicial.pacoteInicialAplicado='elfo-mago';
   }
   function dnd35StartMarkup(s){dnd35SeedOfficialStartingEquipment(s);return dnd35ManualEquipmentMarkup(s,false);}
   var dnd35GoldRollState=null,dnd35GoldRollFrame=null;
