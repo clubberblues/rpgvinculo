@@ -97,3 +97,5 @@ A auditoria de privilégios confirmou que `authenticated` não possui UPDATE em 
 - Verificação estática após a alteração: script JavaScript inline compilado com `new Function` sem erro; verificadas presença da opção Doninha, ausência do bloqueio de cliente, presença do salvamento RPC e dos controles de edição.
 - A consulta read-only confirmou que a função de criação ativa ainda contém a allowlist antiga (Texugo) e não contém a allowlist com Doninha. Nenhum dado, função ou schema de produção foi alterado.
 - Ainda não houve teste em navegador/autenticado nem teste de execução da migration.
+
+- Removido da ficha o painel/integração de ativação da Fúria do Bárbaro. A ficha não deve expor motores de ações de classe; características continuam como informações consultáveis. A remoção foi verificada estaticamente.
