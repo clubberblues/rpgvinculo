@@ -270,3 +270,23 @@ Não foi executada gravação de teste nem alteração em produção. O retorno 
 Fontes SRD usadas nesta auditoria:
 - Mago, tabela de progressão, grimório, especialização e familiares: https://www.35srd.com/players/classes/base-classes/wizard/
 - Referência alternativa de Mago e magia: https://www.d20srd.org/srd/classes/sorcererWizard.htm
+
+
+---
+
+## Aditivo de escopo aprovado — 2026-11-16
+
+Este aditivo substitui qualquer trecho anterior que conflite com a direção atual do produto.
+
+- A ficha é um documento vivo, totalmente editável pelo jogador durante a campanha. O jogador pode consultar, adicionar, alterar e apagar informações e registros pertinentes.
+- O fluxo de criação é guiado e orienta escolhas conforme as regras de D&D 3.5, explicando seus efeitos na ficha e na campanha e validando os requisitos necessários à criação.
+- Depois da criação, a edição cotidiana não deve obrigar o jogador a refazer etapas nem bloquear registros narrativos por não se encaixarem em validações do assistente.
+- Inventário é uma lista simples e narrativa de itens pertencentes ao personagem. Não há estados obrigatórios de equipado, guardado ou consumível; não há interpretação automática de efeitos de itens sobre atributos.
+- O jogador dispõe da própria ficha (consulta e edição) e da rolagem de dados. Não existem painéis de ações de classe, perícias, magias ou combate.
+- O token serve exclusivamente para o Mestre abrir a ficha do personagem correspondente.
+- O Mestre conduz a narrativa e aplica as regras manualmente. Não construir motor de combate, resolução de testes, conjuração ou efeitos.
+- Cálculos determinísticos necessários ao processo de criação podem orientar e apresentar o resultado da ficha; não devem evoluir para automação da sessão. Em especial, itens nunca modificam atributos automaticamente.
+- A ordem de prioridade é: completar a ficha-base e o Mago-modelo; depois validar as demais classes básicas, uma por vez, reutilizando a estrutura comum.
+
+
+Ver especificação funcional completa em [wizard-character-sheet-spec.md](wizard-character-sheet-spec.md) e diretrizes superiores em [PROJECT_CHARTER.md](../PROJECT_CHARTER.md).
