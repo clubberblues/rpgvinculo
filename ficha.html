@@ -713,6 +713,50 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2938
 @media(max-width:420px){.dnd35-manual-entry{grid-template-columns:1fr}.dnd35-manual-quantity{grid-column:1/-1}.dnd35-manual-entry-title{grid-column:1/-1}}
 @media(prefers-reduced-motion:reduce){.dnd35-manual-category,.dnd35-manual-entry,.dnd35-manual-add{animation:none!important;transition:none!important}}
 </style>
+
+<style id="dnd35-sheet-vertical-modern">
+/* Ficha D&D 3.5 — leitura vertical e hierarquia inspirada no grimório aprovado. */
+body:has(.ficha.dnd35-mode){font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+.ficha.dnd35-mode{font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:14px;line-height:1.55}
+.dnd35-page{max-width:900px}
+.dnd35-header{display:flex;flex-direction:column;align-items:stretch;gap:12px}
+.dnd35-header>div{width:100%}
+.dnd35-header h1{font-family:Inter,ui-sans-serif,system-ui,sans-serif;font-size:clamp(25px,4vw,34px);font-weight:750;letter-spacing:-.035em;line-height:1.12}
+.dnd35-header p,.dnd35-note{font-size:14px;line-height:1.55}
+.dnd35-kicker{font-family:Inter,ui-sans-serif,system-ui,sans-serif;font-size:10px;font-weight:750;letter-spacing:.12em}
+.dnd35-link{align-self:flex-start;font-family:Inter,ui-sans-serif,system-ui,sans-serif;font-size:12px}
+.dnd35-grid{grid-template-columns:minmax(0,1fr)!important;gap:12px}
+.dnd35-panel,.dnd35-build-panel{padding:clamp(14px,2.5vw,20px);border-radius:13px}
+.dnd35-panel h2,.dnd35-build-panel h2{font-family:Inter,ui-sans-serif,system-ui,sans-serif;font-size:15px;font-weight:750;letter-spacing:-.01em}
+.dnd35-meta{grid-template-columns:repeat(2,minmax(0,1fr))}
+.dnd35-stat small{font-family:Inter,ui-sans-serif,system-ui,sans-serif;font-size:10px;letter-spacing:.06em}
+.dnd35-stat strong{font-size:15px}
+.dnd35-attrs{grid-template-columns:repeat(3,minmax(0,1fr))}
+.dnd35-attr small,.dnd35-attr strong{font-family:Inter,ui-sans-serif,system-ui,sans-serif}
+.dnd35-attr strong{font-size:23px}
+.dnd35-create-nav{display:flex;flex-direction:column;gap:6px}
+.dnd35-create-step{width:100%;text-align:left;padding:9px 13px;font:650 12px Inter,ui-sans-serif,system-ui,sans-serif}
+.dnd35-create-step small{font:12px Inter,ui-sans-serif,system-ui,sans-serif}
+.dnd35-tabs{display:flex;flex-direction:column;gap:6px;border:0}
+.dnd35-tab{width:100%;text-align:left;border:1px solid #665638;border-radius:8px;font:650 13px Inter,ui-sans-serif,system-ui,sans-serif}
+.dnd35-skill-list,.dnd35-feat-list{grid-template-columns:minmax(0,1fr)!important;gap:8px}
+.dnd35-skill,.dnd35-feat{padding:13px;border-radius:10px}
+.dnd35-skill strong,.dnd35-feat strong{font-family:Inter,ui-sans-serif,system-ui,sans-serif;font-size:14px}
+.dnd35-skill p,.dnd35-feat p{font-size:13px;line-height:1.45}
+.dnd35-skill-control label,.dnd35-feat-control label{font:650 12px Inter,ui-sans-serif,system-ui,sans-serif}
+.dnd35-skill-control select,.dnd35-feat-control select,.dnd35-feat-control input{font:14px Inter,ui-sans-serif,system-ui,sans-serif;min-height:40px}
+.dnd35-budget,.dnd35-point-budget{font:650 12px Inter,ui-sans-serif,system-ui,sans-serif;line-height:1.5}
+.dnd35-spell-list{grid-template-columns:minmax(0,1fr)!important}
+.dnd35-manual-grid{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:10px!important}
+.dnd35-manual-category{min-width:0}
+.dnd35-manual-category h3{font-family:Inter,ui-sans-serif,system-ui,sans-serif;font-size:14px;font-weight:750}
+.dnd35-manual-entry{border-radius:10px}
+.dnd35-manual-entry label>span{font-family:Inter,ui-sans-serif,system-ui,sans-serif;font-size:11px;font-weight:650}
+.dnd35-stage-actions{align-items:stretch;flex-wrap:wrap}
+.dnd35-stage-actions button{font-family:Inter,ui-sans-serif,system-ui,sans-serif;font-size:12px}
+.dnd35-stage-actions .dnd35-status{flex-basis:100%;order:3}
+@media(max-width:560px){.dnd35-meta{grid-template-columns:minmax(0,1fr)}.dnd35-attrs{grid-template-columns:repeat(2,minmax(0,1fr))}.dnd35-panel,.dnd35-build-panel{padding:13px}.dnd35-stage-actions{flex-direction:column}.dnd35-stage-actions button{width:100%}}
+</style>
 </head>
 <body>
 
