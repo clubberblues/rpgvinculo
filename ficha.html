@@ -779,6 +779,10 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -18%,#1a1e
 .ficha.dnd35-mode .dnd35-review-grid strong{color:#e5e1d9!important}
 .ficha.dnd35-mode .dnd35-grimoire-box,.ficha.dnd35-mode .dnd35-grimoire-modalhead,.ficha.dnd35-mode .dnd35-step-board,.ficha.dnd35-mode .dnd35-daily-level,.ficha.dnd35-mode .dnd35-grimoire-tools{background:linear-gradient(150deg,#1b2025,#111518)!important;color:#e5e1d9!important;border-color:#3b434b!important}
 .ficha.dnd35-mode .dnd35-grimoire-box h2,.ficha.dnd35-mode .dnd35-grimoire-modalhead h2,.ficha.dnd35-mode .dnd35-step-board-head,.ficha.dnd35-mode .dnd35-daily-level>b{color:#d0b27c!important}
+.ficha.dnd35-mode .dnd35-spell-steps,.ficha.dnd35-mode .dnd35-grimoire-guide,.ficha.dnd35-mode .dnd35-grimoire-tools,.ficha.dnd35-mode .dnd35-book-slots,.ficha.dnd35-mode .dnd35-daily-slots{background:#11161a!important;border-color:#343b42!important;color:#e5e1d9!important}
+.ficha.dnd35-mode .dnd35-spell-steps button,.ficha.dnd35-mode .dnd35-book-slot,.ficha.dnd35-mode .dnd35-daily-cells i,.ficha.dnd35-mode .dnd35-school-icon{background:linear-gradient(150deg,#20262c,#14191d)!important;border-color:#514536!important;color:#d0b27c!important}
+.ficha.dnd35-mode .dnd35-spell-steps button.active,.ficha.dnd35-mode .dnd35-book-slot.filled,.ficha.dnd35-mode .dnd35-daily-cells i.filled{background:linear-gradient(145deg,#493b28,#20262c)!important;border-color:#b59663!important;color:#f0dfbd!important}
+.ficha.dnd35-mode .dnd35-grimoire-btn,.ficha.dnd35-mode .dnd35-grimoire-action{background:#262d33!important;border-color:#806b4c!important;color:#d0b27c!important}
 .ficha.dnd35-mode .dnd35-spell-card,.ficha.dnd35-mode .dnd35-grimoire-grid>*{background:linear-gradient(155deg,#20262c,#14191d)!important;border-color:#414951!important;color:#e5e1d9!important}
 .ficha.dnd35-mode .dnd35-spell-card h3,.ficha.dnd35-mode .dnd35-spell-tags,.ficha.dnd35-mode .dnd35-spell-details summary{color:#d0b27c!important}
 .ficha.dnd35-mode .dnd35-spell-teaser,.ficha.dnd35-mode .dnd35-spell-detail-grid>div{color:#c2beb6!important}
@@ -2998,21 +3002,23 @@ function dnd35LanguageNormalize(value){
         ['Besta leve','1','Arma do pacote inicial oficial.']
       ],
       ammunition:[
-        ['Virotes de besta','10','Estojo com 10 virotes do pacote inicial oficial.']
+        ['Estojo com 10 virotes','1','Contém 10 virotes para a besta leve.']
       ],
       gear:[
         ['Mochila','1',''],
-        ['Odre','1',''],
+        ['Cantil','1',''],
         ['Rações de viagem','1 dia',''],
         ['Saco de dormir','1',''],
         ['Saco','1',''],
         ['Pederneira e isqueiro','1 conjunto',''],
         ['Velas','10',''],
-        ['Porta-mapas','1',''],
+        ['Estojo de mapas','1',''],
         ['Papel/pergaminho','3 folhas',''],
         ['Tinta','1 frasco',''],
-        ['Pena de escrever','1',''],
-        ['Bolsa de componentes de magia','1',''],
+        ['Pena de escrever','1','']
+      ],
+      magic:[
+        ['Bolsa de componentes de magia','1','Item do pacote inicial oficial.'],
         ['Livro de magias','1','O grimório inicial é detalhado na seção de Magias.']
       ]
     };
