@@ -1008,6 +1008,58 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -18%,#1a1e
 .ficha.dnd35-mode .dnd35-selection-footer,.ficha.dnd35-mode .dnd35-stage-actions{background:linear-gradient(145deg,#252b34,#151a22)!important}
 .ficha.dnd35-mode .dnd35-skill-summary{background:transparent!important}
 .ficha.dnd35-mode .dnd35-feat-card button{background:#252b34!important;color:#f0d18b!important}
+</style>
+<style id="dnd35-wide-layout-and-training-flow">
+/* Ficha mais ampla: o conteúdo ganha área útil sem comprimir os cards. */
+.ficha.dnd35-mode{width:min(1500px,calc(100% - 32px))!important;max-width:1500px!important}
+.dnd35-page{width:100%;max-width:none!important}
+.dnd35-page:has(.dnd35-create-nav)>.dnd35-grid{margin-right:154px}
+.dnd35-create-nav{position:absolute;z-index:8;top:128px;right:clamp(10px,2vw,26px);width:126px;display:flex;flex-direction:column;gap:7px;margin:0;padding:0;background:transparent;border:0}
+.dnd35-create-step{min-height:0;padding:7px 4px;text-align:right;border:0!important;border-right:2px solid #51545a!important;border-radius:0!important;background:transparent!important;color:#aaa69d!important;font:600 10px Inter,system-ui,sans-serif!important;letter-spacing:.04em;box-shadow:none!important}
+.dnd35-create-step small{display:none!important}
+.dnd35-create-step.active{border-right:2px solid #d0b27c!important;background:transparent!important;color:#f0d18b!important;box-shadow:none!important}
+.dnd35-create-step.completed{color:#c4bba9!important}
+.dnd35-create-step:disabled{opacity:.48}
+.dnd35-skill-list{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:9px!important;align-items:start}
+.dnd35-skill{min-width:0!important;padding:0!important;overflow:hidden}
+.dnd35-skill-summary{min-height:42px;padding:8px 10px!important;grid-template-columns:minmax(0,1fr) auto 10px!important;gap:6px!important}
+.dnd35-skill-summary-name{white-space:normal!important;overflow-wrap:anywhere;font-size:11px!important;line-height:1.25}
+.dnd35-skill-total{font-size:13px!important}
+.dnd35-skill-expanded{padding:8px 10px 10px!important}
+.dnd35-specializations{grid-column:1/-1;min-width:0;margin-top:12px;padding:15px;border:1px solid #68583f;border-radius:10px;background:linear-gradient(145deg,#252b34,#171d25)!important}
+.dnd35-specializations-head{margin-bottom:12px}
+.dnd35-specializations-kicker{font:700 9px Cinzel,serif;letter-spacing:.16em;color:#b99b68}
+.dnd35-specializations-head h3{margin:4px 0;color:#f0d18b;font:700 17px Cinzel,serif}
+.dnd35-specializations-head p{margin:0;color:#c4bba9;font-size:12px;line-height:1.45}
+.dnd35-specialization-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.dnd35-specialization-card{display:grid;grid-template-columns:42px minmax(0,1fr);gap:10px;align-items:center;min-width:0;padding:12px;border:1px solid #66563e;border-radius:9px;background:linear-gradient(145deg,#202731,#151a22)}
+.dnd35-specialization-icon{width:40px;height:40px;display:grid;place-items:center;border:1px solid #8b744e;border-radius:9px;background:#171d25;color:#d4b77f;font-size:22px;filter:grayscale(1)}
+.dnd35-specialization-copy{min-width:0}
+.dnd35-specialization-copy h4{margin:0 0 3px;color:#f0d18b;font:700 13px Cinzel,serif}
+.dnd35-specialization-copy p{margin:0 0 8px;color:#bdb5a7;font-size:11px;line-height:1.35}
+.dnd35-specialization-copy label{display:grid;gap:5px;color:#d0b27c;font-size:10px}
+.dnd35-specialization-copy input{width:100%;min-width:0;min-height:37px;padding:8px 10px;border:1px solid #776348;border-radius:6px;background:#10161d!important;color:#eee5d4!important}
+.dnd35-specialization-card>button{grid-column:2;justify-self:start;min-height:34px;padding:7px 12px;border:1px solid #9b8052!important;border-radius:6px;background:linear-gradient(145deg,#343b42,#22282e)!important;color:#f0d18b!important;font-size:11px;font-weight:700}
+.dnd35-tabs{position:sticky;top:8px;z-index:12;display:flex;gap:6px;flex-wrap:wrap;padding:7px;margin:0 0 10px;border:1px solid #66563e;border-radius:9px;background:rgba(20,25,32,.96)!important;backdrop-filter:blur(10px)}
+.dnd35-tab{flex:1 1 100px;min-height:38px;padding:8px 12px;border:1px solid #5d5548!important;border-radius:6px!important;background:#202630!important;color:#c8c0b2!important;font-size:10px}
+.dnd35-tab.active{background:linear-gradient(145deg,#57482f,#30291f)!important;border-color:#c2a36c!important;color:#f4d99f!important}
+.dnd35-grimoire-box .dnd35-spell-step-board{background:linear-gradient(145deg,#252b34,#171d25)!important;color:#e9e1d2!important;border:1px solid #756344!important;box-shadow:none!important}
+.dnd35-grimoire-box .dnd35-step-board-head{background:transparent!important;color:#f0d18b!important;border:0!important}
+.dnd35-grimoire-box .dnd35-step-board-head b,.dnd35-grimoire-box .dnd35-step-board-head strong{color:#f0d18b!important}
+.dnd35-grimoire-box .dnd35-spell-step-board small{color:#c8c0b2!important}
+.dnd35-grimoire-box .dnd35-book-slots{background:#11161c!important;border:1px solid #414951!important;border-radius:8px;padding:10px}
+.dnd35-grimoire-box .dnd35-book-slot{background:linear-gradient(145deg,#252b34,#151a22)!important}
+@media(max-width:1100px){.dnd35-skill-list{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+@media(max-width:760px){
+ .ficha.dnd35-mode{width:100%!important;max-width:100%!important;margin:0!important;border-radius:0!important}
+ .dnd35-page:has(.dnd35-create-nav)>.dnd35-grid{margin-right:0}
+ .dnd35-create-nav{position:static;width:100%;display:flex;flex-direction:row;flex-wrap:wrap;justify-content:center;margin:0 0 14px}
+ .dnd35-create-step{flex:0 0 auto;text-align:center;border-right:0!important;border-bottom:2px solid #51545a!important;padding:8px 6px}
+ .dnd35-create-step.active{border-right:0!important;border-bottom:2px solid #d0b27c!important}
+ .dnd35-skill-list{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ .dnd35-specialization-grid{grid-template-columns:1fr}
+}
+@media(max-width:430px){.dnd35-skill-list{grid-template-columns:1fr!important}}
 </style></head>
 <body>
 
@@ -2510,9 +2562,9 @@ function dnd35TranslateCatalogText(value){
       html+='<article class="dnd35-skill"><div class="dnd35-skill-head"><strong>'+esc(base.nome)+' ('+esc(name)+')</strong><span class="dnd35-badge">'+(isClass?'Perícia de classe':'Fora de classe')+(base.treinada_apenas?' · Somente treinada':'')+'</span></div><p class="dnd35-skill-meta">Atributo-chave: '+ability+' · Limite: '+max+' graduações · Custo: '+(isClass?'1':'2')+' ponto(s) por graduação</p>'+(creating?'<div class="dnd35-skill-control"><label>Graduações</label><select data-skill="'+esc(key)+'">'+options+'</select></div>':'<p>Graduações: <b>'+rank+'</b></p>')+'<div class="dnd35-formula"><strong>Bônus total atual: '+(rank+abilityMod+bonus>=0?'+':'')+(rank+abilityMod+bonus)+'</strong><span>Graduações '+rank+' · '+ability+' '+(abilityMod>=0?'+':'')+abilityMod+(bonus?' · classe +3':'')+'</span></div></article>';
     });
     if(creating){
-      html+='<section class="dnd35-panel"><h3>Especializações</h3><p>Informe cada ofício ou profissão como uma perícia separada. Você pode adicionar mais de uma.</p>';
-      ['oficio','profissao'].forEach(function(type){var label=type==='oficio'?'Ofício':'Profissão';html+='<div class="dnd35-specialization-row"><label>'+label+'<input type="text" maxlength="60" data-skill-specialization-input="'+type+'" placeholder="'+(type==='oficio'?'Ex.: Alquimia, Armoreiro, Carpinteiro':'Ex.: Mercador, Marinheiro, Cozinheiro')+'"><button type="button" data-skill-specialization-add="'+type+'">Adicionar '+label+'</button></div>';});
-      html+='</section>';
+      html+='<section class="dnd35-specializations"><header class="dnd35-specializations-head"><span class="dnd35-specializations-kicker">OFÍCIOS &amp; PROFISSÕES</span><h3>Especializações</h3><p>Registre atividades específicas como perícias independentes. Cada especialidade pode receber suas próprias graduações.</p></header><div class="dnd35-specialization-grid">';
+      ['oficio','profissao'].forEach(function(type){var label=type==='oficio'?'Ofício':'Profissão',icon=type==='oficio'?'⚒':'▤',hint=type==='oficio'?'Ex.: Alquimia, Armoreiro, Carpinteiro':'Ex.: Mercador, Marinheiro, Cozinheiro';html+='<article class="dnd35-specialization-card dnd35-specialization-'+type+'"><div class="dnd35-specialization-icon" aria-hidden="true">'+icon+'</div><div class="dnd35-specialization-copy"><h4>'+label+'</h4><p>'+(type==='oficio'?'Prática de um ofício ou trabalho artesanal.':'Atuação profissional, serviços e ocupações.')+'</p><label>'+label+' escolhido<input type="text" maxlength="60" data-skill-specialization-input="'+type+'" placeholder="'+hint+'"></label></div><button type="button" data-skill-specialization-add="'+type+'">＋ Adicionar</button></article>';});
+      html+='</div></section>';
     }
     return {html:html,spent:spent,budget:budget};
   }
