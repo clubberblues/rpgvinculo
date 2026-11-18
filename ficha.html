@@ -2491,7 +2491,7 @@ function dnd35TranslateCatalogText(value){
       srd35_spell_summon_monster_i:'Invocar Criaturas I',srd35_spell_true_strike:'Ataque Certeiro',
       srd35_spell_unseen_servant:'Servo Invisível',srd35_spell_ventriloquism:'Ventriloquismo'
     };
-    return String(sp&&(sp.nome_pt||names[String(sp.id||'')]||sp.nome)||'Nome em português não cadastrado').trim();
+    return String(sp&&(sp.nome_pt||names[String(sp.id||'')])||'Nome em português pendente').trim();
   }
   function dnd35SpellDescriptionPt(sp){return String(sp&&sp.descricao_pt||'').trim();}
   function dnd35SpellTechnicalLabelPt(value){
@@ -3121,7 +3121,7 @@ function dnd35LanguageNormalize(value){
       activeHtml=s.preparadas.map(function(p){var sp=spells.filter(function(x){return String(x.id)===String(p.spell_id);})[0];if(!sp)return '';return '<div class="dnd35-spell-line"><span><b>'+esc(dnd35SpellNamePt(sp))+'</b> · círculo '+Number(p.slot_level)+(p.expended?' · gasto':' · pronta para conjurar na mesa')+'</span></div>';}).join('');
     }
     if(creating){var draftIds=isSpontaneous?s.conhecidas:s.preparadas.map(function(p){return String(p.spell_id);});activeHtml=draftIds.map(function(id){var sp=spells.find(function(x){return String(x.id)===String(id);});return sp?'<div class="dnd35-spell-line"><span><b>'+esc(dnd35SpellNamePt(sp))+'</b> · círculo '+dnd35SpellLevel(sp,avail.key)+(isSpontaneous?' · conhecida':' · selecionada para preparar')+'</span></div>':'';}).join('');}
-    var domainActive=(s.dominioPreparadas||[]).map(function(p){var sp=(state.srdSpells||[]).find(function(x){return String(x.id)===String(p.spell_id);}),domain=(state.srdDomains||[]).find(function(x){return String(x.domain_id)===String(p.domain_id);});return sp?'<div class="dnd35-spell-line"><span><b>'+esc(sp.nome)+'</b> · '+esc(domain&&domain.name||'Domínio')+' · círculo '+Number(p.slot_level)+(p.expended?' · gasto':' · preparada')+'</span></div>':'';}).join('');
+    var domainActive=(s.dominioPreparadas||[]).map(function(p){var sp=(state.srdSpells||[]).find(function(x){return String(x.id)===String(p.spell_id);}),domain=(state.srdDomains||[]).find(function(x){return String(x.domain_id)===String(p.domain_id);});return sp?'<div class="dnd35-spell-line"><span><b>'+esc(dnd35SpellNamePt(sp))+'</b> · '+esc(domain&&domain.name||'Domínio')+' · círculo '+Number(p.slot_level)+(p.expended?' · gasto':' · preparada')+'</span></div>':'';}).join('');
     if(domainActive)activeHtml+=domainActive;
     if(!activeHtml)activeHtml='<div class="dnd35-spell-empty">'+(isSpontaneous?'Nenhuma magia conhecida selecionada.':'Nenhuma magia preparada selecionada.')+'</div>';
     var spellGuide=!avail.key?'<strong>Sem conjuração:</strong> esta classe não possui magias no SRD 3.5. O descanso longo continua disponível para recuperar PV e recursos de classe.':(avail.key==='wizard'?'<strong>Mago:</strong> marque “No grimório” para registrar uma magia no livro. Depois marque “Preparar” para deixá-la pronta; cada preparação ocupa um espaço diário.':(isSpontaneous?'<strong>Feiticeiro/Bardo:</strong> escolha magias conhecidas. Você conjura qualquer uma delas sem preparar cada espaço; o círculo da magia e os usos por dia são recursos diferentes.':'<strong>Conjurador preparado:</strong> escolha as magias que deixa prontas após o descanso. O círculo é o nível da magia; o espaço diário é gasto ao conjurar.'));
@@ -3146,7 +3146,7 @@ function dnd35LanguageNormalize(value){
       var savingThrow=techFields['Saving Throw']||techFields['Teste de Resistência']||'—',
           spellDescription=dnd35SpellDescriptionPt(sp),
           spellName=dnd35SpellNamePt(sp),
-          hasPortugueseName=!!(sp.nome_pt||dnd35SpellNamePt(sp)!=='Nome em português não cadastrado'),
+          hasPortugueseName=!!(sp.nome_pt||dnd35SpellNamePt(sp)!=='Nome em português pendente'),
           hasPortugueseDescription=!!sp.descricao_pt,
           detailMarkup='<div class="dnd35-spell-detail-grid">'+detailRows.map(function(row){return '<div><small>'+esc(row[0])+'</small><b>'+esc(row[1])+'</b></div>';}).join('')+'</div>';
       var controls='';
@@ -3466,8 +3466,8 @@ function dnd35LanguageNormalize(value){
     var spellsHtml=dnd35GrimoireRender(state,attrs,level,creating);
     var attrHtml = ATR.map(function(sigla) {
       var val=Number(attrs[sigla]==null?10:attrs[sigla]), base=Number(baseAttrs[sigla]==null?10:baseAttrs[sigla]), mod=dnd35Modificador(val),costNow=Number(DND35_CUSTO_COMPRA[base]||0),costUp=Number(DND35_CUSTO_COMPRA[base+1]),canUp=creating&&base<18&&points+(costUp-costNow)<=25,canDown=creating&&base>8;
-      var ctrl=creating?'<button type="button" class="dnd35-attr-step" data-attr-step="-1" data-attr="'+sigla+'" aria-label="Diminuir '+esc(ROT[sigla]||sigla)+'" '+(!canDown?'disabled':'')+'>−</button><button type="button" class="dnd35-attr-step" data-attr-step="1" data-attr="'+sigla+'" aria-label="Aumentar '+esc(ROT[sigla]||sigla)+'" '+(!canUp?'disabled':'')+'>＋</button>':'';
-      return '<div class="dnd35-attr"><small>'+esc(ROT[sigla]||sigla)+'</small><div class="dnd35-attr-value">'+(creating?ctrl:'')+'<strong>'+val+'</strong>'+(creating?'':'')+'<span class="dnd35-attr-mod">'+(mod>=0?'+':'')+mod+'</span></div></div>';
+      var minus=creating?'<button type="button" class="dnd35-attr-step" data-attr-step="-1" data-attr="'+sigla+'" aria-label="Diminuir '+esc(ROT[sigla]||sigla)+'" '+(!canDown?'disabled':'')+'>−</button>':'';var plus=creating?'<button type="button" class="dnd35-attr-step" data-attr-step="1" data-attr="'+sigla+'" aria-label="Aumentar '+esc(ROT[sigla]||sigla)+'" '+(!canUp?'disabled':'')+'>＋</button>':'';
+      return '<div class="dnd35-attr"><small>'+esc(ROT[sigla]||sigla)+'</small><div class="dnd35-attr-value">'+minus+'<strong>'+val+'</strong>'+plus+'<span class="dnd35-attr-mod">'+(mod>=0?'+':'')+mod+'</span></div></div>';
     }).join('');
     var skillsView=dnd35RenderSkills(state,attrs,creating,classMap), featsView=dnd35RenderFeats(state,attrs,creating);
     var skillBudgetNote='Pontos de perícia: '+skillsView.spent+' / '+skillsView.budget+' gastos';
