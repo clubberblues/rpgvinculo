@@ -2442,7 +2442,13 @@ function dnd35TranslateCatalogText(value){
     text=text.replace(/market price/gi,'preço de mercado').replace(/listed in table/gi,'listado na tabela').replace(/the specific item entry is not individually written out in this SRD table\./gi,'a descrição individual deste item não consta nesta tabela.').replace(/\bweight\b/gi,'peso').replace(/\bprice\b/gi,'preço').replace(/\bdamage\b/gi,'dano').replace(/\bcritical\b/gi,'crítico').replace(/\b([0-9]+(?:\.[0-9]+)?)\s*gp\b/gi,'$1 po');
     return text;
   }
-    function dnd35FeatNamePt(feat){return String(feat&&feat.nome_pt||'Talento sem nome').trim();}
+    function dnd35HighlightRulesText(value){
+    var safe=esc(String(value||''));
+    return safe.replace(/\\b\\d+d\\d+(?:\\s*[+−-]\\s*\\d+)?\\b/gi,'<mark class="dnd35-rule-highlight">  function dnd35FeatNamePt(feat){</mark>')
+      .replace(/(?<![\\w>])(?:\\+\\d+|−\\d+|\\-\\d+)(?![\\w<])/g,'<mark class="dnd35-rule-highlight">  function dnd35FeatNamePt(feat){</mark>')
+      .replace(/\\b(?:dano|cura|pontos de vida|PV|níveis negativos|rodadas|alvos|criaturas)\\b/gi,'<span class="dnd35-rule-term">  function dnd35FeatNamePt(feat){</span>');
+  }
+  function dnd35FeatNamePt(feat){return String(feat&&feat.nome_pt||'Talento sem nome').trim();}
   function dnd35FeatDescriptionPt(feat){return String(feat&&feat.descricao_pt||'Descrição não cadastrada no Livro do Jogador.').trim();}
   function dnd35ClassFeatureDescription(name,source){
     var key=String(name||'').toLowerCase();
@@ -4145,5 +4151,12 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2732
 .ficha.dnd35-mode .dnd35-language-slot.is-active{outline:1px solid #d7b66e;outline-offset:2px}
 .ficha.dnd35-mode .dnd35-hero-attributes .dnd35-attr-value .dnd35-attr-step{display:inline-flex!important;position:static!important;transform:none!important;float:none!important}
 @media(max-width:720px){.ficha.dnd35-mode .dnd35-hero-attributes .dnd35-attrs{grid-template-columns:repeat(2,minmax(0,1fr))!important}.ficha.dnd35-mode .dnd35-language-confirm{align-items:flex-start;flex-direction:column}}
+</style><style id="dnd35-rule-highlights">
+.ficha.dnd35-mode .dnd35-rule-highlight{padding:0 2px;border-radius:3px;background:rgba(205,171,99,.18);color:#f3d58f;font-weight:750;font-variant-numeric:tabular-nums}
+.ficha.dnd35-mode .dnd35-rule-term{color:#e7c77f;font-weight:650}
+.ficha.dnd35-mode .dnd35-hero-attributes .dnd35-attr-value{box-sizing:border-box;max-width:100%;overflow:visible}
+.ficha.dnd35-mode .dnd35-hero-attributes .dnd35-attr-step{box-sizing:border-box;position:static;inset:auto;margin:0;transform:none;justify-self:center}
+.ficha.dnd35-mode .dnd35-hero-attributes .dnd35-attr-value strong{font-size:clamp(17px,1.35vw,21px)!important}
+.ficha.dnd35-mode .dnd35-hero-attributes .dnd35-attr-mod{font-size:10px!important;line-height:1.1}
 </style></body>
 </html>
