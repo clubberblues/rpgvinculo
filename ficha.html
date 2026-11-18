@@ -3460,8 +3460,8 @@ function dnd35LanguageNormalize(value){
     var spellsHtml=dnd35GrimoireRender(state,attrs,level,creating);
     var attrHtml = ATR.map(function(sigla) {
       var val=Number(attrs[sigla]==null?10:attrs[sigla]), base=Number(baseAttrs[sigla]==null?10:baseAttrs[sigla]), mod=dnd35Modificador(val),costNow=Number(DND35_CUSTO_COMPRA[base]||0),costUp=Number(DND35_CUSTO_COMPRA[base+1]),canUp=creating&&base<18&&points+(costUp-costNow)<=25,canDown=creating&&base>8;
-      var ctrl=creating?'<div class="dnd35-attr-stepper"><button type="button" data-attr-step="-1" data-attr="'+sigla+'" aria-label="Diminuir '+esc(ROT[sigla]||sigla)+'" '+(!canDown?'disabled':'')+'>−</button><span>Base <b>'+base+'</b></span><button type="button" data-attr-step="1" data-attr="'+sigla+'" aria-label="Aumentar '+esc(ROT[sigla]||sigla)+'" '+(!canUp?'disabled':'')+'>＋</button></div>':'';
-      return '<div class="dnd35-attr"><small>'+esc(ROT[sigla]||sigla)+'</small><div class="dnd35-attr-value"><strong>'+val+'</strong><span class="dnd35-attr-mod">'+(mod>=0?'+':'')+mod+'</span></div>'+ctrl+'</div>';
+      var ctrl=creating?'<button type="button" class="dnd35-attr-step" data-attr-step="-1" data-attr="'+sigla+'" aria-label="Diminuir '+esc(ROT[sigla]||sigla)+'" '+(!canDown?'disabled':'')+'>−</button><button type="button" class="dnd35-attr-step" data-attr-step="1" data-attr="'+sigla+'" aria-label="Aumentar '+esc(ROT[sigla]||sigla)+'" '+(!canUp?'disabled':'')+'>＋</button>':'';
+      return '<div class="dnd35-attr"><small>'+esc(ROT[sigla]||sigla)+'</small><div class="dnd35-attr-value">'+(creating?ctrl:'')+'<strong>'+val+'</strong>'+(creating?'':'')+'<span class="dnd35-attr-mod">'+(mod>=0?'+':'')+mod+'</span></div></div>';
     }).join('');
     var skillsView=dnd35RenderSkills(state,attrs,creating,classMap), featsView=dnd35RenderFeats(state,attrs,creating);
     var skillBudgetNote='Pontos de perícia: '+skillsView.spent+' / '+skillsView.budget+' gastos';
@@ -3518,7 +3518,7 @@ function dnd35LanguageNormalize(value){
     reviewPages.push({title:'Equipamentos e objetos',html:'<section class="dnd35-panel"><h2>Equipamentos e objetos</h2>'+reviewEquipmentHtml+'</section>'});
     reviewPages.push({title:'Idiomas conhecidos',html:dnd35LanguageSummaryMarkup(state)});
     var reviewPage=Math.max(0,Math.min(Number(state.reviewPage)||0,reviewPages.length-1));
-    var reviewSheetHtml='<div class="dnd35-review-sheet"><nav class="dnd35-review-navigation" aria-label="Tópicos da ficha"><button type="button" data-review-prev '+(reviewPage===0?'disabled':'')+' aria-label="Tópico anterior">←</button><div><small>REVISÃO DA FICHA · '+(reviewPage+1)+' / '+reviewPages.length+'</small><strong data-review-title>'+esc(reviewPages[reviewPage].title)+'</strong></div><button type="button" data-review-next '+(reviewPage===reviewPages.length-1?'disabled':'')+' aria-label="Próximo tópico">→</button></nav><div class="dnd35-review-stage">'+reviewPages.map(function(page,index){return '<div class="dnd35-review-page" data-review-page="'+index+'" '+(index===reviewPage?'':'hidden')+'>'+page.html+'</div>';}).join('')+'</div></div>';    var html='<div class="dnd35-page"><header class="dnd35-header"><div><div class="dnd35-kicker">VÍNCULO · D&amp;D 3.5</div><h1>'+esc(nome)+'</h1><p>'+esc(state.raca.nome)+' · '+esc(state.classe.nome)+' · Nível '+level+'</p>'+''+'</div><a class="dnd35-link" href="lobby.html">Voltar ao Lobby</a></header>'+
+    var reviewSheetHtml='<div class="dnd35-review-sheet"><nav class="dnd35-review-topics" aria-label="Tópicos da ficha">'+reviewPages.map(function(page,index){return '<button type="button" data-review-jump="'+index+'" class="'+(index===reviewPage?'active':'')+'" aria-current="'+(index===reviewPage?'step':'false')+'">'+esc(page.title)+'</button>';}).join('')+'</nav><div class="dnd35-review-stage">'+reviewPages.map(function(page,index){return '<div class="dnd35-review-page" data-review-page="'+index+'" '+(index===reviewPage?'':'hidden')+'>'+page.html+'</div>';}).join('')+'</div></div>';    var html='<div class="dnd35-page"><header class="dnd35-header"><div><div class="dnd35-kicker">VÍNCULO · D&amp;D 3.5</div><h1>'+esc(nome)+'</h1><p>'+esc(state.raca.nome)+' · '+esc(state.classe.nome)+' · Nível '+level+'</p>'+''+'</div><a class="dnd35-link" href="lobby.html">Voltar ao Lobby</a></header>'+
       createNav+levelupNotice+levelupPanel+(creating?'':heroHtml)+'<div class="dnd35-grid"><section class="dnd35-panel" '+(creating?'data-creation-step="identity" '+(createStep!=='identity'?'hidden':''):'')+'><h2>Identidade'+(creating?' <button type="button" class="dnd35-help" data-dnd35-help="identity">?</button>':'')+'</h2>'+(creating?'<label class="dnd35-name-label" for="dnd35-nome">Nome do personagem</label><input class="dnd35-name-input" id="dnd35-nome" maxlength="60" autocomplete="off" placeholder="Ex.: Tordek" value="'+esc(state.nomeDraft||'')+'">'+dnd35DwarfIdentityMarkup(state):'')+
       '<div class="dnd35-meta"><div class="dnd35-stat"><small>Raça</small><strong>'+esc(state.raca.nome)+'</strong></div><div class="dnd35-stat"><small>Classe</small><strong>'+esc(state.classe.nome)+'</strong></div><div class="dnd35-stat"><small>Nível</small><strong>'+level+'</strong></div><div class="dnd35-stat"><small>Dado de Vida</small><strong>d'+dadoVida+'</strong></div><div class="dnd35-stat"><small>Pontos de Vida</small><strong class="dnd35-hp">'+hpAtual+' / '+hpMax+'</strong></div><div class="dnd35-stat"><small>Deslocamento</small><strong>'+esc(state.deslocamentoEfetivo==null?(state.raca.deslocamento==null?'—':state.raca.deslocamento+' m base'):state.deslocamentoEfetivo+' m')+'</strong></div><div class="dnd35-stat"><small>Tamanho</small><strong>'+esc(state.raca.tamanho||'—')+'</strong></div><div class="dnd35-stat"><small>XP</small><strong>'+Math.max(0,Number(state.sheet.xp)||0)+'</strong></div></div>'+(creating?'<p class="dnd35-note">Distribua até 25 pontos de compra entre valores-base de 8 a 18. Os ajustes raciais são aplicados depois. PV inicial = dado de vida máximo + modificador de Constituição (mínimo 1).</p>':'')+'</section>'+
       '<section class="dnd35-panel" '+(creating?'data-creation-step="attributes" '+(createStep!=='attributes'?'hidden':''):'')+'><h2>Atributos'+(creating?' <button type="button" class="dnd35-help" data-dnd35-help="attributes">?</button>':'')+'</h2><div class="dnd35-attrs">'+attrHtml+'</div>'+(creating?'<p id="dnd35-point-budget" class="dnd35-point-budget">Pontos de compra: '+points+' / 25 · Restam '+(25-points)+'</p>':'')+'<p class="dnd35-note">Ajustes raciais: '+esc(Object.keys(ajustes).length?Object.keys(ajustes).map(function(k){return k+' '+(Number(ajustes[k])>0?'+':'')+ajustes[k];}).join(' · '):'nenhum')+'</p>'+(creating&&Number(state.identidade&&state.identidade.idade)>=250?'<p class="dnd35-note">Idade venerável: ajustes adicionais de –6 em FOR, DES e CON e +3 em INT, SAB e CAR (efeitos cumulativos).</p>':creating&&Number(state.identidade&&state.identidade.idade)>=188?'<p class="dnd35-note">Velhice: ajustes adicionais cumulativos de –3 em FOR, DES e CON e +2 em INT, SAB e CAR.</p>':creating&&Number(state.identidade&&state.identidade.idade)>=125?'<p class="dnd35-note">Maturidade: –1 em FOR, DES e CON e +1 em INT, SAB e CAR.</p>':'')+'</section>'+
@@ -3575,6 +3575,8 @@ function dnd35LanguageNormalize(value){
       document.querySelectorAll('[data-dwarf-language-choice]').forEach(function(button){button.addEventListener('click',function(){var group=button.dataset.dwarfLanguageChoice,index=Number(button.dataset.index),key=group==='bonus'?'bonus_inteligencia':'comprados_falar_idioma';state.idiomasEscolhidos=state.idiomasEscolhidos||{automaticos:dnd35AutomaticLanguages(state.raca,state.classe),bonus_inteligencia:[],comprados_falar_idioma:[]};state.idiomasEscolhidos[key][index]=button.dataset.value;state.openLanguagePicker=group;var field=document.getElementById('dnd35-nome');if(field)state.nomeDraft=field.value;renderizarFichaSRD35();});});
       document.querySelectorAll('[data-feat-card-pick]').forEach(function(button){button.addEventListener('click',function(){var i=Number(state.activeFeatSlot)||0;state.featPicks=state.featPicks||[];state.featPicks[i]={id:button.dataset.featCardPick,parametro:''};renderizarFichaSRD35();});});document.querySelectorAll('[data-feat-slot]').forEach(function(button){button.addEventListener('click',function(){state.activeFeatSlot=Number(button.dataset.featSlot)||0;renderizarFichaSRD35();});});document.querySelectorAll('[data-feat]').forEach(function(select){select.addEventListener('change',function(){var i=Number(select.dataset.feat), prev=state.featPicks[i]||{};state.featPicks[i]={id:select.value,parametro:prev.parametro||''};if(nameInput)state.nomeDraft=nameInput.value;renderizarFichaSRD35();});});
       document.querySelectorAll('[data-feat-param]').forEach(function(input){input.addEventListener('input',function(){var i=Number(input.dataset.featParam);if(state.featPicks[i])state.featPicks[i].parametro=input.value;});});
+      document.querySelectorAll('[data-review-jump]').forEach(function(button){button.addEventListener('click',function(){state.reviewPage=Number(button.dataset.reviewJump)||0;renderizarFichaSRD35();});});
+      document.querySelectorAll('[data-spell-flip]').forEach(function(button){button.addEventListener('click',function(){var card=button.closest('.dnd35-spell-card');if(card)card.classList.toggle('is-flipped');});});
        var classFeatSelect=document.querySelector('[data-class-feat]');if(classFeatSelect)classFeatSelect.addEventListener('change',function(){state.classFeatPicks=[{id:classFeatSelect.value,parametro:''}];renderizarFichaSRD35();});
        var classFeatParam=document.querySelector('[data-class-feat-param]');if(classFeatParam)classFeatParam.addEventListener('input',function(){if(state.classFeatPicks&&state.classFeatPicks[0])state.classFeatPicks[0].parametro=classFeatParam.value;});
       document.querySelectorAll('[data-dwarf-identity]').forEach(function(input){input.addEventListener('input',function(){state.identidade=state.identidade||{};state.identidade[input.dataset.dwarfIdentity]=input.type==='number'?(input.value===''?'':Number(input.value)):input.value;});input.addEventListener('change',function(){state.identidade=state.identidade||{};state.identidade[input.dataset.dwarfIdentity]=input.type==='number'?(input.value===''?'':Number(input.value)):input.value;if(input.dataset.dwarfIdentity==='sexo'){renderizarFichaSRD35();}});});
@@ -3586,8 +3588,8 @@ function dnd35LanguageNormalize(value){
   async function carregarCatalogosSRD35() {
     var results=await Promise.all([
       sb.from('srd_skills').select('id,nome,atributo,treinada_apenas,penalidade_armadura,descricao,srd_source_url,dados_tecnicos,source_status').neq('source_status','excluded'),
-      sb.from('srd_feats').select('id,nome,descricao,requisitos,exige_parametro,srd_source_url'),
-      sb.from('srd_spells').select('id,nome,nivel,circulo,escola,alcance,alvo,area,duracao,componentes,classes,descricao,dados_tecnicos,srd_source_url'),
+      sb.from('srd_feats').select('id,nome,nome_pt,descricao,descricao_pt,requisitos,exige_parametro,srd_source_url'),
+      sb.from('srd_spells').select('id,nome,nome_pt,descricao_pt,nivel,circulo,escola,alcance,alvo,area,duracao,componentes,classes,descricao,dados_tecnicos,srd_source_url,source_book_page'),
       sb.from('srd_spell_progressions').select('class_key,slots_by_level,known_by_level'),
       sb.from('srd_domains').select('domain_id,name,granted_power_summary,mechanics,source_url,verification_status').order('name'),
       sb.from('srd_domain_spells').select('domain_id,spell_level,spell_id,source_id,verification_status').order('domain_id').order('spell_level'),
@@ -4071,5 +4073,55 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2732
 @media(max-width:760px){.ficha.dnd35-mode .dnd35-skill-list{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media(max-width:430px){.ficha.dnd35-mode .dnd35-skill-list{grid-template-columns:1fr!important}}
 .ficha.dnd35-mode .dnd35-language-option,.ficha.dnd35-mode .dnd35-language-inline>span{background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important;padding:0!important}
+</style><style id="dnd35-user-adjustments-nov17">
+/* Respiro e alinhamento da identidade, atributos e defesa. */
+.ficha.dnd35-mode .dnd35-hero-details{gap:24px!important}
+.ficha.dnd35-mode .dnd35-hero-identity{padding:0 0 8px!important}
+.ficha.dnd35-mode .dnd35-hero-meta{margin-top:16px!important;gap:14px!important}
+.ficha.dnd35-mode .dnd35-hero-meta .dnd35-stat{min-height:82px!important}
+.ficha.dnd35-mode .dnd35-hero-attributes{margin-top:4px!important;padding:15px 16px 16px!important;border:1px solid #75664b;border-radius:10px;background:linear-gradient(145deg,#202833,#151a22)}
+.ficha.dnd35-mode .dnd35-hero-details>.dnd35-panel{margin-top:4px!important;padding:15px 16px!important}
+.ficha.dnd35-mode .dnd35-attr-value{display:flex;align-items:center;justify-content:center;gap:7px;min-height:34px;width:100%}
+.ficha.dnd35-mode .dnd35-attr-step{display:inline-flex;align-items:center;justify-content:center;flex:0 0 28px;width:28px;height:28px;min-height:28px;padding:0!important;border:1px solid #9b8050!important;border-radius:50%!important;background:#202a32!important;color:#f1d58e!important;font:700 17px/1 Cinzel,serif;cursor:pointer}
+.ficha.dnd35-mode .dnd35-attr-step:disabled{opacity:.28;cursor:not-allowed}
+.ficha.dnd35-mode .dnd35-attr-value strong{min-width:24px;text-align:center;font:750 25px/1 Cinzel,serif}
+.ficha.dnd35-mode .dnd35-attr-mod{margin-left:2px;white-space:nowrap}
+.ficha.dnd35-mode .dnd35-hero-attributes .dnd35-attr{min-width:0;padding:12px 5px!important;gap:7px!important}
+.ficha.dnd35-mode .dnd35-hero-attributes .dnd35-attrs{gap:10px!important}
+.ficha.dnd35-mode .dnd35-review-topics{display:flex;flex-wrap:wrap;gap:7px;padding:10px 12px;border:1px solid #75613d;border-radius:10px;background:linear-gradient(145deg,#1b2419,#10170f)}
+.ficha.dnd35-mode .dnd35-review-topics button{flex:0 1 auto;min-height:34px;padding:7px 11px!important;border:1px solid #75613d!important;border-radius:18px!important;background:#171e25!important;color:#d8cba9!important;font:600 10px Inter,system-ui,sans-serif;cursor:pointer}
+.ficha.dnd35-mode .dnd35-review-topics button.active{background:linear-gradient(145deg,#d0b16c,#8c6e3d)!important;color:#17130d!important;border-color:#e2c987!important}
+.ficha.dnd35-mode .dnd35-review-navigation{display:none!important}
+.ficha.dnd35-mode .dnd35-review-page[hidden]{display:none!important}
+.ficha.dnd35-mode .dnd35-feat-flip{display:block!important;min-height:250px!important;perspective:1100px}
+.ficha.dnd35-mode .dnd35-feat-flip .dnd35-feat-inner{position:relative;min-height:250px;height:100%;transform-style:preserve-3d;transition:transform .45s ease}
+.ficha.dnd35-mode .dnd35-feat-flip.is-flipped .dnd35-feat-inner{transform:rotateY(180deg)}
+.ficha.dnd35-mode .dnd35-feat-flip .dnd35-feat-face{position:absolute;inset:0;display:flex;flex-direction:column;gap:9px;padding:14px;border:1px solid #766344;border-radius:9px;background:linear-gradient(150deg,#262d38,#151a22)!important;color:#eee5d4;backface-visibility:hidden;overflow:auto}
+.ficha.dnd35-mode .dnd35-feat-flip .dnd35-feat-back{transform:rotateY(180deg)}
+.ficha.dnd35-mode .dnd35-feat-flip .dnd35-feat-front{justify-content:space-between}
+.ficha.dnd35-mode .dnd35-feat-flip .dnd35-feat-front p{display:none}
+.ficha.dnd35-mode .dnd35-feat-flip .dnd35-feat-back p{color:#e0d7c7;font-size:13px;line-height:1.5;white-space:pre-line}
+.ficha.dnd35-mode .dnd35-feat-flip-action{display:inline-flex!important;align-self:flex-start;margin-top:auto;padding:7px 10px;border:1px solid #a78a53!important;border-radius:6px;background:#222a36!important;color:#f0d18b!important;font:700 10px Cinzel,serif;cursor:pointer}
+.ficha.dnd35-mode .dnd35-feat-flip .dnd35-feat-requirements{margin-top:auto}
+.ficha.dnd35-mode .dnd35-language-slots{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:9px!important;margin:12px 0!important}
+.ficha.dnd35-mode .dnd35-language-slot{display:flex!important;align-items:center;gap:10px!important;padding:10px 12px;border:1px solid #65583f;border-radius:8px;background:#111923}
+.ficha.dnd35-mode .dnd35-language-slot>small{min-width:90px!important;color:#d8bd7b!important;font:700 10px Cinzel,serif}
+.ficha.dnd35-mode .dnd35-language-picker{margin-top:14px;padding:13px;border:1px solid #66583e;border-radius:9px;background:#111923}
+.ficha.dnd35-mode .dnd35-language-picker summary{display:none!important}
+.ficha.dnd35-mode .dnd35-language-options{display:flex!important;flex-wrap:wrap;gap:8px 15px!important;margin-top:0!important}
+.ficha.dnd35-mode .dnd35-language-option{min-height:32px;padding:5px 2px!important;font-size:14px!important}
+.ficha.dnd35-mode .dnd35-language-option.is-selected{color:#f5d58d!important}
+.ficha.dnd35-mode .dnd35-language-group>small{display:block;margin:14px 0 8px;color:#d9bd7b;font:700 11px Cinzel,serif;letter-spacing:.06em;text-transform:uppercase}
+.ficha.dnd35-mode .dnd35-spell-card{padding:0!important;perspective:1100px;background:transparent!important;border:0!important;box-shadow:none!important;min-height:270px}
+.ficha.dnd35-mode .dnd35-spell-card-inner{position:relative;min-height:270px;height:100%;transform-style:preserve-3d;transition:transform .48s cubic-bezier(.2,.7,.2,1)}
+.ficha.dnd35-mode .dnd35-spell-card.is-flipped .dnd35-spell-card-inner{transform:rotateY(180deg)}
+.ficha.dnd35-mode .dnd35-spell-card-face{position:absolute;inset:0;display:flex;flex-direction:column;gap:10px;padding:13px;border:1px solid var(--spell-school-edge,#8c754d);border-radius:10px;background:linear-gradient(145deg,var(--spell-school-bg,#252b35),#111720)!important;color:#eee5d4;backface-visibility:hidden;overflow:auto}
+.ficha.dnd35-mode .dnd35-spell-card-back{transform:rotateY(180deg)}
+.ficha.dnd35-mode .dnd35-spell-card-face h3{color:#f0d18b!important}
+.ficha.dnd35-mode .dnd35-spell-card-back .dnd35-spell-description{color:#e8dfce!important;font:14px/1.55 'EB Garamond',serif;white-space:pre-wrap}
+.ficha.dnd35-mode .dnd35-spell-flip{margin-top:auto;align-self:flex-start;padding:7px 10px;border:1px solid #a78a53!important;border-radius:6px;background:#222a36!important;color:#f0d18b!important;font:700 10px Cinzel,serif;cursor:pointer}
+.ficha.dnd35-mode .dnd35-spell-card-front .dnd35-spell-teaser{display:none!important}
+@media(max-width:760px){.ficha.dnd35-mode .dnd35-hero-meta{margin-top:14px!important}.ficha.dnd35-mode .dnd35-hero-details{gap:18px!important}.ficha.dnd35-mode .dnd35-review-topics{gap:5px}.ficha.dnd35-mode .dnd35-review-topics button{font-size:9px;padding:6px 9px!important}}
+@media(prefers-reduced-motion:reduce){.ficha.dnd35-mode .dnd35-feat-inner,.ficha.dnd35-mode .dnd35-spell-card-inner{transition:none}}
 </style></body>
 </html>
