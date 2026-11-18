@@ -2260,7 +2260,7 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -18%,#1a1e
     }
     function selectedList(items){return items.filter(Boolean).map(function(n){return '<span><i aria-hidden="true">✦</i>'+esc(n)+'</span>';}).join('')||'<span class="dnd35-language-empty">Nenhum escolhido</span>';}
     function slotMarkup(items,count,group){
-      return Array.from({length:count},function(_,i){return '<div class="dnd35-language-slot"><small>Escolha '+(i+1)+'</small><div class="dnd35-language-selected">'+(items[i]?selectedList([items[i]]):'<span class="dnd35-language-empty">Aguardando seleção</span>')+'</div></div>';}).join('');
+      return Array.from({length:count},function(_,i){var active=activeChoice.group===group&&activeChoice.index===i&&!items[i];return '<div class="dnd35-language-slot'+(active?' is-active':'')+'"><small>Escolha '+(i+1)+(active?' · próxima':'')+'</small><div class="dnd35-language-selected">'+(items[i]?selectedList([items[i]]):'<span class="dnd35-language-empty">'+(active?'Aguardando sua escolha':'Espaço disponível')+'</span>')+'</div></div>';}).join('');
     }
     function catalogMarkup(catalog,group,items,count){
       var next=items.findIndex(function(value,index){return !value&&index<count;});if(next<0)next=0;
