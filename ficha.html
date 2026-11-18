@@ -2465,7 +2465,28 @@ function dnd35TranslateCatalogText(value){
     var key=dnd35SpellSchoolKey(value),names={abjuration:'Abjuração',conjuration:'Conjuração',divination:'Adivinhação',enchantment:'Encantamento',evocation:'Evocação',illusion:'Ilusão',necromancy:'Necromancia',transmutation:'Transmutação'};
     return names[key]||String(value||'Escola não informada');
   }
-  function dnd35SpellNamePt(sp){return String(sp&&(sp.nome_pt||sp.nome)||'Nome em português não cadastrado').trim();}
+  function dnd35SpellNamePt(sp){
+    var names={
+      srd35_spell_alarm:'Alarme',srd35_spell_animate_rope:'Animar Cordas',srd35_mage_armor:'Armadura Arcana',
+      srd35_spell_cause_fear:'Causar Medo',srd35_spell_charm_person:'Enfeitiçar Pessoa',srd35_spell_chill_touch:'Toque Macabro',
+      srd35_spell_color_spray:'Leque Cromático',srd35_spell_comprehend_languages:'Compreender Idiomas',srd35_spell_detect_secret_doors:'Detectar Portas Secretas',
+      srd35_spell_detect_undead:'Detectar Mortos-Vivos',srd35_spell_disguise_self:'Disfarçar-se',srd35_spell_endure_elements:'Suportar Elementos',
+      srd35_spell_enlarge_person:'Aumentar Pessoa',srd35_spell_erase:'Apagar',srd35_shield:'Escudo',srd35_spell_expeditious_retreat:'Recuo Acelerado',
+      srd35_spell_feather_fall:'Queda Suave',srd35_spell_floating_disk:'Disco Flutuante de Tenser',srd35_spell_grease:'Área Escorregadia',
+      srd35_spell_hideous_laughter:'Riso Histérico de Tasha, O',srd35_spell_hold_portal:'Trancar Portas',srd35_spell_hypnotism:'Hipnotismo',
+      srd35_spell_identify:'Identificação',srd35_spell_jump:'Salto',srd35_spell_magic_aura:'Aura Mágica',srd35_spell_magic_mouth:'Boca Encantada',
+      srd35_spell_magic_weapon:'Arma Mágica',srd35_spell_burning_hands:'Mãos Flamejantes',srd35_burning_hands:'Mãos Flamejantes',
+      srd35_magic_missile:'Mísseis Mágicos',srd35_spell_mount:'Montaria Arcana',srd35_spell_obscure_object:'Obscurecer Objeto',
+      srd35_spell_obscuring_mist:'Névoa Obscurecente',srd35_spell_protection_from_chaos:'Proteção contra o Caos',
+      srd35_spell_protection_from_evil:'Proteção contra o Mal',srd35_spell_protection_from_good:'Proteção contra o Bem',
+      srd35_spell_protection_from_law:'Proteção contra a Ordem',srd35_spell_ray_of_enfeeblement:'Raio do Enfraquecimento',
+      srd35_spell_reduce_person:'Diminuir Pessoa',srd35_spell_resist_energy:'Resistir a Elementos',
+      srd35_spell_shocking_grasp:'Toque Chocante',srd35_spell_silent_image:'Imagem Silenciosa',srd35_spell_sleep:'Sono',
+      srd35_spell_summon_monster_i:'Invocar Criaturas I',srd35_spell_true_strike:'Ataque Certeiro',
+      srd35_spell_unseen_servant:'Servo Invisível',srd35_spell_ventriloquism:'Ventriloquismo'
+    };
+    return String(sp&&(sp.nome_pt||names[String(sp.id||'')]||sp.nome)||'Nome em português não cadastrado').trim();
+  }
   function dnd35SpellDescriptionPt(sp){return String(sp&&(sp.descricao_pt||sp.descricao)||'Descrição em português não cadastrada no Livro do Jogador.').trim();}
   function dnd35SpellTechnicalLabelPt(value){
     var labels={'Casting Time':'Tempo de Conjuração','Saving Throw':'Teste de Resistência','Spell Resistance':'Resistência à Magia','Components':'Componentes','Range':'Alcance','Target':'Alvo','Effect':'Efeito','Area':'Área','Duration':'Duração'};
@@ -3119,8 +3140,8 @@ function dnd35LanguageNormalize(value){
       var savingThrow=techFields['Saving Throw']||techFields['Teste de Resistência']||'—',
           spellDescription=dnd35SpellDescriptionPt(sp)||'Description not present in the SRD source record.',
           spellName=dnd35SpellNamePt(sp),
-          hasPortugueseName=!!sp.nome,
-          hasPortugueseDescription=!!sp.descricao,
+          hasPortugueseName=!!(sp.nome_pt||dnd35SpellNamePt(sp)!=='Nome em português não cadastrado'),
+          hasPortugueseDescription=!!sp.descricao_pt,
           detailMarkup='<div class="dnd35-spell-detail-grid">'+detailRows.map(function(row){return '<div><small>'+esc(row[0])+'</small><b>'+esc(row[1])+'</b></div>';}).join('')+'</div>';
       var controls='';
       if(avail.key){
@@ -3476,7 +3497,7 @@ function dnd35LanguageNormalize(value){
     var reviewSpellCards=reviewSpellIds.map(function(id){var sp=(state.srdSpells||[]).find(function(x){return String(x.id)===String(id);});if(!sp)return '';var lv=dnd35SpellLevel(sp,'wizard');return '<article class="dnd35-review-spell"><b>'+esc(dnd35SpellNamePt(sp))+'</b><span>'+(lv===0?'Truque':lv+'º círculo')+' · '+esc(dnd35SpellSchoolNamePt(sp.escola||''))+'</span></article>';}).join('');
     var reviewEquipment=Array.isArray(state.equipment)?state.equipment.filter(function(x){return Number(x.quantidade||1)>0;}):[];if(state.identidade&&state.identidade.starting_clothing)reviewEquipment.unshift({nome:state.identidade.starting_clothing+' · traje gratuito',quantidade:1});var manualReview=state.identidade&&state.identidade.equipment_notes||{};DND35_MANUAL_EQUIPMENT_SECTIONS.forEach(function(section){(Array.isArray(manualReview[section.id])?manualReview[section.id]:[]).forEach(function(entry){if(entry&&String(entry.nome||'').trim())reviewEquipment.push({nome:entry.nome,quantidade:entry.quantidade||'1'});});});
     var reviewEquipmentHtml=reviewEquipment.length?'<div class="dnd35-review-equipment">'+reviewEquipment.map(function(x){return '<article><b>'+esc(x.nome||x.name||'Item')+'</b><span>'+Number(x.quantidade||1)+' un.</span></article>';}).join('')+'</div>':'<p class="dnd35-note">Nenhum item registrado nesta etapa.</p>';
-    var portraitUrl=String(state.character&&state.character.retrato_url||''),portraitSrc=state.portraitPreview||portraitUrl;
+    var portraitUrl=String(state.character&&(state.character.arte_url||state.character.retrato_url)||''),portraitSrc=state.portraitPreview||portraitUrl;
     var heroStats=[
       ['Raça',state.raca.nome],['Classe',state.classe.nome],['Nível',level],['XP',Math.max(0,Number(state.sheet.xp)||0)],
       ['Dado de Vida','d'+dadoVida],['Pontos de Vida',creating?hpCalc:(hpAtual+' / '+hpMax)],
@@ -3512,7 +3533,7 @@ function dnd35LanguageNormalize(value){
       var file=portraitInput.files&&portraitInput.files[0];if(!file)return;
       if(!/^image\/(png|jpeg|webp)$/.test(file.type)){alert('Use uma imagem PNG, JPG ou WebP.');portraitInput.value='';return;}
       if(creating){state.portraitFile=file;if(state.portraitPreview)try{URL.revokeObjectURL(state.portraitPreview)}catch(e){}state.portraitPreview=URL.createObjectURL(file);renderizarFichaSRD35();return;}
-      try{var ext=file.type==='image/png'?'png':file.type==='image/webp'?'webp':'jpg',path='dnd35/characters/'+String(CHAR_ID)+'/portrait.'+ext,upload=await sb.storage.from('midia').upload(path,file,{upsert:true,contentType:file.type});if(upload.error)throw upload.error;var publicUrl=sb.storage.from('midia').getPublicUrl(path).data.publicUrl,update=await sb.from('characters').update({retrato_url:publicUrl}).eq('id',CHAR_ID);if(update.error)throw update.error;state.character=state.character||{};state.character.retrato_url=publicUrl;state.portraitPreview=null;renderizarFichaSRD35();}catch(error){alert('Não foi possível salvar a arte: '+(error.message||error));}
+      try{var ext=file.type==='image/png'?'png':file.type==='image/webp'?'webp':'jpg',path='dnd35/characters/'+String(CHAR_ID)+'/art.'+ext,upload=await sb.storage.from('midia').upload(path,file,{upsert:true,contentType:file.type});if(upload.error)throw upload.error;var publicUrl=sb.storage.from('midia').getPublicUrl(path).data.publicUrl,update=await sb.from('characters').update({arte_url:publicUrl}).eq('id',CHAR_ID);if(update.error)throw update.error;state.character=state.character||{};state.character.arte_url=publicUrl;state.portraitPreview=null;renderizarFichaSRD35();}catch(error){alert('Não foi possível salvar a arte: '+(error.message||error));}
     });
     dnd35GrimoireBind(state);
     if (!creating) { dnd35ManualEquipmentBindSheet(state); }
@@ -3776,7 +3797,7 @@ function dnd35LanguageNormalize(value){
       if(result.error)throw new Error(result.error.message||'Não foi possível concluir a criação da ficha.');
       var id=result.data;if(Array.isArray(id))id=id[0];if(id&&typeof id==='object')id=id.character_id||id.id;
       if(!id)throw new Error('A ficha foi criada, mas o banco não retornou o identificador do personagem.');
-      if(state.portraitFile){try{var portraitFile=state.portraitFile,portraitExt=portraitFile.type==='image/png'?'png':portraitFile.type==='image/webp'?'webp':'jpg',portraitPath='dnd35/characters/'+String(id)+'/portrait.'+portraitExt,portraitUpload=await sb.storage.from('midia').upload(portraitPath,portraitFile,{upsert:true,contentType:portraitFile.type});if(portraitUpload.error)throw portraitUpload.error;var portraitUrl=sb.storage.from('midia').getPublicUrl(portraitPath).data.publicUrl,portraitUpdate=await sb.from('characters').update({retrato_url:portraitUrl}).eq('id',id);if(portraitUpdate.error)throw portraitUpdate.error;}catch(portraitError){console.error('A ficha foi criada, mas a arte não foi salva:',portraitError);status.textContent='Personagem criado; não foi possível salvar a arte. Você poderá adicioná-la na ficha.';}}
+      if(state.portraitFile){try{var portraitFile=state.portraitFile,portraitExt=portraitFile.type==='image/png'?'png':portraitFile.type==='image/webp'?'webp':'jpg',portraitPath='dnd35/characters/'+String(id)+'/art.'+portraitExt,portraitUpload=await sb.storage.from('midia').upload(portraitPath,portraitFile,{upsert:true,contentType:portraitFile.type});if(portraitUpload.error)throw portraitUpload.error;var portraitUrl=sb.storage.from('midia').getPublicUrl(portraitPath).data.publicUrl,portraitUpdate=await sb.from('characters').update({arte_url:portraitUrl}).eq('id',id);if(portraitUpdate.error)throw portraitUpdate.error;}catch(portraitError){console.error('A ficha foi criada, mas a arte não foi salva:',portraitError);status.textContent='Personagem criado; não foi possível salvar a arte. Você poderá adicioná-la na ficha.';}}
       window.location.href='ficha.html?ruleset=dnd35&char='+encodeURIComponent(String(id))+'&role=player&grimoire=1';
     } catch(err) {status.textContent='Não foi possível salvar: '+(err.message||err);button.disabled=false;}
   }
