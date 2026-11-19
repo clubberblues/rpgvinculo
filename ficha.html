@@ -2558,8 +2558,9 @@ function dnd35TranslateCatalogText(value){
     if(value===null||value===undefined||String(value).trim()==='')return '';
     var s=String(value).trim(),f=String(field||'').toLowerCase(),wasCapitalized=/^[A-Z]/.test(s);
     if(f==='components'){
-      var componentNames={v:'V (verbal)',s:'S (somático)',m:'M (material)',f:'F (foco)',df:'FD (foco divino)'};
-      return s.split(/\s*,\s*/).map(function(token){var k=token.toLowerCase();if(k==='m/df')return 'M (material) / FD (foco divino)';if(k==='f/df')return 'F (foco) / FD (foco divino)';return componentNames[k]||token;}).join(' · ');
+      var componentNames={v:'V (verbal)',s:'S (somático)',m:'M (material)',f:'F (foco)',df:'FD (foco divino)',xp:'custo em XP'};
+      s=s.replace(/\bBrd only\b/gi,'apenas Bardo').replace(/;\s*see text/gi,'; ver texto').replace(/\bsee text\b/gi,'ver texto');
+      return s.split(/\s*,\s*/).map(function(token){var k=token.toLowerCase().trim();if(k==='m/df')return 'M (material) / FD (foco divino)';if(k==='f/df')return 'F (foco) / FD (foco divino)';if(k==='(f)')return 'F (foco opcional)';var brd=token.match(/^V\s*\((.*)\)$/i);if(brd)return 'V (verbal; '+brd[1].toLowerCase()+')';return componentNames[k]||token;}).join(' · ');
     }
     var exact={
       'instantaneous':'Instantânea','concentration':'Concentração','permanent':'Permanente','personal':'Pessoal','touch':'Toque','close (25 ft. + 5 ft./2 levels)':'Curto (7,5 m + 1,5 m a cada 2 níveis)','medium (100 ft. + 10 ft./level)':'Médio (30 m + 3 m por nível)','long (400 ft. + 40 ft./level)':'Longo (120 m + 12 m por nível)','unlimited':'Ilimitado','see text':'Ver texto',
