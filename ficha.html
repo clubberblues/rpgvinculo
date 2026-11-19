@@ -1217,6 +1217,18 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -18%,#1a1e
 @media(max-width:760px){.ficha.dnd35-mode .dnd35-spell-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.ficha.dnd35-mode .dnd35-spell-card-inner{height:250px!important;min-height:250px!important}}
 @media(max-width:430px){.ficha.dnd35-mode .dnd35-spell-list{grid-template-columns:1fr!important}.ficha.dnd35-mode .dnd35-spell-card-inner{height:255px!important;min-height:255px!important}}
 </style>
+
+<style id="dnd35-review-attribute-balance">
+.ficha.dnd35-mode .dnd35-review-attrs{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:9px!important}
+.ficha.dnd35-mode .dnd35-review-attr{min-width:0;min-height:82px;padding:9px 8px!important}
+.ficha.dnd35-mode .dnd35-review-attr>small{display:block;margin-bottom:8px;text-align:center;font:700 9px Cinzel,serif;letter-spacing:.08em}
+.ficha.dnd35-mode .dnd35-review-attr-values{display:grid;grid-template-columns:minmax(0,1fr) 42px;align-items:end;gap:7px}
+.ficha.dnd35-mode .dnd35-review-attr-values>div{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
+.ficha.dnd35-mode .dnd35-review-attr-values em{font:600 8px Inter,system-ui,sans-serif;color:#9fa99b;font-style:normal;text-transform:uppercase;letter-spacing:.04em}
+.ficha.dnd35-mode .dnd35-review-attr-values strong{font:700 22px/1 Cinzel,serif!important;color:#f0e6d2!important;font-variant-numeric:tabular-nums}
+.ficha.dnd35-mode .dnd35-review-attr-values b{display:flex;align-items:center;justify-content:center;width:38px;min-height:24px;border:1px solid #8d7548;border-radius:6px;background:#242b2b;color:#f0d18b;font:700 11px Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums}
+@media(max-width:760px){.ficha.dnd35-mode .dnd35-review-attrs{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+</style>
 </head>
 <body>
 
@@ -3556,6 +3568,7 @@ function dnd35LanguageNormalize(value){
       var minus=creating?'<button type="button" class="dnd35-attr-step" data-attr-step="-1" data-attr="'+sigla+'" aria-label="Diminuir '+esc(ROT[sigla]||sigla)+'" '+(!canDown?'disabled':'')+'>−</button>':'';var plus=creating?'<button type="button" class="dnd35-attr-step" data-attr-step="1" data-attr="'+sigla+'" aria-label="Aumentar '+esc(ROT[sigla]||sigla)+'" '+(!canUp?'disabled':'')+'>＋</button>':'';
       return '<div class="dnd35-attr"><small>'+esc(ROT[sigla]||sigla)+'</small><div class="dnd35-attr-value">'+minus+'<strong>'+val+'</strong>'+plus+'<span class="dnd35-attr-mod">'+(mod>=0?'+':'')+mod+'</span></div></div>';
     }).join('');
+    var reviewAttrHtml=ATR.map(function(sigla){var val=Number(attrs[sigla]==null?10:attrs[sigla]),mod=dnd35Modificador(val);return '<div class="dnd35-attr dnd35-review-attr"><small>'+esc(ROT[sigla]||sigla)+'</small><div class="dnd35-review-attr-values"><div><em>Valor</em><strong>'+val+'</strong></div><div><em>Mod.</em><b>'+(mod>=0?'+':'')+mod+'</b></div></div></div>';}).join('');
     var skillsView=dnd35RenderSkills(state,attrs,creating,classMap), featsView=dnd35RenderFeats(state,attrs,creating);
     var skillBudgetNote='Pontos de perícia: '+skillsView.spent+' / '+skillsView.budget+' gastos';
     var createStep=state.activeStep||'identity',spellAccess=dnd35GrimoireAvailability(state,attrs,level),magicClass=!!spellAccess.key&&Object.keys(spellAccess.slots).some(function(circle){return Number(spellAccess.slots[circle])>0;}),createSteps=[['identity','1 · Herói','Nome e identidade'],['class','2 · Classe','Recursos e escolhas'],['attributes','3 · Atributos','Distribua 25 pontos'],['training','4 · Treino','Perícias e talentos']];if(magicClass)createSteps.push(['magic',(createSteps.length+1)+' · Magias','Conhecer e preparar']);createSteps.push(['equipment',(createSteps.length+1)+' · Equipamento','Kit ou ouro inicial']);createSteps.push(['review',(createSteps.length+1)+' · Revisão','Confira antes de concluir']);
@@ -3597,7 +3610,7 @@ function dnd35LanguageNormalize(value){
       ['Deslocamento',(state.deslocamentoEfetivo==null?(state.raca.deslocamento==null?'—':state.raca.deslocamento+' m'):state.deslocamentoEfetivo+' m')],
       ['Tamanho',state.raca.tamanho||'—']
     ];
-    var heroHtml='<section class="dnd35-panel dnd35-hero-panel"><div class="dnd35-hero-art" data-dnd35-portrait-area>'+(portraitSrc?'<img src="'+esc(portraitSrc)+'" alt="Arte do personagem">':'<div class="dnd35-hero-art-empty"><span>✦</span><small>Arte do personagem</small><em>Adicionar ilustração</em></div>')+'<label class="dnd35-hero-upload"><input type="file" accept="image/png,image/jpeg,image/webp" data-dnd35-portrait> '+(portraitSrc?'Alterar arte':'Adicionar arte')+'</label></div><div class="dnd35-hero-details"><div class="dnd35-hero-identity"><div class="dnd35-kicker">PERSONAGEM</div><h2>'+esc(state.nomeDraft||state.character&&state.character.nome||'Sem nome')+'</h2><div class="dnd35-meta dnd35-hero-meta">'+heroStats.map(function(item){return '<div class="dnd35-stat"><small>'+item[0]+'</small><strong>'+esc(item[1])+'</strong></div>';}).join('')+'</div></div><div class="dnd35-hero-attributes"><h3>Atributos</h3><div class="dnd35-attrs">'+attrHtml+'</div></div>'+statusHtml+'</div></section>';
+    var heroHtml='<section class="dnd35-panel dnd35-hero-panel"><div class="dnd35-hero-art" data-dnd35-portrait-area>'+(portraitSrc?'<img src="'+esc(portraitSrc)+'" alt="Arte do personagem">':'<div class="dnd35-hero-art-empty"><span>✦</span><small>Arte do personagem</small><em>Adicionar ilustração</em></div>')+'<label class="dnd35-hero-upload"><input type="file" accept="image/png,image/jpeg,image/webp" data-dnd35-portrait> '+(portraitSrc?'Alterar arte':'Adicionar arte')+'</label></div><div class="dnd35-hero-details"><div class="dnd35-hero-identity"><div class="dnd35-kicker">PERSONAGEM</div><h2>'+esc(state.nomeDraft||state.character&&state.character.nome||'Sem nome')+'</h2><div class="dnd35-meta dnd35-hero-meta">'+heroStats.map(function(item){return '<div class="dnd35-stat"><small>'+item[0]+'</small><strong>'+esc(item[1])+'</strong></div>';}).join('')+'</div></div><div class="dnd35-hero-attributes"><h3>Atributos</h3><div class="dnd35-attrs dnd35-review-attrs">'+reviewAttrHtml+'</div></div>'+statusHtml+'</div></section>';
 
     var reviewPages=[
       {title:'Herói',html:heroHtml},
