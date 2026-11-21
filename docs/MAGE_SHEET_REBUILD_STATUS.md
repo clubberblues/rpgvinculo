@@ -51,6 +51,15 @@ A ficha enviada em `mago.feiticeiro(2).html` é a interface canônica. A nova im
 - A Mesa ainda precisa abrir a ficha original em painel/modal e respeitar as permissões de jogador e Mestre.
 - A lista separada de magias preparadas do Mago ainda precisa de operações narrativas de adicionar/remover ocorrências durante a campanha, sem slots, limites diários ou consumo automático. A interface/ação de invocar e administrar o familiar ainda precisa ser implementada.
 
+### Auditoria de cobertura dos catálogos no banco (21/11/2026)
+
+- Talentos: 110 registros; 110 com nome em português e 110 com descrição em português.
+- Magias disponíveis ao Mago: 378 registros; 378 com nome e descrição em português.
+- Campos técnicos das magias do Mago: alcance preenchido em 315/378, alvo ou área em 325/378, duração em 316/378 e componentes em 318/378. A interface deve apresentar os dados existentes sem inventar valores; as lacunas continuam sendo pendência de catalogação.
+- Familiares-base consultados em `srd_monsters`: 9 animais encontrados. Os nomes e categorias de tamanho foram localizados na interface; descrições detalhadas ainda usam o texto-fonte cadastrado, que pode estar em inglês.
+- O arquivo `mage-sheet-app.js` passou por compilação de sintaxe JavaScript sem execução. As verificações GitHub Actions associadas à atualização anterior concluíram com sucesso; isso não equivale a teste funcional em navegador.
+- Não foi feita alteração de esquema nem gravação de dados de personagens nesta etapa.
+
 ## Segurança e preservação
 
 - Não foram alteradas fichas existentes, campanhas, tokens ou políticas RLS.
