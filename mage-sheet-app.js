@@ -339,6 +339,9 @@
   function sizeModifier(size) {
     return ({'miudo':2,'pequeno':1,'medio':0,'grande':-1,'enorme':-2,'imenso':-4,'colossal':-8})[normalize(size)] ?? 0;
   }
+  function grappleSizeModifier(size) {
+    return ({'miudo':-8,'pequeno':-4,'medio':0,'grande':4,'enorme':8,'imenso':12,'colossal':16})[normalize(size)] ?? 0;
+  }
   function populateSkillTotals(final, modifiers, race) {
     const p = panel('Perícias');
     if (!p) return;
@@ -412,14 +415,15 @@
       });
     }
     const sizeMod = sizeModifier(race.tamanho);
+    const grappleMod = grappleSizeModifier(race.tamanho);
     const basePanel = panel('Base e Agarrar');
     if (basePanel) {
       const inputs = basePanel.querySelectorAll('input');
       if (inputs[0]) inputs[0].value = '0';
-      if (inputs[2]) inputs[2].value = String(modifiers.FOR + sizeMod);
+      if (inputs[2]) inputs[2].value = String(modifiers.FOR + grappleMod);
       if (inputs[3]) inputs[3].value = '0';
       if (inputs[4]) inputs[4].value = String(modifiers.FOR);
-      if (inputs[5]) inputs[5].value = String(sizeMod);
+      if (inputs[5]) inputs[5].value = String(grappleMod);
       if (inputs[6]) inputs[6].value = '0';
     }
     const initPanel = panel('Iniciativa');
