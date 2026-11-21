@@ -31,10 +31,21 @@ A ficha enviada em `mago.feiticeiro(2).html` é a interface canônica. A nova im
 - A função está executável por `authenticated` e não por `anon`.
 - As validações estáticas e de sintaxe JavaScript passaram nos commits verificados até a última execução de CI.
 
+## Catálogos auxiliares e identidade visual — atualização
+
+- Os títulos Talentos, Familiar e Grimório abrem catálogos auxiliares sem substituir nem ocupar permanentemente os campos da ficha.
+- O catálogo de talentos apresenta nome e pré-requisitos; selecionar o nome preenche a próxima linha disponível da ficha. A ação VER abre a descrição completa em uma camada tipográfica central, com o restante da tela intensamente desfocado e sem cartão ou caixa.
+- O catálogo de magias consulta os registros do Mago, permite filtrar por círculo, exibe os dados técnicos e a descrição organizada em parágrafos; selecionar o nome preenche a linha correspondente no grimório original.
+- O catálogo de Familiar consulta os animais-base existentes em `srd_monsters` (morcego, gato, falcão, lagarto, coruja, rato, corvo, sapo e doninha), copia os dados disponíveis para os campos do modelo e guarda o identificador da escolha nos metadados da ficha.
+- A descrição detalhada de talentos, magias e familiares usa a mesma camada sem caixas, com fundo em blur; pode ser fechada com Escape ou clicando fora do texto.
+- A paleta da ficha e dos catálogos parte dos tokens já existentes: pergaminho claro, tinta escura, latão envelhecido e EB Garamond/Cinzel. O destaque de foco azulado foi substituído por latão para evitar a quebra de identidade.
+- As escolhas de progressão durante a campanha não terão bloqueios automáticos de nível/pré-requisitos impostos pela interface; a condução das condições fica com o Mestre. A validação transacional atual da criação inicial permanece separada e não foi alterada nesta etapa.
+- Limitação de conteúdo: nomes dos familiares foram localizados na interface, mas as descrições dos registros de monstros ainda vêm do campo-fonte existente e podem permanecer em inglês. Os catálogos exibem o texto atualmente cadastrado, sem inventar traduções.
+
 ## Pendências reais
 
 - Ainda falta teste ponta a ponta no navegador com uma sessão real de jogador. A RPC foi testada no banco com contexto de autenticação simulado e transação revertida; nenhum personagem de teste foi deixado persistido.
-- O mapeamento semântico de todos os controles, tabelas repetidas e listas do HTML ainda precisa de revisão completa.
+- O mapeamento semântico de todos os controles, tabelas repetidas e listas do HTML ainda precisa de revisão completa; os catálogos auxiliares agora cobrem talentos, grimório e familiares do Mago, mas ainda precisam de validação visual e funcional em navegador.
 - Retrato e transformação ainda não estão ligados ao Supabase Storage.
 - A edição de uma ficha já existente ainda salva o snapshot visual; a sincronização de cada campo editado com as colunas normalizadas precisa de uma operação própria.
 - A Mesa ainda precisa abrir a ficha original em painel/modal e respeitar as permissões de jogador e Mestre.
