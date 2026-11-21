@@ -1215,7 +1215,7 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
       return;
     }
     var params = new URLSearchParams({ mode: 'criar', ruleset: 'dnd35', raca: String(racaSelecionadaGrimorio.id), classe: String(classeSelecionadaGrimorio.id) });
-    window.location.href = 'ficha-original.html?' + params.toString();
+    window.location.assign(new URL('ficha-original.html?v=20261121-2055&' + params.toString(), window.location.href).href);
   }
 
   async function init() {
@@ -1755,7 +1755,7 @@ function uploadCapaMesa(mesaId) {
         var avatar = ch.retrato_url
           ? '<img src="' + escapeHtml(ch.retrato_url) + '" alt="Retrato de ' + escapeHtml(ch.nome || 'herói') + '">'
           : '<div class="avatar-placeholder" aria-hidden="true">👤</div>';
-        var sheetUrl = sheet && /mago|wizard/i.test(String(classNames[String(sheet.classe_id)] || sheet.classe_id)) ? 'ficha-original.html?char=' : 'ficha.html?char=';
+        var sheetUrl = sheet && /mago|wizard/i.test(String(classNames[String(sheet.classe_id)] || sheet.classe_id)) ? 'ficha-original.html?v=20261121-2055&char=' : 'ficha.html?char=';
         return '<div class="card-ficha-admin"><a href="' + sheetUrl + encodeURIComponent(ch.id) + '" class="card-ficha-user">' + avatar +
           '<div class="nome">' + escapeHtml(ch.nome || 'Sem Nome') + '</div><div class="info">' + escapeHtml(resumo) + '</div></a>' +
           '<button type="button" class="btn-excluir-ficha js-excluir-ficha" data-char-id="' + escapeHtml(ch.id) + '" data-char-name="' + escapeHtml(ch.nome || 'Sem Nome') + '" aria-label="Excluir ficha ' + escapeHtml(ch.nome || 'Sem Nome') + '">Excluir ficha</button></div>';
