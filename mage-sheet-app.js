@@ -491,8 +491,6 @@
       if (inputs[0]) inputs[0].value = '1000';
       if (inputs[1]) inputs[1].value = '0';
     }
-    const moneyPanel = panel('Dinheiro');
-    if (moneyPanel) Array.from(moneyPanel.querySelectorAll('input')).slice(0,4).forEach(input => { input.value = '0'; });
     const spellBlocks = Array.from(document.querySelectorAll('.ficha .spell-level-block'));
     spellBlocks.forEach(block => {
       const circle = parseInt(clean(block.querySelector('.spell-level-title')),10);
