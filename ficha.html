@@ -3514,7 +3514,7 @@ function dnd35LanguageNormalize(value){
       else if(existing>=0)list.splice(existing,1);
       renderizarFichaSRD35();
     });
-    el.addEventListener('input',function(e){var field=e.target.closest('[data-manual-category][data-manual-field]');if(!field)return;var cat=field.dataset.manualCategory,index=Number(field.dataset.manualIndex),key=field.dataset.manualField;if(notes[cat]&&notes[cat][index]&&['nome','quantidade','peso_lb','detalhes'].indexOf(key)>=0){notes[cat][index][key]=field.value;if(key==='peso_lb'||key==='quantidade')dnd35RefreshEquipmentLoad(s,notes);}});
+    el.addEventListener('input',function(e){var field=e.target.closest('[data-manual-category][data-manual-field]');if(!field)return;var cat=field.dataset.manualCategory,index=Number(field.dataset.manualIndex),key=field.dataset.manualField;if(notes[cat]&&notes[cat][index]&&['nome','quantidade','peso_lb','detalhes'].indexOf(key)>=0){notes[cat][index][key]=field.value;if(key==='peso_lb'||key==='quantidade'||key==='nome')dnd35RefreshEquipmentLoad(s,notes);}});
   }
   function dnd35EquipmentMarkup(state) {return dnd35ManualEquipmentMarkup(state,true);}
   function dnd35FreeLanguageBindSheet(state){document.querySelectorAll('[data-free-language-save]').forEach(function(button){button.addEventListener('click',async function(){var section=button.closest('.dnd35-language-panel'),status=section&&section.querySelector('[data-free-language-status]');button.disabled=true;if(status)status.textContent='Salvando…';try{var field=section&&section.querySelector('[data-free-languages]');if(field)state.identidade.idiomas_livres=field.value;var result=await sb.rpc('salvar_idiomas_livres_personagem_srd',{p_character_id:String(CHAR_ID),p_idiomas_livres:String(state.identidade&&state.identidade.idiomas_livres||'')});if(result.error)throw result.error;if(status)status.textContent='Idiomas salvos.';}catch(error){if(status)status.textContent='Não foi possível salvar: '+(error.message||String(error));}finally{button.disabled=false;}});});}
@@ -3541,7 +3541,7 @@ function dnd35LanguageNormalize(value){
     panel.addEventListener('input',function(event){
       var field=event.target.closest('[data-manual-category][data-manual-field]');if(!field)return;
       var category=field.dataset.manualCategory,index=Number(field.dataset.manualIndex),key=field.dataset.manualField;
-      if(notes[category]&&notes[category][index]&&['nome','quantidade','peso_lb','detalhes'].indexOf(key)>=0){notes[category][index][key]=field.value;if(key==='peso_lb'||key==='quantidade')dnd35RefreshEquipmentLoad(state,notes);}
+      if(notes[category]&&notes[category][index]&&['nome','quantidade','peso_lb','detalhes'].indexOf(key)>=0){notes[category][index][key]=field.value;if(key==='peso_lb'||key==='quantidade'||key==='nome')dnd35RefreshEquipmentLoad(state,notes);}
       var status=panel.querySelector('[data-manual-save-status]');if(status)status.textContent='Alterações não salvas.';
     });
   }
@@ -4271,6 +4271,53 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2732
 <style id="dnd35-sheet-load-and-profile">
 .dnd35-load-summary{display:grid;grid-template-columns:minmax(150px,.8fr) minmax(0,1.2fr);gap:12px;align-items:center;margin:12px 0;padding:13px 15px;border:1px solid #806b48;border-radius:9px;background:linear-gradient(145deg,#252b34,#151a22);color:#e9e1d2}.dnd35-load-summary>div:first-child{display:grid;gap:4px}.dnd35-load-summary small{font:700 9px Cinzel,serif;letter-spacing:.12em;color:#d0b27c}.dnd35-load-summary strong{font:800 23px Cinzel,serif;color:#f0d18b;font-variant-numeric:tabular-nums}.dnd35-load-summary span{font-size:11px;color:#c8c0b2;line-height:1.4}.dnd35-load-limits{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}.dnd35-load-limits span{padding:8px;border:1px solid #5a5142;border-radius:6px;background:#171d25;text-align:center}.dnd35-load-limits b{display:block;color:#e4c681;font:700 10px Cinzel,serif;margin-bottom:3px}.dnd35-manual-weight{display:grid;gap:4px}.dnd35-personal-summary,.dnd35-combat-summary{margin:12px 0}.dnd35-personal-summary .dnd35-meta,.dnd35-combat-summary .dnd35-meta{grid-template-columns:repeat(auto-fit,minmax(125px,1fr))}.dnd35-personal-summary .dnd35-note{margin-top:10px;overflow-wrap:anywhere}.dnd35-personal-summary .dnd35-note b{color:#e4c681}
 @media(max-width:640px){.dnd35-load-summary{grid-template-columns:1fr}.dnd35-load-limits{grid-template-columns:1fr 1fr}.dnd35-personal-summary .dnd35-meta,.dnd35-combat-summary .dnd35-meta{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+
+<style id="dnd35-parchment-reference-skin">
+/* Pele visual alinhada às fichas guerreiro.html e mago.feiticeiro(1).html: pergaminho, tinta, latão e cenário de fantasia escuro. */
+body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at top,#2a1f14 0%,#0a0603 70%),#0a0603!important;color:#2b1a0e!important}
+.ficha.dnd35-mode{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.2 0 0 0 0 0.12 0 0 0 0 0.05 0 0 0 0.14 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),linear-gradient(145deg,#e8d8b0,#d9c39a)!important;background-blend-mode:multiply,normal!important;color:#2b1a0e!important;border:1px solid #0c0906!important;border-radius:3px!important;box-shadow:inset 0 0 0 1px #8b6f47,inset 0 0 0 5px #e8d8b0,inset 0 0 0 6px #8b6f4788,0 30px 60px #000b,0 6px 0 #0c0906!important}
+.ficha.dnd35-mode .dnd35-page{color:#2b1a0e!important}
+.ficha.dnd35-mode .dnd35-header{border-color:#8b6f4777!important}
+.ficha.dnd35-mode .dnd35-kicker{color:#8b6f47!important}
+.ficha.dnd35-mode .dnd35-header h1{color:#1a0f08!important;text-shadow:0 1px #fff5!important}
+.ficha.dnd35-mode .dnd35-header p{color:#5a3f28!important}
+.ficha.dnd35-mode .dnd35-link{background:#1b2419!important;color:#f4d07a!important;border-color:#b08d57!important}
+.ficha.dnd35-mode .dnd35-panel,.ficha.dnd35-mode .dnd35-build-panel,.ficha.dnd35-mode .dnd35-section{background:rgba(255,255,255,.34)!important;border:1px solid rgba(139,111,71,.65)!important;border-radius:4px!important;box-shadow:inset 0 1px #fff6,0 2px 7px #3b27100c!important;color:#2b1a0e!important}
+.ficha.dnd35-mode .dnd35-panel h2,.ficha.dnd35-mode .dnd35-build-panel h2,.ficha.dnd35-mode .dnd35-section-title{color:#3a2510!important;border-color:#b08d5777!important;text-shadow:0 1px #fff6!important}
+.ficha.dnd35-mode .dnd35-note,.ficha.dnd35-mode .dnd35-panel p,.ficha.dnd35-mode .dnd35-build-panel p,.ficha.dnd35-mode .dnd35-list{color:#5a3f28!important}
+.ficha.dnd35-mode .dnd35-stat{background:rgba(255,255,255,.38)!important;border-color:#8b6f4755!important}
+.ficha.dnd35-mode .dnd35-stat small{color:#765333!important}
+.ficha.dnd35-mode .dnd35-stat strong{color:#1a0f08!important}
+.ficha.dnd35-mode .dnd35-attr{background:rgba(255,255,255,.38)!important;border-color:#8b6f47!important}
+.ficha.dnd35-mode .dnd35-attr small,.ficha.dnd35-mode .dnd35-attr-mod{color:#5a3f28!important}
+.ficha.dnd35-mode .dnd35-attr strong{color:#1a0f08!important}
+.ficha.dnd35-mode .dnd35-attr-step{background:#1b2419!important;color:#f5ecd6!important;border-color:#b08d57!important}
+.ficha.dnd35-mode input,.ficha.dnd35-mode select,.ficha.dnd35-mode textarea{background:rgba(255,255,255,.5)!important;color:#1a0f08!important;border-color:#8b6f47!important}
+.ficha.dnd35-mode input::placeholder,.ficha.dnd35-mode textarea::placeholder{color:#8a7358!important}
+.ficha.dnd35-mode .dnd35-create-nav{background:linear-gradient(110deg,#1b2419,#263222 50%,#1b2419)!important;border-color:#8b6f47!important}
+.ficha.dnd35-mode .dnd35-create-step{background:rgba(255,255,255,.08)!important;color:#eadfc9!important;border-color:#8b6f47!important}
+.ficha.dnd35-mode .dnd35-create-step.active{background:linear-gradient(145deg,#d5b878,#b08d57)!important;color:#1a0f08!important;border-color:#6f542d!important}
+.ficha.dnd35-mode .dnd35-stage-actions{background:linear-gradient(145deg,#1b2419,#10170f)!important;border-color:#b08d57!important}
+.ficha.dnd35-mode .dnd35-stage-actions button{background:#1b2419!important;color:#f4d07a!important;border-color:#b08d57!important}
+.ficha.dnd35-mode .dnd35-save{background:linear-gradient(180deg,#d8b66b,#b08d57)!important;color:#1a0f08!important;border-color:#8b6f47!important}
+.ficha.dnd35-mode .dnd35-skill,.ficha.dnd35-mode .dnd35-feat-card,.ficha.dnd35-mode .dnd35-feature-card,.ficha.dnd35-mode .dnd35-review-grid article{background:rgba(255,255,255,.42)!important;border-color:#9b7b4e!important;color:#2b1a0e!important;box-shadow:inset 0 1px #fff8,0 2px 5px #3b27100c!important}
+.ficha.dnd35-mode .dnd35-skill-summary-name,.ficha.dnd35-mode .dnd35-feature-card strong,.ficha.dnd35-mode .dnd35-feat-card h3{color:#3a2510!important}
+.ficha.dnd35-mode .dnd35-skill-total,.ficha.dnd35-mode .dnd35-feature-card small{color:#805d32!important}
+.ficha.dnd35-mode .dnd35-skill-expanded{background:rgba(255,255,255,.28)!important}
+.ficha.dnd35-mode .dnd35-grimoire{background:linear-gradient(145deg,#f0e2bf,#ddc99f)!important;color:#2b1a0e!important;border-color:#8b6f47!important}
+.ficha.dnd35-mode .dnd35-grimoire h2,.ficha.dnd35-mode .dnd35-grimoire b,.ficha.dnd35-mode .dnd35-grimoire strong{color:#2b1a0e!important}
+.ficha.dnd35-mode .dnd35-grimoire p,.ficha.dnd35-mode .dnd35-grimoire-guide{color:#5a3f28!important}
+.ficha.dnd35-mode .dnd35-grimoire-ledger article{background:rgba(255,255,255,.48)!important;border-color:#b08d57!important}
+.ficha.dnd35-mode .dnd35-grimoire-ledger b{color:#3a2510!important}.ficha.dnd35-mode .dnd35-grimoire-ledger span{color:#5a3f28!important}
+.ficha.dnd35-mode .dnd35-grimoire-btn,.ficha.dnd35-mode .dnd35-grimoire-action{background:#1b2419!important;color:#f4d07a!important;border-color:#b08d57!important}
+.ficha.dnd35-mode .dnd35-spell-card-face{background:linear-gradient(145deg,#f5ecd6,#e4d4ad)!important;color:#2b1a0e!important;border-color:#9b7b4e!important}
+.ficha.dnd35-mode .dnd35-spell-card-face h3{color:#3a2510!important}.ficha.dnd35-mode .dnd35-spell-card-back .dnd35-spell-description{color:#4d3926!important}
+.ficha.dnd35-mode .dnd35-spell-flip{background:#1b2419!important;color:#f4d07a!important;border-color:#b08d57!important}
+.ficha.dnd35-mode .dnd35-load-summary{background:linear-gradient(145deg,#263222,#1b2419)!important;color:#f5ecd6!important}
+.ficha.dnd35-mode .dnd35-load-summary span{color:#e6ddc8!important}.ficha.dnd35-mode .dnd35-load-summary strong{color:#f4d07a!important}
+.ficha.dnd35-mode .dnd35-review-sheet .dnd35-panel{background:rgba(255,255,255,.34)!important}
+@media(max-width:760px){.ficha.dnd35-mode{padding:14px!important}}
 </style>
 </body>
 </html>
