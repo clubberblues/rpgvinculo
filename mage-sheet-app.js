@@ -700,9 +700,9 @@
       applyRacePresentation(raceData,profile.data);
       setupWizardChoiceFields(null);
       renderSpellInputs();
-      restoreLocalDraft();
+      const draftRestored = restoreLocalDraft();
       bindLocalDraftAutosave();
-      status('Ficha original pronta. Preencha os campos; ao criar, personagem e ficha serão gravados juntos no banco.');
+      if (!draftRestored) status('Ficha original pronta. Preencha os campos; ao criar, personagem e ficha serão gravados juntos no banco.');
     } else if (characterId) {
       const result = await sb.from('srd_character_sheets').select('identidade').eq('character_id', characterId).maybeSingle();
       if (result.error) throw result.error;
