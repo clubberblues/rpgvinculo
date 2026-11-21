@@ -26,7 +26,7 @@
     { title: 'Equipamentos', section: 'Equipamentos', selector: 'input', help: 'Registre livremente os equipamentos e seus pesos.' },
     { title: 'Idiomas', section: 'Idiomas', selector: 'textarea', help: 'Edite a lista livre de idiomas conhecidos.' }
   ];
-  let sb, user, step = 0, raceData = null, classData = null, skillCatalog = [], featCatalog = [], spellCatalog = [];
+  let sb, user, step = 0, raceData = null, classData = null, skillCatalog = [], featCatalog = [], spellCatalog = [], monsterCatalog = [], selectedFamiliar = null, catalogMode = null;
   const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   const clean = node => (node && node.textContent || '').replace(/\s+/g, ' ').trim();
 
@@ -64,6 +64,35 @@
     bar.innerHTML = '<div class="mage-sheet-meta"><strong>FICHA DO MAGO · D&D 3.5</strong><span id="mage-sheet-status" role="status" aria-live="polite">Preparando ficha…</span></div><div class="mage-sheet-actions"><button type="button" id="mage-prev">Anterior</button><button type="button" id="mage-next">Próxima etapa</button><button type="button" id="mage-save">' + (isCreate ? 'Criar Mago' : 'Salvar ficha') + '</button></div>';
     const style = document.createElement('style');
     style.textContent = '#mage-sheet-toolbar{position:sticky;top:0;z-index:10001;display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:10px 16px;margin:-20px -20px 18px;background:#1a120b;color:#f5e8c8;border-bottom:2px solid #b08d57;font:13px Georgia,serif}#mage-sheet-toolbar .mage-sheet-meta{display:flex;flex-direction:column;gap:3px}#mage-sheet-status{color:#d8c69f}#mage-sheet-status[data-error=true]{color:#ff9b8f}#mage-sheet-toolbar .mage-sheet-actions{display:flex;gap:8px;flex-wrap:wrap}#mage-sheet-toolbar button{padding:8px 13px;border:1px solid #b08d57;background:#332416;color:#f5e8c8;border-radius:4px;cursor:pointer;font-weight:700}#mage-sheet-toolbar button:disabled{opacity:.45;cursor:not-allowed}.mage-class-feature-note{margin:6px 0 10px;padding:7px 10px;border-left:2px solid #b08d57;color:#6f5738;background:#f3ead7;font:12px Georgia,serif}.mage-step-focus{outline:3px solid #1687d9!important;outline-offset:4px;box-shadow:0 0 0 6px #1687d955!important;position:relative;z-index:2}.mage-step-note{position:fixed;right:18px;bottom:18px;z-index:10002;max-width:340px;padding:14px 16px;background:#1a120b;color:#f5e8c8;border:1px solid #b08d57;border-radius:6px;box-shadow:0 8px 30px #0009;font:15px Georgia,serif}.mage-choice-panel{margin:12px 0 16px;padding:10px 12px;border:1px solid rgba(139,111,71,.65);background:rgba(255,255,255,.28);font:13px Georgia,serif;color:#2b1a0e}.mage-choice-panel label{font-family:Cinzel,serif;font-size:9px;font-weight:700;display:block;margin-bottom:4px}.mage-choice-panel select{width:100%;padding:6px;background:rgba(255,255,255,.65);border:1px solid #8b6f47;color:#2b1a0e}.mage-school-choices{display:flex;gap:8px 14px;flex-wrap:wrap;margin-top:8px}.mage-school-choices label{display:flex;align-items:center;gap:5px;font-family:Georgia,serif;font-size:12px;font-weight:400}.mage-school-choices input{accent-color:#8b6f47}.mage-choice-help{font-size:11px;margin-top:6px;color:#5a3f28}';
+    
+    style.textContent += '\n' +
+      '.mage-catalog-backdrop{position:fixed;inset:0;z-index:10004;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(12,8,4,.72);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}' +
+      '.mage-catalog-backdrop.ativo{display:flex}' +
+      '.mage-catalog-shell{width:min(900px,96vw);max-height:min(86vh,900px);overflow:hidden;display:flex;flex-direction:column;background:linear-gradient(145deg,#eee1c2,#d7c093);color:#2b1a0e;border:1px solid #8b6f47;outline:4px solid rgba(26,15,8,.88);box-shadow:0 24px 70px #000c;padding:22px 26px}' +
+      '.mage-catalog-head{display:flex;align-items:center;justify-content:space-between;gap:16px;border-bottom:1px solid rgba(90,63,40,.45);padding-bottom:12px;margin-bottom:12px}' +
+      '.mage-catalog-head h2{font:900 22px Cinzel,serif;letter-spacing:2px;text-transform:uppercase;color:#3a2510}' +
+      '.mage-catalog-close{border:1px solid #8b6f47;background:rgba(43,26,14,.08);color:#3a2510;font:700 20px Georgia;cursor:pointer;width:34px;height:34px}' +
+      '.mage-catalog-tools{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}' +
+      '.mage-catalog-tools input,.mage-catalog-tools select{min-width:0;flex:1;padding:9px 11px;border:1px solid #9b8057;background:rgba(255,255,255,.42);color:#2b1a0e;font:15px EB Garamond,serif}' +
+      '.mage-catalog-list{overflow:auto;display:flex;flex-direction:column;gap:8px;padding:2px 4px 8px 0}' +
+      '.mage-catalog-row{display:grid;grid-template-columns:54px minmax(0,1fr) 58px;align-items:center;gap:12px;padding:8px 10px;border:1px solid rgba(139,111,71,.65);background:rgba(255,255,255,.24);min-height:62px}' +
+      '.mage-catalog-mark{width:48px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid #8b6f47;background:linear-gradient(145deg,#c4a66d,#eadcb8);color:#4b3218;font-size:19px}' +
+      '.mage-catalog-name{display:block;border:0;background:transparent;color:#2b1a0e;text-align:left;font:700 17px Cinzel,serif;cursor:pointer;padding:0}' +
+      '.mage-catalog-meta{display:block;margin-top:3px;color:#5a3f28;font:14px EB Garamond,serif;line-height:1.25}' +
+      '.mage-catalog-view{border:0;border-bottom:1px solid #8b6f47;background:transparent;color:#5a3f28;font:700 12px Cinzel,serif;letter-spacing:1px;cursor:pointer;padding:5px}' +
+      '.mage-catalog-empty{padding:28px 12px;text-align:center;color:#5a3f28;font:italic 16px EB Garamond,serif}' +
+      '.mage-lore-backdrop{position:fixed;inset:0;z-index:10006;display:none;align-items:center;justify-content:center;padding:7vh 8vw;background:rgba(10,7,4,.58);backdrop-filter:blur(24px) saturate(.55);-webkit-backdrop-filter:blur(24px) saturate(.55);cursor:pointer}' +
+      '.mage-lore-backdrop.ativo{display:flex}' +
+      '.mage-lore-copy{width:min(780px,100%);max-height:86vh;overflow:auto;cursor:default;text-align:center;color:#f0e2c1;text-shadow:0 2px 12px #000;font:18px/1.65 EB Garamond,Georgia,serif;white-space:normal}' +
+      '.mage-lore-copy h2{font:900 clamp(23px,3vw,34px)/1.2 Cinzel,serif;letter-spacing:2px;color:#e1c184;margin:0 0 22px;text-transform:uppercase}' +
+      '.mage-lore-copy h3{font:700 13px Cinzel,serif;letter-spacing:1.5px;text-transform:uppercase;color:#d7b574;margin:20px 0 5px}' +
+      '.mage-lore-copy p{margin:0 0 13px}' +
+      '.mage-lore-copy .mage-lore-meta{font:italic 15px EB Garamond,serif;color:#e5d2a8;margin-bottom:20px}' +
+      '.mage-catalog-trigger{cursor:pointer;transition:color .18s ease;text-decoration-color:transparent}' +
+      '.mage-catalog-trigger:hover{color:#8b5e24;text-decoration:underline;text-decoration-color:#b08d57;text-underline-offset:4px}' +
+      '.mage-familiar-selection{margin:6px 0 10px;padding:5px 0;border-bottom:1px dotted rgba(90,63,40,.45);font:italic 13px EB Garamond,serif;color:#6a4a29}' +
+      '@media(max-width:650px){.mage-catalog-backdrop{padding:10px}.mage-catalog-shell{padding:14px;max-height:92vh}.mage-catalog-row{grid-template-columns:42px minmax(0,1fr) 44px;gap:8px;padding:7px}.mage-catalog-mark{width:38px;height:38px}.mage-catalog-name{font-size:14px}.mage-lore-backdrop{padding:5vh 6vw}.mage-lore-copy{font-size:16px}}';
+
     document.head.appendChild(style);
     document.body.insertBefore(bar, document.body.firstChild);
     document.getElementById('mage-prev').addEventListener('click', () => showStep(step - 1));
@@ -604,16 +633,301 @@
     const block = Array.from(document.querySelectorAll('.ficha .spell-level-block')).find(b => parseInt(clean(b.querySelector('.spell-level-title')),10) === 1);
     if (block) block.querySelectorAll('.spell-row input[type="text"]').forEach(input => input.setAttribute('list',id));
   }
+
+  function createNode(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+  function ensureCatalogOverlays() {
+    if (!document.getElementById('mage-catalog-overlay')) {
+      const overlay = createNode('div','mage-catalog-backdrop');
+      overlay.id = 'mage-catalog-overlay';
+      const shell = createNode('section','mage-catalog-shell');
+      shell.setAttribute('role','dialog');
+      shell.setAttribute('aria-modal','true');
+      shell.setAttribute('aria-labelledby','mage-catalog-title');
+      const head = createNode('header','mage-catalog-head');
+      const title = createNode('h2','', 'Catálogo');
+      title.id = 'mage-catalog-title';
+      const close = createNode('button','mage-catalog-close','×');
+      close.type = 'button';
+      close.setAttribute('aria-label','Fechar catálogo');
+      close.addEventListener('click',closeCatalog);
+      head.append(title,close);
+      const tools = createNode('div','mage-catalog-tools');
+      const search = createNode('input');
+      search.id = 'mage-catalog-search';
+      search.type = 'search';
+      search.placeholder = 'Pesquisar no catálogo…';
+      search.addEventListener('input',renderCatalogList);
+      tools.appendChild(search);
+      const list = createNode('div','mage-catalog-list');
+      list.id = 'mage-catalog-list';
+      shell.append(head,tools,list);
+      overlay.appendChild(shell);
+      overlay.addEventListener('click',event=>{if(event.target===overlay)closeCatalog();});
+      document.body.appendChild(overlay);
+    }
+    if (!document.getElementById('mage-lore-overlay')) {
+      const overlay = createNode('div','mage-lore-backdrop');
+      overlay.id = 'mage-lore-overlay';
+      const copy = createNode('article','mage-lore-copy');
+      copy.id = 'mage-lore-copy';
+      copy.setAttribute('role','document');
+      overlay.appendChild(copy);
+      overlay.addEventListener('click',event=>{if(event.target===overlay)closeLore();});
+      document.body.appendChild(overlay);
+    }
+  }
+  function closeCatalog() {
+    const overlay = document.getElementById('mage-catalog-overlay');
+    if (overlay) overlay.classList.remove('ativo');
+    catalogMode = null;
+  }
+  function closeLore() {
+    const overlay = document.getElementById('mage-lore-overlay');
+    if (overlay) overlay.classList.remove('ativo');
+  }
+  function loreParagraphs(parent, value) {
+    const text = String(value || '').replace(/\r/g,'').trim();
+    if (!text) {
+      parent.appendChild(createNode('p','', 'Descrição ainda não cadastrada para este registro.'));
+      return;
+    }
+    text.split(/\n{2,}/).forEach(part=>{
+      const cleanPart = part.trim();
+      if (!cleanPart) return;
+      if (/^(Benefício|Normal|Especial|Pré-requisito|Pré-requisitos|Descrição|Efeito|Teste de Resistência|Resistência à Magia):/i.test(cleanPart)) {
+        const first = cleanPart.indexOf(':');
+        const heading = createNode('h3','',cleanPart.slice(0,first));
+        parent.appendChild(heading);
+        const rest = cleanPart.slice(first+1).trim();
+        if (rest) parent.appendChild(createNode('p','',rest));
+      } else {
+        parent.appendChild(createNode('p','',cleanPart));
+      }
+    });
+  }
+  function openLore(title, meta, description) {
+    ensureCatalogOverlays();
+    const overlay = document.getElementById('mage-lore-overlay');
+    const copy = document.getElementById('mage-lore-copy');
+    copy.replaceChildren();
+    copy.appendChild(createNode('h2','',title || 'Descrição'));
+    if (meta) copy.appendChild(createNode('div','mage-lore-meta',meta));
+    loreParagraphs(copy,description);
+    overlay.classList.add('ativo');
+  }
+  function featPrerequisite(feat) {
+    const req = feat && feat.requisitos && typeof feat.requisitos === 'object' ? feat.requisitos : {};
+    if (req.raw && String(req.raw).trim()) return String(req.raw).trim();
+    const parts = [];
+    const abilities = [['for_min','For'],['des_min','Des'],['con_min','Con'],['int_min','Int'],['sab_min','Sab'],['car_min','Car']];
+    abilities.forEach(([key,label])=>{if(req[key])parts.push(label+' '+req[key]);});
+    if (req.bab_min !== undefined) parts.push('BBA +'+req.bab_min);
+    if (req.level_min !== undefined) parts.push('Nível '+req.level_min);
+    if (Array.isArray(req.feat_ids) && req.feat_ids.length) {
+      const names = req.feat_ids.map(id=>{const f=featCatalog.find(item=>item.id===id);return f ? (f.nome_pt||f.nome) : id;});
+      parts.push(names.join(', '));
+    }
+    if (Array.isArray(req.skill_ranks) && req.skill_ranks.length) parts.push('Graduações em perícias');
+    return parts.join(' · ') || 'Pré-requisitos não detalhados no cadastro';
+  }
+  function catalogRow(name, meta, icon, onChoose, onView) {
+    const row = createNode('div','mage-catalog-row');
+    const mark = createNode('span','mage-catalog-mark');
+    const glyph = createNode('i','fa-solid '+icon);
+    glyph.setAttribute('aria-hidden','true');
+    mark.appendChild(glyph);
+    const main = createNode('div','mage-catalog-main');
+    const choose = createNode('button','mage-catalog-name',name);
+    choose.type = 'button';
+    choose.addEventListener('click',onChoose);
+    const sub = createNode('span','mage-catalog-meta',meta || '');
+    main.append(choose,sub);
+    const view = createNode('button','mage-catalog-view','VER');
+    view.type = 'button';
+    view.addEventListener('click',onView);
+    row.append(mark,main,view);
+    return row;
+  }
+  function renderCatalogList() {
+    const list = document.getElementById('mage-catalog-list');
+    const search = normalize(document.getElementById('mage-catalog-search')?.value || '');
+    if (!list || !catalogMode) return;
+    list.replaceChildren();
+    let items = [];
+    if (catalogMode === 'feats') {
+      items = featCatalog.filter(item=>item.id!=='srd35_feat_scribe_scroll' && normalize((item.nome_pt||item.nome)+' '+featPrerequisite(item)).includes(search));
+      items.forEach(feat=>{
+        const name = feat.nome_pt || feat.nome;
+        const description = feat.descricao_pt || feat.descricao || '';
+        list.appendChild(catalogRow(name,'Pré-requisito: '+featPrerequisite(feat),'fa-feather-pointed',()=>chooseFeat(feat),()=>openLore(name,'Pré-requisito: '+featPrerequisite(feat),description)));
+      });
+    } else if (catalogMode === 'spells') {
+      const level = Number(document.getElementById('mage-catalog-level')?.value ?? (isCreate ? 1 : 0));
+      items = allowedSpells(level).filter(item=>normalize((item.nome_pt||item.nome)+' '+item.escola+' '+item.nivel).includes(search));
+      items.forEach(spell=>{
+        const name = spell.nome_pt || spell.nome;
+        const meta = 'Círculo '+spell.circulo+' · '+schoolLabel(normalize(spell.escola).split(' ')[0])+' · '+(spell.alcance||'Alcance não informado');
+        const details = [
+          'Escola: '+(spell.escola||'Não informada'),
+          'Círculo: '+spell.circulo,
+          'Alcance: '+(spell.alcance||'Não informado'),
+          'Alvo: '+(spell.alvo||spell.area||'Não informado'),
+          'Duração: '+(spell.duracao||'Não informada'),
+          'Componentes: '+(spell.componentes||'Não informados')
+        ].join('\n');
+        list.appendChild(catalogRow(name,meta,'fa-wand-sparkles',()=>chooseSpell(spell),()=>openLore(name,details,spell.descricao_pt||spell.descricao||'')));
+      });
+    } else if (catalogMode === 'familiar') {
+      items = monsterCatalog.filter(item=>normalize(item.nome+' '+item.nome_original+' '+item.tamanho).includes(search));
+      items.forEach(monster=>{
+        const meta = 'Animal · '+monster.tamanho+' · ND '+monster.nd+' · '+(monster.deslocamento||'Deslocamento não informado');
+        const details = [
+          'Tamanho: '+(monster.tamanho||'Não informado'),
+          'Pontos de vida: '+(monster.pv ?? monster.dados_vida ?? 'Não informado'),
+          'Iniciativa: '+(monster.iniciativa||'Não informada'),
+          'Deslocamento: '+(monster.deslocamento||'Não informado'),
+          'Classe de Armadura: '+(monster.ca||'Não informada'),
+          'Ataques: '+(monster.ataques||'Não informados')
+        ].join('\n');
+        list.appendChild(catalogRow(monster.nome,meta,'fa-paw',()=>chooseFamiliar(monster),()=>openLore(monster.nome,details,monster.descricao||'')));
+      });
+    }
+    if (!items.length) list.appendChild(createNode('div','mage-catalog-empty','Nenhum resultado encontrado para esta pesquisa.'));
+  }
+  function openCatalog(mode) {
+    ensureCatalogOverlays();
+    catalogMode = mode;
+    const overlay = document.getElementById('mage-catalog-overlay');
+    const title = document.getElementById('mage-catalog-title');
+    const tools = document.querySelector('#mage-catalog-overlay .mage-catalog-tools');
+    const search = document.getElementById('mage-catalog-search');
+    title.textContent = mode === 'feats' ? 'Talentos' : mode === 'spells' ? 'Grimório' : 'Familiar';
+    tools.querySelectorAll('#mage-catalog-level').forEach(node=>node.remove());
+    if (mode === 'spells') {
+      const level = createNode('select');
+      level.id = 'mage-catalog-level';
+      for(let i=0;i<=9;i++){
+        const option = createNode('option','',i===0?'Truques (0)':'Círculo '+i);
+        option.value = String(i);
+        level.appendChild(option);
+      }
+      level.value = String(isCreate ? 1 : 0);
+      level.addEventListener('change',renderCatalogList);
+      tools.appendChild(level);
+    }
+    search.value = '';
+    overlay.classList.add('ativo');
+    renderCatalogList();
+    search.focus();
+  }
+  function bindCatalogTriggers() {
+    document.querySelectorAll('.panel-title').forEach(title=>{
+      const label = normalize(clean(title));
+      const mode = label === 'talentos' ? 'feats' : label === 'familiar' ? 'familiar' : label.startsWith('grimorio') ? 'spells' : null;
+      if (!mode || title.dataset.catalogBound) return;
+      title.dataset.catalogBound = 'true';
+      title.classList.add('mage-catalog-trigger');
+      title.setAttribute('role','button');
+      title.setAttribute('tabindex','0');
+      title.addEventListener('click',()=>openCatalog(mode));
+      title.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();openCatalog(mode);}});
+    });
+  }
+  function appendFeatRow() {
+    const p = panel('Talentos');
+    const rows = Array.from(p.querySelectorAll('div[style*="grid-template-columns: 1fr 50px"]')).filter(row=>row.querySelectorAll('input').length===2);
+    const row = rows[0].cloneNode(true);
+    row.querySelectorAll('input').forEach(input=>{input.value='';input.readOnly=false;input.removeAttribute('list');});
+    rows[rows.length-1].insertAdjacentElement('afterend',row);
+    return row.querySelectorAll('input');
+  }
+  function chooseFeat(feat) {
+    const p = panel('Talentos');
+    const rows = Array.from(p.querySelectorAll('div[style*="grid-template-columns: 1fr 50px"]')).filter(row=>row.querySelectorAll('input').length===2);
+    const name = feat.nome_pt || feat.nome;
+    const already = rows.some(row=>normalize(row.querySelector('input')?.value)===normalize(name));
+    if (already) { status('Este talento já está registrado na ficha.'); closeCatalog(); return; }
+    let row = rows.find(item=>!String(item.querySelector('input')?.value||'').trim());
+    if (!row) { appendFeatRow(); row = Array.from(p.querySelectorAll('div[style*="grid-template-columns: 1fr 50px"]')).filter(item=>item.querySelectorAll('input').length===2).at(-1); }
+    const inputs = row.querySelectorAll('input');
+    inputs[0].value = name;
+    inputs[1].value = '';
+    inputs[0].dispatchEvent(new Event('input',{bubbles:true}));
+    closeCatalog();
+    status('Talento adicionado à ficha: '+name+'.');
+  }
+  function chooseSpell(spell) {
+    const circle = Number(spell.circulo);
+    const block = Array.from(document.querySelectorAll('.spell-level-block')).find(item=>parseInt(clean(item.querySelector('.spell-level-title')),10)===circle);
+    if (!block) { status('A ficha não possui uma área para este círculo de magia.',true); return; }
+    const list = block.querySelector('.spell-list');
+    const name = spell.nome_pt || spell.nome;
+    const inputs = Array.from(list.querySelectorAll('input[type="text"]'));
+    if (inputs.some(input=>normalize(input.value)===normalize(name))) { status('Esta magia já está registrada neste círculo.'); closeCatalog(); return; }
+    let target = inputs.find(input=>!String(input.value||'').trim() && !input.disabled);
+    if (!target) {
+      const template = list.querySelector('.spell-row');
+      const clone = template.cloneNode(true);
+      clone.querySelectorAll('input').forEach(input=>{input.value='';input.checked=false;input.disabled=false;input.readOnly=false;});
+      list.appendChild(clone);
+      target = clone.querySelector('input[type="text"]');
+    }
+    if (target) {
+      target.value = name;
+      target.dispatchEvent(new Event('input',{bubbles:true}));
+      closeCatalog();
+      status('Magia adicionada ao grimório: '+name+'.');
+    }
+  }
+  function chooseFamiliar(monster) {
+    selectedFamiliar = monster;
+    const p = panel('Familiar');
+    const values = {
+      'Tamanho':monster.tamanho,
+      'Iniciativa':monster.iniciativa,
+      'Deslocamento':monster.deslocamento,
+      'PV':monster.pv ?? monster.dados_vida,
+      'CA Total':monster.ca,
+      'Ataque':monster.ataques,
+      'Agarrar':monster.base_attack_grapple,
+      'Ataque Total':monster.ataques,
+      'Espaço':monster.espaco_alcance
+    };
+    Object.entries(values).forEach(([label,value])=>{if(value!==undefined&&value!==null){const input=labeledInput('Familiar',label);if(input)input.value=String(value);}});
+    const reach = labeledInput('Familiar','Alcance');
+    if (reach && monster.espaco_alcance) reach.value = monster.espaco_alcance;
+    const note = createNode('div','mage-familiar-selection','Familiar escolhido: '+monster.nome+' · os dados foram copiados do registro da criatura.');
+    const title = p.querySelector('.panel-title');
+    const old = p.querySelector('.mage-familiar-selection');
+    if (old) old.remove();
+    title.insertAdjacentElement('afterend',note);
+    const textarea = p.querySelector('textarea');
+    if (textarea) textarea.value = monster.nome+'\n\n'+(monster.descricao||'');
+    closeCatalog();
+    status('Familiar registrado na ficha: '+monster.nome+'.');
+  }
+  function formatSpellCatalogDescription(spell) {
+    const name = spell.nome_pt || spell.nome;
+    return [name,spell.escola,spell.circulo,spell.descricao_pt||spell.descricao].filter(Boolean).join('\n\n');
+  }
+
   async function loadCatalogs() {
     const results = await Promise.all([
       sb.from('srd_skills').select('id,nome,atributo,treinada_apenas'),
-      sb.from('srd_feats').select('id,nome,nome_pt,exige_parametro,requisitos'),
-      sb.from('srd_spells').select('id,nome,nome_pt,circulo,nivel,escola,classes,source_status').contains('classes',['wizard'])
+      sb.from('srd_feats').select('id,nome,nome_pt,descricao,descricao_pt,exige_parametro,requisitos,source_status'),
+      sb.from('srd_spells').select('id,nome,nome_pt,descricao,descricao_pt,circulo,nivel,escola,alcance,alvo,area,duracao,componentes,classes,source_status').contains('classes',['wizard'])
     ]);
     for (const result of results) if (result.error) throw result.error;
     skillCatalog = results[0].data || [];
     featCatalog = results[1].data || [];
     spellCatalog = results[2].data || [];
+    const familiarResult = await sb.from('srd_monsters').select('id,nome,nome_original,nd,tamanho,tipo,dados_vida,iniciativa,deslocamento,pv,ca,base_attack_grapple,ataques,espaco_alcance,descricao').in('id',['bat','cat','hawk','lizard','owl','rat','raven','toad','weasel']);
+    monsterCatalog = familiarResult.error ? [] : (familiarResult.data || []);
     updateFeatSuggestions();
     updateSpellSuggestions();
   }
@@ -681,7 +995,9 @@
         atributos_base: baseAttributes,
         deslocamento_base: raceData.deslocamento,
         wizard_familiar_available: true,
-        wizard_familiar_choice: 'pending',
+        wizard_familiar_choice: selectedFamiliar ? 'selected' : 'pending',
+        wizard_familiar_id: selectedFamiliar ? selectedFamiliar.id : null,
+        wizard_familiar_name: selectedFamiliar ? selectedFamiliar.nome : null,
         moedas: money,
         ...choices
       };
@@ -741,6 +1057,9 @@
     if (auth.error || !auth.data.user) { location.replace('index.html'); return; }
     user = auth.data.user;
     addToolbar();
+    ensureCatalogOverlays();
+    bindCatalogTriggers();
+    document.addEventListener('keydown',event=>{if(event.key==='Escape'){closeLore();closeCatalog();}});
     if (isCreate) {
       if (!raceId || !classId) throw new Error('A criação precisa receber raça e classe escolhidas no Lobby.');
       const [race, klass, profile] = await Promise.all([
