@@ -57,7 +57,7 @@ A ficha enviada em `mago.feiticeiro(2).html` é a interface canônica. A nova im
 - Magias disponíveis ao Mago: 378 registros; 378 com nome e descrição em português.
 - Campos técnicos das magias do Mago: alcance preenchido em 315/378, alvo ou área em 325/378, duração em 316/378 e componentes em 318/378. A interface deve apresentar os dados existentes sem inventar valores; as lacunas continuam sendo pendência de catalogação.
 - Familiares-base consultados em `srd_monsters`: 9 animais encontrados. Os nomes e categorias de tamanho foram localizados na interface; descrições detalhadas ainda usam o texto-fonte cadastrado, que pode estar em inglês.
-- O arquivo `mage-sheet-app.js` passou por compilação de sintaxe JavaScript sem execução. As verificações GitHub Actions associadas à atualização anterior concluíram com sucesso; isso não equivale a teste funcional em navegador.
+- O arquivo `mage-sheet-app.js` passou por compilação de sintaxe JavaScript sem execução. Para o commit de código `90ec370`, as duas verificações GitHub Actions (`Static validation` e `Validate application JavaScript`) concluíram com sucesso. Isso não equivale a teste funcional em navegador.
 - Não foi feita alteração de esquema nem gravação de dados de personagens nesta etapa.
 
 ## Segurança e preservação
