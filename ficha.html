@@ -3770,8 +3770,9 @@ function dnd35LanguageNormalize(value){
       var current=fichaSRD35,next=payload&&payload.new;if(!current||current.criacao||!next||String(current.character&&current.character.id)!==id)return;
       var nextXp=Number(next.xp)||0,nextPending=Number(next.niveis_pendentes)||0;
       if(nextXp===Number(current.sheet&&current.sheet.xp||0)&&nextPending===Number(current.sheet&&current.sheet.niveis_pendentes||0))return;
-      var activeTab=current.activeTab,wasGrimoireOpen=!!current.grimoireOpen,grimoireStage=current.grimoireStage;
-      carregarFichaSRD35(id,next).then(function(){if(!fichaSRD35)return;fichaSRD35.activeTab=activeTab||fichaSRD35.activeTab;if(wasGrimoireOpen){fichaSRD35.grimoireOpen=true;fichaSRD35.grimoireStage=grimoireStage||'book';}renderizarFichaSRD35();}).catch(function(error){console.warn('Não foi possível atualizar o XP da ficha em tempo real.',error);});
+      var activeTab=current.activeTab,wasGrimoireOpen=!!current.grimoireOpen,grimoireStage=current.grimoireStage,learnSelection=(current.grimoireLearnSelection||[]).slice(),levelUpDraft=current.levelUp,grimoireDraft=current.grimoireState,identityDraft=current.identidade;
+      var grimoireUnchanged=JSON.stringify(next.magias_preparadas||{})===JSON.stringify(current.sheet&&current.sheet.magias_preparadas||{}),identityUnchanged=JSON.stringify(next.identidade||{})===JSON.stringify(current.sheet&&current.sheet.identidade||{});
+      carregarFichaSRD35(id,next).then(function(){if(!fichaSRD35)return;fichaSRD35.activeTab=activeTab||fichaSRD35.activeTab;if(wasGrimoireOpen){fichaSRD35.grimoireOpen=true;fichaSRD35.grimoireStage=grimoireStage||'book';fichaSRD35.grimoireLearnSelection=learnSelection;if(grimoireUnchanged&&grimoireDraft)fichaSRD35.grimoireState=grimoireDraft;}if(identityUnchanged&&identityDraft)fichaSRD35.identidade=identityDraft;if(levelUpDraft&&Number(fichaSRD35.sheet.niveis_pendentes)>0&&Number(levelUpDraft.level)===Math.min(20,Number(fichaSRD35.sheet.nivel||1)+1))fichaSRD35.levelUp=levelUpDraft;renderizarFichaSRD35();}).catch(function(error){console.warn('Não foi possível atualizar o XP da ficha em tempo real.',error);});
     }).subscribe();
   }
   async function carregarFichaSRD35(characterId,sheet) {
