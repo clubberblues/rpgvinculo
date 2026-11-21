@@ -24,7 +24,7 @@ A ficha enviada em `mago.feiticeiro(2).html` é a interface canônica. A nova im
 ## Próximas entregas técnicas
 
 1. Mapear semanticamente os campos editáveis e derivados do HTML original.
-2. Integrar criação definitiva do Mago a partir do Lobby, persistindo raça, classe, atributos, perícias, talento, idiomas, equipamentos e grimório.
+2. Executar teste autenticado no navegador para criar um Mago novo, salvar e reabrir a ficha; corrigir qualquer diferença entre controles visuais e dados normalizados.
 3. Ligar retrato ao Storage e manter transformações.
 4. Abrir a mesma ficha na Mesa em painel/modal.
 5. Implementar grimório permanente e preparação narrativa ilimitada do Mago.
