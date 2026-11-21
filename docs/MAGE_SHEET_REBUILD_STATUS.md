@@ -2,33 +2,44 @@
 
 ## Decisão de arquitetura
 
-A ficha enviada em `mago.feiticeiro(2).html` é a interface canônica. A nova implementação não utiliza o fluxo visual de criação de `ficha.html` nem o antigo adaptador genérico. A primeira classe atendida é exclusivamente Mago.
+A ficha enviada em `mago.feiticeiro(2).html` é a interface canônica. A nova implementação não utiliza o fluxo visual de criação de `ficha.html`, não chama `finalizar_criacao_personagem_srd` e não reativa o antigo assistente. O escopo atual é exclusivamente Mago.
 
-## Implementado nesta etapa
+## Implementado
 
-- `ficha-original.html` passa a se identificar como ficha do Mago e carrega apenas os módulos novos.
-- `mage-sheet-core.js` contém coleta/hidratação de campos, chaves estruturadas e aplicação de dados de identidade.
-- `mage-sheet-app.js` cria a orientação por etapas com destaque visual dentro da ficha, autentica usando a sessão Supabase existente e carrega/salva snapshots versionados de fichas de Mago existentes em `srd_character_sheets.identidade.ficha_mago_v2`.
-- O Lobby deixou de desviar imediatamente para o criador antigo antes da seleção de raça/classe. A seleção de Mago abre a ficha original; fichas existentes identificadas como Mago também abrem nela.
-- O antigo `original-sheet-adapter.js` foi removido e o verificador estático passou a validar os dois módulos novos.
+- `ficha-original.html` preserva o modelo visual original e carrega `mage-sheet-core.js` e `mage-sheet-app.js`.
+- O Lobby abre a ficha original depois da escolha de raça e classe para novos Magos; fichas existentes identificadas como Mago também abrem nesse modelo.
+- O núcleo novo coleta e hidrata os campos da ficha em um snapshot versionado.
+- A RPC transacional `criar_mago_ficha_original_v2` está aplicada no Supabase pelas migrations:
+  - `20261121215802_srd35_mage_original_sheet_creation_v2`
+  - `20261121220216_srd35_mage_original_sheet_skill_validation_v2`
+- A RPC cria personagem e ficha na mesma transação, valida usuário autenticado, raça e classe Mago, aplica ajustes raciais, registra a progressão de classe de nível 1, PV, perícias, talentos, idiomas livres, equipamentos narrativos e snapshot da ficha.
+- A validação de perícias é específica do Mago: orçamento de nível 1 com Inteligência e bônus humano, máximo de 4 graduações em perícia de classe e 2 em cross-class, incrementos de 0,5 para cross-class. Conhecimento é tratado como perícia de classe.
+- Talentos são validados pelo mecanismo de regras existente; a criação exige um talento para raças comuns e dois para Humano.
+- O grimório recebe automaticamente todos os truques permitidos e exige exatamente 3 + modificador positivo de Inteligência (mínimo 3) magias de 1º círculo. As magias são gravadas no grimório e no catálogo normalizado de magias conhecidas.
+- A especialização e as escolas proibidas usam os campos já existentes no painel Magia da ficha original. A lista de preparadas começa vazia; nenhum espaço diário é gasto, e nenhum descanso ou limite diário é aplicado.
+- Equipamentos livres são preservados em `equipamento_inicial` como itens narrativos, sem obrigar correspondência no catálogo.
+- A função é `SECURITY DEFINER` com `search_path` fixo, exige `auth.uid()`, cria somente para o usuário autenticado e tem execução revogada para `PUBLIC` e `anon`; somente `authenticated` pode chamá-la.
+- O adaptador genérico antigo foi removido. A função antiga de finalização não é chamada. Os validadores de talento e grimório são usados apenas como motores de regras; a gravação de perícias é feita pela nova validação específica do Mago.
 
-## Limites conhecidos — não considerar concluído
+## Verificações executadas
 
-- A criação definitiva do Mago está conectada à RPC transacional `criar_mago_ficha_original_v2`, registrada na migration `20261121215802_srd35_mage_original_sheet_creation_v2` e `20261121220216_srd35_mage_original_sheet_skill_validation_v2`.
-- A RPC cria personagem e ficha juntos, aplica ajustes raciais, valida o orçamento e os limites de perícias do Mago (incluindo Conhecimento como perícia de classe), valida talentos, registra idiomas livres e equipamentos narrativos, grava a trilha de classe e registra o grimório.
-- O grimório inicial inclui automaticamente todos os truques permitidos e exige exatamente 3 + modificador positivo de Inteligência (mínimo 3) magias de 1º círculo. A lista de preparadas começa vazia; nenhum espaço diário é gasto. A especialização e as escolas proibidas usam os campos já existentes no painel Magia da ficha original, sem criar um formulário paralelo.
-- A RPC só pode ser executada por usuários autenticados; `PUBLIC` e `anon` não têm permissão. A chamada positiva foi testada em uma transação revertida, sem deixar personagem persistido.
-- O mapeamento de persistência visual é versionado; tabelas repetidas e algumas listas ainda precisam de revisão semântica completa.
-- Retrato ainda não está ligado ao Storage; os principais campos derivados do Mago (atributos, PV, resistências, CA, iniciativa, agarrar, perícias, CD de magia, carga, XP e moedas iniciais) são preenchidos na criação, mas ainda precisam de conferência visual no navegador.
-- A Mesa ainda precisa abrir a ficha original no contexto de campanha e respeitar permissões de jogador/Mestre.
-- O fluxo narrativo do grimório e da lista separada de magias preparadas do Mago ainda precisa ser conectado ao banco sem limites diários, slots ou consumo automático.
-- Foi adicionada somente uma RPC de criação e sua migration; não foram alteradas policies RLS, campanhas ou fichas existentes.
+- Chamada positiva da RPC para Mago Elfo, com atributos, 12 pontos de perícia, talento, idiomas, equipamento e grimório, dentro de transação revertida.
+- Chamada positiva da RPC para Mago Humano especialista em Evocação, com dois talentos, 16 pontos de perícia, escolas proibidas e grimório, dentro de transação revertida.
+- Verificação posterior confirmou que os personagens temporários de teste não permaneceram no banco.
+- A função está executável por `authenticated` e não por `anon`.
+- As validações estáticas e de sintaxe JavaScript passaram nos commits verificados até a última execução de CI.
 
-## Próximas entregas técnicas
+## Pendências reais
 
-1. Mapear semanticamente os campos editáveis e derivados do HTML original.
-2. Executar teste autenticado no navegador para criar um Mago novo, salvar e reabrir a ficha; corrigir qualquer diferença entre controles visuais e dados normalizados.
-3. Ligar retrato ao Storage e manter transformações.
-4. Abrir a mesma ficha na Mesa em painel/modal.
-5. Implementar grimório permanente e preparação narrativa ilimitada do Mago.
-6. Executar testes autenticados de criar, salvar, recarregar e editar com personagem novo de teste; não usar fichas existentes como fixtures mutáveis.
+- Ainda falta teste ponta a ponta no navegador com uma sessão real de jogador. A RPC foi testada no banco com contexto de autenticação simulado e transação revertida; nenhum personagem de teste foi deixado persistido.
+- O mapeamento semântico de todos os controles, tabelas repetidas e listas do HTML ainda precisa de revisão completa.
+- Retrato e transformação ainda não estão ligados ao Supabase Storage.
+- A edição de uma ficha já existente ainda salva o snapshot visual; a sincronização de cada campo editado com as colunas normalizadas precisa de uma operação própria.
+- A Mesa ainda precisa abrir a ficha original em painel/modal e respeitar as permissões de jogador e Mestre.
+- A lista separada de magias preparadas do Mago ainda precisa de operações narrativas de adicionar/remover ocorrências durante a campanha, sem slots, limites diários ou consumo automático.
+
+## Segurança e preservação
+
+- Não foram alteradas fichas existentes, campanhas, tokens ou políticas RLS.
+- A criação deixa o personagem sem campanha associada, seguindo o fluxo atual de criação pela estante do Lobby; a associação à campanha continua sendo uma etapa separada.
+- O PR #99 permanece draft e sem merge até a validação ponta a ponta.
