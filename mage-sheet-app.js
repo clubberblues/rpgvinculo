@@ -63,7 +63,7 @@
     bar.id = 'mage-sheet-toolbar';
     bar.innerHTML = '<div class="mage-sheet-meta"><strong>FICHA DO MAGO · D&D 3.5</strong><span id="mage-sheet-status" role="status" aria-live="polite">Preparando ficha…</span></div><div class="mage-sheet-actions"><button type="button" id="mage-prev">Anterior</button><button type="button" id="mage-next">Próxima etapa</button><button type="button" id="mage-save">' + (isCreate ? 'Criar Mago' : 'Salvar ficha') + '</button></div>';
     const style = document.createElement('style');
-    style.textContent = '#mage-sheet-toolbar{position:sticky;top:0;z-index:10001;display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:10px 16px;margin:-20px -20px 18px;background:#1a120b;color:#f5e8c8;border-bottom:2px solid #b08d57;font:13px Georgia,serif}#mage-sheet-toolbar .mage-sheet-meta{display:flex;flex-direction:column;gap:3px}#mage-sheet-status{color:#d8c69f}#mage-sheet-status[data-error=true]{color:#ff9b8f}#mage-sheet-toolbar .mage-sheet-actions{display:flex;gap:8px;flex-wrap:wrap}#mage-sheet-toolbar button{padding:8px 13px;border:1px solid #b08d57;background:#332416;color:#f5e8c8;border-radius:4px;cursor:pointer;font-weight:700}#mage-sheet-toolbar button:disabled{opacity:.45;cursor:not-allowed}.mage-class-feature-note{margin:6px 0 10px;padding:7px 10px;border-left:2px solid #b08d57;color:#6f5738;background:#f3ead7;font:12px Georgia,serif}.mage-step-focus{outline:3px solid #1687d9!important;outline-offset:4px;box-shadow:0 0 0 6px #1687d955!important;position:relative;z-index:2}.mage-step-note{position:fixed;right:18px;bottom:18px;z-index:10002;max-width:340px;padding:14px 16px;background:#1a120b;color:#f5e8c8;border:1px solid #b08d57;border-radius:6px;box-shadow:0 8px 30px #0009;font:15px Georgia,serif}.mage-choice-panel{margin:12px 0 16px;padding:10px 12px;border:1px solid rgba(139,111,71,.65);background:rgba(255,255,255,.28);font:13px Georgia,serif;color:#2b1a0e}.mage-choice-panel label{font-family:Cinzel,serif;font-size:9px;font-weight:700;display:block;margin-bottom:4px}.mage-choice-panel select{width:100%;padding:6px;background:rgba(255,255,255,.65);border:1px solid #8b6f47;color:#2b1a0e}.mage-school-choices{display:flex;gap:8px 14px;flex-wrap:wrap;margin-top:8px}.mage-school-choices label{display:flex;align-items:center;gap:5px;font-family:Georgia,serif;font-size:12px;font-weight:400}.mage-school-choices input{accent-color:#8b6f47}.mage-choice-help{font-size:11px;margin-top:6px;color:#5a3f28}';
+    style.textContent = '#mage-sheet-toolbar{position:sticky;top:0;z-index:10001;display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:10px 16px;margin:-20px -20px 18px;background:#1a120b;color:#f5e8c8;border-bottom:2px solid #b08d57;font:13px Georgia,serif}#mage-sheet-toolbar .mage-sheet-meta{display:flex;flex-direction:column;gap:3px}#mage-sheet-status{color:#d8c69f}#mage-sheet-status[data-error=true]{color:#ff9b8f}#mage-sheet-toolbar .mage-sheet-actions{display:flex;gap:8px;flex-wrap:wrap}#mage-sheet-toolbar button{padding:8px 13px;border:1px solid #b08d57;background:#332416;color:#f5e8c8;border-radius:4px;cursor:pointer;font-weight:700}#mage-sheet-toolbar button:disabled{opacity:.45;cursor:not-allowed}.mage-class-feature-note{margin:6px 0 10px;padding:7px 10px;border-left:2px solid #b08d57;color:#6f5738;background:#f3ead7;font:12px Georgia,serif}.mage-step-focus{outline:3px solid #b08d57!important;outline-offset:4px;box-shadow:0 0 0 6px #b08d5755!important;position:relative;z-index:2}.mage-step-note{position:fixed;right:18px;bottom:18px;z-index:10002;max-width:340px;padding:14px 16px;background:#1a120b;color:#f5e8c8;border:1px solid #b08d57;border-radius:6px;box-shadow:0 8px 30px #0009;font:15px Georgia,serif}.mage-choice-panel{margin:12px 0 16px;padding:10px 12px;border:1px solid rgba(139,111,71,.65);background:rgba(255,255,255,.28);font:13px Georgia,serif;color:#2b1a0e}.mage-choice-panel label{font-family:Cinzel,serif;font-size:9px;font-weight:700;display:block;margin-bottom:4px}.mage-choice-panel select{width:100%;padding:6px;background:rgba(255,255,255,.65);border:1px solid #8b6f47;color:#2b1a0e}.mage-school-choices{display:flex;gap:8px 14px;flex-wrap:wrap;margin-top:8px}.mage-school-choices label{display:flex;align-items:center;gap:5px;font-family:Georgia,serif;font-size:12px;font-weight:400}.mage-school-choices input{accent-color:#8b6f47}.mage-choice-help{font-size:11px;margin-top:6px;color:#5a3f28}';
     
     style.textContent += '\n' +
       '.mage-catalog-backdrop{position:fixed;inset:0;z-index:10004;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(12,8,4,.72);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}' +
@@ -753,6 +753,10 @@
     row.append(mark,main,view);
     return row;
   }
+  function familiarLabel(monster) {
+    const names = {bat:'Morcego',cat:'Gato',hawk:'Falcão',lizard:'Lagarto',owl:'Coruja',rat:'Rato',raven:'Corvo',toad:'Sapo',weasel:'Doninha'};
+    return names[monster.id] || monster.nome;
+  }
   function renderCatalogList() {
     const list = document.getElementById('mage-catalog-list');
     const search = normalize(document.getElementById('mage-catalog-search')?.value || '');
@@ -794,7 +798,7 @@
           'Classe de Armadura: '+(monster.ca||'Não informada'),
           'Ataques: '+(monster.ataques||'Não informados')
         ].join('\n');
-        list.appendChild(catalogRow(monster.nome,meta,'fa-paw',()=>chooseFamiliar(monster),()=>openLore(monster.nome,details,monster.descricao||'')));
+        list.appendChild(catalogRow(familiarLabel(monster),meta,'fa-paw',()=>chooseFamiliar(monster),()=>openLore(familiarLabel(monster),details,monster.descricao||'')));
       });
     }
     if (!items.length) list.appendChild(createNode('div','mage-catalog-empty','Nenhum resultado encontrado para esta pesquisa.'));
@@ -901,13 +905,14 @@
     Object.entries(values).forEach(([label,value])=>{if(value!==undefined&&value!==null){const input=labeledInput('Familiar',label);if(input)input.value=String(value);}});
     const reach = labeledInput('Familiar','Alcance');
     if (reach && monster.espaco_alcance) reach.value = monster.espaco_alcance;
-    const note = createNode('div','mage-familiar-selection','Familiar escolhido: '+monster.nome+' · os dados foram copiados do registro da criatura.');
+    const localizedName = familiarLabel(monster);
+    const note = createNode('div','mage-familiar-selection','Familiar escolhido: '+localizedName+' · dados copiados do registro da criatura ('+monster.nome+').');
     const title = p.querySelector('.panel-title');
     const old = p.querySelector('.mage-familiar-selection');
     if (old) old.remove();
     title.insertAdjacentElement('afterend',note);
     const textarea = p.querySelector('textarea');
-    if (textarea) textarea.value = monster.nome+'\n\n'+(monster.descricao||'');
+    if (textarea) textarea.value = localizedName+' ('+monster.nome+')\n\n'+(monster.descricao||'');
     closeCatalog();
     status('Familiar registrado na ficha: '+monster.nome+'.');
   }
@@ -1038,6 +1043,7 @@
       if (current.error) throw current.error;
       if (!current.data) throw new Error('Ficha não encontrada ou sem permissão.');
       const identity = current.data.identidade && typeof current.data.identidade === 'object' ? current.data.identidade : {};
+      if (selectedFamiliar) { identity.wizard_familiar_choice = 'selected'; identity.wizard_familiar_id = selectedFamiliar.id; identity.wizard_familiar_name = familiarLabel(selectedFamiliar); }
       identity.ficha_mago_v2 = core.collect();
       const result = await sb.from('srd_character_sheets').update({ identidade }).eq('character_id', characterId).select('character_id').maybeSingle();
       if (result.error) throw result.error;
@@ -1086,6 +1092,7 @@
       if (!result.data) throw new Error('Ficha não encontrada ou sem permissão de leitura.');
       const identity = result.data.identidade && typeof result.data.identidade === 'object' ? result.data.identidade : {};
       await loadCatalogs();
+      selectedFamiliar = identity.wizard_familiar_id ? (monsterCatalog.find(item=>item.id===identity.wizard_familiar_id) || null) : null;
       setupWizardChoiceFields(identity);
       renderSpellInputs();
       core.hydrate(identity.ficha_mago_v2 || identity.ficha_original_v1);
