@@ -201,6 +201,10 @@
       if (headerInputs[1]) headerInputs[1].value = String(allowedSpells(0).length);
       if (headerInputs[2]) headerInputs[2].value = '10 + modificador de Inteligência';
     }
+    document.querySelectorAll('.spell-level-block .spell-list input[type="checkbox"]').forEach(input => {
+      if (isCreate) input.checked = false;
+      input.disabled = true;
+    });
   }
   function choosePreferredSpell(matches) {
     return matches.slice().sort((a,b) =>
