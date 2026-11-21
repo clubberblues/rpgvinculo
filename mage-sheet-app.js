@@ -386,7 +386,7 @@
   }
   function showFamiliarStatus(identity) {
     const p = panel('Familiar');
-    if (!p || (identity && identity.wizard_familiar_choice && identity.wizard_familiar_choice !== 'pending')) return;
+    if (!p || !identity || identity.wizard_familiar_available !== true || identity.wizard_familiar_choice !== 'pending') return;
     if (p.querySelector('.mage-class-feature-note')) return;
     const title = p.querySelector('.panel-title');
     if (!title) return;
@@ -755,7 +755,7 @@
       await loadCatalogs();
       core.applyIdentity({ raceName: raceData.nome, playerName: profile.data?.username || user.email?.split('@')[0] || '' });
       applyRacePresentation(raceData,profile.data);
-      showFamiliarStatus({wizard_familiar_choice:'pending'});
+      showFamiliarStatus({wizard_familiar_available:true,wizard_familiar_choice:'pending'});
       setupWizardChoiceFields(null);
       renderSpellInputs();
       const draftRestored = restoreLocalDraft();
