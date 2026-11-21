@@ -3,7 +3,7 @@ import { dirname, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 const root = process.cwd();
-const htmlFiles = ['index.html', 'lobby.html', 'ficha.html', 'mesa.html', 'dice.html'];
+const htmlFiles = ['index.html', 'lobby.html', 'ficha.html', 'ficha-original.html', 'mesa.html', 'dice.html'];
 const standaloneScripts = ['vinculo-ui.js', 'original-sheet-adapter.js'];
 const failures = [];
 let checkedInlineScripts = 0;
