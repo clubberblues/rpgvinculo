@@ -361,6 +361,17 @@
       if (misc) misc.value = String(racial);
     });
   }
+  function updateEquipmentWeight(items) {
+    const p = panel('Equipamentos');
+    if (!p) return;
+    const inputs = p.querySelectorAll('input');
+    const total = inputs[inputs.length - 1];
+    const weights = items.map(item => {
+      const match = String(item.peso || '').replace(',', '.').match(/-?\\d+(?:\\.\\d+)?/);
+      return match ? Number(match[0]) : 0;
+    });
+    if (total) total.value = weights.reduce((sum,value) => sum + value,0).toFixed(2).replace(/\\.00$/,'') + ' kg';
+  }
   function applyCalculatedFields(base, race, selectedSpells) {
     const adjustments = race.ajustes_atributos || {};
     const final = {};
@@ -449,6 +460,14 @@
       }
     }
     populateSkillTotals(final,modifiers,race);
+    const xpPanel = panel('Experiência');
+    if (xpPanel) {
+      const inputs = xpPanel.querySelectorAll('input');
+      if (inputs[0]) inputs[0].value = '1000';
+      if (inputs[1]) inputs[1].value = '0';
+    }
+    const moneyPanel = panel('Dinheiro');
+    if (moneyPanel) Array.from(moneyPanel.querySelectorAll('input')).slice(0,4).forEach(input => { input.value = '0'; });
     const spellBlocks = Array.from(document.querySelectorAll('.ficha .spell-level-block'));
     spellBlocks.forEach(block => {
       const circle = parseInt(clean(block.querySelector('.spell-level-title')),10);
@@ -534,6 +553,7 @@
       const feats = collectFeats();
       const languages = splitLanguages();
       const equipment = collectEquipment();
+      updateEquipmentWeight(equipment);
       applyCalculatedFields(baseAttributes,raceData,selectedSpells);
       const identity = {
         tendencia: groupValue('Tendência'),
