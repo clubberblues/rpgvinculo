@@ -302,6 +302,10 @@
     const p = panel('Talentos');
     if (!p) throw new Error('Painel de talentos não encontrado.');
     const inputs = Array.from(p.querySelectorAll('input[type="text"]'));
+    if (inputs.some((input,index) => index % 2 === 0 && normalize(input.value) === 'escrever pergaminho')) {
+      lockWizardBonusFeatField();
+      return;
+    }
     for (let i=0;i<inputs.length;i+=2) {
       if (!String(inputs[i].value || '').trim()) {
         inputs[i].value = 'Escrever Pergaminho';
@@ -336,6 +340,7 @@
       if (!name) continue;
       const feat = map.get(normalize(name));
       if (!feat) throw new Error('O talento "' + name + '" não foi encontrado no catálogo SRD. Use o nome exibido nas sugestões.');
+      if (feat.id === 'srd35_feat_scribe_scroll' && inputs[i].readOnly) continue;
       const entry = { id: feat.id };
       if (feat.exige_parametro) {
         const parameter = window.prompt('O talento "' + (feat.nome_pt || feat.nome) + '" exige uma escolha. Informe o parâmetro:');
@@ -389,6 +394,7 @@
       const draft = JSON.parse(raw);
       if (draft && draft.snapshot && draft.version === core.version) {
         core.hydrate(draft.snapshot);
+        lockWizardBonusFeatField();
         renderSpellInputs();
         status('Rascunho local recuperado. Continue o preenchimento e crie a ficha quando estiver pronto.');
         return true;
