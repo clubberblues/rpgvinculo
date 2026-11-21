@@ -18,11 +18,11 @@
   ];
   const steps = [
     { title: 'Identidade', section: null, selector: '.header-top .input-group input', help: 'Informe o nome do personagem e confira os dados de identificação.' },
-    { title: 'Atributos', section: 'Atributos', selector: '.attr-row input', help: 'Informe os seis valores-base. Os ajustes raciais e modificadores serão aplicados ao criar.' },
+    { title: 'Atributos', section: 'Atributos', selector: '.attr-row input', help: 'Informe os seis valores-base entre 8 e 18, totalizando 25 pontos de compra. Os ajustes raciais serão aplicados ao criar.' },
     { title: 'Resistências', section: 'Resistências', selector: '.resist-row input', help: 'Confira os valores calculados para o Mago de 1º nível.' },
     { title: 'Perícias', section: 'Perícias', selector: 'table input', help: 'Informe as graduações na coluna Grad. O banco valida o orçamento da classe.' },
     { title: 'Talentos', section: 'Talentos', selector: 'input', help: 'Escolha o talento geral permitido para a raça; humanos escolhem dois.' },
-    { title: 'Grimório', section: 'Grimório', selector: '.spell-level-block input', help: 'Todos os truques permitidos entram automaticamente. Escolha as magias iniciais de 1º círculo.' },
+    { title: 'Grimório', section: 'Grimório', selector: '.spell-level-block input', help: 'Todos os truques permitidos entram automaticamente. Escolha 3 + modificador positivo de Inteligência magias de 1º círculo. A preparação acontece durante a campanha, sem limite diário ou consumo automático.' },
     { title: 'Equipamentos', section: 'Equipamentos', selector: 'input', help: 'Registre livremente os equipamentos e seus pesos.' },
     { title: 'Idiomas', section: 'Idiomas', selector: 'textarea', help: 'Edite a lista livre de idiomas conhecidos.' }
   ];
