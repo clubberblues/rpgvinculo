@@ -342,6 +342,40 @@
     });
     return result;
   }
+  function localDraftKey() {
+    return 'dnd35-mage-draft:' + user.id + ':' + raceId;
+  }
+  function restoreLocalDraft() {
+    try {
+      const raw = localStorage.getItem(localDraftKey());
+      if (!raw) return false;
+      const draft = JSON.parse(raw);
+      if (draft && draft.snapshot && draft.version === core.version) {
+        core.hydrate(draft.snapshot);
+        renderSpellInputs();
+        status('Rascunho local recuperado. Continue o preenchimento e crie a ficha quando estiver pronto.');
+        return true;
+      }
+    } catch (error) {
+      status('Não foi possível recuperar o rascunho local: ' + (error.message || error), true);
+    }
+    return false;
+  }
+  function bindLocalDraftAutosave() {
+    const root = document.querySelector('.ficha');
+    if (!root) return;
+    const persist = () => {
+      try {
+        localStorage.setItem(localDraftKey(), JSON.stringify({
+          version: core.version, raceId, classId, snapshot: core.collect()
+        }));
+      } catch (error) {
+        status('Não foi possível salvar o rascunho local: ' + (error.message || error), true);
+      }
+    };
+    root.addEventListener('input',persist);
+    root.addEventListener('change',persist);
+  }
   function applyRacePresentation(race, profile) {
     setGroupValue('Classe','Mago');
     setGroupValue('Raça',race.nome);
@@ -355,6 +389,8 @@
     const languageMatch = languageLine && languageLine.match(/idiomas? autom[aá]ticos?:\s*([^.]*)/i);
     const languages = textareaInPanel('Idiomas');
     if (languages && languageMatch && !languages.value.trim()) languages.value = languageMatch[1].replace(/\s+e\s+/i, ', ');
+    const money = panel('Dinheiro');
+    if (money) Array.from(money.querySelectorAll('input')).slice(0,4).forEach(input => { if (!input.value.trim()) input.value = '0'; });
   }
   function sizeModifier(size) {
     return ({'miudo':2,'pequeno':1,'medio':0,'grande':-1,'enorme':-2,'imenso':-4,'colossal':-8})[normalize(size)] ?? 0;
@@ -612,8 +648,7 @@
       if (result.error) throw result.error;
       const newId = result.data;
       if (!newId) throw new Error('O banco não retornou o identificador do personagem.');
-      const draftKey = 'dnd35-mage-draft:' + user.id + ':' + raceId;
-      localStorage.removeItem(draftKey);
+      localStorage.removeItem(localDraftKey());
       const nextUrl = new URL('ficha-original.html', location.href);
       nextUrl.searchParams.set('char', String(newId));
       location.replace(nextUrl.toString());
@@ -665,6 +700,8 @@
       applyRacePresentation(raceData,profile.data);
       setupWizardChoiceFields(null);
       renderSpellInputs();
+      restoreLocalDraft();
+      bindLocalDraftAutosave();
       status('Ficha original pronta. Preencha os campos; ao criar, personagem e ficha serão gravados juntos no banco.');
     } else if (characterId) {
       const result = await sb.from('srd_character_sheets').select('identidade').eq('character_id', characterId).maybeSingle();
