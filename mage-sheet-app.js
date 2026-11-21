@@ -134,7 +134,8 @@
   function allowedSpells(circle) {
     const prohibited = selectedProhibitedSchools();
     return spellCatalog.filter(sp => Number(sp.circulo) === circle &&
-      !prohibited.includes(schoolKey(sp.escola)));
+      !prohibited.includes(schoolKey(sp.escola)))
+      .sort((a,b) => String(a.id).localeCompare(String(b.id)));
   }
   function ensureDatalist(id, items) {
     let list = document.getElementById(id);
