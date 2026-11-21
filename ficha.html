@@ -2933,7 +2933,8 @@ function dnd35LanguageNormalize(value){
         if(refreshed.error)throw refreshed.error;
         var appliedData=result.data||{};
         await carregarFichaSRD35(CHAR_ID,refreshed.data);
-        alert('Nível '+(appliedData.nivel||'')+' aplicado. Dado de Vida d'+(appliedData.dado_vida||'')+': '+(appliedData.rolagem_dado_vida||'')+'. Ganho de PV: +'+(appliedData.ganho_pv||0)+'.');
+        if(dnd35SpellClassKey(fichaSRD35&&fichaSRD35.classe&&fichaSRD35.classe.id)==='wizard'){fichaSRD35.grimoireOpen=true;fichaSRD35.grimoireStage='learn';fichaSRD35.grimoireLearnSelection=[];renderizarFichaSRD35();}
+        alert('Nível '+(appliedData.nivel||'')+' aplicado. Dado de Vida d'+(appliedData.dado_vida||'')+': '+(appliedData.rolagem_dado_vida||'')+'. Ganho de PV: +'+(appliedData.ganho_pv||0)+'. '+(dnd35SpellClassKey(fichaSRD35&&fichaSRD35.classe&&fichaSRD35.classe.id)==='wizard'?'O grimório foi aberto para escolher as duas novas magias.':''));
       }catch(error){state.levelUp.status='Não foi possível aplicar o avanço: '+(error.message||String(error));renderizarFichaSRD35();}
     });
   }
