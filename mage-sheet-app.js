@@ -180,6 +180,7 @@
         const allowed = allowedSpells(1);
         const datalistId = ensureDatalist('mage-spell-list-level-1', allowed);
         list.querySelectorAll('input[type="text"]').forEach(input => { input.setAttribute('list', datalistId); input.readOnly = false; });
+        if (isCreate) { list.querySelectorAll('input[type="checkbox"]').forEach(el => { el.checked = false; el.disabled = true; }); }
         const headerInputs = Array.from(block.querySelectorAll('.spell-header input'));
         if (headerInputs[1]) headerInputs[1].value = '';
         if (headerInputs[2]) headerInputs[2].value = '';
