@@ -158,7 +158,7 @@
       const list = block.querySelector('.spell-list');
       if (!list || Number.isNaN(circle)) return;
       const spellHeaderInputs = Array.from(block.querySelectorAll('.spell-header input'));
-      if (isCreate && spellHeaderInputs[0]) { spellHeaderInputs[0].value = ''; spellHeaderInputs[0].disabled = true; }
+      if (spellHeaderInputs[0]) { if (isCreate) spellHeaderInputs[0].value = ''; spellHeaderInputs[0].disabled = true; }
       const rows = Array.from(list.querySelectorAll('.spell-row'));
       if (circle === 0) {
         circle0 = block;
@@ -208,6 +208,14 @@
       if (isCreate) input.checked = false;
       input.disabled = true;
     });
+    const magicPanel = panel('Magia');
+    const magicRows = magicPanel && magicPanel.querySelectorAll('table tbody tr');
+    if (magicRows && magicRows[1]) {
+      magicRows[1].querySelectorAll('input').forEach(input => {
+        if (isCreate) input.value = '';
+        input.disabled = true;
+      });
+    }
   }
   function choosePreferredSpell(matches) {
     return matches.slice().sort((a,b) =>
