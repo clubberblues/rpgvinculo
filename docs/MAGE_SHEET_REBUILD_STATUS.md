@@ -12,7 +12,8 @@ A ficha enviada em `mago.feiticeiro(2).html` é a interface canônica. A nova im
 - A RPC transacional `criar_mago_ficha_original_v2` está aplicada no Supabase pelas migrations:
   - `20261121215802_srd35_mage_original_sheet_creation_v2`
   - `20261121220216_srd35_mage_original_sheet_skill_validation_v2`
-- A RPC cria personagem e ficha na mesma transação, valida usuário autenticado, raça e classe Mago, valida os seis atributos no orçamento de 25 pontos de compra e aplica ajustes raciais, registra a progressão de classe de nível 1, PV, perícias, talentos, idiomas livres, equipamentos narrativos e snapshot da ficha.
+  - `20261121220934_srd35_mage_original_sheet_currency_sync_v2`
+- A RPC cria personagem e ficha na mesma transação, valida usuário autenticado, raça e classe Mago, valida os seis atributos no orçamento de 25 pontos de compra e aplica ajustes raciais, registra a progressão de classe de nível 1, PV, perícias, talentos, idiomas livres, equipamentos narrativos, moedas (PC/PP/PO/PL convertidas para ouro total) e snapshot da ficha.
 - A orientação da ficha informa o orçamento de 25 pontos de compra e a validação de atributos é feita no banco. A validação de perícias é específica do Mago: orçamento de nível 1 com Inteligência e bônus humano, máximo de 4 graduações em perícia de classe e 2 em cross-class, incrementos de 0,5 para cross-class. Conhecimento é tratado como perícia de classe.
 - Talentos são validados pelo mecanismo de regras existente; a criação exige um talento para raças comuns e dois para Humano.
 - O grimório recebe automaticamente todos os truques permitidos e exige exatamente 3 + modificador positivo de Inteligência (mínimo 3) magias de 1º círculo. As magias são gravadas no grimório e no catálogo normalizado de magias conhecidas.
