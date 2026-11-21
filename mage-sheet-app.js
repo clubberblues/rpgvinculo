@@ -331,12 +331,37 @@
     setGroupValue('Nível','1');
     const traits = textareaInPanel('Traços Raciais');
     if (traits) traits.value = Array.isArray(race.habilidades_raciais) ? race.habilidades_raciais.join('\n') : '';
-    const languageLine = (race.habilidades_raciais || []).find(x => /idiomas autom[aá]ticos/i.test(x));
-    const languageMatch = languageLine && languageLine.match(/idiomas autom[aá]ticos:\s*([^.]*)/i);
+    const languageLine = (race.habilidades_raciais || []).find(x => /idiomas? autom[aá]ticos?:/i.test(x));
+    const languageMatch = languageLine && languageLine.match(/idiomas? autom[aá]ticos?:\\s*([^.]*)/i);
     const languages = textareaInPanel('Idiomas');
     if (languages && languageMatch && !languages.value.trim()) languages.value = languageMatch[1].replace(/\s+e\s+/i, ', ');
   }
-  function applyCalculatedFields(base, race) {
+  function sizeModifier(size) {
+    return ({'miudo':2,'pequeno':1,'medio':0,'grande':-1,'enorme':-2,'imenso':-4,'colossal':-8})[normalize(size)] ?? 0;
+  }
+  function populateSkillTotals(final, modifiers, race) {
+    const p = panel('Perícias');
+    if (!p) return;
+    const map = skillIdMap();
+    const aliases = {'blefar':'blefe','furtividade':'mover-se silenciosamente','identificar magias':'identificar magia','oficios':'oficio'};
+    p.querySelectorAll('tbody tr').forEach(row => {
+      const cells = Array.from(row.children);
+      const label = clean(cells[0]).replace(/\s*\*\s*$/,'').trim();
+      const skill = map.get(normalize(aliases[normalize(label)] || label));
+      if (!skill) return;
+      const ability = skill.atributo || clean(cells[1]);
+      const mod = Number(modifiers[ability] || 0);
+      const ranks = Number(cells[4]?.querySelector('input')?.value || 0);
+      const racial = race.id === 'elfo' && ['ouvir','procurar','observar'].includes(skill.id) ? 2 : 0;
+      const total = cells[2]?.querySelector('input');
+      const abilityInput = cells[3]?.querySelector('input');
+      const misc = cells[5]?.querySelector('input');
+      if (total) total.value = String(mod + ranks + racial);
+      if (abilityInput) abilityInput.value = String(mod);
+      if (misc) misc.value = String(racial);
+    });
+  }
+  function applyCalculatedFields(base, race, selectedSpells) {
     const adjustments = race.ajustes_atributos || {};
     const final = {};
     Object.keys(base).forEach(key => { final[key] = Number(base[key]) + Number(adjustments[key] || 0); });
@@ -350,9 +375,10 @@
       const value = cols[0]?.querySelector('input');
       const mod = cols[1]?.querySelector('input');
       if (value) value.value = String(final[stat]);
-      if (mod) mod.value = String(modifiers[stat] >= 0 ? '+' + modifiers[stat] : modifiers[stat]);
+      if (mod) mod.value = String(modifiers[stat]);
     });
     const conMod = modifiers.CON, dexMod = modifiers.DES, wisMod = modifiers.SAB;
+    const intMod = modifiers.INT;
     const hp = Math.max(1,4+conMod);
     const hpPanel = panel('Pontos de Vida');
     if (hpPanel) {
@@ -374,11 +400,16 @@
         if (inputs[2]) inputs[2].value = String(mod);
       });
     }
+    const sizeMod = sizeModifier(race.tamanho);
     const basePanel = panel('Base e Agarrar');
     if (basePanel) {
-      const bba = Array.from(basePanel.querySelectorAll('label')).find(l => normalize(clean(l)) === 'bba');
-      const bbaInput = bba && bba.parentElement.querySelector('input');
-      if (bbaInput) bbaInput.value = '0';
+      const inputs = basePanel.querySelectorAll('input');
+      if (inputs[0]) inputs[0].value = '0';
+      if (inputs[2]) inputs[2].value = String(modifiers.FOR + sizeMod);
+      if (inputs[3]) inputs[3].value = '0';
+      if (inputs[4]) inputs[4].value = String(modifiers.FOR);
+      if (inputs[5]) inputs[5].value = String(sizeMod);
+      if (inputs[6]) inputs[6].value = '0';
     }
     const initPanel = panel('Iniciativa');
     if (initPanel) {
@@ -386,13 +417,47 @@
       if (inputs[0]) inputs[0].value = String(dexMod);
       if (inputs[1]) inputs[1].value = String(dexMod);
     }
-    const bab = Math.floor((final.INT - 10) / 2);
+    const caPanel = panel('Armadura (CA)');
+    if (caPanel) {
+      const inputs = caPanel.querySelectorAll('input');
+      const baseCa = 10 + dexMod + sizeMod;
+      if (inputs[0]) inputs[0].value = String(baseCa);
+      if (inputs[1]) inputs[1].value = '10';
+      if (inputs[2]) inputs[2].value = '0';
+      if (inputs[3]) inputs[3].value = '0';
+      if (inputs[4]) inputs[4].value = String(dexMod);
+      if (inputs[5]) inputs[5].value = String(sizeMod);
+      if (inputs[6]) inputs[6].value = '0';
+      if (inputs[7]) inputs[7].value = '0';
+      if (inputs[8]) inputs[8].value = '0';
+      if (inputs[9]) inputs[9].value = String(baseCa);
+      if (inputs[10]) inputs[10].value = String(10 + sizeMod);
+    }
+    const magic = panel('Magia');
+    if (magic) {
+      const tr = labeledInput('Magia','TR de Magia');
+      const dcMod = labeledInput('Magia','Mod. CD');
+      const failure = labeledInput('Magia','Falha Arcana');
+      if (tr) tr.value = String(10 + intMod);
+      if (dcMod) dcMod.value = String(intMod);
+      if (failure) failure.value = '0%';
+      const rows = magic.querySelectorAll('table tbody tr');
+      const knownCells = rows[0] ? rows[0].querySelectorAll('td') : [];
+      for (let circle=0;circle<=9;circle++) {
+        const input = knownCells[circle+1]?.querySelector('input');
+        if (input) input.value = circle === 0 ? String(allowedSpells(0).length) : circle === 1 ? String(selectedSpells.length) : '0';
+      }
+      const spec = labeledInput('Magia','Especialização em Escola');
+      const prohibited = labeledInput('Magia','Escolas Proibidas');
+      if (spec && wizardChoices) { /* values are entered in the original sheet fields */ }
+    }
+    populateSkillTotals(final,modifiers,race);
     const spellBlocks = Array.from(document.querySelectorAll('.ficha .spell-level-block'));
     spellBlocks.forEach(block => {
       const circle = parseInt(clean(block.querySelector('.spell-level-title')),10);
       const headers = Array.from(block.querySelectorAll('.spell-header input'));
-      if (headers[1]) headers[1].value = circle === 0 ? String(allowedSpells(0).length) : '';
-      if (headers[2]) headers[2].value = String(10 + Math.max(-5,Math.min(10,bab)) + circle);
+      if (headers[1]) headers[1].value = circle === 0 ? String(allowedSpells(0).length) : circle === 1 ? String(selectedSpells.length) : '';
+      if (headers[2]) headers[2].value = String(10 + intMod + circle);
     });
     return { final, modifiers, hp };
   }
@@ -412,7 +477,7 @@
   }
   async function loadCatalogs() {
     const results = await Promise.all([
-      sb.from('srd_skills').select('id,nome,treinada_apenas'),
+      sb.from('srd_skills').select('id,nome,atributo,treinada_apenas'),
       sb.from('srd_feats').select('id,nome,nome_pt,exige_parametro,requisitos'),
       sb.from('srd_spells').select('id,nome,nome_pt,circulo,nivel,escola,classes,source_status').contains('classes',['wizard'])
     ]);
@@ -472,7 +537,7 @@
       const feats = collectFeats();
       const languages = splitLanguages();
       const equipment = collectEquipment();
-      applyCalculatedFields(baseAttributes,raceData);
+      applyCalculatedFields(baseAttributes,raceData,selectedSpells);
       const identity = {
         tendencia: groupValue('Tendência'),
         tamanho: groupValue('Tamanho'),
@@ -482,6 +547,7 @@
         peso_kg: groupValue('Peso'),
         divindade: groupValue('Divindade'),
         atributos_base: baseAttributes,
+        deslocamento_base: raceData.deslocamento,
         ...choices
       };
       const firstCircleBlock = Array.from(document.querySelectorAll('.ficha .spell-level-block')).find(b => parseInt(clean(b.querySelector('.spell-level-title')),10) === 1);
