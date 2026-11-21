@@ -69,31 +69,6 @@
     document.getElementById('mage-prev').addEventListener('click', () => showStep(step - 1));
     document.getElementById('mage-save').addEventListener('click', save);
   }
-  function showStep(next) {
-    step = Math.max(0, Math.min(steps.length - 1, next));
-    document.querySelectorAll('.mage-step-focus').forEach(el => el.classList.remove('mage-step-focus'));
-    const config = steps[step];
-    let target = null;
-    if (!config.section) target = document.querySelector(config.selector);
-    else {
-      const p = panel(config.section);
-      target = (p && p.querySelector(config.selector)) || (config.section === 'Grimório' ? document.querySelector(config.selector) : null);
-    }
-    if (target) {
-      target.classList.add('mage-step-focus');
-      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      if (target.matches('input,textarea,select')) target.focus({ preventScroll: true });
-    }
-    let note = document.getElementById('mage-step-note');
-    if (!note) { note = document.createElement('aside'); note.id = 'mage-step-note'; note.className = 'mage-step-note'; document.body.appendChild(note); }
-    note.textContent = (step + 1) + '/' + steps.length + ' · ' + config.title + ': ' + config.help;
-    document.getElementById('mage-prev').disabled = step === 0;
-    const nextButton = document.getElementById('mage-next');
-    nextButton.textContent = step === steps.length - 1 ? 'Concluir orientação' : 'Próxima etapa';
-    nextButton.onclick = step === steps.length - 1
-      ? () => { note.remove(); document.querySelectorAll('.mage-step-focus').forEach(el => el.classList.remove('mage-step-focus')); status('Orientação concluída. Revise a ficha e clique em ' + (isCreate ? 'Criar Mago' : 'Salvar ficha') + '.'); }
-      : () => showStep(step + 1);
-  }
   function addWizardChoicePanel(identity) {
     const heading = Array.from(document.querySelectorAll('.ficha .panel-title')).find(el => normalize(clean(el)).startsWith('grimorio'));
     if (!heading || document.getElementById('mage-wizard-choices')) return;
@@ -508,6 +483,7 @@
         altura_cm: groupValue('Altura'),
         peso_kg: groupValue('Peso'),
         divindade: groupValue('Divindade'),
+        atributos_base: baseAttributes,
         ...choices
       };
       const firstCircleBlock = Array.from(document.querySelectorAll('.ficha .spell-level-block')).find(b => parseInt(clean(b.querySelector('.spell-level-title')),10) === 1);
@@ -592,7 +568,6 @@
       await loadCatalogs();
       addWizardChoicePanel(identity);
       renderSpellInputs();
-      if (isCreate) renderSpellInputs();
       core.hydrate(identity.ficha_mago_v2 || identity.ficha_original_v1);
       document.querySelectorAll('#mage-wizard-choices select,#mage-wizard-choices input').forEach(input => { input.disabled = true; });
       status('Ficha carregada. Edite os campos e salve quando terminar.');
