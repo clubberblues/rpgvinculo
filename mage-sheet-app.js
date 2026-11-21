@@ -367,10 +367,10 @@
     const inputs = p.querySelectorAll('input');
     const total = inputs[inputs.length - 1];
     const weights = items.map(item => {
-      const match = String(item.peso || '').replace(',', '.').match(/-?\\d+(?:\\.\\d+)?/);
+      const match = String(item.peso || '').replace(',', '.').match(/-?\d+(?:\.\d+)?/);
       return match ? Number(match[0]) : 0;
     });
-    if (total) total.value = weights.reduce((sum,value) => sum + value,0).toFixed(2).replace(/\\.00$/,'') + ' kg';
+    if (total) total.value = weights.reduce((sum,value) => sum + value,0).toFixed(2).replace(/\.00$/,'') + ' kg';
   }
   function applyCalculatedFields(base, race, selectedSpells) {
     const adjustments = race.ajustes_atributos || {};
