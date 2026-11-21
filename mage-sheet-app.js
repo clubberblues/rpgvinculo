@@ -322,6 +322,19 @@
         peso: String(inputs[3].value || '').trim()
       }));
   }
+  function collectMoney() {
+    const p = panel('Dinheiro');
+    const inputs = p ? Array.from(p.querySelectorAll('input')).slice(0,4) : [];
+    const keys = ['pc','pp','po','pl'];
+    const result = {};
+    keys.forEach((key,index) => {
+      const raw = String(inputs[index] && inputs[index].value || '').trim();
+      const value = raw ? Number(raw.replace(',','.')) : 0;
+      if (!Number.isFinite(value) || value < 0) throw new Error('Informe uma quantidade válida e não negativa para ' + key.toUpperCase() + '.');
+      result[key] = value;
+    });
+    return result;
+  }
   function applyRacePresentation(race, profile) {
     setGroupValue('Classe','Mago');
     setGroupValue('Raça',race.nome);
@@ -557,6 +570,7 @@
       const feats = collectFeats();
       const languages = splitLanguages();
       const equipment = collectEquipment();
+      const money = collectMoney();
       updateEquipmentWeight(equipment);
       applyCalculatedFields(baseAttributes,raceData,selectedSpells);
       const identity = {
@@ -569,6 +583,7 @@
         divindade: groupValue('Divindade'),
         atributos_base: baseAttributes,
         deslocamento_base: raceData.deslocamento,
+        moedas: money,
         ...choices
       };
       const firstCircleBlock = Array.from(document.querySelectorAll('.ficha .spell-level-block')).find(b => parseInt(clean(b.querySelector('.spell-level-title')),10) === 1);
