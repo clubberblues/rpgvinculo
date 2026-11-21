@@ -7,7 +7,7 @@
   var params = new URLSearchParams(location.search);
   var characterId = params.get('char');
   var supabaseUrl = 'https://grrgwxcagvvafdmzsmro.supabase.co';
-  var supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInRvbGUiOiJhbm9uIiwiaWF0IjoxNzkwMjU2ODE0LCJleHAiOjIxMDU4MzI4MTl9.hqLiYynGXHwyUtqcbGTTa2orSStm7ko2C5R03QNmqtQ';
+  var supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJvbGUiOiJhbm9uIiwiaWF0IjoxNzkwMjU2ODE0LCJleHAiOjIxMDU4MzI4MTJ9.hqLiYynGXHwyUtqcbGTTa2orSStm7ko2C5R03QNmqtQ';
   var client = null;
   var statusNode = null;
   var saveButton = null;
