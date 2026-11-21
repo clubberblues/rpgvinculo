@@ -35,7 +35,6 @@
     document.head.appendChild(style);
     document.body.insertBefore(bar, document.body.firstChild);
     document.getElementById('mage-prev').addEventListener('click', () => showStep(step - 1));
-    document.getElementById('mage-next').addEventListener('click', () => showStep(step + 1));
     document.getElementById('mage-save').addEventListener('click', save);
   }
   function showStep(next) {
