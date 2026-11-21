@@ -14,12 +14,12 @@ A ficha enviada em `mago.feiticeiro(2).html` é a interface canônica. A nova im
 
 ## Limites conhecidos — não considerar concluído
 
-- A criação definitiva do Mago está conectada à RPC transacional `criar_mago_ficha_original_v2`, registrada na migration `20261121215802_srd35_mage_original_sheet_creation_v2`.
-- A RPC cria personagem e ficha juntos, aplica ajustes raciais, valida perícias e talentos, registra idiomas livres e equipamentos narrativos, grava a trilha de classe e registra o grimório.
-- O grimório inicial inclui automaticamente todos os truques permitidos e exige exatamente 3 + modificador positivo de Inteligência (mínimo 3) magias de 1º círculo. A lista de preparadas começa vazia; nenhum espaço diário é gasto.
+- A criação definitiva do Mago está conectada à RPC transacional `criar_mago_ficha_original_v2`, registrada na migration `20261121215802_srd35_mage_original_sheet_creation_v2` e `20261121220216_srd35_mage_original_sheet_skill_validation_v2`.
+- A RPC cria personagem e ficha juntos, aplica ajustes raciais, valida o orçamento e os limites de perícias do Mago (incluindo Conhecimento como perícia de classe), valida talentos, registra idiomas livres e equipamentos narrativos, grava a trilha de classe e registra o grimório.
+- O grimório inicial inclui automaticamente todos os truques permitidos e exige exatamente 3 + modificador positivo de Inteligência (mínimo 3) magias de 1º círculo. A lista de preparadas começa vazia; nenhum espaço diário é gasto. A especialização e as escolas proibidas usam os campos já existentes no painel Magia da ficha original, sem criar um formulário paralelo.
 - A RPC só pode ser executada por usuários autenticados; `PUBLIC` e `anon` não têm permissão. A chamada positiva foi testada em uma transação revertida, sem deixar personagem persistido.
-- O mapeamento de campos já é determinístico por seção/linha/coluna, mas precisa de revisão semântica completa, especialmente tabelas repetidas, grimório e listas de equipamentos.
-- Retrato ainda não está ligado ao Storage e os campos derivados de regras ainda não são calculados.
+- O mapeamento de persistência visual é versionado; tabelas repetidas e algumas listas ainda precisam de revisão semântica completa.
+- Retrato ainda não está ligado ao Storage; os principais campos derivados do Mago (atributos, PV, resistências, CA, iniciativa, agarrar, perícias, CD de magia, carga, XP e moedas iniciais) são preenchidos na criação, mas ainda precisam de conferência visual no navegador.
 - A Mesa ainda precisa abrir a ficha original no contexto de campanha e respeitar permissões de jogador/Mestre.
 - O fluxo narrativo do grimório e da lista separada de magias preparadas do Mago ainda precisa ser conectado ao banco sem limites diários, slots ou consumo automático.
 - Foi adicionada somente uma RPC de criação e sua migration; não foram alteradas policies RLS, campanhas ou fichas existentes.
