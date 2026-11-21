@@ -87,7 +87,7 @@
       '.mage-lore-copy h2{font:900 clamp(23px,3vw,34px)/1.2 Cinzel,serif;letter-spacing:2px;color:#e1c184;margin:0 0 22px;text-transform:uppercase}' +
       '.mage-lore-copy h3{font:700 13px Cinzel,serif;letter-spacing:1.5px;text-transform:uppercase;color:#d7b574;margin:20px 0 5px}' +
       '.mage-lore-copy p{margin:0 0 13px}' +
-      '.mage-lore-copy .mage-lore-meta{font:italic 15px EB Garamond,serif;color:#e5d2a8;margin-bottom:20px}' +
+      ' .mage-lore-copy .mage-lore-meta{font:italic 15px EB Garamond,serif;color:#e5d2a8;margin-bottom:20px;white-space:pre-line}' +
       '.mage-catalog-trigger{cursor:pointer;transition:color .18s ease;text-decoration-color:transparent}' +
       '.mage-catalog-trigger:hover{color:#8b5e24;text-decoration:underline;text-decoration-color:#b08d57;text-underline-offset:4px}' +
       '.mage-familiar-selection{margin:6px 0 10px;padding:5px 0;border-bottom:1px dotted rgba(90,63,40,.45);font:italic 13px EB Garamond,serif;color:#6a4a29}' +
@@ -699,14 +699,21 @@
     text.split(/\n{2,}/).forEach(part=>{
       const cleanPart = part.trim();
       if (!cleanPart) return;
-      if (/^(Benefício|Normal|Especial|Pré-requisito|Pré-requisitos|Descrição|Efeito|Teste de Resistência|Resistência à Magia):/i.test(cleanPart)) {
-        const first = cleanPart.indexOf(':');
-        const heading = createNode('h3','',cleanPart.slice(0,first));
+      if (/^#{1,3}\s+/.test(cleanPart)) {
+        parent.appendChild(createNode('h3','',cleanPart.replace(/^#{1,3}\s+/,'').trim()));
+        return;
+      }
+      const labelMatch = cleanPart.match(/^(?:\*\*([^*]+)\*\*|([^:]{2,55})):?\s*([\s\S]*)$/);
+      const knownLabel = /^(Benefício|Normal|Especial|Pré-requisito|Pré-requisitos|Descrição|Efeito|Nível|Componentes|Tempo de Execução|Alcance|Alvo|Área|Duração|Teste de Resistência|Resistência à Magia|Conjuração|Transmutação|Abjuração|Adivinhação|Evocação|Ilusão|Necromancia|Encantamento)$/i;
+      if (labelMatch && knownLabel.test((labelMatch[1] || labelMatch[2] || '').trim())) {
+        const heading = createNode('h3','',(labelMatch[1] || labelMatch[2]).trim());
         parent.appendChild(heading);
-        const rest = cleanPart.slice(first+1).trim();
-        if (rest) parent.appendChild(createNode('p','',rest));
+        const rest = (labelMatch[3] || '').trim();
+        if (rest) { const paragraph=createNode('p','',rest); paragraph.style.whiteSpace='pre-line'; parent.appendChild(paragraph); }
       } else {
-        parent.appendChild(createNode('p','',cleanPart));
+        const paragraph=createNode('p','',cleanPart);
+        paragraph.style.whiteSpace='pre-line';
+        parent.appendChild(paragraph);
       }
     });
   }
