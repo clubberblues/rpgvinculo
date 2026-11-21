@@ -149,11 +149,17 @@
   }
   function schoolKey(value) {
     const raw = normalize(value);
-    const found = schools.find(s => normalize(s[1]) === raw || s[0] === raw);
+    const first = raw.split(' ')[0];
+    const found = schools.find(s => normalize(s[1]) === raw || s[0] === raw || s[0] === first);
     return found ? found[0] : raw;
   }
+  function selectedProhibitedSchools() {
+    const specialization = document.getElementById('mage-specialization')?.value || '';
+    if (!specialization || specialization === 'universalista') return [];
+    return Array.from(document.querySelectorAll('#mage-prohibited-schools input:checked')).map(x => x.value);
+  }
   function allowedSpells(circle) {
-    const prohibited = wizardChoices().wizard_prohibited_schools;
+    const prohibited = selectedProhibitedSchools();
     return spellCatalog.filter(sp => Number(sp.circulo) === circle &&
       !prohibited.includes(schoolKey(sp.escola)));
   }
@@ -169,7 +175,7 @@
     return id;
   }
   function renderSpellInputs() {
-    if (!isCreate || !spellCatalog.length) return;
+    if (!spellCatalog.length) return;
     let circle0;
     const blocks = Array.from(document.querySelectorAll('.ficha .spell-level-block'));
     blocks.forEach(block => {
@@ -191,10 +197,10 @@
           const check = row.querySelector('input[type="checkbox"]');
           if (input) {
             input.value = spells[index] ? (spells[index].nome_pt || spells[index].nome) : '';
-            input.readOnly = true;
+            input.readOnly = isCreate;
             input.disabled = !spells[index];
           }
-          if (check) { check.checked = false; check.disabled = true; }
+          if (check) { if (isCreate) check.checked = false; check.disabled = isCreate; }
           row.hidden = !spells[index];
         });
       } else if (circle === 1) {
@@ -204,10 +210,16 @@
         const headerInputs = Array.from(block.querySelectorAll('.spell-header input'));
         if (headerInputs[1]) headerInputs[1].value = '';
         if (headerInputs[2]) headerInputs[2].value = '';
-      } else {
+      } else if (isCreate) {
         block.querySelectorAll('input').forEach(input => { input.disabled = true; });
         block.style.opacity = '.48';
         block.title = 'Círculo ainda não acessível ao Mago de 1º nível.';
+      } else {
+        const allowed = allowedSpells(circle);
+        const datalistId = ensureDatalist('mage-spell-list-level-' + circle, allowed);
+        list.querySelectorAll('input[type="text"]').forEach(input => { input.setAttribute('list', datalistId); });
+        block.style.opacity = '1';
+        block.removeAttribute('title');
       }
     });
     if (circle0) {
@@ -429,7 +441,7 @@
     const results = await Promise.all([
       sb.from('srd_skills').select('id,nome,treinada_apenas'),
       sb.from('srd_feats').select('id,nome,nome_pt,exige_parametro,requisitos'),
-      sb.from('srd_spells').select('id,nome,nome_pt,circulo,nivel,escola,classes,source_status').contains('classes',['wizard']).in('circulo',[0,1])
+      sb.from('srd_spells').select('id,nome,nome_pt,circulo,nivel,escola,classes,source_status').contains('classes',['wizard'])
     ]);
     for (const result of results) if (result.error) throw result.error;
     skillCatalog = results[0].data || [];
@@ -498,6 +510,9 @@
         divindade: groupValue('Divindade'),
         ...choices
       };
+      const firstCircleBlock = Array.from(document.querySelectorAll('.ficha .spell-level-block')).find(b => parseInt(clean(b.querySelector('.spell-level-title')),10) === 1);
+      const firstCircleHeader = firstCircleBlock && firstCircleBlock.querySelectorAll('.spell-header input');
+      if (firstCircleHeader && firstCircleHeader[1]) firstCircleHeader[1].value = String(selectedSpells.length);
       const snapshot = core.collect();
       status('Validando e gravando o Mago no banco em uma única transação…');
       const result = await sb.rpc('criar_mago_ficha_original_v2', {
@@ -570,7 +585,17 @@
       renderSpellInputs();
       status('Ficha original pronta. Preencha os campos; ao criar, personagem e ficha serão gravados juntos no banco.');
     } else if (characterId) {
-      await loadCharacter();
+      const result = await sb.from('srd_character_sheets').select('identidade').eq('character_id', characterId).maybeSingle();
+      if (result.error) throw result.error;
+      if (!result.data) throw new Error('Ficha não encontrada ou sem permissão de leitura.');
+      const identity = result.data.identidade && typeof result.data.identidade === 'object' ? result.data.identidade : {};
+      await loadCatalogs();
+      addWizardChoicePanel(identity);
+      renderSpellInputs();
+      if (isCreate) renderSpellInputs();
+      core.hydrate(identity.ficha_mago_v2 || identity.ficha_original_v1);
+      document.querySelectorAll('#mage-wizard-choices select,#mage-wizard-choices input').forEach(input => { input.disabled = true; });
+      status('Ficha carregada. Edite os campos e salve quando terminar.');
     } else {
       throw new Error('Abra a ficha a partir do Lobby ou da Mesa.');
     }
