@@ -1169,8 +1169,7 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
   }
 
   async function abrirGrimorioCriacao() {
-    window.location.href = 'ficha.html?mode=criar&ruleset=dnd35';
-    return;
+    // O fluxo novo começa na ficha original somente depois da escolha de raça e classe.
     modalLivros.classList.remove('ativo');
     modalMinhasFichas.classList.remove('ativo');
     modalEstante.classList.remove('ativo');
@@ -1210,8 +1209,13 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
 
   function iniciarJornadaDnd35() {
     if (!racaSelecionadaGrimorio || !classeSelecionadaGrimorio) return;
+    var nomeClasse = String(classeSelecionadaGrimorio.nome || classeSelecionadaGrimorio.class_key || classeSelecionadaGrimorio.id).toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');
+    if (!nomeClasse.includes('mago') && !nomeClasse.includes('wizard')) {
+      alert('A nova ficha original está sendo implementada primeiro para Mago. As demais classes serão migradas depois.');
+      return;
+    }
     var params = new URLSearchParams({ mode: 'criar', ruleset: 'dnd35', raca: String(racaSelecionadaGrimorio.id), classe: String(classeSelecionadaGrimorio.id) });
-    window.location.href = 'ficha.html?' + params.toString();
+    window.location.href = 'ficha-original.html?' + params.toString();
   }
 
   async function init() {
@@ -1751,7 +1755,8 @@ function uploadCapaMesa(mesaId) {
         var avatar = ch.retrato_url
           ? '<img src="' + escapeHtml(ch.retrato_url) + '" alt="Retrato de ' + escapeHtml(ch.nome || 'herói') + '">'
           : '<div class="avatar-placeholder" aria-hidden="true">👤</div>';
-        return '<div class="card-ficha-admin"><a href="ficha.html?char=' + encodeURIComponent(ch.id) + '" class="card-ficha-user">' + avatar +
+        var sheetUrl = sheet && /mago|wizard/i.test(String(classNames[String(sheet.classe_id)] || sheet.classe_id)) ? 'ficha-original.html?char=' : 'ficha.html?char=';
+        return '<div class="card-ficha-admin"><a href="' + sheetUrl + encodeURIComponent(ch.id) + '" class="card-ficha-user">' + avatar +
           '<div class="nome">' + escapeHtml(ch.nome || 'Sem Nome') + '</div><div class="info">' + escapeHtml(resumo) + '</div></a>' +
           '<button type="button" class="btn-excluir-ficha js-excluir-ficha" data-char-id="' + escapeHtml(ch.id) + '" data-char-name="' + escapeHtml(ch.nome || 'Sem Nome') + '" aria-label="Excluir ficha ' + escapeHtml(ch.nome || 'Sem Nome') + '">Excluir ficha</button></div>';
       }).join('');
