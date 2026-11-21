@@ -447,9 +447,6 @@
         const input = knownCells[circle+1]?.querySelector('input');
         if (input) input.value = circle === 0 ? String(allowedSpells(0).length) : circle === 1 ? String(selectedSpells.length) : '0';
       }
-      const spec = labeledInput('Magia','Especialização em Escola');
-      const prohibited = labeledInput('Magia','Escolas Proibidas');
-      if (spec && wizardChoices) { /* values are entered in the original sheet fields */ }
     }
     populateSkillTotals(final,modifiers,race);
     const spellBlocks = Array.from(document.querySelectorAll('.ficha .spell-level-block'));
