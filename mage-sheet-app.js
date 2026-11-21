@@ -1120,5 +1120,25 @@
     }
     showStep(0);
   }
-  document.addEventListener('DOMContentLoaded', () => init().catch(error => status(error.message || String(error), true)));
+  function reportBootstrapError(error) {
+    const message = error && error.message ? error.message : String(error || 'Erro desconhecido');
+    let node = document.getElementById('mage-sheet-bootstrap-error');
+    if (!node) {
+      node = document.createElement('div');
+      node.id = 'mage-sheet-bootstrap-error';
+      node.setAttribute('role', 'alert');
+      node.style.cssText = 'position:sticky;top:0;z-index:10020;margin:12px auto;padding:12px 16px;max-width:1200px;background:#4a1712;color:#fff0dc;border:2px solid #d49a62;font:16px Georgia,serif;white-space:normal';
+      const sheet = document.querySelector('.ficha');
+      if (sheet) sheet.insertBefore(node, sheet.firstChild);
+      else document.body.insertBefore(node, document.body.firstChild);
+    }
+    node.textContent = 'Não foi possível inicializar a ficha: ' + message + ' — recarregue a página; se persistir, informe esta mensagem ao suporte.';
+    const statusNode = document.getElementById('mage-sheet-status');
+    if (statusNode) status(message, true);
+  }
+  function bootMageSheet() {
+    init().catch(reportBootstrapError);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootMageSheet, { once: true });
+  else bootMageSheet();
 })();
