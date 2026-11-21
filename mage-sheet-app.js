@@ -111,7 +111,7 @@
     const specialization = specializationKey(specializationInput && specializationInput.value);
     if (!specialization) throw new Error('Preencha Especialização em Escola com Universalista ou uma escola válida.');
     const raw = String(prohibitedInput && prohibitedInput.value || '')
-      .split(/[,;]+|\\s+e\\s+/i).map(x => x.trim()).filter(Boolean);
+      .split(/[,;]+|\s+e\s+/i).map(x => x.trim()).filter(Boolean);
     const prohibited = raw.map(schoolKey);
     if (prohibited.some(key => !schools.some(s => s[0] === key))) throw new Error('Há uma escola proibida que não corresponde ao catálogo.');
     const required = specialization === 'universalista' ? 0 : specialization === 'divination' ? 1 : 2;
@@ -129,7 +129,7 @@
   }
   function selectedProhibitedSchools() {
     const input = labeledInput('Magia','Escolas Proibidas');
-    return String(input && input.value || '').split(/[,;]+|\\s+e\\s+/i).map(x => x.trim()).filter(Boolean).map(schoolKey);
+    return String(input && input.value || '').split(/[,;]+|\s+e\s+/i).map(x => x.trim()).filter(Boolean).map(schoolKey);
   }
   function allowedSpells(circle) {
     const prohibited = selectedProhibitedSchools();
@@ -332,7 +332,7 @@
     const traits = textareaInPanel('Traços Raciais');
     if (traits) traits.value = Array.isArray(race.habilidades_raciais) ? race.habilidades_raciais.join('\n') : '';
     const languageLine = (race.habilidades_raciais || []).find(x => /idiomas? autom[aá]ticos?:/i.test(x));
-    const languageMatch = languageLine && languageLine.match(/idiomas? autom[aá]ticos?:\\s*([^.]*)/i);
+    const languageMatch = languageLine && languageLine.match(/idiomas? autom[aá]ticos?:\s*([^.]*)/i);
     const languages = textareaInPanel('Idiomas');
     if (languages && languageMatch && !languages.value.trim()) languages.value = languageMatch[1].replace(/\s+e\s+/i, ', ');
   }
