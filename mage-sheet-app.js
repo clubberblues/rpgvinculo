@@ -764,6 +764,10 @@
     const names = {bat:'Morcego',cat:'Gato',hawk:'Falcão',lizard:'Lagarto',owl:'Coruja',rat:'Rato',raven:'Corvo',toad:'Sapo',weasel:'Doninha'};
     return names[monster.id] || monster.nome;
   }
+  function familiarSize(value) {
+    const sizes = {diminutive:'Mínimo',tiny:'Miúdo',small:'Pequeno',medium:'Médio',large:'Grande',huge:'Enorme',gargantuan:'Imenso',colossal:'Colossal'};
+    return sizes[normalize(value)] || value || '';
+  }
   function renderCatalogList() {
     const list = document.getElementById('mage-catalog-list');
     const search = normalize(document.getElementById('mage-catalog-search')?.value || '');
@@ -796,7 +800,7 @@
     } else if (catalogMode === 'familiar') {
       items = monsterCatalog.filter(item=>normalize(item.nome+' '+item.nome_original+' '+item.tamanho).includes(search));
       items.forEach(monster=>{
-        const meta = 'Animal · '+monster.tamanho+' · ND '+monster.nd+' · '+(monster.deslocamento||'Deslocamento não informado');
+        const meta = 'Animal · '+familiarSize(monster.tamanho)+' · ND '+monster.nd+' · '+(monster.deslocamento||'Deslocamento não informado');
         const details = [
           'Tamanho: '+(monster.tamanho||'Não informado'),
           'Pontos de vida: '+(monster.pv ?? monster.dados_vida ?? 'Não informado'),
@@ -899,7 +903,7 @@
     selectedFamiliar = monster;
     const p = panel('Familiar');
     const values = {
-      'Tamanho':monster.tamanho,
+      'Tamanho':familiarSize(monster.tamanho),
       'Iniciativa':monster.iniciativa,
       'Deslocamento':monster.deslocamento,
       'PV':monster.pv ?? monster.dados_vida,
@@ -910,8 +914,11 @@
       'Espaço':monster.espaco_alcance
     };
     Object.entries(values).forEach(([label,value])=>{if(value!==undefined&&value!==null){const input=labeledInput('Familiar',label);if(input)input.value=String(value);}});
+    const spaceReach = String(monster.espaco_alcance || '').split('/');
+    const space = labeledInput('Familiar','Espaço');
     const reach = labeledInput('Familiar','Alcance');
-    if (reach && monster.espaco_alcance) reach.value = monster.espaco_alcance;
+    if (space && spaceReach[0]) space.value = spaceReach[0].trim();
+    if (reach && spaceReach[1]) reach.value = spaceReach.slice(1).join('/').trim();
     const localizedName = familiarLabel(monster);
     const note = createNode('div','mage-familiar-selection','Familiar escolhido: '+localizedName+' · dados copiados do registro da criatura ('+monster.nome+').');
     const title = p.querySelector('.panel-title');
