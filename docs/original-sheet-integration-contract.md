@@ -39,11 +39,15 @@ magias_preparadas JSONB pode preservar ocorrências repetidas e listas narrativa
 - Manter a validação de que a magia pertence ao grimório, à classe, ao círculo acessível e atende o atributo-chave.
 - Feiticeiro não usa grimório/preparação: mantém magias conhecidas e recursos de conjuração espontânea em fluxo separado.
 
-## Conflito encontrado na RPC atual salvar_grimorio_srd
+## Conflitos encontrados na RPC salvar_grimorio_srd
 
 A função atual exige formato com usos; valida limites de magias conhecidas para Bardo/Feiticeiro; exige progressão e atributo-chave; exige círculos acessíveis; exige slot_level e expended para cada preparada; rejeita preparação para Bardo/Feiticeiro; aplica capacidade de espaços diários para classes preparadas; preserva estados gastos e slots de domínio.
 
 A função não deve ser simplesmente substituída sem revisar todas as chamadas e compatibilidade. A próxima implementação deve introduzir um contrato narrativo versionado em magias_preparadas, preservar os campos legados de forma compatível e migrar o frontend por classe. Não executar atualização em massa de fichas existentes.
+
+## Conflito adicional na mesa
+
+mesa.html ainda trata as magias preparadas como slots de conjuração: filtra entradas expended/gasta, calcula disponibilidade e usa a RPC de conjuração para atualizar o estado. Isso também precisa ser desligado ou adaptado no fluxo do Mago quando a nova regra narrativa entrar em vigor. A mesa não pode consumir automaticamente uma ocorrência nem impor espaços diários ao Mago. O jogador deve poder remover manualmente a ocorrência da lista da ficha. A lógica de Bardo/Feiticeiro e os recursos próprios de Clérigo/Druida precisam ser avaliados separadamente antes de qualquer alteração compartilhada.
 
 ## Contrato proposto do adaptador
 
