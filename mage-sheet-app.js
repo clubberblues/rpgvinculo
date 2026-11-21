@@ -69,57 +69,56 @@
     document.getElementById('mage-prev').addEventListener('click', () => showStep(step - 1));
     document.getElementById('mage-save').addEventListener('click', save);
   }
-  function addWizardChoicePanel(identity) {
-    const heading = Array.from(document.querySelectorAll('.ficha .panel-title')).find(el => normalize(clean(el)).startsWith('grimorio'));
-    if (!heading || document.getElementById('mage-wizard-choices')) return;
-    const box = document.createElement('div');
-    box.id = 'mage-wizard-choices';
-    box.className = 'mage-choice-panel';
-    box.innerHTML = '<label for="mage-specialization">Especialização do Mago</label><select id="mage-specialization"><option value="">Escolha a especialização</option><option value="universalista">Universalista</option>' +
-      schools.map(s => '<option value="' + s[0] + '">' + s[1] + '</option>').join('') +
-      '</select><div id="mage-prohibited-schools" class="mage-school-choices"></div><div id="mage-school-help" class="mage-choice-help">Universalista: nenhuma escola proibida. Especialistas: escolha as escolas proibidas indicadas pelas regras.</div>';
-    heading.insertAdjacentElement('afterend', box);
-    const select = box.querySelector('#mage-specialization');
-    select.addEventListener('change', () => {
-      renderProhibitedSchools();
-      renderSpellInputs();
-    });
-    if (identity && identity.wizard_specialization) select.value = identity.wizard_specialization;
-    renderProhibitedSchools(identity && identity.wizard_prohibited_schools || []);
+  function labeledInput(panelTitle, labelText) {
+    const p = panel(panelTitle);
+    if (!p) return null;
+    const target = normalize(labelText);
+    const label = Array.from(p.querySelectorAll('label')).find(el => normalize(clean(el)) === target);
+    return label && label.parentElement ? label.parentElement.querySelector('input,textarea,select') : null;
   }
-  function renderProhibitedSchools(selected) {
-    const select = document.getElementById('mage-specialization');
-    const host = document.getElementById('mage-prohibited-schools');
-    const help = document.getElementById('mage-school-help');
-    if (!select || !host) return;
-    host.replaceChildren();
-    const specialization = select.value;
-    if (!specialization || specialization === 'universalista') {
-      host.hidden = true;
-      help.textContent = specialization === 'universalista' ? 'Universalista: nenhuma escola proibida.' : 'Escolha uma especialização para continuar.';
-      return;
+  function schoolLabel(key) {
+    const found = schools.find(s => s[0] === key);
+    return found ? found[1] : key;
+  }
+  function specializationKey(value) {
+    const raw = normalize(value);
+    if (raw === 'universalista') return 'universalista';
+    const found = schools.find(s => s[0] === raw || normalize(s[1]) === raw);
+    return found ? found[0] : '';
+  }
+  function setupWizardChoiceFields(identity) {
+    const specialization = labeledInput('Magia','Especialização em Escola');
+    const prohibited = labeledInput('Magia','Escolas Proibidas');
+    if (!specialization || !prohibited) throw new Error('Os campos de especialização do Mago não foram encontrados na ficha original.');
+    const specList = ensureDatalist('mage-specialization-options', [{nome:'Universalista'}, ...schools.map(s => ({nome:s[1]}))]);
+    const schoolList = ensureDatalist('mage-prohibited-school-options', schools.map(s => ({nome:s[1]})));
+    specialization.setAttribute('list',specList);
+    prohibited.setAttribute('list',schoolList);
+    if (identity && identity.wizard_specialization) specialization.value = schoolLabel(identity.wizard_specialization);
+    if (identity && Array.isArray(identity.wizard_prohibited_schools)) {
+      prohibited.value = identity.wizard_prohibited_schools.map(schoolLabel).join(', ');
     }
-    host.hidden = false;
-    const options = schools.filter(s => s[0] !== specialization);
-    options.forEach(s => {
-      const label = document.createElement('label');
-      const input = document.createElement('input');
-      input.type = 'checkbox';
-      input.value = s[0];
-      input.checked = Array.isArray(selected) && selected.includes(s[0]);
-      input.addEventListener('change', () => renderSpellInputs());
-      label.append(input, document.createTextNode(s[1]));
-      host.appendChild(label);
-    });
-    const required = specialization === 'divination' ? 1 : 2;
-    help.textContent = 'Selecione exatamente ' + required + ' escola(s) proibida(s).';
+    specialization.addEventListener('input',renderSpellInputs);
+    prohibited.addEventListener('input',renderSpellInputs);
+    if (!isCreate) {
+      specialization.readOnly = true;
+      prohibited.readOnly = true;
+    }
   }
   function wizardChoices() {
-    const specialization = document.getElementById('mage-specialization')?.value || '';
-    if (!specialization) throw new Error('Escolha a especialização do Mago antes de criar a ficha.');
-    const prohibited = Array.from(document.querySelectorAll('#mage-prohibited-schools input:checked')).map(x => x.value);
+    const specializationInput = labeledInput('Magia','Especialização em Escola');
+    const prohibitedInput = labeledInput('Magia','Escolas Proibidas');
+    const specialization = specializationKey(specializationInput && specializationInput.value);
+    if (!specialization) throw new Error('Preencha Especialização em Escola com Universalista ou uma escola válida.');
+    const raw = String(prohibitedInput && prohibitedInput.value || '')
+      .split(/[,;]+|\\s+e\\s+/i).map(x => x.trim()).filter(Boolean);
+    const prohibited = raw.map(schoolKey);
+    if (prohibited.some(key => !schools.some(s => s[0] === key))) throw new Error('Há uma escola proibida que não corresponde ao catálogo.');
     const required = specialization === 'universalista' ? 0 : specialization === 'divination' ? 1 : 2;
     if (prohibited.length !== required) throw new Error('A especialização selecionada exige exatamente ' + required + ' escola(s) proibida(s).');
+    if (new Set(prohibited).size !== prohibited.length || prohibited.includes(specialization)) {
+      throw new Error('Não repita a escola proibida nem escolha a própria escola de especialização.');
+    }
     return { wizard_specialization: specialization, wizard_prohibited_schools: prohibited };
   }
   function schoolKey(value) {
@@ -129,9 +128,8 @@
     return found ? found[0] : raw;
   }
   function selectedProhibitedSchools() {
-    const specialization = document.getElementById('mage-specialization')?.value || '';
-    if (!specialization || specialization === 'universalista') return [];
-    return Array.from(document.querySelectorAll('#mage-prohibited-schools input:checked')).map(x => x.value);
+    const input = labeledInput('Magia','Escolas Proibidas');
+    return String(input && input.value || '').split(/[,;]+|\\s+e\\s+/i).map(x => x.trim()).filter(Boolean).map(schoolKey);
   }
   function allowedSpells(circle) {
     const prohibited = selectedProhibitedSchools();
@@ -557,7 +555,7 @@
       await loadCatalogs();
       core.applyIdentity({ raceName: raceData.nome, playerName: profile.data?.username || user.email?.split('@')[0] || '' });
       applyRacePresentation(raceData,profile.data);
-      addWizardChoicePanel(null);
+      setupWizardChoiceFields(null);
       renderSpellInputs();
       status('Ficha original pronta. Preencha os campos; ao criar, personagem e ficha serão gravados juntos no banco.');
     } else if (characterId) {
@@ -566,10 +564,9 @@
       if (!result.data) throw new Error('Ficha não encontrada ou sem permissão de leitura.');
       const identity = result.data.identidade && typeof result.data.identidade === 'object' ? result.data.identidade : {};
       await loadCatalogs();
-      addWizardChoicePanel(identity);
+      setupWizardChoiceFields(identity);
       renderSpellInputs();
       core.hydrate(identity.ficha_mago_v2 || identity.ficha_original_v1);
-      document.querySelectorAll('#mage-wizard-choices select,#mage-wizard-choices input').forEach(input => { input.disabled = true; });
       status('Ficha carregada. Edite os campos e salve quando terminar.');
     } else {
       throw new Error('Abra a ficha a partir do Lobby ou da Mesa.');
