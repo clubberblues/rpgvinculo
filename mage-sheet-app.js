@@ -13,14 +13,14 @@
   const core = window.DND35MageSheetCore;
   let sb, user, step = 0;
   const steps = [
-    { title: 'Identidade', selector: '.header-top .input-group input', help: 'Comece pelo nome do personagem e pelos dados de identificação.' },
-    { title: 'Atributos', selector: '.attr-row:nth-of-type(2) input', help: 'Preencha os valores dos seis atributos. Os modificadores serão calculados na etapa de regras.' },
-    { title: 'Resistências', selector: '.resist-row:nth-of-type(2) input', help: 'Confira as resistências do Mago e os modificadores aplicáveis.' },
-    { title: 'Perícias', selector: '.panel:has(.panel-title) table input', help: 'Distribua os pontos de perícia de acordo com a classe e a Inteligência.' },
-    { title: 'Talentos', selector: '.panel:has(.panel-title) textarea, .panel:has(.panel-title) input', help: 'Registre o talento escolhido e suas informações.' },
-    { title: 'Grimório', selector: '.spell-level-block input', help: 'Registre as magias permanentes do grimório. A preparação será uma lista separada durante a campanha.' },
-    { title: 'Equipamentos', selector: '.panel:has(.panel-title) input', help: 'Registre os equipamentos e seus pesos na própria ficha.' },
-    { title: 'Idiomas', selector: '.panel:has(.panel-title) textarea', help: 'Registre os idiomas conhecidos.' }
+    { title: 'Identidade', section: null, selector: '.header-top .input-group input', help: 'Comece pelo nome do personagem e pelos dados de identificação.' },
+    { title: 'Atributos', section: 'Atributos', selector: '.attr-row input', help: 'Preencha os valores dos seis atributos. Os modificadores serão calculados na etapa de regras.' },
+    { title: 'Resistências', section: 'Resistências', selector: '.resist-row input', help: 'Confira as resistências do Mago e os modificadores aplicáveis.' },
+    { title: 'Perícias', section: 'Perícias', selector: 'table input', help: 'Distribua os pontos de perícia de acordo com a classe e a Inteligência.' },
+    { title: 'Talentos', section: 'Talentos', selector: 'input,textarea,select', help: 'Registre o talento escolhido e suas informações.' },
+    { title: 'Grimório', section: 'Grimório', selector: '.spell-level-block input', help: 'Registre as magias permanentes do grimório. A preparação será uma lista separada durante a campanha.' },
+    { title: 'Equipamentos', section: 'Equipamentos', selector: 'input,textarea,select', help: 'Registre os equipamentos e seus pesos na própria ficha.' },
+    { title: 'Idiomas', section: 'Idiomas', selector: 'textarea,input', help: 'Registre os idiomas conhecidos.' }
   ];
   function status(message, error) {
     const node = document.getElementById('mage-sheet-status');
@@ -41,10 +41,11 @@
     step = Math.max(0, Math.min(steps.length - 1, next));
     document.querySelectorAll('.mage-step-focus').forEach(el => el.classList.remove('mage-step-focus'));
     const config = steps[step];
-    let target = document.querySelector(config.selector);
-    if (!target) {
-      const panel = Array.from(document.querySelectorAll('.panel')).find(p => (p.querySelector('.panel-title')?.textContent || '').toLowerCase().includes(config.title.toLowerCase()));
-      target = panel && panel.querySelector('input,textarea,select');
+    let target = null;
+    if (!config.section) target = document.querySelector(config.selector);
+    else {
+      const panel = Array.from(document.querySelectorAll('.panel')).find(p => (p.querySelector('.panel-title')?.textContent || '').toLowerCase().includes(config.section.toLowerCase()));
+      target = (panel && panel.querySelector(config.selector)) || (config.section === 'Grimório' ? document.querySelector(config.selector) : null);
     }
     if (target) {
       target.classList.add('mage-step-focus');
