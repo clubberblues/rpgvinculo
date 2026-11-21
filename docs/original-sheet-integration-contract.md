@@ -1,10 +1,22 @@
 # Integração do modelo original de ficha — contrato de implementação
 
-Status: auditoria estrutural concluída parcialmente; implementação ainda não iniciada.
+Status: contrato de referência; implementação do Mago iniciada na branch feat/original-sheet-integration. A integração visual dos catálogos auxiliares está em andamento; validação ponta a ponta em navegador e round-trip completo permanecem pendentes.
 
 ## Decisão de produto obrigatória
 
 O arquivo de ficha original enviado pelo usuário é o modelo canônico da ficha. Não deve ser redesenhado nem substituído pela interface de criação antiga. Após selecionar raça e classe no Lobby, a pessoa deve abrir a ficha completa original. A orientação destaca os campos pendentes diretamente nela. Catálogos são auxiliares contextuais dos campos.
+
+
+## Atualização de interface aprovada pelo usuário (21/11/2026)
+
+- O layout do modelo original permanece como interface principal e não será substituído por painéis de cartões.
+- Talentos, Familiar e Grimório são títulos acionáveis que abrem catálogos auxiliares somente sob demanda.
+- O catálogo de talentos mostra nome e pré-requisitos; selecionar o nome preenche uma linha textual da ficha. VER abre a descrição completa em tela de texto centralizada, sem caixa, com blur intenso no restante da interface.
+- Grimório abre catálogo filtrável por círculo; selecionar uma magia preenche o campo do círculo correspondente no modelo original. A preparação continua sendo uma lista narrativa separada e não deve ser convertida em slots ou limite diário.
+- Familiar apresenta as criaturas disponíveis, permite consultar a descrição e copia os dados disponíveis da criatura escolhida para os campos do modelo.
+- A identidade visual deriva do próprio modelo: pergaminho, tinta escura, latão envelhecido, Cinzel e EB Garamond. Não introduzir paletas concorrentes nos catálogos.
+- As escolhas durante a campanha não devem ser bloqueadas automaticamente por condições de nível ou pré-requisitos; o Mestre conduz a aplicação das regras. A validação específica da criação inicial é uma questão separada.
+- As descrições devem preservar o texto-fonte e ser organizadas em blocos e parágrafos legíveis. Campos técnicos ausentes permanecem ausentes até serem verificados; não inventar dados.
 
 ## Inventário confirmado do HTML original
 
