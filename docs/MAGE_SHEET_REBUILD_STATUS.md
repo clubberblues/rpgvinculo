@@ -13,11 +13,12 @@ A ficha enviada em `mago.feiticeiro(2).html` é a interface canônica. A nova im
   - `20261121215802_srd35_mage_original_sheet_creation_v2`
   - `20261121220216_srd35_mage_original_sheet_skill_validation_v2`
   - `20261121220934_srd35_mage_original_sheet_currency_sync_v2`
+  - `20261121221412_srd35_mage_original_sheet_class_bonus_features_v2`
 - A RPC cria personagem e ficha na mesma transação, valida usuário autenticado, raça e classe Mago, valida os seis atributos no orçamento de 25 pontos de compra e aplica ajustes raciais, registra a progressão de classe de nível 1, PV, perícias, talentos, idiomas livres, equipamentos narrativos, moedas (PC/PP/PO/PL convertidas para ouro total) e snapshot da ficha.
 - A orientação da ficha informa o orçamento de 25 pontos de compra e a validação de atributos é feita no banco. A validação de perícias é específica do Mago: orçamento de nível 1 com Inteligência e bônus humano, máximo de 4 graduações em perícia de classe e 2 em cross-class, incrementos de 0,5 para cross-class. Conhecimento é tratado como perícia de classe.
-- Talentos são validados pelo mecanismo de regras existente; a criação exige um talento para raças comuns e dois para Humano.
+- Talentos escolhidos pelo jogador são validados pelo mecanismo de regras existente; a criação exige um talento para raças comuns e dois para Humano. O Mago recebe automaticamente o talento bônus Escrever Pergaminho no nível 1, também registrado na tabela normalizada de talentos.
 - O grimório recebe automaticamente todos os truques permitidos e exige exatamente 3 + modificador positivo de Inteligência (mínimo 3) magias de 1º círculo. As magias são gravadas no grimório e no catálogo normalizado de magias conhecidas.
-- A especialização e as escolas proibidas usam os campos já existentes no painel Magia da ficha original. A lista de preparadas começa vazia; nenhum espaço diário é gasto, e nenhum descanso ou limite diário é aplicado.
+- A especialização e as escolas proibidas usam os campos já existentes no painel Magia da ficha original. A disponibilidade de Invocar Familiar é registrada como escolha pendente; nenhum familiar é criado ou invocado automaticamente. A lista de preparadas começa vazia; nenhum espaço diário é gasto, e nenhum descanso ou limite diário é aplicado.
 - Equipamentos livres são preservados em `equipamento_inicial` como itens narrativos, sem obrigar correspondência no catálogo.
 - A função é `SECURITY DEFINER` com `search_path` fixo, exige `auth.uid()`, cria somente para o usuário autenticado e tem execução revogada para `PUBLIC` e `anon`; somente `authenticated` pode chamá-la.
 - O adaptador genérico antigo foi removido. A função antiga de finalização não é chamada. Os validadores de talento e grimório são usados apenas como motores de regras; a gravação de perícias é feita pela nova validação específica do Mago.
@@ -37,7 +38,7 @@ A ficha enviada em `mago.feiticeiro(2).html` é a interface canônica. A nova im
 - Retrato e transformação ainda não estão ligados ao Supabase Storage.
 - A edição de uma ficha já existente ainda salva o snapshot visual; a sincronização de cada campo editado com as colunas normalizadas precisa de uma operação própria.
 - A Mesa ainda precisa abrir a ficha original em painel/modal e respeitar as permissões de jogador e Mestre.
-- A lista separada de magias preparadas do Mago ainda precisa de operações narrativas de adicionar/remover ocorrências durante a campanha, sem slots, limites diários ou consumo automático.
+- A lista separada de magias preparadas do Mago ainda precisa de operações narrativas de adicionar/remover ocorrências durante a campanha, sem slots, limites diários ou consumo automático. A interface/ação de invocar e administrar o familiar ainda precisa ser implementada.
 
 ## Segurança e preservação
 
