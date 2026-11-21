@@ -1075,9 +1075,18 @@
   async function init() {
     if (!window.supabase || !core) throw new Error('Dependências da ficha não foram carregadas.');
     sb = window.supabase.createClient(SUPABASE_URL, KEY);
-    const auth = await sb.auth.getUser();
-    if (auth.error || !auth.data.user) { location.replace('index.html'); return; }
-    user = auth.data.user;
+    // Preserve a ficha visível durante a inicialização. Um estado de auth ainda
+    // não hidratado não pode disparar redirecionamento e desmontar a ficha.
+    const sessionResult = await sb.auth.getSession();
+    if (sessionResult.error) throw new Error('Não foi possível recuperar sua sessão: ' + sessionResult.error.message);
+    let authenticatedUser = sessionResult.data && sessionResult.data.session && sessionResult.data.session.user;
+    if (!authenticatedUser) {
+      const auth = await sb.auth.getUser();
+      if (auth.error) throw new Error('Falha ao validar sua sessão: ' + auth.error.message);
+      authenticatedUser = auth.data && auth.data.user;
+    }
+    if (!authenticatedUser) throw new Error('Sua sessão não foi encontrada nesta aba. A ficha foi mantida aberta; entre novamente pelo Lobby sem fechar sua sessão.');
+    user = authenticatedUser;
     addToolbar();
     ensureCatalogOverlays();
     bindCatalogTriggers();
