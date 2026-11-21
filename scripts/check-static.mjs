@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 
 const root = process.cwd();
 const htmlFiles = ['index.html', 'lobby.html', 'ficha.html', 'ficha-original.html', 'mesa.html', 'dice.html'];
-const standaloneScripts = ['vinculo-ui.js', 'original-sheet-adapter.js'];
+const standaloneScripts = ['vinculo-ui.js', 'mage-sheet-core.js', 'mage-sheet-app.js'];
 const failures = [];
 let checkedInlineScripts = 0;
 
