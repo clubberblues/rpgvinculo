@@ -14,12 +14,15 @@ A ficha enviada em `mago.feiticeiro(2).html` é a interface canônica. A nova im
 
 ## Limites conhecidos — não considerar concluído
 
-- A criação nova ainda salva rascunho somente no armazenamento local do navegador. A gravação definitiva de um personagem novo ainda precisa ser ligada ao contrato de criação SRD, sem reutilizar a interface antiga.
+- A criação definitiva do Mago está conectada à RPC transacional `criar_mago_ficha_original_v2`, registrada na migration `20261121215802_srd35_mage_original_sheet_creation_v2`.
+- A RPC cria personagem e ficha juntos, aplica ajustes raciais, valida perícias e talentos, registra idiomas livres e equipamentos narrativos, grava a trilha de classe e registra o grimório.
+- O grimório inicial inclui automaticamente todos os truques permitidos e exige exatamente 3 + modificador positivo de Inteligência (mínimo 3) magias de 1º círculo. A lista de preparadas começa vazia; nenhum espaço diário é gasto.
+- A RPC só pode ser executada por usuários autenticados; `PUBLIC` e `anon` não têm permissão. A chamada positiva foi testada em uma transação revertida, sem deixar personagem persistido.
 - O mapeamento de campos já é determinístico por seção/linha/coluna, mas precisa de revisão semântica completa, especialmente tabelas repetidas, grimório e listas de equipamentos.
 - Retrato ainda não está ligado ao Storage e os campos derivados de regras ainda não são calculados.
 - A Mesa ainda precisa abrir a ficha original no contexto de campanha e respeitar permissões de jogador/Mestre.
 - O fluxo narrativo do grimório e da lista separada de magias preparadas do Mago ainda precisa ser conectado ao banco sem limites diários, slots ou consumo automático.
-- Não foi feita alteração em migrations, RPCs, políticas RLS, campanhas ou fichas existentes.
+- Foi adicionada somente uma RPC de criação e sua migration; não foram alteradas policies RLS, campanhas ou fichas existentes.
 
 ## Próximas entregas técnicas
 
