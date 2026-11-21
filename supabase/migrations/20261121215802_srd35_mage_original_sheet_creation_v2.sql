@@ -258,7 +258,7 @@ begin
 
   return v_sheet.character_id;
 end;
-$function$
+$function$;
 
 REVOKE ALL ON FUNCTION public.criar_mago_ficha_original_v2(text,text,jsonb,jsonb,jsonb,jsonb,text[],text[],jsonb,jsonb) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.criar_mago_ficha_original_v2(text,text,jsonb,jsonb,jsonb,jsonb,text[],text[],jsonb,jsonb) FROM anon;
