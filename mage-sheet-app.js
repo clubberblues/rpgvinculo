@@ -21,7 +21,7 @@
     { title: 'Atributos', section: 'Atributos', selector: '.attr-row input', help: 'Informe os seis valores-base entre 8 e 18, totalizando 25 pontos de compra. Os ajustes raciais serão aplicados ao criar.' },
     { title: 'Resistências', section: 'Resistências', selector: '.resist-row input', help: 'Confira os valores calculados para o Mago de 1º nível.' },
     { title: 'Perícias', section: 'Perícias', selector: 'table input', help: 'Informe as graduações na coluna Grad. O banco valida o orçamento da classe.' },
-    { title: 'Talentos', section: 'Talentos', selector: 'input', help: 'Escolha o talento geral permitido para a raça; humanos escolhem dois.' },
+    { title: 'Talentos', section: 'Talentos', selector: 'input', help: 'Escolha o talento geral da raça; humanos escolhem dois. Escrever Pergaminho é concedido automaticamente ao Mago de 1º nível.' },
     { title: 'Grimório', section: 'Grimório', selector: '.spell-level-block input', help: 'Todos os truques permitidos entram automaticamente. Escolha 3 + modificador positivo de Inteligência magias de 1º círculo. A preparação acontece durante a campanha, sem limite diário ou consumo automático.' },
     { title: 'Equipamentos', section: 'Equipamentos', selector: 'input', help: 'Registre livremente os equipamentos e seus pesos.' },
     { title: 'Idiomas', section: 'Idiomas', selector: 'textarea', help: 'Edite a lista livre de idiomas conhecidos.' }
@@ -298,6 +298,33 @@
     });
     return map;
   }
+  function addWizardBonusFeatToSheet() {
+    const p = panel('Talentos');
+    if (!p) throw new Error('Painel de talentos não encontrado.');
+    const inputs = Array.from(p.querySelectorAll('input[type="text"]'));
+    for (let i=0;i<inputs.length;i+=2) {
+      if (!String(inputs[i].value || '').trim()) {
+        inputs[i].value = 'Escrever Pergaminho';
+        if (inputs[i+1]) inputs[i+1].value = 'Mago 1';
+        inputs[i].readOnly = true;
+        if (inputs[i+1]) inputs[i+1].readOnly = true;
+        inputs[i].dataset.classBonusFeat = 'scribe-scroll';
+        return;
+      }
+    }
+    throw new Error('Não há espaço livre na ficha para registrar o talento bônus Escrever Pergaminho.');
+  }
+  function lockWizardBonusFeatField() {
+    const p = panel('Talentos');
+    if (!p) return;
+    const inputs = Array.from(p.querySelectorAll('input[type="text"]'));
+    for (let i=0;i<inputs.length;i+=2) {
+      if (normalize(inputs[i].value) === 'escrever pergaminho') {
+        inputs[i].readOnly = true;
+        if (inputs[i+1]) inputs[i+1].readOnly = true;
+      }
+    }
+  }
   function collectFeats() {
     const p = panel('Talentos');
     if (!p) throw new Error('Painel de talentos não encontrado.');
@@ -315,6 +342,7 @@
         if (!parameter || !parameter.trim()) throw new Error('Informe o parâmetro exigido pelo talento ' + (feat.nome_pt || feat.nome) + '.');
         entry.parametro = parameter.trim();
       }
+      if (feat.id === 'srd35_feat_scribe_scroll') throw new Error('Escrever Pergaminho é talento bônus automático do Mago de 1º nível; escolha outro talento geral.');
       selected.push(entry);
     }
     const expected = raceId === 'humano' ? 2 : 1;
@@ -548,7 +576,7 @@
   function updateFeatSuggestions() {
     const p = panel('Talentos');
     if (!p || !featCatalog.length) return;
-    const id = ensureDatalist('mage-feat-catalog', featCatalog.map(f => ({nome:f.nome_pt || f.nome})));
+    const id = ensureDatalist('mage-feat-catalog', featCatalog.filter(f => f.id !== 'srd35_feat_scribe_scroll').map(f => ({nome:f.nome_pt || f.nome})));
     const inputs = Array.from(p.querySelectorAll('input[type="text"]'));
     for (let i=0;i<inputs.length;i+=2) inputs[i].setAttribute('list',id);
   }
@@ -619,6 +647,7 @@
       if (selectedSpells.length !== expectedSpells) throw new Error('Com Inteligência final ' + finalInt + ', escolha exatamente ' + expectedSpells + ' magias de 1º círculo. Você informou ' + selectedSpells.length + '.');
       const skills = collectSkills();
       const feats = collectFeats();
+      addWizardBonusFeatToSheet();
       const languages = splitLanguages();
       const equipment = collectEquipment();
       const money = collectMoney();
@@ -634,6 +663,8 @@
         divindade: groupValue('Divindade'),
         atributos_base: baseAttributes,
         deslocamento_base: raceData.deslocamento,
+        wizard_familiar_available: true,
+        wizard_familiar_choice: 'pending',
         moedas: money,
         ...choices
       };
@@ -721,6 +752,7 @@
       setupWizardChoiceFields(identity);
       renderSpellInputs();
       core.hydrate(identity.ficha_mago_v2 || identity.ficha_original_v1);
+      lockWizardBonusFeatField();
       status('Ficha carregada. Edite os campos e salve quando terminar.');
     } else {
       throw new Error('Abra a ficha a partir do Lobby ou da Mesa.');
