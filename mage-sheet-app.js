@@ -156,6 +156,8 @@
       const circle = parseInt(title, 10);
       const list = block.querySelector('.spell-list');
       if (!list || Number.isNaN(circle)) return;
+      const spellHeaderInputs = Array.from(block.querySelectorAll('.spell-header input'));
+      if (isCreate && spellHeaderInputs[0]) { spellHeaderInputs[0].value = ''; spellHeaderInputs[0].disabled = true; }
       const rows = Array.from(list.querySelectorAll('.spell-row'));
       if (circle === 0) {
         circle0 = block;
@@ -475,6 +477,7 @@
       if (dcMod) dcMod.value = String(intMod);
       if (failure) failure.value = '0%';
       const rows = magic.querySelectorAll('table tbody tr');
+      if (isCreate && rows[1]) rows[1].querySelectorAll('input').forEach(input => { input.value = ''; input.disabled = true; });
       const knownCells = rows[0] ? rows[0].querySelectorAll('td') : [];
       for (let circle=0;circle<=9;circle++) {
         const input = knownCells[circle+1]?.querySelector('input');
