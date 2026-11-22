@@ -20,6 +20,18 @@
   let sb, user, step = 0, raceData = null, classData = null, skillCatalog = [], featCatalog = [], spellCatalog = [], monsterCatalog = [], selectedFamiliar = null, catalogMode = null;
   const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   const clean = node => (node && node.textContent || '').replace(/\s+/g, ' ').trim();
+  // A ficha conserva alguns nomes tradicionais/abreviados; estes aliases ligam-nos ao catálogo SRD.
+  const skillGuideAliases = {
+    'blefar': 'blefe',
+    'oficios': 'oficio',
+    'furtividade': 'mover se silenciosamente',
+    'identificar magias': 'identificar magia'
+  };
+  function findGuideSkill(label) {
+    const visibleName = normalize(String(label || '').replace(/\*/g, ' '));
+    const catalogName = skillGuideAliases[visibleName] || visibleName;
+    return skillCatalog.find(entry => normalize(entry.nome) === catalogName) || null;
+  }
 
   function status(message, error) {
     const node = document.getElementById('mage-sheet-status');
@@ -1232,19 +1244,19 @@
         help = identityHelp[fieldKey] || 'Esta etapa reúne informações de identidade e história do aventureiro. Confira o dado apresentado e ajuste quando necessário.';
       } else if (/atributos/.test(sectionKey)) help = attributeHelp[attributeKey] || 'Os atributos são as seis capacidades básicas do personagem. Seus modificadores alimentam automaticamente perícias, combate e resistências.';
       else if (/pericias/.test(sectionKey)) {
-        const skillName = normalize(control.value || label);
-        const skill = skillCatalog.find(entry => {
-          const name = normalize(entry.nome);
-          return name === skillName || (name && skillName.includes(name)) || (name && name.includes(skillName));
-        });
+        // Em cada linha da tabela, o controle é numérico; o nome está na primeira célula da linha.
+        // guideCandidates já fornece esse texto em label, portanto nunca usamos control.value aqui.
+        const skill = findGuideSkill(label);
         if (skill && skill.descricao) {
           const abilityNames = {FOR:'Força',DES:'Destreza',CON:'Constituição',INT:'Inteligência',SAB:'Sabedoria',CAR:'Carisma'};
           const ability = abilityNames[String(skill.atributo || '').toUpperCase()] || skill.atributo || 'atributo';
           const flags = [];
-          if (skill.treinada_apenas) flags.push('Só pode ser usada se você tiver treinamento.');
-          if (skill.penalidade_armadura) flags.push('A armadura pode atrapalhar esta perícia.');
-          help = skill.descricao + ' O atributo relacionado é ' + ability + '.' + (flags.length ? ' ' + flags.join(' ') : '');
-        } else help = 'Escolha onde investir seus pontos de perícia. Cada perícia representa algo que seu personagem sabe fazer; o atributo relacionado e os bônus aplicáveis entram no cálculo automaticamente.';
+          if (skill.treinada_apenas) flags.push('Esta perícia exige treinamento: sem graduação, não é possível realizar o teste.');
+          if (skill.penalidade_armadura) flags.push('A penalidade de armadura se aplica aos testes desta perícia.');
+          help = skill.descricao + ' Atributo relacionado: ' + ability + '.' + (flags.length ? ' ' + flags.join(' ') : '');
+        } else {
+          help = 'Não foi possível localizar a descrição desta perícia no catálogo. Confira o nome exibido na ficha e o cadastro SRD antes de continuar.';
+        }
       }
       else if (/talentos/.test(sectionKey)) help = 'Nesta etapa você escolhe o talento concedido ao personagem. Confira os pré-requisitos e a descrição para selecionar uma opção válida.';
       else if (/grimorio|magia/.test(sectionKey)) help = 'Aqui você escolhe as magias que farão parte do Grimório. A preparação e a remoção de magias acontecem durante a campanha, conforme a narrativa.';
