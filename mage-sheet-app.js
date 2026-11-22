@@ -120,6 +120,12 @@
       '.mage-familiar-selection{margin:6px 0 10px;padding:5px 0;border-bottom:1px dotted rgba(90,63,40,.45);font:italic 13px EB Garamond,serif;color:#6a4a29}' +
       '@media(max-width:650px){.mage-catalog-backdrop{padding:10px}.mage-catalog-shell{padding:14px;max-height:92vh}.mage-catalog-row{grid-template-columns:42px minmax(0,1fr) 44px;gap:8px;padding:7px}.mage-catalog-mark{width:38px;height:38px}.mage-catalog-name{font-size:14px}.mage-lore-backdrop{padding:5vh 6vw}.mage-lore-copy{font-size:16px}}';
 
+    style.textContent += '\n' +
+      '.mage-feat-selected-row{border:2px solid #b58a42!important;border-radius:7px;background:linear-gradient(90deg,rgba(211,174,103,.22),rgba(255,248,226,.5));box-shadow:0 0 0 2px rgba(181,138,66,.18),inset 0 0 12px rgba(181,138,66,.10);padding:3px!important}' +
+      '.mage-feat-selected-row input:first-child{border-color:#a77a34!important;background:rgba(255,246,218,.92)!important;font-weight:700}' +
+      '.mage-feat-unavailable{opacity:.43;filter:grayscale(.72)}.mage-feat-unavailable .mage-catalog-choose{cursor:not-allowed;opacity:.6}' +
+      '.mage-feat-counter{position:sticky;top:0;z-index:2;padding:9px 11px;margin-bottom:5px;background:rgba(250,242,222,.97);border:1px solid rgba(139,111,71,.65);color:#594126;font:700 12px Georgia,serif;text-align:center}' +
+      '.mage-guide-catalog-button{display:block;margin:12px auto 4px;padding:10px 18px;border:1px solid #8b6f47;border-radius:999px;background:linear-gradient(135deg,#74532d,#4a321b);color:#fff2d2;font:700 12px Cinzel,Georgia,serif;letter-spacing:.04em;cursor:pointer}.mage-guide-catalog-button:hover{filter:brightness(1.12);transform:translateY(-1px)}';
     document.head.appendChild(style);
     const sheet = document.querySelector('.ficha');
     if (!sheet) throw new Error('O modelo original da ficha não foi encontrado.');
@@ -446,7 +452,7 @@
       if (feat.id === 'srd35_feat_scribe_scroll') throw new Error('Escrever Pergaminho é talento bônus automático do Mago de 1º nível; escolha outro talento geral.');
       selected.push(entry);
     }
-    const expected = raceId === 'humano' ? 2 : 1;
+    const expected = allowedGeneralFeatSlots();
     if (selected.length !== expected) throw new Error('A raça escolhida exige ' + expected + ' talento(s) na criação. Você informou ' + selected.length + '.');
     return selected;
   }
@@ -991,6 +997,127 @@
     if (Array.isArray(req.skill_ranks) && req.skill_ranks.length) parts.push('Graduações em perícias');
     return parts.join(' · ') || 'Pré-requisitos não detalhados no cadastro';
   }
+  function currentFeatAbilityScores() {
+    const values = {};
+    const p = panel('Atributos');
+    if (!p) return values;
+    p.querySelectorAll('.attr-row').forEach(row => {
+      const key = clean(row.querySelector('.attr-name'));
+      const input = row.querySelector('.attr-col input');
+      const score = Number(input && input.value);
+      if (key && Number.isFinite(score)) values[key] = score;
+    });
+    return values;
+  }
+  function currentFeatSkillRanks() {
+    const values = {};
+    const p = panel('Perícias');
+    if (!p) return values;
+    p.querySelectorAll('tbody tr').forEach(row => {
+      const cells = Array.from(row.children);
+      const name = normalize(clean(cells[0]).replace(/\\*/g,''));
+      const ranks = Number(cells[4]?.querySelector('input')?.value || 0);
+      if (name) values[name] = ranks;
+    });
+    return values;
+  }
+  function classGrantedFeatIds() {
+    // O Mago recebe Escrever Pergaminho como talento bônus no 1º nível.
+    return classData?.class_key === 'wizard' ? ['srd35_feat_scribe_scroll'] : [];
+  }
+  function featEligibility(feat) {
+    const req = feat?.requisitos && typeof feat.requisitos === 'object' ? feat.requisitos : {};
+    const reasons = [];
+    const scores = currentFeatAbilityScores();
+    const abilityLabels = {FOR:'FOR',DES:'DES',CON:'CON',INT:'INT',SAB:'SAB',CAR:'CAR'};
+    const abilityKeys = {for_min:'FOR',des_min:'DES',con_min:'CON',int_min:'INT',sab_min:'SAB',car_min:'CAR'};
+    Object.entries(abilityKeys).forEach(([key,stat]) => {
+      if (req[key] !== undefined && Number(scores[stat] || 0) < Number(req[key])) reasons.push(stat+' '+req[key]+' necessário (atual: '+(scores[stat] ?? '—')+').');
+    });
+    const level = 1;
+    const bab = classData?.bab_bom ? 1 : 0;
+    if (req.bab_min !== undefined && bab < Number(req.bab_min)) reasons.push('BBA +'+req.bab_min+' necessário (atual: +'+bab+').');
+    if (req.level_min !== undefined && level < Number(req.level_min)) reasons.push('Nível '+req.level_min+' necessário.');
+    if (req.character_level_min !== undefined && level < Number(req.character_level_min)) reasons.push('Nível de personagem '+req.character_level_min+' necessário.');
+    if (req.class_level_min !== undefined && level < Number(req.class_level_min)) reasons.push('Nível '+req.class_level_min+' na classe '+(req.class_key_required || 'exigida')+' necessário.');
+    if (req.class_key_required && classData?.class_key !== req.class_key_required) reasons.push('Exige a classe '+req.class_key_required+'.');
+    if (req.caster_level_min !== undefined) {
+      const casterLevel = classData?.class_key === 'wizard' ? level : 0;
+      if (casterLevel < Number(req.caster_level_min)) reasons.push('Nível de conjurador '+req.caster_level_min+' necessário (atual: '+casterLevel+').');
+    }
+    const existingFeatIds = new Set(classGrantedFeatIds());
+    if (Array.isArray(req.feat_ids)) {
+      req.feat_ids.forEach(id => {
+        if (!existingFeatIds.has(id)) {
+          const prerequisite = featCatalog.find(item => item.id === id);
+          reasons.push('Pré-requisito: '+(prerequisite?.nome_pt || prerequisite?.nome || id)+'.');
+        }
+      });
+    }
+    if (req.skill_ranks && typeof req.skill_ranks === 'object') {
+      const ranks = currentFeatSkillRanks();
+      Object.entries(req.skill_ranks).forEach(([skill,minimum]) => {
+        const key = normalize(skill).replace(/_/g,' ');
+        const actual = Number(ranks[key] || 0);
+        if (actual < Number(minimum)) reasons.push('Graduação '+minimum+' em '+skill+' necessária (atual: '+actual+').');
+      });
+    }
+    if (req.special_ability_required) {
+      const abilities = {
+        familiar: classData?.class_key === 'wizard',
+        turn_or_rebuke_creatures: false,
+        wild_shape: false
+      };
+      if (!abilities[req.special_ability_required]) reasons.push('A habilidade especial exigida não é concedida pela raça/classe escolhida.');
+    }
+    if (req.weapon_proficiency_required) {
+      const exotic = req.parameter_type === 'weapon_exotic';
+      const dwarfWaraxe = raceId === 'anao' || raceId === 'anão';
+      if (exotic && !dwarfWaraxe) reasons.push('É necessário possuir proficiência com a arma exótica escolhida.');
+      else if (exotic) reasons.push('A proficiência depende da arma específica escolhida; confirme-a antes de selecionar.');
+    }
+    if (req.feat_parameter_matches?.length) reasons.push('É necessário possuir o talento pré-requisito com o mesmo parâmetro escolhido.');
+    if (req.dynamic_prerequisites) reasons.push('Pré-requisitos adicionais dependem de escolhas que esta ficha ainda não registra.');
+    if (req.conditional_ability_min && req.parameter_type) {
+      reasons.push('O requisito de atributo depende do parâmetro/arma escolhida.');
+    }
+    const knownKeys = new Set([
+      'raw','type','audit_status','source_url','source_url_primary','official_catalog_index',
+      'feat_ids','for_min','des_min','con_min','int_min','sab_min','car_min','bab_min',
+      'level_min','character_level_min','class_level_min','class_key_required','caster_level_min',
+      'skill_ranks','special_ability_required','weapon_proficiency_required','parameter_type',
+      'conditional_ability_min','dynamic_prerequisites','feat_parameter_matches','feat_parameters',
+      'repeatable','repeatable_mode'
+    ]);
+    const unsupported = Object.keys(req).filter(key => !knownKeys.has(key));
+    if (unsupported.length) reasons.push('O catálogo contém requisito ainda não interpretado: '+unsupported.join(', ')+'.');
+    const hasRaw = Boolean(String(req.raw || '').trim());
+    const hasStructuredRule = Object.keys(req).some(key => !['raw','type','audit_status','source_url','source_url_primary','official_catalog_index','repeatable','repeatable_mode','parameter_type','feat_parameters'].includes(key));
+    if (hasRaw && !hasStructuredRule && !req.dynamic_prerequisites) reasons.push('O pré-requisito textual ainda não está estruturado para validação automática.');
+    return {eligible:reasons.length===0,reasons};
+  }
+  function featSelectionRows() {
+    const p = panel('Talentos');
+    return p ? Array.from(p.querySelectorAll('div[style*="grid-template-columns: 1fr 50px"]')).filter(row=>row.querySelectorAll('input').length===2) : [];
+  }
+  function updateFeatSelectionRows() {
+    featSelectionRows().forEach(row => {
+      const name = String(row.querySelector('input')?.value || '').trim();
+      row.classList.toggle('mage-feat-selected-row',Boolean(name));
+      row.querySelectorAll('input').forEach(input => {
+        if (name) input.setAttribute('aria-label',input === row.querySelector('input') ? 'Talento selecionado: '+name : 'Referência do talento '+name);
+      });
+    });
+  }
+  function selectedGeneralFeatCount() {
+    return featSelectionRows().filter(row => {
+      const input = row.querySelector('input');
+      return String(input?.value || '').trim() && normalize(input.value) !== 'escrever pergaminho';
+    }).length;
+  }
+  function allowedGeneralFeatSlots() {
+    return raceId === 'humano' ? 2 : 1;
+  }
   function catalogRow(name,meta,icon,onChoose,onView) {
     const row=createNode('div','mage-catalog-row'),mark=createNode('span','mage-catalog-mark'),glyph=createNode('i','fa-solid '+icon);
     glyph.setAttribute('aria-hidden','true');mark.appendChild(glyph);
@@ -1025,10 +1152,21 @@
     let items = [];
     if (catalogMode === 'feats') {
       items = featCatalog.filter(item=>item.id!=='srd35_feat_scribe_scroll' && normalize((item.nome_pt||item.nome)+' '+featPrerequisite(item)).includes(search));
+      const chosenCount = selectedGeneralFeatCount();
+      const slots = allowedGeneralFeatSlots();
+      const info = createNode('div','mage-feat-counter','Escolhas disponíveis: '+chosenCount+' de '+slots+'. '+(raceId === 'humano' ? 'Humano: talento normal + talento adicional racial.' : 'Talento concedido pelo nível 1.'));
+      list.appendChild(info);
       items.forEach(feat=>{
         const name = feat.nome_pt || feat.nome;
         const description = feat.descricao_pt || feat.descricao || '';
-        list.appendChild(catalogRow(name,'Pré-requisito: '+featPrerequisite(feat),'fa-feather-pointed',()=>chooseFeat(feat),()=>openLore(name,'Pré-requisito: '+featPrerequisite(feat),description)));
+        const eligibility = featEligibility(feat);
+        const meta = eligibility.eligible ? 'Pré-requisito: '+featPrerequisite(feat)+' · Elegível' : 'Não elegível: '+eligibility.reasons.join(' ');
+        const row = catalogRow(name,meta,'fa-feather-pointed',()=>chooseFeat(feat),()=>openLore(name,meta,description));
+        row.classList.toggle('mage-feat-unavailable',!eligibility.eligible);
+        const choose = row.querySelector('.mage-catalog-choose');
+        choose.disabled = !eligibility.eligible || chosenCount >= slots;
+        choose.title = eligibility.eligible ? (chosenCount >= slots ? 'Todas as escolhas já foram preenchidas.' : 'Selecionar talento') : eligibility.reasons.join(' ');
+        list.appendChild(row);
       });
     } else if (catalogMode === 'spells') {
       const level = Number(document.getElementById('mage-catalog-level')?.value ?? (isCreate ? 1 : 0));
@@ -1112,16 +1250,26 @@
   }
   function chooseFeat(feat) {
     const p = panel('Talentos');
-    const rows = Array.from(p.querySelectorAll('div[style*="grid-template-columns: 1fr 50px"]')).filter(row=>row.querySelectorAll('input').length===2);
+    const eligibility = featEligibility(feat);
+    if (!eligibility.eligible) { status('Não é possível selecionar '+(feat.nome_pt||feat.nome)+': '+eligibility.reasons.join(' '),true); return; }
+    const rows = featSelectionRows();
     const name = feat.nome_pt || feat.nome;
     const already = rows.some(row=>normalize(row.querySelector('input')?.value)===normalize(name));
     if (already) { status('Este talento já está registrado na ficha.'); closeCatalog(); return; }
+    if (selectedGeneralFeatCount() >= allowedGeneralFeatSlots()) {
+      status('Todas as escolhas de talento permitidas para esta raça já foram preenchidas.',true);
+      renderCatalogList();
+      return;
+    }
     let row = rows.find(item=>!String(item.querySelector('input')?.value||'').trim());
-    if (!row) { appendFeatRow(); row = Array.from(p.querySelectorAll('div[style*="grid-template-columns: 1fr 50px"]')).filter(item=>item.querySelectorAll('input').length===2).at(-1); }
+    if (!row) { appendFeatRow(); row = featSelectionRows().at(-1); }
     const inputs = row.querySelectorAll('input');
     inputs[0].value = name;
     inputs[1].value = '';
+    inputs[0].dataset.featId = feat.id;
     inputs[0].dispatchEvent(new Event('input',{bubbles:true}));
+    updateFeatSelectionRows();
+    renderCatalogList();
     closeCatalog();
     status('Talento adicionado à ficha: '+name+'.');
   }
@@ -1258,7 +1406,7 @@
           help = 'Não foi possível localizar a descrição desta perícia no catálogo. Confira o nome exibido na ficha e o cadastro SRD antes de continuar.';
         }
       }
-      else if (/talentos/.test(sectionKey)) help = 'Nesta etapa você escolhe o talento concedido ao personagem. Confira os pré-requisitos e a descrição para selecionar uma opção válida.';
+      else if (/talentos/.test(sectionKey)) help = 'Abra o catálogo para escolher seu talento. O sistema considera raça, classe, nível, atributos, BBA, perícias e talentos prévios; opções cujos pré-requisitos você ainda não cumpre aparecem apagadas e bloqueadas.';
       else if (/grimorio|magia/.test(sectionKey)) help = 'Aqui você escolhe as magias que farão parte do Grimório. A preparação e a remoção de magias acontecem durante a campanha, conforme a narrativa.';
       else if (/ataques/.test(sectionKey)) {
         const attackHelp = {
@@ -1276,7 +1424,7 @@
         help = defenseHelp[fieldKey] || 'A proteção inicial será fornecida pelo pacote da classe. A CA e seus componentes devem refletir automaticamente os equipamentos e modificadores aplicáveis.';
       }
       else if (/idiomas/.test(sectionKey)) help = 'Os idiomas concedidos pela raça e pela classe são preenchidos automaticamente. Confira a lista e registre apenas idiomas adicionais que tenham sido adquiridos por uma escolha válida.';
-      items.push({target,control,label,help});
+      items.push({target,control,label,help,sectionKey});
     });
     return items;
   }
@@ -1295,7 +1443,9 @@
     item.target.scrollIntoView({behavior:'smooth',block:'center'});
     let note = document.getElementById('mage-step-note');
     if (!note) { note = document.createElement('aside'); note.id = 'mage-step-note'; note.className = 'mage-step-note'; document.body.appendChild(note); }
-    note.innerHTML = '<div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#98764a;margin-bottom:6px">Sua jornada · etapa ' + (step+1) + ' de ' + candidates.length + '</div><strong>' + item.label + '</strong><div>' + item.help + '</div><div class="mage-guide-progress"><span style="width:' + (((step+1)/candidates.length)*100) + '%"></span></div><div class="mage-guide-actions"><button type="button" id="mage-guide-prev">Voltar</button><button type="button" id="mage-guide-next">' + (step === candidates.length - 1 ? 'Concluir guia' : 'Avançar') + '</button><button type="button" id="mage-save">' + (isCreate ? 'Criar Mago' : 'Salvar ficha') + '</button></div>';
+    note.innerHTML = '<div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#98764a;margin-bottom:6px">Sua jornada · etapa ' + (step+1) + ' de ' + candidates.length + '</div><strong>' + item.label + '</strong><div class="mage-guide-help">' + item.help + '</div>' + (/talentos/.test(item.sectionKey) ? '<button type="button" id="mage-guide-feats" class="mage-guide-catalog-button">Abrir catálogo de talentos</button>' : '') + '<div class="mage-guide-progress"><span style="width:' + (((step+1)/candidates.length)*100) + '%"></span></div><div class="mage-guide-actions"><button type="button" id="mage-guide-prev">Voltar</button><button type="button" id="mage-guide-next">' + (step === candidates.length - 1 ? 'Concluir guia' : 'Avançar') + '</button><button type="button" id="mage-save">' + (isCreate ? 'Criar Mago' : 'Salvar ficha') + '</button></div>';
+    const featButton = note.querySelector('#mage-guide-feats');
+    if (featButton) featButton.onclick = () => openCatalog('feats');
     const prevButton = note.querySelector('#mage-guide-prev');
     const nextButton = note.querySelector('#mage-guide-next');
     prevButton.disabled = step === 0;
@@ -1433,7 +1583,7 @@
       if (!raceId || !classId) throw new Error('A criação precisa receber raça e classe escolhidas no Lobby.');
       const [race, klass, profile] = await Promise.all([
         sb.from('srd_races').select('*').eq('id', raceId).maybeSingle(),
-        sb.from('srd_classes').select('id,nome,class_key,pericias_por_nivel,pericias_classe,dados_tecnicos').eq('id', classId).maybeSingle(),
+        sb.from('srd_classes').select('id,nome,class_key,bab_bom,bab_progression,pericias_por_nivel,pericias_classe,dados_tecnicos').eq('id', classId).maybeSingle(),
         sb.from('profiles').select('username').eq('id', user.id).maybeSingle()
       ]);
       if (race.error || klass.error) throw race.error || klass.error;
@@ -1466,7 +1616,7 @@
     } else {
       throw new Error('Abra a ficha a partir do Lobby ou da Mesa.');
     }
-    if (isCreate) showStep(0);
+    if (isCreate) { updateFeatSelectionRows(); showStep(0); }
   }
   function reportBootstrapError(error) {
     const message = error && error.message ? error.message : String(error || 'Erro desconhecido');
