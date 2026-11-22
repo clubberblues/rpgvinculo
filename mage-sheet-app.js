@@ -90,16 +90,20 @@
       '.mage-lore-close{position:absolute;right:0;top:0;width:30px;height:30px;border:1px solid rgba(225,193,132,.55);background:rgba(0,0,0,.24);color:#f0e2c1;font:22px Georgia,serif;cursor:pointer;border-radius:3px}' +
       '.mage-lore-close:hover{background:rgba(225,193,132,.2);color:#fff}' +
       '.mage-ability-budget{margin:8px 0 2px;text-align:right;color:#5a3f28;font:700 10px Cinzel,serif;letter-spacing:.3px}' +
-      '.mage-ability-adjust{display:flex;align-items:center;gap:2px;width:100%}' +
-      '.mage-ability-adjust input{min-width:0;flex:1}' +
-      '.mage-ability-adjust button,.mage-skill-adjust button{width:15px;height:19px;min-width:15px;padding:0;border:0;background:transparent;color:rgba(90,63,40,.62);font:700 13px Georgia,serif;line-height:18px;cursor:pointer}' +
+      '.attr-row{grid-template-columns:45px minmax(54px,1.45fr) repeat(3,minmax(30px,1fr));gap:4px}' +
+      '.attr-col{min-width:0;width:100%}' +
+      '.mage-ability-adjust{display:flex;align-items:center;justify-content:center;gap:0;width:100%;min-width:0;flex:1}' +
+      '.mage-ability-adjust input{display:block;box-sizing:border-box;width:36px!important;min-width:24px!important;max-width:40px;flex:1 1 30px;padding-left:2px!important;padding-right:2px!important;text-align:center}' +
+      '.mage-ability-adjust button,.mage-skill-adjust button{display:inline-flex;align-items:center;justify-content:center;width:9px;height:19px;min-width:9px;max-width:9px;padding:0;border:0;background:transparent;color:rgba(90,63,40,.62);font:700 11px Georgia,serif;line-height:18px;cursor:pointer;flex:0 0 9px}' +
       '.mage-ability-adjust button:hover,.mage-skill-adjust button:hover{color:#2b1a0e;background:rgba(139,111,71,.16)}' +
       '.mage-skill-budget{margin-left:auto;font:700 9px Cinzel,serif;letter-spacing:.2px;color:#6a4a29;white-space:nowrap}' +
       '.mage-skill-adjust{display:flex;align-items:center;justify-content:center;gap:1px;min-width:62px}' +
       '.mage-skill-adjust input{width:25px;min-width:20px;max-width:32px}' +
       '.mage-skill-adjust button{width:14px;min-width:14px;font-size:12px}' +
       '.mage-catalog-row{grid-template-columns:54px minmax(0,1fr) 132px}' +
-      '@media(max-width:650px){.mage-catalog-row{grid-template-columns:38px minmax(0,1fr) 112px}.mage-catalog-choose{padding:6px 5px;font-size:9px}.mage-skill-budget{font-size:8px}}' +
+      '.mage-spell-catalog-row{grid-template-columns:54px minmax(0,1fr) 58px}' +
+      '.mage-spell-catalog-row .mage-catalog-view{border-bottom:1px solid #8b6f47;font:700 12px Cinzel,serif;letter-spacing:1px;padding:5px}' +
+      '@media(max-width:650px){.mage-catalog-row{grid-template-columns:38px minmax(0,1fr) 112px}.mage-spell-catalog-row{grid-template-columns:38px minmax(0,1fr) 48px}.mage-catalog-choose{padding:6px 5px;font-size:9px}.mage-skill-budget{font-size:8px}}' +
       '.mage-catalog-empty{padding:28px 12px;text-align:center;color:#5a3f28;font:italic 16px EB Garamond,serif}' +
       '.mage-lore-backdrop{position:fixed;inset:0;z-index:10006;display:none;align-items:center;justify-content:center;padding:7vh 8vw;background:rgba(10,7,4,.58);backdrop-filter:blur(24px) saturate(.55);-webkit-backdrop-filter:blur(24px) saturate(.55);cursor:pointer}' +
       '.mage-lore-backdrop.ativo{display:flex}' +
@@ -645,10 +649,13 @@
       });
     });refreshSkillAllocationUI();
   }
-  function initializeCreationDefaults() {
+  function initializeCreationDefaults(draftRestored) {
     let base;
-    try{base=getBaseAttributes();if(pointBuyTotal(base)>25)throw new Error('Rascunho excede o orçamento de atributos.');}
-    catch(_){base={...SUGGESTED_WIZARD_ATTRIBUTES};setBaseAttributeValues(base);}
+    if(!draftRestored){base={...SUGGESTED_WIZARD_ATTRIBUTES};setBaseAttributeValues(base);}
+    else {
+      try{base=getBaseAttributes();if(pointBuyTotal(base)>25)throw new Error('Rascunho excede o orçamento de atributos.');}
+      catch(_){base={...SUGGESTED_WIZARD_ATTRIBUTES};setBaseAttributeValues(base);}
+    }
     applyCalculatedFields(base,raceData,[]);setupAttributeControls();setupSkillAllocationControls();addWizardBonusFeatToSheet();updateAttributeBudget();
     status('Ficha pré-preenchida com uma distribuição sugerida para Mago de 1º nível. As regras permitem redistribuir os 25 pontos e escolher onde aplicar os pontos de perícia.');
   }
@@ -675,9 +682,9 @@
       const stat = clean(row.querySelector('.attr-name'));
       if (!stat || !(stat in final)) return;
       const cols = row.querySelectorAll('.attr-col');
-      const value = cols[0]?.querySelector('input');
-      const mod = cols[1]?.querySelector('input');
-      const racial = cols[3]?.querySelector('input');
+      const value = cols[0]?.querySelector('.mage-ability-adjust input, input');
+      const mod = cols[1]?.querySelector('input[type="number"]');
+      const racial = cols[3]?.querySelector('input[type="number"]');
       if (value) value.value = String(final[stat]);
       if (mod) mod.value = String(modifiers[stat]);
       if (racial) { racial.value = String(Number(adjustments[stat] || 0)); racial.readOnly = true; racial.title = 'Ajuste racial aplicado automaticamente'; }
@@ -905,6 +912,15 @@
     choose.type='button';choose.addEventListener('click',onChoose);view.type='button';view.addEventListener('click',onView);
     actions.append(choose,view);row.append(mark,main,actions);return row;
   }
+  function spellCatalogRow(name,meta,icon,onChoose,onView) {
+    const row=createNode('div','mage-catalog-row mage-spell-catalog-row');
+    const mark=createNode('span','mage-catalog-mark'),glyph=createNode('i','fa-solid '+icon);
+    glyph.setAttribute('aria-hidden','true');mark.appendChild(glyph);
+    const main=createNode('div','mage-catalog-main'),choose=createNode('button','mage-catalog-name',name),sub=createNode('span','mage-catalog-meta',meta||'');
+    choose.type='button';choose.addEventListener('click',onChoose);main.append(choose,sub);
+    const view=createNode('button','mage-catalog-view','VER');view.type='button';view.addEventListener('click',onView);
+    row.append(mark,main,view);return row;
+  }
   function familiarLabel(monster) {
     const names = {bat:'Morcego',cat:'Gato',hawk:'Falcão',lizard:'Lagarto',owl:'Coruja',rat:'Rato',raven:'Corvo',toad:'Sapo',weasel:'Doninha'};
     return names[monster.id] || monster.nome;
@@ -940,7 +956,7 @@
           'Duração: '+(spell.duracao||'Não informada'),
           'Componentes: '+(spell.componentes||'Não informados')
         ].join('\n');
-        list.appendChild(catalogRow(name,meta,'fa-wand-sparkles',()=>chooseSpell(spell),()=>openLore(name,details,spell.descricao_pt||spell.descricao||'')));
+        list.appendChild(spellCatalogRow(name,meta,'fa-wand-sparkles',()=>chooseSpell(spell),()=>openLore(name,details,spell.descricao_pt||spell.descricao||'')));
       });
     } else if (catalogMode === 'familiar') {
       items = monsterCatalog.filter(item=>normalize(item.nome+' '+item.nome_original+' '+item.tamanho).includes(search));
@@ -1253,8 +1269,8 @@
       showFamiliarStatus({wizard_familiar_available:true,wizard_familiar_choice:'pending'});
       setupWizardChoiceFields(null);
       renderSpellInputs();
-      restoreLocalDraft();
-      initializeCreationDefaults();
+      const draftRestored=restoreLocalDraft();
+      initializeCreationDefaults(draftRestored);
       bindLocalDraftAutosave();
     } else if (characterId) {
       const result = await sb.from('srd_character_sheets').select('identidade').eq('character_id', characterId).maybeSingle();
