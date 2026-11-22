@@ -346,6 +346,7 @@
   }
   function conditionalRacialSkillNote(race,name) {
     const key=normalize(name);
+    if(race&&race.id==='anao'&&key==='procurar')return '+2 racial em Procurar para notar construções incomuns de pedra, armadilhas de pedra e detalhes subterrâneos.';
     if(race&&race.id==='anao'&&['avaliacao','oficio'].includes(key))return '+2 racial em Avaliação/Ofício somente em testes relacionados a pedra ou metal; some ao teste quando pertinente.';
     if(race&&race.id==='gnomo'&&key==='oficio')return '+2 racial em Ofício (alquimia); some ao teste quando a especialização for alquimia.';
     return '';
