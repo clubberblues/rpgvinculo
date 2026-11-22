@@ -559,7 +559,7 @@
     const adjustments=raceData&&raceData.ajustes_atributos||{},p=panel('Atributos');if(!p)return;
     p.querySelectorAll('.attr-row').forEach(row=>{
       const stat=clean(row.querySelector('.attr-name'));if(!(stat in base))return;
-      const input=row.querySelector('.attr-col input');if(input){input.value=String(Number(base[stat])+Number(adjustments[stat]||0));input.dataset.lastValid=input.value;}
+      const input=row.querySelector('.attr-col input');if(input){input.value=String(Number(base[stat])+Number(adjustments[stat]||0));input.dataset.lastValid=input.value;input.dispatchEvent(new Event('input',{bubbles:true}));}
     });
   }
   function updateAttributeBudget() {
@@ -615,7 +615,7 @@
     const cells=Array.from(row.children),name=clean(cells[0]).replace(/\s*\*\s*$/,'').trim(),input=cells[4]&&cells[4].querySelector('input');if(!input)return;
     const next=Number(input.value||0)+delta;if(next<0||next>skillRankMaximum(name))return;
     const stats=skillAllocationStats();if(delta>0&&stats.remaining<skillRankCost(name)){status('Não há pontos de perícia suficientes para essa graduação.');return;}
-    input.value=String(next);input.dataset.lastValid=String(next);
+    input.value=String(next);input.dataset.lastValid=String(next);input.dispatchEvent(new Event('input',{bubbles:true}));
     const base=getBaseAttributes(),final={};Object.keys(base).forEach(k=>final[k]=Number(base[k])+Number((raceData.ajustes_atributos||{})[k]||0));
     const modifiers={};Object.keys(final).forEach(k=>modifiers[k]=Math.floor((final[k]-10)/2));populateSkillTotals(final,modifiers,raceData);
   }
@@ -1128,6 +1128,8 @@
       const name = groupValue('Nome do Personagem');
       if (!name || name.length < 2 || name.length > 40) throw new Error('Informe o nome do personagem (2 a 40 caracteres).');
       const baseAttributes = getBaseAttributes();
+      const spentAttributePoints = pointBuyTotal(baseAttributes);
+      if (spentAttributePoints !== 25) throw new Error('Distribua exatamente os 25 pontos de compra de atributos antes de criar a ficha. Você usou ' + spentAttributePoints + '/25.');
       const choices = wizardChoices();
       const selectedSpells = collectFirstCircleSpells();
       const finalInt = Number(baseAttributes.INT) + Number((raceData.ajustes_atributos || {}).INT || 0);
