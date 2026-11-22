@@ -1254,7 +1254,7 @@
         document.querySelectorAll('.mage-step-focus').forEach(el=>el.classList.remove('mage-step-focus'));
         status('Guia concluído. Você pode criar ou salvar sua ficha.');
         note.querySelector('strong').textContent = 'Jornada concluída';
-        note.querySelector('div:not(.mage-guide-progress):not(.mage-guide-actions)').textContent = 'Você chegou ao fim do guia. Revise sua ficha e use o botão abaixo para ' + (isCreate ? 'criar o personagem.' : 'salvar as alterações.');
+        note.querySelector('.mage-guide-help').textContent = 'Você chegou ao fim do guia. Revise sua ficha e use o botão abaixo para ' + (isCreate ? 'criar o personagem.' : 'salvar as alterações.');
         nextButton.disabled = true;
         prevButton.disabled = true;
       } else showStep(step + 1);
