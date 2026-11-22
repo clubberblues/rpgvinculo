@@ -1198,8 +1198,9 @@
     controls.forEach(control => {
       if (control.disabled || control.readOnly || control.type === 'hidden' || control.type === 'button' || control.type === 'submit') return;
       if (control.closest('[hidden],.mage-catalog-overlay,.mage-lore-overlay')) return;
-      // Resistências são valores derivados automaticamente; não fazem parte das etapas de preenchimento.
-      if (control.closest('.resist-row') || /resistencias/.test(normalize(clean(control.closest('.panel')?.querySelector('.panel-title'))))) return;
+      // Resistências, BBA e Agarrar são campos derivados; Resistência à Magia só se aplica quando houver uma fonte específica.
+      const panelTitle = normalize(clean(control.closest('.panel')?.querySelector('.panel-title')));
+      if (control.closest('.resist-row') || /resistencias/.test(panelTitle) || /base e agarrar/.test(panelTitle)) return;
       const target = guideTargetFor(control);
       if (!target || seen.has(target)) return;
       seen.add(target);
