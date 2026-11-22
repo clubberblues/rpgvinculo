@@ -1116,20 +1116,16 @@
   function guideCandidates() {
     const controls = Array.from(document.querySelectorAll('.ficha input, .ficha textarea, .ficha select'));
     const seen = new Set();
-    return controls.filter(control => {
-      if (control.disabled || control.readOnly || control.type === 'hidden' || control.type === 'button' || control.type === 'submit') return false;
-      if (control.closest('[hidden],.mage-catalog-overlay,.mage-lore-overlay')) return false;
+    const items = [];
+    controls.forEach(control => {
+      if (control.disabled || control.readOnly || control.type === 'hidden' || control.type === 'button' || control.type === 'submit') return;
+      if (control.closest('[hidden],.mage-catalog-overlay,.mage-lore-overlay')) return;
       const target = guideTargetFor(control);
-      if (!target || seen.has(target)) return false;
+      if (!target || seen.has(target)) return;
       seen.add(target);
-      return true;
-    }).map(target => {
-      const control = target.matches('input,textarea,select') ? target : target.querySelector('input:not([disabled]):not([readonly]),textarea:not([disabled]):not([readonly]),select:not([disabled])');
-      if (!control) return null;
       const labelNode = target.querySelector('label,td:first-child,th:first-child,.attr-name,.resist-name,.panel-title');
       const label = clean(labelNode) || 'esta informação';
-      const sectionName = sectionOf(target);
-      const sectionKey = normalize(sectionName);
+      const sectionKey = normalize(sectionOf(control));
       let help = 'Preencha ou confira esta informação. Ela ficará registrada neste espaço da ficha para consulta durante a campanha.';
       if (/cabecalho|identidade/.test(sectionKey)) help = 'Aqui ficam os dados que identificam seu aventureiro. O nome será exibido na ficha e nas telas da campanha.';
       else if (/atributos/.test(sectionKey)) help = 'Os atributos representam as capacidades do personagem. Eles influenciam testes, perícias, combate e outras características. Os ajustes raciais são considerados pelo sistema.';
@@ -1138,8 +1134,9 @@
       else if (/grimorio|magia/.test(sectionKey)) help = 'Aqui você registra as magias do Grimório. A preparação acontece durante a campanha, conforme a narrativa.';
       else if (/equipamentos/.test(sectionKey)) help = 'Registre o que seu personagem carrega. Esses itens aparecem na ficha para consulta durante a aventura.';
       else if (/idiomas/.test(sectionKey)) help = 'Informe os idiomas que seu personagem conhece. Os idiomas concedidos pela raça devem aparecer preenchidos automaticamente.';
-      return {target,control,label,help};
-    }).filter(Boolean);
+      items.push({target,control,label,help});
+    });
+    return items;
   }
   function showStep(next) {
     const candidates = guideCandidates();
