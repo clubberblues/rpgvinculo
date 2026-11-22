@@ -18,9 +18,9 @@
   ];
   const steps = [
     { title: 'Identidade', section: null, selector: '.header-top .input-group input', help: 'Informe o nome do personagem e confira os dados de identificação.' },
-    { title: 'Atributos', section: 'Atributos', selector: '.attr-row input', help: 'Informe os seis valores-base entre 8 e 18, totalizando 25 pontos de compra. Os ajustes raciais serão aplicados ao criar.' },
+    { title: 'Atributos', section: 'Atributos', selector: '.attr-row input', help: 'Os valores iniciais seguem uma distribuição sugerida para Mago. Ajuste com + e − respeitando os 25 pontos de compra; os modificadores raciais e derivados são calculados automaticamente.' },
     { title: 'Resistências', section: 'Resistências', selector: '.resist-row input', help: 'Confira os valores calculados para o Mago de 1º nível.' },
-    { title: 'Perícias', section: 'Perícias', selector: 'table input', help: 'Informe as graduações na coluna Grad. O banco valida o orçamento da classe.' },
+    { title: 'Perícias', section: 'Perícias', selector: 'table input', help: 'Os modificadores de atributo e benefícios raciais/de classe são preenchidos automaticamente. Distribua os pontos disponíveis com + e −.' },
     { title: 'Talentos', section: 'Talentos', selector: 'input', help: 'Escolha o talento geral da raça; humanos escolhem dois. Escrever Pergaminho é concedido automaticamente ao Mago de 1º nível.' },
     { title: 'Grimório', section: 'Grimório', selector: '.spell-level-block input', help: 'Todos os truques permitidos entram automaticamente. Escolha 3 + modificador positivo de Inteligência magias de 1º círculo. A preparação acontece durante a campanha, sem limite diário ou consumo automático.' },
     { title: 'Equipamentos', section: 'Equipamentos', selector: 'input', help: 'Registre livremente os equipamentos e seus pesos.' },
@@ -79,7 +79,27 @@
       '.mage-catalog-mark{width:48px;height:44px;display:flex;align-items:center;justify-content:center;border:1px solid #8b6f47;background:linear-gradient(145deg,#c4a66d,#eadcb8);color:#4b3218;font-size:19px}' +
       '.mage-catalog-name{display:block;border:0;background:transparent;color:#2b1a0e;text-align:left;font:700 17px Cinzel,serif;cursor:pointer;padding:0}' +
       '.mage-catalog-meta{display:block;margin-top:3px;color:#5a3f28;font:14px EB Garamond,serif;line-height:1.25}' +
-      '.mage-catalog-view{border:0;border-bottom:1px solid #8b6f47;background:transparent;color:#5a3f28;font:700 12px Cinzel,serif;letter-spacing:1px;cursor:pointer;padding:5px}' +
+      '.mage-catalog-view{border:0;background:transparent;color:rgba(90,63,40,.62);font:600 10px Cinzel,serif;letter-spacing:.25px;cursor:pointer;padding:3px 2px;opacity:.72}' +
+      '.mage-catalog-view:hover{color:#3a2510;opacity:1;text-decoration:underline;text-underline-offset:3px}' +
+      '.mage-catalog-actions{display:flex;align-items:center;justify-content:flex-end;gap:9px}' +
+      '.mage-catalog-choose{border:1px solid rgba(139,111,71,.8);background:rgba(139,111,71,.12);color:#3a2510;padding:7px 9px;font:700 10px Cinzel,serif;letter-spacing:.5px;cursor:pointer;white-space:nowrap}' +
+      '.mage-catalog-choose:hover{background:#8b6f47;color:#fff5df}' +
+      '.mage-lore-copy{position:relative}' +
+      '.mage-lore-head{display:flex;align-items:flex-start;justify-content:center;position:relative;padding:0 38px 0 0}' +
+      '.mage-lore-head h2{flex:1}' +
+      '.mage-lore-close{position:absolute;right:0;top:0;width:30px;height:30px;border:1px solid rgba(225,193,132,.55);background:rgba(0,0,0,.24);color:#f0e2c1;font:22px Georgia,serif;cursor:pointer;border-radius:3px}' +
+      '.mage-lore-close:hover{background:rgba(225,193,132,.2);color:#fff}' +
+      '.mage-ability-budget{margin:8px 0 2px;text-align:right;color:#5a3f28;font:700 10px Cinzel,serif;letter-spacing:.3px}' +
+      '.mage-ability-adjust{display:flex;align-items:center;gap:2px;width:100%}' +
+      '.mage-ability-adjust input{min-width:0;flex:1}' +
+      '.mage-ability-adjust button,.mage-skill-adjust button{width:15px;height:19px;min-width:15px;padding:0;border:0;background:transparent;color:rgba(90,63,40,.62);font:700 13px Georgia,serif;line-height:18px;cursor:pointer}' +
+      '.mage-ability-adjust button:hover,.mage-skill-adjust button:hover{color:#2b1a0e;background:rgba(139,111,71,.16)}' +
+      '.mage-skill-budget{margin-left:auto;font:700 9px Cinzel,serif;letter-spacing:.2px;color:#6a4a29;white-space:nowrap}' +
+      '.mage-skill-adjust{display:flex;align-items:center;justify-content:center;gap:1px;min-width:62px}' +
+      '.mage-skill-adjust input{width:25px;min-width:20px;max-width:32px}' +
+      '.mage-skill-adjust button{width:14px;min-width:14px;font-size:12px}' +
+      '.mage-catalog-row{grid-template-columns:54px minmax(0,1fr) 132px}' +
+      '@media(max-width:650px){.mage-catalog-row{grid-template-columns:38px minmax(0,1fr) 112px}.mage-catalog-choose{padding:6px 5px;font-size:9px}.mage-skill-budget{font-size:8px}}' +
       '.mage-catalog-empty{padding:28px 12px;text-align:center;color:#5a3f28;font:italic 16px EB Garamond,serif}' +
       '.mage-lore-backdrop{position:fixed;inset:0;z-index:10006;display:none;align-items:center;justify-content:center;padding:7vh 8vw;background:rgba(10,7,4,.58);backdrop-filter:blur(24px) saturate(.55);-webkit-backdrop-filter:blur(24px) saturate(.55);cursor:pointer}' +
       '.mage-lore-backdrop.ativo{display:flex}' +
@@ -280,8 +300,9 @@
       const name = clean(row.querySelector('.attr-name'));
       if (!name) return;
       const first = row.querySelector('.attr-col input');
-      const value = Number(first && first.value);
-      if (!Number.isInteger(value) || value < 8 || value > 18) throw new Error('Informe um valor-base entre 8 e 18 para ' + name + '.');
+      const displayedValue = Number(first && first.value);
+      const value = displayedValue - Number((raceData && raceData.ajustes_atributos || {})[name] || 0);
+      if (!Number.isInteger(value) || value < 8 || value > 18) throw new Error('O valor-base de ' + name + ' deve ficar entre 8 e 18.');
       result[name] = value;
     });
     if (Object.keys(result).length !== 6) throw new Error('Informe os seis atributos: FOR, DES, CON, INT, SAB e CAR.');
@@ -295,28 +316,60 @@
     });
     return map;
   }
-  function collectSkills() {
-    const p = panel('Perícias');
-    if (!p) throw new Error('Painel de perícias não encontrado.');
-    const map = skillIdMap();
-    const aliases = {
-      'blefar':'blefe',
-      'furtividade':'mover-se silenciosamente',
-      'identificar magias':'identificar magia',
-      'oficios':'oficio'
+  function classSkillNames() {
+    return (classData && Array.isArray(classData.pericias_classe) ? classData.pericias_classe : []).map(normalize);
+  }
+  function isClassSkill(name) {
+    const key=normalize(name);
+    return classSkillNames().some(item=>item===key||(item==='conhecimento qualquer'&&key.startsWith('conhecimento'))||(item==='oficio'&&key.startsWith('oficio'))||(item==='profissao'&&key.startsWith('profissao')));
+  }
+  function pointBuyCost(score) { return ({8:0,9:1,10:2,11:3,12:4,13:5,14:6,15:8,16:10,17:13,18:16})[Number(score)] ?? Infinity; }
+  function pointBuyTotal(attributes) { return Object.values(attributes).reduce((sum,value)=>sum+pointBuyCost(value),0); }
+  function skillPointsBudget() {
+    const base=getBaseAttributes();
+    const intScore=Number(base.INT)+Number((raceData&&raceData.ajustes_atributos||{}).INT||0);
+    const intMod=Math.floor((intScore-10)/2);
+    return Math.max(1,Number(classData&&classData.pericias_por_nivel||2)+intMod)*4+(raceData&&raceData.id==='humano'?4:0);
+  }
+  function skillRankCost(name) { return isClassSkill(name)?1:2; }
+  function skillRankMaximum(name) { return isClassSkill(name)?4:2; }
+  function racialSkillBonus(race,name) {
+    const key=normalize(name);
+    const bonuses={
+      anao:{avaliacao:2,oficio:2},
+      elfo:{ouvir:2,procurar:2,observar:2},
+      'meio-elfo':{ouvir:1,procurar:1,observar:1,diplomacia:2,'obter informacao':2,'obter informacoes':2},
+      halfling:{escalar:2,saltar:2,ouvir:2,'mover se silenciosamente':2},
+      gnomo:{ouvir:2,oficio:2}
     };
-    const skills = {};
-    p.querySelectorAll('tbody tr').forEach(row => {
-      const cells = Array.from(row.children);
-      const name = clean(cells[0]).replace(/\s*\*\s*$/,'').trim();
-      const input = cells[4] && cells[4].querySelector('input');
-      const ranks = Number(input && input.value || 0);
-      if (!name || !Number.isFinite(ranks) || ranks <= 0) return;
-      const lookup = aliases[normalize(name)] || name;
-      const skill = map.get(normalize(lookup));
-      if (!skill) throw new Error('A perícia "' + name + '" não possui correspondência no catálogo SRD. Não vou descartar essa graduação.');
-      skills[skill.id] = ranks;
+    return (bonuses[race&&race.id]||{})[key]||0;
+  }
+  function skillAllocationStats() {
+    const p=panel('Perícias'); let spent=0;
+    if(p)p.querySelectorAll('tbody tr').forEach(row=>{
+      const cells=Array.from(row.children),name=clean(cells[0]).replace(/\s*\*\s*$/,'').trim();
+      const input=cells[4]&&cells[4].querySelector('input');
+      const ranks=Math.max(0,Number(input&&input.value||0));
+      if(name)spent+=ranks*skillRankCost(name);
     });
+    const total=skillPointsBudget(); return {spent,total,remaining:total-spent};
+  }
+  function collectSkills() {
+    const p=panel('Perícias');
+    if(!p)throw new Error('Painel de perícias não encontrado.');
+    const map=skillIdMap(),aliases={'blefar':'blefe','furtividade':'mover-se silenciosamente','identificar magias':'identificar magia','oficios':'oficio'};
+    const skills={};
+    p.querySelectorAll('tbody tr').forEach(row=>{
+      const cells=Array.from(row.children),name=clean(cells[0]).replace(/\s*\*\s*$/,'').trim();
+      const input=cells[4]&&cells[4].querySelector('input'),ranks=Number(input&&input.value||0);
+      if(!name)return;
+      if(!Number.isInteger(ranks)||ranks<0||ranks>skillRankMaximum(name))throw new Error('Graduações inválidas em '+name+'.');
+      const skill=map.get(normalize(aliases[normalize(name)]||name));
+      if(ranks>0&&!skill)throw new Error('A perícia "'+name+'" não possui correspondência no catálogo SRD. Não vou descartar essa graduação.');
+      if(skill&&ranks>0)skills[skill.id]=ranks;
+    });
+    const allocation=skillAllocationStats();
+    if(allocation.spent>allocation.total)throw new Error('Você distribuiu '+allocation.spent+' pontos de perícia, mas possui apenas '+allocation.total+'.');
     return skills;
   }
   function featMap() {
@@ -483,28 +536,115 @@
   function grappleSizeModifier(size) {
     return ({'miudo':-8,'pequeno':-4,'medio':0,'grande':4,'enorme':8,'imenso':12,'colossal':16})[normalize(size)] ?? 0;
   }
-  function populateSkillTotals(final, modifiers, race) {
-    const p = panel('Perícias');
-    if (!p) return;
-    const map = skillIdMap();
-    const aliases = {'blefar':'blefe','furtividade':'mover-se silenciosamente','identificar magias':'identificar magia','oficios':'oficio'};
-    p.querySelectorAll('tbody tr').forEach(row => {
-      const cells = Array.from(row.children);
-      const label = clean(cells[0]).replace(/\s*\*\s*$/,'').trim();
-      const skill = map.get(normalize(aliases[normalize(label)] || label));
-      if (!skill) return;
-      const ability = skill.atributo || clean(cells[1]);
-      const mod = Number(modifiers[ability] || 0);
-      const ranks = Number(cells[4]?.querySelector('input')?.value || 0);
-      const racial = race.id === 'elfo' && ['ouvir','procurar','observar'].includes(skill.id) ? 2 : 0;
-      const total = cells[2]?.querySelector('input');
-      const abilityInput = cells[3]?.querySelector('input');
-      const misc = cells[5]?.querySelector('input');
-      if (total) total.value = String(mod + ranks + racial);
-      if (abilityInput) abilityInput.value = String(mod);
-      if (misc) misc.value = String(racial);
+  function populateSkillTotals(final,modifiers,race) {
+    const p=panel('Perícias'); if(!p)return;
+    const map=skillIdMap(),aliases={'blefar':'blefe','furtividade':'mover-se silenciosamente','identificar magias':'identificar magia','oficios':'oficio'};
+    p.querySelectorAll('tbody tr').forEach(row=>{
+      const cells=Array.from(row.children),label=clean(cells[0]).replace(/\s*\*\s*$/,'').trim();
+      const skill=map.get(normalize(aliases[normalize(label)]||label));
+      const ability=skill&&skill.atributo||clean(cells[1]),mod=Number(modifiers[ability]||0);
+      const ranksInput=cells[4]&&cells[4].querySelector('input');
+      if(isCreate&&ranksInput&&!String(ranksInput.value).trim())ranksInput.value='0';
+      const ranks=Number(ranksInput&&ranksInput.value||0),racial=racialSkillBonus(race,label);
+      const classBonus=isClassSkill(label)&&ranks>0?3:0,other=Number(cells[6]&&cells[6].querySelector('input')&&cells[6].querySelector('input').value||0);
+      const total=cells[2]&&cells[2].querySelector('input'),abilityInput=cells[3]&&cells[3].querySelector('input'),misc=cells[5]&&cells[5].querySelector('input');
+      if(total){total.value=String(mod+ranks+racial+classBonus+other);total.readOnly=true;}
+      if(abilityInput){abilityInput.value=String(mod);abilityInput.readOnly=true;}
+      if(misc){misc.value=String(racial+classBonus);misc.readOnly=true;const notes=[];if(classBonus)notes.push('+3 por perícia de classe treinada');if(racial)notes.push('bônus racial +'+racial);misc.title=notes.join('; ');}
+    });
+    refreshSkillAllocationUI();
+  }
+  const SUGGESTED_WIZARD_ATTRIBUTES={FOR:8,DES:13,CON:14,INT:15,SAB:12,CAR:10};
+  function setBaseAttributeValues(base) {
+    const adjustments=raceData&&raceData.ajustes_atributos||{},p=panel('Atributos');if(!p)return;
+    p.querySelectorAll('.attr-row').forEach(row=>{
+      const stat=clean(row.querySelector('.attr-name'));if(!(stat in base))return;
+      const input=row.querySelector('.attr-col input');if(input)input.value=String(Number(base[stat])+Number(adjustments[stat]||0));
     });
   }
+  function updateAttributeBudget() {
+    const p=panel('Atributos');if(!p)return;
+    let note=p.querySelector('.mage-ability-budget');
+    if(!note){note=createNode('div','mage-ability-budget');p.appendChild(note);}
+    try{const spent=pointBuyTotal(getBaseAttributes());note.textContent='COMPRA DE PONTOS · '+spent+'/25';note.dataset.valid=spent<=25?'true':'false';}
+    catch(_){note.textContent='COMPRA DE PONTOS · 25 disponíveis';note.dataset.valid='false';}
+  }
+  function recalculateCreationFromAttributes() {
+    const base=getBaseAttributes();if(pointBuyTotal(base)>25)throw new Error('A compra de atributos ultrapassa os 25 pontos.');
+    applyCalculatedFields(base,raceData,[]);updateAttributeBudget();
+  }
+  function changeBaseAttribute(stat,delta) {
+    try{
+      const base=getBaseAttributes(),next=Number(base[stat])+delta;if(next<8||next>18)return;
+      const changed={...base,[stat]:next},spent=pointBuyTotal(changed);
+      if(spent>25){status('Esse ajuste ultrapassa os 25 pontos de compra. Reduza outro atributo primeiro.');return;}
+      setBaseAttributeValues(changed);recalculateCreationFromAttributes();status('Atributos atualizados · '+spent+'/25 pontos de compra.');
+    }catch(error){status(error.message||String(error),true);}
+  }
+  function setupAttributeControls() {
+    const p=panel('Atributos');if(!p||p.dataset.adjustControls==='true')return;p.dataset.adjustControls='true';
+    p.querySelectorAll('.attr-row').forEach(row=>{
+      const stat=clean(row.querySelector('.attr-name')),column=row.querySelectorAll('.attr-col')[0],input=column&&column.querySelector('input');
+      if(!stat||!input)return;input.step='1';input.setAttribute('aria-label','Valor final de '+stat+' com ajuste racial');
+      const wrap=createNode('div','mage-ability-adjust'),minus=createNode('button','','−'),plus=createNode('button','','+');
+      minus.type='button';minus.title='Diminuir '+stat;minus.setAttribute('aria-label','Diminuir '+stat);minus.addEventListener('click',()=>changeBaseAttribute(stat,-1));
+      plus.type='button';plus.title='Aumentar '+stat;plus.setAttribute('aria-label','Aumentar '+stat);plus.addEventListener('click',()=>changeBaseAttribute(stat,1));
+      input.parentNode.insertBefore(wrap,input);wrap.append(minus,input,plus);
+      input.addEventListener('change',()=>{
+        try{const base=getBaseAttributes();if(pointBuyTotal(base)>25)throw new Error('A compra de atributos deve respeitar os 25 pontos.');recalculateCreationFromAttributes();}
+        catch(error){setBaseAttributeValues(SUGGESTED_WIZARD_ATTRIBUTES);recalculateCreationFromAttributes();status(error.message||String(error),true);}
+      });
+    });updateAttributeBudget();
+  }
+  function refreshSkillAllocationUI() {
+    const p=panel('Perícias');if(!p)return;
+    const title=p.querySelector('.panel-title');
+    if(title){let badge=title.querySelector('.mage-skill-budget');if(!badge){badge=createNode('span','mage-skill-budget');title.appendChild(badge);}
+      try{const stats=skillAllocationStats();badge.textContent='PONTOS · '+stats.remaining+'/'+stats.total;badge.title=stats.spent+' gastos; perícias de classe custam 1 e demais custam 2.';badge.dataset.valid=stats.remaining>=0?'true':'false';}
+      catch(_){badge.textContent='PONTOS · aguardando atributos';}
+    }
+    p.querySelectorAll('tbody tr').forEach(row=>{
+      const cells=Array.from(row.children),name=clean(cells[0]).replace(/\s*\*\s*$/,'').trim(),input=cells[4]&&cells[4].querySelector('input');
+      const buttons=input&&input.closest('.mage-skill-adjust')&&input.closest('.mage-skill-adjust').querySelectorAll('button');if(!buttons||buttons.length!==2)return;
+      const current=Number(input.value||0),remaining=(()=>{try{return skillAllocationStats().remaining;}catch(_){return 0;}})();
+      buttons[0].disabled=current<=0;buttons[1].disabled=current>=skillRankMaximum(name)||remaining<skillRankCost(name);
+    });
+  }
+  function adjustSkillRank(row,delta) {
+    const cells=Array.from(row.children),name=clean(cells[0]).replace(/\s*\*\s*$/,'').trim(),input=cells[4]&&cells[4].querySelector('input');if(!input)return;
+    const next=Number(input.value||0)+delta;if(next<0||next>skillRankMaximum(name))return;
+    const stats=skillAllocationStats();if(delta>0&&stats.remaining<skillRankCost(name)){status('Não há pontos de perícia suficientes para essa graduação.');return;}
+    input.value=String(next);input.dataset.lastValid=String(next);
+    const base=getBaseAttributes(),final={};Object.keys(base).forEach(k=>final[k]=Number(base[k])+Number((raceData.ajustes_atributos||{})[k]||0));
+    const modifiers={};Object.keys(final).forEach(k=>modifiers[k]=Math.floor((final[k]-10)/2));populateSkillTotals(final,modifiers,raceData);
+  }
+  function setupSkillAllocationControls() {
+    const p=panel('Perícias');if(!p||p.dataset.adjustControls==='true')return;p.dataset.adjustControls='true';
+    p.querySelectorAll('tbody tr').forEach(row=>{
+      const cells=Array.from(row.children),name=clean(cells[0]).replace(/\s*\*\s*$/,'').trim(),cell=cells[4],input=cell&&cell.querySelector('input');if(!name||!input)return;
+      input.type='number';input.step='1';input.min='0';input.max=String(skillRankMaximum(name));if(isCreate&&!String(input.value).trim())input.value='0';input.dataset.lastValid=String(Number(input.value||0));
+      const wrap=createNode('div','mage-skill-adjust'),minus=createNode('button','','−'),plus=createNode('button','','+');
+      minus.type='button';minus.setAttribute('aria-label','Remover graduação de '+name);minus.addEventListener('click',()=>adjustSkillRank(row,-1));
+      plus.type='button';plus.setAttribute('aria-label','Adicionar graduação em '+name);plus.addEventListener('click',()=>adjustSkillRank(row,1));
+      cell.insertBefore(wrap,input);wrap.append(minus,input,plus);
+      input.addEventListener('change',()=>{
+        const value=Number(input.value||0),previous=Number(input.dataset.lastValid||0);
+        if(!Number.isInteger(value)||value<0||value>skillRankMaximum(name)){input.value=String(previous);status('Limite de graduações para '+name+': '+skillRankMaximum(name)+'.');}
+        else if(skillAllocationStats().spent>skillAllocationStats().total){input.value=String(previous);status('Essa graduação excede os pontos de perícia disponíveis.');}
+        else input.dataset.lastValid=String(value);
+        const base=getBaseAttributes(),final={};Object.keys(base).forEach(k=>final[k]=Number(base[k])+Number((raceData.ajustes_atributos||{})[k]||0));
+        const modifiers={};Object.keys(final).forEach(k=>modifiers[k]=Math.floor((final[k]-10)/2));populateSkillTotals(final,modifiers,raceData);
+      });
+    });refreshSkillAllocationUI();
+  }
+  function initializeCreationDefaults() {
+    let base;
+    try{base=getBaseAttributes();if(pointBuyTotal(base)>25)throw new Error('Rascunho excede o orçamento de atributos.');}
+    catch(_){base={...SUGGESTED_WIZARD_ATTRIBUTES};setBaseAttributeValues(base);}
+    applyCalculatedFields(base,raceData,[]);setupAttributeControls();setupSkillAllocationControls();addWizardBonusFeatToSheet();updateAttributeBudget();
+    status('Ficha pré-preenchida pelas regras do Mago de 1º nível. Ajuste os 25 pontos de atributos e distribua os pontos de perícia.');
+  }
+
   function updateEquipmentWeight(items) {
     const p = panel('Equipamentos');
     if (!p) return;
@@ -609,7 +749,7 @@
     const xpPanel = panel('Experiência');
     if (xpPanel) {
       const inputs = xpPanel.querySelectorAll('input');
-      if (inputs[0]) inputs[0].value = '1000';
+      if (inputs[0]) inputs[0].value = '0';
       if (inputs[1]) inputs[1].value = '0';
     }
     const spellBlocks = Array.from(document.querySelectorAll('.ficha .spell-level-block'));
@@ -724,7 +864,9 @@
     const overlay = document.getElementById('mage-lore-overlay');
     const copy = document.getElementById('mage-lore-copy');
     copy.replaceChildren();
-    copy.appendChild(createNode('h2','',title || 'Descrição'));
+    const head=createNode('header','mage-lore-head'),heading=createNode('h2','',title||'Descrição'),close=createNode('button','mage-lore-close','×');
+    close.type='button';close.setAttribute('aria-label','Fechar descrição e voltar ao catálogo');close.addEventListener('click',closeLore);
+    head.append(heading,close);copy.appendChild(head);
     if (meta) copy.appendChild(createNode('div','mage-lore-meta',meta));
     loreParagraphs(copy,description);
     overlay.classList.add('ativo');
@@ -744,23 +886,14 @@
     if (Array.isArray(req.skill_ranks) && req.skill_ranks.length) parts.push('Graduações em perícias');
     return parts.join(' · ') || 'Pré-requisitos não detalhados no cadastro';
   }
-  function catalogRow(name, meta, icon, onChoose, onView) {
-    const row = createNode('div','mage-catalog-row');
-    const mark = createNode('span','mage-catalog-mark');
-    const glyph = createNode('i','fa-solid '+icon);
-    glyph.setAttribute('aria-hidden','true');
-    mark.appendChild(glyph);
-    const main = createNode('div','mage-catalog-main');
-    const choose = createNode('button','mage-catalog-name',name);
-    choose.type = 'button';
-    choose.addEventListener('click',onChoose);
-    const sub = createNode('span','mage-catalog-meta',meta || '');
-    main.append(choose,sub);
-    const view = createNode('button','mage-catalog-view','VER');
-    view.type = 'button';
-    view.addEventListener('click',onView);
-    row.append(mark,main,view);
-    return row;
+  function catalogRow(name,meta,icon,onChoose,onView) {
+    const row=createNode('div','mage-catalog-row'),mark=createNode('span','mage-catalog-mark'),glyph=createNode('i','fa-solid '+icon);
+    glyph.setAttribute('aria-hidden','true');mark.appendChild(glyph);
+    const main=createNode('div','mage-catalog-main'),title=createNode('span','mage-catalog-name',name),sub=createNode('span','mage-catalog-meta',meta||'');
+    main.append(title,sub);
+    const actions=createNode('div','mage-catalog-actions'),choose=createNode('button','mage-catalog-choose','ESCOLHER'),view=createNode('button','mage-catalog-view','ver mais');
+    choose.type='button';choose.addEventListener('click',onChoose);view.type='button';view.addEventListener('click',onView);
+    actions.append(choose,view);row.append(mark,main,actions);return row;
   }
   function familiarLabel(monster) {
     const names = {bat:'Morcego',cat:'Gato',hawk:'Falcão',lizard:'Lagarto',owl:'Coruja',rat:'Rato',raven:'Corvo',toad:'Sapo',weasel:'Doninha'};
@@ -1095,7 +1228,7 @@
       if (!raceId || !classId) throw new Error('A criação precisa receber raça e classe escolhidas no Lobby.');
       const [race, klass, profile] = await Promise.all([
         sb.from('srd_races').select('*').eq('id', raceId).maybeSingle(),
-        sb.from('srd_classes').select('id,nome,class_key').eq('id', classId).maybeSingle(),
+        sb.from('srd_classes').select('id,nome,class_key,pericias_por_nivel,pericias_classe,dados_tecnicos').eq('id', classId).maybeSingle(),
         sb.from('profiles').select('username').eq('id', user.id).maybeSingle()
       ]);
       if (race.error || klass.error) throw race.error || klass.error;
@@ -1108,9 +1241,9 @@
       showFamiliarStatus({wizard_familiar_available:true,wizard_familiar_choice:'pending'});
       setupWizardChoiceFields(null);
       renderSpellInputs();
-      const draftRestored = restoreLocalDraft();
+      restoreLocalDraft();
+      initializeCreationDefaults();
       bindLocalDraftAutosave();
-      if (!draftRestored) status('Ficha original pronta. Preencha os campos; ao criar, personagem e ficha serão gravados juntos no banco.');
     } else if (characterId) {
       const result = await sb.from('srd_character_sheets').select('identidade').eq('character_id', characterId).maybeSingle();
       if (result.error) throw result.error;
