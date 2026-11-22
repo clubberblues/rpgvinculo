@@ -689,6 +689,15 @@
       if (mod) mod.value = String(modifiers[stat]);
       if (racial) { racial.value = String(Number(adjustments[stat] || 0)); racial.readOnly = true; racial.title = 'Ajuste racial aplicado automaticamente'; }
     });
+    const movementPanel = panel('Deslocamento');
+    if (movementPanel) {
+      const movementInput = movementPanel.querySelector('input[data-sheet-field="deslocamento.base"]');
+      if (movementInput) {
+        const meters = Number(race && race.deslocamento);
+        if (Number.isFinite(meters) && meters > 0) movementInput.value = meters + ' m';
+        movementInput.title = 'Deslocamento base racial. Ajustes por carga, armadura ou habilidades podem ser aplicados durante a campanha.';
+      }
+    }
     const conMod = modifiers.CON, dexMod = modifiers.DES, wisMod = modifiers.SAB;
     const intMod = modifiers.INT;
     const hp = Math.max(1,4+conMod);
