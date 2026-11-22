@@ -336,13 +336,19 @@
   function racialSkillBonus(race,name) {
     const key=normalize(name);
     const bonuses={
-      anao:{avaliacao:2,oficio:2},
+      anao:{},
       elfo:{ouvir:2,procurar:2,observar:2},
       'meio-elfo':{ouvir:1,procurar:1,observar:1,diplomacia:2,'obter informacao':2,'obter informacoes':2},
       halfling:{escalar:2,saltar:2,ouvir:2,'mover se silenciosamente':2},
-      gnomo:{ouvir:2,oficio:2}
+      gnomo:{ouvir:2}
     };
     return (bonuses[race&&race.id]||{})[key]||0;
+  }
+  function conditionalRacialSkillNote(race,name) {
+    const key=normalize(name);
+    if(race&&race.id==='anao'&&['avaliacao','oficio'].includes(key))return '+2 racial em Avaliação/Ofício somente em testes relacionados a pedra ou metal; some ao teste quando pertinente.';
+    if(race&&race.id==='gnomo'&&key==='oficio')return '+2 racial em Ofício (alquimia); some ao teste quando a especialização for alquimia.';
+    return '';
   }
   function skillAllocationStats() {
     const p=panel('Perícias'); let spent=0;
@@ -550,7 +556,7 @@
       const total=cells[2]&&cells[2].querySelector('input'),abilityInput=cells[3]&&cells[3].querySelector('input'),misc=cells[5]&&cells[5].querySelector('input');
       if(total){total.value=String(mod+ranks+racial+classBonus+other);total.readOnly=true;}
       if(abilityInput){abilityInput.value=String(mod);abilityInput.readOnly=true;}
-      if(misc){misc.value=String(racial+classBonus);misc.readOnly=true;const notes=[];if(classBonus)notes.push('+3 por perícia de classe treinada');if(racial)notes.push('bônus racial +'+racial);misc.title=notes.join('; ');}
+      if(misc){misc.value=String(racial+classBonus);misc.readOnly=true;const notes=[];if(classBonus)notes.push('+3 por perícia de classe treinada');if(racial)notes.push('bônus racial +'+racial);const conditional=conditionalRacialSkillNote(race,label);if(conditional)notes.push(conditional);misc.title=notes.join('; ');}
     });
     refreshSkillAllocationUI();
   }
