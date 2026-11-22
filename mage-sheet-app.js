@@ -559,7 +559,7 @@
     const adjustments=raceData&&raceData.ajustes_atributos||{},p=panel('Atributos');if(!p)return;
     p.querySelectorAll('.attr-row').forEach(row=>{
       const stat=clean(row.querySelector('.attr-name'));if(!(stat in base))return;
-      const input=row.querySelector('.attr-col input');if(input)input.value=String(Number(base[stat])+Number(adjustments[stat]||0));
+      const input=row.querySelector('.attr-col input');if(input){input.value=String(Number(base[stat])+Number(adjustments[stat]||0));input.dataset.lastValid=input.value;}
     });
   }
   function updateAttributeBudget() {
@@ -585,14 +585,15 @@
     const p=panel('Atributos');if(!p||p.dataset.adjustControls==='true')return;p.dataset.adjustControls='true';
     p.querySelectorAll('.attr-row').forEach(row=>{
       const stat=clean(row.querySelector('.attr-name')),column=row.querySelectorAll('.attr-col')[0],input=column&&column.querySelector('input');
-      if(!stat||!input)return;input.step='1';input.setAttribute('aria-label','Valor final de '+stat+' com ajuste racial');
+      if(!stat||!input)return;input.step='1';input.dataset.lastValid=String(input.value||'');input.setAttribute('aria-label','Valor final de '+stat+' com ajuste racial');
       const wrap=createNode('div','mage-ability-adjust'),minus=createNode('button','','−'),plus=createNode('button','','+');
       minus.type='button';minus.title='Diminuir '+stat;minus.setAttribute('aria-label','Diminuir '+stat);minus.addEventListener('click',()=>changeBaseAttribute(stat,-1));
       plus.type='button';plus.title='Aumentar '+stat;plus.setAttribute('aria-label','Aumentar '+stat);plus.addEventListener('click',()=>changeBaseAttribute(stat,1));
       input.parentNode.insertBefore(wrap,input);wrap.append(minus,input,plus);
       input.addEventListener('change',()=>{
-        try{const base=getBaseAttributes();if(pointBuyTotal(base)>25)throw new Error('A compra de atributos deve respeitar os 25 pontos.');recalculateCreationFromAttributes();}
-        catch(error){setBaseAttributeValues(SUGGESTED_WIZARD_ATTRIBUTES);recalculateCreationFromAttributes();status(error.message||String(error),true);}
+        const previous=input.dataset.lastValid;
+        try{const base=getBaseAttributes();if(pointBuyTotal(base)>25)throw new Error('A compra de atributos deve respeitar os 25 pontos.');recalculateCreationFromAttributes();input.dataset.lastValid=String(input.value);}
+        catch(error){input.value=previous||'8';recalculateCreationFromAttributes();status(error.message||String(error),true);}
       });
     });updateAttributeBudget();
   }
@@ -642,7 +643,7 @@
     try{base=getBaseAttributes();if(pointBuyTotal(base)>25)throw new Error('Rascunho excede o orçamento de atributos.');}
     catch(_){base={...SUGGESTED_WIZARD_ATTRIBUTES};setBaseAttributeValues(base);}
     applyCalculatedFields(base,raceData,[]);setupAttributeControls();setupSkillAllocationControls();addWizardBonusFeatToSheet();updateAttributeBudget();
-    status('Ficha pré-preenchida pelas regras do Mago de 1º nível. Ajuste os 25 pontos de atributos e distribua os pontos de perícia.');
+    status('Ficha pré-preenchida com uma distribuição sugerida para Mago de 1º nível. As regras permitem redistribuir os 25 pontos e escolher onde aplicar os pontos de perícia.');
   }
 
   function updateEquipmentWeight(items) {
