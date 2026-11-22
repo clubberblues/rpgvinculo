@@ -16,16 +16,7 @@
     ['enchantment','Encantamento'],['evocation','Evocação'],['illusion','Ilusão'],
     ['necromancy','Necromancia'],['transmutation','Transmutação']
   ];
-  const steps = [
-    { title: 'Identidade', section: null, selector: '.header-top .input-group input', help: 'Informe o nome do personagem e confira os dados de identificação.' },
-    { title: 'Atributos', section: 'Atributos', selector: '.attr-row input', help: 'Os valores iniciais seguem uma distribuição sugerida para Mago. Ajuste com + e − respeitando os 25 pontos de compra; os modificadores raciais e derivados são calculados automaticamente.' },
-    { title: 'Resistências', section: 'Resistências', selector: '.resist-row input', help: 'Confira os valores calculados para o Mago de 1º nível.' },
-    { title: 'Perícias', section: 'Perícias', selector: 'table input', help: 'Os modificadores de atributo e benefícios raciais/de classe são preenchidos automaticamente. Distribua os pontos disponíveis com + e −.' },
-    { title: 'Talentos', section: 'Talentos', selector: 'input', help: 'Escolha o talento geral da raça; humanos escolhem dois. Escrever Pergaminho é concedido automaticamente ao Mago de 1º nível.' },
-    { title: 'Grimório', section: 'Grimório', selector: '.spell-level-block input', help: 'Todos os truques permitidos entram automaticamente. Escolha 3 + modificador positivo de Inteligência magias de 1º círculo. A preparação acontece durante a campanha, sem limite diário ou consumo automático.' },
-    { title: 'Equipamentos', section: 'Equipamentos', selector: 'input', help: 'Registre livremente os equipamentos e seus pesos.' },
-    { title: 'Idiomas', section: 'Idiomas', selector: 'textarea', help: 'Edite a lista livre de idiomas conhecidos.' }
-  ];
+  // Guia dinâmico: percorre os campos editáveis reais da ficha, sem etapas fixas.
   let sb, user, step = 0, raceData = null, classData = null, skillCatalog = [], featCatalog = [], spellCatalog = [], monsterCatalog = [], selectedFamiliar = null, catalogMode = null;
   const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   const clean = node => (node && node.textContent || '').replace(/\s+/g, ' ').trim();
@@ -61,7 +52,7 @@
   function addToolbar() {
     const bar = document.createElement('section');
     bar.id = 'mage-sheet-toolbar';
-    bar.innerHTML = '<div class="mage-sheet-meta"><strong>FICHA DO MAGO · D&D 3.5</strong><span id="mage-sheet-status" role="status" aria-live="polite">Preparando ficha…</span></div><div class="mage-sheet-actions"><button type="button" id="mage-prev">Anterior</button><button type="button" id="mage-next">Próxima etapa</button><button type="button" id="mage-save">' + (isCreate ? 'Criar Mago' : 'Salvar ficha') + '</button></div>';
+    bar.innerHTML = '<div class="mage-sheet-meta"><strong>FICHA DO MAGO · D&D 3.5</strong><span id="mage-sheet-status" role="status" aria-live="polite">Preparando ficha…</span></div><div class="mage-sheet-actions"><button type="button" id="mage-prev">Anterior</button><button type="button" id="mage-next">Próximo campo</button><button type="button" id="mage-save">' + (isCreate ? 'Criar Mago' : 'Salvar ficha') + '</button></div>';
     const style = document.createElement('style');
     style.textContent = '#mage-sheet-toolbar{position:relative;top:auto;z-index:10001;display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:10px 16px;width:calc(100% + 50px);margin:-25px -25px 18px;background:#1a120b;color:#f5e8c8;border-bottom:2px solid #b08d57;font:13px Georgia,serif}#mage-sheet-toolbar .mage-sheet-meta{display:flex;flex-direction:column;gap:3px}#mage-sheet-status{color:#d8c69f}#mage-sheet-status[data-error=true]{color:#ff9b8f}#mage-sheet-toolbar .mage-sheet-actions{display:flex;gap:8px;flex-wrap:wrap}#mage-sheet-toolbar button{padding:8px 13px;border:1px solid #b08d57;background:#332416;color:#f5e8c8;border-radius:4px;cursor:pointer;font-weight:700}#mage-sheet-toolbar button:disabled{opacity:.45;cursor:not-allowed}.mage-class-feature-note{margin:6px 0 10px;padding:7px 10px;border-left:2px solid #b08d57;color:#6f5738;background:#f3ead7;font:12px Georgia,serif}.mage-step-focus{outline:3px solid #b08d57!important;outline-offset:4px;box-shadow:0 0 0 6px #b08d5755!important;position:relative;z-index:2}.mage-step-note{position:fixed;right:18px;bottom:18px;z-index:10002;max-width:340px;padding:14px 16px;background:#1a120b;color:#f5e8c8;border:1px solid #b08d57;border-radius:6px;box-shadow:0 8px 30px #0009;font:15px Georgia,serif}.mage-choice-panel{margin:12px 0 16px;padding:10px 12px;border:1px solid rgba(139,111,71,.65);background:rgba(255,255,255,.28);font:13px Georgia,serif;color:#2b1a0e}.mage-choice-panel label{font-family:Cinzel,serif;font-size:9px;font-weight:700;display:block;margin-bottom:4px}.mage-choice-panel select{width:100%;padding:6px;background:rgba(255,255,255,.65);border:1px solid #8b6f47;color:#2b1a0e}.mage-school-choices{display:flex;gap:8px 14px;flex-wrap:wrap;margin-top:8px}.mage-school-choices label{display:flex;align-items:center;gap:5px;font-family:Georgia,serif;font-size:12px;font-weight:400}.mage-school-choices input{accent-color:#8b6f47}.mage-choice-help{font-size:11px;margin-top:6px;color:#5a3f28}';
     
@@ -1119,30 +1110,65 @@
     updateFeatSuggestions();
     updateSpellSuggestions();
   }
+  function guideTargetFor(control) {
+    return control.closest('.attr-row, .resist-row, .input-group, .spell-row, tr, .atk-block, .panel') || control;
+  }
+  function guideCandidates() {
+    const controls = Array.from(document.querySelectorAll('.ficha input, .ficha textarea, .ficha select'));
+    const seen = new Set();
+    return controls.filter(control => {
+      if (control.disabled || control.readOnly || control.type === 'hidden' || control.type === 'button' || control.type === 'submit') return false;
+      if (control.closest('[hidden],.mage-catalog-overlay,.mage-lore-overlay')) return false;
+      const target = guideTargetFor(control);
+      if (!target || seen.has(target)) return false;
+      seen.add(target);
+      return true;
+    }).map(target => {
+      const control = target.matches('input,textarea,select') ? target : target.querySelector('input:not([disabled]):not([readonly]),textarea:not([disabled]):not([readonly]),select:not([disabled])');
+      if (!control) return null;
+      const labelNode = target.querySelector('label,td:first-child,th:first-child,.attr-name,.resist-name,.panel-title');
+      const label = clean(labelNode) || 'esta informação';
+      const sectionName = sectionOf(target);
+      const sectionKey = normalize(sectionName);
+      let help = 'Preencha ou confira esta informação. Ela ficará registrada neste espaço da ficha para consulta durante a campanha.';
+      if (/cabecalho|identidade/.test(sectionKey)) help = 'Aqui ficam os dados que identificam seu aventureiro. O nome será exibido na ficha e nas telas da campanha.';
+      else if (/atributos/.test(sectionKey)) help = 'Os atributos representam as capacidades do personagem. Eles influenciam testes, perícias, combate e outras características. Os ajustes raciais são considerados pelo sistema.';
+      else if (/pericias/.test(sectionKey)) help = 'As perícias mostram aquilo em que seu personagem foi treinado. O atributo relacionado e os benefícios de classe ou raça entram no cálculo automaticamente.';
+      else if (/talentos/.test(sectionKey)) help = 'Escolha uma habilidade especial para seu personagem. O catálogo apresenta os requisitos e os efeitos de cada talento.';
+      else if (/grimorio|magia/.test(sectionKey)) help = 'Aqui você registra as magias do Grimório. A preparação acontece durante a campanha, conforme a narrativa.';
+      else if (/equipamentos/.test(sectionKey)) help = 'Registre o que seu personagem carrega. Esses itens aparecem na ficha para consulta durante a aventura.';
+      else if (/idiomas/.test(sectionKey)) help = 'Informe os idiomas que seu personagem conhece. Os idiomas concedidos pela raça devem aparecer preenchidos automaticamente.';
+      return {target,control,label,help};
+    }).filter(Boolean);
+  }
   function showStep(next) {
-    step = Math.max(0, Math.min(steps.length - 1, next));
-    document.querySelectorAll('.mage-step-focus').forEach(el => el.classList.remove('mage-step-focus'));
-    const config = steps[step];
-    let target = null;
-    if (!config.section) target = document.querySelector(config.selector);
-    else {
-      const p = panel(config.section);
-      target = (p && p.querySelector(config.selector)) || (config.section === 'Grimório' ? document.querySelector(config.selector) : null);
+    const candidates = guideCandidates();
+    if (!candidates.length) {
+      const oldNote = document.getElementById('mage-step-note');
+      if (oldNote) oldNote.remove();
+      status('Não há mais campos que precisem de preenchimento manual. Revise a ficha e salve.');
+      return;
     }
-    if (target) {
-      target.classList.add('mage-step-focus');
-      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      if (target.matches('input,textarea,select')) target.focus({ preventScroll: true });
-    }
+    step = Math.max(0,Math.min(candidates.length - 1,next));
+    document.querySelectorAll('.mage-step-focus').forEach(el=>el.classList.remove('mage-step-focus'));
+    const item = candidates[step];
+    item.target.classList.add('mage-step-focus');
+    item.target.scrollIntoView({behavior:'smooth',block:'center'});
     let note = document.getElementById('mage-step-note');
     if (!note) { note = document.createElement('aside'); note.id = 'mage-step-note'; note.className = 'mage-step-note'; document.body.appendChild(note); }
-    note.textContent = (step + 1) + '/' + steps.length + ' · ' + config.title + ': ' + config.help;
+    note.innerHTML = '<div style="font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#d8bd87;margin-bottom:6px">Jornada do aventureiro · ' + (step+1) + ' de ' + candidates.length + '</div><strong>' + item.label + '</strong><br>' + item.help;
     document.getElementById('mage-prev').disabled = step === 0;
     const nextButton = document.getElementById('mage-next');
-    nextButton.textContent = step === steps.length - 1 ? 'Concluir orientação' : 'Próxima etapa';
-    nextButton.onclick = step === steps.length - 1
-      ? () => { note.remove(); document.querySelectorAll('.mage-step-focus').forEach(el => el.classList.remove('mage-step-focus')); status('Orientação concluída. Revise a ficha e clique em ' + (isCreate ? 'Criar Mago' : 'Salvar ficha') + '.'); }
-      : () => showStep(step + 1);
+    nextButton.textContent = step === candidates.length - 1 ? 'Concluir guia' : 'Próximo campo';
+    nextButton.onclick = () => {
+      const refreshed = guideCandidates();
+      if (step >= refreshed.length - 1) {
+        note.remove();
+        document.querySelectorAll('.mage-step-focus').forEach(el=>el.classList.remove('mage-step-focus'));
+        status('Guia concluído. Revise a ficha e clique em ' + (isCreate ? 'Criar Mago' : 'Salvar ficha') + '.');
+      } else showStep(step + 1);
+    };
+    document.getElementById('mage-prev').onclick = () => showStep(step - 1);
   }
   async function loadCharacter() {
     const result = await sb.from('srd_character_sheets').select('identidade').eq('character_id', characterId).maybeSingle();
@@ -1296,7 +1322,7 @@
     } else {
       throw new Error('Abra a ficha a partir do Lobby ou da Mesa.');
     }
-    showStep(0);
+    if (isCreate) showStep(0);
   }
   function reportBootstrapError(error) {
     const message = error && error.message ? error.message : String(error || 'Erro desconhecido');
