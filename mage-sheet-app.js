@@ -1314,14 +1314,14 @@
     status('Escolhas de talentos salvas na ficha.');
   }
   function chooseFeat(feat) {
-    const eligibility = featEligibility(feat);
-    if (!eligibility.eligible) { status('Não é possível selecionar '+(feat.nome_pt||feat.nome)+': '+eligibility.reasons.join(' '),true); return; }
     initializePendingFeatSelections();
     const selectedIndex = pendingFeatSelections.indexOf(feat.id);
     if (selectedIndex >= 0) {
       pendingFeatSelections.splice(selectedIndex,1);
       status('Talento desmarcado. Escolha outro para completar a seleção.');
     } else {
+      const eligibility = featEligibility(feat);
+      if (!eligibility.eligible) { status('Não é possível selecionar '+(feat.nome_pt||feat.nome)+': '+eligibility.reasons.join(' '),true); return; }
       if (pendingFeatSelections.length >= allowedGeneralFeatSlots()) {
         status('Remova um talento selecionado antes de escolher outro.',true);
         return;
