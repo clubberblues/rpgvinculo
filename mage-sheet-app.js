@@ -1217,13 +1217,39 @@
       };
       const attributeKey = normalize(label).replace(/[^a-z]/g,'');
       if (/atributos/.test(sectionKey) && attributeHelp[attributeKey]) help = attributeHelp[attributeKey];
-      if (/cabecalho|identidade/.test(sectionKey)) help = 'Aqui ficam os dados que dão cara ao seu aventureiro: nome, raça, tendência e características físicas. Escolha o que quiser; os dados gerados pela raça são sugestões e podem ser alterados.';
-      else if (/atributos/.test(sectionKey)) help = attributeHelp[attributeKey] || 'Os atributos são as seis capacidades básicas do personagem. O valor define o modificador que entra em testes, perícias, combate e resistências. Os ajustes raciais são considerados pelo sistema.';
-      else if (/pericias/.test(sectionKey)) help = 'As perícias mostram aquilo em que seu personagem foi treinado. O atributo relacionado e os benefícios de classe ou raça entram no cálculo automaticamente.';
-      else if (/talentos/.test(sectionKey)) help = 'Escolha uma habilidade especial para seu personagem. O catálogo apresenta os requisitos e os efeitos de cada talento.';
-      else if (/grimorio|magia/.test(sectionKey)) help = 'Aqui você registra as magias do Grimório. A preparação acontece durante a campanha, conforme a narrativa.';
-      else if (/equipamentos/.test(sectionKey)) help = 'Registre o que seu personagem carrega. Esses itens aparecem na ficha para consulta durante a aventura.';
-      else if (/idiomas/.test(sectionKey)) help = 'Informe os idiomas que seu personagem conhece. Os idiomas concedidos pela raça devem aparecer preenchidos automaticamente.';
+      const fieldKey = normalize(label);
+      if (/cabecalho|identidade/.test(sectionKey)) {
+        const identityHelp = {
+          'nome do personagem':'Dê um nome ao aventureiro. É assim que ele será identificado na ficha e durante a campanha.',
+          'raca':'A raça define características físicas, ajustes de atributos, deslocamento, idiomas e habilidades próprias.',
+          'tendencia':'Escolha a orientação moral e ética do personagem. Ela ajuda a interpretar suas decisões, mas não substitui sua personalidade.',
+          'sexo':'Informe como o personagem se identifica. Este dado é narrativo e não altera os atributos.',
+          'idade':'A idade ajuda a definir a história do personagem e pode ter efeitos próprios conforme a raça.',
+          'altura':'A altura é gerada a partir da raça e pode ser ajustada para representar seu personagem.',
+          'peso':'O peso acompanha a constituição física e a altura do personagem; a geração racial oferece um valor inicial.',
+          'divindade':'Registre a divindade seguida pelo personagem, se houver.'
+        };
+        help = identityHelp[fieldKey] || 'Esta etapa reúne informações de identidade e história do aventureiro. Confira o dado apresentado e ajuste quando necessário.';
+      } else if (/atributos/.test(sectionKey)) help = attributeHelp[attributeKey] || 'Os atributos são as seis capacidades básicas do personagem. Seus modificadores alimentam automaticamente perícias, combate e resistências.';
+      else if (/pericias/.test(sectionKey)) help = 'Aqui você distribui os pontos de perícia concedidos pela classe. O sistema calcula os modificadores de atributo e os bônus aplicáveis; escolha onde seu personagem foi treinado.';
+      else if (/talentos/.test(sectionKey)) help = 'Nesta etapa você escolhe o talento concedido ao personagem. Confira os pré-requisitos e a descrição para selecionar uma opção válida.';
+      else if (/grimorio|magia/.test(sectionKey)) help = 'Aqui você escolhe as magias que farão parte do Grimório. A preparação e a remoção de magias acontecem durante a campanha, conforme a narrativa.';
+      else if (/ataques/.test(sectionKey)) {
+        const attackHelp = {
+          'arma':'A arma inicial da classe será inserida automaticamente pelo pacote. Confira o nome e os dados do equipamento; o bônus de ataque e o dano são derivados das regras e dos atributos.',
+          'bonus':'Este valor é calculado a partir do BBA, atributo aplicável, tamanho, proficiência e modificadores da arma. Não some bônus manualmente.',
+          'dano':'O dano é preenchido conforme a arma, o modificador de atributo aplicável e outras regras pertinentes. O pacote inicial fornece a arma.',
+          'critico':'Confira a margem de ameaça e o multiplicador de crítico próprios da arma selecionada no pacote inicial.',
+          'alcance':'O alcance depende do tipo de arma. Armas de combate à distância e armas com alcance especial recebem seus valores correspondentes.',
+          'tipo':'Este campo identifica o tipo de dano da arma, como cortante, perfurante ou contundente.',
+          'municao':'Quando a arma utilizar munição, a quantidade e o tipo ficam registrados aqui.'
+        };
+        help = attackHelp[fieldKey] || 'Os dados de ataque são integrados ao equipamento inicial da classe. O sistema preenche os valores derivados; confira as informações apresentadas.';
+      } else if (/armadura|ca/.test(sectionKey)) {
+        const defenseHelp = {'total':'A Classe de Armadura total é calculada automaticamente com base em 10, armadura, escudo, Destreza, tamanho e demais bônus aplicáveis.','arm':'O bônus de armadura vem da proteção equipada no pacote inicial da classe.','esc':'O bônus de escudo é aplicado quando houver um escudo equipado.','des':'O modificador de Destreza entra na CA respeitando o limite máximo da armadura.','tam':'O modificador de tamanho é determinado pela raça e aplicado automaticamente.','nat':'Bônus de armadura natural só entram quando uma característica ou efeito os conceder.','defl':'Bônus de deflexão entram quando concedidos por habilidade, magia ou item.','out':'Use este campo apenas para modificadores de CA que não tenham categoria própria.'};
+        help = defenseHelp[fieldKey] || 'A proteção inicial será fornecida pelo pacote da classe. A CA e seus componentes devem refletir automaticamente os equipamentos e modificadores aplicáveis.';
+      } else if (/equipamentos/.test(sectionKey)) help = 'Os equipamentos iniciais são adicionados automaticamente pelo pacote obrigatório da classe. Confira os itens, sua localização e peso; os efeitos mecânicos são integrados aos campos correspondentes da ficha.';
+      else if (/idiomas/.test(sectionKey)) help = 'Os idiomas concedidos pela raça e pela classe são preenchidos automaticamente. Confira a lista e registre apenas idiomas adicionais que tenham sido adquiridos por uma escolha válida.';
       items.push({target,control,label,help});
     });
     return items;
