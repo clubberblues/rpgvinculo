@@ -17,7 +17,7 @@
     ['necromancy','Necromancia'],['transmutation','Transmutação']
   ];
   // Guia dinâmico: percorre os campos editáveis reais da ficha, sem etapas fixas.
-  let sb, user, step = 0, raceData = null, classData = null, skillCatalog = [], featCatalog = [], spellCatalog = [], monsterCatalog = [], selectedFamiliar = null, catalogMode = null;
+  let sb, user, step = 0, raceData = null, classData = null, skillCatalog = [], featCatalog = [], spellCatalog = [], monsterCatalog = [], selectedFamiliar = null, catalogMode = null, pendingFeatSelections = null;
   const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   const clean = node => (node && node.textContent || '').replace(/\s+/g, ' ').trim();
   // A ficha conserva alguns nomes tradicionais/abreviados; estes aliases ligam-nos ao catálogo SRD.
@@ -125,7 +125,8 @@
       '.mage-feat-selected-row input:first-child{border-color:#a77a34!important;background:rgba(255,246,218,.92)!important;font-weight:700}' +
       '.mage-feat-unavailable{opacity:.43;filter:grayscale(.72)}.mage-feat-unavailable .mage-catalog-choose{cursor:not-allowed;opacity:.6}' +
       '.mage-feat-counter{position:sticky;top:0;z-index:2;padding:9px 11px;margin-bottom:5px;background:rgba(250,242,222,.97);border:1px solid rgba(139,111,71,.65);color:#594126;font:700 12px Georgia,serif;text-align:center}' +
-      '.mage-guide-catalog-button{display:block;margin:12px auto 4px;padding:10px 18px;border:1px solid #8b6f47;border-radius:999px;background:linear-gradient(135deg,#74532d,#4a321b);color:#fff2d2;font:700 12px Cinzel,Georgia,serif;letter-spacing:.04em;cursor:pointer}.mage-guide-catalog-button:hover{filter:brightness(1.12);transform:translateY(-1px)}';
+      '.mage-guide-catalog-button{display:block;margin:12px auto 4px;padding:10px 18px;border:1px solid #8b6f47;border-radius:999px;background:linear-gradient(135deg,#74532d,#4a321b);color:#fff2d2;font:700 12px Cinzel,Georgia,serif;letter-spacing:.04em;cursor:pointer}.mage-guide-catalog-button:hover{filter:brightness(1.12);transform:translateY(-1px)}' +
+      '.mage-feat-selected-row{border:1px solid #b58a42!important;background:linear-gradient(90deg,rgba(211,174,103,.24),rgba(255,248,226,.55));box-shadow:0 0 0 2px rgba(181,138,66,.22),0 0 14px rgba(181,138,66,.22)}.mage-feat-save-wrap{display:flex;justify-content:flex-end;position:sticky;bottom:0;padding:9px 2px 3px;background:linear-gradient(0deg,#d7c093 75%,rgba(215,192,147,0))}.mage-feat-save{padding:6px 12px;border:1px solid rgba(109,79,42,.55);border-radius:14px;background:rgba(89,65,38,.9);color:#fff2d2;font:600 10px Georgia,serif;letter-spacing:.03em;cursor:pointer;opacity:.9}.mage-feat-save:hover{opacity:1;filter:brightness(1.08)}';
     document.head.appendChild(style);
     const sheet = document.querySelector('.ficha');
     if (!sheet) throw new Error('O modelo original da ficha não foi encontrado.');
@@ -1155,7 +1156,7 @@
     let items = [];
     if (catalogMode === 'feats') {
       items = featCatalog.filter(item=>item.id!=='srd35_feat_scribe_scroll' && normalize((item.nome_pt||item.nome)+' '+featPrerequisite(item)).includes(search));
-      const chosenCount = selectedGeneralFeatCount();
+      const chosenCount = (pendingFeatSelections || []).length;
       const slots = allowedGeneralFeatSlots();
       const info = createNode('div','mage-feat-counter',(raceData?.nome || 'Raça')+' · '+(classData?.nome || 'Classe')+' 1º nível — escolhas: '+chosenCount+' de '+slots+'. '+(raceId === 'humano' ? 'Humano recebe 1 talento normal + 1 adicional racial.' : '1 talento por nível de personagem.')+' '+(classData?.class_key === 'wizard' ? 'Mago recebe Escrever Pergaminho como talento bônus de classe.' : ''));
       list.appendChild(info);
@@ -1163,14 +1164,25 @@
         const name = feat.nome_pt || feat.nome;
         const description = feat.descricao_pt || feat.descricao || '';
         const eligibility = featEligibility(feat);
-        const meta = eligibility.eligible ? 'Pré-requisito: '+featPrerequisite(feat)+' · Elegível' : 'Não elegível: '+eligibility.reasons.join(' ');
+        const selected = (pendingFeatSelections || []).includes(feat.id);
+        const meta = eligibility.eligible ? 'Pré-requisito: '+featPrerequisite(feat)+' · '+(selected ? 'Selecionado' : 'Elegível') : 'Não elegível: '+eligibility.reasons.join(' ');
         const row = catalogRow(name,meta,'fa-feather-pointed',()=>chooseFeat(feat),()=>openLore(name,meta,description));
         row.classList.toggle('mage-feat-unavailable',!eligibility.eligible);
+        row.classList.toggle('mage-feat-selected-row',selected);
         const choose = row.querySelector('.mage-catalog-choose');
-        choose.disabled = !eligibility.eligible || chosenCount >= slots;
-        choose.title = eligibility.eligible ? (chosenCount >= slots ? 'Todas as escolhas já foram preenchidas.' : 'Selecionar talento') : eligibility.reasons.join(' ');
+        choose.textContent = selected ? 'DESMARCAR' : 'ESCOLHER';
+        choose.disabled = !eligibility.eligible || (!selected && chosenCount >= slots);
+        choose.title = !eligibility.eligible ? eligibility.reasons.join(' ') : selected ? 'Remover esta seleção' : (chosenCount >= slots ? 'Remova uma escolha para selecionar outra.' : 'Selecionar talento');
         list.appendChild(row);
       });
+      if (chosenCount === slots) {
+        const saveWrap = createNode('div','mage-feat-save-wrap');
+        const saveButton = createNode('button','mage-feat-save','Salvar escolhas');
+        saveButton.type = 'button';
+        saveButton.addEventListener('click',savePendingFeatSelections);
+        saveWrap.appendChild(saveButton);
+        list.appendChild(saveWrap);
+      }
     } else if (catalogMode === 'spells') {
       const level = Number(document.getElementById('mage-catalog-level')?.value ?? (isCreate ? 1 : 0));
       items = allowedSpells(level).filter(item=>normalize((item.nome_pt||item.nome)+' '+item.escola+' '+item.nivel).includes(search));
@@ -1212,6 +1224,7 @@
     const tools = document.querySelector('#mage-catalog-overlay .mage-catalog-tools');
     const search = document.getElementById('mage-catalog-search');
     title.textContent = mode === 'feats' ? 'Talentos' : mode === 'spells' ? 'Grimório' : 'Familiar';
+    if (mode === 'feats') initializePendingFeatSelections();
     tools.querySelectorAll('#mage-catalog-level').forEach(node=>node.remove());
     if (mode === 'spells') {
       const level = createNode('select');
@@ -1251,30 +1264,72 @@
     rows[rows.length-1].insertAdjacentElement('afterend',row);
     return row.querySelectorAll('input');
   }
-  function chooseFeat(feat) {
-    const p = panel('Talentos');
-    const eligibility = featEligibility(feat);
-    if (!eligibility.eligible) { status('Não é possível selecionar '+(feat.nome_pt||feat.nome)+': '+eligibility.reasons.join(' '),true); return; }
-    const rows = featSelectionRows();
-    const name = feat.nome_pt || feat.nome;
-    const already = rows.some(row=>normalize(row.querySelector('input')?.value)===normalize(name));
-    if (already) { status('Este talento já está registrado na ficha.'); closeCatalog(); return; }
-    if (selectedGeneralFeatCount() >= allowedGeneralFeatSlots()) {
-      status('Todas as escolhas de talento permitidas para esta raça já foram preenchidas.',true);
-      renderCatalogList();
+  function initializePendingFeatSelections() {
+    if (pendingFeatSelections !== null) return;
+    const map = featMap();
+    pendingFeatSelections = featSelectionRows().map(row => {
+      const input = row.querySelector('input');
+      const feat = map.get(normalize(input?.value || ''));
+      return feat && feat.id !== 'srd35_feat_scribe_scroll' ? feat.id : null;
+    }).filter(Boolean).slice(0,allowedGeneralFeatSlots());
+  }
+  function savePendingFeatSelections() {
+    const slots = allowedGeneralFeatSlots();
+    if (!pendingFeatSelections || pendingFeatSelections.length !== slots) {
+      status('Selecione exatamente '+slots+' talento(s) antes de salvar.',true);
       return;
     }
-    let row = rows.find(item=>!String(item.querySelector('input')?.value||'').trim());
-    if (!row) { appendFeatRow(); row = featSelectionRows().at(-1); }
-    const inputs = row.querySelectorAll('input');
-    inputs[0].value = name;
-    inputs[1].value = '';
-    inputs[0].dataset.featId = feat.id;
-    inputs[0].dispatchEvent(new Event('input',{bubbles:true}));
+    const map = new Map(featCatalog.map(feat=>[feat.id,feat]));
+    const selected = pendingFeatSelections.map(id=>map.get(id)).filter(Boolean);
+    if (selected.length !== slots) {
+      status('Uma das escolhas não está mais disponível no catálogo. Revise a seleção.',true);
+      return;
+    }
+    for (const feat of selected) {
+      const eligibility = featEligibility(feat);
+      if (!eligibility.eligible) {
+        status('Não é possível salvar '+(feat.nome_pt||feat.nome)+': '+eligibility.reasons.join(' '),true);
+        return;
+      }
+    }
+    const rows = featSelectionRows();
+    rows.forEach(row=>{
+      const input = row.querySelector('input');
+      if (input && !input.readOnly && normalize(input.value) !== 'escrever pergaminho') {
+        row.querySelectorAll('input').forEach(field=>{field.value='';delete field.dataset.featId;});
+      }
+    });
+    selected.forEach((feat,index)=>{
+      let row = featSelectionRows().find(item=>!String(item.querySelector('input')?.value||'').trim());
+      if (!row) { appendFeatRow(); row = featSelectionRows().at(-1); }
+      const inputs = row.querySelectorAll('input');
+      inputs[0].value = feat.nome_pt || feat.nome;
+      inputs[1].value = '';
+      inputs[0].dataset.featId = feat.id;
+      inputs[0].dispatchEvent(new Event('input',{bubbles:true}));
+    });
     updateFeatSelectionRows();
-    renderCatalogList();
+    pendingFeatSelections = selected.map(feat=>feat.id);
     closeCatalog();
-    status('Talento adicionado à ficha: '+name+'.');
+    status('Escolhas de talentos salvas na ficha.');
+  }
+  function chooseFeat(feat) {
+    const eligibility = featEligibility(feat);
+    if (!eligibility.eligible) { status('Não é possível selecionar '+(feat.nome_pt||feat.nome)+': '+eligibility.reasons.join(' '),true); return; }
+    initializePendingFeatSelections();
+    const selectedIndex = pendingFeatSelections.indexOf(feat.id);
+    if (selectedIndex >= 0) {
+      pendingFeatSelections.splice(selectedIndex,1);
+      status('Talento desmarcado. Escolha outro para completar a seleção.');
+    } else {
+      if (pendingFeatSelections.length >= allowedGeneralFeatSlots()) {
+        status('Remova um talento selecionado antes de escolher outro.',true);
+        return;
+      }
+      pendingFeatSelections.push(feat.id);
+      status('Talento selecionado provisoriamente: '+(feat.nome_pt||feat.nome)+'.');
+    }
+    renderCatalogList();
   }
   function chooseSpell(spell) {
     const circle = Number(spell.circulo);
