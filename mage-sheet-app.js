@@ -443,6 +443,8 @@
       const feat = map.get(normalize(name));
       if (!feat) throw new Error('O talento "' + name + '" não foi encontrado no catálogo SRD. Use o nome exibido nas sugestões.');
       if (feat.id === 'srd35_feat_scribe_scroll' && inputs[i].readOnly) continue;
+      const eligibility = featEligibility(feat);
+      if (!eligibility.eligible) throw new Error('O talento "' + name + '" não atende aos pré-requisitos: ' + eligibility.reasons.join(' '));
       const entry = { id: feat.id };
       if (feat.exige_parametro) {
         const parameter = window.prompt('O talento "' + (feat.nome_pt || feat.nome) + '" exige uma escolha. Informe o parâmetro:');
@@ -1035,7 +1037,8 @@
       if (req[key] !== undefined && Number(scores[stat] || 0) < Number(req[key])) reasons.push(stat+' '+req[key]+' necessário (atual: '+(scores[stat] ?? '—')+').');
     });
     const level = 1;
-    const bab = classData?.bab_bom ? 1 : 0;
+    const progression = String(classData?.bab_progression || '').toLowerCase();
+    const bab = progression === 'poor' ? Math.floor(level / 2) : progression === 'medium' ? Math.floor(level * 0.75) : progression === 'good' ? level : (classData?.bab_bom ? level : 0);
     if (req.bab_min !== undefined && bab < Number(req.bab_min)) reasons.push('BBA +'+req.bab_min+' necessário (atual: +'+bab+').');
     if (req.level_min !== undefined && level < Number(req.level_min)) reasons.push('Nível '+req.level_min+' necessário.');
     if (req.character_level_min !== undefined && level < Number(req.character_level_min)) reasons.push('Nível de personagem '+req.character_level_min+' necessário.');
@@ -1154,7 +1157,7 @@
       items = featCatalog.filter(item=>item.id!=='srd35_feat_scribe_scroll' && normalize((item.nome_pt||item.nome)+' '+featPrerequisite(item)).includes(search));
       const chosenCount = selectedGeneralFeatCount();
       const slots = allowedGeneralFeatSlots();
-      const info = createNode('div','mage-feat-counter','Escolhas disponíveis: '+chosenCount+' de '+slots+'. '+(raceId === 'humano' ? 'Humano: talento normal + talento adicional racial.' : 'Talento concedido pelo nível 1.'));
+      const info = createNode('div','mage-feat-counter',(raceData?.nome || 'Raça')+' · '+(classData?.nome || 'Classe')+' 1º nível — escolhas: '+chosenCount+' de '+slots+'. '+(raceId === 'humano' ? 'Humano recebe 1 talento normal + 1 adicional racial.' : '1 talento por nível de personagem.')+' '+(classData?.class_key === 'wizard' ? 'Mago recebe Escrever Pergaminho como talento bônus de classe.' : ''));
       list.appendChild(info);
       items.forEach(feat=>{
         const name = feat.nome_pt || feat.nome;
