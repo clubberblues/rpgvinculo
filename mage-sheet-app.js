@@ -1125,7 +1125,8 @@
       seen.add(target);
       const labelNode = target.querySelector('label,td:first-child,th:first-child,.attr-name,.resist-name,.panel-title');
       const label = clean(labelNode) || 'esta informação';
-      const sectionKey = normalize(sectionOf(control));
+      const sectionPanel = control.closest('.panel');
+      const sectionKey = normalize(sectionPanel ? clean(sectionPanel.querySelector('.panel-title')) : 'identidade');
       let help = 'Preencha ou confira esta informação. Ela ficará registrada neste espaço da ficha para consulta durante a campanha.';
       if (/cabecalho|identidade/.test(sectionKey)) help = 'Aqui ficam os dados que identificam seu aventureiro. O nome será exibido na ficha e nas telas da campanha.';
       else if (/atributos/.test(sectionKey)) help = 'Os atributos representam as capacidades do personagem. Eles influenciam testes, perícias, combate e outras características. Os ajustes raciais são considerados pelo sistema.';
