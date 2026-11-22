@@ -603,11 +603,11 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
           <div class="grimorio-vazio"><span>✦</span><p>Selecione uma classe para ver suas regras, perícias e progressão.</p></div>
         </aside>
       </div>
-      <div class="grimorio-passo-acoes">
-        <button type="button" class="btn-iniciar-jornada" id="btn-iniciar-jornada" disabled>Prosseguir para criar a ficha →</button>
-      </div>
     </div>
-    <div class="grimorio-footer"><p id="grimorio-status" class="grimorio-status" role="status" aria-live="polite"></p></div>
+    <div class="grimorio-footer">
+      <p id="grimorio-status" class="grimorio-status" role="status" aria-live="polite"></p>
+      <button type="button" class="btn-iniciar-jornada" id="btn-iniciar-jornada" hidden disabled>Prosseguir para criar a ficha →</button>
+    </div>
   </div>
 </div>
 
@@ -1157,8 +1157,8 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
     card.addEventListener('click',function(){
       var collection=tipo==='raca'?listaRacasGrimorio:listaClassesGrimorio;
       collection.querySelectorAll('.card-opcao').forEach(function(el){el.classList.toggle('selecionado',el===card);});
-      if(tipo==='raca'){racaSelecionadaGrimorio=item;renderBriefingGrimorio(item,'raca',document.getElementById('grimorio-raca-detalhe'));botaoProsseguirClasse.disabled=false;definirStatusGrimorio('Confira o briefing e confirme a raça para avançar.');}
-      else{classeSelecionadaGrimorio=item;renderBriefingGrimorio(item,'classe',document.getElementById('grimorio-classe-detalhe'));botaoIniciarJornada.disabled=!racaSelecionadaGrimorio;definirStatusGrimorio('Confira o briefing da classe; a ficha ainda não foi criada.');}
+      if(tipo==='raca'){racaSelecionadaGrimorio=item;renderBriefingGrimorio(item,'raca',document.getElementById('grimorio-raca-detalhe'));botaoProsseguirClasse.disabled=false;botaoIniciarJornada.hidden=true;definirStatusGrimorio('Confira o briefing e confirme a raça para avançar.');}
+      else{classeSelecionadaGrimorio=item;renderBriefingGrimorio(item,'classe',document.getElementById('grimorio-classe-detalhe'));botaoIniciarJornada.disabled=!racaSelecionadaGrimorio;botaoIniciarJornada.hidden=false;definirStatusGrimorio('Classe selecionada. Prossiga para criar a ficha.');}
     });
     return card;
   }
@@ -1179,6 +1179,7 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
     racaSelecionadaGrimorio = null;
     classeSelecionadaGrimorio = null;
     botaoIniciarJornada.disabled = true;
+    botaoIniciarJornada.hidden = true;
     botaoProsseguirClasse.disabled = true;
     passoRacasGrimorio.hidden = false;
     passoClassesGrimorio.hidden = true;
@@ -1208,14 +1209,23 @@ body{background:#10150f;color:#e8eadc}.bg-image{opacity:.055;filter:grayscale(.8
   }
 
   function iniciarJornadaDnd35() {
-    if (!racaSelecionadaGrimorio || !classeSelecionadaGrimorio) return;
+    if (!racaSelecionadaGrimorio || !classeSelecionadaGrimorio) {
+      definirStatusGrimorio('Selecione uma raça e uma classe antes de prosseguir.', true);
+      return;
+    }
     var nomeClasse = String(classeSelecionadaGrimorio.nome || classeSelecionadaGrimorio.class_key || classeSelecionadaGrimorio.id).toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');
     if (!nomeClasse.includes('mago') && !nomeClasse.includes('wizard')) {
       alert('A nova ficha original está sendo implementada primeiro para Mago. As demais classes serão migradas depois.');
       return;
     }
-    var params = new URLSearchParams({ mode: 'criar', ruleset: 'dnd35', raca: String(racaSelecionadaGrimorio.id), classe: String(classeSelecionadaGrimorio.id) });
-    window.location.assign(new URL('ficha-original.html?v=20261121-2055&' + params.toString(), window.location.href).href);
+    var destino = new URL('ficha-original.html', window.location.href);
+    destino.searchParams.set('v', '20261121-2055');
+    destino.searchParams.set('mode', 'criar');
+    destino.searchParams.set('ruleset', 'dnd35');
+    destino.searchParams.set('raca', String(racaSelecionadaGrimorio.id));
+    destino.searchParams.set('classe', String(classeSelecionadaGrimorio.id));
+    definirStatusGrimorio('Abrindo a ficha de ' + (classeSelecionadaGrimorio.nome || 'classe selecionada') + '…');
+    window.location.assign(destino.href);
   }
 
   async function init() {
@@ -1894,7 +1904,7 @@ function uploadCapaMesa(mesaId) {
   document.getElementById('btn-fechar-grimorio').addEventListener('click', fecharGrimorioCriacao);
   botaoProsseguirClasse.addEventListener('click', function() {
     if(!racaSelecionadaGrimorio)return;
-    passoRacasGrimorio.hidden=true;passoClassesGrimorio.hidden=false;botaoIniciarJornada.disabled=!classeSelecionadaGrimorio;
+    passoRacasGrimorio.hidden=true;passoClassesGrimorio.hidden=false;botaoIniciarJornada.hidden=!classeSelecionadaGrimorio;botaoIniciarJornada.disabled=!classeSelecionadaGrimorio;
     document.getElementById('grimorio-indicador-raca').classList.remove('atual');
     document.getElementById('grimorio-indicador-classe').classList.add('atual');
     document.getElementById('grimorio-raca-escolhida').textContent='Raça selecionada: '+racaSelecionadaGrimorio.nome;
@@ -1902,7 +1912,7 @@ function uploadCapaMesa(mesaId) {
   });
   document.getElementById('btn-voltar-racas').addEventListener('click', function() {
     passoClassesGrimorio.hidden=true;passoRacasGrimorio.hidden=false;classeSelecionadaGrimorio=null;
-    botaoIniciarJornada.disabled=true;
+    botaoIniciarJornada.hidden=true;botaoIniciarJornada.disabled=true;
     document.getElementById('grimorio-indicador-raca').classList.add('atual');
     document.getElementById('grimorio-indicador-classe').classList.remove('atual');
     definirStatusGrimorio('Você pode trocar a raça ou rever suas características.');
