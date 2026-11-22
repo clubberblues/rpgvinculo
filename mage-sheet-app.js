@@ -516,6 +516,84 @@
     root.addEventListener('input',persist);
     root.addEventListener('change',persist);
   }
+  const alignmentOptions = [
+    'Leal e Bom','Neutro e Bom','Caótico e Bom',
+    'Leal e Neutro','Neutro','Caótico e Neutro',
+    'Leal e Mau','Neutro e Mau','Caótico e Mau'
+  ];
+  function replaceIdentityInput(labelText, options) {
+    const group = Array.from(document.querySelectorAll('.input-group')).find(el => normalize(clean(el.querySelector('label'))) === normalize(labelText));
+    const old = group && group.querySelector('input,select');
+    if (!old) return null;
+    if (old.tagName === 'SELECT') return old;
+    const select = document.createElement('select');
+    select.className = old.className;
+    select.innerHTML = '<option value="">Selecione...</option>' + options.map(value => '<option value="' + value + '">' + value + '</option>').join('');
+    if (old.value && options.includes(old.value)) select.value = old.value;
+    old.replaceWith(select);
+    return select;
+  }
+  function rollDice(count, sides) {
+    let total = 0;
+    for (let i = 0; i < count; i++) total += 1 + Math.floor(Math.random() * sides);
+    return total;
+  }
+  const physicalTables = {
+    'anao': { male:[45,130,4,6], female:[43,100,4,6] },
+    'elfo': { male:[53,85,6,6], female:[53,80,6,6] },
+    'gnomo': { male:[36,40,4,1], female:[34,35,4,1] },
+    'meio-elfo': { male:[55,100,8,8], female:[53,80,8,8] },
+    'meio-orc': { male:[58,150,12,12], female:[53,110,12,12] },
+    'halfling': { male:[32,30,4,1], female:[30,25,4,1] },
+    'humano': { male:[58,120,10,8], female:[53,85,10,8] }
+  };
+  function setupIdentityChoices() {
+    const alignment = replaceIdentityInput('Tendência', alignmentOptions);
+    const sex = replaceIdentityInput('Sexo', ['Masculino','Feminino','Outro','Prefiro não informar']);
+    const identityLine = document.querySelector('.ficha .input-line');
+    if (!identityLine || document.getElementById('generate-racial-profile')) return;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.id = 'generate-racial-profile';
+    button.textContent = 'Gerar dados pela raça';
+    button.style.cssText = 'margin:6px 0 10px auto;display:block;padding:7px 12px;border:1px solid #9b8057;border-radius:5px;background:rgba(155,128,87,.12);color:var(--tinta-escura);font:700 10px Cinzel,serif;cursor:pointer;';
+    button.title = 'Gera tamanho, idade, altura e peso conforme as tabelas de D&D 3.5. Você pode editar qualquer campo depois.';
+    const targetLine = Array.from(document.querySelectorAll('.ficha .input-line')).find(line => Array.from(line.querySelectorAll('label')).some(label => normalize(clean(label)) === 'peso'));
+    if (targetLine) targetLine.insertAdjacentElement('afterend', button);
+    button.addEventListener('click', () => {
+      if (!raceData) return;
+      const sexValue = normalize(sex && sex.value);
+      if (!['masculino','feminino'].includes(sexValue)) {
+        status('Escolha Masculino ou Feminino para gerar altura e peso. Você ainda pode preencher esses campos manualmente.');
+        if (sex) sex.focus();
+        return;
+      }
+      const table = physicalTables[raceData.id] && physicalTables[raceData.id][sexValue === 'masculino' ? 'male' : 'female'];
+      if (!table) {
+        status('Não há tabela racial cadastrada para essa raça. Os campos continuam livres para preenchimento manual.');
+        return;
+      }
+      const [baseHeightIn, baseWeightLb, heightDice, weightDice] = table;
+      const heightExtra = rollDice(2, heightDice);
+      const weightExtra = weightDice === 1 ? heightExtra : heightExtra * rollDice(2, weightDice);
+      const heightCm = Math.round((baseHeightIn + heightExtra) * 2.54);
+      const weightKg = Math.round((baseWeightLb + weightExtra) * 0.45359237 * 10) / 10;
+      const ageDice = ({'anao':7,'elfo':10,'gnomo':9,'meio-elfo':3,'meio-orc':2,'halfling':4,'humano':2})[raceData.id] || 2;
+      const adulthood = ({'anao':40,'elfo':110,'gnomo':40,'meio-elfo':20,'meio-orc':14,'halfling':20,'humano':15})[raceData.id] || 15;
+      const age = adulthood + rollDice(ageDice, 6);
+      setGroupValue('Tamanho', raceData.tamanho || '');
+      setGroupValue('Idade', String(age));
+      setGroupValue('Altura', String(heightCm) + ' cm');
+      setGroupValue('Peso', String(weightKg).replace('.', ',') + ' kg');
+      status('Dados raciais gerados! Você pode editar tamanho, idade, altura e peso à vontade.');
+      const root = document.querySelector('.ficha');
+      if (root) root.dispatchEvent(new Event('change', {bubbles:true}));
+    });
+    [alignment,sex].forEach(control => control && control.addEventListener('change', () => {
+      const root = document.querySelector('.ficha');
+      if (root) root.dispatchEvent(new Event('change', {bubbles:true}));
+    }));
+  }
   function applyRacePresentation(race, profile) {
     setGroupValue('Classe','Mago');
     setGroupValue('Raça',race.nome);
@@ -1128,8 +1206,18 @@
       const sectionPanel = control.closest('.panel');
       const sectionKey = normalize(sectionPanel ? clean(sectionPanel.querySelector('.panel-title')) : 'identidade');
       let help = 'Preencha ou confira esta informação. Ela ficará registrada neste espaço da ficha para consulta durante a campanha.';
-      if (/cabecalho|identidade/.test(sectionKey)) help = 'Aqui ficam os dados que identificam seu aventureiro. O nome será exibido na ficha e nas telas da campanha.';
-      else if (/atributos/.test(sectionKey)) help = 'Os atributos representam as capacidades do personagem. Eles influenciam testes, perícias, combate e outras características. Os ajustes raciais são considerados pelo sistema.';
+      const attributeHelp = {
+        'for': 'FORÇA é o braço forte do personagem: ajuda a acertar golpes corpo a corpo, aumenta o dano e conta para tarefas físicas como escalar, saltar e arrombar. Também influencia quanto equipamento você consegue carregar.',
+        'des': 'DESTREZA é agilidade, reflexo e coordenação. Entra na Iniciativa, na CA (quando você pode se esquivar), nos Reflexos e em perícias como Furtividade, Acrobacia e Abrir Fechaduras. Armaduras pesadas podem limitar parte desse benefício.',
+        'con': 'CONSTITUIÇÃO é fôlego e resistência. Ela aumenta seus Pontos de Vida a cada nível e ajuda nos testes de Fortitude, usados para resistir a venenos, doenças e outros perigos que castigam o corpo.',
+        'int': 'INTELIGÊNCIA é raciocínio, memória e estudo. Ela define quantos pontos de perícia você recebe e ajuda em perícias de conhecimento e investigação. Para o Mago, também é o atributo-chave das magias: influencia o que ele pode conjurar e a dificuldade para resistir a elas.',
+        'sab': 'SABEDORIA é percepção, instinto e força de vontade. Ajuda na resistência de Vontade e em perícias como Ouvir, Observar, Sentir Motivação e Sobrevivência. É o atributo-chave de conjuradores como Clérigos e Druidas.',
+        'car': 'CARISMA é presença, confiança e força de personalidade. Ajuda em Blefar, Diplomacia, Intimidar e Atuação. Também é o atributo-chave de conjuradores como Feiticeiros e Bardos.'
+      };
+      const attributeKey = normalize(label).replace(/[^a-z]/g,'');
+      if (/atributos/.test(sectionKey) && attributeHelp[attributeKey]) help = attributeHelp[attributeKey];
+      if (/cabecalho|identidade/.test(sectionKey)) help = 'Aqui ficam os dados que dão cara ao seu aventureiro: nome, raça, tendência e características físicas. Escolha o que quiser; os dados gerados pela raça são sugestões e podem ser alterados.';
+      else if (/atributos/.test(sectionKey)) help = attributeHelp[attributeKey] || 'Os atributos são as seis capacidades básicas do personagem. O valor define o modificador que entra em testes, perícias, combate e resistências. Os ajustes raciais são considerados pelo sistema.';
       else if (/pericias/.test(sectionKey)) help = 'As perícias mostram aquilo em que seu personagem foi treinado. O atributo relacionado e os benefícios de classe ou raça entram no cálculo automaticamente.';
       else if (/talentos/.test(sectionKey)) help = 'Escolha uma habilidade especial para seu personagem. O catálogo apresenta os requisitos e os efeitos de cada talento.';
       else if (/grimorio|magia/.test(sectionKey)) help = 'Aqui você registra as magias do Grimório. A preparação acontece durante a campanha, conforme a narrativa.';
