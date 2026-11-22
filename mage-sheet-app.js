@@ -1198,7 +1198,7 @@
       if (control.closest('[hidden],.mage-catalog-overlay,.mage-lore-overlay')) return;
       // Resistências, BBA e Agarrar são campos derivados; Resistência à Magia só se aplica quando houver uma fonte específica.
       const panelTitle = normalize(clean(control.closest('.panel')?.querySelector('.panel-title')));
-      if (control.closest('.resist-row') || /resistencias/.test(panelTitle) || /base e agarrar/.test(panelTitle) || /iniciativa/.test(panelTitle) || /deslocamento/.test(panelTitle)) return;
+      if (control.closest('.resist-row') || /resistencias/.test(panelTitle) || /base e agarrar/.test(panelTitle) || /iniciativa/.test(panelTitle) || /deslocamento/.test(panelTitle) || /equipamentos|ataques|armadura|ca/.test(panelTitle)) return;
       const target = guideTargetFor(control);
       if (!target || seen.has(target)) return;
       seen.add(target);
@@ -1248,7 +1248,7 @@
       } else if (/armadura|ca/.test(sectionKey)) {
         const defenseHelp = {'total':'A Classe de Armadura total é calculada automaticamente com base em 10, armadura, escudo, Destreza, tamanho e demais bônus aplicáveis.','arm':'O bônus de armadura vem da proteção equipada no pacote inicial da classe.','esc':'O bônus de escudo é aplicado quando houver um escudo equipado.','des':'O modificador de Destreza entra na CA respeitando o limite máximo da armadura.','tam':'O modificador de tamanho é determinado pela raça e aplicado automaticamente.','nat':'Bônus de armadura natural só entram quando uma característica ou efeito os conceder.','defl':'Bônus de deflexão entram quando concedidos por habilidade, magia ou item.','out':'Use este campo apenas para modificadores de CA que não tenham categoria própria.'};
         help = defenseHelp[fieldKey] || 'A proteção inicial será fornecida pelo pacote da classe. A CA e seus componentes devem refletir automaticamente os equipamentos e modificadores aplicáveis.';
-      } else if (/equipamentos/.test(sectionKey)) help = 'Os equipamentos iniciais são adicionados automaticamente pelo pacote obrigatório da classe. Confira os itens, sua localização e peso; os efeitos mecânicos são integrados aos campos correspondentes da ficha.';
+      }
       else if (/idiomas/.test(sectionKey)) help = 'Os idiomas concedidos pela raça e pela classe são preenchidos automaticamente. Confira a lista e registre apenas idiomas adicionais que tenham sido adquiridos por uma escolha válida.';
       items.push({target,control,label,help});
     });
