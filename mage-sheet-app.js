@@ -1044,7 +1044,6 @@
     const list = block.querySelector('.spell-list');
     const name = spell.nome_pt || spell.nome;
     const inputs = Array.from(list.querySelectorAll('input[type="text"]'));
-    if (inputs.some(input=>normalize(input.value)===normalize(name))) { status('Esta magia já está registrada neste círculo.'); closeCatalog(); return; }
     let target = inputs.find(input=>!String(input.value||'').trim() && !input.disabled);
     if (!target) {
       const template = list.querySelector('.spell-row');
