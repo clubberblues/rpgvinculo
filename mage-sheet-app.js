@@ -670,8 +670,10 @@
       const cols = row.querySelectorAll('.attr-col');
       const value = cols[0]?.querySelector('input');
       const mod = cols[1]?.querySelector('input');
+      const racial = cols[3]?.querySelector('input');
       if (value) value.value = String(final[stat]);
       if (mod) mod.value = String(modifiers[stat]);
+      if (racial) { racial.value = String(Number(adjustments[stat] || 0)); racial.readOnly = true; racial.title = 'Ajuste racial aplicado automaticamente'; }
     });
     const conMod = modifiers.CON, dexMod = modifiers.DES, wisMod = modifiers.SAB;
     const intMod = modifiers.INT;
