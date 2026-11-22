@@ -1173,7 +1173,7 @@
 
   async function loadCatalogs() {
     const results = await Promise.all([
-      sb.from('srd_skills').select('id,nome,atributo,treinada_apenas'),
+      sb.from('srd_skills').select('id,nome,atributo,treinada_apenas,penalidade_armadura,descricao,dados_tecnicos').neq('source_status','excluded'),
       sb.from('srd_feats').select('id,nome,nome_pt,descricao,descricao_pt,exige_parametro,requisitos,source_status'),
       sb.from('srd_spells').select('id,nome,nome_pt,descricao,descricao_pt,circulo,nivel,escola,alcance,alvo,area,duracao,componentes,classes,source_status').contains('classes',['wizard'])
     ]);
@@ -1231,7 +1231,21 @@
         };
         help = identityHelp[fieldKey] || 'Esta etapa reúne informações de identidade e história do aventureiro. Confira o dado apresentado e ajuste quando necessário.';
       } else if (/atributos/.test(sectionKey)) help = attributeHelp[attributeKey] || 'Os atributos são as seis capacidades básicas do personagem. Seus modificadores alimentam automaticamente perícias, combate e resistências.';
-      else if (/pericias/.test(sectionKey)) help = 'Aqui você distribui os pontos de perícia concedidos pela classe. O sistema calcula os modificadores de atributo e os bônus aplicáveis; escolha onde seu personagem foi treinado.';
+      else if (/pericias/.test(sectionKey)) {
+        const skillName = normalize(control.value || label);
+        const skill = skillCatalog.find(entry => {
+          const name = normalize(entry.nome);
+          return name === skillName || (name && skillName.includes(name)) || (name && name.includes(skillName));
+        });
+        if (skill && skill.descricao) {
+          const abilityNames = {FOR:'Força',DES:'Destreza',CON:'Constituição',INT:'Inteligência',SAB:'Sabedoria',CAR:'Carisma'};
+          const ability = abilityNames[String(skill.atributo || '').toUpperCase()] || skill.atributo || 'atributo';
+          const flags = [];
+          if (skill.treinada_apenas) flags.push('Só pode ser usada se você tiver treinamento.');
+          if (skill.penalidade_armadura) flags.push('A armadura pode atrapalhar esta perícia.');
+          help = skill.descricao + ' O atributo relacionado é ' + ability + '.' + (flags.length ? ' ' + flags.join(' ') : '');
+        } else help = 'Escolha onde investir seus pontos de perícia. Cada perícia representa algo que seu personagem sabe fazer; o atributo relacionado e os bônus aplicáveis entram no cálculo automaticamente.';
+      }
       else if (/talentos/.test(sectionKey)) help = 'Nesta etapa você escolhe o talento concedido ao personagem. Confira os pré-requisitos e a descrição para selecionar uma opção válida.';
       else if (/grimorio|magia/.test(sectionKey)) help = 'Aqui você escolhe as magias que farão parte do Grimório. A preparação e a remoção de magias acontecem durante a campanha, conforme a narrativa.';
       else if (/ataques/.test(sectionKey)) {
