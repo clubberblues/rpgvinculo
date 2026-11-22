@@ -539,13 +539,13 @@
     return total;
   }
   const physicalTables = {
-    'anao': { male:[45,130,4,6], female:[43,100,4,6] },
-    'elfo': { male:[53,85,6,6], female:[53,80,6,6] },
-    'gnomo': { male:[36,40,4,1], female:[34,35,4,1] },
-    'meio-elfo': { male:[55,100,8,8], female:[53,80,8,8] },
-    'meio-orc': { male:[58,150,12,12], female:[53,110,12,12] },
-    'halfling': { male:[32,30,4,1], female:[30,25,4,1] },
-    'humano': { male:[58,120,10,8], female:[53,85,10,8] }
+    'anao': { male:[45,130,4,2,6], female:[43,100,4,2,6] },
+    'elfo': { male:[53,85,6,1,6], female:[53,80,6,1,6] },
+    'gnomo': { male:[36,40,4,0,1], female:[34,35,4,0,1] },
+    'meio-elfo': { male:[55,100,8,2,4], female:[53,80,8,2,4] },
+    'meio-orc': { male:[58,150,12,2,6], female:[53,110,12,2,6] },
+    'halfling': { male:[32,30,4,0,1], female:[30,25,4,0,1] },
+    'humano': { male:[58,120,10,2,4], female:[53,85,10,2,4] }
   };
   function setupIdentityChoices() {
     const alignment = replaceIdentityInput('Tendência', alignmentOptions);
@@ -573,9 +573,9 @@
         status('Não há tabela racial cadastrada para essa raça. Os campos continuam livres para preenchimento manual.');
         return;
       }
-      const [baseHeightIn, baseWeightLb, heightDice, weightDice] = table;
-      const heightExtra = rollDice(2, heightDice);
-      const weightExtra = weightDice === 1 ? heightExtra : heightExtra * rollDice(2, weightDice);
+      const [baseHeightIn, baseWeightLb, heightSides, weightCount, weightSides] = table;
+      const heightExtra = rollDice(2, heightSides);
+      const weightExtra = weightCount === 0 ? heightExtra : heightExtra * rollDice(weightCount, weightSides);
       const heightCm = Math.round((baseHeightIn + heightExtra) * 2.54);
       const weightKg = Math.round((baseWeightLb + weightExtra) * 0.45359237 * 10) / 10;
       const ageDice = ({'anao':7,'elfo':10,'gnomo':9,'meio-elfo':3,'meio-orc':2,'halfling':4,'humano':2})[raceData.id] || 2;
