@@ -1386,6 +1386,7 @@
       await loadCatalogs();
       core.applyIdentity({ raceName: raceData.nome, playerName: profile.data?.username || user.email?.split('@')[0] || '' });
       applyRacePresentation(raceData,profile.data);
+      setupIdentityChoices();
       showFamiliarStatus({wizard_familiar_available:true,wizard_familiar_choice:'pending'});
       setupWizardChoiceFields(null);
       renderSpellInputs();
