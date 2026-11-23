@@ -136,6 +136,14 @@
       '@media(max-width:650px){.mage-catalog-backdrop{padding:10px}.mage-catalog-shell{padding:14px;max-height:92vh}.mage-catalog-row{grid-template-columns:42px minmax(0,1fr) 44px;gap:8px;padding:7px}.mage-catalog-mark{width:38px;height:38px}.mage-catalog-name{font-size:14px}.mage-lore-backdrop{padding:5vh 6vw}.mage-lore-copy{font-size:16px}}';
 
     style.textContent += '\n' +
+      '.mage-school-card,.mage-prep-row{border:1px solid rgba(139,111,71,.72);border-radius:8px;background:linear-gradient(115deg,rgba(255,249,232,.94),rgba(231,215,181,.88));color:#49331f;box-shadow:inset 0 0 0 1px rgba(255,255,255,.42);transition:border-color .2s,box-shadow .2s,background .2s,transform .2s}' +
+      '.mage-school-card h3,.mage-prep-row strong{color:#593b20}.mage-school-card p,.mage-prep-row small{color:#684f34}' +
+      '.mage-school-card.selected,.mage-school-card.mage-feat-selected-row,.mage-prep-row.mage-feat-selected-row{border:2px solid #b58a42!important;background:linear-gradient(110deg,rgba(244,224,177,.98),rgba(255,249,231,.98))!important;box-shadow:0 0 0 2px rgba(181,138,66,.22),0 0 17px rgba(190,143,69,.42),inset 0 0 14px rgba(181,138,66,.18)!important}' +
+      '.mage-school-card.selected h3,.mage-prep-row.mage-feat-selected-row strong{color:#4a2e13;text-shadow:0 0 7px rgba(190,143,69,.22)}' +
+      '.mage-school-progress{background:linear-gradient(110deg,rgba(250,241,219,.97),rgba(232,215,180,.94));border-color:#9c7945;color:#5b4025}' +
+      '.mage-spell-tabs{background:linear-gradient(110deg,#4d3925,#2c2015);border-color:#9b7844}.mage-spell-tab{background:linear-gradient(135deg,#6b4b2c,#4b321d);border-color:#a7834e;color:#f6e6c7}.mage-spell-tab.ativo{background:linear-gradient(135deg,#b58a42,#765126);border-color:#f0d18b;color:#fff8e8;box-shadow:0 0 0 1px rgba(240,209,139,.38),0 0 16px rgba(190,143,69,.42)}' +
+      '.mage-school-actions button{background:linear-gradient(135deg,#76532e,#4d321b);border-color:#a7834e;color:#fff0d0}.mage-school-actions button.active{background:linear-gradient(135deg,#b58a42,#765126);border-color:#e8c77e;color:#fff8e8;box-shadow:0 0 10px rgba(190,143,69,.38)}' +
+      '.mage-prep-toggle{background:linear-gradient(135deg,#76532e,#4d321b);border-color:#a7834e;color:#fff0d0}.mage-prep-toggle.active{background:linear-gradient(135deg,#b58a42,#765126);border-color:#e8c77e;color:#fff8e8;box-shadow:0 0 10px rgba(190,143,69,.42)}' +
       '.mage-feat-selected-row{border:2px solid #b58a42!important;border-radius:7px;background:linear-gradient(90deg,rgba(211,174,103,.22),rgba(255,248,226,.5));box-shadow:0 0 0 2px rgba(181,138,66,.18),inset 0 0 12px rgba(181,138,66,.10);padding:3px!important}' +
       '.mage-feat-selected-row input:first-child{border-color:#a77a34!important;background:rgba(255,246,218,.92)!important;font-weight:700}' +
       '.mage-feat-unavailable{opacity:.43;filter:grayscale(.72)}.mage-feat-unavailable .mage-catalog-choose{cursor:not-allowed;opacity:.6}' +
@@ -1287,7 +1295,7 @@
     const uc=createNode('div');uc.append(createNode('h3','','Universalista'),createNode('p','','Estude magia sem se especializar em uma escola e sem abrir mão de nenhuma tradição.'));
     const ua=createNode('div','mage-school-actions'),ub=createNode('button','',spec==='universalista'?'ESCOLHIDO':'ESCOLHER');ub.type='button';ub.addEventListener('click',()=>chooseWizardSpecialization('universalista'));ua.appendChild(ub);universal.append(uc,ua);list.appendChild(universal);
     schools.forEach(([key,name,description])=>{
-      const card=createNode('article','mage-school-card'+(spec===key?' selected':''));
+      const card=createNode('article','mage-school-card'+(spec===key?' selected mage-feat-selected-row':banned.includes(key)?' mage-feat-selected-row':''));
       const body=createNode('div');body.append(createNode('h3','',name),createNode('p','',description));
       const actions=createNode('div','mage-school-actions');
       const choose=createNode('button','',spec===key?'ESPECIALIZADA':'ESPECIALIZAR');choose.type='button';choose.classList.toggle('active',spec===key);choose.addEventListener('click',()=>chooseWizardSpecialization(key));
@@ -1337,9 +1345,9 @@
     const filtered=known.filter(row=>normalize(row.name+' '+row.circle+' '+row.spell.escola).includes(search));
     if(!filtered.length)list.appendChild(createNode('div','mage-catalog-empty','Nenhuma magia conhecida corresponde à pesquisa.'));
     filtered.forEach(row=>{
-      const card=createNode('div','mage-prep-row'),copy=createNode('div');copy.append(createNode('strong','',row.name),createNode('small','','Círculo '+row.circle+' · '+schoolLabel(spellSchoolKey(row.spell.escola)||row.spell.escola)));
-      const button=createNode('button','mage-prep-toggle'+(row.check?.checked?' active':''),row.check?.checked?'PREPARADA':'PREPARAR');button.type='button';button.setAttribute('aria-pressed',row.check?.checked?'true':'false');
-      button.addEventListener('click',()=>{if(row.check){row.check.checked=!row.check.checked;row.check.dispatchEvent(new Event('change',{bubbles:true}));button.classList.toggle('active',row.check.checked);button.textContent=row.check.checked?'PREPARADA':'PREPARAR';button.setAttribute('aria-pressed',row.check.checked?'true':'false');}});
+      const selected=Boolean(row.check?.checked),card=createNode('div','mage-prep-row'+(selected?' mage-feat-selected-row':'')),copy=createNode('div');copy.append(createNode('strong','',row.name),createNode('small','','Círculo '+row.circle+' · '+schoolLabel(spellSchoolKey(row.spell.escola)||row.spell.escola)));
+      const button=createNode('button','mage-prep-toggle'+(selected?' active':''),selected?'PREPARADA':'PREPARAR');button.type='button';button.setAttribute('aria-pressed',row.check?.checked?'true':'false');
+      button.addEventListener('click',()=>{if(row.check){row.check.checked=!row.check.checked;row.check.dispatchEvent(new Event('change',{bubbles:true}));button.classList.toggle('active',row.check.checked);card.classList.toggle('mage-feat-selected-row',row.check.checked);button.textContent=row.check.checked?'PREPARADA':'PREPARAR';button.setAttribute('aria-pressed',row.check.checked?'true':'false');}});
       card.append(copy,button);list.appendChild(card);
     });
     list.appendChild(createNode('div','mage-school-progress','Preparação livre: marque ou desmarque as magias que deseja deixar preparadas. Não há contador diário nem bloqueio por descanso.'));
