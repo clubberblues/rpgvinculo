@@ -2044,6 +2044,100 @@
     const statusNode = document.getElementById('mage-sheet-status');
     if (statusNode) status(message, true);
   }
+
+  // Coruja-guia: assistente contextual inspirado nos antigos assistentes do Office.
+  function initOwlGuide() {
+    if (document.getElementById('dnd35-owl-guide')) return;
+    const style = document.createElement('style');
+    style.id = 'dnd35-owl-guide-style';
+    style.textContent = `
+      #dnd35-owl-guide{position:fixed;right:22px;bottom:20px;z-index:10050;display:flex;align-items:flex-end;gap:10px;font-family:'EB Garamond',Georgia,serif;pointer-events:none}
+      #dnd35-owl-guide *{box-sizing:border-box}
+      #dnd35-owl-guide .owl-avatar{pointer-events:auto;width:76px;height:76px;border-radius:50%;display:grid;place-items:center;border:2px solid #c9a050;background:radial-gradient(circle at 35% 25%,#fff0c9,#d8b46c 58%,#78552e);box-shadow:0 5px 18px rgba(0,0,0,.48),0 0 0 4px rgba(201,160,80,.18);cursor:pointer;position:relative;animation:owl-bob 3.6s ease-in-out infinite;transition:transform .2s}
+      #dnd35-owl-guide .owl-avatar:hover{transform:scale(1.07) rotate(-4deg)}
+      #dnd35-owl-guide .owl-face{font-size:43px;line-height:1;filter:drop-shadow(0 2px 2px rgba(50,25,5,.45))}
+      #dnd35-owl-guide .owl-hat{position:absolute;top:-13px;left:7px;font-size:24px;transform:rotate(-18deg);filter:drop-shadow(0 2px 2px rgba(0,0,0,.5))}
+      #dnd35-owl-guide .owl-mug{position:absolute;right:-3px;bottom:0;font-size:21px;transform:rotate(12deg);filter:drop-shadow(0 2px 2px rgba(0,0,0,.5))}
+      #dnd35-owl-guide .owl-bubble{pointer-events:auto;display:none;width:min(310px,calc(100vw - 130px));padding:13px 15px 12px;background:linear-gradient(145deg,#fff5dc,#e9d4a8);color:#392817;border:2px solid #b89050;border-radius:12px 12px 12px 3px;box-shadow:0 9px 28px rgba(0,0,0,.45);position:relative;margin-bottom:12px}
+      #dnd35-owl-guide.open .owl-bubble{display:block;animation:owl-pop .2s ease-out}
+      #dnd35-owl-guide .owl-bubble:after{content:"";position:absolute;right:-8px;bottom:13px;width:13px;height:13px;background:#e9d4a8;border-right:2px solid #b89050;border-bottom:2px solid #b89050;transform:rotate(-45deg)}
+      #dnd35-owl-guide .owl-name{font:900 11px Cinzel,Georgia,serif;letter-spacing:1.2px;color:#75501f;text-transform:uppercase;margin-bottom:5px;display:flex;justify-content:space-between;gap:8px}
+      #dnd35-owl-guide .owl-close{border:0;background:transparent;color:#76552b;font-size:17px;line-height:1;cursor:pointer}
+      #dnd35-owl-guide .owl-message{font-size:15px;line-height:1.35;margin:0 0 9px}
+      #dnd35-owl-guide .owl-actions{display:flex;gap:6px;flex-wrap:wrap}
+      #dnd35-owl-guide .owl-actions button{border:1px solid #9a7138;border-radius:5px;background:linear-gradient(#f7e6bc,#dfc18a);color:#3b2917;padding:6px 9px;font:700 10px Cinzel,Georgia,serif;cursor:pointer}
+      #dnd35-owl-guide .owl-actions button:hover{background:#c9a050;color:#171008}
+      #dnd35-owl-guide .owl-hint{position:absolute;right:-3px;top:-4px;width:17px;height:17px;border-radius:50%;background:#6d2e20;color:#fff2d8;border:1px solid #f5e3b9;font:700 11px Georgia,serif;display:grid;place-items:center}
+      @keyframes owl-bob{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-4px) rotate(-2deg)}55%{transform:translateY(1px) rotate(2deg)}80%{transform:translateY(-2px) rotate(-1deg)}}
+      @keyframes owl-pop{from{opacity:0;transform:translateY(7px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+      @media(max-width:600px){#dnd35-owl-guide{right:12px;bottom:12px;gap:7px}#dnd35-owl-guide .owl-avatar{width:62px;height:62px}#dnd35-owl-guide .owl-face{font-size:35px}#dnd35-owl-guide .owl-bubble{width:min(270px,calc(100vw - 100px));padding:10px 11px}#dnd35-owl-guide .owl-message{font-size:14px}}
+      @media(prefers-reduced-motion:reduce){#dnd35-owl-guide .owl-avatar{animation:none}#dnd35-owl-guide .owl-bubble{animation:none}}
+    `;
+    document.head.appendChild(style);
+    const root = document.createElement('aside');
+    root.id = 'dnd35-owl-guide';
+    root.setAttribute('aria-label','Coruja-guia do aventureiro');
+    root.innerHTML = '<div class="owl-bubble" role="status" aria-live="polite"><div class="owl-name"><span>Coruja-guia</span><button class="owl-close" type="button" aria-label="Fechar dica">×</button></div><p class="owl-message"></p><div class="owl-actions"></div></div><button class="owl-avatar" type="button" aria-label="Pedir ajuda à coruja"><span class="owl-hat">🧙</span><span class="owl-face">🦉</span><span class="owl-mug">🍺</span><span class="owl-hint">?</span></button>';
+    document.body.appendChild(root);
+    const message = root.querySelector('.owl-message');
+    const actions = root.querySelector('.owl-actions');
+    const bubble = root.querySelector('.owl-bubble');
+    const avatar = root.querySelector('.owl-avatar');
+    const say = (text, options = []) => {
+      message.textContent = text;
+      actions.replaceChildren();
+      options.forEach(option => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = option.label;
+        button.addEventListener('click', option.run);
+        actions.appendChild(button);
+      });
+      root.classList.add('open');
+    };
+    const activeCategory = () => {
+      const active = document.querySelector('.mage-guide-category.ativo');
+      return active ? active.textContent.trim() : (step >= 0 ? 'Ficha' : 'Início');
+    };
+    const categoryButton = label => {
+      const button = Array.from(document.querySelectorAll('.mage-guide-category')).find(node => normalize(node.textContent) === normalize(label));
+      if (button) button.click();
+    };
+    const explain = () => {
+      const category = activeCategory();
+      const key = normalize(category);
+      const tips = {
+        'atributos':'Aqui você define as capacidades do personagem. Inteligência é especialmente importante para o Mago; confira os valores antes de avançar.',
+        'pericias':'Escolha onde seu personagem é treinado. Leia cada descrição e distribua os pontos conforme as opções permitidas.',
+        'talentos':'Este é o catálogo de talentos. Você pode consultar cada opção e selecionar somente a quantidade liberada para esta criação.',
+        'familiar':'Ora, ora... um Mago sem companhia fica falando sozinho com os livros. Abra o catálogo e escolha seu familiar; a invocação fica para a narrativa.',
+        'magia':'Primeiro escolha sua escola, depois registre as magias permitidas no Grimório. Na aba Preparação, escolha entre as que já estão registradas.',
+        'equipamentos':'Confira armas, armaduras e itens que acompanham seu aventureiro. O que não estiver definido pode ser combinado com o Mestre.',
+        'experiencia':'Aqui ficam os dados de progressão do personagem. Confira os valores e mantenha-os alinhados com a campanha.',
+        'ficha':'Psst! Eu sou sua coruja-guia. Clique em uma etapa do GUIA e eu explico o que fazer. Prometo não dormir em cima do grimório... de novo.'
+      };
+      const text = tips[key] || 'Vamos por partes, aventureiro. Leia as informações desta seção, preencha o que for pedido e use o GUIA para mudar de etapa.';
+      const options = [];
+      if (key === 'familiar') options.push({label:'Abrir catálogo',run:()=>openCatalog('familiar')});
+      if (key === 'magia') options.push({label:'Abrir Grimório',run:()=>openCatalog('spells')});
+      if (key !== 'ficha') options.push({label:'Voltar ao início',run:()=>categoryButton('Atributos')});
+      say(text, options);
+    };
+    avatar.addEventListener('click',()=>{if(root.classList.contains('open')) explain(); else explain();});
+    root.querySelector('.owl-close').addEventListener('click',()=>root.classList.remove('open'));
+    let lastCategory = '';
+    const observer = new MutationObserver(()=>{
+      const category = activeCategory();
+      if(category && category !== lastCategory){
+        lastCategory = category;
+        const key = normalize(category);
+        if(['familiar','magia','talentos'].includes(key)) explain();
+      }
+    });
+    observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
+    window.setTimeout(()=>say('Saudações, aventureiro! Sou sua guia. Clique em mim quando precisar de uma mãozinha... ou de uma asa. 🦉'),900);
+  }
+
   function bootMageSheet() {
     init().catch(reportBootstrapError);
   }
