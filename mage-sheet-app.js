@@ -173,6 +173,7 @@
     if(Number(spell.circulo)>wizardMaxCircle())reasons.push('Seu nível atual ainda não permite este círculo.');
     return {eligible:reasons.length===0,reasons};
   }
+  function wizardSpecialization() { return specializationKey(labeledInput('Magia','Especialização em Escola')?.value || ''); }
   function specializationKey(value) {
     const raw = normalize(value);
     if (raw === 'universalista') return 'universalista';
@@ -265,7 +266,7 @@
         const allowed = allowedSpells(1);
         const datalistId = ensureDatalist('mage-spell-list-level-1', allowed);
         list.querySelectorAll('input[type="text"]').forEach(input => { input.setAttribute('list', datalistId); input.readOnly = false; });
-        if (isCreate) { list.querySelectorAll('input[type="checkbox"]').forEach(el => { el.checked = false; el.disabled = true; }); }
+        if (isCreate) { list.querySelectorAll('input[type="checkbox"]').forEach(el => { el.checked = false; el.disabled = false; }); }
         const headerInputs = Array.from(block.querySelectorAll('.spell-header input'));
         if (headerInputs[1]) headerInputs[1].value = '';
         if (headerInputs[2]) headerInputs[2].value = '';
@@ -1657,11 +1658,11 @@
       { label: 'Perícias', panel: 'Perícias' },
       { label: 'Talentos', panel: 'Talentos' },
       { label: 'Familiar', panel: 'Familiar' },
+      { label: 'Magia', panel: 'Grimório', description: 'Primeiro escolha sua escola de especialização e as escolas proibidas. Depois, registre as magias permitidas no Grimório e escolha quais ficam preparadas.' },
       { label: 'Resumo mágico', panel: 'Magia' },
       { label: 'Experiência', panel: 'Experiência' },
       { label: 'Traços Raciais', panel: 'Traços Raciais' },
       { label: 'Observações', panel: 'Observação' },
-      { label: 'Grimório', panel: 'Grimório' },
       { label: 'Equipamentos', panel: 'Equipamentos' },
       { label: 'Varinhas e Cajados', panel: 'Varinhas e Cajados' },
       { label: 'Capacidade de Carga', panel: 'Capacidade de Carga' },
@@ -1694,8 +1695,7 @@
     if (/pericias/.test(key)) return 'Perícias';
     if (/talentos/.test(key)) return 'Talentos';
     if (/familiar/.test(key)) return 'Familiar';
-    if (/grimorio/.test(key)) return 'Grimório';
-    if (/magia/.test(key)) return 'Magia';
+    if (/grimorio|magia/.test(key)) return 'Magia';
     if (/experiencia/.test(key)) return 'Experiência';
     if (/tracos raciais/.test(key)) return 'Traços Raciais';
     if (/observacao/.test(key)) return 'Observações';
@@ -1780,7 +1780,7 @@
     item.target.scrollIntoView({behavior:'smooth',block:'center'});
     let note = document.getElementById('mage-step-note');
     if (!note) { note = document.createElement('aside'); note.id = 'mage-step-note'; note.className = 'mage-step-note'; document.body.appendChild(note); }
-    note.innerHTML = '<div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#98764a;margin-bottom:6px;text-align:center">Sua jornada · etapa ' + (step+1) + ' de ' + candidates.length + '</div><strong>' + item.label + '</strong><div class="mage-guide-help">' + item.help + '</div>' + (/talentos/.test(item.sectionKey) ? '<button type="button" id="mage-guide-feats" class="mage-guide-catalog-button">Abrir catálogo de talentos</button>' : '') + '<div class="mage-guide-progress"><span style="width:' + (((step+1)/candidates.length)*100) + '%"></span></div><div class="mage-guide-actions"><button type="button" id="mage-guide-prev">Voltar</button><button type="button" id="mage-guide-next">' + (step === candidates.length - 1 ? 'Concluir guia' : 'Avançar') + '</button><button type="button" id="mage-save">' + (isCreate ? 'Criar Mago' : 'Salvar ficha') + '</button></div>';
+    note.innerHTML = '<div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#98764a;margin-bottom:6px;text-align:center">Sua jornada · etapa ' + (step+1) + ' de ' + candidates.length + '</div><strong>' + item.label + '</strong><div class="mage-guide-help">' + item.help + '</div>' + (/talentos/.test(item.sectionKey) ? '<button type="button" id="mage-guide-feats" class="mage-guide-catalog-button">Abrir catálogo de talentos</button>' : (/grimorio|magia/.test(item.sectionKey) ? '<button type="button" id="mage-guide-spells" class="mage-guide-catalog-button">Abrir Grimório</button>' : '')) + '<div class="mage-guide-progress"><span style="width:' + (((step+1)/candidates.length)*100) + '%"></span></div><div class="mage-guide-actions"><button type="button" id="mage-guide-prev">Voltar</button><button type="button" id="mage-guide-next">' + (step === candidates.length - 1 ? 'Concluir guia' : 'Avançar') + '</button><button type="button" id="mage-save">' + (isCreate ? 'Criar Mago' : 'Salvar ficha') + '</button></div>';
     renderGuideCategories(note,candidates,item);
     const guideToggle = document.createElement('button');
     guideToggle.type = 'button';
@@ -1795,6 +1795,8 @@
     note.insertBefore(guideToggle, note.firstChild);
     const featButton = note.querySelector('#mage-guide-feats');
     if (featButton) featButton.onclick = () => openCatalog('feats');
+    const spellButton = note.querySelector('#mage-guide-spells');
+    if (spellButton) spellButton.onclick = () => openCatalog('spells');
     const prevButton = note.querySelector('#mage-guide-prev');
     const nextButton = note.querySelector('#mage-guide-next');
     prevButton.disabled = step === 0;
@@ -1832,7 +1834,7 @@
       const choices = wizardChoices();
       const selectedSpells = collectFirstCircleSpells();
       const finalInt = Number(baseAttributes.INT) + Number((raceData.ajustes_atributos || {}).INT || 0);
-      const expectedSpells = Math.max(3,3+Math.floor((finalInt-10)/2));
+      const expectedSpells = Math.max(1,3+Math.floor((finalInt-10)/2));
       if (selectedSpells.length !== expectedSpells) throw new Error('Com Inteligência final ' + finalInt + ', escolha exatamente ' + expectedSpells + ' magias de 1º círculo. Você informou ' + selectedSpells.length + '.');
       const skills = collectSkills();
       const feats = collectFeats();
