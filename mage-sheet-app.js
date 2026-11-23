@@ -1464,68 +1464,6 @@
     updateFeatSuggestions();
     updateSpellSuggestions();
   }
-  function initializeGuideNavigation() {
-    const sheet = document.querySelector('.ficha');
-    if (!sheet || document.getElementById('mage-guide-navigation')) return;
-    const nav = document.createElement('nav');
-    nav.id = 'mage-guide-navigation';
-    nav.setAttribute('aria-label', 'Navegação do guia da ficha');
-    const entries = [
-      { label: 'Base', target: '.header-top', kind: 'base' },
-      { label: 'Atributos', panel: 'Atributos' },
-      { label: 'Resistências', panel: 'Resistências' },
-      { label: 'Base e Agarrar', panel: 'Base e Agarrar' },
-      { label: 'Iniciativa', panel: 'Iniciativa' },
-      { label: 'Deslocamento', panel: 'Deslocamento' },
-      { label: 'Pontos de Vida', panel: 'Pontos de Vida' },
-      { label: 'Armadura (CA)', panel: 'Armadura (CA)' },
-      { label: 'Ataques', panel: 'Ataques' },
-      { label: 'Perícias', panel: 'Perícias' },
-      { label: 'Talentos', panel: 'Talentos' },
-      { label: 'Familiar', panel: 'Familiar' },
-      { label: 'Magia', panel: 'Magia' },
-      { label: 'Experiência', panel: 'Experiência' },
-      { label: 'Traços Raciais', panel: 'Traços Raciais' },
-      { label: 'Observações', panel: 'Observação' },
-      { label: 'Grimório', panel: 'Grimório' },
-      { label: 'Equipamentos', panel: 'Equipamentos' },
-      { label: 'Varinhas e Cajados', panel: 'Varinhas e Cajados' },
-      { label: 'Capacidade de Carga', panel: 'Capacidade de Carga' },
-      { label: 'Idiomas', panel: 'Idiomas' },
-      { label: 'Recipientes', panel: 'Recipientes' },
-      { label: 'Dinheiro', panel: 'Dinheiro' }
-    ];
-    const resolveTarget = entry => {
-      if (entry.target) return document.querySelector(entry.target);
-      const wanted = normalize(entry.panel);
-      return Array.from(sheet.querySelectorAll('.panel')).find(node => {
-        const heading = normalize(clean(node.querySelector('.panel-title')));
-        return heading === wanted || (entry.panel === 'Perícias' && heading.startsWith('pericias')) || (entry.panel === 'Grimório' && heading.startsWith('grimorio'));
-      }) || null;
-    };
-    nav.innerHTML = '<div class="mage-guide-nav-heading">GUIA</div>';
-    entries.forEach(entry => {
-      const target = resolveTarget(entry);
-      if (!target) return;
-      const link = document.createElement('button');
-      link.type = 'button';
-      link.className = 'mage-guide-nav-link';
-      link.textContent = entry.label;
-      link.addEventListener('click', () => {
-        document.querySelectorAll('.mage-guide-nav-link.ativo').forEach(node => node.classList.remove('ativo'));
-        link.classList.add('ativo');
-        document.querySelectorAll('.mage-guide-nav-focus').forEach(node => node.classList.remove('mage-guide-nav-focus'));
-        target.classList.add('mage-guide-nav-focus');
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
-      nav.appendChild(link);
-    });
-    sheet.appendChild(nav);
-    const style = document.createElement('style');
-    style.id = 'mage-guide-navigation-style';
-    style.textContent = '#mage-guide-navigation{position:fixed;z-index:1000;left:12px;top:112px;bottom:18px;width:174px;overflow-y:auto;display:flex;flex-direction:column;align-items:stretch;gap:5px;padding:10px 8px;box-sizing:border-box;background:rgba(35,25,17,.94);border:1px solid rgba(190,151,91,.35);border-radius:9px;box-shadow:0 8px 26px rgba(0,0,0,.22)}.mage-guide-nav-heading{padding:3px 7px 9px;color:#c8a56c;font:700 11px Cinzel,Georgia,serif;letter-spacing:.18em}.mage-guide-nav-link{appearance:none;border:0;background:transparent;text-align:left;padding:5px 7px;color:#e3d3b6;cursor:pointer;font:13px Georgia,serif;transition:color .18s,text-shadow .18s}.mage-guide-nav-link:hover{color:#fff0c7}.mage-guide-nav-link.ativo{color:#ffd982;text-shadow:0 0 7px rgba(255,198,91,.95),0 0 16px rgba(255,174,48,.65)}.mage-guide-nav-focus{outline:2px solid rgba(176,141,87,.6)!important;outline-offset:4px;border-radius:4px}@media(max-width:900px){#mage-guide-navigation{left:8px;top:auto;bottom:8px;width:calc(100vw - 16px);max-height:116px;flex-direction:row;flex-wrap:wrap;align-content:flex-start;gap:2px;background:rgba(35,25,17,.97)}.mage-guide-nav-heading{width:100%;padding:1px 6px 3px}.mage-guide-nav-link{font-size:12px;padding:4px 6px}}';
-    document.head.appendChild(style);
-  }
   function guideTargetFor(control) {
     return control.closest('.attr-row, .resist-row, .input-group, .spell-row, tr, .atk-block, .panel') || control;
   }
@@ -1608,6 +1546,117 @@
     });
     return items;
   }
+  function guideNavigationEntries() {
+    const sheet = document.querySelector('.ficha');
+    const entries = [
+      { label: 'Base', target: sheet && sheet.querySelector('.header-top') },
+      { label: 'Atributos', panel: 'Atributos' },
+      { label: 'Resistências', panel: 'Resistências' },
+      { label: 'Base e Agarrar', panel: 'Base e Agarrar' },
+      { label: 'Iniciativa', panel: 'Iniciativa' },
+      { label: 'Deslocamento', panel: 'Deslocamento' },
+      { label: 'Pontos de Vida', panel: 'Pontos de Vida' },
+      { label: 'Armadura (CA)', panel: 'Armadura (CA)' },
+      { label: 'Ataques', panel: 'Ataques' },
+      { label: 'Perícias', panel: 'Perícias' },
+      { label: 'Talentos', panel: 'Talentos' },
+      { label: 'Familiar', panel: 'Familiar' },
+      { label: 'Magia', panel: 'Magia' },
+      { label: 'Experiência', panel: 'Experiência' },
+      { label: 'Traços Raciais', panel: 'Traços Raciais' },
+      { label: 'Observações', panel: 'Observação' },
+      { label: 'Grimório', panel: 'Grimório' },
+      { label: 'Equipamentos', panel: 'Equipamentos' },
+      { label: 'Varinhas e Cajados', panel: 'Varinhas e Cajados' },
+      { label: 'Capacidade de Carga', panel: 'Capacidade de Carga' },
+      { label: 'Idiomas', panel: 'Idiomas' },
+      { label: 'Recipientes', panel: 'Recipientes' },
+      { label: 'Dinheiro', panel: 'Dinheiro' }
+    ];
+    return entries.map(entry => {
+      if (!entry.target && entry.panel) {
+        const wanted = normalize(entry.panel);
+        entry.target = Array.from(sheet.querySelectorAll('.panel')).find(node => {
+          const heading = normalize(clean(node.querySelector('.panel-title')));
+          return heading === wanted || (entry.panel === 'Perícias' && heading.startsWith('pericias')) || (entry.panel === 'Grimório' && heading.startsWith('grimorio'));
+        }) || null;
+      }
+      return entry;
+    }).filter(entry => entry.target);
+  }
+  function guideCategoryFor(item) {
+    const key = normalize(item.sectionKey || '');
+    if (/identidade|cabecalho/.test(key)) return 'Base';
+    if (/atributos/.test(key)) return 'Atributos';
+    if (/resistencias/.test(key)) return 'Resistências';
+    if (/base e agarrar/.test(key)) return 'Base e Agarrar';
+    if (/iniciativa/.test(key)) return 'Iniciativa';
+    if (/deslocamento/.test(key)) return 'Deslocamento';
+    if (/pontos de vida/.test(key)) return 'Pontos de Vida';
+    if (/armadura|ca/.test(key)) return 'Armadura (CA)';
+    if (/ataques/.test(key)) return 'Ataques';
+    if (/pericias/.test(key)) return 'Perícias';
+    if (/talentos/.test(key)) return 'Talentos';
+    if (/familiar/.test(key)) return 'Familiar';
+    if (/grimorio/.test(key)) return 'Grimório';
+    if (/magia/.test(key)) return 'Magia';
+    if (/experiencia/.test(key)) return 'Experiência';
+    if (/tracos raciais/.test(key)) return 'Traços Raciais';
+    if (/observacao/.test(key)) return 'Observações';
+    if (/equipamentos/.test(key)) return 'Equipamentos';
+    if (/varinhas e cajados/.test(key)) return 'Varinhas e Cajados';
+    if (/capacidade de carga/.test(key)) return 'Capacidade de Carga';
+    if (/idiomas/.test(key)) return 'Idiomas';
+    if (/recipientes/.test(key)) return 'Recipientes';
+    if (/dinheiro/.test(key)) return 'Dinheiro';
+    return 'Base';
+  }
+  function renderGuideCategories(note, candidates, currentItem) {
+    const oldNav = note.querySelector('.mage-guide-categories');
+    if (oldNav) oldNav.remove();
+    const layout = document.createElement('div');
+    layout.className = 'mage-guide-layout';
+    const nav = document.createElement('nav');
+    nav.className = 'mage-guide-categories';
+    nav.setAttribute('aria-label', 'Tópicos da ficha');
+    const content = document.createElement('div');
+    content.className = 'mage-guide-current';
+    while (note.firstChild) content.appendChild(note.firstChild);
+    layout.append(nav, content);
+    note.appendChild(layout);
+    const entries = guideNavigationEntries();
+    entries.forEach(entry => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'mage-guide-category';
+      button.textContent = entry.label;
+      const firstStep = candidates.findIndex(candidate => guideCategoryFor(candidate) === entry.label);
+      if (entry.label === guideCategoryFor(currentItem)) button.classList.add('ativo');
+      button.addEventListener('click', () => {
+        if (firstStep >= 0) {
+          showStep(firstStep);
+          return;
+        }
+        document.querySelectorAll('.mage-guide-category.ativo').forEach(node => node.classList.remove('ativo'));
+        button.classList.add('ativo');
+        document.querySelectorAll('.mage-step-focus').forEach(node => node.classList.remove('mage-step-focus'));
+        entry.target.classList.add('mage-step-focus');
+        entry.target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const heading = content.querySelector('strong');
+        if (heading) heading.textContent = entry.label;
+        const help = content.querySelector('.mage-guide-help');
+        if (help) help.textContent = 'Você foi direcionado diretamente a este tópico da ficha. Confira as informações e continue a navegação pelos títulos.';
+      });
+      nav.appendChild(button);
+    });
+    const styleId = 'mage-guide-category-style';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = '.mage-step-note{width:min(760px,calc(100vw - 28px));text-align:left;padding:15px 17px}.mage-guide-layout{display:grid;grid-template-columns:156px minmax(0,1fr);gap:16px;align-items:start}.mage-guide-categories{display:flex;flex-direction:column;gap:2px;max-height:min(62vh,480px);overflow:auto;padding:2px 8px 2px 0;border-right:1px solid rgba(139,111,71,.25)}.mage-guide-category{appearance:none;border:0;background:transparent;text-align:left;padding:5px 4px;color:#725637;cursor:pointer;font:13px Georgia,serif;transition:color .18s,text-shadow .18s}.mage-guide-category:hover{color:#3f2a17}.mage-guide-category.ativo{color:#9a681d;text-shadow:0 0 7px rgba(255,190,77,.9),0 0 14px rgba(255,174,48,.55);font-weight:700}.mage-guide-current{min-width:0;text-align:center}.mage-guide-current .mage-guide-actions{justify-content:center}@media(max-width:560px){.mage-step-note{padding:12px;width:calc(100vw - 16px)}.mage-guide-layout{grid-template-columns:112px minmax(0,1fr);gap:9px}.mage-guide-categories{max-height:58vh}.mage-guide-category{font-size:11px;padding:5px 2px}.mage-guide-current{font-size:13px}}';
+      document.head.appendChild(style);
+    }
+  }
   function showStep(next) {
     const candidates = guideCandidates();
     if (!candidates.length) {
@@ -1623,7 +1672,8 @@
     item.target.scrollIntoView({behavior:'smooth',block:'center'});
     let note = document.getElementById('mage-step-note');
     if (!note) { note = document.createElement('aside'); note.id = 'mage-step-note'; note.className = 'mage-step-note'; document.body.appendChild(note); }
-    note.innerHTML = '<div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#98764a;margin-bottom:6px">Sua jornada · etapa ' + (step+1) + ' de ' + candidates.length + '</div><strong>' + item.label + '</strong><div class="mage-guide-help">' + item.help + '</div>' + (/talentos/.test(item.sectionKey) ? '<button type="button" id="mage-guide-feats" class="mage-guide-catalog-button">Abrir catálogo de talentos</button>' : '') + '<div class="mage-guide-progress"><span style="width:' + (((step+1)/candidates.length)*100) + '%"></span></div><div class="mage-guide-actions"><button type="button" id="mage-guide-prev">Voltar</button><button type="button" id="mage-guide-next">' + (step === candidates.length - 1 ? 'Concluir guia' : 'Avançar') + '</button><button type="button" id="mage-save">' + (isCreate ? 'Criar Mago' : 'Salvar ficha') + '</button></div>';
+    note.innerHTML = '<div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#98764a;margin-bottom:6px;text-align:center">Sua jornada · etapa ' + (step+1) + ' de ' + candidates.length + '</div><strong>' + item.label + '</strong><div class="mage-guide-help">' + item.help + '</div>' + (/talentos/.test(item.sectionKey) ? '<button type="button" id="mage-guide-feats" class="mage-guide-catalog-button">Abrir catálogo de talentos</button>' : '') + '<div class="mage-guide-progress"><span style="width:' + (((step+1)/candidates.length)*100) + '%"></span></div><div class="mage-guide-actions"><button type="button" id="mage-guide-prev">Voltar</button><button type="button" id="mage-guide-next">' + (step === candidates.length - 1 ? 'Concluir guia' : 'Avançar') + '</button><button type="button" id="mage-save">' + (isCreate ? 'Criar Mago' : 'Salvar ficha') + '</button></div>';
+    renderGuideCategories(note,candidates,item);
     const featButton = note.querySelector('#mage-guide-feats');
     if (featButton) featButton.onclick = () => openCatalog('feats');
     const prevButton = note.querySelector('#mage-guide-prev');
@@ -1796,7 +1846,6 @@
     } else {
       throw new Error('Abra a ficha a partir do Lobby ou da Mesa.');
     }
-    initializeGuideNavigation();
     if (isCreate) { updateFeatSelectionRows(); showStep(0); }
   }
   function reportBootstrapError(error) {
