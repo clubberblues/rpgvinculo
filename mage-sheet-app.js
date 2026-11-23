@@ -1286,7 +1286,9 @@
   function renderGrimoireSelection(list,search) {
     const circle=Number(document.getElementById('mage-catalog-level')?.value??1),existing=spellRows(),known=existing.filter(row=>row.circle===circle);
     list.appendChild(createNode('div','mage-school-progress',isCreate&&circle===1?'Escolha '+expectedInitialSpellCount()+' magia(s) de 1º círculo. Selecionadas: '+known.length+'. Truques de 0º círculo entram automaticamente.':'Magias registradas neste círculo: '+known.length+'. Opções bloqueadas não atendem às regras da classe, escola ou nível.'));
-    spellCatalog.filter(sp=>Number(sp.circulo)===circle&&normalize((sp.nome_pt||sp.nome)+' '+sp.escola+' '+sp.nivel).includes(search)).forEach(spell=>{
+    const spells=spellCatalog.filter(sp=>Number(sp.circulo)===circle&&normalize((sp.nome_pt||sp.nome)+' '+sp.escola+' '+sp.nivel).includes(search));
+    if(!spells.length)list.appendChild(createNode('div','mage-catalog-empty','Nenhuma magia encontrada neste círculo com essa pesquisa.'));
+    spells.forEach(spell=>{
       const name=spell.nome_pt||spell.nome,elig=spellEligibility(spell),selected=existing.some(row=>row.circle===circle&&normalize(row.name)===normalize(name));
       const meta='Círculo '+circle+' · '+schoolLabel(spellSchoolKey(spell.escola)||spell.escola)+' · '+(elig.eligible?(selected?'Já está no Grimório':'Permitida para Mago'):elig.reasons.join(' '));
       const details=['Escola: '+(spell.escola||'Não informada'),'Círculo: '+spell.circulo,'Nível: '+(spell.nivel||'Não informado'),'Alcance: '+(spell.alcance||'Não informado'),'Alvo: '+(spell.alvo||spell.area||'Não informado'),'Duração: '+(spell.duracao||'Não informada'),'Componentes: '+(spell.componentes||'Não informados')].join('\n');
@@ -1300,7 +1302,9 @@
   function renderPreparationSelection(list,search) {
     const known=spellRows().filter(row=>row.spell&&wizardSpell(row.spell)&&!selectedProhibitedSchools().includes(spellSchoolKey(row.spell.escola)));
     if(!known.length){list.appendChild(createNode('div','mage-catalog-empty','Seu Grimório ainda não tem magias registradas. Escolha primeiro suas magias na aba Grimório.'));return;}
-    known.filter(row=>normalize(row.name+' '+row.circle+' '+row.spell.escola).includes(search)).forEach(row=>{
+    const filtered=known.filter(row=>normalize(row.name+' '+row.circle+' '+row.spell.escola).includes(search));
+    if(!filtered.length)list.appendChild(createNode('div','mage-catalog-empty','Nenhuma magia conhecida corresponde à pesquisa.'));
+    filtered.forEach(row=>{
       const card=createNode('div','mage-prep-row'),copy=createNode('div');copy.append(createNode('strong','',row.name),createNode('small','','Círculo '+row.circle+' · '+schoolLabel(spellSchoolKey(row.spell.escola)||row.spell.escola)));
       const button=createNode('button','mage-prep-toggle'+(row.check?.checked?' active':''),row.check?.checked?'PREPARADA':'PREPARAR');button.type='button';button.setAttribute('aria-pressed',row.check?.checked?'true':'false');
       button.addEventListener('click',()=>{if(row.check){row.check.checked=!row.check.checked;row.check.dispatchEvent(new Event('change',{bubbles:true}));button.classList.toggle('active',row.check.checked);button.textContent=row.check.checked?'PREPARADA':'PREPARAR';button.setAttribute('aria-pressed',row.check.checked?'true':'false');}});
@@ -1365,7 +1369,7 @@
         list.appendChild(catalogRow(familiarLabel(monster),meta,'fa-paw',()=>chooseFamiliar(monster),()=>openLore(familiarLabel(monster),details,monster.descricao||'')));
       });
     }
-    if (!items.length) list.appendChild(createNode('div','mage-catalog-empty','Nenhum resultado encontrado para esta pesquisa.'));
+    if (!items.length && !list.children.length) list.appendChild(createNode('div','mage-catalog-empty','Nenhum resultado encontrado para esta pesquisa.'));
   }
   function openCatalog(mode) {
     ensureCatalogOverlays();
