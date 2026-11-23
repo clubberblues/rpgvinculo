@@ -496,7 +496,7 @@ body:has(.ficha.dnd35-mode){background:radial-gradient(ellipse at 50% -12%,#2938
 
 .dnd35-wizard-school{margin:12px 0;padding:12px;border:1px solid #80683f;border-radius:6px;background:rgba(28,37,29,.55)}.dnd35-wizard-school h3{margin-top:0}
 
-.dnd35-class-resource-panel{margin:12px 0}.dnd35-cleric-deity-detail{display:grid;gap:4px;padding:10px;margin:10px 0;border-left:3px solid #b89050;background:rgba(184,144,80,.12);color:#e8d8b7}.dnd35-cleric-deity-detail span{font-size:12px}
+.dnd35-class-resource-panel{margin:12px 0}.dnd35-cleric-deity-detail{display:grid;gap:4px;padding:10px;margin:10px 0;border-left:3px solid #b89050;background:rgba(184,144,80,.12);color:#e8d8b7}.dnd35-cleric-deity-detail span{font-size:12px}.dnd35-animal-companion-detail .dnd35-animal-description{margin:5px 0 3px;font-size:13px;line-height:1.5;color:#f1e3c9}.dnd35-animal-companion-detail small{font-size:11px;line-height:1.45;color:#cdbb9a}
 
 /* Seleção gamificada inicial: cartões com área reservada para artes próprias. */
 .dnd35-selection-page{max-width:1160px}
@@ -3033,7 +3033,7 @@ function dnd35LanguageNormalize(value){
     var identity=state.identidade||{},choice=identity.druid_nature_bond||'companion',animals=state.animalCompanions||[],selected=animals.find(function(a){return String(a.id)===String(identity.druid_animal_companion_id||'');});
     var labels={badger:'Texugo',camel:'Camelo',dire_rat:'Rato atroz',dog:'Cão',dog_riding:'Cão de montaria',eagle:'Águia',hawk:'Falcão',horse_light:'Cavalo leve',owl:'Coruja',pony:'Pônei',snake_small_viper:'Víbora pequena',snake_medium_viper:'Víbora média',wolf:'Lobo'};
     var options='<option value="">Selecione um companheiro animal</option>'+animals.map(function(a){return '<option value="'+esc(a.id)+'"'+(String(identity.druid_animal_companion_id||'')===String(a.id)?' selected':'')+'>'+esc(labels[a.id]||a.nome)+'</option>';}).join('');
-    var detail=selected?'<div class="dnd35-cleric-deity-detail"><b>'+esc(labels[selected.id]||selected.nome)+'</b><span>Tipo: Animal · Tamanho: '+esc(selected.tamanho||'—')+' · ND: '+esc(selected.nd||'—')+'</span><small>Vínculo e partilha de magias são concedidos automaticamente ao Druida de 1º nível. As estatísticas do companheiro começam pelas estatísticas da criatura selecionada e recebem os ajustes da habilidade Companheiro Animal conforme o nível efetivo do Druida.</small></div>':'';
+    var detail=selected?'<div class="dnd35-cleric-deity-detail dnd35-animal-companion-detail"><b>'+esc(labels[selected.id]||selected.nome)+'</b><span>Animal · Tamanho: '+esc(selected.tamanho||'—')+' · ND: '+esc(selected.nd||'—')+'</span><p class="dnd35-animal-description">'+esc(selected.descricao_pt||'Descrição ainda não cadastrada.')+'</p><small>O companheiro recebe os benefícios da habilidade Companheiro Animal conforme o nível efetivo do Druida. Os valores de jogo ficam separados nesta ficha.</small></div>':'';
     return '<section class="dnd35-class-choice"><h3>Vínculo com a Natureza · Druida</h3><p class="dnd35-note">No 1º nível, escolha uma das duas formas de vínculo: um companheiro animal ou um domínio druídico. Esta escolha substitui a outra.</p><label>Forma de vínculo<select data-druid-nature-bond><option value="companion"'+(choice==='companion'?' selected':'')+'>Companheiro animal</option><option value="domain"'+(choice==='domain'?' selected':'')+'>Domínio da natureza</option></select></label>'+(choice==='companion'?'<label>Companheiro animal<select data-druid-animal-companion>'+options+'</select></label>'+detail+'<p class="dnd35-note">Opções de companheiro animal básico do 1º nível, conforme a lista do Livro do Jogador. Companheiros alternativos ou criaturas não listadas dependem da aprovação do Mestre.</p>':'<p class="dnd35-note">Escolha um domínio entre Ar, Animal, Terra, Fogo, Plantas e Água. O domínio concede seu poder e um espaço adicional por círculo para preparar uma magia do domínio.</p>')+'</section>';
   }
   function dnd35FamiliarChoiceMarkup(state){
@@ -3715,7 +3715,7 @@ function dnd35LanguageNormalize(value){
       sb.from('srd_domain_spells').select('domain_id,spell_level,spell_id,source_id,verification_status').order('domain_id').order('spell_level'),
       sb.from('srd_languages').select('id,nome,is_secret,source_status').eq('source_status','official').order('nome'),
       sb.from('srd_deities').select('deity_id,name,alignment,domains,favored_weapon,racial_races,verification_status').eq('verification_status','verified_book').order('name'),
-      sb.from('srd_monsters').select('id,nome,nome_original,tamanho,nd,tipo,source_status').in('id',['badger','camel','dire_rat','dog','dog_riding','eagle','hawk','horse_light','owl','pony','snake_small_viper','snake_medium_viper','wolf']).eq('source_status','verified_srd').order('nome')
+      sb.from('srd_monsters').select('id,nome,nome_original,tamanho,nd,tipo,descricao_pt,source_status').in('id',['badger','camel','dire_rat','dog','dog_riding','eagle','hawk','horse_light','owl','pony','snake_small_viper','snake_medium_viper','wolf']).eq('source_status','verified_srd').order('nome')
     ]);
     var error=results.slice(0,2).filter(function(r){return r.error;})[0];
     if(error) throw new Error('Migração SRD pendente: não foi possível carregar perícias/talentos. Detalhe: '+error.error.message);
