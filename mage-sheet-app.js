@@ -308,7 +308,7 @@
   }
   function spellIdFromName(name, circle) {
     const key = normalize(name);
-    const matches = spellCatalog.filter(sp => Number(sp.circulo) === circle &&
+    const matches = spellCatalog.filter(sp => wizardSpell(sp) && Number(sp.circulo) === circle &&
       [sp.nome_pt,sp.nome].some(label => normalize(label) === key));
     if (!matches.length) throw new Error('A magia "' + name + '" não foi encontrada no catálogo de magias do Mago para o círculo ' + circle + '.');
     return choosePreferredSpell(matches).id;
@@ -1277,7 +1277,7 @@
   function spellRows() {
     const out=[];document.querySelectorAll('.spell-level-block').forEach(block=>{
       const circle=parseInt(clean(block.querySelector('.spell-level-title')),10);
-      block.querySelectorAll('.spell-row').forEach(row=>{const input=row.querySelector('input[type="text"]'),check=row.querySelector('input[type="checkbox"]'),name=String(input?.value||'').trim();if(name)out.push({circle,name,input,check,spell:spellCatalog.find(sp=>Number(sp.circulo)===circle&&[sp.nome_pt,sp.nome].some(x=>normalize(x)===normalize(name)))});});
+      block.querySelectorAll('.spell-row').forEach(row=>{const input=row.querySelector('input[type="text"]'),check=row.querySelector('input[type="checkbox"]'),name=String(input?.value||'').trim();if(name)out.push({circle,name,input,check,spell:spellCatalog.find(sp=>wizardSpell(sp)&&Number(sp.circulo)===circle&&[sp.nome_pt,sp.nome].some(x=>normalize(x)===normalize(name)))});});
     });return out;
   }
   function expectedInitialSpellCount() {
