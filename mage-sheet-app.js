@@ -501,14 +501,21 @@
   }
   function showFamiliarStatus(identity) {
     const p = panel('Familiar');
-    if (!p || !identity || identity.wizard_familiar_available !== true || identity.wizard_familiar_choice !== 'pending') return;
-    if (p.querySelector('.mage-class-feature-note')) return;
+    if (!p) return;
     const title = p.querySelector('.panel-title');
     if (!title) return;
-    const note = document.createElement('div');
-    note.className = 'mage-class-feature-note';
-    note.textContent = 'Invocar Familiar · habilidade de classe disponível no 1º nível. A escolha e a invocação ficam para a narrativa; nenhum familiar foi criado automaticamente.';
-    title.insertAdjacentElement('afterend',note);
+    let note = p.querySelector('.mage-class-feature-note');
+    if (!note) {
+      note = document.createElement('div');
+      note.className = 'mage-class-feature-note';
+      note.textContent = 'Invocar Familiar · habilidade de classe do Mago. Escolha no catálogo qual criatura acompanhará o personagem; a invocação acontece conforme a narrativa.';
+      title.insertAdjacentElement('afterend',note);
+    }
+    if (note.querySelector('.mage-guide-catalog-button')) return;
+    const button = createNode('button','mage-guide-catalog-button','Abrir catálogo de familiares');
+    button.type = 'button';
+    button.addEventListener('click',()=>openCatalog('familiar'));
+    note.appendChild(button);
   }
   function localDraftKey() {
     return 'dnd35-mage-draft:' + user.id + ':' + raceId;
