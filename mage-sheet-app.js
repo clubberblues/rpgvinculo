@@ -1304,7 +1304,7 @@
     spells.forEach(spell=>{
       const name=spell.nome_pt||spell.nome,elig=spellEligibility(spell),selected=existing.some(row=>row.circle===circle&&normalize(row.name)===normalize(name));
       const meta='Círculo '+circle+' · '+schoolLabel(spellSchoolKey(spell.escola)||spell.escola)+' · '+(elig.eligible?(selected?'Já está no Grimório':'Permitida para Mago'):elig.reasons.join(' '));
-      const details=['Escola: '+(spell.escola||'Não informada'),'Círculo: '+spell.circulo,'Nível: '+(spell.nivel||'Não informado'),'Alcance: '+(spell.alcance||'Não informado'),'Alvo: '+(spell.alvo||spell.area||'Não informado'),'Duração: '+(spell.duracao||'Não informada'),'Componentes: '+(spell.componentes||'Não informados')].join('\n');
+      const details=['Escola: '+(spell.escola||'Não informada'),'Círculo de Mago: '+wizardSpellCircle(spell),'Nível: '+(spell.nivel||'Não informado'),'Alcance: '+(spell.alcance||'Não informado'),'Alvo: '+(spell.alvo||spell.area||'Não informado'),'Duração: '+(spell.duracao||'Não informada'),'Componentes: '+(spell.componentes||'Não informados')].join('\n');
       const row=spellCatalogRow(name,meta,'fa-wand-sparkles',()=>chooseSpell(spell),()=>openLore(name,meta+'\n'+details,spell.descricao_pt||spell.descricao||''));
       row.classList.toggle('mage-spell-unavailable',!elig.eligible);
       const button=row.querySelector('.mage-catalog-name');button.textContent=selected?'ADICIONADA · '+name:'＋ '+name;
