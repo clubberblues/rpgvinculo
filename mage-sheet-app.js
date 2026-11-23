@@ -1920,11 +1920,14 @@
     const button = document.getElementById('mage-save');
     button.disabled = true;
     try {
+      const choices = wizardChoices();
       validateSpellbookEntries();
       const current = await sb.from('srd_character_sheets').select('identidade').eq('character_id', characterId).maybeSingle();
       if (current.error) throw current.error;
       if (!current.data) throw new Error('Ficha não encontrada ou sem permissão.');
       const identity = current.data.identidade && typeof current.data.identidade === 'object' ? current.data.identidade : {};
+      identity.wizard_specialization = choices.wizard_specialization;
+      identity.wizard_prohibited_schools = choices.wizard_prohibited_schools;
       if (selectedFamiliar) { identity.wizard_familiar_choice = 'selected'; identity.wizard_familiar_id = selectedFamiliar.id; identity.wizard_familiar_name = familiarLabel(selectedFamiliar); }
       identity.ficha_mago_v2 = core.collect();
       const result = await sb.from('srd_character_sheets').update({ identidade }).eq('character_id', characterId).select('character_id').maybeSingle();
