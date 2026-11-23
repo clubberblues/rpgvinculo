@@ -2054,7 +2054,14 @@
     style.textContent = `
       #dnd35-owl-guide{position:fixed;right:22px;bottom:18px;z-index:10050;display:flex;align-items:flex-end;gap:12px;font-family:'EB Garamond',Georgia,serif;pointer-events:none;max-width:calc(100vw - 28px)}
       #dnd35-owl-guide *{box-sizing:border-box}
-      #dnd35-owl-guide .lampiao-art{pointer-events:auto;width:164px;height:218px;object-fit:contain;object-position:center bottom;flex:0 0 auto;filter:drop-shadow(0 7px 12px rgba(0,0,0,.55));transform-origin:50% 70%;animation:lampiao-idle 4.2s ease-in-out infinite}
+      #dnd35-owl-guide .lampiao-stage{pointer-events:auto;position:relative;width:164px;height:218px;flex:0 0 auto;transform-origin:50% 70%;isolation:isolate;animation:lampiao-idle 5.6s ease-in-out infinite}
+      #dnd35-owl-guide .lampiao-art{position:relative;z-index:2;width:100%;height:100%;object-fit:contain;object-position:center bottom;filter:drop-shadow(0 9px 13px rgba(0,0,0,.62));transform-origin:50% 70%;animation:lampiao-body-sway 6.8s ease-in-out infinite}
+      #dnd35-owl-guide .lampiao-stage:before{content:"";position:absolute;z-index:1;left:28%;right:28%;bottom:7%;height:32%;border-radius:50%;background:radial-gradient(ellipse,rgba(255,179,66,.48),rgba(183,76,23,.17) 48%,transparent 74%);filter:blur(13px);animation:lampiao-ember 2.7s ease-in-out infinite}
+      #dnd35-owl-guide .lampiao-stage:after{content:"";position:absolute;z-index:3;left:44%;top:0;width:34%;height:42%;pointer-events:none;background:radial-gradient(ellipse at 50% 85%,rgba(190,184,165,.23),rgba(132,130,120,.10) 35%,transparent 72%);filter:blur(8px);opacity:0;animation:lampiao-smoke 7s ease-in-out infinite}
+      #dnd35-owl-guide .lampiao-stage.reacting{animation:lampiao-react .48s cubic-bezier(.2,.8,.2,1)}
+      #dnd35-owl-guide .lampiao-stage.reacting .lampiao-art{animation:lampiao-react-body .48s cubic-bezier(.2,.8,.2,1)}
+      #dnd35-owl-guide .lampiao-stage.speaking .lampiao-art{animation:lampiao-speaking 1.1s ease-in-out 2}
+      #dnd35-owl-guide .lampiao-stage.speaking:before{animation:lampiao-ember  .65s ease-in-out infinite}
       #dnd35-owl-guide .lampiao-chat{pointer-events:auto;width:min(350px,calc(100vw - 205px));min-width:230px;padding:15px 17px 13px;background:linear-gradient(145deg,#fff4d8,#e5cf9f);color:#392817;border:2px solid #ae8345;border-radius:13px 13px 13px 3px;box-shadow:0 12px 34px rgba(0,0,0,.48),inset 0 0 18px rgba(255,255,255,.3);position:relative;margin-bottom:15px}
       #dnd35-owl-guide .lampiao-chat:before{content:"";position:absolute;left:-9px;bottom:28px;width:14px;height:14px;background:#e9d7ae;border-left:2px solid #ae8345;border-bottom:2px solid #ae8345;transform:rotate(45deg)}
       #dnd35-owl-guide .lampiao-title{font:900 11px Cinzel,Georgia,serif;letter-spacing:1.5px;text-transform:uppercase;color:#765020;margin:0 0 7px}
@@ -2067,12 +2074,21 @@
       #dnd35-owl-guide .lampiao-actions button:disabled{opacity:.38;cursor:not-allowed}
       #dnd35-owl-guide .lampiao-actions .lampiao-close{margin-left:auto;background:linear-gradient(#6a3024,#421d17);border-color:#8e5a43;color:#f8e7c7}
       #dnd35-owl-guide .lampiao-minimized{display:none;pointer-events:auto;width:54px;height:54px;border-radius:50%;border:1px solid #d69b48;background:radial-gradient(circle,#ffcc68 0%,#a64a18 42%,#21130d 75%);box-shadow:0 0 18px #e77b27aa,0 5px 16px #0009;cursor:pointer;color:#ffe3a5;font-size:24px}
-      #dnd35-owl-guide.closed .lampiao-art,#dnd35-owl-guide.closed .lampiao-chat{display:none}
+      #dnd35-owl-guide.closed .lampiao-stage,#dnd35-owl-guide.closed .lampiao-chat{display:none}
       #dnd35-owl-guide.closed .lampiao-minimized{display:grid;place-items:center}
-      #dnd35-owl-guide.pop-out .lampiao-art,#dnd35-owl-guide.pop-out .lampiao-chat{animation:lampiao-pop-out .25s cubic-bezier(.2,.8,.3,1) forwards}
-      #dnd35-owl-guide.pop-in .lampiao-art,#dnd35-owl-guide.pop-in .lampiao-chat{animation:lampiao-pop-in .3s cubic-bezier(.2,.8,.3,1) both}
+      #dnd35-owl-guide.pop-out .lampiao-stage,#dnd35-owl-guide.pop-out .lampiao-chat{animation:lampiao-pop-out .25s cubic-bezier(.2,.8,.3,1) forwards}
+      #dnd35-owl-guide.pop-in .lampiao-stage,#dnd35-owl-guide.pop-in .lampiao-chat{animation:lampiao-pop-in .3s cubic-bezier(.2,.8,.3,1) both}
       #dnd35-owl-guide.closed{right:18px;bottom:18px}
-      @keyframes lampiao-idle{0%,100%{transform:translateY(0) rotate(0)}35%{transform:translateY(-4px) rotate(-1deg)}70%{transform:translateY(1px) rotate(1deg)}}
+      @keyframes lampiao-idle{0%,100%{transform:translateY(0)}45%{transform:translateY(-3px)}75%{transform:translateY(1px)}}
+      @keyframes lampiao-body-sway{0%,100%{transform:rotate(0) translateX(0)}28%{transform:rotate(-.7deg) translateX(-1px)}66%{transform:rotate(.55deg) translateX(1px)}}
+      @keyframes lampiao-ember{0%,100%{opacity:.56;transform:scale(.88)}50%{opacity:1;transform:scale(1.13)}}
+      @keyframes lampiao-smoke{0%,70%,100%{opacity:0;transform:translate(0,12px) scale(.72)}76%{opacity:.45}92%{opacity:.1;transform:translate(9px,-20px) scale(1.35)}}
+      @keyframes lampiao-react{0%{transform:scale(1)}32%{transform:scale(1.055) translateY(-5px)}65%{transform:scale(.98) translateY(1px)}100%{transform:scale(1)}}
+      @keyframes lampiao-react-body{0%,100%{transform:rotate(0)}30%{transform:rotate(-2deg)}68%{transform:rotate(1deg)}}
+      @keyframes lampiao-speaking{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-2px) rotate(-.6deg)}55%{transform:translateY(0) rotate(.6deg)}}
+      @media(max-width:680px){#dnd35-owl-guide .lampiao-stage{width:104px;height:150px}}
+      @media(prefers-reduced-motion:reduce){#dnd35-owl-guide .lampiao-stage,#dnd35-owl-guide .lampiao-art,#dnd35-owl-guide .lampiao-stage:before,#dnd35-owl-guide .lampiao-stage:after{animation:none}}
+
       @keyframes lampiao-pop-out{0%{transform:scale(1);opacity:1}30%{transform:scale(1.15);opacity:1}100%{transform:scale(0);opacity:0}}
       @keyframes lampiao-pop-in{0%{transform:scale(0);opacity:0}70%{transform:scale(1.15);opacity:1}100%{transform:scale(1);opacity:1}}
       @media(max-width:680px){#dnd35-owl-guide{right:10px;bottom:10px;gap:4px}#dnd35-owl-guide .lampiao-art{width:104px;height:150px}#dnd35-owl-guide .lampiao-chat{width:min(290px,calc(100vw - 120px));min-width:190px;padding:11px 12px}#dnd35-owl-guide .lampiao-message{font-size:14px}#dnd35-owl-guide .lampiao-actions button{padding:6px 7px;font-size:9px}}
@@ -2082,10 +2098,11 @@
     const root=document.createElement('aside');
     root.id='dnd35-owl-guide';
     root.setAttribute('aria-label','Guia do Lampião Errante');
-    root.innerHTML='<svg class="lampiao-art" viewBox="0 0 240 320" role="img" aria-label="Lampião Errante"><defs><radialGradient id="lampGlow"><stop stop-color="#fff1a0"/><stop offset=".38" stop-color="#ffad35"/><stop offset="1" stop-color="#9b3e12"/></radialGradient><linearGradient id="iron" x2="1" y2="1"><stop stop-color="#92704a"/><stop offset=".3" stop-color="#211b17"/><stop offset=".62" stop-color="#6d4a2c"/><stop offset="1" stop-color="#171411"/></linearGradient><linearGradient id="cloth" x2="0" y2="1"><stop stop-color="#762d2b"/><stop offset="1" stop-color="#240f13"/></linearGradient><filter id="glow"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><path d="M112 295 Q78 265 112 239 Q82 213 117 184 Q143 158 120 130 Q166 153 147 189 Q184 218 145 246 Q169 273 133 302Z" fill="url(#lampGlow)" opacity=".8" filter="url(#glow)"/><path d="M83 47 Q54 4 112 12 Q176 4 157 52" fill="none" stroke="#30231a" stroke-width="10"/><path d="M83 47 Q54 4 112 12 Q176 4 157 52" fill="none" stroke="#9a7547" stroke-width="3"/><path d="M81 47 L159 47 L176 83 L64 83Z" fill="url(#iron)" stroke="#b18a50" stroke-width="3"/><path d="M70 70 Q38 52 28 95 Q56 109 78 90 L92 73 Q128 98 166 77 Q204 88 184 119 Q150 132 105 109 L73 128 Q29 138 37 171 L62 160 L79 130 Q117 151 158 127 Q196 142 207 111 L177 92 L163 67Z" fill="url(#cloth)" stroke="#9a563d" stroke-width="2"/><path d="M75 91 L165 91 L185 218 Q177 250 120 254 Q63 250 55 218Z" fill="url(#iron)" stroke="#b18a50" stroke-width="4"/><path d="M78 108 Q120 87 162 108 L171 212 Q120 241 69 212Z" fill="#27160f" stroke="#8b693f" stroke-width="4"/><path d="M85 203 Q67 159 99 124 Q115 105 121 130 Q147 103 158 143 Q177 178 153 211 Q121 233 85 203Z" fill="url(#lampGlow)" filter="url(#glow)"/><path d="M88 151 Q103 132 117 151 Q104 160 88 151Z M126 151 Q143 132 158 151 Q142 160 126 151Z" fill="#1b100b"/><path d="M91 147 Q104 139 116 148 M129 148 Q143 139 155 147" fill="none" stroke="#e9b45a" stroke-width="5" stroke-linecap="round"/><path d="M75 134 L117 126 L112 141 L79 148Z M126 126 L166 135 L159 148 L129 141Z" fill="#241a14" stroke="#a17a48" stroke-width="3"/><path d="M63 214 Q120 235 177 214 L187 241 Q121 267 53 241Z" fill="url(#iron)" stroke="#a77d48" stroke-width="4"/><path d="M88 240 L76 264 L96 256 L111 274 L124 253 L144 268 L155 245" fill="none" stroke="#b18a50" stroke-width="5"/><path d="M61 120 Q32 135 31 166 L14 185 M177 124 Q204 135 208 163 L226 178" fill="none" stroke="#4b3827" stroke-width="9" stroke-linecap="round"/><path d="M14 185 l-9 13 18-3 8 12 7-18 -10-9Z M226 178 l10 12 -18-2 -8 13 -7-18 10-10Z" fill="#241b15" stroke="#98754a" stroke-width="3"/><path d="M70 82 Q44 96 57 112 M166 82 Q190 98 179 115" fill="none" stroke="#b58a51" stroke-width="3"/><path d="M95 253 L145 253 L155 285 Q120 301 85 285Z" fill="url(#iron)" stroke="#9a7547" stroke-width="3"/><circle cx="120" cy="272" r="10" fill="none" stroke="#d0a45c" stroke-width="2"/><path d="M120 261 L120 283 M109 272 L131 272 M112 264 L128 280 M128 264 L112 280" stroke="#d0a45c" stroke-width="1.5"/><path d="M56 99 L45 117 L59 111 M174 95 L190 113 L176 108" fill="none" stroke="#b45d42" stroke-width="3"/></svg>';
+    root.innerHTML='<div class="lampiao-stage"><img class="lampiao-art" src="assets/lampiao-errante.png" alt="Lampião Errante" onerror="this.style.display=\'none\'"></div>'
     const chat=document.createElement('div');
     chat.className='lampiao-chat';
     chat.innerHTML='<h3 class="lampiao-title">O Lampião Errante</h3><p class="lampiao-message"></p><div class="lampiao-detail"></div><div class="lampiao-actions"><button type="button" data-action="next">Seguir</button><button type="button" data-action="prev">Voltar</button><button type="button" data-action="about">Sobre esta etapa</button><button type="button" class="lampiao-close" data-action="close">Fechar guia</button></div>';
+    const stage=root.querySelector('.lampiao-stage');
     const minimized=document.createElement('button');
     minimized.type='button'; minimized.className='lampiao-minimized'; minimized.textContent='✦'; minimized.setAttribute('aria-label','Reabrir o guia');
     root.append(chat,minimized);
@@ -2149,6 +2166,7 @@
       if(!item){message.textContent='A ficha está preenchida. Revise os dados e salve quando estiver tudo certo.';detail.textContent='';prev.disabled=true;next.disabled=true;return;}
       message.textContent=stageText(item);
       detail.textContent=detailText(item);
+      stage.classList.remove('speaking'); void stage.offsetWidth; stage.classList.add('speaking'); window.setTimeout(()=>stage.classList.remove('speaking'),2200);
       prev.disabled=step<=0;
       next.disabled=step>=list.length-1;
       about.textContent=root.classList.contains('show-detail')?'Ocultar detalhes':'Sobre esta etapa';
@@ -2158,6 +2176,7 @@
       const target=Math.max(0,Math.min(list.length-1,step+delta));
       if(target===step){render();return;}
       showStep(target);
+      stage.classList.remove('reacting'); void stage.offsetWidth; stage.classList.add('reacting'); window.setTimeout(()=>stage.classList.remove('reacting'),520);
       root.classList.remove('show-detail');
       render();
     };
