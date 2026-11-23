@@ -1551,12 +1551,12 @@
     const entries = [
       { label: 'Base', target: sheet && sheet.querySelector('.header-top') },
       { label: 'Atributos', panel: 'Atributos' },
-      { label: 'Resistências', panel: 'Resistências' },
-      { label: 'Base e Agarrar', panel: 'Base e Agarrar' },
-      { label: 'Iniciativa', panel: 'Iniciativa' },
-      { label: 'Deslocamento', panel: 'Deslocamento' },
-      { label: 'Pontos de Vida', panel: 'Pontos de Vida' },
-      { label: 'Armadura (CA)', panel: 'Armadura (CA)' },
+      { label: 'Resistências', panel: 'Resistências', formula: 'Bônus-base da classe + modificador do atributo (Constituição para Fortitude, Destreza para Reflexos e Sabedoria para Vontade) + modificadores adicionais aplicáveis.' },
+      { label: 'Base e Agarrar', panel: 'Base e Agarrar', formula: 'Bônus de Ataque Base (BBA) = progressão da classe conforme o nível. Agarrar = BBA + modificador de Força + modificador de tamanho + outros modificadores aplicáveis.' },
+      { label: 'Iniciativa', panel: 'Iniciativa', formula: 'Iniciativa = modificador de Destreza + modificadores adicionais aplicáveis.' },
+      { label: 'Deslocamento', panel: 'Deslocamento', formula: 'Deslocamento = valor-base da raça ou classe, ajustado por carga, armadura, terreno e habilidades quando aplicável.' },
+      { label: 'Pontos de Vida', panel: 'Pontos de Vida', formula: 'PV = pontos do dado de vida da classe em cada nível + modificador de Constituição por nível + ajustes adicionais aplicáveis. No 1º nível, o dado de vida é maximizado pelas regras padrão.' },
+      { label: 'Armadura (CA)', panel: 'Armadura (CA)', formula: 'CA = 10 + bônus de armadura + bônus de escudo + modificador de Destreza (limitado pela armadura) + modificador de tamanho + bônus de melhoria, deflexão, armadura natural e outros bônus aplicáveis. Toque e surpresa usam apenas os componentes permitidos pelas regras.' },
       { label: 'Ataques', panel: 'Ataques' },
       { label: 'Perícias', panel: 'Perícias' },
       { label: 'Talentos', panel: 'Talentos' },
@@ -1645,7 +1645,14 @@
         const heading = content.querySelector('strong');
         if (heading) heading.textContent = entry.label;
         const help = content.querySelector('.mage-guide-help');
-        if (help) help.textContent = 'Você foi direcionado diretamente a este tópico da ficha. Confira as informações e continue a navegação pelos títulos.';
+        if (help) {
+          const formula = entry.formula;
+          const firstInput = entry.target.querySelector('input:not([type=hidden]),textarea,select');
+          const currentValue = firstInput && String(firstInput.value || '').trim();
+          const resultLine = currentValue ? '\\n\\nValor atualmente exibido na ficha: ' + currentValue + '.' : '';
+          help.textContent = formula ? 'Como o resultado é obtido: ' + formula + resultLine : 'Você foi direcionado diretamente a este tópico da ficha. Confira as informações e continue a navegação pelos títulos.';
+          help.style.whiteSpace = 'pre-line';
+        }
       });
       nav.appendChild(button);
     });
