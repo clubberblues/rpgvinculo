@@ -2106,7 +2106,25 @@
       'resumo magico':'Este painel resume os dados mágicos calculados da ficha. Ele não substitui o Grimório: para adicionar ou preparar magias, volte à etapa Magia e abra o catálogo.',
       'equipamentos':'Confira o que o personagem carrega e veste. Armas, armaduras, escudos e carga podem influenciar valores da ficha. Se algo depender da decisão da campanha, combine com o Mestre.',
       'experiencia':'Aqui ficam os dados de experiência e progressão. Eles devem refletir o avanço definido na campanha, não uma escolha aleatória durante a criação.',
-      'observacoes':'Use este espaço para registrar detalhes que ajudam a interpretar o personagem: hábitos, aparência, objetivos, promessas e informações importantes para a campanha.'
+      'observacoes':'Use este espaço para registrar detalhes que ajudam a interpretar o personagem: hábitos, aparência, objetivos, promessas e informações importantes para a campanha.',
+
+      'resistencias':'Fortitude, Reflexos e Vontade são suas três defesas. Constituição fortalece a Fortitude, Destreza ajuda nos Reflexos e Sabedoria sustenta a Vontade. Não são pontos de vida extras: são testes para resistir a perigos diferentes.',
+      'base e agarrar':'O Bônus Base de Ataque acompanha a progressão da classe. Agarrar combina esse bônus com Força e ajustes aplicáveis. É a matemática por trás de acertar golpes e disputar força corpo a corpo.',
+      'iniciativa':'Quando o combate começa, a Iniciativa ajuda a decidir quem age primeiro. O modificador de Destreza é a base; efeitos e talentos podem alterar o resultado.',
+      'deslocamento':'Este valor indica quanto você consegue percorrer. Raça, classe, armadura, carga e habilidades podem mudar a distância. Confira o equipamento antes de culpar as próprias pernas.',
+      'pontos de vida':'Pontos de Vida representam quanto dano o personagem suporta. O dado de vida vem da classe e Constituição acrescenta seu modificador. No primeiro nível, o dado de vida começa no valor máximo.',
+      'armadura ca':'A Classe de Armadura reúne proteção da armadura, escudo, Destreza permitida, tamanho e outros bônus válidos. CA de toque e desprevenido ignoram partes diferentes dessa proteção.',
+      'ataques':'Aqui ficam as formas de atacar e os bônus usados para acertar. Confira arma, proficiência, atributo e Bônus Base de Ataque. Uma arma que você não sabe usar costuma cobrar esse descuido.',
+      'tracos raciais':'Estas características vêm da raça escolhida: sentidos, resistências, deslocamento e outras particularidades. Leia o que é aplicado automaticamente e o que serve como informação para a interpretação.',
+      'varinhas e cajados':'Varinhas e cajados são itens mágicos com regras próprias de uso. Registre o que o personagem possui e consulte as descrições antes de tentar ativar um deles. Magia não é desculpa para apertar qualquer botão.',
+      'capacidade de carga':'A carga depende do peso transportado e da Força. Ela pode afetar deslocamento e outras situações. Se a mochila parece carregar uma carroça, talvez seja hora de rever o inventário.',
+      'idiomas':'Aqui você registra os idiomas que o personagem conhece. Raça, classe, Inteligência e escolhas permitidas podem influenciar essa lista. Conhecer um idioma não significa saber ler e escrever automaticamente.',
+      'recipientes':'Mochilas, bolsas e outros recipientes ajudam a organizar o que o personagem carrega. Guarde cada item no lugar certo para manter o inventário compreensível.',
+      'dinheiro':'Registre moedas e valores disponíveis para a campanha. Compras e recompensas alteram esse total; mantenha-o atualizado para não tentar pagar uma poção com promessas.',
+      'experiencia':'A experiência acompanha o avanço do personagem. O Mestre define os ganhos da campanha; use este campo para manter o total e o nível coerentes.',
+      'observacoes':'Anote aparência, objetivos, vínculos, hábitos e fatos importantes. É o espaço para aquilo que não cabe em números, mas que faz o personagem parecer alguém de verdade.',
+      'resumo magico':'Este painel reúne os valores mágicos calculados e as escolhas de escola. Ele é um resumo, não o livro: para registrar ou preparar magias, abra o Grimório.',
+      'equipamentos':'Confira armas, armaduras, escudos e itens carregados. Proficiência, peso e tipo de armadura podem afetar outros campos da ficha. Melhor descobrir isso aqui do que no meio de uma emboscada.'
     };
     const stageKey=item=>normalize((item&&item.sectionKey)|| (item&&item.label)||'');
     const stageText=item=>{
@@ -2114,7 +2132,9 @@
       const found=Object.keys(stageLines).find(k=>key.includes(k));
       if(found)return stageLines[found];
       const label=(item&&item.label)||'esta parte da ficha';
-      return 'Nesta etapa, cuide de '+label.toLocaleLowerCase('pt-BR')+'. Confira os campos destacados, leia as orientações da ficha e escolha apenas o que fizer sentido para seu personagem e para as regras da campanha.';
+      const box=document.createElement('div');box.innerHTML=(item&&item.help)||'';
+      const guidance=(box.textContent||'').replace(/\\s+/g,' ').trim();
+      return guidance ? label+'. '+guidance+' Leia com atenção antes de seguir; não vou deixar você escolher no escuro.' : label+'. Esta escolha afeta os dados registrados na ficha. Confira os campos destacados e as regras indicadas antes de avançar.';
     };
     const detailText=item=>{
       const box=document.createElement('div');
