@@ -2156,6 +2156,8 @@
     };
     chat.querySelector('[data-action="close"]').addEventListener('click',closeGuide);
     minimized.addEventListener('click',reopen);
+    const stepNote=document.getElementById('mage-step-note');
+    if(stepNote){const stepObserver=new MutationObserver(()=>render());stepObserver.observe(stepNote,{subtree:true,childList:true,characterData:true,attributes:true});}
     render();
     window.setTimeout(()=>root.classList.add('pop-in'),100);
   }
