@@ -1388,7 +1388,10 @@
     const tools = document.querySelector('#mage-catalog-overlay .mage-catalog-tools');
     const search = document.getElementById('mage-catalog-search');
     title.textContent = mode === 'feats' ? 'Talentos' : mode === 'spells' ? 'Grimório do Mago' : 'Familiar';
-    if(mode==='spells')spellCatalogTab=isCreate?'schools':'grimoire';
+    if(mode==='spells'){
+      if(isCreate)spellCatalogTab='schools';
+      else {try{wizardChoices();spellCatalogTab='grimoire';}catch(_){spellCatalogTab='schools';}}
+    }
     if (mode === 'feats') { initializePendingFeatSelections(); activeFeatCategory = 'todos'; }
     const categoryNav = document.getElementById('mage-feat-categories');
     if (categoryNav) categoryNav.classList.toggle('ativo',mode==='feats');
@@ -1759,6 +1762,12 @@
           const intro = document.createElement('p');
           intro.textContent = entry.description || 'Esta parte da ficha reúne informações do personagem. Confira os valores e consulte os campos durante a campanha.';
           help.appendChild(intro);
+          if (entry.label === 'Magia') {
+            const open = document.createElement('button');
+            open.type = 'button'; open.className = 'mage-guide-catalog-button'; open.textContent = 'Abrir Grimório';
+            open.addEventListener('click', () => openCatalog('spells'));
+            help.appendChild(open);
+          }
           if (entry.formula) {
             const formulaTitle = document.createElement('strong');
             formulaTitle.textContent = 'Como é calculado';
