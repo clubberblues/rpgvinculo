@@ -311,7 +311,16 @@
     const matches = spellCatalog.filter(sp => wizardSpell(sp) && Number(sp.circulo) === circle &&
       [sp.nome_pt,sp.nome].some(label => normalize(label) === key));
     if (!matches.length) throw new Error('A magia "' + name + '" não foi encontrada no catálogo de magias do Mago para o círculo ' + circle + '.');
-    return choosePreferredSpell(matches).id;
+    const spell=choosePreferredSpell(matches);
+    if(selectedProhibitedSchools().includes(spellSchoolKey(spell.escola)))throw new Error('A magia "'+name+'" pertence a uma escola proibida para este Mago.');
+    return spell.id;
+  }
+  function validateSpellbookEntries() {
+    spellRows().forEach(row=>{
+      if(!row.spell)throw new Error('A magia "'+row.name+'" não foi encontrada no catálogo. Escolha-a novamente pelo Grimório.');
+      const result=spellEligibility(row.spell);
+      if(!result.eligible)throw new Error('A magia "'+row.name+'" não pode permanecer no Grimório: '+result.reasons.join(' '));
+    });
   }
   function collectFirstCircleSpells() {
     const block = Array.from(document.querySelectorAll('.ficha .spell-level-block'))
@@ -1898,6 +1907,7 @@
     const button = document.getElementById('mage-save');
     button.disabled = true;
     try {
+      validateSpellbookEntries();
       const current = await sb.from('srd_character_sheets').select('identidade').eq('character_id', characterId).maybeSingle();
       if (current.error) throw current.error;
       if (!current.data) throw new Error('Ficha não encontrada ou sem permissão.');
