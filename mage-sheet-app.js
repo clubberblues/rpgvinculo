@@ -1484,14 +1484,14 @@
       const label = clean(labelNode) || 'esta informação';
       const sectionPanel = control.closest('.panel');
       const sectionKey = normalize(sectionPanel ? clean(sectionPanel.querySelector('.panel-title')) : 'identidade');
-      let help = 'Preencha ou confira esta informação. Ela ficará registrada neste espaço da ficha para consulta durante a campanha.';
+      let help = 'Confira este campo e preencha o que estiver faltando. Essas informações ficam na ficha para você consultar durante a aventura.';
       const attributeHelp = {
-        'for': 'FORÇA é o braço forte do personagem: ajuda a acertar golpes corpo a corpo, aumenta o dano e conta para tarefas físicas como escalar, saltar e arrombar. Também influencia quanto equipamento você consegue carregar.',
-        'des': 'DESTREZA é agilidade, reflexo e coordenação. Entra na Iniciativa, na CA (quando você pode se esquivar), nos Reflexos e em perícias como Furtividade, Acrobacia e Abrir Fechaduras. Armaduras pesadas podem limitar parte desse benefício.',
-        'con': 'CONSTITUIÇÃO é fôlego e resistência. Ela aumenta seus Pontos de Vida a cada nível e ajuda nos testes de Fortitude, usados para resistir a venenos, doenças e outros perigos que castigam o corpo.',
-        'int': 'INTELIGÊNCIA é raciocínio, memória e estudo. Ela define quantos pontos de perícia você recebe e ajuda em perícias de conhecimento e investigação. Para o Mago, também é o atributo-chave das magias: influencia o que ele pode conjurar e a dificuldade para resistir a elas.',
-        'sab': 'SABEDORIA é percepção, instinto e força de vontade. Ajuda na resistência de Vontade e em perícias como Ouvir, Observar, Sentir Motivação e Sobrevivência. É o atributo-chave de conjuradores como Clérigos e Druidas.',
-        'car': 'CARISMA é presença, confiança e força de personalidade. Ajuda em Blefar, Diplomacia, Intimidar e Atuação. Também é o atributo-chave de conjuradores como Feiticeiros e Bardos.'
+        'for': 'FORÇA mede o poder físico. Ajuda nos golpes corpo a corpo, no dano e em tarefas como escalar, saltar e arrombar. Também influencia quanto equipamento você consegue carregar.',
+        'des': 'DESTREZA mede agilidade e reflexos. Ajuda na Iniciativa, na defesa, nos testes de Reflexos e em perícias como Furtividade e Acrobacia. Algumas armaduras limitam esse benefício.',
+        'con': 'CONSTITUIÇÃO mede saúde e resistência. Ela aumenta seus Pontos de Vida e ajuda a resistir a venenos, doenças e outros perigos físicos.',
+        'int': 'INTELIGÊNCIA representa raciocínio, memória e estudo. Ajuda em conhecimentos e investigação e define seus pontos de perícia. Para o Mago, também é o atributo principal para lançar magias.',
+        'sab': 'SABEDORIA reúne percepção, bom senso e força de vontade. Ajuda a perceber perigos e resistir a efeitos mentais. É importante para Clérigos e Druidas.',
+        'car': 'CARISMA mede presença e força de personalidade. Ajuda em conversas, blefes e intimidação. É importante para Feiticeiros e Bardos.'
       };
       const attributeKey = normalize(label).replace(/[^a-z]/g,'');
       if (/atributos/.test(sectionKey) && attributeHelp[attributeKey]) help = attributeHelp[attributeKey];
@@ -1499,13 +1499,13 @@
       if (/cabecalho|identidade/.test(sectionKey)) {
         const identityHelp = {
           'nome do personagem':'Dê um nome ao aventureiro. É assim que ele será identificado na ficha e durante a campanha.',
-          'raca':'A raça define características físicas, ajustes de atributos, deslocamento, idiomas e habilidades próprias.',
-          'tendencia':'Escolha a orientação moral e ética do personagem. Ela ajuda a interpretar suas decisões, mas não substitui sua personalidade.',
-          'sexo':'Informe como o personagem se identifica. Este dado é narrativo e não altera os atributos.',
-          'idade':'A idade ajuda a definir a história do personagem e pode ter efeitos próprios conforme a raça.',
-          'altura':'A altura é gerada a partir da raça e pode ser ajustada para representar seu personagem.',
-          'peso':'O peso acompanha a constituição física e a altura do personagem; a geração racial oferece um valor inicial.',
-          'divindade':'Registre a divindade seguida pelo personagem, se houver.'
+          'raca':'A raça define características do personagem, como ajustes nos atributos, velocidade, idiomas e habilidades especiais.',
+          'tendencia':'Escolha a tendência do personagem. Ela serve como guia para suas escolhas, mas não define toda a personalidade dele.',
+          'sexo':'Registre essa informação para a história do personagem. Ela não muda os atributos.',
+          'idade':'A idade ajuda a contar a história do personagem e pode trazer efeitos conforme a raça.',
+          'altura':'A altura inicial segue a raça escolhida. Você pode ajustar o valor para combinar com seu personagem.',
+          'peso':'O peso inicial acompanha a raça e a altura. Ajuste se quiser representar melhor seu personagem.',
+          'divindade':'Se o personagem segue uma divindade, registre o nome aqui.'
         };
         help = identityHelp[fieldKey] || 'Esta etapa reúne informações de identidade e história do aventureiro. Confira o dado apresentado e ajuste quando necessário.';
       } else if (/atributos/.test(sectionKey)) help = attributeHelp[attributeKey] || 'Os atributos são as seis capacidades básicas do personagem. Seus modificadores alimentam automaticamente perícias, combate e resistências.';
@@ -1551,12 +1551,12 @@
     const entries = [
       { label: 'Base', target: sheet && sheet.querySelector('.header-top') },
       { label: 'Atributos', panel: 'Atributos' },
-      { label: 'Resistências', panel: 'Resistências', formula: 'Bônus-base da classe + modificador do atributo (Constituição para Fortitude, Destreza para Reflexos e Sabedoria para Vontade) + modificadores adicionais aplicáveis.' },
-      { label: 'Base e Agarrar', panel: 'Base e Agarrar', formula: 'Bônus de Ataque Base (BBA) = progressão da classe conforme o nível. Agarrar = BBA + modificador de Força + modificador de tamanho + outros modificadores aplicáveis.' },
-      { label: 'Iniciativa', panel: 'Iniciativa', formula: 'Iniciativa = modificador de Destreza + modificadores adicionais aplicáveis.' },
-      { label: 'Deslocamento', panel: 'Deslocamento', formula: 'Deslocamento = valor-base da raça ou classe, ajustado por carga, armadura, terreno e habilidades quando aplicável.' },
-      { label: 'Pontos de Vida', panel: 'Pontos de Vida', formula: 'PV = pontos do dado de vida da classe em cada nível + modificador de Constituição por nível + ajustes adicionais aplicáveis. No 1º nível, o dado de vida é maximizado pelas regras padrão.' },
-      { label: 'Armadura (CA)', panel: 'Armadura (CA)', formula: 'CA = 10 + bônus de armadura + bônus de escudo + modificador de Destreza (limitado pela armadura) + modificador de tamanho + bônus de melhoria, deflexão, armadura natural e outros bônus aplicáveis. Toque e surpresa usam apenas os componentes permitidos pelas regras.' },
+      { label: 'Resistências', panel: 'Resistências', description: 'Mostram o quanto seu personagem consegue resistir a perigos. Fortitude protege o corpo, Reflexos ajuda a escapar de ameaças e Vontade protege a mente.', formula: 'Fortitude = bônus-base + Constituição. Reflexos = bônus-base + Destreza. Vontade = bônus-base + Sabedoria. Outros efeitos podem somar bônus ou penalidades.' },
+      { label: 'Base e Agarrar', panel: 'Base e Agarrar', description: 'O BBA ajuda a acertar ataques. Agarrar é usado quando você tenta segurar ou imobilizar uma criatura.', formula: 'BBA: valor definido pela classe e pelo nível. Agarrar = BBA + Força + ajuste de tamanho + outros modificadores.' },
+      { label: 'Iniciativa', panel: 'Iniciativa', description: 'Indica a rapidez com que seu personagem reage quando um combate começa.', formula: 'Iniciativa = modificador de Destreza + outros modificadores.' },
+      { label: 'Deslocamento', panel: 'Deslocamento', description: 'É a distância que seu personagem pode percorrer. Armadura, carga e algumas habilidades podem mudar esse valor.', formula: 'Parte do deslocamento da raça ou classe; depois são considerados armadura, carga e efeitos que alterem o movimento.' },
+      { label: 'Pontos de Vida', panel: 'Pontos de Vida', description: 'Representam quanto dano seu personagem aguenta antes de cair. A classe define o dado de vida e a Constituição influencia o total.', formula: 'Em cada nível: pontos do dado de vida + modificador de Constituição. Some também os ajustes concedidos por habilidades ou outros efeitos. No 1º nível, use o valor máximo do dado de vida.' },
+      { label: 'Armadura (CA)', panel: 'Armadura (CA)', description: 'A Classe de Armadura indica o quanto é difícil acertar seu personagem. Armadura, escudo, agilidade e outros bônus podem protegê-lo.', formula: 'CA = 10 + armadura + escudo + Destreza permitida pela armadura + tamanho + outros bônus aplicáveis. CA de toque e desprevenido ignoram alguns desses bônus, conforme as regras.' },
       { label: 'Ataques', panel: 'Ataques' },
       { label: 'Perícias', panel: 'Perícias' },
       { label: 'Talentos', panel: 'Talentos' },
@@ -1646,12 +1646,17 @@
         if (heading) heading.textContent = entry.label;
         const help = content.querySelector('.mage-guide-help');
         if (help) {
-          const formula = entry.formula;
-          const firstInput = entry.target.querySelector('input:not([type=hidden]),textarea,select');
-          const currentValue = firstInput && String(firstInput.value || '').trim();
-          const resultLine = currentValue ? '\\n\\nValor atualmente exibido na ficha: ' + currentValue + '.' : '';
-          help.textContent = formula ? 'Como o resultado é obtido: ' + formula + resultLine : 'Você foi direcionado diretamente a este tópico da ficha. Confira as informações e continue a navegação pelos títulos.';
-          help.style.whiteSpace = 'pre-line';
+          help.replaceChildren();
+          const intro = document.createElement('p');
+          intro.textContent = entry.description || 'Esta parte da ficha reúne informações do personagem. Confira os valores e consulte os campos durante a campanha.';
+          help.appendChild(intro);
+          if (entry.formula) {
+            const formulaTitle = document.createElement('strong');
+            formulaTitle.textContent = 'Como é calculado';
+            const formulaText = document.createElement('p');
+            formulaText.textContent = entry.formula;
+            help.append(formulaTitle, formulaText);
+          }
         }
       });
       nav.appendChild(button);
