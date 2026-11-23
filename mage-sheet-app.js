@@ -1244,6 +1244,7 @@
         list.appendChild(saveWrap);
       }
     } else if (catalogMode === 'spells') {
+      const level = Number(document.getElementById('mage-catalog-level')?.value ?? (isCreate ? 1 : 0));
       items = allowedSpells(level).filter(item=>normalize((item.nome_pt||item.nome)+' '+item.escola+' '+item.nivel).includes(search));
       items.forEach(spell=>{
         const name = spell.nome_pt || spell.nome;
