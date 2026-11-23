@@ -165,12 +165,16 @@
   function wizardSpell(spell) { return Array.isArray(spell.classes)&&spell.classes.includes('wizard'); }
   function wizardLevel() { const value=Number(groupValue('Nível')||1);return Math.max(1,Math.min(20,Number.isFinite(value)?value:1)); }
   function wizardMaxCircle() { return Math.min(9,Math.ceil(wizardLevel()/2)); }
+  function wizardSpellCircle(spell) {
+    const match=String(spell.nivel||'').match(/(?:Sor\/)?Wiz\s+(\d+)/i);
+    return match?Number(match[1]):Number(spell.circulo);
+  }
   function spellEligibility(spell) {
     const reasons=[];
     if(!wizardSpell(spell))reasons.push('Não pertence à lista de Mago.');
     const school=spellSchoolKey(spell.escola);
     if(school&&selectedProhibitedSchools().includes(school))reasons.push('Pertence a uma escola proibida.');
-    if(Number(spell.circulo)>wizardMaxCircle())reasons.push('Seu nível atual ainda não permite este círculo.');
+    if(wizardSpellCircle(spell)>wizardMaxCircle())reasons.push('Seu nível atual ainda não permite este círculo.');
     return {eligible:reasons.length===0,reasons};
   }
   function wizardSpecialization() { return specializationKey(labeledInput('Magia','Especialização em Escola')?.value || ''); }
@@ -217,7 +221,7 @@
   }
   function allowedSpells(circle) {
     const prohibited = selectedProhibitedSchools();
-    return spellCatalog.filter(sp=>wizardSpell(sp)&&Number(sp.circulo)===circle&&!prohibited.includes(spellSchoolKey(sp.escola)))
+    return spellCatalog.filter(sp=>wizardSpell(sp)&&wizardSpellCircle(sp)===circle&&!prohibited.includes(spellSchoolKey(sp.escola)))
       .sort((a,b)=>String(a.nome_pt||a.nome).localeCompare(String(b.nome_pt||b.nome),'pt-BR'));
   }
   function ensureDatalist(id, items) {
@@ -308,7 +312,7 @@
   }
   function spellIdFromName(name, circle) {
     const key = normalize(name);
-    const matches = spellCatalog.filter(sp => wizardSpell(sp) && Number(sp.circulo) === circle &&
+    const matches = spellCatalog.filter(sp => wizardSpell(sp) && wizardSpellCircle(sp) === circle &&
       [sp.nome_pt,sp.nome].some(label => normalize(label) === key));
     if (!matches.length) throw new Error('A magia "' + name + '" não foi encontrada no catálogo de magias do Mago para o círculo ' + circle + '.');
     const spell=choosePreferredSpell(matches);
@@ -1286,7 +1290,7 @@
   function spellRows() {
     const out=[];document.querySelectorAll('.spell-level-block').forEach(block=>{
       const circle=parseInt(clean(block.querySelector('.spell-level-title')),10);
-      block.querySelectorAll('.spell-row').forEach(row=>{const input=row.querySelector('input[type="text"]'),check=row.querySelector('input[type="checkbox"]'),name=String(input?.value||'').trim();if(name)out.push({circle,name,input,check,spell:spellCatalog.find(sp=>wizardSpell(sp)&&Number(sp.circulo)===circle&&[sp.nome_pt,sp.nome].some(x=>normalize(x)===normalize(name)))});});
+      block.querySelectorAll('.spell-row').forEach(row=>{const input=row.querySelector('input[type="text"]'),check=row.querySelector('input[type="checkbox"]'),name=String(input?.value||'').trim();if(name)out.push({circle,name,input,check,spell:spellCatalog.find(sp=>wizardSpell(sp)&&wizardSpellCircle(sp)===circle&&[sp.nome_pt,sp.nome].some(x=>normalize(x)===normalize(name)))});});
     });return out;
   }
   function expectedInitialSpellCount() {
@@ -1295,7 +1299,7 @@
   function renderGrimoireSelection(list,search) {
     const circle=Number(document.getElementById('mage-catalog-level')?.value??1),existing=spellRows(),known=existing.filter(row=>row.circle===circle);
     list.appendChild(createNode('div','mage-school-progress',isCreate&&circle===1?'Escolha '+expectedInitialSpellCount()+' magia(s) de 1º círculo. Selecionadas: '+known.length+'. Truques de 0º círculo entram automaticamente.':'Magias registradas neste círculo: '+known.length+'. Opções bloqueadas não atendem às regras da classe, escola ou nível.'));
-    const spells=spellCatalog.filter(sp=>Number(sp.circulo)===circle&&normalize((sp.nome_pt||sp.nome)+' '+sp.escola+' '+sp.nivel).includes(search));
+    const spells=spellCatalog.filter(sp=>wizardSpellCircle(sp)===circle&&normalize((sp.nome_pt||sp.nome)+' '+sp.escola+' '+sp.nivel).includes(search));
     if(!spells.length)list.appendChild(createNode('div','mage-catalog-empty','Nenhuma magia encontrada neste círculo com essa pesquisa.'));
     spells.forEach(spell=>{
       const name=spell.nome_pt||spell.nome,elig=spellEligibility(spell),selected=existing.some(row=>row.circle===circle&&normalize(row.name)===normalize(name));
@@ -1503,7 +1507,7 @@
     renderCatalogList();
   }
   function chooseSpell(spell) {
-    const circle=Number(spell.circulo),name=spell.nome_pt||spell.nome,eligibility=spellEligibility(spell);
+    const circle=wizardSpellCircle(spell),name=spell.nome_pt||spell.nome,eligibility=spellEligibility(spell);
     if(!eligibility.eligible){status('Esta magia não pode ser registrada: '+eligibility.reasons.join(' '),true);return;}
     const existing=spellRows().find(row=>row.circle===circle&&normalize(row.name)===normalize(name));
     if(existing){if(circle===0){status('Os truques de 0º círculo já fazem parte do Grimório inicial.');return;}existing.input.value='';existing.input.dispatchEvent(new Event('input',{bubbles:true}));if(existing.check)existing.check.checked=false;status('Magia removida do Grimório: '+name+'.');renderCatalogList();return;}
