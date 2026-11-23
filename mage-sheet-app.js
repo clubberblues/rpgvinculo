@@ -917,6 +917,7 @@
     return node;
   }
   function ensureCatalogOverlays() {
+    ensureSpellCatalogStyles();
     if (!document.getElementById('mage-catalog-overlay')) {
       const overlay = createNode('div','mage-catalog-backdrop');
       overlay.id = 'mage-catalog-overlay';
@@ -932,6 +933,7 @@
       close.setAttribute('aria-label','Fechar catálogo');
       close.addEventListener('click',closeCatalog);
       head.append(title,close);
+      const tabs = createNode('nav','mage-spell-tabs'); tabs.id='mage-spell-tabs'; tabs.setAttribute('aria-label','Etapas do Grimório');
       const tools = createNode('div','mage-catalog-tools');
       const search = createNode('input');
       search.id = 'mage-catalog-search';
@@ -946,7 +948,7 @@
       const list = createNode('div','mage-catalog-list');
       list.id = 'mage-catalog-list';
       content.append(categories,list);
-      shell.append(head,tools,content);
+      shell.append(head,tabs,tools,content);
       overlay.appendChild(shell);
       overlay.addEventListener('click',event=>{if(event.target===overlay)closeCatalog();});
       document.body.appendChild(overlay);
@@ -1214,11 +1216,95 @@
       nav.appendChild(button);
     });
   }
+  function ensureSpellCatalogStyles() {
+    if(document.getElementById('mage-spell-catalog-styles'))return;
+    const style=createNode('style');style.id='mage-spell-catalog-styles';
+    style.textContent='.mage-catalog-backdrop{background:radial-gradient(ellipse at center,rgba(42,35,23,.52),rgba(5,7,6,.88));backdrop-filter:blur(16px) saturate(.55);-webkit-backdrop-filter:blur(16px) saturate(.55)}.mage-spell-tabs{display:none;gap:7px;margin:0 0 12px;padding:7px;border:1px solid #80683f;background:linear-gradient(90deg,#1b251d,#111a14);border-radius:9px}.mage-spell-tabs.ativo{display:flex}.mage-spell-tab{flex:1;min-width:0;padding:10px 7px;border:1px solid #59664a;border-radius:7px;background:#202c22;color:#c9c3ae;font:700 10px Cinzel,serif;cursor:pointer}.mage-spell-tab.ativo{border-color:#e0bd69;background:linear-gradient(145deg,#594a2b,#2b3524);color:#ffe7a7;box-shadow:0 0 16px #c9a05035}.mage-school-card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:13px;margin:7px 0;border:1px solid #6c684d;border-radius:9px;background:linear-gradient(120deg,#28362c,#17221a);color:#eee6d2}.mage-school-card.selected{border-color:#e0bd69;box-shadow:0 0 0 1px #d9b96866,0 0 14px #d9b96822}.mage-school-card h3{margin:0 0 4px;color:#f2d995;font:700 13px Cinzel,serif}.mage-school-card p{margin:0;color:#d0c8b8;font:13px/1.4 EB Garamond,serif}.mage-school-actions{display:flex;flex-direction:column;gap:6px;justify-content:center}.mage-school-actions button{border:1px solid #8b754b;border-radius:6px;background:#202a20;color:#f2dfb0;padding:7px 9px;font:700 9px Cinzel,serif;cursor:pointer}.mage-school-actions button.active{background:#80612e;color:#fff0c3;border-color:#e0bd69}.mage-school-progress{padding:10px 12px;margin-bottom:8px;border:1px solid #80683f;border-radius:7px;background:#121c15;color:#e8d8ae;font:13px EB Garamond,serif}.mage-spell-unavailable{opacity:.42;filter:grayscale(.8)}.mage-prep-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px;margin:6px 0;border:1px solid #65704e;border-radius:8px;background:linear-gradient(120deg,#263328,#151e17);color:#eee6d2}.mage-prep-row strong{color:#f1d993;font:700 12px Cinzel,serif}.mage-prep-row small{display:block;color:#c7bea5;font:12px EB Garamond,serif;margin-top:3px}.mage-prep-toggle{border:1px solid #a68b50;border-radius:20px;padding:7px 12px;background:#172319;color:#f3dda0;font:700 9px Cinzel,serif;cursor:pointer}.mage-prep-toggle.active{background:#80612e;color:#fff1c4}@media(max-width:600px){.mage-spell-tab{font-size:8px;padding:9px 3px}.mage-school-card{grid-template-columns:1fr}.mage-school-actions{flex-direction:row;flex-wrap:wrap}}';
+    document.head.appendChild(style);
+  }
+  function renderSpellCatalogTabs() {
+    const nav=document.getElementById('mage-spell-tabs');if(!nav)return;
+    nav.replaceChildren();nav.classList.toggle('ativo',catalogMode==='spells');if(catalogMode!=='spells')return;
+    [['schools','1 · ESCOLAS'],['grimoire','2 · GRIMÓRIO'],['prepare','3 · PREPARAÇÃO']].forEach(([id,label])=>{
+      const b=createNode('button','mage-spell-tab'+(spellCatalogTab===id?' ativo':''),label);b.type='button';b.setAttribute('aria-pressed',spellCatalogTab===id?'true':'false');b.addEventListener('click',()=>setSpellCatalogTab(id));nav.appendChild(b);
+    });
+  }
+  function setSpellCatalogTab(tab) {
+    if(tab!=='schools'){try{wizardChoices();}catch(error){status(error.message,true);spellCatalogTab='schools';renderCatalogList();return;}}
+    spellCatalogTab=tab;
+    const tools=document.querySelector('#mage-catalog-overlay .mage-catalog-tools'),search=document.getElementById('mage-catalog-search'),level=document.getElementById('mage-catalog-level');
+    if(tools)tools.style.display=tab==='schools'?'none':'flex';
+    if(search)search.placeholder=tab==='prepare'?'Pesquisar nas magias conhecidas…':'Pesquisar no catálogo de magias…';
+    if(level)level.style.display=tab==='grimoire'?'':'none';
+    renderCatalogList();
+  }
+  function chooseWizardSpecialization(key) {
+    const spec=labeledInput('Magia','Especialização em Escola'),prohibited=labeledInput('Magia','Escolas Proibidas');if(!spec||!prohibited)return;
+    spec.value=key==='universalista'?'Universalista':schoolLabel(key);prohibited.value='';renderCatalogList();
+    status(key==='universalista'?'Você escolheu o caminho Universalista. Nenhuma escola será proibida.':'Especialização escolhida. Agora marque as escolas proibidas.');
+  }
+  function toggleProhibitedSchool(key) {
+    const spec=wizardSpecialization();if(!spec||spec==='universalista'||spec===key)return;
+    const required=spec==='divination'?1:2,current=selectedProhibitedSchools(),next=current.includes(key)?current.filter(x=>x!==key):current.concat(key);
+    if(next.length>required){status('Esta especialização permite '+required+' escola(s) proibida(s).',true);return;}
+    const input=labeledInput('Magia','Escolas Proibidas');if(input)input.value=next.map(schoolLabel).join(', ');renderCatalogList();
+  }
+  function renderSchoolSelection(list) {
+    const spec=wizardSpecialization(),banned=selectedProhibitedSchools(),required=spec==='divination'?1:2;
+    list.appendChild(createNode('div','mage-school-progress',spec==='universalista'?'Universalista · acesso às oito escolas, sem proibições.':!spec?'Escolha sua especialização. Depois, marque '+required+' escolas proibidas.':'Escolas proibidas: '+banned.length+' de '+(spec==='universalista'?0:required)+'.'));
+    const universal=createNode('article','mage-school-card'+(spec==='universalista'?' selected':''));
+    const uc=createNode('div');uc.append(createNode('h3','','Universalista'),createNode('p','','Estude magia sem se especializar em uma escola e sem abrir mão de nenhuma tradição.'));
+    const ua=createNode('div','mage-school-actions'),ub=createNode('button','',spec==='universalista'?'ESCOLHIDO':'ESCOLHER');ub.type='button';ub.addEventListener('click',()=>chooseWizardSpecialization('universalista'));ua.appendChild(ub);universal.append(uc,ua);list.appendChild(universal);
+    schools.forEach(([key,name,description])=>{
+      const card=createNode('article','mage-school-card'+(spec===key?' selected':''));
+      const body=createNode('div');body.append(createNode('h3','',name),createNode('p','',description));
+      const actions=createNode('div','mage-school-actions');
+      const choose=createNode('button','',spec===key?'ESPECIALIZADA':'ESPECIALIZAR');choose.type='button';choose.classList.toggle('active',spec===key);choose.addEventListener('click',()=>chooseWizardSpecialization(key));
+      const ban=createNode('button','',banned.includes(key)?'PROIBIDA':'PROIBIR');ban.type='button';ban.classList.toggle('active',banned.includes(key));ban.disabled=!spec||spec==='universalista'||spec===key;ban.addEventListener('click',()=>toggleProhibitedSchool(key));
+      actions.append(choose,ban);card.append(body,actions);list.appendChild(card);
+    });
+    const footer=createNode('div','mage-feat-save-wrap'),next=createNode('button','mage-feat-save','Continuar para o Grimório');next.type='button';next.disabled=!(spec==='universalista'||(spec&&banned.length===required));next.addEventListener('click',()=>setSpellCatalogTab('grimoire'));footer.appendChild(next);list.appendChild(footer);
+  }
+  function spellRows() {
+    const out=[];document.querySelectorAll('.spell-level-block').forEach(block=>{
+      const circle=parseInt(clean(block.querySelector('.spell-level-title')),10);
+      block.querySelectorAll('.spell-row').forEach(row=>{const input=row.querySelector('input[type="text"]'),check=row.querySelector('input[type="checkbox"]'),name=String(input?.value||'').trim();if(name)out.push({circle,name,input,check,spell:spellCatalog.find(sp=>Number(sp.circulo)===circle&&[sp.nome_pt,sp.nome].some(x=>normalize(x)===normalize(name)))});});
+    });return out;
+  }
+  function expectedInitialSpellCount() {
+    try{const base=getBaseAttributes(),racial=Number(raceData?.ajustes_atributos?.INT||0);return Math.max(1,3+Math.floor((Number(base.INT)+racial-10)/2));}catch(_){return 3;}
+  }
+  function renderGrimoireSelection(list,search) {
+    const circle=Number(document.getElementById('mage-catalog-level')?.value??1),existing=spellRows(),known=existing.filter(row=>row.circle===circle);
+    list.appendChild(createNode('div','mage-school-progress',isCreate&&circle===1?'Escolha '+expectedInitialSpellCount()+' magia(s) de 1º círculo. Selecionadas: '+known.length+'. Truques de 0º círculo entram automaticamente.':'Magias registradas neste círculo: '+known.length+'. Opções bloqueadas não atendem às regras da classe, escola ou nível.'));
+    spellCatalog.filter(sp=>Number(sp.circulo)===circle&&normalize((sp.nome_pt||sp.nome)+' '+sp.escola+' '+sp.nivel).includes(search)).forEach(spell=>{
+      const name=spell.nome_pt||spell.nome,elig=spellEligibility(spell),selected=existing.some(row=>row.circle===circle&&normalize(row.name)===normalize(name));
+      const meta='Círculo '+circle+' · '+schoolLabel(spellSchoolKey(spell.escola)||spell.escola)+' · '+(elig.eligible?(selected?'Já está no Grimório':'Permitida para Mago'):elig.reasons.join(' '));
+      const details=['Escola: '+(spell.escola||'Não informada'),'Círculo: '+spell.circulo,'Nível: '+(spell.nivel||'Não informado'),'Alcance: '+(spell.alcance||'Não informado'),'Alvo: '+(spell.alvo||spell.area||'Não informado'),'Duração: '+(spell.duracao||'Não informada'),'Componentes: '+(spell.componentes||'Não informados')].join('\n');
+      const row=spellCatalogRow(name,meta,'fa-wand-sparkles',()=>chooseSpell(spell),()=>openLore(name,meta+'\n'+details,spell.descricao_pt||spell.descricao||''));
+      row.classList.toggle('mage-spell-unavailable',!elig.eligible);
+      const button=row.querySelector('.mage-catalog-name');button.textContent=selected?'ADICIONADA · '+name:'＋ '+name;
+      button.disabled=!elig.eligible||(isCreate&&circle===1&&!selected&&known.length>=expectedInitialSpellCount())||(isCreate&&circle>1)||(selected&&circle===0);
+      button.title=elig.eligible?'Adicionar ou remover do Grimório':elig.reasons.join(' ');list.appendChild(row);
+    });
+  }
+  function renderPreparationSelection(list,search) {
+    const known=spellRows().filter(row=>row.spell&&wizardSpell(row.spell)&&!selectedProhibitedSchools().includes(spellSchoolKey(row.spell.escola)));
+    if(!known.length){list.appendChild(createNode('div','mage-catalog-empty','Seu Grimório ainda não tem magias registradas. Escolha primeiro suas magias na aba Grimório.'));return;}
+    known.filter(row=>normalize(row.name+' '+row.circle+' '+row.spell.escola).includes(search)).forEach(row=>{
+      const card=createNode('div','mage-prep-row'),copy=createNode('div');copy.append(createNode('strong','',row.name),createNode('small','','Círculo '+row.circle+' · '+schoolLabel(spellSchoolKey(row.spell.escola)||row.spell.escola)));
+      const button=createNode('button','mage-prep-toggle'+(row.check?.checked?' active':''),row.check?.checked?'PREPARADA':'PREPARAR');button.type='button';button.setAttribute('aria-pressed',row.check?.checked?'true':'false');
+      button.addEventListener('click',()=>{if(row.check){row.check.checked=!row.check.checked;row.check.dispatchEvent(new Event('change',{bubbles:true}));button.classList.toggle('active',row.check.checked);button.textContent=row.check.checked?'PREPARADA':'PREPARAR';button.setAttribute('aria-pressed',row.check.checked?'true':'false');}});
+      card.append(copy,button);list.appendChild(card);
+    });
+    list.appendChild(createNode('div','mage-school-progress','Preparação livre: marque ou desmarque as magias que deseja deixar preparadas. Não há contador diário nem bloqueio por descanso.'));
+  }
   function renderCatalogList() {
     const list = document.getElementById('mage-catalog-list');
     const search = normalize(document.getElementById('mage-catalog-search')?.value || '');
     if (!list || !catalogMode) return;
     renderFeatCategories();
+    renderSpellCatalogTabs();
     list.replaceChildren();
     let items = [];
     if (catalogMode === 'feats') {
@@ -1252,21 +1338,9 @@
         list.appendChild(saveWrap);
       }
     } else if (catalogMode === 'spells') {
-      const level = Number(document.getElementById('mage-catalog-level')?.value ?? (isCreate ? 1 : 0));
-      items = allowedSpells(level).filter(item=>normalize((item.nome_pt||item.nome)+' '+item.escola+' '+item.nivel).includes(search));
-      items.forEach(spell=>{
-        const name = spell.nome_pt || spell.nome;
-        const meta = 'Círculo '+spell.circulo+' · '+schoolLabel(normalize(spell.escola).split(' ')[0])+' · '+(spell.alcance||'Alcance não informado');
-        const details = [
-          'Escola: '+(spell.escola||'Não informada'),
-          'Círculo: '+spell.circulo,
-          'Alcance: '+(spell.alcance||'Não informado'),
-          'Alvo: '+(spell.alvo||spell.area||'Não informado'),
-          'Duração: '+(spell.duracao||'Não informada'),
-          'Componentes: '+(spell.componentes||'Não informados')
-        ].join('\n');
-        list.appendChild(spellCatalogRow(name,meta,'fa-wand-sparkles',()=>chooseSpell(spell),()=>openLore(name,details,spell.descricao_pt||spell.descricao||'')));
-      });
+      if(spellCatalogTab==='schools')renderSchoolSelection(list);
+      else if(spellCatalogTab==='prepare')renderPreparationSelection(list,search);
+      else renderGrimoireSelection(list,search);
     } else if (catalogMode === 'familiar') {
       items = monsterCatalog.filter(item=>normalize(item.nome+' '+item.nome_original+' '+item.tamanho).includes(search));
       items.forEach(monster=>{
@@ -1291,7 +1365,8 @@
     const title = document.getElementById('mage-catalog-title');
     const tools = document.querySelector('#mage-catalog-overlay .mage-catalog-tools');
     const search = document.getElementById('mage-catalog-search');
-    title.textContent = mode === 'feats' ? 'Talentos' : mode === 'spells' ? 'Grimório' : 'Familiar';
+    title.textContent = mode === 'feats' ? 'Talentos' : mode === 'spells' ? 'Grimório do Mago' : 'Familiar';
+    if(mode==='spells')spellCatalogTab=isCreate?'schools':'grimoire';
     if (mode === 'feats') { initializePendingFeatSelections(); activeFeatCategory = 'todos'; }
     const categoryNav = document.getElementById('mage-feat-categories');
     if (categoryNav) categoryNav.classList.toggle('ativo',mode==='feats');
@@ -1304,9 +1379,10 @@
         option.value = String(i);
         level.appendChild(option);
       }
-      level.value = String(isCreate ? 1 : 0);
+      level.value = '1';
       level.addEventListener('change',renderCatalogList);
       tools.appendChild(level);
+      tools.style.display=spellCatalogTab==='schools'?'none':'flex';
     }
     search.value = '';
     overlay.classList.add('ativo');
