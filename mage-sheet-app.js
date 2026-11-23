@@ -165,6 +165,15 @@
   function wizardSpell(spell) { return Array.isArray(spell.classes)&&spell.classes.includes('wizard'); }
   function wizardLevel() { const value=Number(groupValue('Nível')||1);return Math.max(1,Math.min(20,Number.isFinite(value)?value:1)); }
   function wizardMaxCircle() { return Math.min(9,Math.ceil(wizardLevel()/2)); }
+  function uniqueSpellCatalog(items) {
+    const map=new Map();
+    items.forEach(spell=>{
+      const key=normalize(spell.nome_pt||spell.nome)+'|'+wizardSpellCircle(spell),current=map.get(key);
+      if(!current||(!wizardSpell(current)&&wizardSpell(spell)))map.set(key,spell);
+      else if(wizardSpell(current)===wizardSpell(spell))map.set(key,choosePreferredSpell([current,spell]));
+    });
+    return Array.from(map.values()).sort((a,b)=>String(a.nome_pt||a.nome).localeCompare(String(b.nome_pt||b.nome),'pt-BR'));
+  }
   function wizardSpellCircle(spell) {
     const match=String(spell.nivel||'').match(/(?:Sor\/)?Wiz\s+(\d+)/i);
     return match?Number(match[1]):Number(spell.circulo);
@@ -221,8 +230,7 @@
   }
   function allowedSpells(circle) {
     const prohibited = selectedProhibitedSchools();
-    return spellCatalog.filter(sp=>wizardSpell(sp)&&wizardSpellCircle(sp)===circle&&!prohibited.includes(spellSchoolKey(sp.escola)))
-      .sort((a,b)=>String(a.nome_pt||a.nome).localeCompare(String(b.nome_pt||b.nome),'pt-BR'));
+    return uniqueSpellCatalog(spellCatalog.filter(sp=>wizardSpell(sp)&&wizardSpellCircle(sp)===circle&&!prohibited.includes(spellSchoolKey(sp.escola))));
   }
   function ensureDatalist(id, items) {
     let list = document.getElementById(id);
@@ -1310,7 +1318,7 @@
   function renderGrimoireSelection(list,search) {
     const circle=Number(document.getElementById('mage-catalog-level')?.value??1),existing=spellRows(),known=existing.filter(row=>row.circle===circle);
     list.appendChild(createNode('div','mage-school-progress',isCreate&&circle===1?'Escolha '+expectedInitialSpellCount()+' magia(s) de 1º círculo. Selecionadas: '+known.length+'. Truques de 0º círculo entram automaticamente.':'Magias registradas neste círculo: '+known.length+'. Opções bloqueadas não atendem às regras da classe, escola ou nível.'));
-    const spells=spellCatalog.filter(sp=>wizardSpellCircle(sp)===circle&&normalize((sp.nome_pt||sp.nome)+' '+sp.escola+' '+sp.nivel).includes(search));
+    const spells=uniqueSpellCatalog(spellCatalog.filter(sp=>wizardSpellCircle(sp)===circle&&normalize((sp.nome_pt||sp.nome)+' '+sp.escola+' '+sp.nivel).includes(search)));
     if(!spells.length)list.appendChild(createNode('div','mage-catalog-empty','Nenhuma magia encontrada neste círculo com essa pesquisa.'));
     spells.forEach(spell=>{
       const name=spell.nome_pt||spell.nome,elig=spellEligibility(spell),selected=existing.some(row=>row.circle===circle&&normalize(row.name)===normalize(name));
