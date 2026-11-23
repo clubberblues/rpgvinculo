@@ -1585,7 +1585,7 @@
     const seen = new Set();
     const items = [];
     controls.forEach(control => {
-      if (control.disabled || control.readOnly || control.type === 'hidden' || control.type === 'button' || control.type === 'submit') return;
+      if (control.disabled || control.readOnly || control.type === 'hidden' || control.type === 'button' || control.type === 'submit' || control.type === 'checkbox') return;
       if (control.closest('[hidden],.mage-catalog-overlay,.mage-lore-overlay')) return;
       // Resistências, BBA e Agarrar são campos derivados; Resistência à Magia só se aplica quando houver uma fonte específica.
       const panelTitle = normalize(clean(control.closest('.panel')?.querySelector('.panel-title')));
