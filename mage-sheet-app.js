@@ -18,6 +18,7 @@
   ];
   // Guia dinâmico: percorre os campos editáveis reais da ficha, sem etapas fixas.
   let sb, user, step = 0, raceData = null, classData = null, skillCatalog = [], featCatalog = [], spellCatalog = [], monsterCatalog = [], selectedFamiliar = null, catalogMode = null, pendingFeatSelections = null;
+  let activeFeatCategory = 'todos';
   const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   const clean = node => (node && node.textContent || '').replace(/\s+/g, ' ').trim();
   // A ficha conserva alguns nomes tradicionais/abreviados; estes aliases ligam-nos ao catálogo SRD.
@@ -107,6 +108,16 @@
       '.mage-spell-catalog-row{grid-template-columns:54px minmax(0,1fr) 58px}' +
       '.mage-spell-catalog-row .mage-catalog-view{border-bottom:1px solid #8b6f47;font:700 12px Cinzel,serif;letter-spacing:1px;padding:5px}' +
       '@media(max-width:650px){#mage-sheet-toolbar{width:calc(100% - 20px);padding:10px;margin:0 auto 16px;gap:8px}#mage-sheet-toolbar .mage-sheet-meta{flex-basis:100%}#mage-sheet-toolbar .mage-sheet-actions{justify-content:center}.mage-step-note{width:calc(100vw - 24px);padding:16px 15px;font-size:14px}.mage-step-note strong{font-size:16px}.mage-guide-actions{gap:7px}.mage-guide-actions button{padding:8px 12px}.mage-catalog-row{grid-template-columns:38px minmax(0,1fr) 112px}.mage-spell-catalog-row{grid-template-columns:38px minmax(0,1fr) 48px}.mage-catalog-choose{padding:6px 5px;font-size:9px}.mage-skill-budget{font-size:8px}}' +
+      '.mage-feat-categories{display:none;flex-direction:column;gap:6px;max-height:34vh;overflow:auto;padding:3px 5px 10px 3px;margin:0 0 8px;border-bottom:1px solid rgba(90,63,40,.28)}' +
+      '.mage-feat-categories.ativo{display:flex}' +
+      '.mage-feat-category{display:grid;grid-template-columns:42px minmax(0,1fr);align-items:center;gap:11px;width:100%;min-height:48px;padding:5px 10px;border:1px solid rgba(139,111,71,.58);background:linear-gradient(100deg,rgba(255,255,255,.22),rgba(139,111,71,.06));color:#49351f;text-align:left;cursor:pointer;font:700 13px Cinzel,Georgia,serif;letter-spacing:.35px;transition:box-shadow .2s,border-color .2s,background .2s,color .2s}' +
+      '.mage-feat-category-mark{width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,111,71,.8);background:linear-gradient(145deg,#c4a66d,#eadcb8);color:#4b3218;box-shadow:inset 0 1px 3px rgba(255,255,255,.55)}' +
+      '.mage-feat-category-mark svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}' +
+      '.mage-feat-category:hover{border-color:#9b7137;background:linear-gradient(100deg,rgba(255,248,226,.72),rgba(193,157,94,.2))}' +
+      '.mage-feat-category.ativo{border-color:#9b6827;background:linear-gradient(100deg,rgba(255,244,207,.98),rgba(190,145,69,.38));color:#2d1b0b;box-shadow:0 0 0 1px rgba(160,109,42,.48),0 0 12px 4px rgba(192,143,58,.58),inset 0 0 16px rgba(255,225,151,.82);text-shadow:0 0 8px rgba(255,239,190,.9)}' +
+      '.mage-feat-category.ativo .mage-feat-category-mark{border-color:#a36d2d;box-shadow:0 0 10px 3px rgba(193,143,58,.75),inset 0 0 9px rgba(255,244,202,.95)}' +
+      '.mage-feat-category:focus-visible{outline:2px solid #8b5e24;outline-offset:2px}' +
+      '@media(max-width:650px){.mage-feat-categories{max-height:30vh}.mage-feat-category{min-height:44px;font-size:12px}}' +
       '.mage-catalog-empty{padding:28px 12px;text-align:center;color:#5a3f28;font:italic 16px EB Garamond,serif}' +
       '.mage-lore-backdrop{position:fixed;inset:0;z-index:10006;display:none;align-items:center;justify-content:center;padding:7vh 8vw;background:rgba(10,7,4,.58);backdrop-filter:blur(24px) saturate(.55);-webkit-backdrop-filter:blur(24px) saturate(.55);cursor:pointer}' +
       '.mage-lore-backdrop.ativo{display:flex}' +
@@ -919,9 +930,12 @@
       search.placeholder = 'Pesquisar no catálogo…';
       search.addEventListener('input',renderCatalogList);
       tools.appendChild(search);
+      const categories = createNode('nav','mage-feat-categories');
+      categories.id = 'mage-feat-categories';
+      categories.setAttribute('aria-label','Categorias de talentos');
       const list = createNode('div','mage-catalog-list');
       list.id = 'mage-catalog-list';
-      shell.append(head,tools,list);
+      shell.append(head,tools,categories,list);
       overlay.appendChild(shell);
       overlay.addEventListener('click',event=>{if(event.target===overlay)closeCatalog();});
       document.body.appendChild(overlay);
@@ -1148,14 +1162,60 @@
     const sizes = {diminutive:'Mínimo',tiny:'Miúdo',small:'Pequeno',medium:'Médio',large:'Grande',huge:'Enorme',gargantuan:'Imenso',colossal:'Colossal'};
     return sizes[normalize(value)] || value || '';
   }
+  const featCategoryDefinitions = [
+    {id:'todos',name:'Todos os talentos',icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h16"/><path d="M8 3v4M16 10v4M11 17v4"/></svg>'},
+    {id:'combate',name:'Combate',icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 4 6 6M4 20l8-8M8 4l12 12M4 8l12 12"/><path d="m3 3 5 1 12 12 1 5-5-1L4 8z"/></svg>'},
+    {id:'defesa',name:'Defesa',icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 6v5c0 5-3.4 8.3-8 10-4.6-1.7-8-5-8-10V6z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></svg>'},
+    {id:'manobras',name:'Manobras e mobilidade',icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17h5l3-5 3 3 3-7h4"/><path d="m17 4 4 4-4 4"/><circle cx="6" cy="7" r="2"/></svg>'},
+    {id:'magia',name:'Magia',icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 1.7 6.3L20 10l-6.3 1.7L12 18l-1.7-6.3L4 10l6.3-1.7z"/><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>'},
+    {id:'itens',name:'Criação de itens',icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v12H4zM3 4h18v4H3z"/><path d="M9 12h6M12 9v6"/></svg>'},
+    {id:'pericias',name:'Perícias',icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v18H5z"/><path d="M8 7h8M8 11h8M8 15h5"/><path d="m14 18 2 2 4-5"/></svg>'},
+    {id:'lideranca',name:'Liderança e aliados',icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c.4-3.5 2.4-5.5 6-5.5s5.6 2 6 5.5M15 15c3.5-.5 5.5 1.2 6 4"/></svg>'},
+    {id:'outros',name:'Outros',icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'}
+  ];
+  function featCategoryId(feat) {
+    const text = normalize([feat.nome_pt,feat.nome,feat.descricao_pt,feat.descricao,feat.requisitos?.raw].filter(Boolean).join(' '));
+    const has = pattern => pattern.test(text);
+    if (has(/fabricar|criar|criacao|confeccionar|item magico|itens magicos|pergaminho|varinha|pocao|arma magica|armadura magica/)) return 'itens';
+    if (has(/magia|magico|magica|conjur|feitic|escola de magia|resistencia a magia|foco em magia|penetracao de magia|metamag|sortilegio/)) return 'magia';
+    if (has(/lideranca|seguidores|aliados|companheiro|familiar|montaria|coorte|recrutar/)) return 'lideranca';
+    if (has(/pericia|pericias|perito|habilidade|conhecimento|oficio|artesanato|diplomacia|blefar|furtividade|sentir motivacao|usar instrumento magico/)) return 'pericias';
+    if (has(/esquiva|defesa|defensiv|bloqueio|aparar|escudo|fortitude|resistencia|vitalidade|robustez|casco|pele de ferro|reducao de dano/)) return 'defesa';
+    if (has(/iniciativa|reflexos de combate|ataque|combate|arma|tiro|disparo|arco|luta|golpe|critico|sucesso decisivo|especializacao|proficiência|proficiencia|foco em arma|trespassar|combater com duas armas|ataque poderoso/)) return 'combate';
+    if (has(/manobra|agarrar|derrubar|desarmar|empurrar|imobilizar|investida|corrida|salto|acrobacia|movimento|mobilidade|montado|carga|voo/)) return 'manobras';
+    return 'outros';
+  }
+  function renderFeatCategories() {
+    const nav = document.getElementById('mage-feat-categories');
+    if (!nav) return;
+    nav.replaceChildren();
+    nav.classList.toggle('ativo',catalogMode==='feats');
+    if (catalogMode!=='feats') return;
+    featCategoryDefinitions.forEach(category=>{
+      const button=createNode('button','mage-feat-category'+(activeFeatCategory===category.id?' ativo':''),category.name);
+      button.type='button';
+      button.dataset.category=category.id;
+      button.setAttribute('aria-pressed',activeFeatCategory===category.id?'true':'false');
+      const mark=createNode('span','mage-feat-category-mark');
+      mark.innerHTML=category.icon;
+      button.prepend(mark);
+      button.addEventListener('click',()=>{
+        activeFeatCategory=category.id;
+        renderCatalogList();
+      });
+      nav.appendChild(button);
+    });
+  }
   function renderCatalogList() {
     const list = document.getElementById('mage-catalog-list');
     const search = normalize(document.getElementById('mage-catalog-search')?.value || '');
     if (!list || !catalogMode) return;
+    renderFeatCategories();
     list.replaceChildren();
     let items = [];
     if (catalogMode === 'feats') {
-      items = featCatalog.filter(item=>item.id!=='srd35_feat_scribe_scroll' && normalize((item.nome_pt||item.nome)+' '+featPrerequisite(item)).includes(search));
+      items = featCatalog.filter(item=>item.id!=='srd35_feat_scribe_scroll' && normalize((item.nome_pt||item.nome)+' '+featPrerequisite(item)+' '+(item.descricao_pt||item.descricao||'')).includes(search));
+      if (activeFeatCategory!=='todos') items=items.filter(item=>featCategoryId(item)===activeFeatCategory);
       const chosenCount = (pendingFeatSelections || []).length;
       const slots = allowedGeneralFeatSlots();
       const info = createNode('div','mage-feat-counter',(raceData?.nome || 'Raça')+' · '+(classData?.nome || 'Classe')+' 1º nível — escolhas: '+chosenCount+' de '+slots+'. '+(raceId === 'humano' ? 'Humano recebe 1 talento normal + 1 adicional racial.' : '1 talento por nível de personagem.')+' '+(classData?.class_key === 'wizard' ? 'Mago recebe Escrever Pergaminho como talento bônus de classe.' : ''));
@@ -1184,7 +1244,6 @@
         list.appendChild(saveWrap);
       }
     } else if (catalogMode === 'spells') {
-      const level = Number(document.getElementById('mage-catalog-level')?.value ?? (isCreate ? 1 : 0));
       items = allowedSpells(level).filter(item=>normalize((item.nome_pt||item.nome)+' '+item.escola+' '+item.nivel).includes(search));
       items.forEach(spell=>{
         const name = spell.nome_pt || spell.nome;
@@ -1224,7 +1283,9 @@
     const tools = document.querySelector('#mage-catalog-overlay .mage-catalog-tools');
     const search = document.getElementById('mage-catalog-search');
     title.textContent = mode === 'feats' ? 'Talentos' : mode === 'spells' ? 'Grimório' : 'Familiar';
-    if (mode === 'feats') initializePendingFeatSelections();
+    if (mode === 'feats') { initializePendingFeatSelections(); activeFeatCategory = 'todos'; }
+    const categoryNav = document.getElementById('mage-feat-categories');
+    if (categoryNav) categoryNav.classList.toggle('ativo',mode==='feats');
     tools.querySelectorAll('#mage-catalog-level').forEach(node=>node.remove());
     if (mode === 'spells') {
       const level = createNode('select');
