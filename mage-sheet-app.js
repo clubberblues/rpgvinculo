@@ -2046,97 +2046,125 @@
   }
 
   // Coruja-guia: assistente contextual inspirado nos antigos assistentes do Office.
+
   function initOwlGuide() {
     if (document.getElementById('dnd35-owl-guide')) return;
     const style = document.createElement('style');
     style.id = 'dnd35-owl-guide-style';
     style.textContent = `
-      #dnd35-owl-guide{position:fixed;right:22px;bottom:20px;z-index:10050;display:flex;align-items:flex-end;gap:10px;font-family:'EB Garamond',Georgia,serif;pointer-events:none}
+      #dnd35-owl-guide{position:fixed;right:22px;bottom:18px;z-index:10050;display:flex;align-items:flex-end;gap:12px;font-family:'EB Garamond',Georgia,serif;pointer-events:none;max-width:calc(100vw - 28px)}
       #dnd35-owl-guide *{box-sizing:border-box}
-      #dnd35-owl-guide .owl-avatar{pointer-events:auto;width:76px;height:76px;border-radius:50%;display:grid;place-items:center;border:2px solid #c9a050;background:radial-gradient(circle at 35% 25%,#fff0c9,#d8b46c 58%,#78552e);box-shadow:0 5px 18px rgba(0,0,0,.48),0 0 0 4px rgba(201,160,80,.18);cursor:pointer;position:relative;animation:owl-bob 3.6s ease-in-out infinite;transition:transform .2s}
-      #dnd35-owl-guide .owl-avatar:hover{transform:scale(1.07) rotate(-4deg)}
-      #dnd35-owl-guide .owl-face{font-size:43px;line-height:1;filter:drop-shadow(0 2px 2px rgba(50,25,5,.45))}
-      #dnd35-owl-guide .owl-hat{position:absolute;top:-13px;left:7px;font-size:24px;transform:rotate(-18deg);filter:drop-shadow(0 2px 2px rgba(0,0,0,.5))}
-      #dnd35-owl-guide .owl-mug{position:absolute;right:-3px;bottom:0;font-size:21px;transform:rotate(12deg);filter:drop-shadow(0 2px 2px rgba(0,0,0,.5))}
-      #dnd35-owl-guide .owl-bubble{pointer-events:auto;display:none;width:min(310px,calc(100vw - 130px));padding:13px 15px 12px;background:linear-gradient(145deg,#fff5dc,#e9d4a8);color:#392817;border:2px solid #b89050;border-radius:12px 12px 12px 3px;box-shadow:0 9px 28px rgba(0,0,0,.45);position:relative;margin-bottom:12px}
-      #dnd35-owl-guide.open .owl-bubble{display:block;animation:owl-pop .2s ease-out}
-      #dnd35-owl-guide .owl-bubble:after{content:"";position:absolute;right:-8px;bottom:13px;width:13px;height:13px;background:#e9d4a8;border-right:2px solid #b89050;border-bottom:2px solid #b89050;transform:rotate(-45deg)}
-      #dnd35-owl-guide .owl-name{font:900 11px Cinzel,Georgia,serif;letter-spacing:1.2px;color:#75501f;text-transform:uppercase;margin-bottom:5px;display:flex;justify-content:space-between;gap:8px}
-      #dnd35-owl-guide .owl-close{border:0;background:transparent;color:#76552b;font-size:17px;line-height:1;cursor:pointer}
-      #dnd35-owl-guide .owl-message{font-size:15px;line-height:1.35;margin:0 0 9px}
-      #dnd35-owl-guide .owl-actions{display:flex;gap:6px;flex-wrap:wrap}
-      #dnd35-owl-guide .owl-actions button{border:1px solid #9a7138;border-radius:5px;background:linear-gradient(#f7e6bc,#dfc18a);color:#3b2917;padding:6px 9px;font:700 10px Cinzel,Georgia,serif;cursor:pointer}
-      #dnd35-owl-guide .owl-actions button:hover{background:#c9a050;color:#171008}
-      #dnd35-owl-guide .owl-hint{position:absolute;right:-3px;top:-4px;width:17px;height:17px;border-radius:50%;background:#6d2e20;color:#fff2d8;border:1px solid #f5e3b9;font:700 11px Georgia,serif;display:grid;place-items:center}
-      @keyframes owl-bob{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-4px) rotate(-2deg)}55%{transform:translateY(1px) rotate(2deg)}80%{transform:translateY(-2px) rotate(-1deg)}}
-      @keyframes owl-pop{from{opacity:0;transform:translateY(7px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
-      @media(max-width:600px){#dnd35-owl-guide{right:12px;bottom:12px;gap:7px}#dnd35-owl-guide .owl-avatar{width:62px;height:62px}#dnd35-owl-guide .owl-face{font-size:35px}#dnd35-owl-guide .owl-bubble{width:min(270px,calc(100vw - 100px));padding:10px 11px}#dnd35-owl-guide .owl-message{font-size:14px}}
-      @media(prefers-reduced-motion:reduce){#dnd35-owl-guide .owl-avatar{animation:none}#dnd35-owl-guide .owl-bubble{animation:none}}
+      #dnd35-owl-guide .lampiao-art{pointer-events:auto;width:164px;height:218px;object-fit:contain;object-position:center bottom;flex:0 0 auto;filter:drop-shadow(0 7px 12px rgba(0,0,0,.55));transform-origin:50% 70%;animation:lampiao-idle 4.2s ease-in-out infinite}
+      #dnd35-owl-guide .lampiao-chat{pointer-events:auto;width:min(350px,calc(100vw - 205px));min-width:230px;padding:15px 17px 13px;background:linear-gradient(145deg,#fff4d8,#e5cf9f);color:#392817;border:2px solid #ae8345;border-radius:13px 13px 13px 3px;box-shadow:0 12px 34px rgba(0,0,0,.48),inset 0 0 18px rgba(255,255,255,.3);position:relative;margin-bottom:15px}
+      #dnd35-owl-guide .lampiao-chat:before{content:"";position:absolute;left:-9px;bottom:28px;width:14px;height:14px;background:#e9d7ae;border-left:2px solid #ae8345;border-bottom:2px solid #ae8345;transform:rotate(45deg)}
+      #dnd35-owl-guide .lampiao-title{font:900 11px Cinzel,Georgia,serif;letter-spacing:1.5px;text-transform:uppercase;color:#765020;margin:0 0 7px}
+      #dnd35-owl-guide .lampiao-message{font-size:16px;line-height:1.4;margin:0;white-space:pre-line}
+      #dnd35-owl-guide .lampiao-detail{display:none;margin-top:9px;padding-top:8px;border-top:1px solid rgba(139,103,52,.35);font-size:14px;line-height:1.4;color:#5a4128}
+      #dnd35-owl-guide.show-detail .lampiao-detail{display:block}
+      #dnd35-owl-guide .lampiao-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px}
+      #dnd35-owl-guide .lampiao-actions button{border:1px solid #9b733c;border-radius:5px;background:linear-gradient(#f8e8c4,#dfc18c);color:#3b2917;padding:7px 10px;font:700 10px Cinzel,Georgia,serif;cursor:pointer;transition:transform .16s,box-shadow .16s}
+      #dnd35-owl-guide .lampiao-actions button:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 3px 9px #79501e55}
+      #dnd35-owl-guide .lampiao-actions button:disabled{opacity:.38;cursor:not-allowed}
+      #dnd35-owl-guide .lampiao-actions .lampiao-close{margin-left:auto;background:linear-gradient(#6a3024,#421d17);border-color:#8e5a43;color:#f8e7c7}
+      #dnd35-owl-guide .lampiao-minimized{display:none;pointer-events:auto;width:54px;height:54px;border-radius:50%;border:1px solid #d69b48;background:radial-gradient(circle,#ffcc68 0%,#a64a18 42%,#21130d 75%);box-shadow:0 0 18px #e77b27aa,0 5px 16px #0009;cursor:pointer;color:#ffe3a5;font-size:24px}
+      #dnd35-owl-guide.closed .lampiao-art,#dnd35-owl-guide.closed .lampiao-chat{display:none}
+      #dnd35-owl-guide.closed .lampiao-minimized{display:grid;place-items:center}
+      #dnd35-owl-guide.pop-out .lampiao-art,#dnd35-owl-guide.pop-out .lampiao-chat{animation:lampiao-pop-out .25s cubic-bezier(.2,.8,.3,1) forwards}
+      #dnd35-owl-guide.pop-in .lampiao-art,#dnd35-owl-guide.pop-in .lampiao-chat{animation:lampiao-pop-in .3s cubic-bezier(.2,.8,.3,1) both}
+      #dnd35-owl-guide.closed{right:18px;bottom:18px}
+      @keyframes lampiao-idle{0%,100%{transform:translateY(0) rotate(0)}35%{transform:translateY(-4px) rotate(-1deg)}70%{transform:translateY(1px) rotate(1deg)}}
+      @keyframes lampiao-pop-out{0%{transform:scale(1);opacity:1}30%{transform:scale(1.15);opacity:1}100%{transform:scale(0);opacity:0}}
+      @keyframes lampiao-pop-in{0%{transform:scale(0);opacity:0}70%{transform:scale(1.15);opacity:1}100%{transform:scale(1);opacity:1}}
+      @media(max-width:680px){#dnd35-owl-guide{right:10px;bottom:10px;gap:4px}#dnd35-owl-guide .lampiao-art{width:104px;height:150px}#dnd35-owl-guide .lampiao-chat{width:min(290px,calc(100vw - 120px));min-width:190px;padding:11px 12px}#dnd35-owl-guide .lampiao-message{font-size:14px}#dnd35-owl-guide .lampiao-actions button{padding:6px 7px;font-size:9px}}
+      @media(prefers-reduced-motion:reduce){#dnd35-owl-guide .lampiao-art{animation:none}#dnd35-owl-guide.pop-out .lampiao-art,#dnd35-owl-guide.pop-out .lampiao-chat,#dnd35-owl-guide.pop-in .lampiao-art,#dnd35-owl-guide.pop-in .lampiao-chat{animation:none}}
     `;
     document.head.appendChild(style);
-    const root = document.createElement('aside');
-    root.id = 'dnd35-owl-guide';
-    root.setAttribute('aria-label','Coruja-guia do aventureiro');
-    root.innerHTML = '<div class="owl-bubble" role="status" aria-live="polite"><div class="owl-name"><span>Coruja-guia</span><button class="owl-close" type="button" aria-label="Fechar dica">×</button></div><p class="owl-message"></p><div class="owl-actions"></div></div><button class="owl-avatar" type="button" aria-label="Pedir ajuda à coruja"><span class="owl-hat">🧙</span><span class="owl-face">🦉</span><span class="owl-mug">🍺</span><span class="owl-hint">?</span></button>';
+    const root=document.createElement('aside');
+    root.id='dnd35-owl-guide';
+    root.setAttribute('aria-label','Guia do Lampião Errante');
+    root.innerHTML='<img class="lampiao-art" alt="Lampião Errante, guia arcano" src="data:image/webp;base64,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';
+    const chat=document.createElement('div');
+    chat.className='lampiao-chat';
+    chat.innerHTML='<h3 class="lampiao-title">O Lampião Errante</h3><p class="lampiao-message"></p><div class="lampiao-detail"></div><div class="lampiao-actions"><button type="button" data-action="next">Seguir</button><button type="button" data-action="prev">Voltar</button><button type="button" data-action="about">Sobre esta etapa</button><button type="button" class="lampiao-close" data-action="close">Fechar guia</button></div>';
+    const minimized=document.createElement('button');
+    minimized.type='button'; minimized.className='lampiao-minimized'; minimized.textContent='✦'; minimized.setAttribute('aria-label','Reabrir o guia');
+    root.append(document.createElement('div'));
+    root.firstChild.replaceWith(document.createElement('div'));
+    const art=root.querySelector('.lampiao-art');
+    root.append(chat,minimized);
     document.body.appendChild(root);
-    const message = root.querySelector('.owl-message');
-    const actions = root.querySelector('.owl-actions');
-    const bubble = root.querySelector('.owl-bubble');
-    const avatar = root.querySelector('.owl-avatar');
-    const say = (text, options = []) => {
-      message.textContent = text;
-      actions.replaceChildren();
-      options.forEach(option => {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.textContent = option.label;
-        button.addEventListener('click', option.run);
-        actions.appendChild(button);
-      });
-      root.classList.add('open');
+    const message=chat.querySelector('.lampiao-message');
+    const detail=chat.querySelector('.lampiao-detail');
+    const prev=chat.querySelector('[data-action="prev"]');
+    const next=chat.querySelector('[data-action="next"]');
+    const about=chat.querySelector('[data-action="about"]');
+    const stageLines={
+      'base':'Antes de distribuir qualquer coisa, confira o nome e os dados básicos. É aqui que a ficha ganha identidade. Não precisa correr: até heróis lendários começam preenchendo o próprio nome.',
+      'atributos':'Força, Destreza, Constituição, Inteligência, Sabedoria e Carisma definem as capacidades do personagem. Para um Mago, Inteligência merece atenção especial: ela influencia suas magias e várias escolhas da ficha.',
+      'pericias':'Aqui você distribui treinamento. Leia o uso de cada perícia e escolha aquelas que combinam com a história do personagem. Não confunda pontos de perícia com bônus de atributo; são partes diferentes do cálculo.',
+      'talentos':'Este catálogo reúne talentos que concedem capacidades específicas. Confira os pré-requisitos antes de escolher: uma opção pode parecer excelente, mas não adianta cobiçar aquilo que seu personagem ainda não pode aprender.',
+      'familiar':'Um familiar é um companheiro mágico, não um enfeite na margem da ficha. Abra o catálogo, compare as opções e escolha o vínculo que combina com seu Mago. Os detalhes da criatura ficam registrados na ficha.',
+      'magia':'Primeiro vem a escola: ela define a tradição arcana do Mago e, se houver especialização, também as escolas proibidas. Depois você registra no Grimório as magias que as regras permitem. Na aba Preparação, escolhe quais das que já possui ficam preparadas.',
+      'grimorio':'O Grimório é a coleção de magias que seu personagem aprendeu e mantém em seu livro. O catálogo mostra as opções; as escolhas válidas são registradas na ficha. Não confunda possuir uma magia com deixá-la preparada.',
+      'resumo magico':'Este painel resume os dados mágicos calculados da ficha. Ele não substitui o Grimório: para adicionar ou preparar magias, volte à etapa Magia e abra o catálogo.',
+      'equipamentos':'Confira o que o personagem carrega e veste. Armas, armaduras, escudos e carga podem influenciar valores da ficha. Se algo depender da decisão da campanha, combine com o Mestre.',
+      'experiencia':'Aqui ficam os dados de experiência e progressão. Eles devem refletir o avanço definido na campanha, não uma escolha aleatória durante a criação.',
+      'observacoes':'Use este espaço para registrar detalhes que ajudam a interpretar o personagem: hábitos, aparência, objetivos, promessas e informações importantes para a campanha.'
     };
-    const activeCategory = () => {
-      const active = document.querySelector('.mage-guide-category.ativo');
-      return active ? active.textContent.trim() : (step >= 0 ? 'Ficha' : 'Início');
+    const stageKey=item=>normalize((item&&item.sectionKey)|| (item&&item.label)||'');
+    const stageText=item=>{
+      const key=stageKey(item);
+      const found=Object.keys(stageLines).find(k=>key.includes(k));
+      if(found)return stageLines[found];
+      const label=(item&&item.label)||'esta parte da ficha';
+      return 'Nesta etapa, cuide de '+label.toLocaleLowerCase('pt-BR')+'. Confira os campos destacados, leia as orientações da ficha e escolha apenas o que fizer sentido para seu personagem e para as regras da campanha.';
     };
-    const categoryButton = label => {
-      const button = Array.from(document.querySelectorAll('.mage-guide-category')).find(node => normalize(node.textContent) === normalize(label));
-      if (button) button.click();
+    const detailText=item=>{
+      const box=document.createElement('div');
+      box.innerHTML=(item&&item.help)||'';
+      const txt=(box.textContent||'').replace(/\s+/g,' ').trim();
+      return txt||stageText(item);
     };
-    const explain = () => {
-      const category = activeCategory();
-      const key = normalize(category);
-      const tips = {
-        'atributos':'Aqui você define as capacidades do personagem. Inteligência é especialmente importante para o Mago; confira os valores antes de avançar.',
-        'pericias':'Escolha onde seu personagem é treinado. Leia cada descrição e distribua os pontos conforme as opções permitidas.',
-        'talentos':'Este é o catálogo de talentos. Você pode consultar cada opção e selecionar somente a quantidade liberada para esta criação.',
-        'familiar':'Ora, ora... um Mago sem companhia fica falando sozinho com os livros. Abra o catálogo e escolha seu familiar; a invocação fica para a narrativa.',
-        'magia':'Primeiro escolha sua escola, depois registre as magias permitidas no Grimório. Na aba Preparação, escolha entre as que já estão registradas.',
-        'equipamentos':'Confira armas, armaduras e itens que acompanham seu aventureiro. O que não estiver definido pode ser combinado com o Mestre.',
-        'experiencia':'Aqui ficam os dados de progressão do personagem. Confira os valores e mantenha-os alinhados com a campanha.',
-        'ficha':'Psst! Eu sou sua coruja-guia. Clique em uma etapa do GUIA e eu explico o que fazer. Prometo não dormir em cima do grimório... de novo.'
-      };
-      const text = tips[key] || 'Vamos por partes, aventureiro. Leia as informações desta seção, preencha o que for pedido e use o GUIA para mudar de etapa.';
-      const options = [];
-      if (key === 'familiar') options.push({label:'Abrir catálogo',run:()=>openCatalog('familiar')});
-      if (key === 'magia') options.push({label:'Abrir Grimório',run:()=>openCatalog('spells')});
-      if (key !== 'ficha') options.push({label:'Voltar ao início',run:()=>categoryButton('Atributos')});
-      say(text, options);
+    const currentItem=()=>{const list=guideCandidates();return list[Math.max(0,Math.min(step,list.length-1))]||null;};
+    const render=()=>{
+      const list=guideCandidates();
+      const item=currentItem();
+      if(!item){message.textContent='A ficha está preenchida. Revise os dados e salve quando estiver tudo certo.';detail.textContent='';prev.disabled=true;next.disabled=true;return;}
+      message.textContent=stageText(item);
+      detail.textContent=detailText(item);
+      prev.disabled=step<=0;
+      next.disabled=step>=list.length-1;
+      about.textContent=root.classList.contains('show-detail')?'Ocultar detalhes':'Sobre esta etapa';
     };
-    avatar.addEventListener('click',()=>{if(root.classList.contains('open')) explain(); else explain();});
-    root.querySelector('.owl-close').addEventListener('click',()=>root.classList.remove('open'));
-    let lastCategory = '';
-    const observer = new MutationObserver(()=>{
-      const category = activeCategory();
-      if(category && category !== lastCategory){
-        lastCategory = category;
-        const key = normalize(category);
-        if(['familiar','magia','talentos'].includes(key)) explain();
-      }
-    });
-    observer.observe(document.body,{subtree:true,childList:true,attributes:true,attributeFilter:['class']});
-    window.setTimeout(()=>say('Saudações, aventureiro! Sou sua guia. Clique em mim quando precisar de uma mãozinha... ou de uma asa. 🦉'),900);
+    const move=(delta)=>{
+      const list=guideCandidates();
+      const target=Math.max(0,Math.min(list.length-1,step+delta));
+      if(target===step){render();return;}
+      showStep(target);
+      root.classList.remove('show-detail');
+      render();
+    };
+    next.addEventListener('click',()=>move(1));
+    prev.addEventListener('click',()=>move(-1));
+    about.addEventListener('click',()=>{root.classList.toggle('show-detail');render();});
+    const closeGuide=()=>{
+      if(root.classList.contains('closed'))return;
+      root.classList.remove('pop-in');root.classList.add('pop-out');
+      window.setTimeout(()=>{root.classList.remove('pop-out');root.classList.add('closed');},260);
+    };
+    const reopen=()=>{
+      root.classList.remove('closed');root.classList.add('pop-in');
+      window.setTimeout(()=>root.classList.remove('pop-in'),320);
+      render();
+    };
+    chat.querySelector('[data-action="close"]').addEventListener('click',closeGuide);
+    minimized.addEventListener('click',reopen);
+    const observer=new MutationObserver(()=>render());
+    observer.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['class']});
+    render();
+    window.setTimeout(()=>root.classList.add('pop-in'),100);
   }
+
 
   function bootMageSheet() {
     init().then(() => initOwlGuide()).catch(reportBootstrapError);
