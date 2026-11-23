@@ -855,18 +855,21 @@
     }
     const magic = panel('Magia');
     if (magic) {
-      const tr = labeledInput('Magia','TR de Magia');
+      const tr = labeledInput('Magia','CD base das magias');
       const dcMod = labeledInput('Magia','Mod. CD');
       const failure = labeledInput('Magia','Falha Arcana');
       if (tr) tr.value = String(10 + intMod);
       if (dcMod) dcMod.value = String(intMod);
-      if (failure) failure.value = '0%';
+      if (failure) { failure.value = '—'; failure.readOnly = true; failure.title = 'Depende da armadura e do escudo equipados; ainda não há cálculo conectado neste painel.'; }
       const rows = magic.querySelectorAll('table tbody tr');
       if (isCreate && rows[1]) rows[1].querySelectorAll('input').forEach(input => { input.value = ''; input.disabled = true; });
       const knownCells = rows[0] ? rows[0].querySelectorAll('td') : [];
+      const spellBlocks = Array.from(document.querySelectorAll('.spell-level-block'));
       for (let circle=0;circle<=9;circle++) {
         const input = knownCells[circle+1]?.querySelector('input');
-        if (input) input.value = circle === 0 ? String(allowedSpells(0).length) : circle === 1 ? String(selectedSpells.length) : '0';
+        const block = spellBlocks[circle];
+        const actualCount = block ? Array.from(block.querySelectorAll('.spell-list input[type="text"]')).filter(field => String(field.value || '').trim()).length : 0;
+        if (input) { input.value = String(actualCount); input.readOnly = true; }
       }
     }
     populateSkillTotals(final,modifiers,race);
@@ -1561,7 +1564,7 @@
       { label: 'Perícias', panel: 'Perícias' },
       { label: 'Talentos', panel: 'Talentos' },
       { label: 'Familiar', panel: 'Familiar' },
-      { label: 'Magia', panel: 'Magia' },
+      { label: 'Resumo mágico', panel: 'Magia' },
       { label: 'Experiência', panel: 'Experiência' },
       { label: 'Traços Raciais', panel: 'Traços Raciais' },
       { label: 'Observações', panel: 'Observação' },
