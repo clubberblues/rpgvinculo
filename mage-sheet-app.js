@@ -108,16 +108,15 @@
       '.mage-spell-catalog-row{grid-template-columns:54px minmax(0,1fr) 58px}' +
       '.mage-spell-catalog-row .mage-catalog-view{border-bottom:1px solid #8b6f47;font:700 12px Cinzel,serif;letter-spacing:1px;padding:5px}' +
       '@media(max-width:650px){#mage-sheet-toolbar{width:calc(100% - 20px);padding:10px;margin:0 auto 16px;gap:8px}#mage-sheet-toolbar .mage-sheet-meta{flex-basis:100%}#mage-sheet-toolbar .mage-sheet-actions{justify-content:center}.mage-step-note{width:calc(100vw - 24px);padding:16px 15px;font-size:14px}.mage-step-note strong{font-size:16px}.mage-guide-actions{gap:7px}.mage-guide-actions button{padding:8px 12px}.mage-catalog-row{grid-template-columns:38px minmax(0,1fr) 112px}.mage-spell-catalog-row{grid-template-columns:38px minmax(0,1fr) 48px}.mage-catalog-choose{padding:6px 5px;font-size:9px}.mage-skill-budget{font-size:8px}}' +
-      '.mage-feat-categories{display:none;flex-direction:column;gap:6px;max-height:34vh;overflow:auto;padding:3px 5px 10px 3px;margin:0 0 8px;border-bottom:1px solid rgba(90,63,40,.28)}' +
+      '.mage-catalog-content{display:flex;flex:1;min-height:0;gap:22px;overflow:hidden}' +
+      '.mage-feat-categories{display:none;flex:0 0 190px;flex-direction:column;align-items:stretch;gap:13px;overflow:auto;padding:8px 8px 12px 2px;margin:0;border:0}' +
       '.mage-feat-categories.ativo{display:flex}' +
-      '.mage-feat-category{display:grid;grid-template-columns:42px minmax(0,1fr);align-items:center;gap:11px;width:100%;min-height:48px;padding:5px 10px;border:1px solid rgba(139,111,71,.58);background:linear-gradient(100deg,rgba(255,255,255,.22),rgba(139,111,71,.06));color:#49351f;text-align:left;cursor:pointer;font:700 13px Cinzel,Georgia,serif;letter-spacing:.35px;transition:box-shadow .2s,border-color .2s,background .2s,color .2s}' +
-      '.mage-feat-category-mark{width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(139,111,71,.8);background:linear-gradient(145deg,#c4a66d,#eadcb8);color:#4b3218;box-shadow:inset 0 1px 3px rgba(255,255,255,.55)}' +
-      '.mage-feat-category-mark svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}' +
-      '.mage-feat-category:hover{border-color:#9b7137;background:linear-gradient(100deg,rgba(255,248,226,.72),rgba(193,157,94,.2))}' +
-      '.mage-feat-category.ativo{border-color:#9b6827;background:linear-gradient(100deg,rgba(255,244,207,.98),rgba(190,145,69,.38));color:#2d1b0b;box-shadow:0 0 0 1px rgba(160,109,42,.48),0 0 12px 4px rgba(192,143,58,.58),inset 0 0 16px rgba(255,225,151,.82);text-shadow:0 0 8px rgba(255,239,190,.9)}' +
-      '.mage-feat-category.ativo .mage-feat-category-mark{border-color:#a36d2d;box-shadow:0 0 10px 3px rgba(193,143,58,.75),inset 0 0 9px rgba(255,244,202,.95)}' +
-      '.mage-feat-category:focus-visible{outline:2px solid #8b5e24;outline-offset:2px}' +
-      '@media(max-width:650px){.mage-feat-categories{max-height:30vh}.mage-feat-category{min-height:44px;font-size:12px}}' +
+      '.mage-feat-category{display:block;width:100%;flex:0 0 auto;padding:5px 2px;border:0;background:transparent;color:#684d2e;text-align:left;cursor:pointer;font:700 13px Cinzel,Georgia,serif;letter-spacing:.35px;line-height:1.45;transition:color .2s,text-shadow .2s,filter .2s}' +
+      '.mage-feat-category:hover{color:#3d2812;text-shadow:0 0 7px rgba(190,143,69,.48)}' +
+      '.mage-feat-category.ativo{color:#2b1808;text-shadow:0 0 5px #fff1c4,0 0 10px rgba(211,158,67,.98),0 0 19px rgba(190,128,36,.9);filter:brightness(1.12)}' +
+      '.mage-feat-category:focus-visible{outline:1px dotted #8b5e24;outline-offset:3px}' +
+      '.mage-catalog-content .mage-catalog-list{flex:1;min-width:0;min-height:0}' +
+      '@media(max-width:650px){.mage-catalog-content{gap:12px}.mage-feat-categories{flex-basis:142px;gap:11px}.mage-feat-category{font-size:11px}}'
       '.mage-catalog-empty{padding:28px 12px;text-align:center;color:#5a3f28;font:italic 16px EB Garamond,serif}' +
       '.mage-lore-backdrop{position:fixed;inset:0;z-index:10006;display:none;align-items:center;justify-content:center;padding:7vh 8vw;background:rgba(10,7,4,.58);backdrop-filter:blur(24px) saturate(.55);-webkit-backdrop-filter:blur(24px) saturate(.55);cursor:pointer}' +
       '.mage-lore-backdrop.ativo{display:flex}' +
@@ -930,12 +929,14 @@
       search.placeholder = 'Pesquisar no catálogo…';
       search.addEventListener('input',renderCatalogList);
       tools.appendChild(search);
+      const content = createNode('div','mage-catalog-content');
       const categories = createNode('nav','mage-feat-categories');
       categories.id = 'mage-feat-categories';
       categories.setAttribute('aria-label','Categorias de talentos');
       const list = createNode('div','mage-catalog-list');
       list.id = 'mage-catalog-list';
-      shell.append(head,tools,categories,list);
+      content.append(categories,list);
+      shell.append(head,tools,content);
       overlay.appendChild(shell);
       overlay.addEventListener('click',event=>{if(event.target===overlay)closeCatalog();});
       document.body.appendChild(overlay);
@@ -1163,15 +1164,15 @@
     return sizes[normalize(value)] || value || '';
   }
   const featCategoryDefinitions = [
-    {id:'todos',name:'Todos os talentos',icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 12h16M4 19h16"/><path d="M8 3v4M16 10v4M11 17v4"/></svg>'},
-    {id:'combate',name:'Combate',icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 4 6 6M4 20l8-8M8 4l12 12M4 8l12 12"/><path d="m3 3 5 1 12 12 1 5-5-1L4 8z"/></svg>'},
-    {id:'defesa',name:'Defesa',icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 6v5c0 5-3.4 8.3-8 10-4.6-1.7-8-5-8-10V6z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></svg>'},
-    {id:'manobras',name:'Manobras e mobilidade',icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17h5l3-5 3 3 3-7h4"/><path d="m17 4 4 4-4 4"/><circle cx="6" cy="7" r="2"/></svg>'},
-    {id:'magia',name:'Magia',icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 1.7 6.3L20 10l-6.3 1.7L12 18l-1.7-6.3L4 10l6.3-1.7z"/><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>'},
-    {id:'itens',name:'Criação de itens',icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h16v12H4zM3 4h18v4H3z"/><path d="M9 12h6M12 9v6"/></svg>'},
-    {id:'pericias',name:'Perícias',icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h14v18H5z"/><path d="M8 7h8M8 11h8M8 15h5"/><path d="m14 18 2 2 4-5"/></svg>'},
-    {id:'lideranca',name:'Liderança e aliados',icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c.4-3.5 2.4-5.5 6-5.5s5.6 2 6 5.5M15 15c3.5-.5 5.5 1.2 6 4"/></svg>'},
-    {id:'outros',name:'Outros',icon:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'}
+    {id:'todos',name:'Todos os talentos'},
+    {id:'combate',name:'Combate'},
+    {id:'defesa',name:'Defesa'},
+    {id:'manobras',name:'Manobras e mobilidade'},
+    {id:'magia',name:'Magia'},
+    {id:'itens',name:'Criação de itens'},
+    {id:'pericias',name:'Perícias'},
+    {id:'lideranca',name:'Liderança e aliados'},
+    {id:'outros',name:'Outros'}
   ];
   function featCategoryId(feat) {
     const text = normalize([feat.nome_pt,feat.nome,feat.descricao_pt,feat.descricao,feat.requisitos?.raw].filter(Boolean).join(' '));
@@ -1196,9 +1197,6 @@
       button.type='button';
       button.dataset.category=category.id;
       button.setAttribute('aria-pressed',activeFeatCategory===category.id?'true':'false');
-      const mark=createNode('span','mage-feat-category-mark');
-      mark.innerHTML=category.icon;
-      button.prepend(mark);
       button.addEventListener('click',()=>{
         activeFeatCategory=category.id;
         renderCatalogList();
