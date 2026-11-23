@@ -2139,7 +2139,7 @@
   }
 
   function bootMageSheet() {
-    init().catch(reportBootstrapError);
+    init().then(() => initOwlGuide()).catch(reportBootstrapError);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bootMageSheet, { once: true });
   else bootMageSheet();
