@@ -2088,8 +2088,6 @@
     chat.innerHTML='<h3 class="lampiao-title">O Lampião Errante</h3><p class="lampiao-message"></p><div class="lampiao-detail"></div><div class="lampiao-actions"><button type="button" data-action="next">Seguir</button><button type="button" data-action="prev">Voltar</button><button type="button" data-action="about">Sobre esta etapa</button><button type="button" class="lampiao-close" data-action="close">Fechar guia</button></div>';
     const minimized=document.createElement('button');
     minimized.type='button'; minimized.className='lampiao-minimized'; minimized.textContent='✦'; minimized.setAttribute('aria-label','Reabrir o guia');
-    root.append(document.createElement('div'));
-    root.firstChild.replaceWith(document.createElement('div'));
     const art=root.querySelector('.lampiao-art');
     root.append(chat,minimized);
     document.body.appendChild(root);
@@ -2159,8 +2157,6 @@
     };
     chat.querySelector('[data-action="close"]').addEventListener('click',closeGuide);
     minimized.addEventListener('click',reopen);
-    const observer=new MutationObserver(()=>render());
-    observer.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['class']});
     render();
     window.setTimeout(()=>root.classList.add('pop-in'),100);
   }
