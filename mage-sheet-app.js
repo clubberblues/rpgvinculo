@@ -302,6 +302,7 @@
         input.disabled = true;
       });
     }
+    updateMagicKnownCounts();
   }
   function choosePreferredSpell(matches) {
     return matches.slice().sort((a,b) =>
@@ -1287,6 +1288,16 @@
     });
     const footer=createNode('div','mage-feat-save-wrap'),next=createNode('button','mage-feat-save','Continuar para o Grimório');next.type='button';next.disabled=!(spec==='universalista'||(spec&&banned.length===required));next.addEventListener('click',()=>setSpellCatalogTab('grimoire'));footer.appendChild(next);list.appendChild(footer);
   }
+  function updateMagicKnownCounts() {
+    const magic=panel('Magia'),rows=magic&&magic.querySelectorAll('table tbody tr');
+    const cells=rows&&rows[0]?rows[0].querySelectorAll('td'):[];
+    const blocks=Array.from(document.querySelectorAll('.spell-level-block'));
+    for(let circle=0;circle<=9;circle++){
+      const input=cells[circle+1]?.querySelector('input'),block=blocks.find(item=>parseInt(clean(item.querySelector('.spell-level-title')),10)===circle);
+      const count=block?Array.from(block.querySelectorAll('.spell-list input[type="text"]')).filter(field=>String(field.value||'').trim()).length:0;
+      if(input){input.value=String(count);input.readOnly=true;}
+    }
+  }
   function spellRows() {
     const out=[];document.querySelectorAll('.spell-level-block').forEach(block=>{
       const circle=parseInt(clean(block.querySelector('.spell-level-title')),10);
@@ -1510,7 +1521,7 @@
     const circle=wizardSpellCircle(spell),name=spell.nome_pt||spell.nome,eligibility=spellEligibility(spell);
     if(!eligibility.eligible){status('Esta magia não pode ser registrada: '+eligibility.reasons.join(' '),true);return;}
     const existing=spellRows().find(row=>row.circle===circle&&normalize(row.name)===normalize(name));
-    if(existing){if(circle===0){status('Os truques de 0º círculo já fazem parte do Grimório inicial.');return;}existing.input.value='';existing.input.dispatchEvent(new Event('input',{bubbles:true}));if(existing.check)existing.check.checked=false;status('Magia removida do Grimório: '+name+'.');renderCatalogList();return;}
+    if(existing){if(circle===0){status('Os truques de 0º círculo já fazem parte do Grimório inicial.');return;}existing.input.value='';existing.input.dispatchEvent(new Event('input',{bubbles:true}));if(existing.check)existing.check.checked=false;status('Magia removida do Grimório: '+name+'.');updateMagicKnownCounts();renderCatalogList();return;}
     if(isCreate&&circle===1&&spellRows().filter(row=>row.circle===1).length>=expectedInitialSpellCount()){status('Você já escolheu todas as magias iniciais permitidas.');return;}
     const block = Array.from(document.querySelectorAll('.spell-level-block')).find(item=>parseInt(clean(item.querySelector('.spell-level-title')),10)===circle);
     if (!block) { status('A ficha não possui uma área para este círculo de magia.',true); return; }
@@ -1527,7 +1538,7 @@
     if (target) {
       target.value = name;
       target.dispatchEvent(new Event('input',{bubbles:true}));
-      status('Magia adicionada ao grimório: '+name+'.');renderCatalogList();
+      status('Magia adicionada ao grimório: '+name+'.');updateMagicKnownCounts();renderCatalogList();
     }
   }
   function chooseFamiliar(monster) {
