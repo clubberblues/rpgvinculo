@@ -12,12 +12,17 @@
   const classId = params.get('classe');
   const core = window.DND35MageSheetCore;
   const schools = [
-    ['abjuration','Abjuração'],['conjuration','Conjuração'],['divination','Adivinhação'],
-    ['enchantment','Encantamento'],['evocation','Evocação'],['illusion','Ilusão'],
-    ['necromancy','Necromancia'],['transmutation','Transmutação']
+    ['abjuration','Abjuração','Proteção, bloqueios, dissipação e defesa contra efeitos mágicos.'],
+    ['conjuration','Conjuração','Cria ou invoca criaturas, objetos e energia; também permite teletransportar.'],
+    ['divination','Adivinhação','Revela informações, detecta presenças e ajuda a descobrir o que está oculto.'],
+    ['enchantment','Encantamento','Afeta a mente e as emoções, influenciando ou controlando criaturas.'],
+    ['evocation','Evocação','Manipula energia para produzir fogo, frio, eletricidade, força e outros efeitos.'],
+    ['illusion','Ilusão','Cria imagens, sons e sensações falsas para enganar os sentidos ou a mente.'],
+    ['necromancy','Necromancia','Lida com vida, morte, energia vital e efeitos ligados aos mortos-vivos.'],
+    ['transmutation','Transmutação','Altera propriedades de criaturas, objetos e matéria.']
   ];
   // Guia dinâmico: percorre os campos editáveis reais da ficha, sem etapas fixas.
-  let sb, user, step = 0, raceData = null, classData = null, skillCatalog = [], featCatalog = [], spellCatalog = [], monsterCatalog = [], selectedFamiliar = null, catalogMode = null, pendingFeatSelections = null;
+  let sb, user, step = 0, raceData = null, classData = null, skillCatalog = [], featCatalog = [], spellCatalog = [], monsterCatalog = [], selectedFamiliar = null, catalogMode = null, pendingFeatSelections = null, spellCatalogTab = 'schools';
   let activeFeatCategory = 'todos';
   const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   const clean = node => (node && node.textContent || '').replace(/\s+/g, ' ').trim();
@@ -150,8 +155,23 @@
     return label && label.parentElement ? label.parentElement.querySelector('input,textarea,select') : null;
   }
   function schoolLabel(key) {
-    const found = schools.find(s => s[0] === key);
-    return found ? found[1] : key;
+    const raw=normalize(key),found=schools.find(s=>s[0]===raw||normalize(s[1])===raw||raw.startsWith(s[0]+' ')||raw.startsWith(normalize(s[1])+' '));
+    return found?found[1]:key;
+  }
+  function spellSchoolKey(value) {
+    const raw=normalize(value),found=schools.find(s=>raw.startsWith(s[0])||raw.startsWith(normalize(s[1])));
+    return found?found[0]:'';
+  }
+  function wizardSpell(spell) { return Array.isArray(spell.classes)&&spell.classes.includes('wizard'); }
+  function wizardLevel() { const value=Number(groupValue('Nível')||1);return Math.max(1,Math.min(20,Number.isFinite(value)?value:1)); }
+  function wizardMaxCircle() { return Math.min(9,Math.ceil(wizardLevel()/2)); }
+  function spellEligibility(spell) {
+    const reasons=[];
+    if(!wizardSpell(spell))reasons.push('Não pertence à lista de Mago.');
+    const school=spellSchoolKey(spell.escola);
+    if(school&&selectedProhibitedSchools().includes(school))reasons.push('Pertence a uma escola proibida.');
+    if(Number(spell.circulo)>wizardMaxCircle())reasons.push('Seu nível atual ainda não permite este círculo.');
+    return {eligible:reasons.length===0,reasons};
   }
   function specializationKey(value) {
     const raw = normalize(value);
@@ -163,26 +183,16 @@
     const specialization = labeledInput('Magia','Especialização em Escola');
     const prohibited = labeledInput('Magia','Escolas Proibidas');
     if (!specialization || !prohibited) throw new Error('Os campos de especialização do Mago não foram encontrados na ficha original.');
-    const specList = ensureDatalist('mage-specialization-options', [{nome:'Universalista'}, ...schools.map(s => ({nome:s[1]}))]);
-    const schoolList = ensureDatalist('mage-prohibited-school-options', schools.map(s => ({nome:s[1]})));
-    specialization.setAttribute('list',specList);
-    prohibited.setAttribute('list',schoolList);
     if (identity && identity.wizard_specialization) specialization.value = schoolLabel(identity.wizard_specialization);
-    if (identity && Array.isArray(identity.wizard_prohibited_schools)) {
-      prohibited.value = identity.wizard_prohibited_schools.map(schoolLabel).join(', ');
-    }
-    specialization.addEventListener('input',renderSpellInputs);
-    prohibited.addEventListener('input',renderSpellInputs);
-    if (!isCreate) {
-      specialization.readOnly = true;
-      prohibited.readOnly = true;
-    }
+    if (identity && Array.isArray(identity.wizard_prohibited_schools)) prohibited.value = identity.wizard_prohibited_schools.map(schoolLabel).join(', ');
+    specialization.readOnly=true;prohibited.readOnly=true;
+    specialization.placeholder='Escolha no catálogo de escolas';prohibited.placeholder='Definidas no catálogo de escolas';
   }
   function wizardChoices() {
     const specializationInput = labeledInput('Magia','Especialização em Escola');
     const prohibitedInput = labeledInput('Magia','Escolas Proibidas');
     const specialization = specializationKey(specializationInput && specializationInput.value);
-    if (!specialization) throw new Error('Preencha Especialização em Escola com Universalista ou uma escola válida.');
+    if (!specialization) throw new Error('Escolha uma escola de especialização ou Universalista no catálogo de escolas.');
     const raw = String(prohibitedInput && prohibitedInput.value || '')
       .split(/[,;]+|\s+e\s+/i).map(x => x.trim()).filter(Boolean);
     const prohibited = raw.map(schoolKey);
@@ -206,9 +216,8 @@
   }
   function allowedSpells(circle) {
     const prohibited = selectedProhibitedSchools();
-    return spellCatalog.filter(sp => Number(sp.circulo) === circle &&
-      !prohibited.includes(schoolKey(sp.escola)))
-      .sort((a,b) => String(a.id).localeCompare(String(b.id)));
+    return spellCatalog.filter(sp=>wizardSpell(sp)&&Number(sp.circulo)===circle&&!prohibited.includes(spellSchoolKey(sp.escola)))
+      .sort((a,b)=>String(a.nome_pt||a.nome).localeCompare(String(b.nome_pt||b.nome),'pt-BR'));
   }
   function ensureDatalist(id, items) {
     let list = document.getElementById(id);
@@ -249,7 +258,7 @@
             input.readOnly = isCreate;
             input.disabled = !spells[index];
           }
-          if (check) { if (isCreate) check.checked = false; check.disabled = isCreate; }
+          if (check) { if (isCreate) check.checked = false; check.disabled = false; }
           row.hidden = !spells[index];
         });
       } else if (circle === 1) {
@@ -278,8 +287,7 @@
       if (headerInputs[2]) headerInputs[2].value = '10 + modificador de Inteligência';
     }
     document.querySelectorAll('.spell-level-block .spell-list input[type="checkbox"]').forEach(input => {
-      if (isCreate) input.checked = false;
-      input.disabled = true;
+      input.disabled=false;input.title='Marque para deixar esta magia preparada. A preparação é livre e não controla limites diários.';
     });
     const magicPanel = panel('Magia');
     const magicRows = magicPanel && magicPanel.querySelectorAll('table tbody tr');
@@ -904,7 +912,7 @@
   }
   function updateSpellSuggestions() {
     if (!spellCatalog.length) return;
-    const allowed = spellCatalog.filter(s => Number(s.circulo) === 1);
+    const allowed = allowedSpells(1);
     const id = ensureDatalist('mage-spell-list-level-1', allowed.map(s => ({nome:s.nome_pt || s.nome})));
     const block = Array.from(document.querySelectorAll('.ficha .spell-level-block')).find(b => parseInt(clean(b.querySelector('.spell-level-title')),10) === 1);
     if (block) block.querySelectorAll('.spell-row input[type="text"]').forEach(input => input.setAttribute('list',id));
@@ -1478,11 +1486,14 @@
     renderCatalogList();
   }
   function chooseSpell(spell) {
-    const circle = Number(spell.circulo);
+    const circle=Number(spell.circulo),name=spell.nome_pt||spell.nome,eligibility=spellEligibility(spell);
+    if(!eligibility.eligible){status('Esta magia não pode ser registrada: '+eligibility.reasons.join(' '),true);return;}
+    const existing=spellRows().find(row=>row.circle===circle&&normalize(row.name)===normalize(name));
+    if(existing){if(circle===0){status('Os truques de 0º círculo já fazem parte do Grimório inicial.');return;}existing.input.value='';existing.input.dispatchEvent(new Event('input',{bubbles:true}));if(existing.check)existing.check.checked=false;status('Magia removida do Grimório: '+name+'.');renderCatalogList();return;}
+    if(isCreate&&circle===1&&spellRows().filter(row=>row.circle===1).length>=expectedInitialSpellCount()){status('Você já escolheu todas as magias iniciais permitidas.');return;}
     const block = Array.from(document.querySelectorAll('.spell-level-block')).find(item=>parseInt(clean(item.querySelector('.spell-level-title')),10)===circle);
     if (!block) { status('A ficha não possui uma área para este círculo de magia.',true); return; }
     const list = block.querySelector('.spell-list');
-    const name = spell.nome_pt || spell.nome;
     const inputs = Array.from(list.querySelectorAll('input[type="text"]'));
     let target = inputs.find(input=>!String(input.value||'').trim() && !input.disabled);
     if (!target) {
@@ -1495,8 +1506,7 @@
     if (target) {
       target.value = name;
       target.dispatchEvent(new Event('input',{bubbles:true}));
-      closeCatalog();
-      status('Magia adicionada ao grimório: '+name+'.');
+      status('Magia adicionada ao grimório: '+name+'.');renderCatalogList();
     }
   }
   function chooseFamiliar(monster) {
@@ -1539,7 +1549,7 @@
     const results = await Promise.all([
       sb.from('srd_skills').select('id,nome,atributo,treinada_apenas,penalidade_armadura,descricao,dados_tecnicos').neq('source_status','excluded'),
       sb.from('srd_feats').select('id,nome,nome_pt,descricao,descricao_pt,exige_parametro,requisitos,source_status'),
-      sb.from('srd_spells').select('id,nome,nome_pt,descricao,descricao_pt,circulo,nivel,escola,alcance,alvo,area,duracao,componentes,classes,source_status').contains('classes',['wizard'])
+      sb.from('srd_spells').select('id,nome,nome_pt,descricao,descricao_pt,circulo,nivel,escola,alcance,alvo,area,duracao,componentes,classes,source_status')
     ]);
     for (const result of results) if (result.error) throw result.error;
     skillCatalog = results[0].data || [];
