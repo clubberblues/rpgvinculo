@@ -42,7 +42,8 @@
       @media(prefers-reduced-motion:reduce){#dnd35-owl-guide .lampiao-art{animation:none}#dnd35-owl-guide.pop-out .lampiao-art,#dnd35-owl-guide.pop-out .lampiao-chat,#dnd35-owl-guide.pop-in .lampiao-art,#dnd35-owl-guide.pop-in .lampiao-chat{animation:none}}
     `;
     document.head.appendChild(style);
-    const legacyGuide=document.getElementById('mage-step-note');if(legacyGuide)legacyGuide.remove();\n    const root=document.createElement('aside');
+    const legacyGuide=document.getElementById('mage-step-note');if(legacyGuide)legacyGuide.remove();
+    const root=document.createElement('aside');
     root.id='dnd35-owl-guide';
     root.setAttribute('aria-label','Guia do Lampião Errante');
     root.innerHTML='<div class="lampiao-stage"><img class="lampiao-art" src="assets/lampiao-errante.png" alt="Lampião Errante" onerror="this.style.display=\'none\'"></div>'
