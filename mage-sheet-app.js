@@ -72,7 +72,7 @@
     bar.id = 'mage-sheet-toolbar';
     bar.innerHTML = '<div class="mage-sheet-meta"><strong>FICHA DO MAGO · D&D 3.5</strong><span id="mage-sheet-status" role="status" aria-live="polite">Preparando ficha…</span></div>';
     const style = document.createElement('style');
-    style.textContent = '#mage-sheet-toolbar{position:relative;z-index:20;display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;padding:10px 16px;width:min(760px,calc(100% - 28px));margin:0 auto 22px;background:linear-gradient(135deg,rgba(246,237,215,.94),rgba(226,210,174,.94));color:#49351f;border:1px solid rgba(139,111,71,.48);border-radius:12px;box-shadow:0 5px 18px rgba(48,31,13,.10);font:13px Georgia,serif}#mage-sheet-toolbar .mage-sheet-meta{display:flex;flex-direction:column;gap:3px;flex:1;min-width:180px;text-align:center}#mage-sheet-status{color:#806747;font-size:12px}#mage-sheet-status[data-error=true]{color:#ff9b8f}#mage-sheet-toolbar .mage-sheet-actions{display:flex;gap:8px;flex-wrap:wrap}#mage-sheet-toolbar button{padding:7px 12px;border:1px solid rgba(139,111,71,.48);background:rgba(255,250,238,.78);color:#594126;border-radius:999px;cursor:pointer;font:600 12px Georgia,serif;transition:background .18s,transform .18s}#mage-sheet-toolbar button:hover{background:#fff8e9;transform:translateY(-1px)}#mage-sheet-toolbar #mage-save{background:#594126;color:#fff3d7;border-color:#594126}#mage-sheet-toolbar button:disabled{opacity:.45;cursor:not-allowed}.mage-class-feature-note{margin:6px 0 10px;padding:7px 10px;border-left:2px solid #b08d57;color:#6f5738;background:#f3ead7;font:12px Georgia,serif}.mage-step-focus{outline:2px solid rgba(176,141,87,.72)!important;outline-offset:3px;box-shadow:0 0 0 5px rgba(176,141,87,.12)!important;position:relative;z-index:2;border-radius:5px}.mage-step-note{position:fixed;left:16px;top:16px;bottom:16px;transform:none;z-index:10002;width:244px;max-height:none;overflow:auto;box-sizing:border-box;padding:14px 13px;background:linear-gradient(145deg,rgba(249,242,225,.985),rgba(231,216,185,.985));color:#49351f;border:1px solid rgba(139,111,71,.58);border-radius:16px;box-shadow:0 16px 48px rgba(25,16,7,.24);font:15px/1.5 Georgia,serif;text-align:center;backdrop-filter:blur(10px)}.mage-guide-actions{display:flex;justify-content:center;align-items:center;gap:9px;flex-wrap:wrap;margin-top:15px;padding-top:13px;border-top:1px solid rgba(139,111,71,.24)}.mage-guide-actions button{padding:8px 15px;border:1px solid rgba(139,111,71,.55);border-radius:999px;background:rgba(255,250,238,.78);color:#594126;cursor:pointer;font:600 12px Georgia,serif}.mage-guide-actions button:disabled{opacity:.35;cursor:not-allowed}.mage-guide-actions #mage-save{background:#594126;color:#fff3d7;border-color:#594126}.mage-guide-actions button:hover:not(:disabled){filter:brightness(1.04);transform:translateY(-1px)}.mage-step-note strong{display:block;font:700 17px Cinzel,Georgia,serif;color:#382514;margin:2px 0 5px}.mage-step-note .mage-guide-progress{height:3px;background:rgba(139,111,71,.18);border-radius:5px;overflow:hidden;margin:9px 0 0}.mage-step-note .mage-guide-progress span{display:block;height:100%;background:#a47d45;border-radius:5px}.mage-choice-panel{margin:12px 0 16px;padding:10px 12px;border:1px solid rgba(139,111,71,.65);background:rgba(255,255,255,.28);font:13px Georgia,serif;color:#2b1a0e}.mage-choice-panel label{font-family:Cinzel,serif;font-size:9px;font-weight:700;display:block;margin-bottom:4px}.mage-choice-panel select{width:100%;padding:6px;background:rgba(255,255,255,.65);border:1px solid #8b6f47;color:#2b1a0e}.mage-school-choices{display:flex;gap:8px 14px;flex-wrap:wrap;margin-top:8px}.mage-school-choices label{display:flex;align-items:center;gap:5px;font-family:Georgia,serif;font-size:12px;font-weight:400}.mage-school-choices input{accent-color:#8b6f47}.mage-choice-help{font-size:11px;margin-top:6px;color:#5a3f28}';
+    style.textContent = '#mage-sheet-toolbar{position:relative;z-index:20;display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap;padding:10px 16px;width:min(760px,calc(100% - 28px));margin:0 auto 22px;background:linear-gradient(135deg,rgba(246,237,215,.94),rgba(226,210,174,.94));color:#49351f;border:1px solid rgba(139,111,71,.48);border-radius:12px;box-shadow:0 5px 18px rgba(48,31,13,.10);font:13px Georgia,serif}#mage-sheet-toolbar .mage-sheet-meta{display:flex;flex-direction:column;gap:3px;flex:1;min-width:180px;text-align:center}#mage-sheet-status{color:#806747;font-size:12px}#mage-sheet-status[data-error=true]{color:#ff9b8f}#mage-sheet-toolbar .mage-sheet-actions{display:flex;gap:8px;flex-wrap:wrap}#mage-sheet-toolbar button{padding:7px 12px;border:1px solid rgba(139,111,71,.48);background:rgba(255,250,238,.78);color:#594126;border-radius:999px;cursor:pointer;font:600 12px Georgia,serif;transition:background .18s,transform .18s}#mage-sheet-toolbar button:hover{background:#fff8e9;transform:translateY(-1px)}#mage-sheet-toolbar #mage-save{background:#594126;color:#fff3d7;border-color:#594126}#mage-sheet-toolbar button:disabled{opacity:.45;cursor:not-allowed}.mage-class-feature-note{margin:6px 0 10px;padding:7px 10px;border-left:2px solid #b08d57;color:#6f5738;background:#f3ead7;font:12px Georgia,serif}.mage-step-focus{outline:2px solid rgba(176,141,87,.72)!important;outline-offset:3px;box-shadow:0 0 0 5px rgba(176,141,87,.12)!important;position:relative;z-index:2;border-radius:5px}.mage-guide-actions{display:flex;justify-content:center;align-items:center;gap:9px;flex-wrap:wrap;margin-top:15px;padding-top:13px;border-top:1px solid rgba(139,111,71,.24)}.mage-guide-actions button{padding:8px 15px;border:1px solid rgba(139,111,71,.55);border-radius:999px;background:rgba(255,250,238,.78);color:#594126;cursor:pointer;font:600 12px Georgia,serif}.mage-guide-actions button:disabled{opacity:.35;cursor:not-allowed}.mage-guide-actions #mage-save{background:#594126;color:#fff3d7;border-color:#594126}.mage-guide-actions button:hover:not(:disabled){filter:brightness(1.04);transform:translateY(-1px)}.mage-step-note strong{display:block;font:700 17px Cinzel,Georgia,serif;color:#382514;margin:2px 0 5px}.mage-step-note .mage-guide-progress{height:3px;background:rgba(139,111,71,.18);border-radius:5px;overflow:hidden;margin:9px 0 0}.mage-step-note .mage-guide-progress span{display:block;height:100%;background:#a47d45;border-radius:5px}.mage-choice-panel{margin:12px 0 16px;padding:10px 12px;border:1px solid rgba(139,111,71,.65);background:rgba(255,255,255,.28);font:13px Georgia,serif;color:#2b1a0e}.mage-choice-panel label{font-family:Cinzel,serif;font-size:9px;font-weight:700;display:block;margin-bottom:4px}.mage-choice-panel select{width:100%;padding:6px;background:rgba(255,255,255,.65);border:1px solid #8b6f47;color:#2b1a0e}.mage-school-choices{display:flex;gap:8px 14px;flex-wrap:wrap;margin-top:8px}.mage-school-choices label{display:flex;align-items:center;gap:5px;font-family:Georgia,serif;font-size:12px;font-weight:400}.mage-school-choices input{accent-color:#8b6f47}.mage-choice-help{font-size:11px;margin-top:6px;color:#5a3f28}';
     
     style.textContent += '\n' +
       '.mage-catalog-backdrop{position:fixed;inset:0;z-index:10004;display:none;align-items:center;justify-content:center;padding:24px;background:rgba(12,8,4,.72);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}' +
@@ -1825,49 +1825,16 @@
     if (!candidates.length) {
       const oldNote = document.getElementById('mage-step-note');
       if (oldNote) oldNote.remove();
-      status('Não há mais campos que precisem de preenchimento manual. Revise a ficha e salve.');
+      status('Não há mais campos que precisem de preenchimento manual. Revise os dados e salve.');
       return;
     }
-    step = Math.max(0,Math.min(candidates.length - 1,next));
-    document.querySelectorAll('.mage-step-focus').forEach(el=>el.classList.remove('mage-step-focus'));
+    step = Math.max(0, Math.min(candidates.length - 1, next));
+    document.querySelectorAll('.mage-step-focus').forEach(el => el.classList.remove('mage-step-focus'));
     const item = candidates[step];
     item.target.classList.add('mage-step-focus');
-    item.target.scrollIntoView({behavior:'smooth',block:'center'});
-    let note = document.getElementById('mage-step-note');
-    if (!note) { note = document.createElement('aside'); note.id = 'mage-step-note'; note.className = 'mage-step-note'; document.body.appendChild(note); }
-    note.innerHTML = '<div style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#98764a;margin-bottom:6px;text-align:center">Sua jornada · etapa ' + (step+1) + ' de ' + candidates.length + '</div><strong>' + item.label + '</strong><div class="mage-guide-help">' + item.help + '</div>' + (/talentos/.test(item.sectionKey) ? '<button type="button" id="mage-guide-feats" class="mage-guide-catalog-button">Abrir catálogo de talentos</button>' : (/grimorio|magia/.test(item.sectionKey) ? '<button type="button" id="mage-guide-spells" class="mage-guide-catalog-button">Abrir Grimório</button>' : '')) + '<div class="mage-guide-progress"><span style="width:' + (((step+1)/candidates.length)*100) + '%"></span></div><div class="mage-guide-actions"><button type="button" id="mage-guide-prev">Voltar</button><button type="button" id="mage-guide-next">' + (step === candidates.length - 1 ? 'Concluir guia' : 'Avançar') + '</button><button type="button" id="mage-save">' + (isCreate ? 'Criar Mago' : 'Salvar ficha') + '</button></div>';
-    renderGuideCategories(note,candidates,item);
-    const guideToggle = document.createElement('button');
-    guideToggle.type = 'button';
-    guideToggle.className = 'mage-guide-toggle';
-    guideToggle.textContent = '− Recolher GUIA';
-    guideToggle.setAttribute('aria-expanded', 'true');
-    guideToggle.addEventListener('click', () => {
-      const collapsed = note.classList.toggle('recolhido');
-      guideToggle.textContent = collapsed ? 'GUIA +' : '− Recolher GUIA';
-      guideToggle.setAttribute('aria-expanded', String(!collapsed));
-    });
-    note.insertBefore(guideToggle, note.firstChild);
-    const featButton = note.querySelector('#mage-guide-feats');
-    if (featButton) featButton.onclick = () => openCatalog('feats');
-    const spellButton = note.querySelector('#mage-guide-spells');
-    if (spellButton) spellButton.onclick = () => openCatalog('spells');
-    const prevButton = note.querySelector('#mage-guide-prev');
-    const nextButton = note.querySelector('#mage-guide-next');
-    prevButton.disabled = step === 0;
-    prevButton.onclick = () => showStep(step - 1);
-    nextButton.onclick = () => {
-      const refreshed = guideCandidates();
-      if (step >= refreshed.length - 1) {
-        document.querySelectorAll('.mage-step-focus').forEach(el=>el.classList.remove('mage-step-focus'));
-        status('Guia concluído. Você pode criar ou salvar sua ficha.');
-        note.querySelector('strong').textContent = 'Jornada concluída';
-        note.querySelector('.mage-guide-help').textContent = 'Você chegou ao fim do guia. Revise sua ficha e use o botão abaixo para ' + (isCreate ? 'criar o personagem.' : 'salvar as alterações.');
-        nextButton.disabled = true;
-        prevButton.disabled = true;
-      } else showStep(step + 1);
-    };
-    note.querySelector('#mage-save').addEventListener('click', save);
+    item.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const oldNote = document.getElementById('mage-step-note');
+    if (oldNote) oldNote.remove();
   }
   async function loadCharacter() {
     const result = await sb.from('srd_character_sheets').select('identidade').eq('character_id', characterId).maybeSingle();
