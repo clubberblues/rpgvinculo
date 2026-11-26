@@ -2052,7 +2052,7 @@
     const style = document.createElement('style');
     style.id = 'dnd35-owl-guide-style';
     style.textContent = `
-      #dnd35-owl-guide{position:fixed;right:22px;bottom:18px;z-index:10050;display:flex;align-items:flex-end;gap:12px;font-family:'EB Garamond',Georgia,serif;pointer-events:none;max-width:calc(100vw - 28px)}
+      #dnd35-owl-guide{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:10050;display:flex;align-items:flex-end;gap:12px;font-family:'EB Garamond',Georgia,serif;pointer-events:none;max-width:calc(100vw - 28px);max-height:calc(100vh - 24px)}
       #dnd35-owl-guide *{box-sizing:border-box}
       #dnd35-owl-guide .lampiao-stage{pointer-events:auto;position:relative;width:164px;height:218px;flex:0 0 auto;transform-origin:50% 70%;isolation:isolate;animation:lampiao-idle 5.6s ease-in-out infinite}
       #dnd35-owl-guide .lampiao-art{position:relative;z-index:2;width:100%;height:100%;object-fit:contain;object-position:center bottom;filter:drop-shadow(0 9px 13px rgba(0,0,0,.62));transform-origin:50% 70%;animation:lampiao-body-sway 6.8s ease-in-out infinite}
@@ -2073,12 +2073,12 @@
       #dnd35-owl-guide .lampiao-actions button:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 3px 9px #79501e55}
       #dnd35-owl-guide .lampiao-actions button:disabled{opacity:.38;cursor:not-allowed}
       #dnd35-owl-guide .lampiao-actions .lampiao-close{margin-left:auto;background:linear-gradient(#6a3024,#421d17);border-color:#8e5a43;color:#f8e7c7}
-      #dnd35-owl-guide .lampiao-minimized{display:none;pointer-events:auto;width:54px;height:54px;border-radius:50%;border:1px solid #d69b48;background:radial-gradient(circle,#ffcc68 0%,#a64a18 42%,#21130d 75%);box-shadow:0 0 18px #e77b27aa,0 5px 16px #0009;cursor:pointer;color:#ffe3a5;font-size:24px}
+      #dnd35-owl-guide .lampiao-minimized{display:none;pointer-events:auto;align-items:center;gap:7px;padding:5px 11px 5px 7px;border-radius:22px;border:1px solid #d69b48;background:linear-gradient(120deg,#342014,#1b120d);box-shadow:0 0 12px #e77b2744,0 3px 10px #0008;cursor:pointer;color:#ffe3a5;font:700 11px Cinzel,Georgia,serif;letter-spacing:1px}#dnd35-owl-guide .lampiao-minimized:before{content:'✦';display:grid;place-items:center;width:27px;height:27px;border-radius:50%;background:radial-gradient(circle,#ffcc68 0%,#a64a18 55%,#21130d 80%);font-size:17px}
       #dnd35-owl-guide.closed .lampiao-stage,#dnd35-owl-guide.closed .lampiao-chat{display:none}
       #dnd35-owl-guide.closed .lampiao-minimized{display:grid;place-items:center}
       #dnd35-owl-guide.pop-out .lampiao-stage,#dnd35-owl-guide.pop-out .lampiao-chat{animation:lampiao-pop-out .25s cubic-bezier(.2,.8,.3,1) forwards}
       #dnd35-owl-guide.pop-in .lampiao-stage,#dnd35-owl-guide.pop-in .lampiao-chat{animation:lampiao-pop-in .3s cubic-bezier(.2,.8,.3,1) both}
-      #dnd35-owl-guide.closed{right:18px;bottom:18px}
+      #dnd35-owl-guide.closed{left:12px;top:12px;right:auto;bottom:auto;transform:none;max-height:none}
       @keyframes lampiao-idle{0%,100%{transform:translateY(0)}45%{transform:translateY(-3px)}75%{transform:translateY(1px)}}
       @keyframes lampiao-body-sway{0%,100%{transform:rotate(0) translateX(0)}28%{transform:rotate(-.7deg) translateX(-1px)}66%{transform:rotate(.55deg) translateX(1px)}}
       @keyframes lampiao-ember{0%,100%{opacity:.56;transform:scale(.88)}50%{opacity:1;transform:scale(1.13)}}
@@ -2104,9 +2104,18 @@
     chat.innerHTML='<h3 class="lampiao-title">O Lampião Errante</h3><p class="lampiao-message"></p><div class="lampiao-detail"></div><div class="lampiao-actions"><button type="button" data-action="next">Seguir</button><button type="button" data-action="prev">Voltar</button><button type="button" data-action="about">Sobre esta etapa</button><button type="button" class="lampiao-close" data-action="close">Fechar guia</button></div>';
     const stage=root.querySelector('.lampiao-stage');
     const minimized=document.createElement('button');
-    minimized.type='button'; minimized.className='lampiao-minimized'; minimized.textContent='✦'; minimized.setAttribute('aria-label','Reabrir o guia');
+    minimized.type='button'; minimized.className='lampiao-minimized'; minimized.textContent='GUIA'; minimized.setAttribute('aria-label','Reabrir o Guia do Lampião Errante');
     root.append(chat,minimized);
     document.body.appendChild(root);
+    const centerGuide=()=>{root.style.left='50%';root.style.top='50%';root.style.right='auto';root.style.bottom='auto';root.style.transform='translate(-50%,-50%)';root.dataset.userMoved='false';};
+    const guideIsOutOfView=()=>{const r=root.getBoundingClientRect();return r.bottom<0||r.top>window.innerHeight||r.right<0||r.left>window.innerWidth;};
+    let guideDrag=null;
+    const beginGuideDrag=e=>{if(e.button!==0||root.classList.contains('closed'))return;if(e.target.closest('button'))return;const r=root.getBoundingClientRect();guideDrag={x:e.clientX,y:e.clientY,left:r.left,top:r.top};root.style.transform='none';root.style.left=r.left+'px';root.style.top=r.top+'px';root.style.right='auto';root.style.bottom='auto';root.dataset.userMoved='true';e.preventDefault();};
+    const moveGuideDrag=e=>{if(!guideDrag)return;const x=Math.max(0,Math.min(window.innerWidth-root.offsetWidth,guideDrag.left+e.clientX-guideDrag.x));const y=Math.max(0,Math.min(window.innerHeight-root.offsetHeight,guideDrag.top+e.clientY-guideDrag.y));root.style.left=x+'px';root.style.top=y+'px';};
+    const endGuideDrag=()=>{guideDrag=null;};
+    stage.addEventListener('pointerdown',beginGuideDrag);chat.querySelector('.lampiao-title').style.cursor='grab';chat.querySelector('.lampiao-title').addEventListener('pointerdown',beginGuideDrag);window.addEventListener('pointermove',moveGuideDrag);window.addEventListener('pointerup',endGuideDrag);
+    window.addEventListener('scroll',()=>{if(!root.classList.contains('closed')&&guideIsOutOfView())centerGuide();},{passive:true});
+    window.addEventListener('resize',()=>{if(!root.classList.contains('closed')&&guideIsOutOfView())centerGuide();});
     const message=chat.querySelector('.lampiao-message');
     const detail=chat.querySelector('.lampiao-detail');
     const prev=chat.querySelector('[data-action="prev"]');
@@ -2189,7 +2198,7 @@
       window.setTimeout(()=>{root.classList.remove('pop-out');root.classList.add('closed');},260);
     };
     const reopen=()=>{
-      root.classList.remove('closed');root.classList.add('pop-in');
+      root.classList.remove('closed');centerGuide();root.classList.add('pop-in');
       window.setTimeout(()=>root.classList.remove('pop-in'),320);
       render();
     };
