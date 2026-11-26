@@ -2054,7 +2054,7 @@
     style.textContent = `
       #dnd35-owl-guide{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:10050;display:flex;align-items:flex-end;gap:12px;font-family:'EB Garamond',Georgia,serif;pointer-events:none;max-width:calc(100vw - 28px);max-height:calc(100vh - 24px)}
       #dnd35-owl-guide *{box-sizing:border-box}
-      #dnd35-owl-guide .lampiao-stage{pointer-events:auto;position:relative;width:164px;height:218px;flex:0 0 auto;transform-origin:50% 70%;isolation:isolate;animation:lampiao-idle 5.6s ease-in-out infinite}
+      #dnd35-owl-guide .lampiao-stage{pointer-events:auto;position:relative;width:126px;height:168px;flex:0 0 auto;transform-origin:50% 70%;isolation:isolate;animation:lampiao-idle 5.6s ease-in-out infinite}
       #dnd35-owl-guide .lampiao-art{position:relative;z-index:2;width:100%;height:100%;object-fit:contain;object-position:center bottom;filter:drop-shadow(0 9px 13px rgba(0,0,0,.62));transform-origin:50% 70%;animation:lampiao-body-sway 6.8s ease-in-out infinite}
       #dnd35-owl-guide .lampiao-stage:before{content:"";position:absolute;z-index:1;left:28%;right:28%;bottom:7%;height:32%;border-radius:50%;background:radial-gradient(ellipse,rgba(255,179,66,.48),rgba(183,76,23,.17) 48%,transparent 74%);filter:blur(13px);animation:lampiao-ember 2.7s ease-in-out infinite}
       #dnd35-owl-guide .lampiao-stage:after{content:"";position:absolute;z-index:3;left:44%;top:0;width:34%;height:42%;pointer-events:none;background:radial-gradient(ellipse at 50% 85%,rgba(190,184,165,.23),rgba(132,130,120,.10) 35%,transparent 72%);filter:blur(8px);opacity:0;animation:lampiao-smoke 7s ease-in-out infinite}
@@ -2062,11 +2062,11 @@
       #dnd35-owl-guide .lampiao-stage.reacting .lampiao-art{animation:lampiao-react-body .48s cubic-bezier(.2,.8,.2,1)}
       #dnd35-owl-guide .lampiao-stage.speaking .lampiao-art{animation:lampiao-speaking 1.1s ease-in-out 2}
       #dnd35-owl-guide .lampiao-stage.speaking:before{animation:lampiao-ember  .65s ease-in-out infinite}
-      #dnd35-owl-guide .lampiao-chat{pointer-events:auto;width:min(350px,calc(100vw - 205px));min-width:230px;padding:15px 17px 13px;background:linear-gradient(145deg,#fff4d8,#e5cf9f);color:#392817;border:2px solid #ae8345;border-radius:13px 13px 13px 3px;box-shadow:0 12px 34px rgba(0,0,0,.48),inset 0 0 18px rgba(255,255,255,.3);position:relative;margin-bottom:15px}
+      #dnd35-owl-guide .lampiao-chat{pointer-events:auto;width:min(310px,calc(100vw - 155px));min-width:210px;padding:12px 14px 11px;background:linear-gradient(145deg,#fff4d8,#e5cf9f);color:#392817;border:2px solid #ae8345;border-radius:13px 13px 13px 3px;box-shadow:0 12px 34px rgba(0,0,0,.48),inset 0 0 18px rgba(255,255,255,.3);position:relative;margin-bottom:15px}
       #dnd35-owl-guide .lampiao-chat:before{content:"";position:absolute;left:-9px;bottom:28px;width:14px;height:14px;background:#e9d7ae;border-left:2px solid #ae8345;border-bottom:2px solid #ae8345;transform:rotate(45deg)}
       #dnd35-owl-guide .lampiao-title{font:900 11px Cinzel,Georgia,serif;letter-spacing:1.5px;text-transform:uppercase;color:#765020;margin:0 0 7px}
-      #dnd35-owl-guide .lampiao-message{font-size:16px;line-height:1.4;margin:0;white-space:pre-line}
-      #dnd35-owl-guide .lampiao-detail{display:none;margin-top:9px;padding-top:8px;border-top:1px solid rgba(139,103,52,.35);font-size:14px;line-height:1.4;color:#5a4128}
+      #dnd35-owl-guide .lampiao-message{font-size:15px;line-height:1.35;margin:0;white-space:pre-line}
+      #dnd35-owl-guide .lampiao-detail{display:none;margin-top:9px;padding-top:8px;border-top:1px solid rgba(139,103,52,.35);font-size:13px;line-height:1.4;color:#5a4128}
       #dnd35-owl-guide.show-detail .lampiao-detail{display:block}
       #dnd35-owl-guide .lampiao-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px}
       #dnd35-owl-guide .lampiao-actions button{border:1px solid #9b733c;border-radius:5px;background:linear-gradient(#f8e8c4,#dfc18c);color:#3b2917;padding:7px 10px;font:700 10px Cinzel,Georgia,serif;cursor:pointer;transition:transform .16s,box-shadow .16s}
@@ -2086,12 +2086,12 @@
       @keyframes lampiao-react{0%{transform:scale(1)}32%{transform:scale(1.055) translateY(-5px)}65%{transform:scale(.98) translateY(1px)}100%{transform:scale(1)}}
       @keyframes lampiao-react-body{0%,100%{transform:rotate(0)}30%{transform:rotate(-2deg)}68%{transform:rotate(1deg)}}
       @keyframes lampiao-speaking{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-2px) rotate(-.6deg)}55%{transform:translateY(0) rotate(.6deg)}}
-      @media(max-width:680px){#dnd35-owl-guide .lampiao-stage{width:104px;height:150px}}
+      @media(max-width:680px){#dnd35-owl-guide .lampiao-stage{width:88px;height:124px}}
       @media(prefers-reduced-motion:reduce){#dnd35-owl-guide .lampiao-stage,#dnd35-owl-guide .lampiao-art,#dnd35-owl-guide .lampiao-stage:before,#dnd35-owl-guide .lampiao-stage:after{animation:none}}
 
       @keyframes lampiao-pop-out{0%{transform:scale(1);opacity:1}30%{transform:scale(1.15);opacity:1}100%{transform:scale(0);opacity:0}}
       @keyframes lampiao-pop-in{0%{transform:scale(0);opacity:0}70%{transform:scale(1.15);opacity:1}100%{transform:scale(1);opacity:1}}
-      @media(max-width:680px){#dnd35-owl-guide{right:auto;bottom:auto;gap:4px}#dnd35-owl-guide .lampiao-art{width:104px;height:150px}#dnd35-owl-guide .lampiao-chat{width:min(290px,calc(100vw - 120px));min-width:190px;padding:11px 12px}#dnd35-owl-guide .lampiao-message{font-size:14px}#dnd35-owl-guide .lampiao-actions button{padding:6px 7px;font-size:9px}}
+      @media(max-width:680px){#dnd35-owl-guide{right:auto;bottom:auto;gap:4px}#dnd35-owl-guide .lampiao-art{width:88px;height:124px}#dnd35-owl-guide .lampiao-chat{width:min(290px,calc(100vw - 120px));min-width:190px;padding:11px 12px}#dnd35-owl-guide .lampiao-message{font-size:14px}#dnd35-owl-guide .lampiao-actions button{padding:6px 7px;font-size:9px}}
       @media(prefers-reduced-motion:reduce){#dnd35-owl-guide .lampiao-art{animation:none}#dnd35-owl-guide.pop-out .lampiao-art,#dnd35-owl-guide.pop-out .lampiao-chat,#dnd35-owl-guide.pop-in .lampiao-art,#dnd35-owl-guide.pop-in .lampiao-chat{animation:none}}
     `;
     document.head.appendChild(style);
@@ -2154,19 +2154,21 @@
     };
     const stageKey=item=>normalize((item&&item.sectionKey)|| (item&&item.label)||'');
     const stageText=item=>{
+      const label=(item&&item.label)||'esta escolha';
       const key=stageKey(item);
-      const found=Object.keys(stageLines).find(k=>key.includes(k));
-      if(found)return stageLines[found];
-      const label=(item&&item.label)||'esta parte da ficha';
-      const box=document.createElement('div');box.innerHTML=(item&&item.help)||'';
-      const guidance=(box.textContent||'').replace(/\\s+/g,' ').trim();
-      return guidance ? label+'. '+guidance+' Leia com atenção antes de seguir; não vou deixar você escolher no escuro.' : label+'. Esta escolha afeta os dados registrados na ficha. Confira os campos destacados e as regras indicadas antes de avançar.';
+      if(/atribut/.test(key))return 'Ora, escolha com juízo. Até um Mago precisa saber onde é forte — e onde é só teimoso.';
+      if(/per[ií]cia/.test(key))return 'Escolha o que combina com sua história. Não dá para ser especialista em tudo, nem com uma biblioteca inteira.';
+      if(/talento/.test(key))return 'Um talento pode mudar seu jeito de agir. Veja os requisitos antes de se apaixonar pela ideia.';
+      if(/familiar/.test(key))return 'Escolha seu companheiro arcano. E lembre: até familiar tem opinião própria.';
+      if(/magia|grim[oó]rio|prepara/.test(key))return 'Magia exige estudo. Vamos separar o que você aprendeu daquilo que deixa preparado.';
+      if(/equip/.test(key))return 'Revise o que leva. A magia não vai carregar sua mochila por você.';
+      return 'Vamos cuidar de “'+label+'”. Confira os detalhes; eu fico aqui, julgando em silêncio.';
     };
     const detailText=item=>{
       const box=document.createElement('div');
       box.innerHTML=(item&&item.help)||'';
       const txt=(box.textContent||'').replace(/\s+/g,' ').trim();
-      return txt||stageText(item);
+      return txt||'Confira esta etapa e preencha o campo indicado.';
     };
     const currentItem=()=>{const list=guideCandidates();return list[Math.max(0,Math.min(step,list.length-1))]||null;};
     const render=()=>{
