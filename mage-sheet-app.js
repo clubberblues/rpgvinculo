@@ -1,7 +1,8 @@
     style.textContent = `\n      .mage-step-note,.mage-guide-toggle{display:none!important}\n
       #dnd35-owl-guide{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:10050;display:flex;align-items:flex-end;gap:12px;font-family:'EB Garamond',Georgia,serif;pointer-events:none;max-width:calc(100vw - 28px);max-height:calc(100vh - 24px)}
       #dnd35-owl-guide *{box-sizing:border-box}
-      #dnd35-owl-guide .lampiao-stage{pointer-events:auto;position:relative;width:126px;height:168px;flex:0 0 auto;transform-origin:50% 70%;isolation:isolate;animation:lampiao-idle 5.6s ease-in-out infinite}
+      #dnd35-owl-guide .lampiao-stage{pointer-events:auto;position:relative;width:126px;height:168px;flex:0 0 auto;transform-origin:50% 70%;isolation:isolate;animation:lampiao-idle 5.6s ease-in-out infinite;display:grid;place-items:center} 
+      #dnd35-owl-guide .lampiao-stage.no-art:after{content:'🏮';position:absolute;inset:0;display:grid;place-items:center;font:100px/1 serif;filter:drop-shadow(0 0 18px #ff9b32);opacity:1;background:none;animation:none}
       #dnd35-owl-guide .lampiao-art{position:relative;z-index:2;width:100%;height:100%;object-fit:contain;object-position:center bottom;filter:drop-shadow(0 9px 13px rgba(0,0,0,.62));transform-origin:50% 70%;animation:lampiao-body-sway 6.8s ease-in-out infinite}
       #dnd35-owl-guide .lampiao-stage:before{content:"";position:absolute;z-index:1;left:28%;right:28%;bottom:7%;height:32%;border-radius:50%;background:radial-gradient(ellipse,rgba(255,179,66,.48),rgba(183,76,23,.17) 48%,transparent 74%);filter:blur(13px);animation:lampiao-ember 2.7s ease-in-out infinite}
       #dnd35-owl-guide .lampiao-stage:after{content:"";position:absolute;z-index:3;left:44%;top:0;width:34%;height:42%;pointer-events:none;background:radial-gradient(ellipse at 50% 85%,rgba(190,184,165,.23),rgba(132,130,120,.10) 35%,transparent 72%);filter:blur(8px);opacity:0;animation:lampiao-smoke 7s ease-in-out infinite}
@@ -46,7 +47,7 @@
     const root=document.createElement('aside');
     root.id='dnd35-owl-guide';
     root.setAttribute('aria-label','Guia do Lampião Errante');
-    root.innerHTML='<div class="lampiao-stage"><img class="lampiao-art" src="assets/lampiao-errante.png" alt="Lampião Errante" onerror="this.style.display=\'none\'"></div>'
+    root.innerHTML='<div class="lampiao-stage no-art"><img class="lampiao-art" src="assets/lampiao-errante.png" alt="Lampião Errante" onerror="this.remove();this.parentElement.classList.add(\'no-art\')"></div>'
     const chat=document.createElement('div');
     chat.className='lampiao-chat';
     chat.innerHTML='<h3 class="lampiao-title">O Lampião Errante</h3><p class="lampiao-message"></p><div class="lampiao-detail"></div><div class="lampiao-actions"><button type="button" data-action="next">Seguir</button><button type="button" data-action="prev">Voltar</button><button type="button" data-action="about">Sobre esta etapa</button><button type="button" class="lampiao-close" data-action="close">Fechar guia</button></div>';
