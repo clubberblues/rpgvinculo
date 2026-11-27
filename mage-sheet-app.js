@@ -2035,7 +2035,7 @@
       #dnd35-owl-guide .lampiao-message{font-size:15px;line-height:1.35;margin:0;white-space:pre-line}
       #dnd35-owl-guide .lampiao-detail{display:none;margin-top:9px;padding-top:8px;border-top:1px solid rgba(139,103,52,.35);font-size:13px;line-height:1.4;color:#5a4128}
       #dnd35-owl-guide.show-detail .lampiao-detail{display:block}
-      #dnd35-owl-guide .lampiao-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:13pxjustify-content:center;}
+      #dnd35-owl-guide .lampiao-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px;justify-content:center;}
       #dnd35-owl-guide .lampiao-actions button{border:1px solid #9b733c;border-radius:5px;background:linear-gradient(#f8e8c4,#dfc18c);color:#3b2917;padding:7px 10px;font:700 10px Cinzel,Georgia,serif;cursor:pointer;}
       #dnd35-owl-guide .lampiao-actions button:hover:not(:disabled){box-shadow:0 3px 9px #79501e55}
       #dnd35-owl-guide .lampiao-actions button:disabled{opacity:.38;cursor:not-allowed}
