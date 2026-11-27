@@ -2021,45 +2021,45 @@
     style.textContent = `
       #dnd35-owl-guide{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:10050;display:block;width:min(720px,calc(100vw - 20px));height:min(600px,calc(100vh - 20px));font-family:'EB Garamond',Georgia,serif;pointer-events:none}
       #dnd35-owl-guide *{box-sizing:border-box}
-      #dnd35-owl-guide .lampiao-stage{pointer-events:auto;position:absolute;inset:0;width:100%;height:100%;transform-origin:50% 70%;isolation:isolate;animation:lampiao-idle 5.6s ease-in-out infinite}
-      #dnd35-owl-guide .lampiao-art{position:absolute;inset:0;z-index:2;width:100%;height:100%;object-fit:contain;object-position:center;filter:drop-shadow(0 9px 13px rgba(0,0,0,.62));transform-origin:50% 70%;animation:lampiao-body-sway 6.8s ease-in-out infinite}
-      #dnd35-owl-guide .lampiao-stage:before{content:"";position:absolute;z-index:1;left:28%;right:28%;bottom:7%;height:32%;border-radius:50%;background:radial-gradient(ellipse,rgba(255,179,66,.48),rgba(183,76,23,.17) 48%,transparent 74%);filter:blur(13px);animation:lampiao-ember 2.7s ease-in-out infinite}
-      #dnd35-owl-guide .lampiao-stage:after{content:"";position:absolute;z-index:3;left:44%;top:0;width:34%;height:42%;pointer-events:none;background:radial-gradient(ellipse at 50% 85%,rgba(190,184,165,.23),rgba(132,130,120,.10) 35%,transparent 72%);filter:blur(8px);opacity:0;animation:lampiao-smoke 7s ease-in-out infinite}
-      #dnd35-owl-guide .lampiao-stage.reacting{animation:lampiao-react .48s cubic-bezier(.2,.8,.2,1)}
-      #dnd35-owl-guide .lampiao-stage.reacting .lampiao-art{animation:lampiao-react-body .48s cubic-bezier(.2,.8,.2,1)}
-      #dnd35-owl-guide .lampiao-stage.speaking .lampiao-art{animation:lampiao-speaking 1.1s ease-in-out 2}
-      #dnd35-owl-guide .lampiao-stage.speaking:before{animation:lampiao-ember  .65s ease-in-out infinite}
+      #dnd35-owl-guide .lampiao-stage{pointer-events:auto;position:absolute;inset:0;width:100%;height:100%;transform-origin:50% 70%;isolation:isolate;}
+      #dnd35-owl-guide .lampiao-art{position:absolute;inset:0;z-index:2;width:100%;height:100%;object-fit:contain;object-position:center;transform-origin:50% 70%;}
+      #dnd35-owl-guide .lampiao-stage:before{display:none}
+      #dnd35-owl-guide .lampiao-stage:after{display:none}
+      #dnd35-owl-guide .lampiao-stage.reacting{}
+      #dnd35-owl-guide .lampiao-stage.reacting .lampiao-art{}
+      #dnd35-owl-guide .lampiao-stage.speaking .lampiao-art{}
+      #dnd35-owl-guide .lampiao-stage.speaking:before{}
       #dnd35-owl-guide .lampiao-chat{pointer-events:auto;position:absolute;left:20%;right:7%;top:40%;bottom:5%;width:auto;min-width:0;padding:clamp(10px,2vw,22px);background:transparent;color:#392817;border:0;border-radius:0;box-shadow:none;display:flex;flex-direction:column;justify-content:center;overflow:auto}
       #dnd35-owl-guide .lampiao-chat:before{display:none}
-      #dnd35-owl-guide .lampiao-title{font:900 11px Cinzel,Georgia,serif;letter-spacing:1.5px;text-transform:uppercase;color:#765020;margin:0 0 7px}
+      #dnd35-owl-guide .lampiao-title{font:900 11px Cinzel,Georgia,serif;letter-spacing:1.5px;text-color:#765020;margin:0 0 7px}
       #dnd35-owl-guide .lampiao-message{font-size:15px;line-height:1.35;margin:0;white-space:pre-line}
       #dnd35-owl-guide .lampiao-detail{display:none;margin-top:9px;padding-top:8px;border-top:1px solid rgba(139,103,52,.35);font-size:13px;line-height:1.4;color:#5a4128}
       #dnd35-owl-guide.show-detail .lampiao-detail{display:block}
-      #dnd35-owl-guide .lampiao-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px}
-      #dnd35-owl-guide .lampiao-actions button{border:1px solid #9b733c;border-radius:5px;background:linear-gradient(#f8e8c4,#dfc18c);color:#3b2917;padding:7px 10px;font:700 10px Cinzel,Georgia,serif;cursor:pointer;transition:transform .16s,box-shadow .16s}
-      #dnd35-owl-guide .lampiao-actions button:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 3px 9px #79501e55}
+      #dnd35-owl-guide .lampiao-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:13pxjustify-content:center;}
+      #dnd35-owl-guide .lampiao-actions button{border:1px solid #9b733c;border-radius:5px;background:linear-gradient(#f8e8c4,#dfc18c);color:#3b2917;padding:7px 10px;font:700 10px Cinzel,Georgia,serif;cursor:pointer;}
+      #dnd35-owl-guide .lampiao-actions button:hover:not(:disabled){box-shadow:0 3px 9px #79501e55}
       #dnd35-owl-guide .lampiao-actions button:disabled{opacity:.38;cursor:not-allowed}
-      #dnd35-owl-guide .lampiao-actions .lampiao-close{margin-left:auto;background:linear-gradient(#6a3024,#421d17);border-color:#8e5a43;color:#f8e7c7}
+      #dnd35-owl-guide .lampiao-actions .lampiao-close{background:linear-gradient(#6a3024,#421d17);border-color:#8e5a43;color:#f8e7c7}
       #dnd35-owl-guide .lampiao-minimized{display:none;pointer-events:auto;align-items:center;gap:7px;padding:5px 11px 5px 7px;border-radius:22px;border:1px solid #d69b48;background:linear-gradient(120deg,#342014,#1b120d);box-shadow:0 0 12px #e77b2744,0 3px 10px #0008;cursor:pointer;color:#ffe3a5;font:700 11px Cinzel,Georgia,serif;letter-spacing:1px}#dnd35-owl-guide .lampiao-minimized:before{content:'✦';display:grid;place-items:center;width:27px;height:27px;border-radius:50%;background:radial-gradient(circle,#ffcc68 0%,#a64a18 55%,#21130d 80%);font-size:17px}
       #dnd35-owl-guide.closed .lampiao-stage,#dnd35-owl-guide.closed .lampiao-chat{display:none}
       #dnd35-owl-guide.closed .lampiao-minimized{display:flex;place-items:center}
-      #dnd35-owl-guide.pop-out .lampiao-stage,#dnd35-owl-guide.pop-out .lampiao-chat{animation:lampiao-pop-out .25s cubic-bezier(.2,.8,.3,1) forwards}
-      #dnd35-owl-guide.pop-in .lampiao-stage,#dnd35-owl-guide.pop-in .lampiao-chat{animation:lampiao-pop-in .3s cubic-bezier(.2,.8,.3,1) both}
-      #dnd35-owl-guide.closed{left:12px;top:12px;right:auto;bottom:auto;transform:none;max-height:none}
-      @keyframes lampiao-idle{0%,100%{transform:translateY(0)}45%{transform:translateY(-3px)}75%{transform:translateY(1px)}}
-      @keyframes lampiao-body-sway{0%,100%{transform:rotate(0) translateX(0)}28%{transform:rotate(-.7deg) translateX(-1px)}66%{transform:rotate(.55deg) translateX(1px)}}
-      @keyframes lampiao-ember{0%,100%{opacity:.56;transform:scale(.88)}50%{opacity:1;transform:scale(1.13)}}
-      @keyframes lampiao-smoke{0%,70%,100%{opacity:0;transform:translate(0,12px) scale(.72)}76%{opacity:.45}92%{opacity:.1;transform:translate(9px,-20px) scale(1.35)}}
-      @keyframes lampiao-react{0%{transform:scale(1)}32%{transform:scale(1.055) translateY(-5px)}65%{transform:scale(.98) translateY(1px)}100%{transform:scale(1)}}
-      @keyframes lampiao-react-body{0%,100%{transform:rotate(0)}30%{transform:rotate(-2deg)}68%{transform:rotate(1deg)}}
-      @keyframes lampiao-speaking{0%,100%{transform:translateY(0) rotate(0)}25%{transform:translateY(-2px) rotate(-.6deg)}55%{transform:translateY(0) rotate(.6deg)}}
-      @media(max-width:680px){#dnd35-owl-guide{width:calc(100vw - 12px);height:min(78vh,620px)}#dnd35-owl-guide .lampiao-chat{left:17%;right:5%;top:41%;bottom:4%;padding:8px}#dnd35-owl-guide .lampiao-message{font-size:clamp(12px,3.2vw,15px)}#dnd35-owl-guide .lampiao-actions{gap:4px;margin-top:7px}#dnd35-owl-guide .lampiao-actions button{padding:5px 6px;font-size:9px}}
-      @media(prefers-reduced-motion:reduce){#dnd35-owl-guide .lampiao-stage,#dnd35-owl-guide .lampiao-art,#dnd35-owl-guide .lampiao-stage:before,#dnd35-owl-guide .lampiao-stage:after{animation:none}}
-
-      @keyframes lampiao-pop-out{0%{transform:scale(1);opacity:1}30%{transform:scale(1.15);opacity:1}100%{transform:scale(0);opacity:0}}
-      @keyframes lampiao-pop-in{0%{transform:scale(0);opacity:0}70%{transform:scale(1.15);opacity:1}100%{transform:scale(1);opacity:1}}
       
-      @media(prefers-reduced-motion:reduce){#dnd35-owl-guide .lampiao-art{animation:none}#dnd35-owl-guide.pop-out .lampiao-art,#dnd35-owl-guide.pop-out .lampiao-chat,#dnd35-owl-guide.pop-in .lampiao-art,#dnd35-owl-guide.pop-in .lampiao-chat{animation:none}}
+      
+      #dnd35-owl-guide.closed{left:12px;top:12px;right:auto;bottom:auto;max-height:none}
+      45%{}75%{}}
+      28%{}66%{}}
+      50%{opacity:1;}}
+      76%{opacity:.45}92%{opacity:.1;}}
+      32%{}65%{}100%{}}
+      30%{}68%{}}
+      25%{}55%{}}
+      @media(max-width:680px){#dnd35-owl-guide{width:calc(100vw - 12px);height:min(78vh,620px)}#dnd35-owl-guide .lampiao-chat{left:17%;right:5%;top:41%;bottom:4%;padding:8px}#dnd35-owl-guide .lampiao-message{font-size:clamp(12px,3.2vw,15px)}#dnd35-owl-guide .lampiao-actions{gap:4px;margin-top:7px}#dnd35-owl-guide .lampiao-actions button{padding:5px 6px;font-size:9px}}
+      @media(prefers-reduced-motion:reduce){#dnd35-owl-guide .lampiao-stage,#dnd35-owl-guide .lampiao-art,#dnd35-owl-guide .lampiao-stage:before,#dnd35-owl-guide .lampiao-stage:after{display:none}}
+
+      30%{opacity:1}100%{opacity:0}}
+      70%{opacity:1}100%{opacity:1}}
+      
+      @media(prefers-reduced-motion:reduce){#dnd35-owl-guide .lampiao-art{}}
     `;
     document.head.appendChild(style);
     const root=document.createElement('aside');
@@ -2144,7 +2144,7 @@
       if(!item){message.textContent='A ficha está preenchida. Revise os dados e salve quando estiver tudo certo.';detail.textContent='';prev.disabled=true;next.disabled=true;return;}
       message.textContent=stageText(item);
       detail.textContent=detailText(item);
-      stage.classList.remove('speaking'); void stage.offsetWidth; stage.classList.add('speaking'); window.setTimeout(()=>stage.classList.remove('speaking'),2200);
+      
       prev.disabled=step<=0;
       next.disabled=step>=list.length-1;
       about.textContent=root.classList.contains('show-detail')?'Ocultar detalhes':'Sobre esta etapa';
@@ -2154,7 +2154,7 @@
       const target=Math.max(0,Math.min(list.length-1,step+delta));
       if(target===step){render();return;}
       showStep(target);
-      stage.classList.remove('reacting'); void stage.offsetWidth; stage.classList.add('reacting'); window.setTimeout(()=>stage.classList.remove('reacting'),520);
+      
       root.classList.remove('show-detail');
       render();
     };
@@ -2163,12 +2163,10 @@
     about.addEventListener('click',()=>{root.classList.toggle('show-detail');render();});
     const closeGuide=()=>{
       if(root.classList.contains('closed'))return;
-      root.classList.remove('pop-in');root.classList.add('pop-out');
-      window.setTimeout(()=>{root.classList.remove('pop-out');root.classList.add('closed');},260);
+      root.classList.add('closed');
     };
     const reopen=()=>{
-      root.classList.remove('closed');centerGuide();root.classList.add('pop-in');
-      window.setTimeout(()=>root.classList.remove('pop-in'),320);
+      root.classList.remove('closed');centerGuide();
       render();
     };
     chat.querySelector('[data-action="close"]').addEventListener('click',closeGuide);
@@ -2176,7 +2174,7 @@
     const stepNote=document.getElementById('mage-step-note');
     if(stepNote){const stepObserver=new MutationObserver(()=>render());stepObserver.observe(stepNote,{subtree:true,childList:true,characterData:true,attributes:true});}
     render();
-    window.setTimeout(()=>root.classList.add('pop-in'),100);
+    
   }
 
 
