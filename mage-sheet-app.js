@@ -2033,11 +2033,11 @@
       #dnd35-owl-guide .lampiao-stage.reacting .lampiao-art{}
       #dnd35-owl-guide .lampiao-stage.speaking .lampiao-art{}
       #dnd35-owl-guide .lampiao-stage.speaking:before{}
-      #dnd35-owl-guide .lampiao-chat{pointer-events:auto;position:absolute;left:22.6%;right:20.8%;top:23%;height:32%;width:auto;min-width:0;padding:5px 7px;background:transparent;color:#2b2118;border:0;border-radius:0;box-shadow:none;display:block;overflow:hidden;text-align:left}
+      #dnd35-owl-guide .lampiao-chat{pointer-events:auto;position:absolute;left:21%;right:19%;top:52%;height:19%;width:auto;min-width:0;padding:5px 7px;background:transparent;color:#2b2118;border:0;border-radius:0;box-shadow:none;display:block;overflow:hidden;text-align:left}
       #dnd35-owl-guide .lampiao-message{font:600 13px/1.4 Arial,Helvetica,sans-serif;margin:0;white-space:pre-line;text-wrap:pretty;color:#2b2118;text-shadow:0 1px rgba(255,250,235,.65)}
       #dnd35-owl-guide .lampiao-detail{display:none;margin-top:6px;padding-top:5px;border-top:1px solid rgba(139,103,52,.35);font:600 11px/1.3 Arial,Helvetica,sans-serif;color:#382719}
       #dnd35-owl-guide.show-detail .lampiao-detail{display:block}
-      #dnd35-owl-guide .lampiao-actions{position:absolute;pointer-events:auto;left:19%;width:56%;top:70.5%;height:11%;display:flex;gap:4px;flex-wrap:nowrap;margin:0;padding:0;border:0;justify-content:center;align-items:center;}
+      #dnd35-owl-guide .lampiao-actions{position:absolute;pointer-events:auto;left:16%;width:68%;top:72%;height:12%;display:flex;gap:4px;flex-wrap:nowrap;margin:0;padding:0;border:0;justify-content:center;align-items:center;}
       #dnd35-owl-guide .lampiao-actions button{border:1px solid #9b733c;border-radius:4px;background:linear-gradient(#f8e8c4,#dfc18c);color:#3b2917;padding:4px 6px;font:700 8px/1.1 Arial,Helvetica,sans-serif;cursor:pointer;white-space:nowrap;}
       #dnd35-owl-guide .lampiao-actions button:hover:not(:disabled){box-shadow:0 3px 9px #79501e55}
       #dnd35-owl-guide .lampiao-actions button:disabled{opacity:.38;cursor:not-allowed}
@@ -2055,7 +2055,7 @@
       32%{}65%{}100%{}}
       30%{}68%{}}
       25%{}55%{}}
-      @media(max-width:680px){#dnd35-owl-guide{width:min(360px,calc(100vw - 12px));height:min(300px,calc(100vh - 12px))}#dnd35-owl-guide .lampiao-chat{left:22.6%;right:20.8%;top:23%;height:32%;padding:3px 4px}#dnd35-owl-guide .lampiao-message{font-size:11px;line-height:1.3}#dnd35-owl-guide .lampiao-detail{font-size:10px;line-height:1.25}#dnd35-owl-guide .lampiao-actions{left:19%;width:56%;top:70.5%;height:11%;gap:2px;margin:0}#dnd35-owl-guide .lampiao-actions button{padding:3px 4px;font-size:7px}}
+      @media(max-width:680px){#dnd35-owl-guide{width:min(360px,calc(100vw - 12px));height:min(300px,calc(100vh - 12px))}#dnd35-owl-guide .lampiao-chat{left:21%;right:19%;top:52%;height:19%;padding:3px 4px}#dnd35-owl-guide .lampiao-message{font-size:11px;line-height:1.3}#dnd35-owl-guide .lampiao-detail{font-size:10px;line-height:1.25}#dnd35-owl-guide .lampiao-actions{left:16%;width:68%;top:72%;height:12%;gap:2px;margin:0}#dnd35-owl-guide .lampiao-actions button{padding:3px 4px;font-size:7px}}
       @media(prefers-reduced-motion:reduce){#dnd35-owl-guide .lampiao-stage,#dnd35-owl-guide .lampiao-art,#dnd35-owl-guide .lampiao-stage:before,#dnd35-owl-guide .lampiao-stage:after{display:none}}
 
       30%{opacity:1}100%{opacity:0}}
