@@ -2068,7 +2068,7 @@
     root.innerHTML='<div class="lampiao-stage"><img class="lampiao-art" src="./owl_on_dnd_guide_chat_bubble_wooden_mug.png" alt="Lampião Errante" onerror="this.style.display=\'none\'"></div>'
     const chat=document.createElement('div');
     chat.className='lampiao-chat';
-    chat.innerHTML='<h3 class="lampiao-title">O Lampião Errante</h3><p class="lampiao-message"></p><div class="lampiao-detail"></div><div class="lampiao-actions"><button type="button" data-action="next">Seguir</button><button type="button" data-action="prev">Voltar</button><button type="button" data-action="about">Sobre esta etapa</button><button type="button" class="lampiao-close" data-action="close">Fechar guia</button></div>';
+    chat.innerHTML='<p class="lampiao-message" aria-live="polite"></p><div class="lampiao-detail"></div><div class="lampiao-actions"><button type="button" data-action="next">Seguir</button><button type="button" data-action="prev">Voltar</button><button type="button" data-action="about">Sobre esta etapa</button><button type="button" class="lampiao-close" data-action="close">Fechar guia</button></div>';
     const stage=root.querySelector('.lampiao-stage');
     const minimized=document.createElement('button');
     minimized.type='button'; minimized.className='lampiao-minimized'; minimized.textContent='GUIA'; minimized.setAttribute('aria-label','Reabrir o Guia do Lampião Errante');
@@ -2143,8 +2143,7 @@
       const item=currentItem();
       if(!item){message.textContent='A ficha está preenchida. Revise os dados e salve quando estiver tudo certo.';detail.textContent='';prev.disabled=true;next.disabled=true;return;}
       const copy=stageText(item);
-      const split=copy.search(/[.!?](?:\s|$)/);
-      message.replaceChildren();\n      if(split>=0){const lead=document.createElement('strong');lead.textContent=copy.slice(0,split+1);const rest=copy.slice(split+1).trim();message.append(lead);if(rest){const body=document.createElement('span');body.textContent=rest;message.append(body);}}else message.textContent=copy;
+      message.textContent=copy;
       detail.textContent=detailText(item);
       
       prev.disabled=step<=0;
