@@ -2126,19 +2126,33 @@
     };
     const stageKey=item=>normalize((item&&item.sectionKey)|| (item&&item.label)||'');
     const stageText=item=>{
-      const label=(item&&item.label)||'esta escolha';
       const key=stageKey(item);
-      if(/atribut/.test(key))return 'Ora, escolha com juízo. Até um Mago precisa saber onde é forte — e onde é só teimoso.';
-      if(/resist|salv/.test(key))return 'Nem toda ameaça se vence com magia. Confira suas resistências: elas podem salvar sua pele.';
-      if(/pontos.?de.?vida|\bpv\b|vida/.test(key))return 'Esses são seus Pontos de Vida. Cuide bem deles; coragem não impede ninguém de cair.';
-      if(/armadura|classe.?de.?armadura|\bca\b/.test(key))return 'Sua Classe de Armadura mostra o quanto é difícil acertar você. Armadura, escudo e Destreza podem fazer diferença.';
-      if(/per[ií]cia/.test(key))return 'Escolha o que combina com sua história. Não dá para ser especialista em tudo, nem com uma biblioteca inteira.';
-      if(/talento/.test(key))return 'Um talento pode mudar seu jeito de agir. Veja os requisitos antes de se apaixonar pela ideia.';
-      if(/familiar/.test(key))return 'Escolha seu companheiro arcano. E lembre: até familiar tem opinião própria.';
-      if(/magia|grim[oó]rio|prepara/.test(key))return 'Magia exige estudo. Vamos separar o que você aprendeu daquilo que deixa preparado.';
-      if(/equip/.test(key))return 'Revise o que leva. A magia não vai carregar sua mochila por você.';
-      if(/identidade|cabecalho/.test(key))return 'Todo herói começa por aqui. Dê forma à identidade de quem vai viver esta aventura.';
-      return 'Vamos conferir esta parte da ficha. Um detalhe bem escolhido pode fazer diferença na aventura.';
+      const topicLines={
+        'base':'Aqui ficam os dados principais do personagem, como nome, raça, classe e nível.',
+        'atributos':'Seus atributos representam suas capacidades físicas e mentais e influenciam várias outras estatísticas.',
+        'resistencias':'Aqui estão seus bônus de Fortitude, Reflexos e Vontade, usados para resistir a diferentes perigos.',
+        'base e agarrar':'O bônus base de ataque ajuda a determinar seus ataques; o bônus de agarrar é usado em manobras de agarrão.',
+        'iniciativa':'Sua iniciativa determina a ordem em que você age quando o combate começa.',
+        'deslocamento':'Este valor indica a distância que você pode percorrer durante seu movimento.',
+        'pontos de vida':'Seus pontos de vida representam quanto dano você pode suportar antes de cair.',
+        'armadura ca':'Sua Classe de Armadura indica o quão difícil é acertar você em combate.',
+        'ataques':'Aqui ficam seus ataques, com os bônus e os danos usados para resolver cada golpe.',
+        'pericias':'Suas perícias representam conhecimentos e habilidades que você pode usar em diferentes situações.',
+        'talentos':'Aqui ficam os talentos escolhidos pelo personagem e seus benefícios.',
+        'familiar':'Se seu personagem possui um familiar, esta seção reúne as informações dele.',
+        'magia':'Aqui ficam as informações das magias do personagem.',
+        'resumo magico':'Consulte aqui um resumo dos dados importantes para usar suas magias.',
+        'experiencia':'A experiência acumulada indica seu progresso em direção ao próximo nível.',
+        'tracos raciais':'Aqui estão as características especiais concedidas pela sua raça.',
+        'observacoes':'Use este espaço para registrar informações importantes sobre o personagem.',
+        'equipamentos':'Aqui ficam os itens que você carrega e utiliza durante a aventura.',
+        'varinhas e cajados':'Registre aqui suas varinhas e cajados, incluindo as informações necessárias para consultá-los.',
+        'capacidade de carga':'Esta seção mostra quanto peso você pode carregar e como isso afeta seu deslocamento.',
+        'idiomas':'Aqui ficam os idiomas que seu personagem sabe falar, ler ou escrever.',
+        'recipientes':'Registre bolsas, mochilas e outros recipientes, junto dos itens guardados neles.',
+        'dinheiro':'Aqui você acompanha as moedas e os valores que seu personagem possui.'
+      };
+      return topicLines[key]||'Confira as informações desta parte da ficha e preencha os campos correspondentes.';
     };
     const detailText=item=>{
       const box=document.createElement('div');
