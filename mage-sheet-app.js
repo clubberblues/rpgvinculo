@@ -2029,10 +2029,8 @@
       #dnd35-owl-guide .lampiao-stage.reacting .lampiao-art{}
       #dnd35-owl-guide .lampiao-stage.speaking .lampiao-art{}
       #dnd35-owl-guide .lampiao-stage.speaking:before{}
-      #dnd35-owl-guide .lampiao-chat{pointer-events:auto;position:absolute;left:22.6%;right:20.8%;top:23%;bottom:32%;width:auto;min-width:0;padding:4px 6px;background:transparent;color:#2d2117;border:0;border-radius:0;box-shadow:none;display:flex;flex-direction:column;justify-content:flex-start;overflow:auto;text-align:left}
-      #dnd35-owl-guide .lampiao-chat:before{display:none}
-      #dnd35-owl-guide .lampiao-title{font:700 10px/1.2 Georgia,'Times New Roman',serif;letter-spacing:.65px;text-transform:uppercase;color:#49301a;margin:0 0 7px;text-align:left;text-shadow:0 1px rgba(255,248,226,.7)}
-      #dnd35-owl-guide .lampiao-message{font:600 13px/1.4 Arial,Helvetica,sans-serif;margin:0;white-space:pre-line;text-wrap:pretty;color:#2b2118;text-shadow:0 1px rgba(255,250,235,.65)}#dnd35-owl-guide .lampiao-message strong{font-weight:800;color:#24170e}#dnd35-owl-guide .lampiao-message span{display:block;margin-top:4px}
+      #dnd35-owl-guide .lampiao-chat{pointer-events:auto;position:absolute;left:22.6%;right:20.8%;top:23%;height:32%;width:auto;min-width:0;padding:5px 7px;background:transparent;color:#2b2118;border:0;border-radius:0;box-shadow:none;display:block;overflow:hidden;text-align:left}
+      #dnd35-owl-guide .lampiao-message{font:600 13px/1.4 Arial,Helvetica,sans-serif;margin:0;white-space:pre-line;text-wrap:pretty;color:#2b2118;text-shadow:0 1px rgba(255,250,235,.65)}
       #dnd35-owl-guide .lampiao-detail{display:none;margin-top:6px;padding-top:5px;border-top:1px solid rgba(139,103,52,.35);font:600 11px/1.3 Arial,Helvetica,sans-serif;color:#382719}
       #dnd35-owl-guide.show-detail .lampiao-detail{display:block}
       #dnd35-owl-guide .lampiao-actions{position:absolute;pointer-events:auto;left:19%;width:56%;top:70.5%;height:11%;display:flex;gap:4px;flex-wrap:nowrap;margin:0;padding:0;border:0;justify-content:center;align-items:center;}
@@ -2041,7 +2039,7 @@
       #dnd35-owl-guide .lampiao-actions button:disabled{opacity:.38;cursor:not-allowed}
       #dnd35-owl-guide .lampiao-actions .lampiao-close{margin-left:0;background:linear-gradient(#6a3024,#421d17);border-color:#8e5a43;color:#f8e7c7}
       #dnd35-owl-guide .lampiao-minimized{display:none;pointer-events:auto;align-items:center;gap:7px;padding:5px 11px 5px 7px;border-radius:22px;border:1px solid #d69b48;background:linear-gradient(120deg,#342014,#1b120d);box-shadow:0 0 12px #e77b2744,0 3px 10px #0008;cursor:pointer;color:#ffe3a5;font:700 11px Cinzel,Georgia,serif;letter-spacing:1px}#dnd35-owl-guide .lampiao-minimized:before{content:'✦';display:grid;place-items:center;width:27px;height:27px;border-radius:50%;background:radial-gradient(circle,#ffcc68 0%,#a64a18 55%,#21130d 80%);font-size:17px}
-      #dnd35-owl-guide.closed .lampiao-stage,#dnd35-owl-guide.closed .lampiao-chat{display:none}
+      #dnd35-owl-guide.closed .lampiao-stage,#dnd35-owl-guide.closed .lampiao-chat,#dnd35-owl-guide.closed .lampiao-actions{display:none}
       #dnd35-owl-guide.closed .lampiao-minimized{display:flex;place-items:center}
       
       
@@ -2053,7 +2051,7 @@
       32%{}65%{}100%{}}
       30%{}68%{}}
       25%{}55%{}}
-      @media(max-width:680px){#dnd35-owl-guide{width:min(360px,calc(100vw - 12px));height:min(300px,calc(100vh - 12px))}#dnd35-owl-guide .lampiao-chat{left:22.6%;right:20.8%;top:23%;bottom:32%;padding:3px 4px}#dnd35-owl-guide .lampiao-title{font-size:9px;letter-spacing:.45px;margin-bottom:4px}#dnd35-owl-guide .lampiao-message{font-size:11px;line-height:1.3}#dnd35-owl-guide .lampiao-detail{font-size:10px;line-height:1.25}#dnd35-owl-guide .lampiao-actions{left:19%;width:56%;top:70.5%;height:11%;gap:2px;margin:0}#dnd35-owl-guide .lampiao-actions button{padding:3px 4px;font-size:7px}}
+      @media(max-width:680px){#dnd35-owl-guide{width:min(360px,calc(100vw - 12px));height:min(300px,calc(100vh - 12px))}#dnd35-owl-guide .lampiao-chat{left:22.6%;right:20.8%;top:23%;height:32%;padding:3px 4px}#dnd35-owl-guide .lampiao-message{font-size:11px;line-height:1.3}#dnd35-owl-guide .lampiao-detail{font-size:10px;line-height:1.25}#dnd35-owl-guide .lampiao-actions{left:19%;width:56%;top:70.5%;height:11%;gap:2px;margin:0}#dnd35-owl-guide .lampiao-actions button{padding:3px 4px;font-size:7px}}
       @media(prefers-reduced-motion:reduce){#dnd35-owl-guide .lampiao-stage,#dnd35-owl-guide .lampiao-art,#dnd35-owl-guide .lampiao-stage:before,#dnd35-owl-guide .lampiao-stage:after{display:none}}
 
       30%{opacity:1}100%{opacity:0}}
@@ -2068,11 +2066,14 @@
     root.innerHTML='<div class="lampiao-stage"><img class="lampiao-art" src="./owl_on_dnd_guide_chat_bubble_wooden_mug.png" alt="Lampião Errante" onerror="this.style.display=\'none\'"></div>'
     const chat=document.createElement('div');
     chat.className='lampiao-chat';
-    chat.innerHTML='<p class="lampiao-message" aria-live="polite"></p><div class="lampiao-detail"></div><div class="lampiao-actions"><button type="button" data-action="next">Seguir</button><button type="button" data-action="prev">Voltar</button><button type="button" data-action="about">Sobre esta etapa</button><button type="button" class="lampiao-close" data-action="close">Fechar guia</button></div>';
+    chat.innerHTML='<p class="lampiao-message" aria-live="polite"></p><div class="lampiao-detail"></div>';
+    const actions=document.createElement('div');
+    actions.className='lampiao-actions';
+    actions.innerHTML='<button type="button" data-action="next">Seguir</button><button type="button" data-action="prev">Voltar</button><button type="button" data-action="about">Sobre esta etapa</button><button type="button" class="lampiao-close" data-action="close">Fechar guia</button>';
     const stage=root.querySelector('.lampiao-stage');
     const minimized=document.createElement('button');
     minimized.type='button'; minimized.className='lampiao-minimized'; minimized.textContent='GUIA'; minimized.setAttribute('aria-label','Reabrir o Guia do Lampião Errante');
-    root.append(chat,minimized);
+    root.append(chat,actions,minimized);
     document.body.appendChild(root);
     const centerGuide=()=>{root.style.left='50%';root.style.top='50%';root.style.right='auto';root.style.bottom='auto';root.style.transform='translate(-50%,-50%)';root.dataset.userMoved='false';};
     const guideIsOutOfView=()=>{const r=root.getBoundingClientRect();return r.bottom<0||r.top>window.innerHeight||r.right<0||r.left>window.innerWidth;};
@@ -2080,14 +2081,14 @@
     const beginGuideDrag=e=>{if(e.button!==0||root.classList.contains('closed'))return;if(e.target.closest('button'))return;const r=root.getBoundingClientRect();guideDrag={x:e.clientX,y:e.clientY,left:r.left,top:r.top};root.style.transform='none';root.style.left=r.left+'px';root.style.top=r.top+'px';root.style.right='auto';root.style.bottom='auto';root.dataset.userMoved='true';e.preventDefault();};
     const moveGuideDrag=e=>{if(!guideDrag)return;const x=Math.max(0,Math.min(window.innerWidth-root.offsetWidth,guideDrag.left+e.clientX-guideDrag.x));const y=Math.max(0,Math.min(window.innerHeight-root.offsetHeight,guideDrag.top+e.clientY-guideDrag.y));root.style.left=x+'px';root.style.top=y+'px';};
     const endGuideDrag=()=>{guideDrag=null;};
-    stage.addEventListener('pointerdown',beginGuideDrag);chat.querySelector('.lampiao-title').style.cursor='grab';chat.querySelector('.lampiao-title').addEventListener('pointerdown',beginGuideDrag);window.addEventListener('pointermove',moveGuideDrag);window.addEventListener('pointerup',endGuideDrag);
+    stage.addEventListener('pointerdown',beginGuideDrag);window.addEventListener('pointermove',moveGuideDrag);window.addEventListener('pointerup',endGuideDrag);
     window.addEventListener('scroll',()=>{if(!root.classList.contains('closed')&&guideIsOutOfView())centerGuide();},{passive:true});
     window.addEventListener('resize',()=>{if(!root.classList.contains('closed')&&guideIsOutOfView())centerGuide();});
     const message=chat.querySelector('.lampiao-message');
     const detail=chat.querySelector('.lampiao-detail');
-    const prev=chat.querySelector('[data-action="prev"]');
-    const next=chat.querySelector('[data-action="next"]');
-    const about=chat.querySelector('[data-action="about"]');
+    const prev=actions.querySelector('[data-action="prev"]');
+    const next=actions.querySelector('[data-action="next"]');
+    const about=actions.querySelector('[data-action="about"]');
     const stageLines={
       'base':'Antes de distribuir qualquer coisa, confira o nome e os dados básicos. É aqui que a ficha ganha identidade. Não precisa correr: até heróis lendários começam preenchendo o próprio nome.',
       'atributos':'Força, Destreza, Constituição, Inteligência, Sabedoria e Carisma definem as capacidades do personagem. Para um Mago, Inteligência merece atenção especial: ela influencia suas magias e várias escolhas da ficha.',
@@ -2170,7 +2171,7 @@
       root.classList.remove('closed');centerGuide();
       render();
     };
-    chat.querySelector('[data-action="close"]').addEventListener('click',closeGuide);
+    actions.querySelector('[data-action="close"]').addEventListener('click',closeGuide);
     minimized.addEventListener('click',reopen);
     const stepNote=document.getElementById('mage-step-note');
     if(stepNote){const stepObserver=new MutationObserver(()=>render());stepObserver.observe(stepNote,{subtree:true,childList:true,characterData:true,attributes:true});}
