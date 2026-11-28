@@ -1420,6 +1420,10 @@
     const title = document.getElementById('mage-catalog-title');
     const tools = document.querySelector('#mage-catalog-overlay .mage-catalog-tools');
     const search = document.getElementById('mage-catalog-search');
+    if (!overlay || !title || !tools || !search) {
+      console.error('[MageSheet] Catálogo incompleto; não foi possível abrir:', mode);
+      return;
+    }
     title.textContent = mode === 'feats' ? 'Talentos' : mode === 'spells' ? 'Grimório do Mago' : 'Familiar';
     if(mode==='spells'){
       if(isCreate)spellCatalogTab='schools';
