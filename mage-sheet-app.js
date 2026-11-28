@@ -2143,7 +2143,8 @@
       const item=currentItem();
       if(!item){message.textContent='A ficha está preenchida. Revise os dados e salve quando estiver tudo certo.';detail.textContent='';prev.disabled=true;next.disabled=true;return;}
       const copy=stageText(item);
-      const split=copy.search(/[.!?](?:\s|$)/);\n      message.replaceChildren();\n      if(split>=0){const lead=document.createElement('strong');lead.textContent=copy.slice(0,split+1);const rest=copy.slice(split+1).trim();message.append(lead);if(rest){const body=document.createElement('span');body.textContent=rest;message.append(body);}}else message.textContent=copy;
+      const split=copy.search(/[.!?](?:\s|$)/);
+      message.replaceChildren();\n      if(split>=0){const lead=document.createElement('strong');lead.textContent=copy.slice(0,split+1);const rest=copy.slice(split+1).trim();message.append(lead);if(rest){const body=document.createElement('span');body.textContent=rest;message.append(body);}}else message.textContent=copy;
       detail.textContent=detailText(item);
       
       prev.disabled=step<=0;
