@@ -1626,7 +1626,7 @@
       if (control.closest('[hidden],.mage-catalog-overlay,.mage-lore-overlay')) return;
       // Resistências, BBA e Agarrar são campos derivados; Resistência à Magia só se aplica quando houver uma fonte específica.
       const panelTitle = normalize(clean(control.closest('.panel')?.querySelector('.panel-title')));
-      if (control.closest('.resist-row') || /resistencias/.test(panelTitle) || /base e agarrar/.test(panelTitle) || /iniciativa/.test(panelTitle) || /deslocamento/.test(panelTitle) || /equipamentos|ataques|armadura|ca/.test(panelTitle)) return;
+      if (control.closest('.resist-row') || /resistencias/.test(panelTitle) || /base e agarrar/.test(panelTitle) || /iniciativa/.test(panelTitle) || /deslocamento/.test(panelTitle) || /equipamentos|ataques/.test(panelTitle)) return;
       const target = guideTargetFor(control);
       if (!target || seen.has(target)) return;
       seen.add(target);
@@ -2033,11 +2033,11 @@
       #dnd35-owl-guide .lampiao-stage.reacting .lampiao-art{}
       #dnd35-owl-guide .lampiao-stage.speaking .lampiao-art{}
       #dnd35-owl-guide .lampiao-stage.speaking:before{}
-      #dnd35-owl-guide .lampiao-chat{pointer-events:auto;position:absolute;left:21%;right:19%;top:52%;height:19%;width:auto;min-width:0;padding:5px 7px;background:transparent;color:#2b2118;border:0;border-radius:0;box-shadow:none;display:block;overflow:hidden;text-align:left}
+      #dnd35-owl-guide .lampiao-chat{pointer-events:auto;position:absolute;left:20%;right:20%;top:55%;height:16%;z-index:5;width:auto;min-width:0;padding:5px 7px;background:transparent;color:#2b2118;border:0;border-radius:0;box-shadow:none;display:block;overflow:hidden;text-align:left}
       #dnd35-owl-guide .lampiao-message{font:600 13px/1.4 Arial,Helvetica,sans-serif;margin:0;white-space:pre-line;text-wrap:pretty;color:#2b2118;text-shadow:0 1px rgba(255,250,235,.65)}
       #dnd35-owl-guide .lampiao-detail{display:none;margin-top:6px;padding-top:5px;border-top:1px solid rgba(139,103,52,.35);font:600 11px/1.3 Arial,Helvetica,sans-serif;color:#382719}
       #dnd35-owl-guide.show-detail .lampiao-detail{display:block}
-      #dnd35-owl-guide .lampiao-actions{position:absolute;pointer-events:auto;left:16%;width:68%;top:72%;height:12%;display:flex;gap:4px;flex-wrap:nowrap;margin:0;padding:0;border:0;justify-content:center;align-items:center;}
+      #dnd35-owl-guide .lampiao-actions{position:absolute;z-index:6;pointer-events:auto;left:16%;width:68%;top:72%;height:12%;display:flex;gap:4px;flex-wrap:nowrap;margin:0;padding:0;border:0;justify-content:center;align-items:center;}
       #dnd35-owl-guide .lampiao-actions button{border:1px solid #9b733c;border-radius:4px;background:linear-gradient(#f8e8c4,#dfc18c);color:#3b2917;padding:4px 6px;font:700 8px/1.1 Arial,Helvetica,sans-serif;cursor:pointer;white-space:nowrap;}
       #dnd35-owl-guide .lampiao-actions button:hover:not(:disabled){box-shadow:0 3px 9px #79501e55}
       #dnd35-owl-guide .lampiao-actions button:disabled{opacity:.38;cursor:not-allowed}
@@ -2055,7 +2055,7 @@
       32%{}65%{}100%{}}
       30%{}68%{}}
       25%{}55%{}}
-      @media(max-width:680px){#dnd35-owl-guide{width:min(360px,calc(100vw - 12px));height:min(300px,calc(100vh - 12px))}#dnd35-owl-guide .lampiao-chat{left:21%;right:19%;top:52%;height:19%;padding:3px 4px}#dnd35-owl-guide .lampiao-message{font-size:11px;line-height:1.3}#dnd35-owl-guide .lampiao-detail{font-size:10px;line-height:1.25}#dnd35-owl-guide .lampiao-actions{left:16%;width:68%;top:72%;height:12%;gap:2px;margin:0}#dnd35-owl-guide .lampiao-actions button{padding:3px 4px;font-size:7px}}
+      @media(max-width:680px){#dnd35-owl-guide{width:min(360px,calc(100vw - 12px));height:min(300px,calc(100vh - 12px))}#dnd35-owl-guide .lampiao-chat{left:20%;right:20%;top:55%;height:16%;z-index:5;padding:3px 4px}#dnd35-owl-guide .lampiao-message{font-size:11px;line-height:1.3}#dnd35-owl-guide .lampiao-detail{font-size:10px;line-height:1.25}#dnd35-owl-guide .lampiao-actions{left:16%;width:68%;top:72%;height:12%;z-index:6;gap:2px;margin:0}#dnd35-owl-guide .lampiao-actions button{padding:3px 4px;font-size:7px}}
       @media(prefers-reduced-motion:reduce){#dnd35-owl-guide .lampiao-stage,#dnd35-owl-guide .lampiao-art,#dnd35-owl-guide .lampiao-stage:before,#dnd35-owl-guide .lampiao-stage:after{display:none}}
 
       30%{opacity:1}100%{opacity:0}}
@@ -2129,12 +2129,16 @@
       const label=(item&&item.label)||'esta escolha';
       const key=stageKey(item);
       if(/atribut/.test(key))return 'Ora, escolha com juízo. Até um Mago precisa saber onde é forte — e onde é só teimoso.';
+      if(/resist|salv/.test(key))return 'Nem toda ameaça se vence com magia. Confira suas resistências: elas podem salvar sua pele.';
+      if(/pontos.?de.?vida|\bpv\b|vida/.test(key))return 'Esses são seus Pontos de Vida. Cuide bem deles; coragem não impede ninguém de cair.';
+      if(/armadura|classe.?de.?armadura|\bca\b/.test(key))return 'Sua Classe de Armadura mostra o quanto é difícil acertar você. Armadura, escudo e Destreza podem fazer diferença.';
       if(/per[ií]cia/.test(key))return 'Escolha o que combina com sua história. Não dá para ser especialista em tudo, nem com uma biblioteca inteira.';
       if(/talento/.test(key))return 'Um talento pode mudar seu jeito de agir. Veja os requisitos antes de se apaixonar pela ideia.';
       if(/familiar/.test(key))return 'Escolha seu companheiro arcano. E lembre: até familiar tem opinião própria.';
       if(/magia|grim[oó]rio|prepara/.test(key))return 'Magia exige estudo. Vamos separar o que você aprendeu daquilo que deixa preparado.';
       if(/equip/.test(key))return 'Revise o que leva. A magia não vai carregar sua mochila por você.';
-      return 'Vamos cuidar de “'+label+'”. Confira os detalhes; eu fico aqui, julgando em silêncio.';
+      if(/identidade|cabecalho/.test(key))return 'Todo herói começa por aqui. Dê forma à identidade de quem vai viver esta aventura.';
+      return 'Vamos conferir esta parte da ficha. Um detalhe bem escolhido pode fazer diferença na aventura.';
     };
     const detailText=item=>{
       const box=document.createElement('div');
